@@ -47,8 +47,15 @@ export const ITEMS = [
     // are inside this section, which is what every document's breadcrumb has
     // claimed since the site was built.
     match: (r: string) =>
-      ['/handbook', '/architecture', '/conventions', '/traps', '/readme', '/release'].includes(r) ||
-      r.startsWith('/diagrams'),
+      [
+        '/handbook',
+        '/architecture',
+        '/conventions',
+        '/provenance',
+        '/traps',
+        '/readme',
+        '/release',
+      ].includes(r) || r.startsWith('/diagrams'),
   },
   {
     route: '/decisions',

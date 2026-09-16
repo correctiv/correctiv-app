@@ -116,18 +116,27 @@ export function Document({ doc }: Props) {
           {record && <Neighbours route={doc.route} />}
 
           <footer className="mt-xl max-w-content border-t border-stroke pt-sm text-m text-on-canvas-muted">
+            {/* Two sentences, because there are two kinds of document and the
+                difference is the whole point of the one that is generated: every
+                other page here offers its file as the place to edit, and this one
+                would be offering an edit to an output. */}
             <p>
               This page is{' '}
               <a
                 href={`${REPO_BLOB}/${doc.file}`}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex items-center gap-3xs font-mono text-on-canvas underline decoration-accent underline-offset-2"
+                /* `max-w-full break-all`, because the longest path on the site is
+                   36 characters and 368 of them fit at 400px: without it this one
+                   line put the whole page three pixels into a sideways scroll. */
+                className="inline-flex max-w-full items-center gap-3xs break-all font-mono text-on-canvas underline decoration-accent underline-offset-2"
               >
                 {doc.file}
                 <ExternalLink aria-hidden="true" className="size-[0.75rem]" />
               </a>{' '}
-              in the repository, rendered here. It is not a copy, so there is one place to edit it.
+              {doc.generated === true
+                ? 'in the repository, which is the program that writes this page rather than the page. It is produced from the tree at build time, so nothing on it is a copy of anything and there is nothing here to edit.'
+                : 'in the repository, rendered here. It is not a copy, so there is one place to edit it.'}
             </p>
           </footer>
         </article>
