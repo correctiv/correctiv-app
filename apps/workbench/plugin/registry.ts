@@ -19,6 +19,15 @@ export interface DocumentSource {
   nav: string;
   /** One line for the navigation and the landing page. */
   blurb: string;
+  /**
+   * True where `file` is the program that writes the page rather than the page.
+   *
+   * One document is generated from the repository instead of read out of it, and
+   * the difference reaches the reader: `pages/Document.tsx` offers every other
+   * document as a file to edit, and offering this one would be an invitation to
+   * type into an output.
+   */
+  generated?: boolean;
 }
 
 /**

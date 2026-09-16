@@ -32,6 +32,9 @@ export function Handbook() {
     },
     { route: '/conventions', title: 'Conventions', kind: 'Rules', blurb: blurb('/conventions') },
     { route: '/traps', title: 'Traps', kind: 'Hard-won', blurb: blurb('/traps') },
+    // The one card whose page is not a file. It sits here rather than apart
+    // because what it describes is how everything else on this grid stays true.
+    { route: '/provenance', title: 'Provenance', kind: 'Generated', blurb: blurb('/provenance') },
     { route: '/readme', title: 'Readme', kind: 'Start', blurb: blurb('/readme') },
     { route: '/release', title: 'Release', kind: 'Process', blurb: blurb('/release') },
   ];

@@ -4,7 +4,7 @@ import { Marked, type Token, type Tokens } from 'marked';
 
 import { slug } from '../src/lib/slug.ts';
 
-import { adrNumber, adrRoute, DOCUMENTS } from './registry.ts';
+import { adrNumber, adrRoute, DOCUMENTS, type DocumentSource } from './registry.ts';
 
 export interface Heading {
   depth: number;
@@ -53,12 +53,7 @@ export function decisionNumber(headingText: string): number | null {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-export interface RenderedDoc {
-  id: string;
-  file: string;
-  route: string;
-  nav: string;
-  blurb: string;
+export interface RenderedDoc extends DocumentSource {
   /** The h1, or the navigation label where a document has none. */
   title: string;
   html: string;
@@ -258,7 +253,7 @@ function plain(raw: string): string {
 const REPO_BLOB_SEGMENT = '/blob';
 
 export function renderDoc(
-  source: { id: string; file: string; route: string; nav: string; blurb: string },
+  source: DocumentSource,
   markdown: string,
   routes: Map<string, string>,
   blobBase: string,

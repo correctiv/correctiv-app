@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import { buildDecisions, type DecisionRecord } from './decisions.ts';
 import { renderDoc, routeMap, type RenderedDoc } from './markdown.ts';
-import { adrNumber, adrRoute, DOCUMENTS } from './registry.ts';
+import { buildProvenance, PROVENANCE_SOURCE, provenanceMarkdown } from './provenance.ts';
+import { adrNumber, adrRoute, DOCUMENTS, type DocumentSource } from './registry.ts';
 
 export const ROOT = fileURLToPath(new URL('../../..', import.meta.url));
 export const REPO = 'https://github.com/faktenforum/correctiv-app';
@@ -28,6 +29,23 @@ export function commit(): string {
   } catch {
     return 'main';
   }
+}
+
+/**
+ * The documents this site produces rather than reads.
+ *
+ * One so far. It is in the same list as the rest because everything downstream —
+ * the route, the contents list, the search index, the link rewriting, the
+ * breadcrumb — should not have to know which kind of document it is holding; the
+ * difference is that `file` names the program instead of the page, and the page
+ * says so in its footer.
+ */
+export const GENERATED_DOCUMENTS: DocumentSource[] = [{ ...PROVENANCE_SOURCE, generated: true }];
+
+/** What a generated document's Markdown is, at the moment it is asked for. */
+function write(source: DocumentSource): string {
+  if (source.id !== PROVENANCE_SOURCE.id) throw new Error(`${source.id} generates nothing.`);
+  return provenanceMarkdown(buildProvenance(ROOT));
 }
 
 /** Every record, in number order, which is also reading order. */
@@ -63,8 +81,9 @@ export function collectDocs(base = '/'): { module: DocsModule; files: string[] }
   const sha = commit();
   const blobBase = `${REPO}/blob/${sha}`;
 
-  const sources = [
+  const sources: DocumentSource[] = [
     ...DOCUMENTS,
+    ...GENERATED_DOCUMENTS,
     ...adrs.map((file) => {
       const n = adrNumber(file) as string;
       return { id: `adr-${n}`, file, route: adrRoute(n), nav: `ADR ${n}`, blurb: '' };
@@ -76,7 +95,8 @@ export function collectDocs(base = '/'): { module: DocsModule; files: string[] }
   // of an index row was put in bold.
   const markdown = new Map<string, string>();
   const docs = sources.map((source) => {
-    const raw = readFileSync(join(ROOT, source.file), 'utf8');
+    const raw =
+      source.generated === true ? write(source) : readFileSync(join(ROOT, source.file), 'utf8');
     markdown.set(source.file, raw);
     return renderDoc(source, raw, routes, blobBase, base);
   });

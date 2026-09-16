@@ -112,9 +112,10 @@ export function Landing() {
               <p className="mt-xs text-m leading-relaxed text-on-canvas-muted">
                 One per manifest entry, which is why the board counts more: it draws the article
                 family as its {FEEDS.length} feeds, because a feed is the thing that goes stale. The
-                figures were measured by hand against the live sources on {MEASURED_ON},{' '}
-                {ageInWords(MEASURED_ON)}, and nothing here refreshes, because the feeds send no
-                CORS header for a browser to re-take them through.
+                figures come from a run against the live sources on {MEASURED_ON},{' '}
+                {ageInWords(MEASURED_ON)}, which a weekly job re-takes. Nothing refreshes while you
+                read this, because the feeds send no CORS header for a browser to re-take them
+                through.
               </p>
             </div>
             <dl className="grid grid-cols-2 gap-sm self-start sm:grid-cols-4 lg:gap-m">
