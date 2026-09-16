@@ -697,7 +697,7 @@ ${
         )}, written by \`${byTool[0].claims}\` as it builds. They are committed for the typechecker's benefit and nothing in this repository regenerates them.
 `
 }
-**Two of them are checked by regenerating, which is the whole of the idea.**
+**Two are checked by regenerating, which is the whole of the idea.**
 ${when(
   drift,
   () =>
@@ -730,8 +730,11 @@ commit, because a pull request opened with \`GITHUB_TOKEN\` starts no workflow a
 nothing else would.
 
 **Derived at build time, and deliberately not committed.** The core's reference
-and the app's component list come from TypeDoc, run as a data extractor with
-\`--json\` and never as a site generator, and the reduced model it leaves in
+and the app's component list come from TypeDoc, run as a data extractor and never
+as a site generator: it converts and emits no pages, and this site renders the
+model with its own components. A generated documentation site would have arrived
+with its own navigation and its own design and become the front door by accident.
+The reduced model it leaves in
 \`apps/workbench/content/api.generated.json\` is gitignored: it is derived, it is
 large, and it would conflict on every rename. The site fails its build when it is
 missing rather than publishing an empty reference, which is the same principle
