@@ -384,5 +384,18 @@
       ],
       "10": ["The gallery gets a module's settings with the declaration"]
     }
+  },
+  "0046": {
+    "slugs": ["what-the-editor-may-add-and-what-a-block-is-called"],
+    "decisions": {
+      "1": ["The palette is the registry, and the shipped document stops being the roster"],
+      "2": [
+        "A new block's id is minted from its module, and the editor does not offer to change it"
+      ],
+      "3": ["A removed id may come back, and the editing model is why that is safe"],
+      "4": ["The insertion mark offers every module, and says nothing about where one belongs"],
+      "5": ["A drawn block re-renders on its section, not on the clock"],
+      "6": ["Offline, the list draws less than the frame, and that is accepted"]
+    }
   }
 }

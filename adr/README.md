@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Forty-five records shaped this repo. Read them when you want to know *why* something
+Forty-six records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -49,7 +49,8 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0042](0042-the-timeline-belongs-to-the-stage.md) | The timeline belongs to the stage, not the tools | accepted, **not built**; five decisions, moves 0039 §10's track out of the tool panel and keeps it in `full` above 64rem only, strikes nothing and says which sentence the carrying-out will strike, two open items named |
 | [0043](0043-two-concepts-become-packages-and-the-shell-stays.md) | Two concepts become packages, and the shell stays | accepted, partly built — the checks package is `packages/prose-and-code`, Apache-2.0 and used from here; the decision-record package is **not built**; seven decisions, two capabilities surveyed and declined as already published, Backstage measured and rejected, two gaps recorded as deliberately unfilled, four open items named |
 | [0044](0044-the-workbench-drives-a-real-device.md) | The workbench drives a real device, in the same view | accepted in shape, **not built** and not measured; five decisions, the ground it stands on measured over Android and nothing at all on iOS, names the one experiment that decides whether the shape is worth building, four open items named |
-| [0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) | The home editor arranges the blocks it draws, and a module declares its own settings | accepted, **not built**, and the same piece of work as 0042; ten decisions, makes the day's arrangement the editor's and gives each module a declaration a generator carries into the core, retires four claims in 0036 §2 and names 0039 §3 read and left untouched, five open items named |
+| [0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) | The home editor arranges the blocks it draws, and a module declares its own settings | accepted, **§8 and §9 built in #208** and the rest not, the unbuilt part being the same piece of work as 0042; ten decisions, makes the day's arrangement the editor's and gives each module a declaration a generator carries into the core, retires four claims in 0036 §2 and names 0039 §3 read and left untouched, five open items named and three of them answered by 0046 |
+| [0046](0046-what-the-editor-may-add-and-what-a-block-is-called.md) | What the editor may add, what a block is called, and what a drawn row costs | accepted, **not built** and deliberately only answers; six decisions clearing 0045's carrying-out, measures the drawn list at 69 ms a playhead step against 37 ms without it and finds the shipped document changes nothing at 1438 of 1440 minutes, retires one check in the app and writes none to replace it, two open items left where they were |
 
 Ten notes for readers of the older ones:
 
