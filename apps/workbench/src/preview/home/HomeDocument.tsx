@@ -49,6 +49,17 @@ const CARD = 'rounded-md border border-stroke bg-canvas';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 
+/**
+ * A daypart chip, chosen or not. A border alone drew both states the same width
+ * apart from white, which is why the outline this replaces was unreadable at a
+ * glance — `border-accent` and `border-stroke` are two thin lines a metre away
+ * from each other. A filled ground cannot be mistaken for an unfilled one.
+ */
+const CHIP =
+  'cursor-pointer rounded-s border px-3xs py-4xs text-s font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent';
+const CHIP_ON = 'border-accent bg-accent text-white';
+const CHIP_OFF = 'border-stroke text-on-canvas-muted hover:bg-surface hover:text-on-canvas';
+
 export function HomeDocument() {
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   const [result, setResult] = useState<SaveResult | null>(null);
@@ -102,9 +113,18 @@ export function HomeDocument() {
       </p>
 
       <div className="flex flex-wrap items-center gap-xs">
+        {/*
+          `mr-auto` rather than a neighbouring spot next to Save: the two are not a
+          matched pair. This one throws work away, Save writes the repository, and an
+          outline button beside a filled one at the same size still reads as "pick
+          either" unless something else keeps them apart. Its own comparison is
+          `changed`, the same one the "N changed" count and every row's `changed` badge
+          already use, so "inert" here and "nothing to save" are never out of step.
+        */}
         <Button
           variant="outline"
           size="sm"
+          className="mr-auto"
           disabled={edited.length === 0}
           onClick={() => edit(SHIPPED)}
         >
@@ -283,33 +303,53 @@ function Row({
         <fieldset disabled={off} className="min-w-0 disabled:opacity-60">
           <legend className="sr-only">When {name} appears</legend>
           <div className="flex flex-wrap items-center gap-4xs">
-            {DAYPARTS.map((part) => (
-              <label
-                key={part}
-                className={cn(
-                  'cursor-pointer rounded-s border px-3xs py-4xs text-s transition-colors',
-                  'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent',
-                  chosen.has(part)
-                    ? 'border-accent text-on-canvas'
-                    : 'border-stroke text-on-canvas-muted',
-                  part === now && 'font-semibold',
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={chosen.has(part)}
-                  onChange={() => {
-                    const next = new Set(chosen);
-                    if (next.has(part)) next.delete(part);
-                    else next.add(part);
-                    onDayparts(next);
-                  }}
-                  className="sr-only"
-                />
-                {daypartLabel(part)}
-              </label>
-            ))}
-            <span className={NOTE}>{always ? 'always' : 'these hours only'}</span>
+            {DAYPARTS.map((part) => {
+              const isChosen = chosen.has(part);
+              return (
+                <label
+                  key={part}
+                  className={cn(
+                    CHIP,
+                    isChosen ? CHIP_ON : CHIP_OFF,
+                    part === now && 'font-semibold',
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChosen}
+                    onChange={() => {
+                      const next = new Set(chosen);
+                      if (next.has(part)) next.delete(part);
+                      else next.add(part);
+                      onDayparts(next);
+                    }}
+                    className="sr-only"
+                  />
+                  {daypartLabel(part)}
+                </label>
+              );
+            })}
+
+            {/*
+              "Always" as a fifth chip, not the sentence this used to be. `withDayparts`
+              writes every daypart chosen the same way it writes none — no `dayparts` key
+              at all — so the document cannot tell "all four" from "none" apart, and a
+              control that pretended otherwise would be lying about what it just saved.
+              Filled, it says the honest thing plainly; disabled once filled, because
+              there is then nothing left for a click on it to mean — the way off is
+              unchecking one of the four, not un-checking this.
+            */}
+            <span aria-hidden="true" className="mx-3xs h-[1rem] w-px shrink-0 bg-stroke" />
+            <label className={cn(CHIP, always ? [CHIP_ON, 'cursor-default'] : CHIP_OFF)}>
+              <input
+                type="checkbox"
+                checked={always}
+                disabled={always}
+                onChange={() => onDayparts(new Set(DAYPARTS))}
+                className="sr-only"
+              />
+              Always
+            </label>
           </div>
         </fieldset>
 
