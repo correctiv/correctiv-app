@@ -199,27 +199,54 @@ export function effectiveAt(layout: HomeLayout, point: Point): readonly HomeSect
 // --- editing the order ------------------------------------------------------------
 
 /**
- * One step up or down, in the document's own order.
+ * A block, that many places up or down, in the document's own order.
  *
  * Over the whole list rather than over what is on screen right now: the document is one
  * order and the time is a filter over it, so moving a section that is hidden at this
  * minute past one that is shown still means something and still has to be expressible.
- * At either end this answers with the layout it was given, so a button that cannot move
- * anything changes nothing rather than wrapping around.
+ *
+ * **Any distance, not one step**, because
+ * [ADR 0047](0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md) §3
+ * gives one operation two controls: an arrow button passes `-1` or `1`, and a drop
+ * computes how far the block travelled. What the document sees is one function and one
+ * kind of edit, so a difference between the two inputs cannot exist below the interface,
+ * which is where it would be expensive.
+ *
+ * **Clamped to the ends, and answering with the layout it was given when the clamp
+ * leaves the block where it was.** A control that cannot move anything must change
+ * nothing — not hand back an equal copy, which would mark the document as edited and put
+ * a Save in front of somebody who pressed a disabled-looking arrow.
  *
  * **Order is the document's and not a moment's**, which is ADR 0039 §3. A moment can
  * switch a place off and another one on, which is how the callout appears to move; what
  * it cannot do is rearrange the screen, because ADR 0036 §2 keeps the places fixed and
  * an arrangement that changed by the hour would be a layout engine in the app.
  */
-export function moved(layout: HomeLayout, id: string, delta: -1 | 1): HomeLayout {
+export function moved(layout: HomeLayout, id: string, delta: number): HomeLayout {
   const from = layout.sections.findIndex((section) => section.id === id);
-  const to = from + delta;
-  if (from === -1 || to < 0 || to >= layout.sections.length) return layout;
+  if (from === -1) return layout;
+  const to = Math.max(0, Math.min(from + delta, layout.sections.length - 1));
+  if (to === from) return layout;
   const sections = [...layout.sections];
   const [lifted] = sections.splice(from, 1);
   sections.splice(to, 0, lifted!);
   return { ...layout, sections };
+}
+
+/**
+ * How far a block has to travel to land in a gap, which is not the gap's own number.
+ *
+ * The list's gaps are numbered the way an insertion is: gap 0 is above the first block,
+ * gap `n` is below the last. A drop names a gap; `moved` takes a distance. They differ by
+ * one whenever the block is moving DOWN, because the block leaves its own place before it
+ * arrives and every gap below it shifts up by one as it goes.
+ *
+ * Written out and tested rather than inlined at the drop, because it is the arithmetic
+ * that is wrong in every first attempt at a drag, and wrong by exactly one place, which
+ * is the amount nobody notices in a screenshot.
+ */
+export function deltaTo(from: number, gap: number): number {
+  return (gap > from ? gap - 1 : gap) - from;
 }
 
 // --- adding and removing a block ---------------------------------------------------

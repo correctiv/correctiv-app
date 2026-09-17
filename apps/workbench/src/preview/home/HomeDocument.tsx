@@ -5,11 +5,19 @@ import {
   Copy,
   Eye,
   EyeOff,
+  GripVertical,
   RotateCcw,
   Save,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 
 import {
   MINUTES_IN_DAY,
@@ -51,6 +59,7 @@ import {
   withHidden,
   withoutMoment,
   blockName,
+  deltaTo,
   whereAt,
   withSetting,
   type CountSetting,
@@ -111,6 +120,13 @@ import { canSave, publish, save, type SaveResult } from './write';
  * typed here, so it disappears by itself on the day that row turns live.
  */
 
+/** A block a pointer has picked up: which one, where it started, where it would land. */
+interface Carry {
+  id: string;
+  from: number;
+  gap: number;
+}
+
 /** The dock's ground is `surface`, so a row inside it steps back to `canvas`. */
 const CARD = 'rounded-md border border-stroke bg-canvas';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
@@ -170,6 +186,31 @@ export function HomeDocument({
    */
   const [follow, setFollow] = useState(true);
 
+  /**
+   * The block a pointer is carrying, where it started, and the gap it would land in.
+   *
+   * [ADR 0047](../../../../../adr/0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md)
+   * §1: the handle is the pointer's route and has no keyboard mode; §2 keeps the arrow
+   * buttons as the keyboard's. Both end at `moved`, so the document never learns there
+   * were two controls.
+   *
+   * Held here rather than in the row, because a row knows where it is and not where the
+   * others are, and a drop is a question about the whole column.
+   */
+  const [carried, setCarried] = useState<Carry | null>(null);
+  /**
+   * The same thing again, for the drop to read.
+   *
+   * A `pointerup` can arrive before React has re-rendered from the last `pointermove`,
+   * and the handlers a row carries are the ones built by the render it can see. Reading
+   * state at the drop would then apply the position the pointer was in one move ago,
+   * which is a block landing one place out — rarely, and only on a fast drag, which is
+   * the worst kind of wrong. The ref is written beside the state and never instead of it:
+   * the state is what the marks draw, the ref is what the drop reads.
+   */
+  const carrying = useRef<Carry | null>(null);
+  const list = useRef<HTMLOListElement>(null);
+
   /*
    * The same minute the track under the frame is drawing, out of the same two places:
    * the address while a time is simulated, and `openedAt()` while it is not.
@@ -227,6 +268,50 @@ export function HomeDocument({
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
+  /**
+   * Which gap the pointer is in, by the rows' own boxes.
+   *
+   * Measured on every move rather than once at the grab: the list reflows while a block
+   * is carried, because the row it came from stays where it is and keeps its height, and
+   * a drawing inside another row can still finish measuring itself. Boxes read once would
+   * be stale by exactly the amount that makes a drop land one place out.
+   */
+  const gapAt = (y: number): number => {
+    const rows = list.current === null ? [] : [...list.current.children];
+    const above = rows.findIndex(
+      (row) => y < row.getBoundingClientRect().top + row.clientHeight / 2,
+    );
+    return above === -1 ? rows.length : above;
+  };
+
+  /** Both at once, because one of them is for drawing and the other is for landing. */
+  const carry = (next: Carry | null) => {
+    carrying.current = next;
+    setCarried(next);
+  };
+
+  /** The four handlers a row's handle carries, built here because the drop needs the column. */
+  const gripFor = (id: string, from: number) => ({
+    onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      // Or the browser starts a text selection across the whole panel instead.
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      carry({ id, from, gap: from });
+    },
+    onPointerMove: (event: PointerEvent<HTMLElement>) => {
+      const held = carrying.current;
+      if (held !== null) carry({ ...held, gap: gapAt(event.clientY) });
+    },
+    onPointerUp: () => {
+      const held = carrying.current;
+      carry(null);
+      if (held !== null) setLayout(moved(layout, held.id, deltaTo(held.from, held.gap)));
+    },
+    // A touch the browser takes over — a scroll gesture, a call coming in — ends the drag
+    // without an up, and the block has to go back rather than stay picked up for ever.
+    onPointerCancel: () => carry(null),
+  });
+
   const effective = effectiveAt(layout, point);
   const inherited = inheritedAt(layout, point);
   const edited = changedAt(layout, minute);
@@ -283,7 +368,7 @@ export function HomeDocument({
         valid needs no prediction about who resolves what.
       */}
       <AppHost>
-        <ol className="flex flex-col">
+        <ol ref={list} className="flex flex-col">
           {layout.sections.map((section, index) => (
             <Row
               key={section.id}
@@ -299,9 +384,12 @@ export function HomeDocument({
                 <InsertMark
                   where={whereAt(layout, index)}
                   deviceWidth={deviceWidth}
+                  dropping={carried !== null && carried.gap === index}
                   onAdd={(module) => setLayout(added(layout, index, module))}
                 />
               }
+              grip={gripFor(section.id, index)}
+              carried={carried?.id === section.id}
               onMove={(delta) => setLayout(moved(layout, section.id, delta))}
               onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
               onSetting={(key, value) =>
@@ -316,6 +404,7 @@ export function HomeDocument({
         <InsertMark
           where={whereAt(layout, layout.sections.length)}
           deviceWidth={deviceWidth}
+          dropping={carried !== null && carried.gap === layout.sections.length}
           onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
         />
       </AppHost>
@@ -501,6 +590,8 @@ function Row({
   deviceWidth,
   follow,
   before,
+  grip,
+  carried,
   onMove,
   onHidden,
   onSetting,
@@ -531,6 +622,18 @@ function Row({
   follow: boolean;
   /** The gap above this block, as a control. It is drawn inside the row so the list stays a list. */
   before: ReactNode;
+  /**
+   * What the drag handle listens to. ADR 0047 §1: a pointer route and nothing else, so
+   * these are the whole of it and there is no key to press.
+   */
+  grip: {
+    onPointerDown: (event: PointerEvent<HTMLElement>) => void;
+    onPointerMove: (event: PointerEvent<HTMLElement>) => void;
+    onPointerUp: () => void;
+    onPointerCancel: () => void;
+  };
+  /** Whether this is the block a pointer is carrying right now. */
+  carried: boolean;
 }) {
   const { name, what } = moduleLabel(section.module);
   /*
@@ -562,13 +665,37 @@ function Row({
       */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
-        className={cn(CARD, 'flex flex-col gap-2xs p-xs', isChanged && 'border-accent')}
+        className={cn(
+          CARD,
+          'flex flex-col gap-2xs p-xs',
+          isChanged && 'border-accent',
+          carried && 'opacity-50',
+        )}
         onPointerEnter={() => outline({ id: section.id, follow })}
         onPointerLeave={() => outline(null)}
         onFocus={() => outline({ id: section.id, follow })}
         onBlur={() => outline(null)}
       >
         <div className="flex min-w-0 items-start gap-xs">
+          {/*
+            ADR 0047 §1: the pointer's route, and nothing else. No `tabindex`, no role and
+            `aria-hidden`, because a handle that looked focusable while doing nothing on a
+            key would be the untested route wearing the tested one's clothes. The arrows
+            two controls along are the keyboard's, by ADR 0047 §2.
+
+            `touch-none`, or a touch on the handle scrolls the panel instead of carrying
+            the block, and the pointer capture never sees a move.
+          */}
+          <span
+            {...grip}
+            aria-hidden="true"
+            className={cn(
+              'mt-4xs shrink-0 touch-none text-on-canvas-muted',
+              carried ? 'cursor-grabbing' : 'cursor-grab hover:text-on-canvas',
+            )}
+          >
+            <GripVertical aria-hidden="true" className="size-[1rem]" />
+          </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2xs">
               <span

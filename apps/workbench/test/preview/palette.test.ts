@@ -144,3 +144,74 @@ describe('the marks and the verbs they carry', () => {
     expect(PALETTE.indexOf('<HomeBlock')).toBeGreaterThan(closed);
   });
 });
+
+describe('one handle for the pointer, and the arrows for the keyboard', () => {
+  /**
+   * [ADR 0047](../../../../adr/0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md),
+   * which changed ADR 0045 §7 before it was built. The handle is the pointer's route and
+   * has no keyboard mode; the arrow buttons stay and are the keyboard's; both end at
+   * `moved`, so the document never learns there were two controls.
+   *
+   * The arithmetic that turns a drop into a distance is `deltaTo` and
+   * `home-document.test.ts` runs it over every block and every gap of the shipped
+   * document. What is read here is that the two routes exist and that neither has grown
+   * the other's input.
+   */
+  it('gives the handle a pointer and refuses it a key', () => {
+    // No `tabindex`, no role, and hidden from the accessibility tree: a handle that
+    // looked focusable while doing nothing on a key would be the untested route wearing
+    // the tested one's clothes.
+    const grip = PANEL.slice(
+      PANEL.indexOf('{...grip}'),
+      PANEL.indexOf('</span>', PANEL.indexOf('{...grip}')),
+    );
+    expect(grip).toMatch(/aria-hidden="true"/);
+    expect(grip).not.toMatch(/tabIndex|role=|onKey/);
+    // And `touch-none`, or a touch scrolls the panel and the capture never sees a move.
+    expect(grip).toMatch(/touch-none/);
+  });
+
+  it('keeps the arrow buttons, which is what ADR 0047 changed', () => {
+    expect(PANEL).toMatch(/aria-label=\{`Move \$\{spoken\} up`\}/);
+    expect(PANEL).toMatch(/aria-label=\{`Move \$\{spoken\} down`\}/);
+    expect(PANEL).toMatch(/onMove\(-1\)/);
+    expect(PANEL).toMatch(/onMove\(1\)/);
+  });
+
+  it('ends both routes at one function', () => {
+    // ADR 0047 §3. A second way to reorder the document would be a difference between
+    // the two inputs living below the interface, which is where it would be expensive.
+    expect(PANEL).toMatch(/moved\(layout, section\.id, delta\)/);
+    expect(PANEL).toMatch(/moved\(layout, held\.id, deltaTo\(held\.from, held\.gap\)\)/);
+    expect(PANEL.match(/setLayout\(moved\(/g) ?? []).toHaveLength(2);
+  });
+
+  it('reads the drop from a ref rather than from the state it draws with', () => {
+    // A `pointerup` can arrive before React has re-rendered from the last `pointermove`,
+    // and the handlers a row carries are the ones built by the render it can see. Reading
+    // state at the drop applies the position the pointer was in one move ago: a block
+    // landing one place out, rarely, and only on a fast drag.
+    // Sliced to the drop, because the move reads the ref too and a check over the whole
+    // file stayed green when the drop alone was changed back to state. Measured.
+    const drop = PANEL.slice(PANEL.indexOf('onPointerUp:'), PANEL.indexOf('onPointerCancel:'));
+    expect(drop).toMatch(/carrying\.current/);
+    expect(drop).not.toMatch(/=\s*carried\b/);
+    expect(PANEL).toMatch(/carrying\.current = next;/);
+  });
+
+  it('shows the drop in the mark that is already at that gap', () => {
+    // Not a second line drawn over the list: the marks are one per gap, at exactly the
+    // places a block can land in, and two answers to "where are the gaps" would part the
+    // first time one of them moved.
+    expect(PANEL).toMatch(/dropping=\{carried !== null && carried\.gap === index\}/);
+    expect(PALETTE).toMatch(/dropping\?: boolean/);
+  });
+
+  it('measures the gaps on every move rather than once at the grab', () => {
+    // The list reflows while a block is carried — the row it came from keeps its height,
+    // and a drawing inside another row can still be finishing its own measurement — so
+    // boxes read once would be stale by the amount that makes a drop land one place out.
+    const gapAt = PANEL.slice(PANEL.indexOf('const gapAt'), PANEL.indexOf('const gripFor'));
+    expect(gapAt).toMatch(/getBoundingClientRect\(\)/);
+  });
+});

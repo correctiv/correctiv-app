@@ -2,9 +2,11 @@
 
 Status: accepted, 2026-09-17, from looking at the editor built in
 [#210](https://github.com/correctiv/correctiv-app/pull/210) and
-[#211](https://github.com/correctiv/correctiv-app/pull/211). **Not built.** It changes one
-decision in [ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) and nothing
-else, so that the three sections of that record still to be carried out — add, remove and
+[#211](https://github.com/correctiv/correctiv-app/pull/211). ~~**Not built.**~~ **Built in
+[#214](https://github.com/correctiv/correctiv-app/pull/214)**, all four decisions,
+together with the section of
+[ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) it reshapes. It changes
+one decision in that record and nothing else, so that the three sections of that record still to be carried out — add, remove and
 reorder; the insertion mark; the handle — are a build rather than a build plus an
 argument.
 

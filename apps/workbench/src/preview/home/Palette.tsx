@@ -44,12 +44,22 @@ const SPECIMEN = 'max-h-[13rem]';
 export function InsertMark({
   where,
   deviceWidth,
+  dropping = false,
   onAdd,
 }: {
   /** Said in words, for the dialog and for the mark's own label: "at the top", "after X". */
   where: string;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
+  /**
+   * Whether a block being dragged would land here.
+   *
+   * The drop indicator is a state of this control rather than a line drawn over the list,
+   * because the marks are already one per gap, at exactly the places a block can land in.
+   * A second thing drawn at the same positions would be a second answer to "where are the
+   * gaps", and the two would part the first time one of them moved.
+   */
+  dropping?: boolean;
   onAdd: (module: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -79,7 +89,7 @@ export function InsertMark({
             className={cn(
               'h-px w-full transition-colors',
               'bg-stroke group-hover:bg-accent group-focus-visible:bg-accent',
-              open && 'bg-accent',
+              (open || dropping) && 'h-[2px] bg-accent',
             )}
           />
           <Plus
@@ -89,6 +99,9 @@ export function InsertMark({
               'text-accent opacity-0 transition-opacity',
               'group-hover:opacity-100 group-focus-visible:opacity-100',
               open && 'opacity-100',
+              // Not while a block is being dropped here: the thickened line says where it
+              // lands, and a plus sign beside it would say "add" about a move.
+              dropping && 'opacity-0',
             )}
           />
         </button>
