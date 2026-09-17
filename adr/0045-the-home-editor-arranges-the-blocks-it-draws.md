@@ -199,18 +199,23 @@ The position is chosen **before** the block, not after. A person inserting into 
 points at a gap and then says what goes in it; the alternative — pick a module, then be
 asked where — has the same two steps in the order that makes the first one abstract.
 
-### 7. One handle, two ways, and the arrow buttons go
+### 7. One handle, two ways, ~~and the arrow buttons go~~ and the arrow buttons stay
 
-Each block has one handle. A pointer drags it. The keyboard takes it — focus the handle,
+Each block has one handle. A pointer drags it. ~~The keyboard takes it — focus the handle,
 pick it up, move with the arrow keys, drop it, Escape abandons and puts it back — and the
-destination is announced as it moves.
+destination is announced as it moves.~~ The handle has no keyboard mode, and the arrow
+buttons are the keyboard's route rather than something replaced by one — voided by
+[ADR 0047](0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md) §1 and §2,
+which takes this section's own condition below seriously: nothing tested replaces them, so
+they stay.
 
 One mechanism with two inputs, not two mechanisms. The track above already argues the
 distinction in its own comment: it is a pointer surface with a typed field beside it as
 the accessible route, and giving it a slider role as well "would have been a third way to
-say the same thing, and the one nobody tests". Keeping the arrow buttons beside a drag
-would be that third way. A handle that both inputs move is one code path and one thing to
-test.
+say the same thing, and the one nobody tests". ~~Keeping the arrow buttons beside a drag
+would be that third way.~~ It is the second way, one control per input, which is what
+`Timeline.tsx` itself does — same voiding. A handle that both inputs move is one code path
+and one thing to test.
 
 **The arrow buttons are the accessible route today, so what replaces them has to do their
 job before they go.** [#199](https://github.com/correctiv/correctiv-app/pull/199) measured

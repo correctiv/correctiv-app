@@ -377,7 +377,10 @@
       "4": ["The arrangement is the document's, and the editor writes it: add, remove, reorder"],
       "5": ["`hidden` stays in the document and leaves the interface"],
       "6": ["An insertion mark between two blocks, offering the modules drawn the same way"],
-      "7": ["One handle, two ways, and the arrow buttons go"],
+      "7": [
+        "One handle, two ways, and the arrow buttons go",
+        "One handle, two ways, ~~and the arrow buttons go~~ and the arrow buttons stay"
+      ],
       "8": ["Settings expand under their block, and a count is a slider"],
       "9": [
         "A module declares its settings beside itself, and a generator carries them into the core"
@@ -396,6 +399,15 @@
       "4": ["The insertion mark offers every module, and says nothing about where one belongs"],
       "5": ["A drawn block re-renders on its section, not on the clock"],
       "6": ["Offline, the list draws less than the frame, and that is accepted"]
+    }
+  },
+  "0047": {
+    "slugs": ["the-handle-is-the-pointers-and-the-arrows-are-the-keyboards"],
+    "decisions": {
+      "1": ["The drag handle is the pointer's route, and it has no keyboard mode"],
+      "2": ["The arrow buttons stay, and they are the keyboard's route"],
+      "3": ["Two controls, one operation, and the document never learns there were two"],
+      "4": ["The keyboard drag is refused now and named as a thing that could be earned"]
     }
   }
 }

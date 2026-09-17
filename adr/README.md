@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Forty-six records shaped this repo. Read them when you want to know *why* something
+Forty-seven records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -51,6 +51,7 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0044](0044-the-workbench-drives-a-real-device.md) | The workbench drives a real device, in the same view | accepted in shape, **not built** and not measured; five decisions, the ground it stands on measured over Android and nothing at all on iOS, names the one experiment that decides whether the shape is worth building, four open items named |
 | [0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) | The home editor arranges the blocks it draws, and a module declares its own settings | accepted, **§8 and §9 built in #208, §1, §2, §3 and §5 in #210**, §4, §6, §7 and §10 not; ten decisions, the #210 half carried 0042 whole in the same change because 0045 §1 makes the list and the frame two halves of one reading of the day; makes the day's arrangement the editor's and gives each module a declaration a generator carries into the core, retires four claims in 0036 §2 and names 0039 §3 read and left untouched, five open items named and three of them answered by 0046 |
 | [0046](0046-what-the-editor-may-add-and-what-a-block-is-called.md) | What the editor may add, what a block is called, and what a drawn row costs | accepted, **§5 and §6 carried out in #210** and §1 to §4 still ahead with 0045 §4, §6 and §7; six decisions clearing 0045's carrying-out, measures the drawn list at 69 ms a playhead step against 37 ms without it and finds the shipped document changes nothing at 1438 of 1440 minutes, retires one check in the app and writes none to replace it, two open items left where they were |
+| [0047](0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md) | The handle is the pointer's, the arrows are the keyboard's | accepted, **not built** and deliberately only one answer; four decisions, gives each input a control shaped for it rather than one control shaped for both, retires two claims in 0045 §7 and leans on that section's own condition for the reason, two open items named including what a screen reader hears when the order changes |
 
 Ten notes for readers of the older ones:
 
