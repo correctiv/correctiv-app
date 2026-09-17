@@ -50,7 +50,7 @@ this host to keep an in-memory mirror, hydrate it before the first render, and c
 a data-loss trap in two file headers. Redux moved store construction to module load
 and made `persist()` a later call the host already awaits, so there was nothing left
 to be earlier than. [ADR 0009](adr/0009-redux-toolkit-for-the-cores-state.md) records
-the change and the 45 lines it deleted.
+the change and what it deleted.
 
 **They stay asynchronous under MMKV, which can answer without a promise.** Making
 them synchronous again would buy back exactly that mirror and that trap, because a
@@ -88,7 +88,7 @@ so there is no platform split here to keep in step.
 
 ## Three conventions in the core
 
-1. **State is framework-neutral.** `stores/` is one Redux Toolkit store with twelve
+1. **State is framework-neutral.** `stores/` is one Redux Toolkit store with several
    slices. The core owns the slices and exports `createAppStore()`; the **host**
    constructs the instance, which is what lets it pass the DevTools enhancer
    ([ADR 0023](adr/0023-the-host-constructs-the-store.md), and `stores/store.ts` for

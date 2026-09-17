@@ -17,7 +17,7 @@ import { NOT_DRAWN } from './direct-ids';
  * barrel's dependencies out of this bundle. That finding is unchanged and is
  * still about `apps/mobile`: the catalogue imports `@/components/ui`, so this
  * bundle now carries `@expo/vector-icons` and `expo-image`. It is paid
- * knowingly — every one of the 45 is drawn here, so every one of them is needed
+ * knowingly — every one of them is drawn here, so each is needed
  * anyway, and the alternative was a second catalogue. ADR 0028 records the
  * trade.
  *

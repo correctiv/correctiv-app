@@ -78,7 +78,7 @@ what still sits on an alias, and why, is listed there.
 git ls-remote https://github.com/correctiv/wp-design-tokens.git HEAD
 
 # 2. Copy the files in (from any checkout of the token repo), then:
-npm run tokens                     # regenerates the five artefacts
+npm run tokens                     # regenerates the artefacts
 
 # 3. Update the commit in the table above, and commit source + generated
 #    files together.

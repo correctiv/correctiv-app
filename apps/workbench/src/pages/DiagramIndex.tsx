@@ -4,7 +4,7 @@ import { Page } from '../ui/Page';
 import { diagramRoute } from './DiagramView';
 
 /**
- * The six drawings, as six doors.
+ * The drawings, as doors.
  *
  * They used to be one page nine screens tall, so looking at the third meant
  * scrolling past two others, each of which is a picture you are meant to study

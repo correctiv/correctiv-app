@@ -43,10 +43,10 @@ Configured in [`packages/app-core/src/data/feeds.config.ts`](packages/app-core/s
 
 Post counts and newest-post dates per feed are on the board, taken by the run.
 
-Three rows need an editorial answer rather than a code change:
+Rows that need an editorial answer rather than a code change:
 
 - **`europe` does not exist.** `wp/v2/categories?slug=europe` returns an empty list.
-  There are `europa` (177, 44 posts) and `europa-aktuelles` (1319, 43 posts). Whether
+  There are `europa` (177) and `europa-aktuelles` (1319). Whether
   either is CORRECTIV.Europe's output is not a question the API can answer. The app
   currently shows the project as a teaser and loads nothing.
 - **`lokal` has published nothing since 2025-05-28.** The project works; the category
@@ -78,13 +78,13 @@ out.
   RSS per show at `/@<handle>/feed.xml`, real MP3 enclosures. The app lists
   `pausenbrot`, `klima`, `salon5_erklart`, `politik`, `europa_was_geht`, `sport` and
   `pyjama_party`; the run lists every handle the instance carries, and the ones the app
-  does not read include **five local shows**: `bottrop`, `chemnitz`, `dortmund`,
+  does not read include **local shows**: `bottrop`, `chemnitz`, `dortmund`,
   `greifswald`, `hamburg`. Which of them belong in the app is an editorial question and
   is deliberately not answered in code. The instance publishes no listing API, so the
   run reads the handles off its front page and says so loudly when that stops working.
-- **Live radio**: Icecast at `icecast.correctiv.net`, three mounts — `salon5low`
+- **Live radio**: Icecast at `icecast.correctiv.net`, several mounts — `salon5low`
   (64 kbit/s), `salon5` (128), `sacharow` (Radio Sakharov, 128). One status document
-  answers for all three, so the board carries a row each with its bitrate, its
+  answers for all of them, so the board carries a row each with its bitrate, its
   listeners and what was playing. The app plays the 64 kbit/s mount and lists Sakharov
   as an outbound link only.
 

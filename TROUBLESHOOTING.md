@@ -5,7 +5,7 @@ looked like and what to do instead. They are grouped by where they bite.
 
 ## A green build is not evidence
 
-Five defects reached a branch past a green build, typecheck and test run: a webview
+Defects reached a branch past a green build, typecheck and test run: a webview
 that does not exist on web, a dev bundle that died before rendering, a 404 on every
 dynamic route, a startup crash from a duplicated React, an empty article list. Each
 was found by opening the app in a browser. None by CI.

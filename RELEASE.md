@@ -1,6 +1,6 @@
 # Release & CI
 
-Three GitHub Actions workflows live in `.github/workflows/`:
+GitHub Actions workflows live in `.github/workflows/`:
 
 | Workflow | File | Trigger | What it does |
 | --- | --- | --- | --- |
@@ -107,8 +107,8 @@ never go to the Play Store. To produce real releases, add the secrets below.
 
 ## Switching to real (Play Store) releases
 
-For Play-ready releases, set up your own **upload keystore** and four repository
-secrets. Without them the workflow falls back to the test key described above.
+For Play-ready releases, set up your own **upload keystore** and the repository
+secrets below. Without them the workflow falls back to the test key described above.
 
 ### 1. Create an upload keystore (if you don't have one yet)
 
@@ -153,8 +153,8 @@ attach job correctly skipped without a tag. The APK carries
 `CN=CORRECTIV App TEST KEY (not for Play)` and verifies under signature schemes v2 and
 v3, so it installs on everything the app supports (`minSdkVersion 24`).
 
-A tagless run cannot cover the two `Set version from tag` steps or the attach job,
-since all three are `if:` a tag. The version steps were checked by running them
+A tagless run cannot cover the `Set version from tag` steps or the attach job,
+since each is `if:` a tag. The version steps were checked by running them
 verbatim against the real files with `GITHUB_REF_NAME=v1.2.3` and
 `GITHUB_RUN_NUMBER=47`. `app.gradle` went to `versionCode 47` and
 `versionName "1.2.3"`, and `app.json` to `version 1.2.3` with `android.versionCode 47`,

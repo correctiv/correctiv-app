@@ -160,7 +160,7 @@ result, the recipe, and the dark-mode trap that comes with it.
 
 ## The tests, and what they are for
 
-Seven of them exist because of a failure that had already happened and that no other
+They exist because of a failure that had already happened and that no other
 check could see.
 
 | File | Catches |

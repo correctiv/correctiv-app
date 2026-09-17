@@ -97,8 +97,8 @@ export function navigate(route: string, options?: { replace?: boolean }): void {
  * The current route, and a navigate that does not reload the page.
  *
  * Deliberately small. A router library would bring its own link component, its
- * own data conventions and a second idea of what a route is, and this site has
- * thirty documents and six pages.
+ * own data conventions and a second idea of what a route is, and this site does
+ * not need one.
  */
 export function useRoute(): [string, (route: string) => void] {
   const [route, setRoute] = useState(currentPath);

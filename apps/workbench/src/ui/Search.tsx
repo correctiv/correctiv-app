@@ -23,8 +23,8 @@ interface Props {
 /**
  * One palette over everything the site holds.
  *
- * Documents, every heading inside them, the pages, all 327 symbols the core
- * exports and all 46 components the app is built from. The last two are the
+ * Documents, every heading inside them, the pages, every symbol the core
+ * exports and every component the app is built from. The last two are the
  * reason it is one palette rather than three: looking something up should not
  * require first knowing whether it is prose, a library or a screen's vocabulary.
  * They stay separate GROUPS, though, because `Button` is a component and no

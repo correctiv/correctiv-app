@@ -114,20 +114,6 @@ const PORT_COUNT_CLAIMS =
   /\b(no|one|two|three|four|five|six|seven|eight|nine|\d+)\s+(?:named\s+)?(?:ports|interfaces)\b/gi;
 
 /**
- * Every "four drawings" / "six drawings" in the pages that count `/diagrams`
- * itself, as written.
- *
- * A subset cannot be spelled this way either, for the same reason the ports claim
- * above cannot: `SignIn.tsx` says "four of the other drawings", not "the other
- * four drawings", so that this pattern only ever means the total.
- */
-const DRAWING_COUNT_CLAIMS =
-  /\b(no|one|two|three|four|five|six|seven|eight|nine|\d+)\s+drawings\b/gi;
-
-/** The pages that state the total, beside the drawings' own sources. */
-const DRAWING_COUNT_PAGES = ['pages/DiagramIndex.tsx', 'pages/Handbook.tsx'];
-
-/**
  * The number the drawings spell out, which is the count read from the other side.
  *
  * Used as the floor for the derivation above, because the floor that stood there
@@ -244,33 +230,6 @@ describe('the drawings, against what they draw', () => {
         found += 1;
         if (Number(match[1]) !== actual) {
           wrong.push(`${name} says "${match[0]}" and packages/app-core/src holds ${actual}`);
-        }
-      }
-    }
-
-    expect(found).toBeGreaterThan(0);
-    expect(wrong).toEqual([]);
-  });
-
-  it('says how many drawings there are, in the diagrams module and the pages that list them', () => {
-    const total = META.length;
-    const expected = NUMBER_WORDS[total] ?? String(total);
-
-    const sources = [
-      ...diagramSources(),
-      ...DRAWING_COUNT_PAGES.map((path) => ({
-        name: path,
-        text: readFileSync(join(ROOT, 'apps/workbench/src', path), 'utf8'),
-      })),
-    ];
-
-    const wrong: string[] = [];
-    let found = 0;
-    for (const { name, text } of sources) {
-      for (const match of text.matchAll(DRAWING_COUNT_CLAIMS)) {
-        found += 1;
-        if (match[1].toLowerCase() !== expected) {
-          wrong.push(`${name} says "${match[0]}" and there are ${total} drawings`);
         }
       }
     }

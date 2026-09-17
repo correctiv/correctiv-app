@@ -108,7 +108,7 @@ silently staying light. Read it before adding a colour.
 npm run tokens          # from the repo root
 ```
 
-That writes all four artefacts in one pass over `theme.css`, so the two colour
+That writes the artefacts in one pass over `theme.css`, so the two colour
 schemes cannot be parsed twice and disagree. Nothing is written outside this
 package.
 

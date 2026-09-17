@@ -582,8 +582,8 @@ function Tile({ value, name, count, checked, onSelect, mark, children }: TilePro
  * prevent is the one where the website and the code quietly disagree and the
  * website is the confident one.
  *
- * The board is thirty rows over twenty-four manifest entries: the seven article
- * feeds get a row each, since a feed is the thing that goes stale, and one row
+ * The board draws more rows than manifest entries: the article feeds each get
+ * their own row, since a feed is the thing that goes stale, and one row
  * reading "articles: live" would hide the two that have stopped.
  *
  * Filtering is React state rather than a class on the DOM, so the group counts,

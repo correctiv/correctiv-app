@@ -43,7 +43,7 @@ export interface DiagramMeta {
 }
 
 /**
- * The six drawings, in the order `/diagrams` shows them.
+ * The drawings, in the order `/diagrams` shows them.
  *
  * They are hand-authored inline SVG rather than images because a drawing whose
  * every fill and stroke comes from a class follows the light and dark schemes on

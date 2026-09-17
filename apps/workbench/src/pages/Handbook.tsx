@@ -28,7 +28,7 @@ export function Handbook() {
       title: 'Diagrams',
       kind: 'Drawn',
       blurb:
-        'The same architecture as six drawings: the core and its host, which decisions still stand, what the app talks to, how the core is layered inside, how somebody signs in, and where an article comes from.',
+        'The same architecture, drawn: the core and its host, which decisions still stand, what the app talks to, how the core is layered inside, how somebody signs in, and where an article comes from.',
     },
     { route: '/conventions', title: 'Conventions', kind: 'Rules', blurb: blurb('/conventions') },
     { route: '/traps', title: 'Traps', kind: 'Hard-won', blurb: blurb('/traps') },

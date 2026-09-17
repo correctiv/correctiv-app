@@ -131,9 +131,16 @@ where someone reading it would act on it and be wrong.
 
 ## Facts that expire
 
+**First ask whether the figure needs to be there at all.** "The ports", not "the five
+ports"; "the drawings", not "six drawings". A number that is not written cannot drift,
+and needs neither a check under it nor a second copy held in step. Write one only where
+the sentence would otherwise say less than it means: where the count *is* the claim, as
+ADR 0026 §4's cache bounds are, or where what is being described is a mechanism rather
+than a total. A figure that earns its place that way then earns the check below.
+
 A figure measured against the outside world goes wrong quietly, and no reviewer
 catches it because nothing about it looks wrong. A figure measured against **this
-repository** goes wrong the same way, and faster. Three such facts exist here:
+repository** goes wrong the same way, and faster. Facts like that exist here:
 
 - ~~The measuring day, in `SOURCES.md` and in `apps/workbench/content/sources.manifest.ts`.~~
   Retired: the sources measure themselves now. A weekly job reaches all of them, writes

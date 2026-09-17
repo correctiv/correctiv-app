@@ -14,7 +14,7 @@ is the front door, and the app is a link inside it. One site carries the reposit
 documentation, the inventory of what the app reads, the architecture diagrams, a
 reference generated from the core, and the running app in a device frame. It renders
 this repository's Markdown in place, keeps no copy of it, and is rebuilt on every push
-to `main`. Four addresses worth going to directly:
+to `main`. Addresses worth going to directly:
 
 | | |
 | --- | --- |

@@ -45,7 +45,7 @@ src/media/       exclusive-playback, only one medium plays at a time
 ## Two things that will surprise you
 
 **The store is the core's, not the host's.** `stores/` is one Redux Toolkit store
-with twelve slices, constructed here rather than by the host, because modules that are
+with several slices, constructed here rather than by the host, because modules that are
 not components need to read the same instance the screens are subscribed to
 (`media/exclusive-playback.ts`, the audio watchdog). The host still supplies the
 binding (react-redux). `zustand` stays on the boundary test's forbidden list not
@@ -71,7 +71,7 @@ npm test -w @correctiv/app-core        # vitest, ~0.5 s
 npm run test:watch                     # from the repo root
 ```
 
-421 tests against real captured correctiv.org pages and feeds, plus two
-architectural guards: the platform boundary, and the agreement between the two
-extraction backends (they must produce the same article from the same page, or the
-choice of backend has become a fork).
+Tests run against real captured correctiv.org pages and feeds, plus architectural
+guards: the platform boundary, and the agreement between the two extraction
+backends (they must produce the same article from the same page, or the choice of
+backend has become a fork).
