@@ -7,7 +7,9 @@ import { defaultFull } from '../preview/devices';
 import { toAddress } from '../preview/state';
 import { namesFrame } from '../preview/store';
 import { usePreview } from '../preview/Preview';
+import { governs } from '../preview/home/document';
 import { HomeDocument } from '../preview/home/HomeDocument';
+import { Timeline } from '../preview/home/Timeline';
 import {
   Appearance,
   Console,
@@ -75,6 +77,19 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /*
+   * Whether the day is drawn under the frame, which is three questions and they are all
+   * asked here because this is the one component that can see all three.
+   *
+   * ADR 0042 §2: the route the FRAME reports, so the track follows the app rather than
+   * a half-typed field. §2 again: the switch in the toolbar puts it away, and that is
+   * `state.timeline`. §5: `full` keeps the track above 64rem — because `full` exists so
+   * that somebody can look at the app and the track is the control for looking — and
+   * gives it up below, on the line the chrome already uses, because at 420 x 860 a line
+   * spent here is a line taken back off the app.
+   */
+  const timeline = state.timeline && governs(preview.status.frameRoute) && (!full || wide);
+
   const panels = {
     state,
     status: preview.status,
@@ -95,6 +110,21 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
         onResize={preview.onResize}
         onLoad={preview.onLoad}
         hint={address.tool === null && !full && wide}
+        timeline={
+          timeline ? (
+            <Timeline
+              state={state}
+              onChange={preview.onChange}
+              /*
+               * ADR 0042 §3: the tool being open is what adds the two writes. Not a
+               * second switch — "the tool is open" is already the sentence that
+               * separates reading the document from writing it.
+               */
+              editing={address.tool === 'home'}
+              compact={!wide}
+            />
+          ) : null
+        }
       />
 
       <Slot id="context-bar">
@@ -118,7 +148,17 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
       </Slot>
 
       <Slot id="home">
-        <HomeDocument state={state} onChange={preview.onChange} outline={preview.outlineSection} />
+        <HomeDocument
+          state={state}
+          onChange={preview.onChange}
+          /*
+           * The slot keeps this mounted whether or not the tool is open (ADR 0038 §1), so
+           * "is it on screen" has to be handed in. `HomeDocument` says what it costs not
+           * to.
+           */
+          drawing={address.tool === 'home'}
+          outline={preview.outlineSection}
+        />
       </Slot>
 
       {/* Two marks on the rail, and nothing on the other five. A tool whose

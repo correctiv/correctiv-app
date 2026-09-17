@@ -1,9 +1,18 @@
-import { ArrowDown, ArrowUp, Check, Copy, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  RotateCcw,
+  Save,
+  Trash2,
+} from 'lucide-react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import {
   MINUTES_IN_DAY,
-  minuteOfDay,
   type HomeLayout,
   type HomeSection,
   type MinuteOfDay,
@@ -11,11 +20,15 @@ import {
 import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 
 import { SOURCES } from '../../../content/sources.manifest';
+import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
-import type { PreviewState } from '../state';
+import { DEFAULT_DEVICE, preset } from '../devices';
 import { timeOf } from './clock';
+import { frameSize, type PreviewState } from '../state';
+import { HomeBlock } from './HomeBlock';
+import { openedAt, parseMinute, STEP } from './minutes';
 import {
   changedAt,
   differs,
@@ -23,17 +36,16 @@ import {
   formatLayoutDocument,
   formatTimeOfDay,
   inheritedAt,
-  momentAt,
   moduleLabel,
   moved,
   movedMoment,
+  momentAt,
   pointAt,
   settingLabel,
   settingsFor,
   SHIPPED,
   spanOf,
   withHidden,
-  withMoment,
   withoutMoment,
   withSetting,
   type CountSetting,
@@ -49,20 +61,39 @@ import { canSave, publish, save, type SaveResult } from './write';
  * One tool, one registration: `shell/views.ts` declares the `home` section, the rail
  * draws its icon (`ui/ToolRail.tsx`) and `pages/Preview.tsx` fills its one slot.
  *
- * ## What it is, since ADR 0039
+ * ## What it is, since ADR 0039, and what left it in ADR 0042
  *
- * The top of the panel is **the day**: a track from midnight to midnight, the moments
- * the document names as stops on it, and a playhead. Moving the playhead tells the
- * framed app what time it is (`./clock.ts`), so the app beside this panel is showing
- * what a reader would see then. Everything below the track edits **the point the
- * playhead is in** — the day's start, or the moment currently in effect — and what an
- * edit writes is a difference from the point before it, which is what the document
- * already is.
+ * The document is **a day**: the places as the day starts, and moments, each carrying
+ * only what changes at it. The panel edits **the point the playhead is in** — the day's
+ * start, or the moment currently in effect — and what an edit writes is a difference
+ * from the point before it, which is what the document already is.
  *
  * That is the whole of why this replaced four checkboxes per block. The checkboxes could
  * say "this block appears between eleven and two" and nothing else: not a fifth point,
  * not half past six, and not "the same block, a different article in the evening". The
  * day is a sequence of changes, and an editor describing one should be writing changes.
+ *
+ * **The track itself is not here any more.** ADR 0042 §1 put it under the framed app,
+ * because the hour is a fact about what you are looking at rather than an inspection of
+ * it, and because twenty-four hours want the full width. `./Timeline.tsx` draws it. What
+ * stays here is the half that writes: which point is in effect, what it inherits, what
+ * it changes, and the day's blocks. The two read one minute out of one place —
+ * `state.time`, which is the address — because two pieces of state for one playhead
+ * would disagree in front of somebody, which is what ADR 0042's "What it costs" names.
+ *
+ * ## The list is the day, the frame is the moment
+ *
+ * ADR 0045 §1. Every block the document has, in the document's order, each drawn as the
+ * app's own component (§3, `./HomeBlock.tsx`); the frame beside it shows the screen at
+ * the minute the playhead names. Two different truths, and each says what the other
+ * cannot: the frame cannot show what is not on screen at this hour, and a list that
+ * repeated the frame would be the worse of two renderings of one fact.
+ *
+ * A block switched off at the playhead keeps its row and loses its drawing (§2). That is
+ * the decision the interview turned on: a list that hid what is off would make "remove"
+ * mean *not on the home screen at all* and *not at this hour* with nothing on screen
+ * telling the two apart, and it would make a second callout unpickable and so
+ * unrepeatable except by adding a third.
  *
  * ## Two things it will not let itself do
  *
@@ -82,29 +113,31 @@ const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
   'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
-/**
- * The step a drag lands on, in minutes.
- *
- * The track is about four hundred pixels wide for fourteen hundred minutes, so a pixel
- * is nearly four minutes and a free drag would write `11:03` for a click somebody made
- * at eleven. Five is the coarsest step nobody has to fight and the finest one a mouse can
- * actually hit; the time fields beside the track are where a minute is typed exactly.
- */
-const STEP = 5;
-
-const snap = (minute: number): MinuteOfDay =>
-  Math.max(0, Math.min(MINUTES_IN_DAY - STEP, Math.round(minute / STEP) * STEP));
-
-/** Where a minute sits on the track, as a CSS length. */
-const percent = (value: number) => `${(value / MINUTES_IN_DAY) * 100}%`;
-
 export function HomeDocument({
   state,
   onChange,
+  drawing,
   outline,
 }: {
   state: PreviewState;
   onChange: (patch: Partial<PreviewState>) => void;
+  /**
+   * Whether the pictures are drawn, which is whether this tool is the open one.
+   *
+   * **The panel is mounted whether or not it is on screen**, by ADR 0038 §1 — a tool that
+   * unmounted took its slot target with it, and the console's filter reset every time
+   * somebody looked at something else. That is right for a tool's state and wrong for
+   * twelve drawings of the app: measured on the dev server, the whole list was in the
+   * document on a plain visit to `/preview` with no tool open at all, so the demo
+   * audience ADR 0038 §2 protects was mounting and feeding the app's modules a second
+   * time beside the frame that already has them.
+   *
+   * So the panel keeps its state and gives up its pictures. The rows are unchanged when
+   * this is false — the day, the order, the marks, the settings — and `HomeBlock` is
+   * simply not there, which is the one part of the row nobody can see while the panel is
+   * behind the rail.
+   */
+  drawing: boolean;
   /** Outlines the section's element in the frame, or clears the outline on `null`. */
   outline: (id: string | null) => void;
 }) {
@@ -113,18 +146,22 @@ export function HomeDocument({
   const [copied, setCopied] = useState(false);
 
   /*
-   * The machine's own clock, so the track can mark it and the app can be put back on it.
-   * Read once per mount rather than ticked: this is a mark on a timeline, and a marker
-   * that moved every minute would be a re-render every minute for a line nobody is
-   * watching.
+   * The same minute the track under the frame is drawing, out of the same two places:
+   * the address while a time is simulated, and `openedAt()` while it is not.
    */
-  const [realMinute] = useState(() => minuteOfDay(Date.now()));
-
-  const simulated = state.time;
-  const minute = simulated === null ? realMinute : (parseMinute(simulated) ?? realMinute);
+  const minute = state.time === null ? openedAt() : (parseMinute(state.time) ?? openedAt());
   const point = pointAt(layout, minute);
   const moment = momentAt(layout, point);
   const span = spanOf(layout, point);
+
+  /*
+   * The width a block draws at, which is the device the frame is set to — ADR 0045 §3:
+   * what is in the list should be the size it is on the phone. `host` has no preset and
+   * reports zero, and the default device's width is the honest stand-in, because it is
+   * the width this tool opens at and the one number here that is already a fact
+   * somewhere else.
+   */
+  const deviceWidth = frameSize(state).w || preset(DEFAULT_DEVICE).w;
 
   /*
    * Once, on arrival: a stored document that is now identical to the shipped one is a
@@ -134,12 +171,18 @@ export function HomeDocument({
    */
   useEffect(() => publish(getLayout()), []);
 
-  const edit = (next: HomeLayout) => {
-    setLayout(next);
-    // A save message is about the document that was saved, and this is not it.
+  /*
+   * A save message is about the document that was saved, so it goes when the document
+   * moves on — whoever moved it. Keyed on the layout rather than cleared inside `edit`
+   * below, because the track under the frame writes the document too since ADR 0042 §3,
+   * and a "saved" line left standing over a document that has changed since is a claim
+   * this panel would be making about a file it no longer matches. Neither `save` nor
+   * `publish` replaces the layout, so this never clears its own result.
+   */
+  useEffect(() => {
     setResult(null);
     setCopied(false);
-  };
+  }, [layout]);
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
@@ -151,84 +194,9 @@ export function HomeDocument({
   return (
     <>
       <p className={NOTE}>
-        The home screen as a day. The track is midnight to midnight; each stop on it is a moment the
-        document names, and a moment carries only what changes at it. Move the playhead and the
-        frame shows that time.
-      </p>
-
-      <Timeline
-        layout={layout}
-        minute={minute}
-        realMinute={realMinute}
-        simulated={simulated !== null}
-        point={point}
-        onGoTo={goTo}
-        onMoveMoment={(from, to) => edit(movedMoment(layout, from, to))}
-      />
-
-      <div className="flex flex-wrap items-center gap-xs">
-        <label className="flex items-center gap-2xs text-s text-on-canvas">
-          <span className="sr-only">The time the frame is showing</span>
-          <input
-            type="time"
-            step={STEP * 60}
-            value={formatTimeOfDay(minute)}
-            onChange={(event) => {
-              const next = parseMinute(event.target.value);
-              if (next !== null) goTo(next);
-            }}
-            className={cn(FIELD, 'font-mono')}
-          />
-        </label>
-
-        {/*
-          "Live" is the app's own clock and it is a different state from "the simulated
-          time happens to be now": the first has no `tm` in the address and writes no key,
-          the second does both. Saying so with one button that is either pressed or not is
-          what keeps the panel from claiming a thing the frame is not doing.
-        */}
-        <Button
-          variant={simulated === null ? 'default' : 'outline'}
-          size="sm"
-          disabled={simulated === null}
-          onClick={() => onChange({ time: null })}
-        >
-          Live
-        </Button>
-
-        {/*
-          Both the test and the write are against the SNAPPED minute, because that is
-          where the point would land. Against the raw one, a playhead typed to 11:02
-          offers a button that then makes nothing, since 11:00 already has a moment.
-        */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto"
-          disabled={momentAt(layout, snap(minute)) !== null}
-          onClick={() => {
-            edit(withMoment(layout, snap(minute)));
-            goTo(snap(minute));
-          }}
-        >
-          <Plus aria-hidden="true" />
-          Point here
-        </Button>
-      </div>
-
-      <p className={NOTE}>
-        {simulated === null ? (
-          <>
-            The frame is on this machine’s clock, {formatTimeOfDay(realMinute)}. Nothing is written
-            to the app until you move the playhead.
-          </>
-        ) : (
-          <>
-            The frame is being told it is{' '}
-            <b className="font-semibold text-on-canvas">{formatTimeOfDay(minute)}</b>. The time is
-            in this page’s address, so this view is a link; Live takes it back off.
-          </>
-        )}
+        The home screen as a day. The track under the frame is midnight to midnight, and each stop
+        on it is a moment the document names; a moment carries only what changes at it. The list
+        below is the whole day in the document’s order. The frame is one minute of it.
       </p>
 
       <PointHead
@@ -238,32 +206,42 @@ export function HomeDocument({
         changes={moment?.changes.length ?? 0}
         onMove={(to) => {
           if (point === null) return;
-          edit(movedMoment(layout, point, to));
+          setLayout(movedMoment(layout, point, to));
           goTo(to);
         }}
         onRemove={() => {
           if (point === null) return;
-          edit(withoutMoment(layout, point));
+          setLayout(withoutMoment(layout, point));
         }}
       />
 
-      <ol className="flex flex-col gap-3xs">
-        {layout.sections.map((section, index) => (
-          <Row
-            key={section.id}
-            section={effective.find((held) => held.id === section.id) ?? section}
-            inherited={inherited.find((held) => held.id === section.id) ?? section}
-            point={point}
-            index={index}
-            last={index === layout.sections.length - 1}
-            changed={edited.includes(section.id)}
-            onMove={(delta) => edit(moved(layout, section.id, delta))}
-            onHidden={(hidden) => edit(withHidden(layout, point, section.id, hidden))}
-            onSetting={(key, value) => edit(withSetting(layout, point, section.id, key, value))}
-            outline={outline}
-          />
-        ))}
-      </ol>
+      {/*
+        One environment around the whole list, not one per row. `AppEnvironment` mounts a
+        store provider, an intl provider, a safe-area provider and a gesture root, and
+        twelve of each would be twelve of each; `components/AppHost.tsx` says the rest.
+      */}
+      <AppHost>
+        <ol className="flex flex-col gap-3xs">
+          {layout.sections.map((section, index) => (
+            <Row
+              key={section.id}
+              section={effective.find((held) => held.id === section.id) ?? section}
+              inherited={inherited.find((held) => held.id === section.id) ?? section}
+              point={point}
+              index={index}
+              last={index === layout.sections.length - 1}
+              changed={edited.includes(section.id)}
+              deviceWidth={drawing ? deviceWidth : null}
+              onMove={(delta) => setLayout(moved(layout, section.id, delta))}
+              onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
+              onSetting={(key, value) =>
+                setLayout(withSetting(layout, point, section.id, key, value))
+              }
+              outline={outline}
+            />
+          ))}
+        </ol>
+      </AppHost>
 
       <div className="flex flex-wrap items-center gap-xs">
         {/*
@@ -277,7 +255,7 @@ export function HomeDocument({
           size="sm"
           className="mr-auto"
           disabled={!dirty}
-          onClick={() => edit(SHIPPED)}
+          onClick={() => setLayout(SHIPPED)}
         >
           <RotateCcw aria-hidden="true" />
           Back to the file
@@ -352,154 +330,6 @@ export function HomeDocument({
         </p>
       )}
     </>
-  );
-}
-
-/** `HH:MM` to minutes, for the two `<input type="time">` fields and the address. */
-function parseMinute(value: string): MinuteOfDay | null {
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
-  return hours * 60 + minutes;
-}
-
-const HOURS = [0, 6, 12, 18, 24];
-
-/**
- * The day as a track: the hours, the moments on it, the machine's clock, the playhead.
- *
- * A pointer anywhere on the track moves the playhead, including a drag, because that is
- * the gesture the whole tool is for — you pull along the day and watch the app change.
- * A pointer on a stop moves the stop instead and stops there, so the two gestures share
- * the surface without either having a mode.
- *
- * It is not the accessible control and does not pretend to be one. The time field
- * underneath is, and the selected point has a field of its own for moving it, so
- * everything the track does can be done by typing. Giving a `<div>` a slider role and
- * arrow keys would have been a third way to say the same thing, and the one nobody
- * tests.
- */
-function Timeline({
-  layout,
-  minute,
-  realMinute,
-  simulated,
-  point,
-  onGoTo,
-  onMoveMoment,
-}: {
-  layout: HomeLayout;
-  minute: MinuteOfDay;
-  realMinute: MinuteOfDay;
-  simulated: boolean;
-  point: Point;
-  onGoTo: (minute: MinuteOfDay) => void;
-  onMoveMoment: (from: MinuteOfDay, to: MinuteOfDay) => void;
-}) {
-  const track = useRef<HTMLDivElement>(null);
-  /** Which moment a drag is carrying, by the minute it was at when the drag began. */
-  const dragging = useRef<MinuteOfDay | null>(null);
-
-  const at = (event: { clientX: number }): MinuteOfDay => {
-    const box = track.current?.getBoundingClientRect();
-    if (!box || box.width === 0) return minute;
-    const share = (event.clientX - box.left) / box.width;
-    return snap(Math.max(0, Math.min(1, share)) * MINUTES_IN_DAY);
-  };
-
-  return (
-    <div className="select-none">
-      <div
-        ref={track}
-        className="relative h-[3.25rem] cursor-pointer rounded-md border border-stroke bg-surface"
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          if (dragging.current === null) onGoTo(at(event));
-        }}
-        onPointerMove={(event) => {
-          if (event.buttons === 0) return;
-          const to = at(event);
-          const held = dragging.current;
-          if (held === null) {
-            onGoTo(to);
-            return;
-          }
-          if (to !== held) {
-            onMoveMoment(held, to);
-            dragging.current = to;
-            onGoTo(to);
-          }
-        }}
-        onPointerUp={() => {
-          dragging.current = null;
-        }}
-        onPointerCancel={() => {
-          dragging.current = null;
-        }}
-      >
-        {/* The hours, as the only fixed thing on the track. */}
-        {HOURS.map((hour) => (
-          <div
-            key={hour}
-            aria-hidden="true"
-            className="absolute top-0 flex h-full flex-col justify-end"
-            style={{ left: percent(hour * 60), transform: 'translateX(-50%)' }}
-          >
-            <span className="absolute inset-y-0 left-1/2 w-px bg-stroke" />
-            <span className="relative bg-surface px-4xs text-[0.6875rem] text-on-canvas-muted">
-              {String(hour).padStart(2, '0')}
-            </span>
-          </div>
-        ))}
-
-        {/*
-          The machine's clock, drawn even while a simulated time is set, because "what
-          the app would be showing if you pressed Live" is the thing a person needs to
-          see next to what it is showing now.
-        */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-y-0 w-px bg-on-canvas-muted/50"
-          style={{ left: percent(realMinute) }}
-        />
-
-        {/* The moments. A filled stop is the one in effect at the playhead. */}
-        {layout.moments.map((held) => (
-          <button
-            key={held.minute}
-            type="button"
-            aria-label={`The moment at ${held.at}`}
-            className={cn(
-              'absolute top-2xs size-[0.875rem] cursor-grab rounded-full border-2 border-accent active:cursor-grabbing',
-              held.minute === point ? 'bg-accent' : 'bg-canvas',
-            )}
-            style={{ left: percent(held.minute), transform: 'translateX(-50%)' }}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-              dragging.current = held.minute;
-              track.current?.setPointerCapture(event.pointerId);
-              onGoTo(held.minute);
-            }}
-          />
-        ))}
-
-        {/* The playhead, last so it is over everything it points at. */}
-        <div
-          aria-hidden="true"
-          className={cn('absolute inset-y-0 w-[2px]', simulated ? 'bg-accent' : 'bg-on-canvas')}
-          style={{ left: percent(minute), transform: 'translateX(-1px)' }}
-        >
-          <span
-            className={cn(
-              'absolute -top-4xs left-1/2 size-2xs -translate-x-1/2 rotate-45',
-              simulated ? 'bg-accent' : 'bg-on-canvas',
-            )}
-          />
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -591,6 +421,7 @@ function Row({
   index,
   last,
   changed: isChanged,
+  deviceWidth,
   onMove,
   onHidden,
   onSetting,
@@ -602,6 +433,14 @@ function Row({
   index: number;
   last: boolean;
   changed: boolean;
+  /**
+   * The width the drawing is at, which is the device's, or `null` for no drawing at all.
+   *
+   * One value rather than a width and a flag, because "how wide" and "whether" are one
+   * question here: there is no width at which a block is drawn and no drawing, and no
+   * drawing that has no width. `HomeBlock.tsx` says what the width is for.
+   */
+  deviceWidth: number | null;
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: string | number | null | undefined) => void;
@@ -651,6 +490,35 @@ function Row({
         </div>
 
         <div className="flex shrink-0 items-center gap-4xs">
+          {/*
+            ADR 0045 §5: this was a checkbox labelled "Shown", under the name, with a
+            badge beside it saying the value was set here. What the checkbox had to do
+            was tell a person the block was off, and the collapsed row does that now
+            without a word — so what is left is the switching, which is an act rather
+            than a field, and an act is a button.
+
+            The two verbs live at two levels and §5 is where the pair is argued. On and
+            off are a MOMENT'S: they change what a block is doing at an hour, and they
+            are here. Add and remove are the DAY'S: they change which blocks exist at
+            all, and they are ADR 0045 §4 and §6, which are not built. When they are,
+            §5's "the switch is the same control a person already used to put the block
+            there" is the sentence this button has to answer to, and it may well stop
+            being a button of its own.
+          */}
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-pressed={!off}
+            className={cn('size-[2rem]', hiddenHere && 'text-accent')}
+            aria-label={
+              off
+                ? `Switch ${name} on ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
+                : `Switch ${name} off ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
+            }
+            onClick={() => onHidden(!off)}
+          >
+            {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -675,18 +543,32 @@ function Row({
       </div>
 
       <div className="flex flex-wrap items-center gap-xs">
-        <label className="flex items-center gap-2xs text-s text-on-canvas">
-          <input
-            type="checkbox"
-            checked={!off}
-            onChange={(event) => onHidden(!event.target.checked)}
-            className="size-[0.875rem] shrink-0 accent-accent"
-          />
-          Shown
-        </label>
         {hiddenHere && <Here />}
         <code className={cn(CODE, 'ml-auto text-on-canvas-muted')}>{section.id}</code>
       </div>
+
+      {/*
+        ADR 0045 §3, and §2 is the `off` branch. A block that is not on screen at the
+        playhead keeps its row and loses its picture — the whole day stays visible and
+        every block stays addressable, and only the drawing is spent on what is showing.
+        The sentence is drawn rather than nothing at all, because an empty gap would read
+        as a block with nothing in it rather than one that is switched off.
+
+        `deviceWidth` being null is the third case and it is not one a reader ever sees:
+        the panel is mounted behind the rail whether or not it is open, and nothing is
+        drawn while it is shut.
+      */}
+      {deviceWidth !== null &&
+        (off ? (
+          <p className={cn(NOTE, 'rounded-s border border-dashed border-stroke px-2xs py-3xs')}>
+            Not on screen{' '}
+            {point === null ? 'at the start of the day' : `at ${formatTimeOfDay(point)}`}.
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-s border border-stroke">
+            <HomeBlock section={section} deviceWidth={deviceWidth} />
+          </div>
+        ))}
 
       {specs.map((spec) => (
         <Setting

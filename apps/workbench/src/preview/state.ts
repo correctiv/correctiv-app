@@ -35,6 +35,19 @@ export interface PreviewState {
    * clears the key the app reads. `preview/home/clock.ts` is the writer.
    */
   time: string | null;
+  /**
+   * Whether the day is drawn under the frame.
+   *
+   * On by default, and off is what travels in the address, because the reason to write
+   * one of the two down is that somebody chose it. ADR 0042 §2: the track is a control
+   * for looking, so somebody who wants the frame and nothing else puts it away, and the
+   * link they send puts it away for the person opening it.
+   *
+   * It says nothing about whether the track is on screen. That is decided where it is
+   * drawn, out of the route the frame reports and the width of the window; a state that
+   * tried to hold the answer would be a second copy of a media query.
+   */
+  timeline: boolean;
   /** Colour tokens overridden in the frame, per scheme. */
   overrides: Overrides;
   /** Run the measure checks as soon as the frame settles. */
@@ -51,6 +64,7 @@ export const INITIAL: PreviewState = {
   theme: null,
   seed: null,
   time: null,
+  timeline: true,
   overrides: {},
   check: false,
 };
@@ -97,6 +111,9 @@ export function fromAddress(address: ShellAddress): PreviewState {
     seed: p.get('s'),
     // Junk is no time at all rather than an error: a stale link should still open.
     time: parseTimeOfDay(p.get('tm')) === null ? null : p.get('tm'),
+    // Default on, so the parameter is the exception and `tl=0` is the only thing it
+    // spells. Anything else in it, including a missing one, is the default.
+    timeline: p.get('tl') !== '0',
     overrides: parseOverrides(p.get('kl'), p.get('kd')),
     check: p.has('check'),
   };
@@ -145,6 +162,7 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   if (state.theme) p.set('t', state.theme);
   if (state.seed) p.set('s', state.seed);
   if (state.time) p.set('tm', state.time);
+  if (!state.timeline) p.set('tl', '0');
   if (state.check) p.set('check', '1');
   const light = writeOverrides(state.overrides, 'light');
   const dark = writeOverrides(state.overrides, 'dark');

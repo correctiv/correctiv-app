@@ -802,3 +802,36 @@ export function formatLayoutDocument(layout: HomeLayout): string {
  * an attribute.
  */
 export { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_KEY, HOME_TIME_KEY, sectionTestId } from './names';
+
+/**
+ * Whether the home document governs what the frame is showing.
+ *
+ * ADR 0042 §2: the track is drawn on the route the document describes and nowhere else.
+ * On `/artikel` the hour changes nothing, because the document says nothing about that
+ * screen, and a playhead there would move while the app did not — which is the kind of
+ * quiet lie this repository spends its checks on.
+ *
+ * **The route the frame reports, not the route the field holds.** They part company while
+ * somebody is typing, and for the second or two the app spends navigating; a track that
+ * appeared on the first keystroke of `/artikel` would be answering about a screen nobody
+ * is looking at yet. `preview/store.ts` reads the frame's own location back live and
+ * `usePreview` hands it on, so the answer follows the app rather than the intention.
+ *
+ * `undefined` is "the frame has not said yet", which is every moment before the first
+ * load settles, and it answers false: an absent control that appears is a smaller
+ * surprise than a control that appears and then goes.
+ *
+ * One route today, and a list here rather than in the shell for the reason ADR 0042's
+ * "What is still open" gives: when a second screen becomes a document, the answer has to
+ * come from the document, not from a third copy of the fact ADR 0036 §14 spent a decision
+ * making singular. This is the document's file, which is the nearest thing to that
+ * available while there is one.
+ */
+export function governs(route: string | undefined): boolean {
+  if (route === undefined) return false;
+  // Query and hash are the app's business, and `/` and `/index` are one screen: Expo
+  // Router serves the home route under both spellings and the frame reports whichever
+  // it navigated with.
+  const path = route.split(/[?#]/)[0].replace(/\/+$/, '');
+  return path === '' || path === '/index';
+}

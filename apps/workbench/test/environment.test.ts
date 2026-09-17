@@ -9,7 +9,20 @@ import { code } from './source.ts';
 const WORKBENCH = join(ROOT, 'apps/workbench');
 const APP = join(ROOT, 'apps/mobile');
 
-const PREVIEW = readFileSync(join(WORKBENCH, 'src/components/DirectPreview.tsx'), 'utf8');
+/*
+ * The site's app-drawing surface, as one text.
+ *
+ * It was one file — `DirectPreview.tsx` — until ADR 0045 §3 made the home editor the
+ * second surface that draws the app's own components, and what the two share moved into
+ * `AppHost.tsx`. Read together rather than separately, because every assertion below is
+ * about the surface and not about which of its two files a line ended up in: a check
+ * pointed at one of them would pass while the thing it guards had moved to the other,
+ * and the `not.toMatch` guards would stop covering half of what they were written for.
+ */
+const PREVIEW = [
+  readFileSync(join(WORKBENCH, 'src/components/AppHost.tsx'), 'utf8'),
+  readFileSync(join(WORKBENCH, 'src/components/DirectPreview.tsx'), 'utf8'),
+].join('\n');
 
 const ENVIRONMENT = readFileSync(join(APP, 'src/lib/env/AppEnvironment.tsx'), 'utf8');
 const ENV_FONTS = readFileSync(join(APP, 'src/lib/env/fonts.ts'), 'utf8');
@@ -87,7 +100,7 @@ describe('the app’s environment, borrowed rather than reproduced', () => {
     // the site's control and the app's setting reach Uniwind through one line.
     const appearance = readFileSync(join(APP, 'src/lib/theme/appearance.ts'), 'utf8');
     expect(appearance).toMatch(/export function useGivenAppearance\(setting: ThemeSetting\)/);
-    expect(PREVIEW).toMatch(/appearance=\{appearance\}/);
+    expect(PREVIEW).toMatch(/appearance=\{useSiteAppearance\(\)\}/);
   });
 
   it('loads the font files the app loads, and names no family of its own', () => {

@@ -31,6 +31,7 @@ describe('the frame’s half of the hash', () => {
       theme: 'dark',
       seed: 'signed-in',
       check: true,
+      timeline: false,
       overrides: { 'grey-100': { dark: '#102a54' }, emphasis: { light: '#00b0ff' } },
     };
     expect(read(write(state))).toEqual(state);
@@ -78,6 +79,31 @@ describe('the frame’s half of the hash', () => {
   it('drops an override it cannot trust rather than refusing the link', () => {
     const state = read('#/?kd=grey-100:102a54,not-a-token:ffffff,emphasis:xyz');
     expect(state.overrides).toEqual({ 'grey-100': { dark: '#102a54' } });
+  });
+
+  /**
+   * The day under the frame is on unless a link says otherwise, and only the exception
+   * is written down.
+   *
+   * ADR 0042 §2 puts a switch in the toolbar so that somebody can have the frame and
+   * nothing else, and the address is what carries that choice to the person the link is
+   * sent to. Default-on is what decides the spelling: a parameter written on every link
+   * to say "yes, the usual thing" is noise in every link, so `tl=0` is the only thing
+   * this key ever spells and everything else — a missing one, a junk one, `tl=1` — is
+   * the default. A stale link should still open, which is the same rule the time, the
+   * device and the overrides above are read by.
+   */
+  it('writes the day away and nothing else, so only the exception is in the link', () => {
+    expect(write({ ...INITIAL, timeline: true })).not.toContain('tl=');
+    expect(write({ ...INITIAL, timeline: false })).toContain('tl=0');
+  });
+
+  it('treats anything but an explicit nought as the day being there', () => {
+    const at = (rest: string) => read(`#/?d=iphone-15-pro${rest}`).timeline;
+    expect(at('')).toBe(true);
+    expect(at('&tl=1')).toBe(true);
+    expect(at('&tl=yes')).toBe(true);
+    expect(at('&tl=0')).toBe(false);
   });
 
   it('treats an empty hash as the default view', () => {

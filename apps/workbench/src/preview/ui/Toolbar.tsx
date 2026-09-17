@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import {
+  CalendarClock,
   Check,
   Copy,
   ExternalLink,
@@ -17,6 +18,7 @@ import { Separator } from '../../ui/kit/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { Pages } from './Pages';
 import { DEVICES, HOST_DEVICE } from '../devices';
+import { governs } from '../home/document';
 import { ROUTES } from '../routes';
 import { frameSize, type PreviewState } from '../state';
 import type { Status } from '../api';
@@ -106,6 +108,15 @@ export function Toolbar({
    * "Portrait" lit beside a 1440 × 900 frame.
    */
   const landscape = size.w > size.h;
+  /*
+   * ADR 0042 §2: the switch is here on the routes the document governs and absent on the
+   * others, rather than present and inert. A control that demonstrably does nothing is
+   * what §2 refuses, and 0038 §5 already cut six badges for saying less than that. What
+   * decides it is the route the FRAME reports, which is also what decides whether there
+   * is a track for this to put away — one predicate, called twice, so the button and the
+   * thing it switches cannot disagree.
+   */
+  const day = governs(status.frameRoute);
 
   return (
     <div
@@ -181,6 +192,26 @@ export function Toolbar({
             }
           />
         </span>
+      )}
+
+      {day && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={state.timeline ? 'outline' : 'ghost'}
+              size="icon"
+              aria-pressed={state.timeline}
+              className="shrink-0"
+              aria-label={state.timeline ? 'Put the day away' : 'Show the day under the frame'}
+              onClick={() => onChange({ timeline: !state.timeline })}
+            >
+              <CalendarClock aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {state.timeline ? 'The day · press to put it away' : 'Show the day under the frame'}
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {!host && (

@@ -1,0 +1,286 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+import { ROOT } from '../../plugin/collect.ts';
+import { governs } from '../../src/preview/home/document';
+import { code } from '../source.ts';
+
+/**
+ * The day under the frame, and the list beside it, held to the two records that put
+ * them there.
+ *
+ * [ADR 0042](../../../../adr/0042-the-timeline-belongs-to-the-stage.md) moves the track
+ * out of the tool panel and under the framed app, and
+ * [ADR 0045](../../../../adr/0045-the-home-editor-arranges-the-blocks-it-draws.md) §1–§3
+ * and §5 make the panel's list the whole day with each block drawn. The two are one
+ * piece of work by 0045's own first line, and most of what follows is about the seam
+ * between them: **one playhead, read by both drawings**, which 0042's "What it costs"
+ * names as the thing that must not become two pieces of state, because two of them
+ * would disagree in front of somebody.
+ *
+ * ## What is read as text, and why that is the weaker half
+ *
+ * Only `governs` below is a function this file can call. Everything else is a decision
+ * about where a component is mounted and what it is allowed to read, and this package's
+ * tests have no DOM — `vite.config.ts` gives vitest no environment, which is the same
+ * choice `environment.test.ts` and `direct.test.ts` explain: rendering one of these to
+ * ask what is above it would need `react-native-web`, a browser and the app's whole
+ * toolchain to answer a question about imports.
+ *
+ * So these are ADR 0031's mechanism 4 and they are worth knowing as that. They catch a
+ * line deleted and a line moved to the wrong file; they cannot catch a track that draws
+ * in the wrong place or a block that measures itself wrong. What catches those is
+ * looking, and `scripts/home-live.mjs` is where this repository automates the looking.
+ */
+
+/** Read as text, because what is being asked is where a line is rather than what it does. */
+const read = (path: string): string => code(readFileSync(join(ROOT, path), 'utf8'));
+
+const PAGE = read('apps/workbench/src/pages/Preview.tsx');
+const STAGE = read('apps/workbench/src/preview/ui/Stage.tsx');
+const TOOLBAR = read('apps/workbench/src/preview/ui/Toolbar.tsx');
+const TIMELINE = read('apps/workbench/src/preview/home/Timeline.tsx');
+const PANEL = read('apps/workbench/src/preview/home/HomeDocument.tsx');
+const BLOCK = read('apps/workbench/src/preview/home/HomeBlock.tsx');
+const MINUTES = read('apps/workbench/src/preview/home/minutes.ts');
+
+describe('which routes the document governs', () => {
+  /*
+   * ADR 0042 §2. The home screen and nothing else: on `/artikel` the hour changes
+   * nothing, because the document does not describe that screen, and a playhead there
+   * would move while the app did not.
+   */
+  it('answers for the home screen, under either spelling Expo Router serves it as', () => {
+    expect(governs('/')).toBe(true);
+    expect(governs('/index')).toBe(true);
+  });
+
+  it('ignores what belongs to the app rather than to the route', () => {
+    // A query and a hash are the app's own business and neither changes which screen is
+    // being shown. A trailing slash is the same route typed by a different person.
+    expect(governs('/?from=push')).toBe(true);
+    expect(governs('/index#top')).toBe(true);
+    expect(governs('//')).toBe(true);
+  });
+
+  it('answers no for every other screen', () => {
+    for (const route of ['/artikel', '/entdecken', '/mediathek', '/profil', '/indexes']) {
+      expect(governs(route)).toBe(false);
+    }
+  });
+
+  it('answers no before the frame has said anything', () => {
+    // Every moment before the first load settles. An absent control that appears is a
+    // smaller surprise than a control that appears and then goes.
+    expect(governs(undefined)).toBe(false);
+  });
+});
+
+describe('the track is the stage’s and not the tool’s', () => {
+  /*
+   * ADR 0042 §1, and the half a reader cannot see: the panel no longer holds a track at
+   * all, so the only way to have one is to be mounted by the page under the frame.
+   */
+  it('is drawn by the stage, and the panel does not draw one of its own', () => {
+    expect(PAGE).toMatch(/<Timeline\b/);
+    expect(PAGE).toMatch(/timeline=\{/);
+    expect(STAGE).toMatch(/timeline: ReactNode/);
+    expect(PANEL).not.toMatch(/Timeline/);
+  });
+
+  it('keeps one order down the screen, so the frame is measured without the track', () => {
+    // ADR 0042 §4: frame, then timeline, then the tools, at every width. `stageRef` is
+    // what `useStage` fits the frame into, so a track inside it would make the frame fit
+    // itself — and the frame would shrink by the height of the thing below it.
+    const shell = STAGE.slice(STAGE.indexOf('export function Stage'));
+    for (const half of [shell.indexOf('ref={stageRef}'), shell.lastIndexOf('ref={stageRef}')]) {
+      expect(half).toBeGreaterThan(-1);
+      expect(shell.indexOf('{timeline}', half)).toBeGreaterThan(half);
+    }
+  });
+
+  it('asks one predicate whether there is a day, and asks it in both places', () => {
+    // The switch in the toolbar and the track under the frame have to agree about which
+    // routes have a day, or one of them is offered for a thing that is not there. One
+    // exported function, called twice, rather than two spellings of one route list.
+    expect(PAGE).toMatch(/governs\(preview\.status\.frameRoute\)/);
+    expect(TOOLBAR).toMatch(/governs\(status\.frameRoute\)/);
+    for (const file of [PAGE, TOOLBAR]) expect(file).toMatch(/from '.*home\/document'/);
+  });
+
+  it('takes the route the frame reports, never the field somebody is typing in', () => {
+    // They part company on every keystroke and for the second the app spends
+    // navigating. `state.route` is the field; `status.frameRoute` is the app.
+    expect(PAGE).not.toMatch(/governs\(state\.route\)/);
+    expect(TOOLBAR).not.toMatch(/governs\(state\.route\)/);
+  });
+});
+
+describe('full screen, and the line it borrows', () => {
+  it('keeps the day above the breakpoint and gives it up below, on the shell’s own line', () => {
+    // ADR 0042 §5. `full` exists so that somebody can look at the app, and the track is
+    // the control for looking — so it is the one thing `full` keeps. Below the line the
+    // arithmetic beats the argument, and it is arithmetic #185 already did.
+    expect(PAGE).toMatch(/!full \|\| wide/);
+  });
+
+  it('does not measure a line of its own', () => {
+    // `WIDE` in `lib/useMedia.ts` and `HOST_BELOW` in `preview/devices.ts` are the same
+    // number on purpose. A third copy of one editorial judgement is one more place for
+    // it to be edited alone, and the copy that goes wrong is whichever nobody touches.
+    for (const file of [PAGE, STAGE, TIMELINE]) {
+      expect(file).not.toMatch(/\b1024\b/);
+      expect(file).not.toMatch(/64rem/);
+    }
+  });
+});
+
+describe('one playhead, two drawings', () => {
+  /*
+   * ADR 0042's "What it costs", in as many words: the stage's playhead and the panel's
+   * head are the same minute, and if they are ever two pieces of state they will
+   * disagree in front of somebody. The minute lives where it already lived — in the
+   * frame's state and in the address — and both drawings read it.
+   */
+  it('reads the simulated hour out of the address in both drawings', () => {
+    for (const file of [TIMELINE, PANEL]) expect(file).toMatch(/state\.time/);
+  });
+
+  it('reads the machine’s clock from one place, so the two cannot be a minute apart', () => {
+    // `minuteOfDay(Date.now())` in two components is two readings, and on a page opened
+    // at 10:59:58 they are a minute apart: the track would put the playhead in one point
+    // and the panel would name the other.
+    expect(MINUTES).toMatch(/minuteOfDay\(Date\.now\(\)\)/);
+    for (const file of [TIMELINE, PANEL]) {
+      expect(file).toMatch(/openedAt\(\)/);
+      expect(file).not.toMatch(/Date\.now\(\)/);
+    }
+  });
+
+  it('snaps to one step, from one constant', () => {
+    // A track landing on fives beside a field accepting minutes would disagree by four
+    // minutes about where a drag put the playhead, with both of them right about their
+    // own rule.
+    expect(MINUTES).toMatch(/export const STEP = /);
+    for (const file of [TIMELINE, PANEL]) expect(file).toMatch(/from '.*minutes'/);
+  });
+});
+
+describe('looking never changes anything', () => {
+  /*
+   * ADR 0042 §3. With the tool shut the track moves the playhead and jumps between the
+   * moments the document already names; adding one, moving one and deleting one need
+   * the tool open. The line is reading the document versus writing it, which is the same
+   * line `apps/mobile/src/lib/home/clock.ts` draws about its own key.
+   */
+  it('makes every write on the track conditional on the tool being open', () => {
+    expect(TIMELINE).toMatch(/editing: boolean/);
+    // The two writes the track has, and both are inside an `editing` test.
+    const point = TIMELINE.indexOf('withMoment(');
+    expect(point).toBeGreaterThan(-1);
+    expect(TIMELINE.lastIndexOf('{editing &&', point)).toBeGreaterThan(-1);
+    expect(TIMELINE).toMatch(/if \(editing\) \{/);
+  });
+
+  it('takes the answer from the tool being open rather than from a switch of its own', () => {
+    // "The tool is open" is already the sentence that separates reading the document
+    // from writing it; a second switch would be a second answer to one question.
+    expect(PAGE).toMatch(/editing=\{address\.tool === 'home'\}/);
+  });
+});
+
+describe('the list is the day, and the blocks are drawn', () => {
+  it('draws every block the document has, in the document’s order', () => {
+    // ADR 0045 §1. Not the sections in effect at the playhead: the list is where the
+    // document is, and a list that showed only what is on screen would make "remove"
+    // mean two different things that look identical (§2).
+    expect(PANEL).toMatch(/layout\.sections\.map\(/);
+  });
+
+  it('collapses a block that is off at the playhead to its row', () => {
+    // §2: the header row stays and the drawing goes. The whole day stays visible and
+    // every block stays addressable; only the picture is spent on what is showing.
+    expect(PANEL).toMatch(/off \? \(/);
+    expect(PANEL).toMatch(/<HomeBlock\b/);
+  });
+
+  it('draws nothing while the panel is behind the rail', () => {
+    /*
+     * The slot keeps a tool mounted whether or not it is the open one (ADR 0038 §1), so
+     * the drawings were in the document on a plain visit to `/preview` with nothing open
+     * — the demo audience ADR 0038 §2 protects, mounting and feeding the app's modules a
+     * second time beside the frame that already has them. Measured on the dev server:
+     * 1250 elements on the page with the tool shut, ten of the app's modules among them;
+     * 1032 and none once the page handed the panel the answer.
+     *
+     * Both spellings are held, because the failure is that they part: the page decides
+     * and the panel obeys, and a panel that decided for itself would be a second answer
+     * to "is this tool open".
+     */
+    expect(PAGE).toMatch(/drawing=\{address\.tool === 'home'\}/);
+    expect(PANEL).toMatch(/drawing: boolean/);
+    expect(PANEL).toMatch(/deviceWidth=\{drawing \? deviceWidth : null\}/);
+  });
+
+  it('puts one environment round the list rather than one round each row', () => {
+    // `AppEnvironment` mounts a store provider, an intl provider, a safe-area provider
+    // and a gesture root; one per row would be one of each per row.
+    expect(PANEL).toMatch(/<AppHost>/);
+    // The block imports the boundary from that file and must not mount the host itself;
+    // a second environment per row is the thing being refused, not the import.
+    expect(BLOCK).not.toMatch(/<AppHost\b/);
+  });
+
+  it('leaves the checkbox behind and keeps `hidden` in the document', () => {
+    // ADR 0045 §5. What the checkbox had to do was say the block was off, and the
+    // collapsed row says it without a word; what is left is the switching, which is an
+    // act rather than a field. The WRITE is unchanged — `withHidden` still puts the
+    // change into the moment in effect.
+    expect(PANEL).not.toMatch(/type="checkbox"/);
+    expect(PANEL).toMatch(/withHidden\(/);
+  });
+});
+
+describe('a block draws itself and reads nothing else', () => {
+  /*
+   * ADR 0046 §5, and the measurement under it: moving the playhead one step cost 37 ms
+   * with no drawings and 69 ms with twelve, and the shipped document has two moments
+   * over twelve sections — so 1438 of the day's 1440 minutes change nothing about any
+   * block. What makes the memo hold is that the component's whole input is the section:
+   * a block that read the playhead would have a reason to redraw on every step of a drag
+   * no comparator could take away.
+   */
+  it('takes the section and the width, and reaches for nothing that moves', () => {
+    for (const forbidden of ['../state', './store', './clock', './minutes']) {
+      expect(BLOCK).not.toMatch(new RegExp(`from '${forbidden}'`));
+    }
+    expect(BLOCK).not.toMatch(/useSyncExternalStore/);
+  });
+
+  it('is memoised on the section’s value rather than on its identity', () => {
+    // `effectiveAt` rebuilds a section a moment has touched on every call and hands back
+    // the original for every section no moment has touched, and the array is new either
+    // way. So the default comparator would redraw exactly the blocks a moment changes,
+    // for ever, which is the case this exists for.
+    expect(BLOCK).toMatch(/memo\(Block, same\)/);
+    expect(BLOCK).toMatch(/function same\(/);
+  });
+
+  it('scales down and never up', () => {
+    // ADR 0045 §3, and `fitScale`'s rule. A block scaled up would be a lie about how
+    // many pixels the app thinks it has.
+    expect(BLOCK).toMatch(/Math\.min\(1,/);
+  });
+
+  it('measures the drawing with an observer the node owns', () => {
+    // A mount-only effect captures the nodes of the first render and goes on observing
+    // them after a remount, which is measured: every drawing sat at `height: 0` while
+    // `offsetHeight` read sixty and up, and every row said it drew nothing while drawing
+    // something. A ref callback and its cleanup cannot go stale that way.
+    expect(BLOCK).toMatch(/new ResizeObserver\(/);
+    expect(BLOCK).not.toMatch(/useLayoutEffect|useEffect/);
+    expect(BLOCK).toMatch(/observer\.disconnect\(\)/);
+  });
+});

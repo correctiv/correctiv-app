@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
 
 import { cn } from '../../lib/cn';
 import { OUTLINE } from '../AppFrame';
@@ -27,6 +27,16 @@ interface Props {
    * is open, because the sentence points at a rail the reader has evidently found.
    */
   hint: boolean;
+  /**
+   * The day, drawn between the frame and whatever is below it, or nothing.
+   *
+   * A node rather than a flag, because whether there is a timeline at all is a
+   * question about the route the frame is showing, the width of the window and
+   * `full` — three things this component has no business knowing and `pages/Preview.tsx`
+   * already holds. ADR 0042 §1 decides that it belongs here; §2 decides when there is
+   * one; and a stage that asked the second question would be the third copy of it.
+   */
+  timeline: ReactNode;
 }
 
 type Axes = 'x' | 'y' | 'xy';
@@ -57,7 +67,17 @@ type Axes = 'x' | 'y' | 'xy';
  * surface rather than a white box on a white page, which is what it looked like
  * without it.
  */
-export function Stage({ state, size, scale, stageRef, frameRef, onResize, onLoad, hint }: Props) {
+export function Stage({
+  state,
+  size,
+  scale,
+  stageRef,
+  frameRef,
+  onResize,
+  onLoad,
+  hint,
+  timeline,
+}: Props) {
   const { w, h } = size;
   const host = state.device === HOST_DEVICE;
   const right = useRef<HTMLDivElement>(null);
@@ -83,16 +103,26 @@ export function Stage({ state, size, scale, stageRef, frameRef, onResize, onLoad
    */
   if (host) {
     return (
-      <div ref={stageRef} className="h-full min-h-0 bg-canvas">
-        <h2 className="sr-only">App frame</h2>
-        {/* eslint-disable-next-line react/iframe-missing-sandbox */}
-        <iframe
-          className="block h-full w-full border-0 bg-transparent"
-          ref={frameRef}
-          title="App preview"
-          allow="autoplay; fullscreen; encrypted-media"
-          onLoad={onLoad}
-        />
+      /*
+       * The frame is still what `stageRef` measures, and the timeline is its sibling
+       * rather than its child. ADR 0042 §4 keeps one order down the screen at every
+       * width — frame, timeline, tools — and `useStage` measures the box the frame has,
+       * which is the box minus the track. A track inside the measured element would
+       * make the frame fit itself.
+       */
+      <div className="flex h-full min-h-0 flex-col bg-canvas">
+        <div ref={stageRef} className="min-h-0 flex-1">
+          <h2 className="sr-only">App frame</h2>
+          {/* eslint-disable-next-line react/iframe-missing-sandbox */}
+          <iframe
+            className="block h-full w-full border-0 bg-transparent"
+            ref={frameRef}
+            title="App preview"
+            allow="autoplay; fullscreen; encrypted-media"
+            onLoad={onLoad}
+          />
+        </div>
+        {timeline}
       </div>
     );
   }
@@ -181,6 +211,8 @@ export function Stage({ state, size, scale, stageRef, frameRef, onResize, onLoad
           />
         </div>
       </div>
+
+      {timeline}
 
       {/*
         The sentence the demo audience gets, and the one the inspector's audience

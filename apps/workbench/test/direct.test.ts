@@ -10,7 +10,20 @@ import { appPlugins } from '../vite.app.mjs';
 const WORKBENCH = join(ROOT, 'apps/workbench');
 const API = join(WORKBENCH, 'content/api.generated.json');
 const REGISTRY = readFileSync(join(WORKBENCH, 'src/components/direct.tsx'), 'utf8');
-const PREVIEW = readFileSync(join(WORKBENCH, 'src/components/DirectPreview.tsx'), 'utf8');
+/*
+ * The site's app-drawing surface, as one text.
+ *
+ * It was one file — `DirectPreview.tsx` — until ADR 0045 §3 made the home editor the
+ * second surface that draws the app's own components, and what the two share moved into
+ * `AppHost.tsx`. Read together rather than separately, because every assertion below is
+ * about the surface and not about which of its two files a line ended up in: a check
+ * pointed at one of them would pass while the thing it guards had moved to the other,
+ * and the `not.toMatch` guards would stop covering half of what they were written for.
+ */
+const PREVIEW = [
+  readFileSync(join(WORKBENCH, 'src/components/AppHost.tsx'), 'utf8'),
+  readFileSync(join(WORKBENCH, 'src/components/DirectPreview.tsx'), 'utf8'),
+].join('\n');
 const CATALOGUE = readFileSync(join(ROOT, 'apps/mobile/src/gallery/catalogue.tsx'), 'utf8');
 
 /**
