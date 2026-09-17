@@ -295,12 +295,16 @@ arrives as `renderable`, at the call. The two questions have different answers a
 asked separately today. Registration would make the first question look like the second
 and answer both from whatever was in the room.
 
-### 10. The gallery gets a module's settings with the declaration
+### 10. ~~The gallery gets a module's settings with the declaration~~ The editor has them, and the gallery points at it
 
-Because the declaration sits with the module, the component gallery can show a module's
+~~Because the declaration sits with the module, the component gallery can show a module's
 settings and let somebody work them where the component is already drawn. A setting is a
 question about what a component shows, and the gallery is the page that draws components,
-so it is one page rather than a second copy of the controls.
+so it is one page rather than a second copy of the controls.~~ The editor is that page:
+§1 to §9, built, draw every module with its settings beside the running app, so a second
+set in the gallery would be the copy this paragraph was written to avoid — voided by
+[ADR 0048](0048-the-gallery-points-at-the-editor-rather-than-copying-it.md) §1 and §2,
+which leaves the gallery a sentence and a link.
 
 This is a consequence being claimed, not a mechanism being specified. What the gallery
 needs to draw is the **module**, and the modules are deliberately not in `src/components`
@@ -357,12 +361,16 @@ whether "makes sense here" is a fact a module can declare or a judgement the edi
 be inventing on the newsroom's behalf, is unanswered — and the second half of that
 question is ADR 0036 §1's, which is why it is not being answered casually.
 
-**What the gallery does with a setting somebody changes there.** §10 claims the gallery
+~~**What the gallery does with a setting somebody changes there.** §10 claims the gallery
 *can* offer the controls. It does not say whether moving one changes anything beyond that
 one drawing, whether it can be linked to like `?c=` already links to a component, or
 whether a value set there has any way to reach a document. And underneath it: whether the
 gallery draws the module or the component, given that the modules are deliberately not in
-the folder the gallery walks.
+the folder the gallery walks.~~ Nothing, because nothing changes there: the surface that
+raised all four questions is not built — same voiding. The one part that stays a real gap
+is whether the EDITOR's address can name a block, which
+[ADR 0048](0048-the-gallery-points-at-the-editor-rather-than-copying-it.md) §4 names as
+still open.
 
 **What a new block's id is, and whether a removed one may come back.** An id is the
 document's stable address — a moment names it, a report carries it, `LIFTED_CALLOUT` keys
