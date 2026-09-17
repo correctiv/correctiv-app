@@ -57,9 +57,13 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
    * the state, the state writes the hash, and the hash stays quiet.
    */
   useEffect(() => {
+    // Not before the store has read the hash. `usePreview`'s `started` says why in full:
+    // the first render holds the defaults, and writing those back is what took the hour
+    // out of a link somebody had been sent.
+    if (!preview.started) return;
     const { head, rest } = toAddress(state);
     onAddress({ head, rest });
-  }, [state, onAddress]);
+  }, [preview.started, state, onAddress]);
 
   /*
    * And the chrome out of the way on a small screen, once, on arrival.

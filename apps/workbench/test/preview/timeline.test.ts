@@ -45,6 +45,7 @@ const TIMELINE = read('apps/workbench/src/preview/home/Timeline.tsx');
 const PANEL = read('apps/workbench/src/preview/home/HomeDocument.tsx');
 const BLOCK = read('apps/workbench/src/preview/home/HomeBlock.tsx');
 const MINUTES = read('apps/workbench/src/preview/home/minutes.ts');
+const HOOK = read('apps/workbench/src/preview/Preview.tsx');
 
 describe('which routes the document governs', () => {
   /*
@@ -75,6 +76,31 @@ describe('which routes the document governs', () => {
     // Every moment before the first load settles. An absent control that appears is a
     // smaller surprise than a control that appears and then goes.
     expect(governs(undefined)).toBe(false);
+  });
+});
+
+describe('an hour in a link survives being opened', () => {
+  /**
+   * The address is what looking writes, and ADR 0042 §3 rests the whole feature on it:
+   * a view of the home screen at half past six is a thing to send somebody. It did not
+   * survive. `#/?d=iphone-15-pro&tm=11:30` came back as `#/?d=iphone-15-pro`, on this
+   * branch and on `origin/main` alike — older than the timeline's move and found by
+   * opening a link rather than by reading anything.
+   *
+   * The first render reads the store's defaults, because `start()` reads the hash in an
+   * effect and effects run after a render; the page's address-writing effect then fired
+   * with those defaults and replaced the hash with them. `d` survived only because the
+   * default device happened to be the one in the link.
+   *
+   * Read as text, and it is the weaker half in the way this file's header says: what
+   * actually holds this is `scripts/home-live.mjs`, which opens a link in a browser.
+   */
+  it('waits for the store to have read the address before writing one back', () => {
+    expect(HOOK).toMatch(/const \[started, setStarted\] = useState\(false\)/);
+    expect(HOOK).toMatch(/setStarted\(true\)/);
+    expect(PAGE).toMatch(/if \(!preview\.started\) return;/);
+    // And the guard has to be a dependency, or it is read once at the wrong moment.
+    expect(PAGE).toMatch(/\[preview\.started, state, onAddress\]/);
   });
 });
 

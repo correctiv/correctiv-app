@@ -82,6 +82,31 @@ export function usePreview() {
   const [selected, setSelected] = useState(0);
   /** Bumped on every load, so everything injected into the frame is re-injected. */
   const [loaded, setLoaded] = useState(0);
+  /**
+   * Whether the store has read the address yet, which the page has to know before it
+   * writes one back.
+   *
+   * **The hour in a link did not survive being opened.** `#/?d=iphone-15-pro&tm=11:30`
+   * came back as `#/?d=iphone-15-pro`, so the one thing ADR 0039 §9 puts in the address
+   * — a view of the home screen at half past six, as a thing to send somebody — was the
+   * one thing a cold arrival dropped. Measured against `origin/main` as well: older than
+   * anything the timeline's move did, and found by opening a link rather than by reading
+   * the code.
+   *
+   * The order is the whole of it. The first render reads `INITIAL` out of the store,
+   * because `start()` runs in the effect below and effects run after a render; the page's
+   * "state out through `toAddress`" effect then fires with that first, empty state and
+   * `replaceState`s a hash built from the defaults. `d` survives because the default
+   * device happens to be the one in the link; `tm` has no default, so it goes. Nothing
+   * puts it back, because what would put it back is a re-read of the hash that is now
+   * the one just written.
+   *
+   * So the page waits to be told the store has taken the address. One boolean rather
+   * than reordering the effects: the order effects run in is the mechanism that broke
+   * this, and a fix that depended on a second, subtler ordering would be the same bug
+   * with a longer fuse.
+   */
+  const [started, setStarted] = useState(false);
 
   /*
    * `Stage` draws the device frame and the full-bleed frame as two different
@@ -104,6 +129,7 @@ export function usePreview() {
   useEffect(() => {
     install();
     const release = start();
+    setStarted(true);
     return () => {
       release();
       uninstall();
@@ -391,6 +417,8 @@ export function usePreview() {
     onResize,
     onLoad,
     /** The home tool's own outline, separate from `tools`: the seventh tool, not one of the six. */
+    /** See above: the page may not write the address until the store has read it. */
+    started,
     outlineSection: setHoveredSection,
     onReload: () => win()?.location.reload(),
     onRaw: () => window.open(BASE + (state.route || '/'), '_blank', 'noopener'),
