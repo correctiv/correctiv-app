@@ -26,7 +26,7 @@ import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
 import { DEFAULT_DEVICE, preset } from '../devices';
 import { timeOf } from './clock';
-import { frameSize, type PreviewState } from '../state';
+import type { PreviewState } from '../state';
 import { HomeBlock } from './HomeBlock';
 import { minuteFrom, openedAt, parseMinute, STEP } from './minutes';
 import {
@@ -138,12 +138,32 @@ export function HomeDocument({
    * behind the rail.
    */
   drawing: boolean;
-  /** Outlines the section's element in the frame, or clears the outline on `null`. */
-  outline: (id: string | null) => void;
+  /**
+   * Outlines the section's element in the frame, or clears the outline on `null`.
+   *
+   * `follow` is whether the frame also scrolls to it. It travels with the id rather than
+   * being read where the scroll happens, so that changing the setting cannot move a frame
+   * by itself — only hovering a row can.
+   */
+  outline: (held: { id: string; follow: boolean } | null) => void;
 }) {
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   const [result, setResult] = useState<SaveResult | null>(null);
   const [copied, setCopied] = useState(false);
+  /**
+   * Whether the frame scrolls to the block under the pointer.
+   *
+   * On, because the outline it goes with is useless where it cannot be seen: at a phone's
+   * height, most of the shipped document is below the fold. Switchable, because a moving
+   * frame is a thing to be able to stop — somebody comparing two hours, or recording the
+   * screen, wants the frame where they put it.
+   *
+   * Held here and not in the address, which is the same call `textPass` makes one file
+   * over and for the same reason: the address carries what a link should reproduce, and
+   * this changes nothing a screenshot would show. It changes what happens when a pointer
+   * moves, which is not a thing to send somebody.
+   */
+  const [follow, setFollow] = useState(true);
 
   /*
    * The same minute the track under the frame is drawing, out of the same two places:
@@ -156,13 +176,28 @@ export function HomeDocument({
   const span = spanOf(layout, point);
 
   /*
-   * The width a block draws at, which is the device the frame is set to — ADR 0045 §3:
-   * what is in the list should be the size it is on the phone. `host` has no preset and
-   * reports zero, and the default device's width is the honest stand-in, because it is
-   * the width this tool opens at and the one number here that is already a fact
-   * somewhere else.
+   * The width a block draws at: the phone's, always, and not the device the frame is set
+   * to.
+   *
+   * ADR 0045 §3 says "a block draws at **the phone's own width**", and this followed the
+   * frame instead for one release. What that looked like: pick an iPad and every drawing
+   * in the panel shrinks to about a third, because §3's other half — scale down to fit,
+   * never up — then has a 744px block to fit into a panel about 400px wide. A column of
+   * unreadable thumbnails, and worse, the list quietly became a second, poorer answer to
+   * a question the frame beside it was already answering properly.
+   *
+   * The division of labour is the point and it is the frame's: **the frame is where a
+   * device is tried**, at any size, with the handles and the presets and the orientation.
+   * The list is where the DOCUMENT is (§1) — which blocks there are, in what order, in
+   * what state at this minute — and a block there has to be recognisable as the thing on
+   * the phone, which is §3's own words for it. Those two jobs want two widths, and the
+   * list's is fixed.
+   *
+   * `DEFAULT_DEVICE`'s width rather than a number typed here: it is the phone this tool
+   * opens at, it is already a fact in `devices.ts`, and a second spelling of 393 is a
+   * second thing to edit.
    */
-  const deviceWidth = frameSize(state).w || preset(DEFAULT_DEVICE).w;
+  const deviceWidth = preset(DEFAULT_DEVICE).w;
 
   /*
    * Once, on arrival: a stored document that is now identical to the shipped one is a
@@ -199,6 +234,16 @@ export function HomeDocument({
         on it is a moment the document names; a moment carries only what changes at it. The list
         below is the whole day in the document’s order. The frame is one minute of it.
       </p>
+
+      <label className="flex items-center gap-2xs text-s text-on-canvas">
+        <input
+          type="checkbox"
+          checked={follow}
+          onChange={(event) => setFollow(event.target.checked)}
+          className="size-[0.875rem] shrink-0 accent-accent"
+        />
+        Scroll the frame to the block under the pointer
+      </label>
 
       <PointHead
         layout={layout}
@@ -239,6 +284,7 @@ export function HomeDocument({
                 setLayout(withSetting(layout, point, section.id, key, value))
               }
               outline={outline}
+              follow={follow}
             />
           ))}
         </ol>
@@ -423,6 +469,7 @@ function Row({
   last,
   changed: isChanged,
   deviceWidth,
+  follow,
   onMove,
   onHidden,
   onSetting,
@@ -445,7 +492,9 @@ function Row({
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: string | number | null | undefined) => void;
-  outline: (id: string | null) => void;
+  outline: (held: { id: string; follow: boolean } | null) => void;
+  /** Whether hovering this row scrolls the frame to it. The panel's setting, not the row's. */
+  follow: boolean;
 }) {
   const { name, what } = moduleLabel(section.module);
   const off = Boolean(section.hidden);
@@ -468,9 +517,9 @@ function Row({
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <li
       className={cn(CARD, 'flex flex-col gap-2xs p-xs', isChanged && 'border-accent')}
-      onPointerEnter={() => outline(section.id)}
+      onPointerEnter={() => outline({ id: section.id, follow })}
       onPointerLeave={() => outline(null)}
-      onFocus={() => outline(section.id)}
+      onFocus={() => outline({ id: section.id, follow })}
       onBlur={() => outline(null)}
     >
       <div className="flex min-w-0 items-start gap-xs">

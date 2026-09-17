@@ -120,7 +120,11 @@ function byTestId(doc: Document, testId: string): Element | null {
  * (`apps/mobile/src/app/(tabs)/index.tsx`, `sectionsAt`), so there is no element
  * to outline and this quietly outlines nothing rather than guessing at one.
  */
-export function outlineByTestId(win: Window | null, testId: string | null): void {
+export function outlineByTestId(win: Window | null, testId: string | null): Element | null {
   const doc = win?.document;
-  markHovered(win, testId && doc ? byTestId(doc, testId) : null);
+  const node = testId && doc ? byTestId(doc, testId) : null;
+  markHovered(win, node);
+  // Handed back rather than looked up twice: `reveal.ts` wants the same element, and the
+  // scan above is the one thing here that walks the frame's whole document.
+  return node;
 }

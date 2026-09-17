@@ -46,6 +46,7 @@ const PANEL = read('apps/workbench/src/preview/home/HomeDocument.tsx');
 const BLOCK = read('apps/workbench/src/preview/home/HomeBlock.tsx');
 const MINUTES = read('apps/workbench/src/preview/home/minutes.ts');
 const HOOK = read('apps/workbench/src/preview/Preview.tsx');
+const REVEAL = read('apps/workbench/src/preview/frame/reveal.ts');
 
 describe('which routes the document governs', () => {
   /*
@@ -297,8 +298,67 @@ describe('the list is the day, and the blocks are drawn', () => {
     // collapsed row says it without a word; what is left is the switching, which is an
     // act rather than a field. The WRITE is unchanged — `withHidden` still puts the
     // change into the moment in effect.
-    expect(PANEL).not.toMatch(/type="checkbox"/);
+    //
+    // The row and not the whole panel, because the panel has a checkbox again and should:
+    // whether the frame follows the pointer is a setting, which is what a form field is
+    // for. §5 is about the one control that was a field and should have been an act.
+    const row = PANEL.slice(PANEL.indexOf('function Row('), PANEL.indexOf('function Here('));
+    expect(row).not.toMatch(/type="checkbox"/);
+    expect(row).toMatch(/onHidden\(/);
     expect(PANEL).toMatch(/withHidden\(/);
+  });
+});
+
+describe('the list draws at the phone’s width, whatever the frame is set to', () => {
+  /**
+   * ADR 0045 §3: "a block draws at **the phone's own width**", and narrower than that the
+   * drawing scales down as a whole, never up.
+   *
+   * This followed the framed device for one release, which is a different sentence and a
+   * worse interface: pick an iPad and every drawing in the panel shrinks to about a third,
+   * because a 744px block then has to fit a panel about 400px wide. The two surfaces have
+   * two jobs — the frame is where a device is tried, the list is where the document is —
+   * and they want two widths.
+   */
+  it('takes the width from the device list and not from the frame', () => {
+    expect(PANEL).toMatch(/preset\(DEFAULT_DEVICE\)\.w/);
+    expect(PANEL).not.toMatch(/frameSize/);
+  });
+});
+
+describe('the frame goes to the block under the pointer', () => {
+  /**
+   * An outline is no use where it cannot be seen, and at a phone's height most of the
+   * shipped document is below the fold: measured on the dev server, the app's scroller is
+   * 796px tall and the last section's top sits at 2856px.
+   *
+   * The arithmetic that decides how far to scroll is `frame/reveal.ts` and
+   * `test/preview/reveal.test.ts` runs it. What is read here is the wiring, which is the
+   * half that can only be looked at.
+   */
+  it('scrolls the frame’s own scroller, never `scrollIntoView`', () => {
+    // `scrollIntoView` scrolls every scrollable ancestor, and the frame's ancestors do
+    // not stop at the frame: the stage box around the iframe is `overflow-auto` and so is
+    // the page. Asking the app to show its footer would move the workbench under it.
+    expect(REVEAL).not.toMatch(/scrollIntoView/);
+    expect(REVEAL).toMatch(/scrollBy\(/);
+  });
+
+  it('is a setting of the panel, on by default, and not in the address', () => {
+    // The address carries what a link should reproduce. This changes nothing a screenshot
+    // would show — it changes what happens when a pointer moves — so it stays local, the
+    // same call `textPass` makes in `Preview.tsx`.
+    expect(PANEL).toMatch(/useState\(true\)/);
+    expect(read('apps/workbench/src/preview/state.ts')).not.toMatch(/follow/);
+  });
+
+  it('follows only a hover, never the setting being changed', () => {
+    // `follow` travels with the id rather than being read where the scroll happens: held
+    // apart, it would be a second value in that effect's dependencies, and switching the
+    // setting on would scroll a frame nobody had pointed at.
+    expect(HOOK).toMatch(/\{ id: string; follow: boolean \}/);
+    expect(HOOK).toMatch(/hoveredSection\?\.follow/);
+    expect(HOOK).toMatch(/\[hoveredSection, loaded\]/);
   });
 });
 

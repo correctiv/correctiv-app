@@ -19,6 +19,7 @@ import {
 import { attachConsole } from './frame/console';
 import { applyTheme, BASE, driveRoute, frameRoute, keepFramePath, navigate } from './frame/handle';
 import { outlineByTestId } from './frame/highlight';
+import { reveal } from './frame/reveal';
 import { armPicker, openInEditor, type Located } from './frame/locate';
 import { audit, setOutline, type Finding } from './frame/measure';
 import { waitReady } from './frame/ready';
@@ -76,8 +77,17 @@ export function usePreview() {
   } | null>(null);
   const [picking, setPicking] = useState(false);
   const [hit, setHit] = useState<{ label: string; frames: Located[] } | null>(null);
-  /** The home document's row currently hovered or focused, or none. */
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  /**
+   * The home document's row currently hovered or focused, and whether the frame follows
+   * it there. None when nothing is hovered.
+   *
+   * The two travel together because they are read together, once, in the effect below:
+   * holding `follow` apart would put a second value in that effect's dependencies and
+   * make a change of setting re-run a scroll nobody asked for.
+   */
+  const [hoveredSection, setHoveredSection] = useState<{ id: string; follow: boolean } | null>(
+    null,
+  );
   /** The innermost frame is the usual answer, so it is the one preselected. */
   const [selected, setSelected] = useState(0);
   /** Bumped on every load, so everything injected into the frame is re-injected. */
@@ -305,8 +315,15 @@ export function usePreview() {
    * whole document.
    */
   useEffect(() => {
-    outlineByTestId(win(), hoveredSection ? sectionTestId(hoveredSection) : null);
-    return () => outlineByTestId(win(), null);
+    const node = outlineByTestId(win(), hoveredSection ? sectionTestId(hoveredSection.id) : null);
+    // An outline below the fold is an outline nobody can see, and more than half the
+    // shipped document's blocks are below it at a phone's height. `reveal` moves the
+    // frame's own scroller and only when it has to; `reveal.ts` says why not
+    // `scrollIntoView`.
+    if (node && hoveredSection?.follow) reveal(node);
+    return () => {
+      outlineByTestId(win(), null);
+    };
   }, [hoveredSection, loaded]);
 
   const onLoad = useCallback(() => {
