@@ -115,10 +115,25 @@ describe('the shipped home document', () => {
     expect(missing.map((section) => `${section.id} → ${section.module}`)).toEqual([]);
   });
 
-  it('names every renderer this app holds, so none is written and never drawn', () => {
-    const named = new Set(layout.sections.map((section) => section.module));
-    expect(Object.keys(HOME_MODULES).filter((module) => !named.has(module))).toEqual([]);
-  });
+  /*
+   * There was a check here asserting the other direction: that the shipped document names
+   * every renderer this app holds, so none is written and never drawn. It is retired by
+   * ADR 0046 §1 and nothing is written to replace it, which is worth saying out loud,
+   * because "we removed a test" is the shape of a mistake.
+   *
+   * It goes because **the condition it flagged stops being a fault.** Before the editor
+   * could add a block, a module the document did not place was unreachable by anybody;
+   * with a palette, it is a module waiting to be used, which is a state a newsroom will
+   * create on purpose the first time it takes a block off the screen for a week.
+   *
+   * What the check was really about — a module nobody can reach — is covered by a
+   * mechanism rather than by an assertion, which is ADR 0031's first rung rather than its
+   * fourth. The palette in `apps/workbench/src/preview/home/Palette.tsx` is built from
+   * `HOME_MODULES` itself, so a module added here appears in the editor with nothing
+   * listing it a second time. And `apps/workbench/test/preview/home-document.test.ts`
+   * already fails on a module with no entry in `MODULE_LABELS`, which is what stops one
+   * reaching a newsroom spelled `faktencheck-rail`.
+   */
 
   /** The spacing of the lifted callout hangs off this id; `modules.tsx` says why. */
   it('still carries the lifted callout under the id the renderer keys on', () => {

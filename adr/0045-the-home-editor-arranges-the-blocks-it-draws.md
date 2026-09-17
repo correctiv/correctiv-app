@@ -3,10 +3,11 @@
 Status: accepted, 2026-09-17, from the design interview held after the product side looked
 at the home-layout configurator that landed today. ~~**Not built.** §8 and §9 are built,
 in [#208](https://github.com/correctiv/correctiv-app/pull/208); the rest is not.~~
-**§8 and §9 in [#208](https://github.com/correctiv/correctiv-app/pull/208), and §1, §2,
-§3 and §5 in [#210](https://github.com/correctiv/correctiv-app/pull/210)**. What is left
-is §4, §6 and §7 — add, remove and reorder, the insertion mark, and the one drag handle
-that replaces the arrow buttons — and §10, the gallery. The second of those changes
+**§8 and §9 in [#208](https://github.com/correctiv/correctiv-app/pull/208), §1, §2,
+§3 and §5 in [#210](https://github.com/correctiv/correctiv-app/pull/210), and §4 and §6 in
+[#213](https://github.com/correctiv/correctiv-app/pull/213)**. What is left is §7, the handle, and §10, the gallery. §7 is reshaped before it is built by
+[ADR 0047](0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md), which
+keeps the arrow buttons rather than replacing them. The second of those changes
 carried the whole of [ADR 0042](0042-the-timeline-belongs-to-the-stage.md) with it, in
 one commit range, as the paragraph below says it has to.
 

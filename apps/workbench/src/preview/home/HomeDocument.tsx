@@ -9,7 +9,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
 
 import {
   MINUTES_IN_DAY,
@@ -28,6 +28,7 @@ import { DEFAULT_DEVICE, preset } from '../devices';
 import { timeOf } from './clock';
 import type { PreviewState } from '../state';
 import { HomeBlock } from './HomeBlock';
+import { InsertMark } from './Palette';
 import { minuteFrom, openedAt, parseMinute, STEP } from './minutes';
 import {
   changedAt,
@@ -36,17 +37,20 @@ import {
   formatLayoutDocument,
   formatTimeOfDay,
   inheritedAt,
+  added,
   moduleLabel,
   moved,
   movedMoment,
   momentAt,
   pointAt,
+  removed,
   settingLabel,
   settingsFor,
   SHIPPED,
   spanOf,
   withHidden,
   withoutMoment,
+  whereAt,
   withSetting,
   type CountSetting,
   type Point,
@@ -266,26 +270,51 @@ export function HomeDocument({
         store provider, an intl provider, a safe-area provider and a gesture root, and one
         per row would be one of each per row; `components/AppHost.tsx` says the rest.
       */}
+      {/*
+        The day, and between every pair of blocks a place to put one. ADR 0045 §6 wants
+        the mark at each end too, so there are one more of them than there are blocks.
+
+        The marks are `role="presentation"` list items: they are not blocks and a reader
+        counting "twelve places on the home screen" should not be told twenty-five. The
+        button inside each keeps its own role and its own label, so nothing is lost by
+        taking the wrapper out of the count.
+      */}
       <AppHost>
-        <ol className="flex flex-col gap-3xs">
-          {layout.sections.map((section, index) => (
-            <Row
-              key={section.id}
-              section={effective.find((held) => held.id === section.id) ?? section}
-              inherited={inherited.find((held) => held.id === section.id) ?? section}
-              point={point}
-              index={index}
-              last={index === layout.sections.length - 1}
-              changed={edited.includes(section.id)}
-              deviceWidth={drawing ? deviceWidth : null}
-              onMove={(delta) => setLayout(moved(layout, section.id, delta))}
-              onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
-              onSetting={(key, value) =>
-                setLayout(withSetting(layout, point, section.id, key, value))
-              }
-              outline={outline}
-              follow={follow}
+        <ol className="flex flex-col">
+          <li role="presentation">
+            <InsertMark
+              where={whereAt(layout, 0)}
+              deviceWidth={deviceWidth}
+              onAdd={(module) => setLayout(added(layout, 0, module))}
             />
+          </li>
+          {layout.sections.map((section, index) => (
+            <Fragment key={section.id}>
+              <Row
+                section={effective.find((held) => held.id === section.id) ?? section}
+                inherited={inherited.find((held) => held.id === section.id) ?? section}
+                point={point}
+                index={index}
+                last={index === layout.sections.length - 1}
+                changed={edited.includes(section.id)}
+                deviceWidth={drawing ? deviceWidth : null}
+                follow={follow}
+                onMove={(delta) => setLayout(moved(layout, section.id, delta))}
+                onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
+                onSetting={(key, value) =>
+                  setLayout(withSetting(layout, point, section.id, key, value))
+                }
+                onRemove={() => setLayout(removed(layout, section.id))}
+                outline={outline}
+              />
+              <li role="presentation">
+                <InsertMark
+                  where={whereAt(layout, index + 1)}
+                  deviceWidth={deviceWidth}
+                  onAdd={(module) => setLayout(added(layout, index + 1, module))}
+                />
+              </li>
+            </Fragment>
           ))}
         </ol>
       </AppHost>
@@ -473,6 +502,7 @@ function Row({
   onMove,
   onHidden,
   onSetting,
+  onRemove,
   outline,
 }: {
   section: HomeSection;
@@ -492,6 +522,8 @@ function Row({
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: string | number | null | undefined) => void;
+  /** Takes the block out of the day, and every change that named it with it. */
+  onRemove: () => void;
   outline: (held: { id: string; follow: boolean } | null) => void;
   /** Whether hovering this row scrolls the frame to it. The panel's setting, not the row's. */
   follow: boolean;
@@ -588,6 +620,26 @@ function Row({
             onClick={() => onMove(1)}
           >
             <ArrowDown aria-hidden="true" />
+          </Button>
+          {/*
+            ADR 0045 §4: remove always deletes, and §5 is why that is not ambiguous —
+            switching a block off is the eye two buttons to the left, and the row
+            collapsing is what tells the two apart on screen.
+
+            No confirmation, and that is a decision rather than an omission. The document
+            is not the file until Save, "Back to the file" is one press away and undoes
+            every edit in the session, and a dialog in front of an edit that is already
+            reversible teaches people to dismiss dialogs. What the label carries instead
+            is the word: `Remove`, not `Hide`.
+          */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-[2rem] hover:text-red-500"
+            aria-label={`Remove ${name} from the day`}
+            onClick={onRemove}
+          >
+            <Trash2 aria-hidden="true" />
           </Button>
         </div>
       </div>

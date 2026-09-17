@@ -222,6 +222,112 @@ export function moved(layout: HomeLayout, id: string, delta: -1 | 1): HomeLayout
   return { ...layout, sections };
 }
 
+// --- adding and removing a block ---------------------------------------------------
+
+/**
+ * The id a new block of this module gets.
+ *
+ * [ADR 0046](../../../../../adr/0046-what-the-editor-may-add-and-what-a-block-is-called.md)
+ * §2: the module's name, and then the smallest suffix the document is not using. A
+ * `callout-teaser` added to a document with none is `callout-teaser`; added to one that
+ * has it, `callout-teaser-2`, then `-3`.
+ *
+ * **An id is an address and not a label**, which is why nothing offers to edit it: a
+ * moment names it, a parse problem carries it, `LIFTED_CALLOUT` in `modules.tsx` hangs a
+ * margin on one, and `sectionTestId` puts it in the rendered tree for the frame's outline
+ * to find. The minted id is uglier than the hand-written ones the shipped document has,
+ * and ADR 0046 §2 says that is correct: a machine that guessed a prettier name would
+ * collide with its next guess.
+ *
+ * A removed id may be minted again, and ADR 0046 §3 is where that is argued: there is one
+ * writer, the document is whole in one file, and "a document somebody has open elsewhere"
+ * does not exist yet. The day it does is the day ADR 0036 §4 is built, and the decision to
+ * revisit belongs there.
+ */
+export function mintId(layout: HomeLayout, module: string): string {
+  const taken = new Set(layout.sections.map((section) => section.id));
+  if (!taken.has(module)) return module;
+  // Bounded rather than a loop with no end: one more than the ids in hand is always
+  // enough, because that many suffixes cannot all be taken by fewer ids.
+  for (let n = 2; n <= taken.size + 2; n += 1) {
+    const id = `${module}-${n}`;
+    if (!taken.has(id)) return id;
+  }
+  /* c8 ignore next */
+  throw new Error(`No free id for ${module}, which the bound above makes impossible.`);
+}
+
+/**
+ * A new block of this module, at this place in the day's order.
+ *
+ * ADR 0045 §4: the arrangement is the document's and the editor writes it. The block
+ * arrives carrying nothing but its id and its module — no settings, not hidden — which is
+ * the honest state of a place somebody has just put down. Every setting it understands
+ * falls back to what `home-settings.ts` declares, and that is the same answer the module
+ * gives when the document says nothing, so the frame draws it exactly as the app would.
+ *
+ * `at` is an index in `sections` and is clamped rather than refused: the insertion mark
+ * hands it one and the ends are the two places it is easiest to be off by one about.
+ */
+export function added(layout: HomeLayout, at: number, module: string): HomeLayout {
+  const sections = [...layout.sections];
+  sections.splice(Math.max(0, Math.min(at, sections.length)), 0, {
+    id: mintId(layout, module),
+    module,
+  });
+  return { ...layout, sections };
+}
+
+/**
+ * The block gone, and with it every change that named it.
+ *
+ * ADR 0045 §4's last paragraph: removing a block takes with it every change that names
+ * it. A change naming a place that is not there is `change-id-unknown` — the parser
+ * reports it and drops it — and **the editor is the half that can know**, so it is the
+ * half that does the taking. Left behind, those changes would print into the file, come
+ * back as a warning on every parse, and describe an hour at which nothing happens.
+ *
+ * A moment left with no changes is kept. It is the same state `withMoment` makes when
+ * somebody puts a point down before saying what changes at it, and a point vanishing
+ * because the last block it mentioned was removed elsewhere in the day would be the
+ * editor undoing a thing nobody asked it to undo.
+ *
+ * An id the document does not have answers with the layout it was given.
+ */
+export function removed(layout: HomeLayout, id: string): HomeLayout {
+  const sections = layout.sections.filter((section) => section.id !== id);
+  if (sections.length === layout.sections.length) return layout;
+
+  return {
+    ...layout,
+    sections,
+    moments: layout.moments.map((moment) => ({
+      ...moment,
+      changes: moment.changes.filter((change) => change.id !== id),
+    })),
+  };
+}
+
+/**
+ * Where an insertion mark puts a block, in words a person can read out.
+ *
+ * The mark's label and the dialog's first line are the only things that say WHERE, since
+ * the mark itself is a hairline between two rows and a dialog covers the list it came
+ * from. Named by the blocks either side rather than by a number, because "after the lead
+ * article" is a place and "at index 3" is an implementation detail somebody would have to
+ * count to check.
+ */
+export function whereAt(layout: HomeLayout, at: number): string {
+  // Clamped the way `added` clamps, and not as tidiness: the two are one index read twice,
+  // and if they disagreed the label would name a place the block does not land in.
+  const index = Math.max(0, Math.min(at, layout.sections.length));
+  const before = layout.sections[index - 1];
+  const after = layout.sections[index];
+  if (!before) return 'at the top of the day';
+  if (!after) return 'at the end of the day';
+  return `between ${moduleLabel(before.module).name} and ${moduleLabel(after.module).name}`;
+}
+
 // --- editing a point --------------------------------------------------------------
 
 /**

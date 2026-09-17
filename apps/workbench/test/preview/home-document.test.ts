@@ -18,12 +18,15 @@ import {
   HOME_LAYOUT_KEY,
   HOME_TIME_KEY,
   inheritedAt,
+  added,
+  mintId,
   moduleLabel,
   MODULE_LABELS,
   momentAt,
   moved,
   movedMoment,
   pointAt,
+  removed,
   sectionTestId,
   SETTING_LABELS,
   settingLabel,
@@ -111,6 +114,11 @@ describe('the document the editor writes', () => {
       SHIPPED,
       moved(SHIPPED, 'hero', -1),
       moved(SHIPPED, 'impact', -1),
+      // A minted id is longer than every hand-written one, so it is also the case most
+      // likely to push a line past the printer's width.
+      added(SHIPPED, 3, 'callout-teaser'),
+      added(added(SHIPPED, 0, 'callout-teaser'), 0, 'callout-teaser'),
+      removed(SHIPPED, 'callout-lifted'),
       withHidden(SHIPPED, null, 'early-access', true),
       withHidden(SHIPPED, AT(11), 'mediathek', true),
       withSetting(SHIPPED, null, 'hero', 'pin', 'https://correctiv.org/x/'),
@@ -206,6 +214,87 @@ describe('the vocabulary the editor offers', () => {
       'hero',
       'callout-lifted',
     ]);
+  });
+
+  /**
+   * ADR 0046 §2: the module's name, then the smallest suffix the document is not using.
+   * An id is an address rather than a label, so nothing offers to edit one and the
+   * minting has to be the only thing that ever writes one.
+   */
+  it('mints an id from the module, and then from the smallest free suffix', () => {
+    // `callout-teaser` is in the shipped document twice already, as `callout-lifted` and
+    // `callout` — hand-written names, which is why the first mint is the bare module.
+    expect(mintId(SHIPPED, 'callout-teaser')).toBe('callout-teaser');
+
+    const once = added(SHIPPED, 0, 'callout-teaser');
+    expect(mintId(once, 'callout-teaser')).toBe('callout-teaser-2');
+    expect(mintId(added(once, 0, 'callout-teaser'), 'callout-teaser')).toBe('callout-teaser-3');
+  });
+
+  it('fills a gap the middle of the run has, rather than counting past it', () => {
+    // Smallest free, not next after the highest. A document that lost its `-2` gets it
+    // back, which is ADR 0046 §3: a removed id may come back, and the reason that is
+    // safe is the single-writer model rather than luck.
+    const three = ['callout-teaser', 'callout-teaser', 'callout-teaser'].reduce(
+      (layout, module) => added(layout, 0, module),
+      SHIPPED,
+    );
+    const gapped = removed(three, 'callout-teaser-2');
+    expect(mintId(gapped, 'callout-teaser')).toBe('callout-teaser-2');
+  });
+
+  it('adds a block carrying nothing, at the place it was asked for', () => {
+    const at2 = added(SHIPPED, 2, 'impact-footer');
+    expect(at2.sections[2]).toEqual({ id: 'impact-footer', module: 'impact-footer' });
+    expect(at2.sections).toHaveLength(SHIPPED.sections.length + 1);
+    // Nothing else moved, and the block carries no settings and no `hidden`: the honest
+    // state of a place somebody has just put down, and the state in which every setting
+    // it understands falls back to what the module itself would do.
+    expect(ids(at2).filter((id) => id !== 'impact-footer')).toEqual(ids(SHIPPED));
+
+    // Both ends, and past both ends, because the insertion mark hands in an index.
+    expect(ids(added(SHIPPED, 0, 'impact-footer'))[0]).toBe('impact-footer');
+    expect(ids(added(SHIPPED, SHIPPED.sections.length, 'impact-footer')).at(-1)).toBe(
+      'impact-footer',
+    );
+    expect(ids(added(SHIPPED, 99, 'impact-footer')).at(-1)).toBe('impact-footer');
+    expect(ids(added(SHIPPED, -3, 'impact-footer'))[0]).toBe('impact-footer');
+  });
+
+  /**
+   * ADR 0045 §4: removing a block takes with it every change that names it. A change
+   * naming a place that is not there is `change-id-unknown` — the parser reports it and
+   * drops it — and the editor is the half that can know.
+   */
+  it('removes a block and every change that named it', () => {
+    // `callout-lifted` is named by the 11:00 moment and by the 14:00 one.
+    const before = SHIPPED.moments.flatMap((moment) =>
+      moment.changes.filter((change) => change.id === 'callout-lifted'),
+    );
+    expect(before.length).toBeGreaterThan(0);
+
+    const gone = removed(SHIPPED, 'callout-lifted');
+    expect(ids(gone)).not.toContain('callout-lifted');
+    expect(
+      gone.moments.flatMap((moment) => moment.changes.filter((c) => c.id === 'callout-lifted')),
+    ).toEqual([]);
+    // And what the core says about the result, which is the only opinion that counts:
+    // a document the parser reads back without a complaint.
+    expect(parseHomeLayout(JSON.parse(formatLayoutDocument(gone))).problems).toEqual([]);
+  });
+
+  it('keeps a moment whose last change it just took away', () => {
+    // A point is a thing somebody put down, and `withMoment` makes an empty one on
+    // purpose. One emptying itself because a block was removed elsewhere in the day
+    // would be the editor undoing something nobody asked it to undo.
+    const alone = withHidden(withMoment(SHIPPED, AT(9)), AT(9), 'briefing', true);
+    const gone = removed(alone, 'briefing');
+    expect(momentAt(gone, AT(9))).not.toBeNull();
+    expect(momentAt(gone, AT(9))!.changes).toEqual([]);
+  });
+
+  it('answers with what it was given for an id the document does not have', () => {
+    expect(removed(SHIPPED, 'nothing-by-this-name')).toBe(SHIPPED);
   });
 
   /**
