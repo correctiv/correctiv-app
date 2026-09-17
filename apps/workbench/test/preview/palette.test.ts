@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { ROOT } from '../../plugin/collect.ts';
-import { MODULE_LABELS, SHIPPED, whereAt } from '../../src/preview/home/document';
+import { blockName, SHIPPED, whereAt } from '../../src/preview/home/document';
 import { code } from '../source.ts';
 
 /**
@@ -40,9 +40,20 @@ describe('where a block is going, in words', () => {
   });
 
   it('names the blocks either side, in the words the rows use', () => {
-    const first = MODULE_LABELS[SHIPPED.sections[0]!.module]!.name;
-    const second = MODULE_LABELS[SHIPPED.sections[1]!.module]!.name;
-    expect(whereAt(SHIPPED, 1)).toBe(`between ${first} and ${second}`);
+    expect(whereAt(SHIPPED, 1)).toBe(
+      `between ${blockName(SHIPPED.sections[0]!)} and ${blockName(SHIPPED.sections[1]!)}`,
+    );
+  });
+
+  it('tells two blocks of one module apart, which the module’s words cannot', () => {
+    // The shipped document has the callout twice, so "between Participation callout and
+    // Participation callout" was a place and "Remove Participation callout from the day"
+    // was the name of two different buttons. Measured in the accessibility tree by a cold
+    // review. The id is what is unique and it is already at the end of every row.
+    const callouts = SHIPPED.sections.filter((section) => section.module === 'callout-teaser');
+    expect(callouts.length).toBeGreaterThan(1);
+    expect(new Set(callouts.map(blockName)).size).toBe(callouts.length);
+    for (const section of callouts) expect(blockName(section)).toContain(section.id);
   });
 
   it('answers for an index past the end rather than throwing', () => {
@@ -67,8 +78,12 @@ describe('the palette is the registry', () => {
     // palette without an entry here would be offered as `faktencheck-rail`.
     // `home-document.test.ts` holds this in both directions against the app's source;
     // what is held here is that the palette shows the label rather than the id.
+    // Only the first half is held here. `MODULE_LABELS` is a literal in the module this
+    // file imports, so a floor under its size would be a floor within nothing of zero —
+    // and the real check, in both directions and against the app's own source, is
+    // `home-document.test.ts`'s "has a name and a description for every module the app
+    // can draw". A cold review found the floor here doing nothing and it is gone.
     expect(PALETTE).toMatch(/moduleLabel\(module\)/);
-    expect(Object.keys(MODULE_LABELS).length).toBeGreaterThan(0);
   });
 
   it('no longer refuses a module the shipped document does not place', () => {
@@ -83,19 +98,23 @@ describe('the palette is the registry', () => {
 });
 
 describe('the marks and the verbs they carry', () => {
-  it('puts a mark at each end as well as between every pair', () => {
-    // One more mark than there are blocks. Read as the two call sites it takes: the one
-    // before the map, and the one inside it that follows each row.
-    expect(PANEL).toMatch(/whereAt\(layout, 0\)/);
-    expect(PANEL).toMatch(/whereAt\(layout, index \+ 1\)/);
-    expect(PANEL).toMatch(/added\(layout, 0, module\)/);
-    expect(PANEL).toMatch(/added\(layout, index \+ 1, module\)/);
+  it('puts a mark before every block and one after the last', () => {
+    // One more mark than there are blocks, out of two call sites: the one each row draws
+    // above itself, and the one after the list for the gap no block follows.
+    expect(PANEL).toMatch(/whereAt\(layout, index\)/);
+    expect(PANEL).toMatch(/whereAt\(layout, layout\.sections\.length\)/);
+    expect(PANEL).toMatch(/added\(layout, index, module\)/);
+    expect(PANEL).toMatch(/added\(layout, layout\.sections\.length, module\)/);
   });
 
-  it('keeps the marks out of the count of what is on the home screen', () => {
-    // A reader counting the places on the home screen should hear twelve, not
-    // twenty-five. The button inside each mark keeps its own role and its own label.
-    expect(PANEL).toMatch(/<li role="presentation">/);
+  it('keeps the list a list, so a reader hears the blocks and not the gaps', () => {
+    // A `list` may own only `listitem`s. The marks were their own presentational items
+    // for a while, and Chrome did report twelve items — but thirteen buttons as
+    // non-`listitem` children of a list is a thing other assistive technology may resolve
+    // differently. Each mark is inside the row it comes before now, and the last one is
+    // outside the list entirely, which is simply valid and needs no prediction.
+    expect(PANEL).not.toMatch(/role="presentation"/);
+    expect(PANEL).toMatch(/\{before\}/);
   });
 
   it('removes through the one function that also takes the changes', () => {
@@ -103,6 +122,25 @@ describe('the marks and the verbs they carry', () => {
     // `removed` is the half that knows. A row calling `filter` on the sections itself
     // would leave `change-id-unknown` behind on every parse.
     expect(PANEL).toMatch(/removed\(layout, section\.id\)/);
-    expect(PANEL).toMatch(/aria-label=\{`Remove \$\{name\} from the day`\}/);
+    expect(PANEL).toMatch(/aria-label=\{`Remove \$\{spoken\} from the day`\}/);
+  });
+
+  it('names a specimen without wrapping the app’s own controls in a button', () => {
+    /*
+     * A cold review measured what the wrapped version cost: nine of the modules carry
+     * pressables of their own, so clicking the picture of the lead article added nothing,
+     * and clicking "Teilnehmen" inside the callout closed the dialog and added nothing,
+     * silently. React reported `<button> cannot be a descendant of <button>` on every
+     * open and nothing here could see it — `workbench:renders` fails on a console error
+     * and never opens a dialog.
+     */
+    expect(PALETTE).toMatch(/inert/);
+    expect(PALETTE).toMatch(/absolute inset-0/);
+    // The drawing is a sibling of the button rather than its child: the `<button>` closes
+    // before `HomeBlock` is reached.
+    const button = PALETTE.indexOf('onClick={onPick}');
+    const closed = PALETTE.indexOf('</button>', button);
+    expect(closed).toBeGreaterThan(-1);
+    expect(PALETTE.indexOf('<HomeBlock')).toBeGreaterThan(closed);
   });
 });

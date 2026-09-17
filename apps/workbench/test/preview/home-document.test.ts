@@ -114,8 +114,11 @@ describe('the document the editor writes', () => {
       SHIPPED,
       moved(SHIPPED, 'hero', -1),
       moved(SHIPPED, 'impact', -1),
-      // A minted id is longer than every hand-written one, so it is also the case most
-      // likely to push a line past the printer's width.
+      // The only documents here that an add or a remove produced, which is the whole of
+      // why they are in this list. Not, as this comment claimed until a cold review
+      // measured it, the cases nearest the printer's width: a minted id takes the longest
+      // line to 75 characters, exactly where the shipped document already has it, against
+      // a `printWidth` of 100. The two explicit edge cases below are what covers the break.
       added(SHIPPED, 3, 'callout-teaser'),
       added(added(SHIPPED, 0, 'callout-teaser'), 0, 'callout-teaser'),
       removed(SHIPPED, 'callout-lifted'),
@@ -241,6 +244,21 @@ describe('the vocabulary the editor offers', () => {
     );
     const gapped = removed(three, 'callout-teaser-2');
     expect(mintId(gapped, 'callout-teaser')).toBe('callout-teaser-2');
+  });
+
+  it('refuses a module name no document could carry', () => {
+    // The only input a cold review found where an editing operation produced a file the
+    // core rejects: an empty name mints an empty id and the parser answers
+    // `section-id-invalid`. The palette cannot reach it, so what this holds is the
+    // precondition rather than a path somebody can walk.
+    for (const bad of ['', ' ', '-x', '2x', 'a b', 'a/b', '__proto__']) {
+      expect(() => mintId(SHIPPED, bad)).toThrow(/module name/);
+      expect(() => added(SHIPPED, 0, bad)).toThrow(/module name/);
+    }
+    // And the shape every real module has still passes.
+    for (const good of ['callout-teaser', 'home-header', 'x', 'x-2']) {
+      expect(() => mintId(SHIPPED, good)).not.toThrow();
+    }
   });
 
   it('adds a block carrying nothing, at the place it was asked for', () => {

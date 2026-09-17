@@ -127,12 +127,14 @@ describe('the shipped home document', () => {
    * create on purpose the first time it takes a block off the screen for a week.
    *
    * What the check was really about — a module nobody can reach — is covered by a
-   * mechanism rather than by an assertion, which is ADR 0031's first rung rather than its
-   * fourth. The palette in `apps/workbench/src/preview/home/Palette.tsx` is built from
-   * `HOME_MODULES` itself, so a module added here appears in the editor with nothing
-   * listing it a second time. And `apps/workbench/test/preview/home-document.test.ts`
-   * already fails on a module with no entry in `MODULE_LABELS`, which is what stops one
-   * reaching a newsroom spelled `faktencheck-rail`.
+   * mechanism rather than by an assertion. The palette in
+   * `apps/workbench/src/preview/home/Palette.tsx` is built from `HOME_MODULES` itself, so
+   * a module added here appears in the editor with nothing listing it a second time.
+   * There is no second list to fall behind, which is not one of ADR 0031's four rungs so
+   * much as the thing all four are for; ADR 0046 §1 is where the trade is argued in full.
+   * And `apps/workbench/test/preview/home-document.test.ts` already fails on a module
+   * with no entry in `MODULE_LABELS`, which is what stops one reaching a newsroom spelled
+   * `faktencheck-rail`.
    */
 
   /** The spacing of the lifted callout hangs off this id; `modules.tsx` says why. */

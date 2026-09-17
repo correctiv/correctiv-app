@@ -245,6 +245,18 @@ export function moved(layout: HomeLayout, id: string, delta: -1 | 1): HomeLayout
  * revisit belongs there.
  */
 export function mintId(layout: HomeLayout, module: string): string {
+  /*
+   * The one input that made an editor operation produce a file the core refuses: an empty
+   * module name mints an empty id, and the parser answers `section-id-invalid`. Not
+   * reachable from the palette, which offers `Object.keys(HOME_MODULES)` and nothing else
+   * — so this is a precondition rather than a bug, found by a cold review feeding this
+   * function names no registry would hold. Refused at the door, where the message names
+   * the caller, rather than at a parse of a file somebody has already saved.
+   */
+  if (!/^[a-z][\da-z-]*$/i.test(module)) {
+    throw new Error(`Not a module name a document can carry: ${JSON.stringify(module)}`);
+  }
+
   const taken = new Set(layout.sections.map((section) => section.id));
   if (!taken.has(module)) return module;
   // Bounded rather than a loop with no end: one more than the ids in hand is always
@@ -309,6 +321,23 @@ export function removed(layout: HomeLayout, id: string): HomeLayout {
 }
 
 /**
+ * A block named so that no two controls in the list share a name.
+ *
+ * The module's words alone are not unique and the shipped document proves it: the callout
+ * is two sections, so "Remove Participation callout from the day" was the name of two
+ * different buttons, and "between Participation callout and Participation callout" was a
+ * place. Measured in the accessibility tree by a cold review.
+ *
+ * The id is what is unique, and it is already on screen at the end of every row
+ * (ADR 0046 §2: the editor shows an id and offers no way to edit one), so a label that
+ * carries it matches what a person can see. Longer to hear, and correct, which is the
+ * right way round for a control somebody is being asked to press.
+ */
+export function blockName(section: HomeSection): string {
+  return `${moduleLabel(section.module).name} (${section.id})`;
+}
+
+/**
  * Where an insertion mark puts a block, in words a person can read out.
  *
  * The mark's label and the dialog's first line are the only things that say WHERE, since
@@ -325,7 +354,7 @@ export function whereAt(layout: HomeLayout, at: number): string {
   const after = layout.sections[index];
   if (!before) return 'at the top of the day';
   if (!after) return 'at the end of the day';
-  return `between ${moduleLabel(before.module).name} and ${moduleLabel(after.module).name}`;
+  return `between ${blockName(before)} and ${blockName(after)}`;
 }
 
 // --- editing a point --------------------------------------------------------------

@@ -60,9 +60,9 @@ export function InsertMark({
         {/*
           A hairline that grows a `+` when it is pointed at or focused, and keeps the
           `+` while its dialog is open. Between two blocks there is otherwise nothing to
-          suggest a gap can be filled, and a row of permanent plus signs down a list of
-          twelve would compete with the blocks for a reader's eye — which is what §6's
-          word "thin" is about.
+          suggest a gap can be filled, and a permanent plus sign in every gap down the
+          list would compete with the blocks for a reader's eye, which is what ADR 0045
+          §6's word "thin" is about.
         */}
         <button
           type="button"
@@ -132,8 +132,8 @@ export function InsertMark({
  * The drawing is cut off at a height rather than shown whole, and that is the one place
  * this departs from "drawn as §3 draws a block". §3 is about WIDTH — a block is the size
  * it is on the phone, so it is recognisable as that thing — and it says nothing about
- * height. A palette is read by recognising, and eleven modules at their real heights is
- * about three thousand pixels of scrolling to answer "which one is the video row".
+ * height. A palette is read by recognising, and every module at its real height is more
+ * scrolling than the question "which one is the video row" is worth.
  *
  * A `section` invented here rather than taken from the document, because the specimen is
  * not in the document: it has no settings, no `hidden`, and an id that exists only to
@@ -153,23 +153,49 @@ function Specimen({
   const section: HomeSection = { id: `palette-${module}`, module };
 
   return (
-    <li>
+    <li className="relative">
+      {/*
+        **The tile is a button laid OVER the drawing, not a button wrapped around it**,
+        and that is a fault a cold review found rather than a preference.
+
+        Wrapped, the app's own pressables end up inside this one. Measured: nine of the
+        modules carry pressables of their own, so clicking the picture of the lead article
+        added nothing at all, and clicking "Teilnehmen" inside the callout closed the
+        dialog and added nothing, silently. React reported `<button> cannot be a
+        descendant of <button>` on every open, and nothing in this repository could see it
+        — `workbench:renders` fails on a console error but never opens a dialog.
+
+        So the drawing is `inert`: out of the tab order, out of the accessibility tree and
+        deaf to the pointer, which also takes the palette from thirty-nine tabbable things
+        down to one per tile. The button is a transparent sheet over the whole tile and
+        carries the only accessible name. It comes first in the markup so that `peer-*`
+        can style the tile behind it.
+      */}
       <button
         type="button"
         onClick={onPick}
-        className={cn(
-          'flex w-full flex-col overflow-hidden rounded-md border border-stroke text-left',
-          'hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-        )}
+        className="peer absolute inset-0 z-10 rounded-md focus-visible:outline-none"
       >
-        <span className="flex w-full flex-col gap-4xs border-b border-stroke p-xs">
-          <span className="text-m font-semibold text-on-canvas">{name}</span>
-          <span className="text-s leading-relaxed text-on-canvas-muted">{what}</span>
-        </span>
-        <span className={cn('w-full overflow-hidden bg-canvas', SPECIMEN)}>
-          <HomeBlock section={section} deviceWidth={deviceWidth} />
+        <span className="sr-only">
+          Add {name}. {what}
         </span>
       </button>
+      <div
+        // eslint-disable-next-line react/no-unknown-property
+        inert
+        className={cn(
+          'flex w-full flex-col overflow-hidden rounded-md border border-stroke',
+          'peer-hover:border-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
+        )}
+      >
+        <div className="flex w-full flex-col gap-4xs border-b border-stroke p-xs">
+          <span className="text-m font-semibold text-on-canvas">{name}</span>
+          <span className="text-s leading-relaxed text-on-canvas-muted">{what}</span>
+        </div>
+        <div className={cn('w-full overflow-hidden bg-canvas', SPECIMEN)}>
+          <HomeBlock section={section} deviceWidth={deviceWidth} />
+        </div>
+      </div>
     </li>
   );
 }

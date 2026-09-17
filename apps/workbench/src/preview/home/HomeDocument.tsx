@@ -9,7 +9,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react';
-import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import {
   MINUTES_IN_DAY,
@@ -50,6 +50,7 @@ import {
   spanOf,
   withHidden,
   withoutMoment,
+  blockName,
   whereAt,
   withSetting,
   type CountSetting,
@@ -271,52 +272,52 @@ export function HomeDocument({
         per row would be one of each per row; `components/AppHost.tsx` says the rest.
       */}
       {/*
-        The day, and between every pair of blocks a place to put one. ADR 0045 §6 wants
-        the mark at each end too, so there are one more of them than there are blocks.
+        The day, and before every block a place to put one. ADR 0045 §6 wants the mark at
+        each end too, so there is one more of them than there are blocks.
 
-        The marks are `role="presentation"` list items: they are not blocks and a reader
-        counting "twelve places on the home screen" should not be told twenty-five. The
-        button inside each keeps its own role and its own label, so nothing is lost by
-        taking the wrapper out of the count.
+        **Each mark lives inside the row it comes before**, and the last one lives outside
+        the list, because a `list` may own only `listitem`s. The marks were their own
+        `role="presentation"` items for a while and Chrome did report the twelve blocks as
+        twelve items — but thirteen buttons as non-`listitem` children of a list is a thing
+        other assistive technology may resolve differently, and a structure that is simply
+        valid needs no prediction about who resolves what.
       */}
       <AppHost>
         <ol className="flex flex-col">
-          <li role="presentation">
-            <InsertMark
-              where={whereAt(layout, 0)}
-              deviceWidth={deviceWidth}
-              onAdd={(module) => setLayout(added(layout, 0, module))}
-            />
-          </li>
           {layout.sections.map((section, index) => (
-            <Fragment key={section.id}>
-              <Row
-                section={effective.find((held) => held.id === section.id) ?? section}
-                inherited={inherited.find((held) => held.id === section.id) ?? section}
-                point={point}
-                index={index}
-                last={index === layout.sections.length - 1}
-                changed={edited.includes(section.id)}
-                deviceWidth={drawing ? deviceWidth : null}
-                follow={follow}
-                onMove={(delta) => setLayout(moved(layout, section.id, delta))}
-                onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
-                onSetting={(key, value) =>
-                  setLayout(withSetting(layout, point, section.id, key, value))
-                }
-                onRemove={() => setLayout(removed(layout, section.id))}
-                outline={outline}
-              />
-              <li role="presentation">
+            <Row
+              key={section.id}
+              section={effective.find((held) => held.id === section.id) ?? section}
+              inherited={inherited.find((held) => held.id === section.id) ?? section}
+              point={point}
+              index={index}
+              last={index === layout.sections.length - 1}
+              changed={edited.includes(section.id)}
+              deviceWidth={drawing ? deviceWidth : null}
+              follow={follow}
+              before={
                 <InsertMark
-                  where={whereAt(layout, index + 1)}
+                  where={whereAt(layout, index)}
                   deviceWidth={deviceWidth}
-                  onAdd={(module) => setLayout(added(layout, index + 1, module))}
+                  onAdd={(module) => setLayout(added(layout, index, module))}
                 />
-              </li>
-            </Fragment>
+              }
+              onMove={(delta) => setLayout(moved(layout, section.id, delta))}
+              onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
+              onSetting={(key, value) =>
+                setLayout(withSetting(layout, point, section.id, key, value))
+              }
+              onRemove={() => setLayout(removed(layout, section.id))}
+              outline={outline}
+            />
           ))}
         </ol>
+        {/* The last gap, which has no block after it to live in. */}
+        <InsertMark
+          where={whereAt(layout, layout.sections.length)}
+          deviceWidth={deviceWidth}
+          onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
+        />
       </AppHost>
 
       <div className="flex flex-wrap items-center gap-xs">
@@ -499,6 +500,7 @@ function Row({
   changed: isChanged,
   deviceWidth,
   follow,
+  before,
   onMove,
   onHidden,
   onSetting,
@@ -527,52 +529,64 @@ function Row({
   outline: (held: { id: string; follow: boolean } | null) => void;
   /** Whether hovering this row scrolls the frame to it. The panel's setting, not the row's. */
   follow: boolean;
+  /** The gap above this block, as a control. It is drawn inside the row so the list stays a list. */
+  before: ReactNode;
 }) {
   const { name, what } = moduleLabel(section.module);
+  /*
+   * What the row's four controls call this block when they are read out. `name` alone is
+   * the module's, and two sections of one module share it — `document.ts` says what that
+   * cost in the accessibility tree.
+   */
+  const spoken = blockName(section);
   const off = Boolean(section.hidden);
   const specs = settingsFor(section.module);
   const hiddenHere = point !== null && Boolean(inherited.hidden) !== off;
 
   return (
-    // Nothing below makes the row operable; the handlers only relay whether the
-    // pointer or the focus is somewhere inside it, and every control a person can
-    // act on is one of its own buttons, checkboxes and labels.
-    //
-    // `outline` is called with `section.id` whether or not `off` is true, and this row
-    // does not check it first. A moment can hide a place at the point being previewed —
-    // `off` is exactly that fact — and the deliberate choice is to let the lookup in
-    // `frame/highlight.ts` discover the absence itself: it finds no matching element and
-    // clears whatever mark was there, which is the same quiet nothing a mistyped id or an
-    // unrendered module would produce. The `off` badge below already tells a person the
-    // row is not on screen; the outline does not need to say it twice, and a row cannot
-    // drift out of sync with a mechanism it does no filtering of its own.
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-    <li
-      className={cn(CARD, 'flex flex-col gap-2xs p-xs', isChanged && 'border-accent')}
-      onPointerEnter={() => outline({ id: section.id, follow })}
-      onPointerLeave={() => outline(null)}
-      onFocus={() => outline({ id: section.id, follow })}
-      onBlur={() => outline(null)}
-    >
-      <div className="flex min-w-0 items-start gap-xs">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2xs">
-            <span
-              className={cn(
-                'text-m font-semibold',
-                off ? 'text-on-canvas-muted' : 'text-on-canvas',
-              )}
-            >
-              {name}
-            </span>
-            {off && <Badge variant="outline">off</Badge>}
-            {isChanged && <Badge>changed</Badge>}
-          </div>
-          <div className={NOTE}>{what}</div>
-        </div>
+    <li className="flex flex-col">
+      {before}
+      {/*
+        Nothing below makes the card operable; the handlers only relay whether the
+        pointer or the focus is somewhere inside it, and every control a person can act on
+        is one of its own buttons and labels.
 
-        <div className="flex shrink-0 items-center gap-4xs">
-          {/*
+        `outline` is called with `section.id` whether or not `off` is true, and this row
+        does not check it first. A moment can hide a place at the point being previewed —
+        `off` is exactly that fact — and the deliberate choice is to let the lookup in
+        `frame/highlight.ts` discover the absence itself: it finds no matching element and
+        clears whatever mark was there, which is the same quiet nothing a mistyped id or
+        an unrendered module would produce. The `off` badge below already tells a person
+        the row is not on screen; the outline does not need to say it twice, and a row
+        cannot drift out of sync with a mechanism it does no filtering of its own.
+      */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+      <div
+        className={cn(CARD, 'flex flex-col gap-2xs p-xs', isChanged && 'border-accent')}
+        onPointerEnter={() => outline({ id: section.id, follow })}
+        onPointerLeave={() => outline(null)}
+        onFocus={() => outline({ id: section.id, follow })}
+        onBlur={() => outline(null)}
+      >
+        <div className="flex min-w-0 items-start gap-xs">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2xs">
+              <span
+                className={cn(
+                  'text-m font-semibold',
+                  off ? 'text-on-canvas-muted' : 'text-on-canvas',
+                )}
+              >
+                {name}
+              </span>
+              {off && <Badge variant="outline">off</Badge>}
+              {isChanged && <Badge>changed</Badge>}
+            </div>
+            <div className={NOTE}>{what}</div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-4xs">
+            {/*
             ADR 0045 §5: this was a checkbox labelled "Shown", under the name, with a
             badge beside it saying the value was set here. What the checkbox had to do
             was tell a person the block was off, and the collapsed row does that now
@@ -587,41 +601,41 @@ function Row({
             there" is the sentence this button has to answer to, and it may well stop
             being a button of its own.
           */}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-pressed={!off}
-            className={cn('size-[2rem]', hiddenHere && 'text-accent')}
-            aria-label={
-              off
-                ? `Switch ${name} on ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
-                : `Switch ${name} off ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
-            }
-            onClick={() => onHidden(!off)}
-          >
-            {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-[2rem]"
-            disabled={index === 0}
-            aria-label={`Move ${name} up`}
-            onClick={() => onMove(-1)}
-          >
-            <ArrowUp aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-[2rem]"
-            disabled={last}
-            aria-label={`Move ${name} down`}
-            onClick={() => onMove(1)}
-          >
-            <ArrowDown aria-hidden="true" />
-          </Button>
-          {/*
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-pressed={!off}
+              className={cn('size-[2rem]', hiddenHere && 'text-accent')}
+              aria-label={
+                off
+                  ? `Switch ${spoken} on ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
+                  : `Switch ${spoken} off ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
+              }
+              onClick={() => onHidden(!off)}
+            >
+              {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-[2rem]"
+              disabled={index === 0}
+              aria-label={`Move ${spoken} up`}
+              onClick={() => onMove(-1)}
+            >
+              <ArrowUp aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-[2rem]"
+              disabled={last}
+              aria-label={`Move ${spoken} down`}
+              onClick={() => onMove(1)}
+            >
+              <ArrowDown aria-hidden="true" />
+            </Button>
+            {/*
             ADR 0045 §4: remove always deletes, and §5 is why that is not ambiguous —
             switching a block off is the eye two buttons to the left, and the row
             collapsing is what tells the two apart on screen.
@@ -632,24 +646,24 @@ function Row({
             reversible teaches people to dismiss dialogs. What the label carries instead
             is the word: `Remove`, not `Hide`.
           */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-[2rem] hover:text-red-500"
-            aria-label={`Remove ${name} from the day`}
-            onClick={onRemove}
-          >
-            <Trash2 aria-hidden="true" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-[2rem] hover:text-red-500"
+              aria-label={`Remove ${spoken} from the day`}
+              onClick={onRemove}
+            >
+              <Trash2 aria-hidden="true" />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-xs">
-        {hiddenHere && <Here />}
-        <code className={cn(CODE, 'ml-auto text-on-canvas-muted')}>{section.id}</code>
-      </div>
+        <div className="flex flex-wrap items-center gap-xs">
+          {hiddenHere && <Here />}
+          <code className={cn(CODE, 'ml-auto text-on-canvas-muted')}>{section.id}</code>
+        </div>
 
-      {/*
+        {/*
         ADR 0045 §3, and §2 is the `off` branch. A block that is not on screen at the
         playhead keeps its row and loses its picture — the whole day stays visible and
         every block stays addressable, and only the drawing is spent on what is showing.
@@ -660,30 +674,31 @@ function Row({
         the panel is mounted behind the rail whether or not it is open, and nothing is
         drawn while it is shut.
       */}
-      {deviceWidth !== null &&
-        (off ? (
-          <p className={cn(NOTE, 'rounded-s border border-dashed border-stroke px-2xs py-3xs')}>
-            Not on screen{' '}
-            {point === null ? 'at the start of the day' : `at ${formatTimeOfDay(point)}`}.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-s border border-stroke">
-            <HomeBlock section={section} deviceWidth={deviceWidth} />
-          </div>
-        ))}
+        {deviceWidth !== null &&
+          (off ? (
+            <p className={cn(NOTE, 'rounded-s border border-dashed border-stroke px-2xs py-3xs')}>
+              Not on screen{' '}
+              {point === null ? 'at the start of the day' : `at ${formatTimeOfDay(point)}`}.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-s border border-stroke">
+              <HomeBlock section={section} deviceWidth={deviceWidth} />
+            </div>
+          ))}
 
-      {specs.map((spec) => (
-        <Setting
-          key={spec.key}
-          module={section.module}
-          spec={spec}
-          value={section.settings?.[spec.key]}
-          inherited={inherited.settings?.[spec.key]}
-          point={point}
-          disabled={off}
-          onSet={(value) => onSetting(spec.key, value)}
-        />
-      ))}
+        {specs.map((spec) => (
+          <Setting
+            key={spec.key}
+            module={section.module}
+            spec={spec}
+            value={section.settings?.[spec.key]}
+            inherited={inherited.settings?.[spec.key]}
+            point={point}
+            disabled={off}
+            onSet={(value) => onSetting(spec.key, value)}
+          />
+        ))}
+      </div>
     </li>
   );
 }
