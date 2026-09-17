@@ -8,7 +8,7 @@ import { Button } from '../../ui/kit/button';
 import type { PreviewState } from '../state';
 import { timeOf } from './clock';
 import { formatTimeOfDay, momentAt, movedMoment, pointAt, withMoment } from './document';
-import { openedAt, parseMinute, percent, snap, STEP } from './minutes';
+import { minuteFrom, openedAt, parseMinute, percent, snap, STEP } from './minutes';
 import { getLayout, setLayout, subscribeLayout } from './store';
 
 /** The hours that carry a number. Every three, because every one of them did not fit. */
@@ -88,7 +88,7 @@ export function Timeline({
   const realMinute = openedAt();
 
   const simulated = state.time !== null;
-  const minute = state.time === null ? realMinute : (parseMinute(state.time) ?? realMinute);
+  const minute = minuteFrom(state.time, realMinute);
   const point = pointAt(layout, minute);
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });

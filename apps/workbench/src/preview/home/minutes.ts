@@ -38,6 +38,19 @@ export function parseMinute(value: string): MinuteOfDay | null {
 }
 
 /**
+ * The minute a drawing shows: the address while it names one, a fallback while it does
+ * not.
+ *
+ * Both `Timeline.tsx` and `HomeDocument.tsx` read `state.time` this way, and it was the
+ * same ternary copied into both when the track moved out of the panel — the exact
+ * failure this file's header describes, one step earlier: a rule in two places agrees
+ * with itself right up until somebody changes one of them.
+ */
+export function minuteFrom(time: string | null, fallback: MinuteOfDay): MinuteOfDay {
+  return time === null ? fallback : (parseMinute(time) ?? fallback);
+}
+
+/**
  * The minute this page was opened at, which is what "the app's own clock" means here.
  *
  * One answer for the whole page, and that is the point of it being a function rather

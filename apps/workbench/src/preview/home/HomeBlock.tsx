@@ -201,11 +201,11 @@ interface HomeBlockProps {
  * every render, and `stateAt` inside it keeps the original object for a section
  * no moment has touched and builds a NEW one, through `applyChange`, for every
  * section a moment has. So identity is preserved for most of the list and lost
- * for exactly the sections the day's moments name — which is the shipped
- * document's two callouts, re-created on every playhead step whether or not
- * anything about them differs. React's default comparator would therefore
- * memoise ten blocks of twelve and redraw two, a thousand times a day, for two
- * minutes of actual difference (ADR 0046 §5, and the table in its Context).
+ * for exactly the sections the day's moments name, re-created on every playhead
+ * step whether or not anything about them differs. React's default comparator
+ * would therefore memoise most of the list and redraw the rest at every minute
+ * of the day, for the few minutes where anything about them is different
+ * (ADR 0046 §5 has the counts, measured, and the table in its Context).
  *
  * Written out rather than a deep-equality import because `HomeSection` is three
  * fields and a flat record of scalars, and `SettingValue` is compared with `===`

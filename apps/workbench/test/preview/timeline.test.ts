@@ -238,8 +238,8 @@ describe('the list is the day, and the blocks are drawn', () => {
      * the drawings were in the document on a plain visit to `/preview` with nothing open
      * — the demo audience ADR 0038 §2 protects, mounting and feeding the app's modules a
      * second time beside the frame that already has them. Measured on the dev server:
-     * 1250 elements on the page with the tool shut, ten of the app's modules among them;
-     * 1032 and none once the page handed the panel the answer.
+     * 1250 elements on the page with the tool shut, the app's own modules among them;
+     * 1032 and none of them once the page handed the panel the answer.
      *
      * Both spellings are held, because the failure is that they part: the page decides
      * and the panel obeys, and a panel that decided for itself would be a second answer
@@ -271,12 +271,14 @@ describe('the list is the day, and the blocks are drawn', () => {
 
 describe('a block draws itself and reads nothing else', () => {
   /*
-   * ADR 0046 §5, and the measurement under it: moving the playhead one step cost 37 ms
-   * with no drawings and 69 ms with twelve, and the shipped document has two moments
-   * over twelve sections — so 1438 of the day's 1440 minutes change nothing about any
-   * block. What makes the memo hold is that the component's whole input is the section:
-   * a block that read the playhead would have a reason to redraw on every step of a drag
-   * no comparator could take away.
+   * ADR 0046 §5, which measured what a drawn list costs per playhead step and how few of
+   * the day's minutes change anything about a block, and decided the drawing re-draws on
+   * its section rather than on the clock. The figures are that record's and are not
+   * copied here; what this file can hold is the shape the decision needs.
+   *
+   * And that shape is: the component's whole input is the section it is given. A block
+   * that read the playhead would have a reason to redraw on every step of a drag, and no
+   * comparator could take it away.
    */
   it('takes the section and the width, and reaches for nothing that moves', () => {
     for (const forbidden of ['../state', './store', './clock', './minutes']) {

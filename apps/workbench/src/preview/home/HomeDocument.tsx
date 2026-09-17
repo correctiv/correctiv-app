@@ -28,7 +28,7 @@ import { DEFAULT_DEVICE, preset } from '../devices';
 import { timeOf } from './clock';
 import { frameSize, type PreviewState } from '../state';
 import { HomeBlock } from './HomeBlock';
-import { openedAt, parseMinute, STEP } from './minutes';
+import { minuteFrom, openedAt, parseMinute, STEP } from './minutes';
 import {
   changedAt,
   differs,
@@ -126,9 +126,9 @@ export function HomeDocument({
    *
    * **The panel is mounted whether or not it is on screen**, by ADR 0038 §1 — a tool that
    * unmounted took its slot target with it, and the console's filter reset every time
-   * somebody looked at something else. That is right for a tool's state and wrong for
-   * twelve drawings of the app: measured on the dev server, the whole list was in the
-   * document on a plain visit to `/preview` with no tool open at all, so the demo
+   * somebody looked at something else. That is right for a tool's state and wrong for a
+   * drawing of every block in the document: measured on the dev server, the whole list
+   * was in the page on a plain visit to `/preview` with no tool open at all, so the demo
    * audience ADR 0038 §2 protects was mounting and feeding the app's modules a second
    * time beside the frame that already has them.
    *
@@ -148,8 +148,9 @@ export function HomeDocument({
   /*
    * The same minute the track under the frame is drawing, out of the same two places:
    * the address while a time is simulated, and `openedAt()` while it is not.
+   * `minuteFrom` is what keeps the two readings one rule.
    */
-  const minute = state.time === null ? openedAt() : (parseMinute(state.time) ?? openedAt());
+  const minute = minuteFrom(state.time, openedAt());
   const point = pointAt(layout, minute);
   const moment = momentAt(layout, point);
   const span = spanOf(layout, point);
@@ -217,8 +218,8 @@ export function HomeDocument({
 
       {/*
         One environment around the whole list, not one per row. `AppEnvironment` mounts a
-        store provider, an intl provider, a safe-area provider and a gesture root, and
-        twelve of each would be twelve of each; `components/AppHost.tsx` says the rest.
+        store provider, an intl provider, a safe-area provider and a gesture root, and one
+        per row would be one of each per row; `components/AppHost.tsx` says the rest.
       */}
       <AppHost>
         <ol className="flex flex-col gap-3xs">
