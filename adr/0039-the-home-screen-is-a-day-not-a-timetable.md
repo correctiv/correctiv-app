@@ -235,11 +235,15 @@ document that can go away.
 
 ### 10. The editor is a timeline, and an edit lands on the point in effect
 
-The panel draws the day as a track: the hours, the moments as stops, the machine's own
-clock as a mark, and a playhead. Moving the playhead tells the framed app what time it
-is. Everything below the track edits **the point the playhead is in** — the day's start,
-or the moment currently in effect — and shows, per control, whether what it shows is
-inherited or set here.
+~~The panel draws the day as a track: the hours, the moments as stops, the machine's own
+clock as a mark, and a playhead.~~ The track is the stage's: it is drawn below the framed
+app, at full width, on the route the document governs, because the hour is a fact about
+what is being looked at rather than an inspection of it — voided by
+[ADR 0042](0042-the-timeline-belongs-to-the-stage.md) §1. Moving the playhead tells the
+framed app what time it is. ~~Everything below the track~~ Everything in the panel, which
+the track is no longer at the top of — same voiding — edits **the point the playhead is
+in** — the day's start, or the moment currently in effect — and shows, per control,
+whether what it shows is inherited or set here.
 
 A new moment is an explicit act ("Point here") rather than a side effect of editing at a
 time no moment exists at. The alternative reads well in a sentence and badly in use: a

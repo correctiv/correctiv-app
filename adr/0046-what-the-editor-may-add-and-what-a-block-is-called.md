@@ -1,9 +1,12 @@
 # ADR 0046 — What the editor may add, what a block is called, and what a drawn row costs
 
-Status: accepted, 2026-09-17. **Not built**, and deliberately so: this record answers the
-questions [ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) left to its
-carrying-out and nothing else, so that the carrying-out is a build rather than a build
-plus four arguments. The build is 0042 and 0045 §1 to §7, in that order.
+Status: accepted, 2026-09-17. ~~**Not built**, and deliberately so~~ — **§5 and §6 are
+carried out** in [#210](https://github.com/correctiv/correctiv-app/pull/210), which built
+0042 and 0045 §1, §2, §3 and §5; §1 to §4 belong to 0045 §4, §6 and §7 and are still
+ahead. This record answers the questions
+[ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) left to its carrying-out
+and nothing else, so that the carrying-out is a build rather than a build plus four
+arguments. The build is 0042 and 0045 §1 to §7, in that order.
 
 ## Context
 

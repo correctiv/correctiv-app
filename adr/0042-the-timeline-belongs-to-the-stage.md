@@ -1,7 +1,10 @@
 # ADR 0042 — The timeline belongs to the stage, not the tools
 
 Status: accepted, 2026-09-17, from the design interview held after the architecture
-meeting in [#200](https://github.com/correctiv/correctiv-app/issues/200). **Not built.**
+meeting in [#200](https://github.com/correctiv/correctiv-app/issues/200). ~~**Not
+built.**~~ **Built in [#210](https://github.com/correctiv/correctiv-app/pull/210)**, all
+five decisions, together with ADR 0045 §1, §2, §3 and §5, which 0045's first line makes
+the same piece of work.
 
 ## Context
 
@@ -230,3 +233,13 @@ waiting is that a strike on a claim which is still true would be a record rewrit
 right in advance. The rest of ADR 0039 §10 is unaffected wherever the track is drawn: an
 edit lands on the point in effect, a new moment is an explicit act, and the editor never
 writes a change equal to what the point already inherits.
+
+**Struck in [#210](https://github.com/correctiv/correctiv-app/pull/210), and one sentence
+more than this paragraph had foreseen.** The carrying-out found a second location in the
+same section — "Everything below the track edits the point the playhead is in" — which
+names a place that no longer exists once the track is under the frame. The claim about
+*what* an edit lands on is untouched and stands; only the *where* was struck, with the
+same clause and the same link. Worth recording that the paragraph above named one sentence
+and the work found two, because that is the ordinary case and not a slip: a record can see
+which claim its decision contradicts and cannot reliably see which sentence a reader will
+use to find the thing.

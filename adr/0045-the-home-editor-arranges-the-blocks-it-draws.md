@@ -1,9 +1,16 @@
 # ADR 0045 — The home editor arranges the blocks it draws, and a module declares its own settings
 
 Status: accepted, 2026-09-17, from the design interview held after the product side looked
-at the home-layout configurator that landed today. ~~**Not built.**~~ **§8 and §9 are
-built**, in [#208](https://github.com/correctiv/correctiv-app/pull/208); the rest is not.
-Those two are the sections that are NOT part of the one piece of work below — a count is a
+at the home-layout configurator that landed today. ~~**Not built.** §8 and §9 are built,
+in [#208](https://github.com/correctiv/correctiv-app/pull/208); the rest is not.~~
+**§8 and §9 in [#208](https://github.com/correctiv/correctiv-app/pull/208), and §1, §2,
+§3 and §5 in [#210](https://github.com/correctiv/correctiv-app/pull/210)**. What is left
+is §4, §6 and §7 — add, remove and reorder, the insertion mark, and the one drag handle
+that replaces the arrow buttons — and §10, the gallery. The second of those changes
+carried the whole of [ADR 0042](0042-the-timeline-belongs-to-the-stage.md) with it, in
+one commit range, as the paragraph below says it has to.
+
+§8 and §9 are the sections that are NOT part of the one piece of work below — a count is a
 control inside a settings block that already exists, and the generator moves a declaration
 between packages without touching the list or the playhead — so building them alone leaves
 no half of anything waiting for the other.
