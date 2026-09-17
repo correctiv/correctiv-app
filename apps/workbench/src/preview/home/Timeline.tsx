@@ -93,6 +93,29 @@ export function Timeline({
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
+  /*
+   * The two writes §3 allows, each refusing itself while the tool is shut.
+   *
+   * The markup below already withholds the button, and the track below already withholds
+   * the drag, so these guards look redundant and are not: a cold review measured what the
+   * check on them was worth, and a rendered condition is the thing somebody edits. The
+   * guard is in the write, where the rule is, and the markup decides only what is offered.
+   *
+   * `getLayout()` rather than the `layout` above, because a drag writes many times
+   * between two renders: the closed-over document would be the one the drag started on,
+   * so every step after the first would move the moment back from where the last put it.
+   */
+  const moveMoment = (from: MinuteOfDay, to: MinuteOfDay) => {
+    if (!editing) return;
+    setLayout(movedMoment(getLayout(), from, to));
+  };
+
+  const addPoint = () => {
+    if (!editing) return;
+    setLayout(withMoment(getLayout(), snap(minute)));
+    goTo(snap(minute));
+  };
+
   return (
     <div
       className={cn(
@@ -111,13 +134,7 @@ export function Timeline({
         labelled={!compact}
         editing={editing}
         onGoTo={goTo}
-        /*
-         * `getLayout()` rather than the `layout` above: a drag writes many times between
-         * two renders, and the closed-over document would be the one the drag started on,
-         * so every step after the first would move the moment back from where the last
-         * step put it.
-         */
-        onMoveMoment={(from, to) => setLayout(movedMoment(getLayout(), from, to))}
+        onMoveMoment={moveMoment}
       />
 
       <label className="flex shrink-0 items-center gap-2xs">
@@ -174,10 +191,7 @@ export function Timeline({
           className="shrink-0"
           aria-label="Make this minute a moment"
           disabled={momentAt(layout, snap(minute)) !== null}
-          onClick={() => {
-            setLayout(withMoment(getLayout(), snap(minute)));
-            goTo(snap(minute));
-          }}
+          onClick={addPoint}
         >
           <Plus aria-hidden="true" />
           <span aria-hidden="true" className="max-sm:hidden">

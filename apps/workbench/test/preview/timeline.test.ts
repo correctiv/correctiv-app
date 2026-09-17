@@ -117,13 +117,37 @@ describe('the track is the stage’s and not the tool’s', () => {
   });
 
   it('keeps one order down the screen, so the frame is measured without the track', () => {
-    // ADR 0042 §4: frame, then timeline, then the tools, at every width. `stageRef` is
-    // what `useStage` fits the frame into, so a track inside it would make the frame fit
-    // itself — and the frame would shrink by the height of the thing below it.
-    const shell = STAGE.slice(STAGE.indexOf('export function Stage'));
-    for (const half of [shell.indexOf('ref={stageRef}'), shell.lastIndexOf('ref={stageRef}')]) {
-      expect(half).toBeGreaterThan(-1);
-      expect(shell.indexOf('{timeline}', half)).toBeGreaterThan(half);
+    /*
+     * ADR 0042 §4: frame, then timeline, then the tools, at every width. `stageRef` is
+     * what `useStage` fits the frame into, so a track INSIDE it would make the frame fit
+     * itself, and the frame would shrink by the height of the thing below it.
+     *
+     * So what has to be read is nesting, and an earlier version of this read order —
+     * "`{timeline}` appears after `ref={stageRef}`" — which is true of a `{timeline}`
+     * sitting inside that very element. Measured in a cold review: moved into the
+     * measured box, in each of the two branches in turn, and this check stayed green
+     * over exactly the arrangement its own comment described as the failure.
+     *
+     * Indentation is the nesting, because `oxfmt` decides it and `npm run check` runs
+     * `oxfmt --check`: two lines at the same indent in one JSX block are siblings. That
+     * is a real dependency on the formatter and it is the honest one to take — the
+     * alternative is balancing tags in a regular expression, which is the thing regular
+     * expressions cannot do.
+     */
+    const lines = STAGE.split('\n');
+    const indent = (line: string) => line.length - line.trimStart().length;
+
+    const boxes = lines.filter((line) => line.includes('ref={stageRef}'));
+    const tracks = lines.filter((line) => line.trim() === '{timeline}');
+    // Two branches, `host` and framed, and each draws one of each.
+    expect(boxes).toHaveLength(2);
+    expect(tracks).toHaveLength(2);
+
+    for (const [box, track] of boxes.map((box, at) => [box, tracks[at]] as const)) {
+      // The box's own line is `<div` plus attributes, so the element opens one line up
+      // whenever the attributes wrap; either way its indent is the element's.
+      expect(indent(track)).toBe(indent(box));
+      expect(lines.indexOf(track)).toBeGreaterThan(lines.indexOf(box));
     }
   });
 
@@ -201,13 +225,22 @@ describe('looking never changes anything', () => {
    * the tool open. The line is reading the document versus writing it, which is the same
    * line `apps/mobile/src/lib/home/clock.ts` draws about its own key.
    */
-  it('makes every write on the track conditional on the tool being open', () => {
+  it('makes every write on the track refuse itself while the tool is shut', () => {
+    /*
+     * The guard is in the write and not only in the markup, and that is the finding of a
+     * cold review rather than a preference: asked only whether an `{editing &&` stood
+     * before the first `withMoment(`, this check was green over a real guard changed to
+     * `{true && (` with a decorative `{editing &&` left above it. A rendered condition is
+     * what somebody edits; the rule belongs where the write is.
+     *
+     * So both writers open by refusing, and what is counted is that every function which
+     * reaches `setLayout` does. `snap` and `goTo` do not write and are not counted.
+     */
     expect(TIMELINE).toMatch(/editing: boolean/);
-    // The two writes the track has, and both are inside an `editing` test.
-    const point = TIMELINE.indexOf('withMoment(');
-    expect(point).toBeGreaterThan(-1);
-    expect(TIMELINE.lastIndexOf('{editing &&', point)).toBeGreaterThan(-1);
-    expect(TIMELINE).toMatch(/if \(editing\) \{/);
+    const writes = TIMELINE.match(/setLayout\(/g) ?? [];
+    const guards = TIMELINE.match(/if \(!editing\) return;/g) ?? [];
+    expect(writes.length).toBeGreaterThan(0);
+    expect(guards).toHaveLength(writes.length);
   });
 
   it('takes the answer from the tool being open rather than from a switch of its own', () => {
@@ -307,8 +340,13 @@ describe('a block draws itself and reads nothing else', () => {
     // them after a remount, which is measured: every drawing sat at `height: 0` while
     // `offsetHeight` read sixty and up, and every row said it drew nothing while drawing
     // something. A ref callback and its cleanup cannot go stale that way.
-    expect(BLOCK).toMatch(/new ResizeObserver\(/);
+    const observers = BLOCK.match(/new ResizeObserver\(/g) ?? [];
+    const cleanups = BLOCK.match(/observer\.disconnect\(\)/g) ?? [];
+    expect(observers.length).toBeGreaterThan(0);
+    // One count against the other, not one match: with a single `toMatch` here, dropping
+    // the cleanup from either callback on its own was green — measured — and a leaked
+    // observer holds a detached node and keeps answering about it.
+    expect(cleanups).toHaveLength(observers.length);
     expect(BLOCK).not.toMatch(/useLayoutEffect|useEffect/);
-    expect(BLOCK).toMatch(/observer\.disconnect\(\)/);
   });
 });

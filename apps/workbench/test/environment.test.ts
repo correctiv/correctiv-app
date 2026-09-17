@@ -18,11 +18,19 @@ const APP = join(ROOT, 'apps/mobile');
  * about the surface and not about which of its two files a line ended up in: a check
  * pointed at one of them would pass while the thing it guards had moved to the other,
  * and the `not.toMatch` guards would stop covering half of what they were written for.
+ *
+ * **With the prose taken out**, because a file explaining why it no longer calls
+ * something has to be able to name the thing it no longer calls — and because a check
+ * that reads what a file DOES must not be answered by a file that only says so. Measured
+ * in a cold review: `expect(PREVIEW).toMatch(/storedAppearance\(/)` was satisfied by the
+ * doc comment above the call, and replacing the call itself with a literal left it green.
  */
-const PREVIEW = [
-  readFileSync(join(WORKBENCH, 'src/components/AppHost.tsx'), 'utf8'),
-  readFileSync(join(WORKBENCH, 'src/components/DirectPreview.tsx'), 'utf8'),
-].join('\n');
+const PREVIEW = code(
+  [
+    readFileSync(join(WORKBENCH, 'src/components/AppHost.tsx'), 'utf8'),
+    readFileSync(join(WORKBENCH, 'src/components/DirectPreview.tsx'), 'utf8'),
+  ].join('\n'),
+);
 
 const ENVIRONMENT = readFileSync(join(APP, 'src/lib/env/AppEnvironment.tsx'), 'utf8');
 const ENV_FONTS = readFileSync(join(APP, 'src/lib/env/fonts.ts'), 'utf8');

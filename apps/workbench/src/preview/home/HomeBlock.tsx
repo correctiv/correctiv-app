@@ -2,6 +2,8 @@ import { memo, useCallback, useState, type ReactNode } from 'react';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 
+import { sameSection } from './section';
+
 // The app's own registry, through the build that compiles `apps/mobile/src` into
 // this site (ADR 0027). Not a second table: the palette, the app's screen and
 // this row all draw whatever `HOME_MODULES` holds, which is what ADR 0046 §1
@@ -76,8 +78,19 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
    *
    * `offsetHeight` and not `getBoundingClientRect()`: the drawing is transformed,
    * so its rect is already the scaled height and reading that would fold the
-   * scale in twice. Setting the shell's height cannot change the shell's width,
-   * so the two readings cannot drive each other.
+   * scale in twice.
+   *
+   * **The two readings are not independent, and the earlier version of this
+   * comment said they were.** The panel is a scroll container, so a taller list
+   * takes a scrollbar and every shell in it loses that width: measured in a cold
+   * review on a browser with classic scrollbars, the panel reported 401px while
+   * the list overflowed and 416px once it did not, and each shell fifteen less.
+   * So height does feed width, through the scrollbar, and what stands between
+   * that and a loop is only a margin — the list is several times taller than the
+   * panel, so no plausible change of scale takes it back over the line. Measured
+   * over four seconds at two window widths: no oscillation and no
+   * `ResizeObserver loop` from the browser. A margin, not an impossibility, and
+   * a drawn list that ever fits its panel exactly is where to look first.
    */
   const shell = useCallback((node: HTMLDivElement | null) => {
     if (node === null) return;
@@ -128,8 +141,7 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
    * while the scale is 1 and an over-claim of `1 / scale` while it is not.
    * Collapsing to zero was the alternative and it is the worse one — every row
    * of the document would stack on the same line and the page would jump once
-   * per block. The over-claim survives no painted frame, because the observer
-   * above is installed in a layout effect.
+   * per block.
    */
   const height = natural === null ? undefined : natural * scale;
 
@@ -167,16 +179,17 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
         unmounting it would take the measurement with it and the two would then
         take turns.
 
-        **After the shell and not before it, and that is not a matter of taste.**
-        React reconciles a fragment's children by position, so a conditional
-        element in front of the shell changes what sits at position nought the
-        first time it appears: the `div` is unmounted, an identical one is
-        mounted in its place, and `ref` is repointed — while the observer set up
-        in the layout effect above goes on watching the node that was thrown
-        away. Measured with it first: the drawing was 60px tall in the DOM, the
-        shell stayed at `height: 0`, and the block said it drew nothing while
-        drawing something. Last, the shell is always position nought and the
-        node it measures outlives every state this component has.
+        After the shell rather than before it, which is tidiness now and was not
+        always: with the measurement in a mount-only effect, a conditional element
+        in front of the shell changed what sat at position nought the first time
+        it appeared, React mounted a fresh `div` in its place, and the observer
+        went on watching the node that had been thrown away. Measured then: the
+        drawing was sixty pixels tall in the document while the shell stayed at
+        `height: 0`, so the block said it drew nothing while drawing something.
+        The ref callbacks above are what actually fixes that, and a cold review
+        confirmed it by putting this note back in front and finding the drawings
+        unchanged. So the order is no longer load-bearing, and it is written down
+        that way rather than left standing as a rule with nothing under it.
       */}
       {natural === 0 && (
         <p className="px-2xs py-3xs text-s leading-relaxed text-on-canvas-muted">
@@ -195,34 +208,11 @@ interface HomeBlockProps {
 }
 
 /**
- * Equal by VALUE, because identity says nothing useful here.
- *
- * `effectiveAt()` in `./document.ts` folds the day up to the playhead's point on
- * every render, and `stateAt` inside it keeps the original object for a section
- * no moment has touched and builds a NEW one, through `applyChange`, for every
- * section a moment has. So identity is preserved for most of the list and lost
- * for exactly the sections the day's moments name, re-created on every playhead
- * step whether or not anything about them differs. React's default comparator
- * would therefore memoise most of the list and redraw the rest at every minute
- * of the day, for the few minutes where anything about them is different
- * (ADR 0046 §5 has the counts, measured, and the table in its Context).
- *
- * Written out rather than a deep-equality import because `HomeSection` is three
- * fields and a flat record of scalars, and `SettingValue` is compared with `===`
- * by the document itself. An absent `hidden` is `false` there too, so the two
- * spellings of "shown" must not read as a change.
+ * Equal by VALUE, and `./section.ts` is where the arithmetic lives and says why it is
+ * not here: a test in this package can run that module and cannot run this one.
  */
 function same(before: HomeBlockProps, after: HomeBlockProps): boolean {
-  if (before.deviceWidth !== after.deviceWidth) return false;
-
-  const a = before.section;
-  const b = after.section;
-  if (a.id !== b.id || a.module !== b.module) return false;
-  if (Boolean(a.hidden) !== Boolean(b.hidden)) return false;
-
-  const keys = Object.keys(a.settings ?? {});
-  if (keys.length !== Object.keys(b.settings ?? {}).length) return false;
-  return keys.every((key) => a.settings?.[key] === b.settings?.[key]);
+  return before.deviceWidth === after.deviceWidth && sameSection(before.section, after.section);
 }
 
 export const HomeBlock = memo(Block, same);
