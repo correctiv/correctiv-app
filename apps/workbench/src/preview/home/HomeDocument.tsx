@@ -789,7 +789,7 @@ function Row({
       <div
         className={cn(
           CARD,
-          'flex flex-col gap-2xs p-xs',
+          'group flex flex-col gap-2xs p-xs',
           isChanged && 'border-accent',
           carried && 'opacity-50',
         )}
@@ -812,8 +812,18 @@ function Row({
             {...grip}
             aria-hidden="true"
             className={cn(
-              'mt-4xs shrink-0 touch-none text-on-canvas-muted',
-              carried ? 'cursor-grabbing' : 'cursor-grab hover:text-on-canvas',
+              // A hit area wider than the mark in it. Sixteen pixels of icon is a target
+              // a pointer has to aim at, and `-m-3xs p-3xs` grows what can be grabbed
+              // without moving anything on screen.
+              '-m-3xs shrink-0 touch-none p-3xs text-stroke-strong transition-colors',
+              // Brighter when the pointer is anywhere on the row, not only on the grip
+              // itself. ADR 0047's "What it costs" hands the affordance to the
+              // carrying-out, and a cold review said the grip read as decoration: a mark
+              // that answers to the whole row is what says it is a control before
+              // somebody has found its own few pixels.
+              carried
+                ? 'cursor-grabbing text-accent'
+                : 'cursor-grab group-hover:text-on-canvas-muted hover:text-on-canvas',
             )}
           >
             <GripVertical aria-hidden="true" className="size-[1rem]" />
