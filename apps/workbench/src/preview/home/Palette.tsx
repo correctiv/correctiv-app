@@ -89,7 +89,11 @@ export function InsertMark({
             className={cn(
               'h-px w-full transition-colors',
               'bg-stroke group-hover:bg-accent group-focus-visible:bg-accent',
-              (open || dropping) && 'h-[2px] bg-accent',
+              open && 'bg-accent',
+              // Thicker only for a drop: the open state is a dialog asking what to add,
+              // and a line that got heavier for it would be saying something about a
+              // landing that is not happening.
+              dropping && 'h-[2px] bg-accent',
             )}
           />
           <Plus

@@ -220,11 +220,35 @@ describe('the vocabulary the editor offers', () => {
   });
 
   it('answers with what it was given when the clamp leaves the block where it was', () => {
-    // Not an equal copy: that would mark the document edited and put a Save in front of
-    // somebody who pressed an arrow that could not move anything.
+    // So that a caller can tell nothing happened. Not, as an earlier comment claimed,
+    // because an equal copy would light up Save: `differs` compares the two documents as
+    // printed text, so it would read as unchanged either way. A cold review measured that
+    // and the justification was wrong rather than the behaviour.
     expect(moved(SHIPPED, SHIPPED.sections[0]!.id, -5)).toBe(SHIPPED);
     expect(moved(SHIPPED, SHIPPED.sections.at(-1)!.id, 5)).toBe(SHIPPED);
     expect(moved(SHIPPED, 'hero', 0)).toBe(SHIPPED);
+  });
+
+  it('refuses a delta that is not a whole number of places', () => {
+    /*
+     * `NaN` survives `Math.max` and `Math.min` unchanged and `splice(NaN, …)` inserts at
+     * the front, so a bad delta moved a block to the TOP of the day rather than doing
+     * nothing — measured in a cold review. A fraction slipped past the identity test and
+     * handed back an equal copy. Neither is reachable from the arrows or from a drop,
+     * which is why they are refused rather than thrown at.
+     */
+    for (const delta of [
+      Number.NaN,
+      0.5,
+      -0.5,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ]) {
+      expect(moved(SHIPPED, 'hero', delta)).toBe(SHIPPED);
+    }
+    // And the whole numbers either side of them still work.
+    expect(ids(moved(SHIPPED, 'hero', -1))[2]).toBe('hero');
+    expect(ids(moved(SHIPPED, 'hero', 1))[4]).toBe('hero');
   });
 
   /**

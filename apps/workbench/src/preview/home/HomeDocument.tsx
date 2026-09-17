@@ -122,9 +122,26 @@ import { canSave, publish, save, type SaveResult } from './write';
 
 /** A block a pointer has picked up: which one, where it started, where it would land. */
 interface Carry {
+  /**
+   * Which pointer is carrying it.
+   *
+   * One column, one ref, and without this every pointer wrote to it. Measured with two
+   * touches in a cold review: one finger grabs the header and drags, a second finger
+   * merely RESTS on another row's handle, and the second block is the one that moves —
+   * the first never budges, the wrong row dims, and the document is marked changed.
+   * Every handler below refuses an event whose pointer is not this one.
+   */
+  pointer: number;
   id: string;
   from: number;
   gap: number;
+  /**
+   * Where the pointer was, so that a scroll can re-ask the question without a move.
+   *
+   * The gap was recomputed on `pointermove` alone, so a wheel during a carry left the
+   * mark lit on a gap that had scrolled out of sight, and a release there dropped at it.
+   */
+  y: number;
 }
 
 /** The dock's ground is `surface`, so a row inside it steps back to `canvas`. */
@@ -211,6 +228,39 @@ export function HomeDocument({
   const carrying = useRef<Carry | null>(null);
   const list = useRef<HTMLOListElement>(null);
 
+  /**
+   * Two things that have to reach a carry from outside the handle it started on.
+   *
+   * **Escape puts the block back.** ADR 0047 §1 refuses the handle a keyboard mode and
+   * this is not one: the listener exists only while a pointer is down, so it is a way out
+   * of a gesture rather than a way into an edit, and nothing can be reordered with it.
+   * Without it, and before the release outside the list became an abandon, a drag
+   * somebody had thought better of had no way out but finding the original gap again.
+   *
+   * **A scroll re-asks where the pointer is.** The gap was recomputed on `pointermove`
+   * alone, so a wheel during a carry left the mark lit on a gap that had scrolled away.
+   * Capture, because the panel is what scrolls and a scroll does not bubble.
+   */
+  useEffect(() => {
+    if (carried === null) return;
+    const abandon = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') carry(null);
+    };
+    const followed = () => {
+      const held = carrying.current;
+      if (held !== null) carry({ ...held, gap: gapAt(held.y) });
+    };
+    window.addEventListener('keydown', abandon);
+    window.addEventListener('scroll', followed, true);
+    return () => {
+      window.removeEventListener('keydown', abandon);
+      window.removeEventListener('scroll', followed, true);
+    };
+    // `carry` and `gapAt` are rebuilt every render and close over nothing that changes
+    // while a pointer is down; what decides whether this listens at all is the carry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carried !== null]);
+
   /*
    * The same minute the track under the frame is drawing, out of the same two places:
    * the address while a time is simulated, and `openedAt()` while it is not.
@@ -276,6 +326,18 @@ export function HomeDocument({
    * a drawing inside another row can still finish measuring itself. Boxes read once would
    * be stale by exactly the amount that makes a drop land one place out.
    */
+  /**
+   * Whether a release at this x lands in the list or abandons the carry.
+   *
+   * The list's own box, widened by a hand's width either side so that a drag that strays
+   * a little is still a drop. Anything further out is somebody leaving, and leaving is
+   * the only way out of a carry: the handle has no key, by ADR 0047 §1.
+   */
+  const overList = (x: number): boolean => {
+    const box = list.current?.getBoundingClientRect();
+    return box === undefined || (x > box.left - 96 && x < box.right + 96);
+  };
+
   const gapAt = (y: number): number => {
     const rows = list.current === null ? [] : [...list.current.children];
     const above = rows.findIndex(
@@ -290,26 +352,59 @@ export function HomeDocument({
     setCarried(next);
   };
 
-  /** The four handlers a row's handle carries, built here because the drop needs the column. */
+  /**
+   * Whether this event belongs to the carry in progress.
+   *
+   * Two guards in one place. A second pointer must not write to the one ref the column
+   * shares, and an event from a pointer that is not carrying must not move anything.
+   */
+  const mine = (event: PointerEvent<HTMLElement>): Carry | null => {
+    const held = carrying.current;
+    return held !== null && held.pointer === event.pointerId ? held : null;
+  };
+
+  /** The handlers a row's handle carries, built here because the drop needs the column. */
   const gripFor = (id: string, from: number) => ({
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      /*
+       * The primary button and nothing else. Without this a right-click on the handle
+       * picked the block up and the right-button release reordered the day — measured —
+       * and a middle drag on Linux is the autoscroll gesture, which nobody means as an
+       * edit. A second pointer while one is already carrying is refused outright rather
+       * than allowed to take over: taking over is the two-finger failure above.
+       */
+      if (event.button !== 0 || !event.isPrimary || carrying.current !== null) return;
       // Or the browser starts a text selection across the whole panel instead.
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      carry({ id, from, gap: from });
+      carry({ pointer: event.pointerId, id, from, gap: from, y: event.clientY });
     },
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
-      const held = carrying.current;
-      if (held !== null) carry({ ...held, gap: gapAt(event.clientY) });
+      const held = mine(event);
+      if (held !== null) carry({ ...held, gap: gapAt(event.clientY), y: event.clientY });
     },
-    onPointerUp: () => {
-      const held = carrying.current;
+    onPointerUp: (event: PointerEvent<HTMLElement>) => {
+      const held = mine(event);
       carry(null);
-      if (held !== null) setLayout(moved(layout, held.id, deltaTo(held.from, held.gap)));
+      /*
+       * Two things decide whether this is a drop or an abandon, and both are read from
+       * the event rather than from what the last move left behind.
+       *
+       * The gap is recomputed here, because a wheel between the last move and the release
+       * moves every row without producing a move event. And a release away from the list
+       * puts the block back: without that test, letting go anywhere at all reordered the
+       * day, including out over the phone frame nine hundred pixels away — which is the
+       * only way out of a drag somebody has started and thought better of, since ADR 0047
+       * §1 gives the handle no key to press.
+       */
+      if (held === null || !overList(event.clientX)) return;
+      setLayout(moved(layout, held.id, deltaTo(held.from, gapAt(event.clientY))));
     },
     // A touch the browser takes over — a scroll gesture, a call coming in — ends the drag
     // without an up, and the block has to go back rather than stay picked up for ever.
-    onPointerCancel: () => carry(null),
+    onPointerCancel: (event: PointerEvent<HTMLElement>) => {
+      if (mine(event) !== null) carry(null);
+    },
   });
 
   const effective = effectiveAt(layout, point);
@@ -629,8 +724,8 @@ function Row({
   grip: {
     onPointerDown: (event: PointerEvent<HTMLElement>) => void;
     onPointerMove: (event: PointerEvent<HTMLElement>) => void;
-    onPointerUp: () => void;
-    onPointerCancel: () => void;
+    onPointerUp: (event: PointerEvent<HTMLElement>) => void;
+    onPointerCancel: (event: PointerEvent<HTMLElement>) => void;
   };
   /** Whether this is the block a pointer is carrying right now. */
   carried: boolean;
@@ -642,6 +737,33 @@ function Row({
    * cost in the accessibility tree.
    */
   const spoken = blockName(section);
+
+  /**
+   * Where the keyboard goes when the arrow it just used switches itself off.
+   *
+   * ADR 0047 §2 makes the arrows **the** keyboard route, and §4 refuses the drag a
+   * keyboard mode precisely because they already work. They half worked: measured in a
+   * cold review, pressing "Move Header up" until the block reaches the top disables that
+   * button, the browser blurs it, and focus lands on `<body>` — a person walking a block
+   * up the list loses their place at the exact moment the move lands.
+   *
+   * So a press is remembered, and the render that follows puts focus on whichever of the
+   * two is still pressable. Remembered rather than read back, because by then the browser
+   * has already moved focus away and `document.activeElement` says `body` either way.
+   * Only this row's own press sets it, so a row moved by somebody else's press does not
+   * steal focus.
+   */
+  const pressed = useRef<-1 | 1 | null>(null);
+  const up = useRef<HTMLButtonElement>(null);
+  const down = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const was = pressed.current;
+    pressed.current = null;
+    if (was === null) return;
+    const wanted = was === -1 ? (index === 0 ? down : up) : last ? up : down;
+    wanted.current?.focus();
+  }, [index, last]);
   const off = Boolean(section.hidden);
   const specs = settingsFor(section.module);
   const hiddenHere = point !== null && Boolean(inherited.hidden) !== off;
@@ -743,22 +865,30 @@ function Row({
               {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
             </Button>
             <Button
+              ref={up}
               variant="ghost"
               size="icon"
               className="size-[2rem]"
               disabled={index === 0}
               aria-label={`Move ${spoken} up`}
-              onClick={() => onMove(-1)}
+              onClick={() => {
+                pressed.current = -1;
+                onMove(-1);
+              }}
             >
               <ArrowUp aria-hidden="true" />
             </Button>
             <Button
+              ref={down}
               variant="ghost"
               size="icon"
               className="size-[2rem]"
               disabled={last}
               aria-label={`Move ${spoken} down`}
-              onClick={() => onMove(1)}
+              onClick={() => {
+                pressed.current = 1;
+                onMove(1);
+              }}
             >
               <ArrowDown aria-hidden="true" />
             </Button>

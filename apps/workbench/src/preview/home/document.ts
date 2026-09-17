@@ -213,9 +213,17 @@ export function effectiveAt(layout: HomeLayout, point: Point): readonly HomeSect
  * which is where it would be expensive.
  *
  * **Clamped to the ends, and answering with the layout it was given when the clamp
- * leaves the block where it was.** A control that cannot move anything must change
- * nothing — not hand back an equal copy, which would mark the document as edited and put
- * a Save in front of somebody who pressed a disabled-looking arrow.
+ * leaves the block where it was**, so that a caller can tell nothing happened. It does
+ * not decide whether Save lights up — `differs` compares the two documents as printed
+ * text, so an equal copy would read as unchanged anyway, and an earlier version of this
+ * paragraph claimed otherwise. The identity is for the caller, not for the button.
+ *
+ * **A delta that is not a whole number, or not a number at all, is refused before the
+ * clamp.** `NaN` survives `Math.max`/`Math.min` unchanged and `splice(NaN, …)` inserts at
+ * the front, so a bad delta moved a block to the top of the day rather than doing
+ * nothing; a fraction slipped past the identity test and handed back an equal copy.
+ * Neither is reachable from the two controls, which is why this is a guard rather than a
+ * throw: an unreachable input should cost a caller nothing and surprise nobody.
  *
  * **Order is the document's and not a moment's**, which is ADR 0039 §3. A moment can
  * switch a place off and another one on, which is how the callout appears to move; what
@@ -223,6 +231,7 @@ export function effectiveAt(layout: HomeLayout, point: Point): readonly HomeSect
  * an arrangement that changed by the hour would be a layout engine in the app.
  */
 export function moved(layout: HomeLayout, id: string, delta: number): HomeLayout {
+  if (!Number.isInteger(delta)) return layout;
   const from = layout.sections.findIndex((section) => section.id === id);
   if (from === -1) return layout;
   const to = Math.max(0, Math.min(from + delta, layout.sections.length - 1));
