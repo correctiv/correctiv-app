@@ -372,7 +372,10 @@
     "slugs": ["the-home-editor-arranges-the-blocks-it-draws"],
     "decisions": {
       "1": ["The list is the day, the frame is the moment"],
-      "2": ["A block that is not on screen at the playhead collapses to its row"],
+      "2": [
+        "A block that is not on screen at the playhead collapses to its row",
+        "A block that is not on screen at the playhead ~~collapses to its row~~ is drawn greyed"
+      ],
       "3": ["The blocks are drawn, not described"],
       "4": ["The arrangement is the document's, and the editor writes it: add, remove, reorder"],
       "5": ["`hidden` stays in the document and leaves the interface"],
@@ -474,6 +477,18 @@
       "7": [
         "The home configurator's blocks say what they are in German, and the module takes a formatter"
       ]
+    }
+  },
+  "0053": {
+    "slugs": ["the-editor-is-the-screen-and-the-drag-is-the-answer"],
+    "decisions": {
+      "1": ["The list is the screen, and a block that is off is drawn greyed"],
+      "2": ["A drag is shown by moving the block, not by marking a gap"],
+      "3": ["A block's name, its sentence, its id and its settings move into a popover beside it"],
+      "4": [
+        "The controls are revealed over the block, and the keyboard's route is not conditional"
+      ],
+      "5": ["A gutter down the left, which is the one thing the list has that the app has not"]
     }
   },
   "0054": {
