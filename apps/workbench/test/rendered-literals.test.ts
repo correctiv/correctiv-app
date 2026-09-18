@@ -192,16 +192,17 @@ describe('the walk reads the site it is checking', () => {
  * language.
  */
 const STILL_IN_THE_MARKUP: Record<string, number> = {
-  // **Three of the six drawings have been through the pass and three have not.**
-  // What stopped the other three is not effort: `test/drawn.ts`'s `drawnText`
-  // reads a drawing's ENGLISH out of its own source and holds it to the code, and
-  // `diagrams-article-path.test.ts` and `diagrams-sign-in.test.ts` assert whole
-  // sentences of those two that way. A label that becomes a descriptor leaves
-  // `drawnText` and takes its check with it, so moving them means first deciding
-  // what those checks read instead. `DecisionsChain.tsx` and `layout.ts` are a
-  // third case again: their caption, legend and every list entry are assembled
-  // from `adr/` at build time by two string builders, and moving them means
-  // turning those into ICU.
+  // **English by decision, not by backlog** — ADR 0052 §6, taken on 2026-09-18.
+  // These three drawings are read by whoever is reading the code: they draw a
+  // load cascade's rungs, a sign-in's session states and the graph of which
+  // record struck which claim, in module names, file paths and millisecond
+  // budgets. And a check reads them: `test/drawn.ts`'s `drawnText` pulls a
+  // drawing's text out of its own source and holds it to the code, so a label
+  // that becomes a descriptor leaves `drawnText` and takes its check with it.
+  // Repairable, and the three that were translated proved it — but it moves
+  // where a check gets its truth, which is worth paying only for something
+  // somebody reads. What would change this is somebody outside development
+  // reading one of these pictures, and then the check comes first.
   'diagrams/ArticlePath.tsx': 117,
   'diagrams/DecisionsChain.tsx': 32,
   'diagrams/SignIn.tsx': 151,
@@ -241,9 +242,12 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   'preview/frame/seed.ts': 2,
   // At its floor: the name of a browser panel, and a token prefix in monospace.
   'preview/ui/Panels.tsx': 2,
-  // The app's screen names. That file's own docblock argues they are marks — the
-  // app calls a route „Entdecken“ in German and nothing else — so some of this is a
-  // floor rather than debt, and separating the two is that pass's job.
+  // At its floor, and all 22 of it: the app's own screen names, from „Entdecken“
+  // to „Tagebuch“. The app ships in German, so these are what is written in its
+  // tab bar and what somebody typing into that picker is looking for; the file's
+  // own docblock argues it, and the three labels that ARE messages are the three
+  // this site named itself because the screen behind them has no name. Counted
+  // rather than inherited: every one of the 22 is a screen name.
   'preview/routes.ts': 22,
   // At its floor: the wordmark, and the wordmark with the product word after it.
   // `ui/Header.tsx` argues both as names, and a translator is not being asked to

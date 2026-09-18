@@ -1,6 +1,6 @@
 # ADR 0052 — The site's own words follow the setting, the repository's are printed as they are written
 
-Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty. **§5 was added on 2026-09-18**, after the first four had landed: migrating `/handbook` found a hand-written file that §1 takes and the extraction cannot reach.
+Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty. **§5 was added on 2026-09-18**, after the first four had landed: migrating `/handbook` found a hand-written file that §1 takes and the extraction cannot reach. **§6 was added the same day**, when the drawings were the last area left and three of the six were decided to keep their labels in English.
 
 ## Context
 
@@ -162,6 +162,41 @@ thing that reads as a bug.
 cannot see a reason written in `components/direct-ids.ts`: it walks `src/` and
 reads JSX children and visible props, and `nav: 'Architecture'` is a property in
 a data table outside it. Stated here and in both files, rather than enforced.
+
+### 6. Three of the six drawings keep their labels in English
+
+Decided on 2026-09-18, when the drawings were the last area left.
+
+**What did follow the setting**: the title and the lede of all six, so `/diagrams`
+is a German page of German cards, and each drawing's own page has a German
+breadcrumb, heading and paragraph. Three of the six are translated through and
+through: the core and its host, the app and what it talks to, and the inside of
+the core.
+
+**What stays English** is the labels inside `ArticlePath.tsx`, `SignIn.tsx` and
+`DecisionsChain.tsx`, and the geometry in `layout.ts`. Two reasons, and the second
+is the one that decides it.
+
+**A check reads those labels.** `test/drawn.ts`'s `drawnText` pulls a drawing's
+text out of its own source and holds it to the code: `diagrams-article-path.test.ts`
+and `diagrams-sign-in.test.ts` assert "15 articles", "1500 ms", "under 4
+characters", the four `SessionStatus` values and the `ContentBundle` method list
+that way, so a figure in a picture cannot quietly stop being true. A label that
+becomes a descriptor leaves `drawnText` and takes its check with it. That is
+repairable — the three that were translated proved it, and `diagrams.test.ts` now
+holds their German figures too — but it moves where a check gets its truth, and
+that is a price worth paying only for something somebody reads.
+
+**And these three are read by whoever is reading the code.** They draw a load
+cascade's five rungs, a sign-in's four session states and the graph of which
+record struck which claim, in module names, file paths and millisecond budgets.
+The audience ADR 0050 §1 names is somebody arranging the home screen, and nothing
+on these three pictures is addressed to them.
+
+**What would change this**: somebody outside development reading a drawing. The
+work is then the check first and the translation second, in that order, and
+`test/rendered-literals.test.ts`'s table says so where the three files are listed
+— as a decision, not as a backlog.
 
 ## What this retires
 
