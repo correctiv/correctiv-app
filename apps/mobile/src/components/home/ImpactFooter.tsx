@@ -5,7 +5,7 @@ import { Typo } from '@/components/ui';
 
 /**
  * The thank-you, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/home.ts` (ADR 0026 §6). CORRECTIV keeps its spelling
+ * `packages/catalogue/src/de/home.ts` (ADR 0026 §6). CORRECTIV keeps its spelling
  * inside the sentence rather than being lifted out of it.
  */
 const COPY = defineMessages({

@@ -8,7 +8,7 @@ import { typography, useColors } from '@/lib/theme';
 
 /**
  * The three words a field says for itself, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/form.ts`. Everything else on a field — its label, its
+ * `packages/catalogue/src/de/form.ts`. Everything else on a field — its label, its
  * description, its options — comes from the callout's schema and is content.
  */
 const COPY = defineMessages({

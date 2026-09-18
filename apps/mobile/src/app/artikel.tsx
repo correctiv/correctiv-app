@@ -21,7 +21,7 @@ import { sizes, useColors, useIsDark } from '@/lib/theme';
 
 /**
  * Everything the reader's own chrome says, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/article.ts` (ADR 0026 §6). The article itself is not in
+ * `packages/catalogue/src/de/article.ts` (ADR 0026 §6). The article itself is not in
  * here: it is CORRECTIV's journalism, rendered as it was published.
  *
  * The back control says `ui.back`, imported rather than declared, because it is

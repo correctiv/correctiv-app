@@ -226,7 +226,7 @@ describe('reader html', () => {
   /**
    * The words a host arrives with, and they are ENGLISH here on purpose.
    *
-   * The German that ships is in `apps/mobile/src/i18n/catalogue/de/core.ts` and
+   * The German that ships is in `packages/catalogue/src/de/core.ts` and
    * this file cannot see it. What these assertions are about is what the core
    * still decides once the words are somebody else's: the order of the meta line,
    * the separator between its parts, which of them are dropped when absent, and

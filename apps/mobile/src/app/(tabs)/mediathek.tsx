@@ -17,7 +17,7 @@ import { useCoreActions, usePodcastLibrary, useVideoChannel } from '@/lib/store/
 
 /**
  * Everything this screen says, in one place, in ENGLISH — the German that ships
- * is `src/i18n/catalogue/de/mediathek.ts` (ADR 0026 §6).
+ * is `packages/catalogue/src/de/mediathek.ts` (ADR 0026 §6).
  *
  * `offlineEpisodes` is declared here AND in `app/serie/[id].tsx`, under the same
  * id and with the same default: it is one sentence shown in two places, and the

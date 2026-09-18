@@ -12,7 +12,7 @@ import { colors } from '@/lib/theme';
 
 /**
  * Everything this screen says, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/video.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/video.ts` (ADR 0026 §6).
  *
  * `views` is an ICU plural. It replaces a `formatNumberDe` call: `#` inside a
  * plural is formatted by the provider's locale, so the thousands separator is

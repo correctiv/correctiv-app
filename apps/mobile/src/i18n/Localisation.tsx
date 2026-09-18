@@ -6,19 +6,8 @@ import './polyfills';
 import type { ReactNode } from 'react';
 import { IntlProvider, ReactIntlErrorCode, type IntlConfig } from 'react-intl';
 
-import type { Locale } from '@correctiv/app-core/stores/settings';
+import { CATALOGUES } from '@correctiv/catalogue';
 import { useLocale } from '@/lib/store/core';
-
-import { de } from './catalogue/de';
-
-/**
- * Every catalogue there is, by locale.
- *
- * One entry, and the type is what keeps it honest: adding a locale to
- * `@correctiv/app-core/stores/settings` without a catalogue fails to typecheck
- * here rather than rendering English to somebody.
- */
-const CATALOGUES: Record<Locale, Record<string, string>> = { de };
 
 /**
  * The language every user-facing string is rendered in.
@@ -30,8 +19,10 @@ const CATALOGUES: Record<Locale, Record<string, string>> = { de };
  *
  * `defaultLocale` is **English**, and that is not a typo. A descriptor's
  * `defaultMessage` is English so that the source reads in one language
- * ([AGENTS.md](../../../../AGENTS.md#language)); German is data, in
- * `catalogue/de/`. So a missing German entry does not blank the screen, it prints
+ * ([AGENTS.md](../../../../AGENTS.md#language)); German is data, and it is not in
+ * this app at all — `@correctiv/catalogue` holds every locale's, so the core's own
+ * vocabulary is not kept inside one of its hosts
+ * ([ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md)). So a missing German entry does not blank the screen, it prints
  * the English — which is a defect that looks like a feature, and is why
  * `__tests__/localisation-seam.test.ts` fails on one at build time and `onError`
  * below throws on one at run time, instead of either being left to a reader to

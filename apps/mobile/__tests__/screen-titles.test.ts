@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import { de } from '@/i18n/catalogue/de';
+import { de } from '@correctiv/catalogue';
 
 /**
  * Every route pushed over the tabs names itself, and no two name themselves the

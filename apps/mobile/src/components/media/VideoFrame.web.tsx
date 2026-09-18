@@ -4,7 +4,7 @@ import type { VideoFrameProps } from './videoFrameTypes';
 
 /**
  * The frame's name, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/video.ts` (ADR 0026 §6). An iframe's `title` is what a
+ * `packages/catalogue/src/de/video.ts` (ADR 0026 §6). An iframe's `title` is what a
  * screen reader reads for the whole embed, which makes it user-facing even
  * though the word was already English.
  */

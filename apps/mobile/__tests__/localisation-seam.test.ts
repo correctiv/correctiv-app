@@ -1,11 +1,11 @@
 import { execSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { parse, TYPE, type MessageFormatElement } from '@formatjs/icu-messageformat-parser';
 
-import { de } from '@/i18n/catalogue/de';
+import { de } from '@correctiv/catalogue';
 
 import {
   filesUnder,
@@ -21,7 +21,7 @@ import {
  * The shape, decided in
  * [ADR 0026](../../../adr/0026-react-native-review-and-hardening.md) §6: a message
  * descriptor's `defaultMessage` is ENGLISH and lives next to the component, the
- * German that ships is data in `src/i18n/catalogue/de/`, and `en.json` beside it
+ * German that ships is data in `packages/catalogue/src/de/`, and `en.json` beside it
  * is generated from the source. German is the only language that ships.
  *
  * Both halves fail quietly on their own. A German entry deleted while its
@@ -35,9 +35,16 @@ import {
  */
 const APP = resolve(__dirname, '..');
 const SRC = join(APP, 'src');
-const CATALOGUE = join(SRC, 'i18n', 'catalogue');
-const GERMAN = join(CATALOGUE, 'de');
-const ENGLISH = join(CATALOGUE, 'en.json');
+/**
+ * The catalogues are a package now, not a directory in this app
+ * ([ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md)). What stays here is
+ * what is true of the APP: no German in its source, `COPY` as the one name for a
+ * block, `en.json` current against a fresh extraction, and a description wherever
+ * the string cannot speak for itself. What is true of a CATALOGUE — a namespace per
+ * file, every file merged — moved with the files, to
+ * `packages/catalogue/test/catalogue.test.ts`.
+ */
+const ENGLISH = resolve(APP, '../../packages/catalogue/src/en.json');
 
 /** `en.json` as `@formatjs/cli` writes it: one entry per id. */
 interface Extracted {
@@ -80,36 +87,6 @@ describe('every id exists on both sides', () => {
       .filter(([, message]) => !message.defaultMessage?.trim())
       .map(([id]) => id);
     expect(empty).toEqual([]);
-  });
-
-  it('keeps every id in the file its namespace names', () => {
-    // `gate.headline` belongs in `de/gate.ts` and nowhere else. Without this the
-    // directory is 26 files that happen to be merged, and the first hurried
-    // migration puts a screen's strings wherever the file was already open.
-    const misfiled: string[] = [];
-    for (const file of readdirSync(GERMAN)) {
-      if (file === 'index.ts') continue;
-      const namespace = basename(file, '.ts');
-      const module = require(join(GERMAN, file)) as Record<string, Record<string, string>>;
-      const messages = module[namespace];
-      expect(messages).toBeDefined();
-      for (const id of Object.keys(messages)) {
-        if (!id.startsWith(`${namespace}.`)) misfiled.push(`${file}: ${id}`);
-      }
-    }
-    expect(misfiled).toEqual([]);
-  });
-
-  it('merges every namespace file into the catalogue', () => {
-    // An empty namespace file contributes nothing to the merged object, so its
-    // absence from the index cannot be seen there — but it is what the next agent
-    // fills, and a file merged by nobody is a screen translated into a void.
-    const index = readFileSync(join(GERMAN, 'index.ts'), 'utf8');
-    const unmerged = readdirSync(GERMAN)
-      .filter((file) => file !== 'index.ts')
-      .map((file) => basename(file, '.ts'))
-      .filter((namespace) => !index.includes(`from './${namespace}'`));
-    expect(unmerged).toEqual([]);
   });
 });
 
@@ -226,10 +203,12 @@ describe('German lives in the catalogue', () => {
   /** Every file under `src/`, as a path relative to it, with `/` on every OS. */
   const sources = filesUnder(SRC, ANY_FILE)
     .map((full) => under(SRC, full))
-    .filter(
-      (path) =>
-        !path.startsWith('i18n/catalogue/de/') && !CONTENT.has(path) && !DEVELOPER_ONLY.test(path),
-    );
+    // No catalogue-shaped hole in this walk any longer. It used to skip
+    // `i18n/catalogue/de/`, which was the one directory under `src/` allowed to
+    // hold German; the catalogue is a package now, so the rule this walk enforces
+    // is the simpler one it always meant: no German under `apps/mobile/src`, full
+    // stop, bar the two strings named below.
+    .filter((path) => !CONTENT.has(path) && !DEVELOPER_ONLY.test(path));
 
   const read = (path: string) => readFileSync(join(SRC, path), 'utf8');
 
@@ -317,7 +296,7 @@ describe('the extracted English catalogue is current', () => {
         scripts: Record<string, string>;
       }
     ).scripts['i18n:extract'];
-    const out = 'src/i18n/catalogue/en.json';
+    const out = '../../packages/catalogue/src/en.json';
     expect(script).toContain(out);
 
     const fresh = join(mkdtempSync(join(tmpdir(), 'i18n-')), 'en.json');

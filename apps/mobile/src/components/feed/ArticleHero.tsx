@@ -10,7 +10,7 @@ import { useArticleMeta } from '@/lib/articles/useArticleMeta';
 
 /**
  * The two words the hero adds to a feed item, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/article.ts` (ADR 0026 §6). Everything else on this card
+ * `packages/catalogue/src/de/article.ts` (ADR 0026 §6). Everything else on this card
  * is the article's own.
  *
  * `readingTime` is an ICU plural whose two German forms happen to be identical,

@@ -409,5 +409,16 @@
       "3": ["Two controls, one operation, and the document never learns there were two"],
       "4": ["The keyboard drag is refused now and named as a thing that could be earned"]
     }
+  },
+  "0049": {
+    "slugs": ["the-catalogue-is-a-package"],
+    "decisions": {
+      "1": ["The catalogues are a package of their own, `@correctiv/catalogue`"],
+      "2": ["Four things do not move, and each would have been the tempting mistake"],
+      "3": ["English becomes a locale the app can actually render"],
+      "4": ["The locale is supplied by the host, not written into the core"],
+      "5": ["The checks split along the same line"],
+      "6": ["`Locale` stays in the core, and the catalogue answers to it"]
+    }
   }
 }

@@ -16,7 +16,7 @@ const SPEEDS = [1, 1.2, 1.5];
 
 /**
  * Everything the full player says, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/player.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/player.ts` (ADR 0026 §6).
  *
  * `pause` and `play` are declared here AND in `components/player/MiniPlayer.tsx`
  * under the same ids, and `liveSubtitle` AND in `lib/audio/tracks.ts`, which is

@@ -46,8 +46,14 @@ const MEASURED_THRESHOLD = '1.3';
 
 const SRC = join(__dirname, '..', 'src');
 const TABS_LAYOUT = join(SRC, 'app', '(tabs)', '_layout.tsx');
-const GERMAN_UI = join(SRC, 'i18n', 'catalogue', 'de', 'ui.ts');
-const LOCALISATION = join(SRC, 'i18n', 'Localisation.tsx');
+/**
+ * Both files left this app in
+ * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md). The German is a
+ * package's now, and the registry of catalogues went with it — which is why the
+ * second read below is of the package's index and not of the app's provider.
+ */
+const GERMAN_UI = join(SRC, '..', '..', '..', 'packages', 'catalogue', 'src', 'de', 'ui.ts');
+const REGISTRY = join(SRC, '..', '..', '..', 'packages', 'catalogue', 'src', 'index.ts');
 
 const read = (path: string) => withoutComments(readFileSync(path, 'utf8'));
 
@@ -91,8 +97,9 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
   it('still ships one language, which is the other thing that moves the number', () => {
     // A second locale does not touch a German word or the constant, and it moves
     // the threshold anyway: the bar is as wide as its longest label in whatever
-    // language is on. `Localisation.tsx` names every catalogue there is.
-    const catalogues = read(LOCALISATION).match(/const CATALOGUES[^=]*=\s*\{([^}]*)\}/);
+    // language is on. `@correctiv/catalogue` names every catalogue there is, and
+    // did so from `Localisation.tsx` until ADR 0049 moved it.
+    const catalogues = read(REGISTRY).match(/const CATALOGUES[^=]*=\s*\{([^}]*)\}/);
 
     expect(catalogues?.[1].trim()).toBe('de');
   });

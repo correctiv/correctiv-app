@@ -5,7 +5,7 @@ import { READER_BASE_URL, type ReaderViewProps } from './types';
 
 /**
  * The frame's name, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/article.ts` (ADR 0026 §6). An iframe's `title` is the
+ * `packages/catalogue/src/de/article.ts` (ADR 0026 §6). An iframe's `title` is the
  * whole document's name to a screen reader, so it is read aloud and belongs in
  * the catalogue like any other word a person receives.
  */

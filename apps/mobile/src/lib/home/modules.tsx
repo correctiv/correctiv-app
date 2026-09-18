@@ -46,7 +46,7 @@ import { useColors } from '@/lib/theme';
 
 /**
  * The words Home adds around the feeds, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/home.ts` (ADR 0026 §6). Everything else on this screen belongs
+ * `packages/catalogue/src/de/home.ts` (ADR 0026 §6). Everything else on this screen belongs
  * to a card, and each card carries its own.
  *
  * The arrows stay out of the messages, and out of the call site too: `SectionHeader`

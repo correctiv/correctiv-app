@@ -4,7 +4,7 @@ import type { RadioCopy } from '@correctiv/app-core/stores/audio';
 
 /**
  * How the Salon5 live stream names itself, in ENGLISH; the German that ships is
- * in `src/i18n/catalogue/de/player.ts` (ADR 0026 §6).
+ * in `packages/catalogue/src/de/player.ts` (ADR 0026 §6).
  *
  * Descriptors rather than strings, because this module holds no React and so
  * cannot call `useIntl`: whoever puts these on a screen formats them. They live

@@ -25,7 +25,7 @@ const keyExtractor = (episode: PodcastEpisode) => episode.id;
 
 /**
  * Everything this screen says, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/series.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/series.ts` (ADR 0026 §6).
  *
  * `offlineEpisodes` is the Mediathek's id, not a second one, because it is
  * literally the same note (see where it is rendered below). It is declared there

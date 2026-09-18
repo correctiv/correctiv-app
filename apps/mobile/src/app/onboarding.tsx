@@ -12,7 +12,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * Everything a person reads in the onboarding, in ENGLISH; the German that ships
- * is `src/i18n/catalogue/de/onboarding.ts`.
+ * is `packages/catalogue/src/de/onboarding.ts`.
  */
 const COPY = defineMessages({
   screenTitle: { id: 'onboarding.screenTitle', defaultMessage: 'Welcome' },

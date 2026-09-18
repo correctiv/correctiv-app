@@ -14,7 +14,7 @@ const WHATSAPP_TIP = 'https://wa.me/4915142647500';
 
 /**
  * Everything a person reads on this tab, in one place, with an ENGLISH
- * `defaultMessage`; the German that ships is `src/i18n/catalogue/de/participate.ts`.
+ * `defaultMessage`; the German that ships is `packages/catalogue/src/de/participate.ts`.
  *
  * The three counters are ICU plurals rather than a number glued to a noun. German
  * and English both inflect the noun, and the data can reach one: a fresh atlas

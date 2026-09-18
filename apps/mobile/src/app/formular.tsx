@@ -13,7 +13,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * Everything a person reads in the flow, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/form.ts`.
+ * `packages/catalogue/src/de/form.ts`.
  *
  * `step` and `contributors` are one message each rather than a number stuck
  * between two fragments: word order is the translator's to change, and the

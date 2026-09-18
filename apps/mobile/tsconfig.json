@@ -14,6 +14,8 @@
       // at runtime through the workspace symlink and each package's exports map.
       "@correctiv/app-core": ["../../packages/app-core/src/index.ts"],
       "@correctiv/app-core/*": ["../../packages/app-core/src/*"],
+      "@correctiv/catalogue": ["../../packages/catalogue/src/index.ts"],
+      "@correctiv/catalogue/*": ["../../packages/catalogue/src/*"],
       "@correctiv/design-tokens": ["../../packages/design-tokens/src/index.ts"],
       "@correctiv/design-tokens/*": ["../../packages/design-tokens/src/*"],
       // Test-only: the checks under `__tests__/` read this app as text and hold

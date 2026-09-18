@@ -7,7 +7,7 @@ import { useDocumentTitle } from '@/lib/navigation/documentTitle';
 
 /**
  * Everything a person reads on this page, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/notFound.ts`.
+ * `packages/catalogue/src/de/notFound.ts`.
  */
 const COPY = defineMessages({
   screenTitle: { id: 'notFound.screenTitle', defaultMessage: 'Page not found' },

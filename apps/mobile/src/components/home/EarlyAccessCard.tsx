@@ -5,7 +5,7 @@ import { Badge, Typo } from '@/components/ui';
 
 /**
  * The card's own vocabulary, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/backstage.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/backstage.ts` (ADR 0026 §6).
  *
  * **The headline and the teaser below are NOT here, and that is the decision.**
  * They are a sample article standing in for one that will come from the source,

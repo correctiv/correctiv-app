@@ -9,7 +9,7 @@ import { colors, sizes } from '@/lib/theme';
 
 /**
  * The card's spoken name, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/video.ts` (ADR 0026 §6). The title is interpolated, so
+ * `packages/catalogue/src/de/video.ts` (ADR 0026 §6). The title is interpolated, so
  * this is one message and not a word glued to a headline.
  */
 const COPY = defineMessages({

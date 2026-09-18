@@ -9,7 +9,7 @@ import { useColors } from '@/lib/theme';
 
 /**
  * Everything a person reads on this screen, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/atlas.ts`.
+ * `packages/catalogue/src/de/atlas.ts`.
  *
  * The screen's own name is not among them, and it is written out twice below
  * rather than lifted: Abriss-Atlas is the project's name, the same word in every

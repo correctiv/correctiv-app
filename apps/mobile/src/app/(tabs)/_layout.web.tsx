@@ -30,7 +30,7 @@ type IoniconName = keyof typeof Ionicons.glyphMap;
 
 /**
  * The five tab labels, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/ui.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
  *
  * **The same five ids are declared in `_layout.tsx`, with the same defaults.** The two
  * files draw the bar differently and share nothing they could import a constant

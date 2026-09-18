@@ -12,7 +12,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The bar's words, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/player.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/player.ts` (ADR 0026 §6).
  *
  * `pause` and `play` are the same two ids `app/player.tsx` declares, because the
  * mini bar and the full player are one player and the button is spoken with one

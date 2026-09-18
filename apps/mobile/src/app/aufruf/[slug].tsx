@@ -15,7 +15,7 @@ export function generateStaticParams(): { slug: string }[] {
 
 /**
  * Everything a person reads on this screen, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/callout.ts`.
+ * `packages/catalogue/src/de/callout.ts`.
  *
  * This screen states CrowdNewsroom outright for every callout, survey included,
  * so it has words of its own rather than `lib/participate/calloutStyle.ts`'s: that

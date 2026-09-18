@@ -8,7 +8,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The row's words, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/mediathek.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/mediathek.ts` (ADR 0026 §6).
  *
  * `live` is the badge, and it is declared here AND in
  * `components/media/LiveBanner.tsx` under the same id: two tiles for the same
