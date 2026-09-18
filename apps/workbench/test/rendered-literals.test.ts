@@ -211,9 +211,13 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   'pages/ComponentDetail.tsx': 5,
   // At its floor: two import lines.
   'pages/Components.tsx': 2,
-  'pages/Design.tsx': 46,
-  'pages/Document.tsx': 12,
-  'pages/Landing.tsx': 30,
+  // At its floor: three record numbers and the four client labels, which are the
+  // names of operating systems and of a fork.
+  'pages/Design.tsx': 7,
+  // At its floor: the word before a record's number.
+  'pages/Document.tsx': 1,
+  // At its floor: four package and directory paths.
+  'pages/Landing.tsx': 4,
   // At its floor: one import line.
   'pages/Reference.tsx': 1,
   // At its floor: six product names. A phone is called the same thing in every

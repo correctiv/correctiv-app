@@ -47,9 +47,24 @@ const COPY = defineMessages({
     description:
       'The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab, and handbook.title is that page’s own heading.',
   },
-  decisions: { id: 'shell.activity.decisions', defaultMessage: 'Decisions' },
-  sources: { id: 'shell.activity.sources', defaultMessage: 'Sources' },
-  design: { id: 'shell.activity.design', defaultMessage: 'Design' },
+  decisions: {
+    id: 'shell.activity.decisions',
+    defaultMessage: 'Decisions',
+    description:
+      'The rail’s entry for the board of records. landing.door.decisions.title is the same word on the front page’s card for it; nav.decisions is the longer name the browser tab carries, and decisions.title the page’s own heading.',
+  },
+  sources: {
+    id: 'shell.activity.sources',
+    defaultMessage: 'Sources',
+    description:
+      'The rail’s entry for the sources board. landing.door.sources.title is the same word on the front page’s card for it; nav.sources is the longer name the browser tab carries, and sources.title the page’s own heading.',
+  },
+  design: {
+    id: 'shell.activity.design',
+    defaultMessage: 'Design',
+    description:
+      'The rail’s entry for the design page. landing.door.design.title is the same word on the front page’s card for it and design.title is that page’s own heading; nav.design is the longer name the browser tab carries.',
+  },
   reference: {
     id: 'shell.activity.reference',
     defaultMessage: 'Reference',

@@ -61,7 +61,12 @@ export const PAGE_TITLES: Record<string, PageTitle> = {
     description:
       'The browser tab and the search palette for /strings. It said “the app’s own” until the board grew this site’s half, which made it a row ON that board asserting the board did not hold it.',
   }),
-  '/preview': wbMessage({ id: 'nav.preview', defaultMessage: 'Preview' }),
+  '/preview': wbMessage({
+    id: 'nav.preview',
+    defaultMessage: 'Preview',
+    description:
+      'The browser tab and the search palette for /preview. landing.door.preview.title is the same word on the front page’s card for it, and shell.activity.preview the rail’s entry.',
+  }),
 };
 
 /** The two titles the tab needs that no route in the table above carries. */

@@ -374,6 +374,119 @@
     "defaultMessage": "Decision records",
     "description": "The page’s heading. nav.decisions is the same two words as the browser tab and the search palette carry for this page; shell.activity.decisions is the shorter word the rail has room for."
   },
+  "design.board": {
+    "defaultMessage": "The board",
+    "description": "The second of the three cards. The board is the inventory of screens the plugin draws into the Figma file."
+  },
+  "design.board.note": {
+    "defaultMessage": "<code>{path}</code> draws the screen inventory into the file from data in this repository, rather than anybody keeping a board in step by hand.",
+    "description": "The line in the board card. {path} is the plugin’s directory in this repository and is not translated; <code> draws it in monospace."
+  },
+  "design.clients.fork": {
+    "defaultMessage": "figma-linux-next, a fork",
+    "description": "Under the Linux download. figma-linux-next is the project’s own name and is not translated; the rest says what it is, because Figma builds no client for Linux."
+  },
+  "design.clients.note": {
+    "defaultMessage": "The plugin is loaded through Plugins, Development, Import plugin from manifest, and that menu exists only in the desktop app. Figma builds one for macOS and Windows; on Linux this project uses a fork.",
+    "description": "The line above the four downloads. “Plugins, Development, Import plugin from manifest” is Figma’s own menu and stays in English in every catalogue: it is not a description of a menu, it is the words a reader has to find in one. macOS, Windows and Linux are the platforms’ own names."
+  },
+  "design.clients.official": {
+    "defaultMessage": "Official",
+    "description": "Under each of the three downloads Figma itself builds, as against the Linux fork under design.clients.fork."
+  },
+  "design.colours": {
+    "defaultMessage": "The colours",
+    "description": "The first of the three cards saying where the design reaches the code. This one is about the shared palette."
+  },
+  "design.colours.note": {
+    "defaultMessage": "Not redrawn from the file. <code>{pkg}</code> is generated and both the app and this site import the same stylesheet, so <code>{token}</code> means one thing in three places.",
+    "description": "The line in the colours card. {pkg} is the design-tokens package and {token} one of its classes; both are identifiers and are not translated. <code> draws each in monospace."
+  },
+  "design.frameTitle": {
+    "defaultMessage": "{file}, in Figma",
+    "description": "The accessible name of the frame that holds the design file, read aloud and never drawn. {file} is the Figma file’s own name and is not translated."
+  },
+  "design.full": {
+    "defaultMessage": "Open full screen",
+    "description": "The button on the narrow layout, where the frame does not fit beside the page. It opens the view full screen and loads nothing; design.load is the button that fetches the file. components.detail.full is the same words on a component’s page, where what opens full screen is the app."
+  },
+  "design.full.note": {
+    "defaultMessage": "The frame needs the width of the screen, so it opens on its own. The file itself still loads on a press.",
+    "description": "The line under the full-screen button. design.load.note is the line under the other button, which does fetch the file."
+  },
+  "design.lede": {
+    "defaultMessage": "The app is designed in one Figma file, <b>{file}</b>. It is the source for the screens, and this workbench is the source for everything written down about them.",
+    "description": "The paragraph under the heading. {file} is the Figma file’s own name and is not translated; <b> draws it in bold."
+  },
+  "design.links.app": {
+    "defaultMessage": "The app, at device size",
+    "description": "The second card in the Open tool, which goes to /preview."
+  },
+  "design.links.file": {
+    "defaultMessage": "The file in Figma",
+    "description": "The first card in the Open tool, which leaves for the design file itself. design.open is the same door as a button in the bar above the page."
+  },
+  "design.links.note": {
+    "defaultMessage": "The preview frames the running app at the size the file draws it, which is the comparison the file is for."
+  },
+  "design.load": {
+    "defaultMessage": "Load the Figma file",
+    "description": "The button that makes the one request to figma.com. Nothing is fetched until it is pressed, which is why the box above it says what will be."
+  },
+  "design.load.note": {
+    "defaultMessage": "from figma.com",
+    "description": "The line under the load button, naming the third party the request goes to. design.full.note is the line under the other button, which fetches nothing."
+  },
+  "design.loads": {
+    "defaultMessage": "What loads",
+    "description": "The first heading in the box above the button, over the address a press will fetch. The address itself is printed in monospace and is not a message."
+  },
+  "design.loads.note": {
+    "defaultMessage": "One request to figma.com, and none before the button is pressed."
+  },
+  "design.open": {
+    "defaultMessage": "Open in Figma",
+    "description": "The button in the bar above the page that leaves this site for the file in Figma itself. design.links.file is the same door in the tool panel, worded as a place rather than as an action."
+  },
+  "design.plugin": {
+    "defaultMessage": "The plugin",
+    "description": "The third of the three cards, about the program that draws the board."
+  },
+  "design.plugin.doc": {
+    "defaultMessage": "The Figma plugin",
+    "description": "The link to the plugin’s own documentation, which is that README rendered as a page of this site. It reads the same as the document’s name in the repository’s registry, which is not a message."
+  },
+  "design.plugin.note": {
+    "defaultMessage": "An interpreter rather than a builder: <code>{codeFile}</code> knows nothing about the app and draws whatever <code>{specFile}</code> describes. Its own documentation is a page of this site, with the three traps of the Linux client in it.",
+    "description": "The line in the plugin card. {codeFile} and {specFile} are two file names in the plugin’s directory and are not translated; <code> draws each in monospace."
+  },
+  "design.plugin.repo": {
+    "defaultMessage": "In the repository",
+    "description": "The link beside it, which leaves this site for the plugin’s directory on GitHub at the commit this page was built from."
+  },
+  "design.reload": {
+    "defaultMessage": "Reload the frame",
+    "description": "Both the reload button’s accessible name and its tooltip, on this page, where the frame holds the Figma file. frame.reload is the same words on the preview’s bar, where the frame holds a whole route of the app, and components.detail.reload on a component’s page, where it holds the gallery."
+  },
+  "design.rest.below": {
+    "defaultMessage": "Everything else about the design, the clients, the plugin and where the colours reach the code, is below.",
+    "description": "Where the three tools are, on a layout too narrow for the right-hand panel. design.rest.side is the same sentence for the wide layout."
+  },
+  "design.rest.side": {
+    "defaultMessage": "Everything else about the design, the clients, the plugin and where the colours reach the code, is on the right.",
+    "description": "Where the three tools are, on a layout wide enough to put them in the right-hand panel. design.rest.below is the same sentence for the layout that stacks them under the page."
+  },
+  "design.see": {
+    "defaultMessage": "What you will see",
+    "description": "The second heading in that box, over what the frame will show once it loads."
+  },
+  "design.see.note": {
+    "defaultMessage": "The file, if you are signed in to Figma with access to it. Figma’s own sign-in screen if not. That screen is a permission and not a fault: this file is not shared publicly."
+  },
+  "design.title": {
+    "defaultMessage": "Design",
+    "description": "The heading over the page that frames the Figma file. shell.activity.design is the same word on the rail, landing.door.design.title on the front page’s card, and nav.design is the longer name the browser tab carries."
+  },
   "devices.breakpoint": {
     "defaultMessage": "Tablet breakpoint (48rem)",
     "description": "Not a device: the width the reader’s own stylesheet changes at, worth being able to sit exactly on. 48rem is a CSS length and stays as it is written."
@@ -419,6 +532,42 @@
   "diagrams.title": {
     "defaultMessage": "Diagrams",
     "description": "The page’s heading. handbook.card.diagrams is the card on /handbook that opens this page and diagrams.crumb is the step in a single drawing’s breadcrumb that leads back to it; all three read the same in English. nav.diagrams is the longer name the browser tab carries."
+  },
+  "document.breadcrumb": {
+    "defaultMessage": "Breadcrumb",
+    "description": "Read aloud as the name of the trail above a document, and never drawn. The trail itself is the section the rail lights and then the document’s own name, both of which come out of the repository. components.detail.breadcrumb is the same word over a single component’s page."
+  },
+  "document.neighbours": {
+    "defaultMessage": "The records either side of this one",
+    "description": "Read aloud as the name of the two cards at the foot of a record, and never drawn. Records are a chain, and reading two in a row is the ordinary way to use them."
+  },
+  "document.next": {
+    "defaultMessage": "Next · {nav}",
+    "description": "The kicker on the right-hand card at the foot of a record. {nav} is the neighbouring record’s own short name out of the repository and is not translated. document.previous is the card on the other side."
+  },
+  "document.previous": {
+    "defaultMessage": "Previous · {nav}",
+    "description": "The kicker on the left-hand card at the foot of a record. {nav} is the neighbouring record’s own short name out of the repository and is not translated. document.next is the card on the other side."
+  },
+  "document.retired.badge": {
+    "defaultMessage": "{count, plural, one {# retired} other {# retired}}",
+    "description": "The badge at the head of a document that has struck claims in it. {count} is how many, and is never zero because the badge is not drawn then. English does not inflect the word; the plural is here so that a language which does has somewhere to say so."
+  },
+  "document.retired.note": {
+    "defaultMessage": "{count, plural, one {One claim on this page is} other {Claims on this page are}} struck through where they stand, with what voided them beside them.",
+    "description": "The sentence beside that badge, saying what the strikes on the page mean. {count} is how many claims are struck, and decides only whether the sentence is singular."
+  },
+  "document.retired.tag": {
+    "defaultMessage": "retired",
+    "description": "The chip drawn on each struck claim, against the clause that says what voided it. One word, in small type, inside the annotation rather than in the document: it is this site’s label and not the record’s text."
+  },
+  "document.source": {
+    "defaultMessage": "This page is <fileLink>{file}</fileLink> in the repository, rendered here. It is not a copy, so there is one place to edit it.",
+    "description": "The line at the foot of a document read out of the repository. {file} is its path and is not translated; <fileLink> is the link to it on GitHub at the commit this site was built from. document.source.generated is the same line for the one document that is written by a program."
+  },
+  "document.source.generated": {
+    "defaultMessage": "This page is <fileLink>{file}</fileLink> in the repository, which is the program that writes this page rather than the page. It is produced from the tree at build time, so nothing on it is a copy of anything and there is nothing here to edit.",
+    "description": "The line at the foot of the one document that is generated rather than read. {file} is the path of the PROGRAM and is not translated; <fileLink> is the link to it. document.source offers every other document as a file to edit, and offering this one would be an invitation to type into an output."
   },
   "drawing.failed": {
     "defaultMessage": "Did not render: {message}",
@@ -901,6 +1050,127 @@
     "defaultMessage": "The time the frame is showing",
     "description": "The label of the time field beside the track. Read aloud and never seen."
   },
+  "landing.door.decisions.blurb": {
+    "defaultMessage": "Why the repository is the way it is, and which of its claims have since expired."
+  },
+  "landing.door.decisions.kind": {
+    "defaultMessage": "Records",
+    "description": "The badge over the Decisions card. A record is a kind of document that is never rewritten, which the row about adr/ further down the page states."
+  },
+  "landing.door.decisions.title": {
+    "defaultMessage": "Decisions",
+    "description": "The Decisions card’s own name, on the front page. shell.activity.decisions is the same word on the rail; nav.decisions is the longer name the browser tab carries."
+  },
+  "landing.door.design.blurb": {
+    "defaultMessage": "The Figma file the screens come from, and the three places it reaches the code."
+  },
+  "landing.door.design.kind": {
+    "defaultMessage": "Drawn by hand",
+    "description": "The badge over the Design card. It says the section is a drawing rather than prose or a list, and that a person drew it."
+  },
+  "landing.door.design.title": {
+    "defaultMessage": "Design",
+    "description": "The Design card’s own name, on the front page. shell.activity.design is the same word on the rail, design.title is the heading of the page it opens, and nav.design is the longer name the browser tab carries."
+  },
+  "landing.door.handbook.blurb": {
+    "defaultMessage": "What the system is and how to work in it: the architecture, the drawings of it, the conventions, and the traps that pass every check."
+  },
+  "landing.door.handbook.kind": {
+    "defaultMessage": "Written down",
+    "description": "The badge over the Handbook card: the section is prose somebody wrote."
+  },
+  "landing.door.handbook.title": {
+    "defaultMessage": "Handbook",
+    "description": "The Handbook card’s own name, on the front page. shell.activity.handbook is the same word on the rail and in a document’s breadcrumb; nav.handbook is the page’s name in the browser tab."
+  },
+  "landing.door.preview.blurb": {
+    "defaultMessage": "The app itself at device size, with an inspector for its state, its console, its palette and its layout. No install and no emulator, and the address reproduces exactly what you see."
+  },
+  "landing.door.preview.kind": {
+    "defaultMessage": "The app, running",
+    "description": "The badge over the Preview card, saying what kind of thing is behind it. shell.activity.app is the rail’s shorter word for the same section."
+  },
+  "landing.door.preview.title": {
+    "defaultMessage": "Preview",
+    "description": "The Preview card’s own name, on the front page. nav.preview is the same word as the page’s name in the browser tab and in the search palette."
+  },
+  "landing.door.sources.blurb": {
+    "defaultMessage": "For everything the app shows: whether it is a live source, a file standing in for an API that does not exist yet, or a wanted feature with nothing to read at all."
+  },
+  "landing.door.sources.kind": {
+    "defaultMessage": "Inventory",
+    "description": "The badge over the Sources card: the section is a list of what exists."
+  },
+  "landing.door.sources.title": {
+    "defaultMessage": "Sources",
+    "description": "The Sources card’s own name, on the front page. shell.activity.sources is the same word on the rail; nav.sources is the longer name the browser tab carries."
+  },
+  "landing.doors.heading": {
+    "defaultMessage": "Where to go",
+    "description": "The heading over the five cards that open the sections of this site."
+  },
+  "landing.figure.live": {
+    "defaultMessage": "Live sources",
+    "description": "The first of the four figures: entries the app reads from an endpoint that answers today."
+  },
+  "landing.figure.noSource": {
+    "defaultMessage": "Wanted, with no source",
+    "description": "The third of the four figures: something the app is meant to show and has nothing at all to read for."
+  },
+  "landing.figure.questions": {
+    "defaultMessage": "Open editorial questions",
+    "description": "The fourth of the four figures: questions the sources board raises that only the newsroom can answer."
+  },
+  "landing.figure.sample": {
+    "defaultMessage": "Sample data sets",
+    "description": "The second of the four figures: a checked-in file standing in for an API that does not exist yet."
+  },
+  "landing.footer": {
+    "defaultMessage": "{licence} · <repoLink>{repo}</repoLink> · built from <commitLink>{commit}</commitLink>",
+    "description": "The line at the foot of the front page. {licence} is the SPDX identifier of this repository’s licence, {repo} its name on GitHub and {commit} the seven-character hash this site was built from; all three are identifiers and arrive as values so that none of them is translated. <repoLink> and <commitLink> are the two links."
+  },
+  "landing.layout.core": {
+    "defaultMessage": "The model, the parsers, the services, the caches and all of the state. It imports no UI framework and no platform SDK, and a test fails the build if that ever changes."
+  },
+  "landing.layout.heading": {
+    "defaultMessage": "How the repository is laid out",
+    "description": "The heading over the four rows naming a directory of this repository and saying what is in it. The directory names themselves are paths and stay as they are."
+  },
+  "landing.layout.mobile": {
+    "defaultMessage": "The Expo app: iOS, Android and a web target. It holds the screens and one file implementing the ports."
+  },
+  "landing.layout.records": {
+    "defaultMessage": "{records, plural, one {# record} other {# records}}. A record is never rewritten to look right in hindsight: a claim a later decision made false is struck through where it stands, and {retired, plural, one {# of them is} other {# of them are}}.",
+    "description": "The row about adr/. {records} is how many records the site publishes; {retired} is how many claims are struck through, counted over every document this site renders rather than over the records alone."
+  },
+  "landing.layout.tokens": {
+    "defaultMessage": "The shared palette. CORRECTIV’s WordPress CMS consumes the same values, and so does this workbench, which is why no page here can fork the colours."
+  },
+  "landing.lede": {
+    "defaultMessage": "A community app for CORRECTIV members, built as one platform-free core with the Expo app as its host. The core holds every piece of behaviour and imports no UI framework and no platform SDK, which is why replacing the whole view layer once cost no behaviour at all."
+  },
+  "landing.note": {
+    "defaultMessage": "This workbench publishes the repository’s own documents, unchanged and in place, and puts the running app next to them."
+  },
+  "landing.status.heading": {
+    "defaultMessage": "What the app reads",
+    "description": "The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the paragraph beside it explains."
+  },
+  "landing.status.note": {
+    "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {days, plural, =0 {today} =1 {yesterday} other {# days ago}}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
+    "description": "The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {days} is how many days ago that was, worked out in the reader’s browser, so the sentence says it twice over. “The board” is /sources."
+  },
+  "landing.title": {
+    "defaultMessage": "The CORRECTIV app, and everything written down about it"
+  },
+  "measured.age": {
+    "defaultMessage": "{days, plural, =0 {today} one {yesterday} other {# days ago}}",
+    "description": "How long ago a figure was measured, in a sentence that already names the day. {days} is whole days, counted in the reader’s own browser rather than at build time, because a published page sits at its address for months. Zero is today and one is yesterday; German needs no other branches, and a language that does may add them."
+  },
+  "measured.age.unknown": {
+    "defaultMessage": "date unknown",
+    "description": "Stands in for measured.age when the day cannot be parsed, or is in the future. Not an error a reader can act on, which is why it says what is missing rather than what went wrong."
+  },
   "nav.components": {
     "defaultMessage": "Components, the app’s own"
   },
@@ -919,7 +1189,8 @@
     "description": "The documents area of this site, at /handbook. The word is this repository’s own name for it and appears in the browser tab and in the search palette. handbook.title is the same word as that page’s own heading and shell.activity.handbook as the rail’s entry for it."
   },
   "nav.preview": {
-    "defaultMessage": "Preview"
+    "defaultMessage": "Preview",
+    "description": "The browser tab and the search palette for /preview. landing.door.preview.title is the same word on the front page’s card for it, and shell.activity.preview the rail’s entry."
   },
   "nav.reference": {
     "defaultMessage": "Reference, the core"
@@ -1078,10 +1349,12 @@
     "description": "The rail’s entry for the app’s own components. shell.search.group.components is the palette’s group of them and reads the same in English."
   },
   "shell.activity.decisions": {
-    "defaultMessage": "Decisions"
+    "defaultMessage": "Decisions",
+    "description": "The rail’s entry for the board of records. landing.door.decisions.title is the same word on the front page’s card for it; nav.decisions is the longer name the browser tab carries, and decisions.title the page’s own heading."
   },
   "shell.activity.design": {
-    "defaultMessage": "Design"
+    "defaultMessage": "Design",
+    "description": "The rail’s entry for the design page. landing.door.design.title is the same word on the front page’s card for it and design.title is that page’s own heading; nav.design is the longer name the browser tab carries."
   },
   "shell.activity.handbook": {
     "defaultMessage": "Handbook",
@@ -1099,7 +1372,8 @@
     "description": "The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reference.title is that page’s own heading; both read the same in English."
   },
   "shell.activity.sources": {
-    "defaultMessage": "Sources"
+    "defaultMessage": "Sources",
+    "description": "The rail’s entry for the sources board. landing.door.sources.title is the same word on the front page’s card for it; nav.sources is the longer name the browser tab carries, and sources.title the page’s own heading."
   },
   "shell.activity.strings": {
     "defaultMessage": "Strings",
