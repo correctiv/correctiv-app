@@ -314,6 +314,7 @@ export const en: Record<string, string> = {
   "ui.tabParticipate": "Take part",
   "ui.tabProfile": "Profile",
   "video.cardLabel": "Video: {title}",
+  "video.duration": "{count, plural, one {# min} other {# min}}",
   "video.frameTitle": "Video",
   "video.kicker": "Video",
   "video.loading": "Loading …",

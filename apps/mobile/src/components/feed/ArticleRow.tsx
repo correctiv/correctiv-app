@@ -1,8 +1,9 @@
 import { Pressable, View } from 'react-native';
 
 import { Typo } from '@/components/ui';
-import { formatDateDe } from '@correctiv/app-core/lib/format';
+import { formatDate } from '@correctiv/app-core/lib/format';
 import type { FeedItem } from '@correctiv/app-core/types/models';
+import { useLocale } from '@/lib/store/core';
 
 /** Compact list row for "Neueste Recherchen": title plus meta, no image. */
 export function ArticleRow({
@@ -12,6 +13,7 @@ export function ArticleRow({
   item: FeedItem;
   onPress: (item: FeedItem) => void;
 }) {
+  const locale = useLocale();
   return (
     <Pressable
       onPress={() => onPress(item)}
@@ -46,7 +48,7 @@ export function ArticleRow({
         {item.publishedAt ? (
           <Typo variant="text-s" color="grey-500">
             {item.author ? ' · ' : ''}
-            {formatDateDe(item.publishedAt)}
+            {formatDate(item.publishedAt, locale)}
           </Typo>
         ) : null}
       </View>

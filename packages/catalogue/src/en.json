@@ -997,6 +997,10 @@
     "defaultMessage": "Video: {title}",
     "description": "The accessible name of a video card, read aloud and never seen. {title} is the video's title."
   },
+  "video.duration": {
+    "defaultMessage": "{count, plural, one {# min} other {# min}}",
+    "description": "Beside the publication date under a video. {count} is a whole number of minutes, never less than one; both branches read the same in English because the abbreviation does not inflect, and a language whose does needs both."
+  },
   "video.frameTitle": {
     "defaultMessage": "Video",
     "description": "The accessible name of the frame the video is embedded in, read aloud and never seen. `video.screenTitle` is the same word as the route's name and `video.kicker` the one above the title."

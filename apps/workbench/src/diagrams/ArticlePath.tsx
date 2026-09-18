@@ -428,7 +428,8 @@ export function ArticlePath({ alt = true }: { alt?: boolean }) {
           it: the structure, the class names, the byline and the verdict plaque. It owns neither the
           words nor the colours — a document built for a WebView can reach no provider and inherits
           no stylesheet — so the copy is a required second parameter the host formats and the
-          host&apos;s CSS arrives through the optional third.
+          host&apos;s CSS arrives through the third, whose `css` is optional and whose `locale` is
+          not.
         </dd>
         <dt>What the host adds</dt>
         <dd>

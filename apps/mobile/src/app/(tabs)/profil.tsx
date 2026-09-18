@@ -6,7 +6,7 @@ import { ClubCard } from '@/components/profile/ClubCard';
 import { NavCard } from '@/components/profile/NavCard';
 import { SettingRow } from '@/components/profile/SettingRow';
 import { Button, Hairline, Overline, Screen, SectionCard, SplitRow, Typo } from '@/components/ui';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 import type { NewsletterKey } from '@correctiv/app-core/stores/settings';
 import type { Entitlement } from '@correctiv/app-core/types/models';
 import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
@@ -14,7 +14,13 @@ import { useInvestigations } from '@/lib/feeds/useFeed';
 import { TIER_LABELS } from '@/lib/membership/tierLabel';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
-import { useCoreActions, useSavedArticles, useSession, useSettings } from '@/lib/store/core';
+import {
+  useCoreActions,
+  useLocale,
+  useSavedArticles,
+  useSession,
+  useSettings,
+} from '@/lib/store/core';
 import { sizes } from '@/lib/theme';
 
 /**
@@ -196,6 +202,7 @@ export default function ProfilScreen() {
   const settings = useSettings();
   const saved = useSavedArticles();
   const intl = useIntl();
+  const locale = useLocale();
   const entitlement = session.entitlement;
 
   /**
@@ -240,7 +247,7 @@ export default function ProfilScreen() {
             <Hairline className="my-2xs" />
             <Row
               label={intl.formatMessage(COPY.validUntilRow)}
-              value={formatDateShortDe(entitlement.validUntil)}
+              value={formatDateShort(entitlement.validUntil, locale)}
             />
           </>
         )}

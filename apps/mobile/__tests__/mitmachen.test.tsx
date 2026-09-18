@@ -2,7 +2,7 @@ import { act, type ReactTestRenderer } from 'react-test-renderer';
 
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { claims } from '@correctiv/app-core/data/claims';
-import { formatNumberDe } from '@correctiv/app-core/lib/format';
+import { formatNumber } from '@correctiv/app-core/lib/format';
 
 /**
  * The participation flow, end to end: a multi-step form whose steps come from the
@@ -83,8 +83,10 @@ describe('Mitmachen hub', () => {
   });
 
   it('shows the live contribution count per callout', () => {
+    // `'de'` because German is what the app renders: the expectation has to group
+    // the thousands the way the screen's own provider does.
     expect(renderedText(render(<MitmachenScreen />))).toContain(
-      `${formatNumberDe(CALLOUT.responseCount)} ${UNIT}`,
+      `${formatNumber(CALLOUT.responseCount, 'de')} ${UNIT}`,
     );
   });
 
@@ -116,7 +118,7 @@ describe('Mitmachen hub', () => {
     const text = renderedText(render(<MitmachenScreen />));
     expect(text).toContain('✓ Sie haben beigetragen');
     // …and the count has moved by one.
-    expect(text).toContain(`${formatNumberDe(CALLOUT.responseCount + 1)} ${UNIT}`);
+    expect(text).toContain(`${formatNumber(CALLOUT.responseCount + 1, 'de')} ${UNIT}`);
   });
 });
 
@@ -179,7 +181,7 @@ describe('the callout form', () => {
 
     const text = renderedText(tree);
     expect(text).toContain('Danke für Ihren Beitrag!');
-    expect(text).toContain(`${formatNumberDe(CALLOUT.responseCount + 1)} Menschen`);
+    expect(text).toContain(`${formatNumber(CALLOUT.responseCount + 1, 'de')} Menschen`);
   });
 
   it('leaves the form and the callout page together', () => {

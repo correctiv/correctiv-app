@@ -4,9 +4,9 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { VideoFrame } from '@/components/media/VideoFrame';
 import { Button, Overline, ScreenHeader, Typo } from '@/components/ui';
-import { formatDateDe, formatMinutesDe } from '@correctiv/app-core/lib/format';
+import { formatDate, minutesOf } from '@correctiv/app-core/lib/format';
 import type { Video } from '@correctiv/app-core/types/models';
-import { useVideo } from '@/lib/store/core';
+import { useLocale, useVideo } from '@/lib/store/core';
 import { openExternal } from '@/lib/openExternal';
 import { colors } from '@/lib/theme';
 
@@ -14,9 +14,9 @@ import { colors } from '@/lib/theme';
  * Everything this screen says, in ENGLISH; the German ships in
  * `packages/catalogue/src/de/video.ts` (ADR 0026 §6).
  *
- * `views` is an ICU plural. It replaces a `formatNumberDe` call: `#` inside a
+ * `views` is an ICU plural. It replaces a `formatNumber` call: `#` inside a
  * plural is formatted by the provider's locale, so the thousands separator is
- * still the German one and the count now picks its own noun.
+ * still the language's own and the count now picks its own noun.
  */
 const COPY = defineMessages({
   screenTitle: {
@@ -24,6 +24,12 @@ const COPY = defineMessages({
     defaultMessage: 'Video',
     description:
       "The video route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it, so nobody sees it there. `video.kicker` is the word above the video's own title and `video.frameTitle` names the embed.",
+  },
+  duration: {
+    id: 'video.duration',
+    defaultMessage: '{count, plural, one {# min} other {# min}}',
+    description:
+      'Beside the publication date under a video. {count} is a whole number of minutes, never less than one; both branches read the same in English because the abbreviation does not inflect, and a language whose does needs both.',
   },
   none: { id: 'video.none', defaultMessage: 'No video selected.' },
   unavailable: { id: 'video.unavailable', defaultMessage: 'Video unavailable' },
@@ -208,14 +214,17 @@ function PeertubeStage({
 /** Kicker, title, source, description, link — the same for both sources. */
 function VideoMeta({ video }: { video: Video }) {
   const intl = useIntl();
+  const locale = useLocale();
   const days = daysSince(video.publishedAt);
   const when =
     days <= 0
       ? intl.formatMessage(COPY.today)
       : days === 1
         ? intl.formatMessage(COPY.yesterday)
-        : formatDateDe(video.publishedAt);
-  const duration = video.durationSec ? formatMinutesDe(video.durationSec) : '';
+        : formatDate(video.publishedAt, locale);
+  const duration = video.durationSec
+    ? intl.formatMessage(COPY.duration, { count: minutesOf(video.durationSec) })
+    : '';
   const views = video.views != null ? intl.formatMessage(COPY.views, { count: video.views }) : '';
   const channel = channelOf(video);
   const host = (video.url || '').replace(/^https?:\/\//, '').split('/')[0];
