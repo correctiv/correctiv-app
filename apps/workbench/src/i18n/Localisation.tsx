@@ -9,7 +9,7 @@ import {
 } from 'react-intl';
 
 import { de } from './catalogue/de';
-import { DEFAULT_LANGUAGE, type Language } from './language';
+import { SOURCE_LANGUAGE, type Language } from './language';
 
 /**
  * Every catalogue this site has, by language.
@@ -83,7 +83,7 @@ export function Localisation({ language, children }: { language: Language; child
       createIntl(
         {
           locale: language,
-          defaultLocale: DEFAULT_LANGUAGE,
+          defaultLocale: SOURCE_LANGUAGE,
           messages: CATALOGUES[language],
           onError,
         },

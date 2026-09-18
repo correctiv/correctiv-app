@@ -421,6 +421,14 @@
     "defaultMessage": "Language · Sprache",
     "description": "The heading of the language group, and the same words again as its legend. Every translation of it carries BOTH language names, because this is the one control a reader has to find in a language they may not be reading yet; what a translation changes is which of the two comes first."
   },
+  "settings.language.system": {
+    "defaultMessage": "System",
+    "description": "The third LANGUAGE choice, and the default: whichever of this site’s languages the browser asks for. settings.mode.system is the same word one group up for the appearance, and settings.language.system.hint is the line under this one. The two rows beside it name themselves — English and Deutsch — and are not translated at all; this is the only row in the group that has no language of its own, which is why it is a message."
+  },
+  "settings.language.system.hint": {
+    "defaultMessage": "Follow the browser",
+    "description": "The line under the System language choice. settings.mode.system.hint says “Follow the device” one group up and means the appearance; this one means the language list the browser sends, which is a setting of the browser rather than of the machine."
+  },
   "settings.lede": {
     "defaultMessage": "For this browser. Nothing here is sent anywhere or shared with the app in the frame, which keeps its own setting."
   },
@@ -438,7 +446,7 @@
   },
   "settings.mode.system": {
     "defaultMessage": "System",
-    "description": "The third appearance choice, and the default: whatever the device is set to. settings.mode.system.hint is the line under it."
+    "description": "The third APPEARANCE choice, and the default: whatever the device is set to. settings.mode.system.hint is the line under it, and settings.language.system is the same word one group further down for the language."
   },
   "settings.mode.system.hint": {
     "defaultMessage": "Follow the device"

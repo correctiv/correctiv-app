@@ -1,6 +1,6 @@
 import { Languages, Moon, Sun, SunMoon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { defineMessages, type MessageDescriptor } from 'react-intl';
+import { defineMessages, type IntlShape, type MessageDescriptor } from 'react-intl';
 
 import docsModule from 'virtual:docs';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog';
@@ -8,7 +8,7 @@ import { cn } from '../lib/cn';
 import { MEASURED_ON } from '../../content/sources.manifest';
 import { ageInWords } from '../lib/measured';
 import { useWorkbenchIntl } from '../i18n/Localisation';
-import type { Language } from '../i18n/language';
+import { tagOf, type LanguageChoice } from '../i18n/language';
 import type { Appearance } from '../theme';
 
 /**
@@ -47,7 +47,7 @@ const COPY = defineMessages({
     id: 'settings.mode.system',
     defaultMessage: 'System',
     description:
-      'The third appearance choice, and the default: whatever the device is set to. settings.mode.system.hint is the line under it.',
+      'The third APPEARANCE choice, and the default: whatever the device is set to. settings.mode.system.hint is the line under it, and settings.language.system is the same word one group further down for the language.',
   },
   systemHint: { id: 'settings.mode.system.hint', defaultMessage: 'Follow the device' },
 
@@ -56,6 +56,18 @@ const COPY = defineMessages({
     defaultMessage: 'Language · Sprache',
     description:
       'The heading of the language group, and the same words again as its legend. Every translation of it carries BOTH language names, because this is the one control a reader has to find in a language they may not be reading yet; what a translation changes is which of the two comes first.',
+  },
+  systemLanguage: {
+    id: 'settings.language.system',
+    defaultMessage: 'System',
+    description:
+      'The third LANGUAGE choice, and the default: whichever of this site\u2019s languages the browser asks for. settings.mode.system is the same word one group up for the appearance, and settings.language.system.hint is the line under this one. The two rows beside it name themselves \u2014 English and Deutsch \u2014 and are not translated at all; this is the only row in the group that has no language of its own, which is why it is a message.',
+  },
+  systemLanguageHint: {
+    id: 'settings.language.system.hint',
+    defaultMessage: 'Follow the browser',
+    description:
+      'The line under the System language choice. settings.mode.system.hint says \u201cFollow the device\u201d one group up and means the appearance; this one means the language list the browser sends, which is a setting of the browser rather than of the machine.',
   },
 
   keyboard: { id: 'settings.keyboard', defaultMessage: 'Keyboard' },
@@ -121,23 +133,55 @@ const MODES: {
 ];
 
 /**
- * The two languages, named in themselves rather than in the reader's.
+ * The three choices, and only one of them is a message.
  *
- * A person looking for German does not read "German", they read "Deutsch". That is
- * the one convention a language picker has that no other picker does, and it is why
- * these labels are NOT message descriptors: translating them would mean a German
- * reader sees "Englisch", which is the wrong answer to the only question this
- * control asks.
+ * **A language names itself.** A person looking for German does not read "German",
+ * they read "Deutsch", and that is the one convention a language picker has that no
+ * other picker does. So those two labels are NOT descriptors: translating them would
+ * mean a German reader sees "Englisch", which is the wrong answer to the only
+ * question this control asks. Their hints are written in the language of the row
+ * they belong to for the same reason, so that a reader who cannot read the other one
+ * still gets a full sentence in theirs.
  *
- * The hint beside each one is written in the language of the row it belongs to, so
- * that a reader who cannot read the other one still gets a full sentence in theirs.
- * That is the second reason these two rows are not a `Record` of descriptors like
- * every other list on this page.
+ * **"System" has no language of its own**, so it is the one row that follows the
+ * setting like everything else in this dialog. It is also the default and therefore
+ * the row most readers will find selected: since 2026-09-18 an untouched browser
+ * gets the language it asks for rather than English (`i18n/language.ts`), which is
+ * what puts a newsroom machine on German without anybody finding this dialog first.
+ *
+ * Its position is first and that is deliberate: it is what is selected until
+ * somebody decides otherwise, and the appearance group above puts its own default
+ * last only because "light, dark, follow" is the order those three are thought in.
+ * Here the three are "follow, or one of these two".
  */
-const TONGUES: { value: Language; label: string; hint: string }[] = [
+type Tongue = {
+  value: LanguageChoice;
+  /** A descriptor for the row with no language of its own, a literal for the two that have one. */
+  label: string | MessageDescriptor;
+  hint: string | MessageDescriptor;
+};
+
+export const TONGUES: Tongue[] = [
+  { value: 'system', label: COPY.systemLanguage, hint: COPY.systemLanguageHint },
   { value: 'en', label: 'English', hint: 'The language every string is written in' },
   { value: 'de', label: 'Deutsch', hint: 'Die Werkzeuge, nicht die Dokumente' },
 ];
+
+/**
+ * A row's words, whichever of the two kinds it holds.
+ *
+ * Takes `intl` rather than calling the hook, because it is reached from a `.map`
+ * inside one component and a hook in a helper would be a rule violated for no gain.
+ *
+ * Exported with `TONGUES` for `test/i18n.test.ts`. Nothing in this package renders
+ * this dialog — it is a Radix dialog and the tests here use `renderToStaticMarkup`,
+ * which mounts no portal — so a cold review rewrote this to skip `formatMessage`
+ * entirely, leaving every translated row reading "[object Object]", and 484 tests
+ * stayed green.
+ */
+export function say(intl: IntlShape, words: string | MessageDescriptor): string {
+  return typeof words === 'string' ? words : intl.formatMessage(words);
+}
 
 const SHORTCUTS: [string, MessageDescriptor][] = [
   ['⌘K', COPY.search],
@@ -170,8 +214,8 @@ export function Settings({
   onOpenChange: (open: boolean) => void;
   appearance: Appearance;
   onAppearance: (next: Appearance) => void;
-  language: Language;
-  onLanguage: (next: Language) => void;
+  language: LanguageChoice;
+  onLanguage: (next: LanguageChoice) => void;
 }) {
   const intl = useWorkbenchIntl();
 
@@ -249,16 +293,27 @@ export function Settings({
             and the controls around the frame (ADR 0050 §2).
 
             The heading carries both languages because it is the one control a reader
-            has to find in a language they may not be reading yet.
+            has to find in a language they may not be reading yet. Which is a smaller
+            problem than it was: the first row is "System" and it is the default, so
+            a reader whose browser asks for German arrives at a German dialog and
+            reaches this control to leave it rather than to arrive at it.
           */}
           <fieldset className="mt-xs grid gap-2xs sm:grid-cols-2">
             <legend className="sr-only">{intl.formatMessage(COPY.language)}</legend>
             {TONGUES.map((tongue) => (
               <label
                 key={tongue.value}
-                lang={tongue.value}
+                /* The row's own language, where it has one. `i18n/language.ts`'s
+                   `tagOf` carries the rule and the reason. */
+                lang={tagOf(tongue.value)}
+                /* The default takes the whole row and the two languages share the
+                   one below it. Three equal columns fit, and what they do to these
+                   hints is the reason not to: they are sentences where the
+                   appearance's are two words, and at a third of this dialog each
+                   one wraps to three lines. */
                 className={cn(
                   'grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-x-xs',
+                  tongue.value === 'system' && 'sm:col-span-2',
                   'rounded-md border p-xs transition-colors',
                   'border-stroke text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
                   'has-[:checked]:border-accent has-[:checked]:bg-surface has-[:checked]:text-on-canvas',
@@ -277,9 +332,11 @@ export function Settings({
                   aria-hidden="true"
                   className="col-start-1 row-start-1 row-span-2 size-[1rem] shrink-0 self-center"
                 />
-                <span className="col-start-2 row-start-1 text-m font-medium">{tongue.label}</span>
+                <span className="col-start-2 row-start-1 text-m font-medium">
+                  {say(intl, tongue.label)}
+                </span>
                 <span className="col-start-2 row-start-2 text-s text-on-canvas-muted">
-                  {tongue.hint}
+                  {say(intl, tongue.hint)}
                 </span>
               </label>
             ))}

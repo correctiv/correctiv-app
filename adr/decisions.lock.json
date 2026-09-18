@@ -434,5 +434,17 @@
       "4": ["The setting is the reader's, so it lives where the appearance does"],
       "5": ["`document.ts`'s module labels are a decision this record does not make"]
     }
+  },
+  "0051": {
+    "slugs": ["the-workbench-starts-in-the-browsers-language"],
+    "decisions": {
+      "1": ["The default is the language the browser asks for"],
+      "2": ["\"System\" is a third value of the setting, not a hidden default"],
+      "3": [
+        "The picker's third row is the only one that is translated",
+        "One row of the picker is translated, and it is the only one"
+      ],
+      "4": ["The constant that meant both things is split"]
+    }
   }
 }
