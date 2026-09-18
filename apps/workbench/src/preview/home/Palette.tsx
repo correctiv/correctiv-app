@@ -7,11 +7,13 @@ import { say } from '../../i18n/messages';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 
-// The app's own registry, and the whole of ADR 0046 §1: the palette IS this table, so a
-// module added to the app appears here without anybody listing it a second time. The
-// check that used to refuse a module the shipped document does not place went with that
-// decision, because the condition it flagged stopped being a fault.
-import { HOME_MODULES } from '@/lib/home/modules';
+// The app's own declaration, and ADR 0046 §1 one step along: the palette was
+// `HOME_MODULES` itself, and is now the blocks that say they belong on the screen being
+// edited (ADR 0054 §2 and §5). The check that used to refuse a module the shipped
+// document does not place went with ADR 0046 §1 and has not come back; what holds the
+// declaration against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in
+// both directions, which is what ADR 0046 §1's "no second list to forget" became.
+import { blocksFor } from '@/lib/home/screens';
 
 import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
@@ -90,7 +92,7 @@ const COPY = defineMessages({
   lead: {
     id: 'home.palette.lead',
     defaultMessage:
-      'It goes {where}. Every module the app holds is offered; the frame beside this is where an arrangement is judged, not this list.',
+      'It goes {where}. Every block that says it belongs on this screen is offered; the frame beside this is where an arrangement is judged, not this list.',
     description:
       'The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as "at the top of the day".',
   },
@@ -196,7 +198,10 @@ export function InsertMark({
         */}
         <AppHost>
           <ul className="mt-s grid grid-cols-1 gap-xs sm:grid-cols-2">
-            {Object.keys(HOME_MODULES).map((module) => (
+            {/* The screen this tool edits. One value today, and the reason it is written
+                rather than left implicit is ADR 0054 §2: the second screen should be a
+                change to this line and not a discovery about what the palette meant. */}
+            {blocksFor('home').map((module) => (
               <Specimen
                 key={module}
                 module={module}

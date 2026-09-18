@@ -1227,7 +1227,7 @@
     "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
   },
   "home.palette.lead": {
-    "defaultMessage": "It goes {where}. Every module the app holds is offered; the frame beside this is where an arrangement is judged, not this list.",
+    "defaultMessage": "It goes {where}. Every block that says it belongs on this screen is offered; the frame beside this is where an arrangement is judged, not this list.",
     "description": "The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the top of the day\"."
   },
   "home.palette.title": {

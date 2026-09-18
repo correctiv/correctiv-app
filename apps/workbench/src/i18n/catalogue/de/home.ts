@@ -73,7 +73,7 @@ export const home: Record<string, string> = {
   'home.palette.addHere': 'Einen Block hinzufügen: {where}',
   'home.palette.title': 'Einen Block hinzufügen',
   'home.palette.lead':
-    'Eingefügt wird: {where}. Angeboten wird jedes Modul, das die App hat; beurteilt wird eine Anordnung im Rahmen daneben, nicht in dieser Liste.',
+    'Eingefügt wird: {where}. Angeboten wird jeder Block, der für diesen Bildschirm deklariert ist; beurteilt wird eine Anordnung im Rahmen daneben, nicht in dieser Liste.',
   'home.palette.addModule': '{name} hinzufügen. {what}',
 
   // What a block says instead of a drawing (`preview/home/HomeBlock.tsx`). Since ADR 0053

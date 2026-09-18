@@ -67,6 +67,7 @@ import {
   sectionsAt,
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
+import { MODULE_SCREENS } from '@/lib/home/screens';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
@@ -128,12 +129,18 @@ describe('the shipped home document', () => {
    *
    * What the check was really about — a module nobody can reach — is covered by a
    * mechanism rather than by an assertion. The palette in
-   * `apps/workbench/src/preview/home/Palette.tsx` is built from `HOME_MODULES` itself, so
-   * a module added here appears in the editor with nothing listing it a second time.
-   * There is no second list to fall behind, which is not one of ADR 0031's four rungs so
-   * much as the thing all four are for; ADR 0046 §1 is where the trade is argued in full.
-   * And `apps/workbench/test/preview/home-document.test.ts` already fails on a module
-   * with no entry in `MODULE_LABELS`, which is what stops one reaching a newsroom spelled
+   * `apps/workbench/src/preview/home/Palette.tsx` is built from the modules themselves,
+   * so a module added here appears in the editor without being listed a second time by
+   * hand; ADR 0046 §1 is where that trade is argued in full.
+   *
+   * **It now reads `lib/home/screens.ts` to do it, so there IS a second list and the
+   * sentence above used to say there was not.** ADR 0054 §2 made that trade on purpose: a
+   * block says which screens it belongs on rather than having it read off the name of the
+   * registry that holds it. What takes the place of absence is the pair of assertions
+   * below, which fail in both directions, and that is one of ADR 0031's four rungs rather
+   * than the thing all four are for. And
+   * `apps/workbench/test/preview/home-document.test.ts` already fails on a module with no
+   * entry in `MODULE_LABELS`, which is what stops one reaching a newsroom spelled
    * `faktencheck-rail`.
    */
 
@@ -169,6 +176,28 @@ describe('the shipped home document', () => {
     const undrawable = Object.keys(HOME_MODULE_SETTINGS).filter(
       (module) => !(module in HOME_MODULES),
     );
+    expect(undrawable).toEqual([]);
+  });
+
+  /**
+   * The two halves of ADR 0054 §2, and they are why that record could give the palette a
+   * second list to read without giving it a list that can fall behind.
+   *
+   * The first half is the one a type cannot see. Every module has to say where it
+   * belongs, so a block written and never declared is a block the editor offers on no
+   * screen at all — which would look exactly like the module having been forgotten, and
+   * is the failure the declaration exists to make loud.
+   */
+  it('has every module declare at least one screen', () => {
+    const undeclared = Object.keys(HOME_MODULES).filter(
+      (module) => (MODULE_SCREENS[module]?.length ?? 0) === 0,
+    );
+    expect(undeclared).toEqual([]);
+  });
+
+  /** And the other direction: a declaration for a block this app cannot draw. */
+  it('declares screens only for modules it can draw', () => {
+    const undrawable = Object.keys(MODULE_SCREENS).filter((module) => !(module in HOME_MODULES));
     expect(undrawable).toEqual([]);
   });
 });

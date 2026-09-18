@@ -152,7 +152,20 @@ read as unmeasured until then.
 
 ## What this retires
 
-Nothing is struck. Two claims are read and deliberately left standing:
+[ADR 0046](0046-what-the-editor-may-add-and-what-a-block-is-called.md), **one claim in
+§1 struck**, and this section said "nothing is struck" until §2 above was carried out.
+
+- **ADR 0046 §1's second protection, that the palette is built from the registry itself
+  so there is no second list to forget.** There is one now, and §2 above is what made it.
+  What the sentence was really protecting — a module written and reachable by nobody — is
+  held instead by a pair of assertions that fail in both directions, a module with no
+  declaration and a declaration for no module.
+
+  **The record did not see this when it was written**, which is the honest account and the
+  argument for writing the field rather than only deciding it. `screens.ts` and the
+  strike in 0046 arrived together, one change later.
+
+Two claims are read and deliberately left standing:
 
 - **ADR 0048 §1, that the modules stay out of the gallery and out of `src/components`.**
   Untouched. This record answers the question the review raised underneath it and reaches

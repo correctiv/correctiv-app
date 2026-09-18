@@ -420,7 +420,7 @@ export function mintId(layout: HomeLayout, module: string): string {
   /*
    * The one input that made an editor operation produce a file the core refuses: an empty
    * module name mints an empty id, and the parser answers `section-id-invalid`. Not
-   * reachable from the palette, which offers `Object.keys(HOME_MODULES)` and nothing else
+   * reachable from the palette, which offers `blocksFor('home')` and nothing else
    * — so this is a precondition rather than a bug, found by a cold review feeding this
    * function names no registry would hold. Refused at the door, where the message names
    * the caller, rather than at a parse of a file somebody has already saved.

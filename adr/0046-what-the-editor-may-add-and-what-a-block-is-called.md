@@ -75,9 +75,14 @@ first time it takes a block off the screen for a week.
 **What does not go is the protection.** The risk that check was really about is a module
 nobody can reach, and two things now cover it, neither of them new:
 
-- The palette is built from the registry itself, so a module added to `HOME_MODULES`
+- ~~The palette is built from the registry itself, so a module added to `HOME_MODULES`
   appears in the editor without anyone listing it anywhere. There is no second list to
-  forget.
+  forget.~~ There is one, `apps/mobile/src/lib/home/screens.ts`, voided by
+  [ADR 0054](0054-a-block-declares-where-it-may-appear.md) §2: a block now says which
+  screens it belongs on, and the palette offers the ones that name the screen being
+  edited. What stands in for the absence of a list is an assertion in both directions in
+  `apps/mobile/__tests__/home-layout.test.tsx`, so a module added to `HOME_MODULES` and
+  declared nowhere fails rather than quietly appearing.
 - `apps/workbench/test/preview/home-document.test.ts` already reads `HOME_MODULES` out of
   `apps/mobile/src/lib/home/modules.tsx` as source text and fails on a module with no
   entry in `MODULE_LABELS` — and on an entry no module answers to. A module that reached

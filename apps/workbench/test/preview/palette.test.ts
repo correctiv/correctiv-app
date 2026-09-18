@@ -17,9 +17,16 @@ import { code } from '../source.ts';
  *
  * ADR 0045 §4 makes the arrangement the editor's and §6 puts a thin mark between every
  * pair of blocks, opening the modules available. ADR 0046 §1 decides where that list
- * comes from and what it cost: the palette IS `HOME_MODULES`, and the app's check that
- * the shipped document names every renderer was retired rather than replaced, because a
- * module waiting in a palette stopped being a module nobody can reach.
+ * comes from and what it cost: the palette was `HOME_MODULES` itself, and the app's check
+ * that the shipped document names every renderer was retired rather than replaced,
+ * because a module waiting in a palette stopped being a module nobody can reach.
+ *
+ * ADR 0054 §2 moves it one step: the palette is the blocks that declare the screen being
+ * edited, `blocksFor('home')`. That is the second list ADR 0046 §1 said it did not have,
+ * and what stands in for its absence is `apps/mobile/__tests__/home-layout.test.tsx`
+ * failing in both directions — a module with no declaration, and a declaration for no
+ * module. Neither half is readable from here, which is why this file asserts the wiring
+ * and that file asserts the pair.
  *
  * The naming is a pure function and is run here. The wiring is read as text, which is the
  * weaker half — it catches a line deleted or moved and not a mark drawn in the wrong
@@ -123,12 +130,14 @@ describe('where a block is going, in words', () => {
 
 describe('the palette is the registry', () => {
   /*
-   * ADR 0046 §1. A module added to the app appears in the editor with nothing listing it
-   * a second time, and that mechanism is what replaced the check the app used to carry.
+   * ADR 0046 §1 and ADR 0054 §2. The list is still the app's and still kept nowhere here;
+   * what changed is which of the app's files answers, and that the screen it asks for is
+   * written rather than implied.
    */
-  it('reads the app’s own table and keeps no list beside it', () => {
-    expect(PALETTE).toMatch(/import \{ HOME_MODULES \} from '@\/lib\/home\/modules'/);
-    expect(PALETTE).toMatch(/Object\.keys\(HOME_MODULES\)/);
+  it('reads the app’s own declaration and keeps no list beside it', () => {
+    expect(PALETTE).toMatch(/import \{ blocksFor \} from '@\/lib\/home\/screens'/);
+    expect(PALETTE).toMatch(/blocksFor\('home'\)/);
+    expect(PALETTE).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
   });
 
   it('gives every module in that table words a newsroom can read', () => {
