@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ScrollView } from 'react-native';
 
 import { Bleed } from './Bleed';
+import { useRailDrag } from '@/lib/rail/useRailDrag';
 import { spacingPx } from '@/lib/theme';
 
 export type RailProps = {
@@ -22,11 +23,18 @@ export type RailProps = {
  * That padding was copied into three rails as a bare `24` before this component
  * existed; it now comes from the token on both sides, so a change to the screen
  * padding cannot leave the rails behind.
+ *
+ * **`useRailDrag` is the whole of the web target's difference**, and on iOS and
+ * Android it is a no-op that hands `ScrollView` no ref. A finger scrolls this
+ * row; a mouse had nothing at all, and `lib/rail/useRailDrag.web.ts` has the
+ * measurement and the argument.
  */
 export function Rail({ children, gap = 's' }: RailProps) {
+  const drag = useRailDrag();
   return (
     <Bleed>
       <ScrollView
+        ref={drag}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: spacingPx.m, gap: spacingPx[gap] }}
