@@ -1,6 +1,6 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -120,5 +120,90 @@ describe('the Node version', () => {
         what: 'engines.node asks for',
       }),
     ).toEqual([]);
+  });
+});
+
+/**
+ * Every subpath a workspace package promises resolves to something that is there.
+ *
+ * **This exists because the mistake it catches is green.** `packages/catalogue`
+ * shipped `"./*": "./src/*.ts"` for a `src/` holding a directory and a `.json`. The
+ * wildcard APPENDS its suffix, so `@correctiv/catalogue/de` mapped to `src/de.ts`,
+ * which is not a file, and `@correctiv/catalogue/en.json` to `src/en.json.ts`,
+ * which is not either. Nothing failed: nothing imported a subpath yet, and when
+ * something did it would have resolved through `apps/mobile/tsconfig.json`'s
+ * `paths` under tsc and through the mapper jest-expo derives from it, and thrown
+ * `ERR_MODULE_NOT_FOUND` under Node, Vite and Metro. Typecheck green, tests green,
+ * bundle broken — measured 2026-09-18, and found by a cold review rather than by
+ * anything here.
+ *
+ * So the question this asks is the reverse of the obvious one. Not "does every
+ * export resolve", which says nothing about the subpaths nobody has written yet,
+ * but **"is every file under the wildcard's own directory reachable through it"**.
+ * A wildcard is a promise about a whole directory, and an entry the pattern cannot
+ * produce a specifier for is a file the package cannot hand out.
+ *
+ * The suffix is what makes the two spellings differ, and both are legitimate:
+ * `./src/*` reaches everything, and `./src/*.ts` reaches a flat directory of
+ * TypeScript and is what `@correctiv/design-tokens` wants. It stops being
+ * legitimate the moment that directory holds anything else, which is the day this
+ * goes red.
+ */
+describe('what a package says it exports', () => {
+  interface Manifest {
+    name?: string;
+    exports?: Record<string, string>;
+  }
+
+  const PACKAGES = join(ROOT, 'packages');
+
+  const manifests = readdirSync(PACKAGES)
+    .map((directory) => join(PACKAGES, directory, 'package.json'))
+    .filter((path) => existsSync(path))
+    .map((path) => ({
+      path,
+      manifest: JSON.parse(readFileSync(path, 'utf8')) as Manifest,
+    }))
+    .filter(({ manifest }) => manifest.exports !== undefined);
+
+  it('reads the packages it is checking (guards against a silently empty walk)', () => {
+    expect(
+      floorFaults({ 'packages with an exports map': { found: manifests.length, atLeast: 3 } }),
+    ).toEqual([]);
+  });
+
+  it('points every fixed entry at a file that exists', () => {
+    const missing = manifests.flatMap(({ path, manifest }) =>
+      Object.entries(manifest.exports ?? {})
+        .filter(([key]) => !key.includes('*'))
+        .filter(([, target]) => !existsSync(join(dirname(path), target)))
+        .map(([key, target]) => `${manifest.name}: "${key}" → ${target}, which is not there`),
+    );
+
+    expect(missing).toEqual([]);
+  });
+
+  it('can produce a specifier for every file under a wildcard', () => {
+    const unreachable = manifests.flatMap(({ path, manifest }) =>
+      Object.entries(manifest.exports ?? {})
+        .filter(([key]) => key.includes('*'))
+        .flatMap(([key, target]) => {
+          const star = target.indexOf('*');
+          const prefix = target.slice(0, star);
+          const suffix = target.slice(star + 1);
+          const directory = join(dirname(path), prefix);
+          if (!existsSync(directory)) {
+            return [`${manifest.name}: "${key}" → ${prefix}*, and ${prefix} is not there`];
+          }
+          return readdirSync(directory)
+            .filter((entry) => !entry.endsWith(suffix))
+            .map(
+              (entry) =>
+                `${manifest.name}: ${prefix}${entry} cannot be reached through "${key}": "${target}"`,
+            );
+        }),
+    );
+
+    expect(unreachable).toEqual([]);
   });
 });
