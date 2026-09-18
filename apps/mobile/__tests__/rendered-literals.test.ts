@@ -49,12 +49,17 @@ import {
  * would still be the better tool for judging LAYOUT under a longer language, which
  * is a different question and not one a check can answer.
  *
- * **What it does not do.** It reads literals where they are written, so a string
- * reached through a variable, built by concatenation, or returned from a helper is
- * invisible to it, and so is a literal on a prop outside `VISIBLE` below. It says
- * nothing about whether a descriptor's English is any good. It is the net for the
- * mistake as somebody makes it — a word typed straight into the markup — and it is
- * no reason to skip reading a screen in German.
+ * **What it does not do.** It reads literals where they are written, and follows a
+ * ternary, a `&&`/`||` fallback, a `+` between two literals and an array of
+ * literals joined with `.join(…)` — four shapes that CHOOSE a string rather than
+ * computing one, exactly as cheap to write as `{'Save'}`. Past that it stops: a
+ * string reached through a variable, built by concatenation with anything that is
+ * not itself a literal, or returned from any other helper — `.map` before the
+ * `.join`, a `sprintf`, an `Intl.NumberFormat` — is invisible to it, and so is a
+ * literal on a prop outside `VISIBLE` below. It says nothing about whether a
+ * descriptor's English is any good. It is the net for the mistake as somebody makes
+ * it — a word typed straight into the markup, however it is chosen — and it is no
+ * reason to skip reading a screen in German.
  */
 const SRC = resolve(__dirname, '..', 'src');
 
@@ -240,7 +245,21 @@ interface Reading {
   texts: number;
   /** Visible props and keys met, whatever their value. Guards the prop branch. */
   slots: number;
-  /** Which of `VISIBLE` were met, for the other direction of that list. */
+  /**
+   * Which of `VISIBLE` were met, for the other direction of that list.
+   *
+   * **Counts the NAME, not a render.** A name is added whether or not its value
+   * turned out to be a literal, so a data key that only ever carries a reference —
+   * `description: COPY.spotlight` in the `NEWSLETTERS` table `(tabs)/profil.tsx`
+   * builds, `description={intl.formatMessage(...)}` on the two settings rows that
+   * use it — keeps `description` out of `stale` exactly as a bare string would.
+   * That is accepted rather than fixed: narrowing this to "carried a literal at
+   * least once" would flag `description` today, and wrongly — `profile/SettingRow`
+   * still renders that prop, it is fed a message on every call site there is. The
+   * cost is the one named in the docblock above the ratchet's case: a key sharing a
+   * rendered prop's spelling in a plain data structure, never itself rendered,
+   * would read as coverage here too, and nothing in this file would notice.
+   */
   names: Set<string>;
   /** What the parser could not read, which is this check's `eatenByStripping`. */
   unreadable: string[];
@@ -251,6 +270,23 @@ const literal = (node: ts.Node | undefined): string | undefined =>
   node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
     ? node.text
     : undefined;
+
+/**
+ * A template's holes read out, so `` `Page ${n}` `` reads as the words around the
+ * number rather than as nothing. Shared by every branch that meets a template, so a
+ * hole is read out the same way wherever it appears.
+ *
+ * **The cooked spans, not the source text with a hole cut out of it.** `head.text`
+ * and each span's `literal.text` are what the template decodes an escape to and
+ * neither one carries the surrounding backtick or the `${`/`}` around a hole — the
+ * source-text-and-regex version this replaced left the backticks in, which passed
+ * every case in this file only because nothing in `src/` puts a template literal in
+ * a JSX expression child today. `<Text>{`Page ${n}`}</Text>` written tomorrow would
+ * have been keyed by `` `Page ` `` — backticks and all — in a ratchet meant to be
+ * keyed by rendered words.
+ */
+const template = (node: ts.TemplateExpression): string =>
+  node.head.text + node.templateSpans.map((span) => span.literal.text).join('');
 
 /**
  * The rendered spelling: one space for any run of whitespace. A text child is
@@ -316,6 +352,64 @@ function read(file: string, code: string): Reading {
     if (WORD.test(text)) reading.literals.push({ file, text: words(text), slot });
   };
 
+  /**
+   * Every literal reachable from an expression that CHOOSES a string rather than
+   * computing one, read without asking what the expression does.
+   *
+   * `{'Save'}` and `` {`Page ${n}`} `` are one brace around a literal; a ternary and
+   * `&&` are one operator around two of them, and an array of literals joined back
+   * into one string is a literal for each of its elements. All four are exactly as
+   * cheap to write as the brace form, so a check that reads the brace and not the
+   * ternary is not reading for the mistake, it is reading for one spelling of it.
+   *
+   * **Only the operators that CHOOSE a string, not every `BinaryExpression`.** The
+   * first version of this recursed into both sides of any binary expression, on the
+   * theory that `+` and `&&` are the same shape at the syntax level and the
+   * distinction is never the operator — and a cold measurement over the real tree
+   * put twelve findings straight through it: `{status === 'offline' && (…)}` reads
+   * as a comparison against a state code, and the old version read `'offline'` off
+   * the LEFT of the `===` as if it were a rendered fallback. A state code compared
+   * for equality is `switch`'s `case` spelled with `?:`, never a string a person
+   * reads, so `RENDERS` below is the fix: `&&`, `||`, `??` and `+`, and nothing that
+   * compares.
+   *
+   * Recursion stops at the first thing it cannot read as a literal: a variable, a
+   * comparison, a call other than `.join`. That half is `read`'s own "what it does
+   * not do", not repeated here.
+   */
+  const RENDERS = new Set<ts.SyntaxKind>([
+    ts.SyntaxKind.AmpersandAmpersandToken,
+    ts.SyntaxKind.BarBarToken,
+    ts.SyntaxKind.QuestionQuestionToken,
+    ts.SyntaxKind.PlusToken,
+  ]);
+  const literalsIn = (node: ts.Node | undefined): string[] => {
+    if (node === undefined) return [];
+    const direct = literal(node);
+    if (direct !== undefined) return [direct];
+    if (ts.isParenthesizedExpression(node)) return literalsIn(node.expression);
+    if (ts.isTemplateExpression(node)) return [template(node)];
+    if (ts.isConditionalExpression(node)) {
+      return [...literalsIn(node.whenTrue), ...literalsIn(node.whenFalse)];
+    }
+    if (ts.isBinaryExpression(node) && RENDERS.has(node.operatorToken.kind)) {
+      return [...literalsIn(node.left), ...literalsIn(node.right)];
+    }
+    if (ts.isArrayLiteralExpression(node)) {
+      return node.elements.flatMap((element) => literalsIn(element));
+    }
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === 'join'
+    ) {
+      // `['One', 'Two'].join(', ')`: the separator is an argument, not a rendered
+      // choice of string, so only the receiver is read.
+      return literalsIn(node.expression.expression);
+    }
+    return [];
+  };
+
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node) && DESCRIPTOR.test(node.expression.getText(source))) return;
 
@@ -336,25 +430,32 @@ function read(file: string, code: string): Reading {
       ts.isJsxExpression(node) &&
       (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))
     ) {
-      // `<Typo>{'Save'}</Typo>` and `` <Typo>{`Page ${n}`}</Typo> ``: the same
-      // rendered text, one brace further out. The template is read with its holes
-      // removed, so `{`${a}${b}`}` carries no words and is not a finding.
-      const child = literal(node.expression);
-      if (child !== undefined) keep('child', child);
-      if (node.expression !== undefined && ts.isTemplateExpression(node.expression)) {
-        keep('child', node.expression.getText(source).replace(/\$\{[^}]*\}/g, ''));
-      }
+      // `<Typo>{'Save'}</Typo>`, a ternary, a `&&` fallback, an array of literals
+      // joined into one: `literalsIn` reads all of them the same way, one brace
+      // further out than the text branch above.
+      for (const found of literalsIn(node.expression)) keep('child', found);
     }
 
     if (ts.isJsxAttribute(node)) {
       const name = node.name.getText(source);
       if (VISIBLE.has(name)) {
         reading.slots += 1;
+        // A data key answering to a rendered prop's name keeps that name COUNTED
+        // here whether or not this particular occurrence carries a literal —
+        // `description={intl.formatMessage(COPY.pushDescription)}` is exactly as
+        // much "the app still writes `description`" as a bare string would be. See
+        // the note beside `names` on `Reading` for what that costs the ratchet
+        // below.
         reading.names.add(name);
+        const expression =
+          node.initializer !== undefined && ts.isJsxExpression(node.initializer)
+            ? node.initializer.expression
+            : undefined;
         const value =
           literal(node.initializer) ??
-          (node.initializer !== undefined && ts.isJsxExpression(node.initializer)
-            ? literal(node.initializer.expression)
+          literal(expression) ??
+          (expression !== undefined && ts.isTemplateExpression(expression)
+            ? template(expression)
             : undefined);
         if (value !== undefined) keep(`${name}=`, value);
       }
@@ -366,8 +467,14 @@ function read(file: string, code: string): Reading {
       const name = node.name.getText(source).replace(/['"]/g, '');
       if (VISIBLE.has(name)) {
         reading.slots += 1;
+        // Same cost as the attribute branch above: `description: COPY.spotlight`
+        // in a data array counts as writing `description` even though nothing in
+        // this expression renders. `NEWSLETTERS` in `(tabs)/profil.tsx` is exactly
+        // this shape today.
         reading.names.add(name);
-        const value = literal(node.initializer);
+        const value =
+          literal(node.initializer) ??
+          (ts.isTemplateExpression(node.initializer) ? template(node.initializer) : undefined);
         if (value !== undefined) keep(`${name}:`, value);
       }
     }
@@ -397,7 +504,7 @@ describe('the walk reads the app it is checking', () => {
       floorFaults({
         'files under src/': { found: FILES.length, atLeast: 100 },
         'JSX elements parsed': { found: total((r) => r.elements), atLeast: 500 },
-        'JSX text nodes': { found: total((r) => r.texts), atLeast: 5 },
+        'JSX text nodes': { found: total((r) => r.texts), atLeast: 10 },
         'visible props and keys': { found: total((r) => r.slots), atLeast: 150 },
       }),
     ).toEqual([]);
@@ -414,6 +521,95 @@ describe('the walk reads the app it is checking', () => {
     const written = new Set<string>();
     for (const reading of READINGS) for (const name of reading.names) written.add(name);
     expect(ratchet(written, [...VISIBLE]).stale).toEqual([]);
+  });
+});
+
+/**
+ * `read()`'s own self-test, on the model of
+ * `no-workbench-dependency.test.ts`'s "catches every shape it claims to, and
+ * nothing that is correct today": run the detector over fixture source rather than
+ * over the app, and assert the exact finding list in both directions.
+ *
+ * **Why this exists on top of the walk-guards above.** Those four floors count
+ * files, elements, text nodes and visible slots — never findings — so a branch of
+ * `read()` that silently stops matching (a node-kind check that no longer matches
+ * the TypeScript version in use, a condition inverted by an edit) leaves every
+ * floor exactly as satisfied as before and every list of findings empty. The suite
+ * stays green throughout, because green is also what "the app has no bug today"
+ * looks like. Fixtures with a KNOWN answer are the only way to tell the two apart:
+ * each shape below is asserted to produce exactly the finding it should, so a
+ * branch that stops matching turns one of these red rather than turning the real
+ * suite quietly optimistic.
+ *
+ * One file name throughout, `fixture.tsx`, because `read()`'s first argument only
+ * ever affects the `file` field of a `Literal` and the choice of `ScriptKind`.
+ */
+describe('read() catches the shapes it claims to, and stays quiet on what is not one', () => {
+  const at = (code: string): { slot: string; text: string }[] =>
+    read('fixture.tsx', code).literals.map(({ slot, text }) => ({ slot, text }));
+
+  it('finds a literal in every shape this check exists to catch', () => {
+    // The text child and the brace form beside it, which is where the docblock's
+    // whole argument starts: the same rendered word, one brace apart.
+    expect(at('const X = () => <Text>Save</Text>;')).toEqual([{ slot: '<Text>', text: 'Save' }]);
+    expect(at("const X = () => <Text>{'Save'}</Text>;")).toEqual([{ slot: 'child', text: 'Save' }]);
+    expect(at('const X = () => <Text>{`Page ${n}`}</Text>;')).toEqual([
+      { slot: 'child', text: 'Page' },
+    ]);
+
+    // The four shapes a cold review measured going straight past the old parse.
+    expect(at("const X = () => <Text>{ok ? 'Ternary yes' : 'Ternary no'}</Text>;")).toEqual([
+      { slot: 'child', text: 'Ternary yes' },
+      { slot: 'child', text: 'Ternary no' },
+    ]);
+    expect(at("const X = () => <Text>{ok && 'Logical and string'}</Text>;")).toEqual([
+      { slot: 'child', text: 'Logical and string' },
+    ]);
+    expect(at('const X = () => <Button title={`Template prop ${n}`} />;')).toEqual([
+      { slot: 'title=', text: 'Template prop' },
+    ]);
+    expect(at("const X = () => <Text>{['Array one', 'Array two'].join(', ')}</Text>;")).toEqual([
+      { slot: 'child', text: 'Array one' },
+      { slot: 'child', text: 'Array two' },
+    ]);
+
+    // The ordinary prop forms, both slots `read` recognises a name in.
+    expect(at("const X = () => <Button title='Plain prop' />;")).toEqual([
+      { slot: 'title=', text: 'Plain prop' },
+    ]);
+    expect(at("const ROWS = [{ title: 'Row title' }];")).toEqual([
+      { slot: 'title:', text: 'Row title' },
+    ]);
+    expect(at('const ROWS = [{ title: `Row ${n}` }];')).toEqual([{ slot: 'title:', text: 'Row' }]);
+
+    // A `+` beside a `&&`, because both are a `BinaryExpression` and the walk does
+    // not single one operator out from the other.
+    expect(at("const X = () => <Text>{'Plain ' + 'concatenation'}</Text>;")).toEqual([
+      { slot: 'child', text: 'Plain' },
+      { slot: 'child', text: 'concatenation' },
+    ]);
+  });
+
+  it('stays quiet on the shapes this check is not for', () => {
+    // A variable, and a value returned from a helper that is not `.join` on an
+    // array literal: both are the stated edge of `literalsIn`, not a gap in it.
+    expect(at('const X = () => <Text>{label}</Text>;')).toEqual([]);
+    expect(at('const X = () => <Text>{helper()}</Text>;')).toEqual([]);
+    expect(at("const X = () => <Text>{rows.map((r) => r.label).join(', ')}</Text>;")).toEqual([]);
+
+    // A descriptor's whole subtree is a message by construction, `description`
+    // included — the field a translator reads and nobody renders.
+    expect(
+      at(
+        "const COPY = defineMessages({ save: { id: 'x.save', defaultMessage: 'Save', description: 'A button' } });",
+      ),
+    ).toEqual([]);
+
+    // A prop outside `VISIBLE`, whatever it carries.
+    expect(at('const X = () => <Text testID="save-button">{count}</Text>;')).toEqual([]);
+
+    // A blank or punctuation-only text child carries no word.
+    expect(at('const X = () => <Text> · </Text>;')).toEqual([]);
   });
 });
 

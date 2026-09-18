@@ -235,8 +235,10 @@ language a string is in: it parses the app and fails on a text child, or on a li
 handed to a prop a person reads. What it excuses is a **mark**, the wordmark and the
 names of the products and the newsletters, because a name is the same word in every
 language and so gets no id; the list of them lives in that check and each one carries
-its reason. The pseudo-locale that would find the same strings was considered and
-rejected, and that file says why.
+its reason. A second list, keyed by file and text rather than by word, excuses
+content that is not a mark either — two strings in `EarlyAccessCard.tsx` today,
+each with its own reason and the same two-sided ratchet. The pseudo-locale that
+would find the same strings was considered and rejected, and that file says why.
 
 **A descriptor carries a `description` where the string cannot speak for itself.**
 It is never rendered; the extractor carries it into `en.json` and a translation tool
