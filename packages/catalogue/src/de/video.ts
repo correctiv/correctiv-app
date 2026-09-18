@@ -3,6 +3,7 @@ export const video: Record<string, string> = {
   'video.screenTitle': 'Video',
   'video.none': 'Kein Video ausgewählt.',
   'video.unavailable': 'Video nicht verfügbar',
+  'video.duration': '{count, plural, one {# Min.} other {# Min.}}',
   'video.loading': 'Lädt …',
   'video.today': 'Heute',
   'video.yesterday': 'Gestern',

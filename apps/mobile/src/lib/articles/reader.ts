@@ -42,12 +42,14 @@ import { READER_FONTS_CSS } from '@/lib/theme/readerFonts.generated';
  * picks a voice from, so it must be the language the words are actually in.
  * `intl.locale` is typed `string` by react-intl and would have to be cast; the
  * caller has `useLocale()`, which is the same value already typed `Locale`, so the
- * caller passes it and nothing is asserted away.
+ * caller passes it and nothing is asserted away. Which is also why `options` has no
+ * default any more: an empty one would have to invent a locale, and the core refuses
+ * to invent one for the same reason.
  */
 export function readerHtml(
   article: Article,
   intl: IntlShape,
-  options: Pick<ReaderHtmlOptions, 'textScale' | 'locale'> & { isDark?: boolean } = {},
+  options: Pick<ReaderHtmlOptions, 'textScale' | 'locale'> & { isDark?: boolean },
 ): string {
   const { isDark, ...rest } = options;
   return buildReaderHtml(article, readerCopy(article, intl), {

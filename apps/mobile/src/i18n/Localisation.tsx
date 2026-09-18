@@ -7,6 +7,7 @@ import { useEffect, type ReactNode } from 'react';
 import { IntlProvider, ReactIntlErrorCode, type IntlConfig } from 'react-intl';
 
 import { CATALOGUES } from '@correctiv/catalogue';
+import { intlLocale } from '@correctiv/app-core/lib/format';
 import type { Locale } from '@correctiv/app-core/stores/settings';
 import { useLocale } from '@/lib/store/core';
 
@@ -104,7 +105,14 @@ export function Localisation({ children }: { children: ReactNode }) {
   useDocumentLanguage(locale);
   return (
     <IntlProvider
-      locale={locale}
+      /*
+        The region, not the bare tag, and the same one `lib/format.ts` formats a date
+        with. `'en'` resolves to American order inside `Intl` and `'en-GB'` does not,
+        so a provider given `'en'` beside a `formatDate` given `'en-GB'` would print
+        one day two ways. Nothing in the catalogue carries an ICU `{x, date}` today;
+        this is what keeps the first one that does from finding it.
+      */
+      locale={intlLocale(locale)}
       defaultLocale="en"
       messages={CATALOGUES[locale]}
       onError={onError}

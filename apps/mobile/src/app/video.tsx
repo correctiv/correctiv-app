@@ -4,7 +4,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { VideoFrame } from '@/components/media/VideoFrame';
 import { Button, Overline, ScreenHeader, Typo } from '@/components/ui';
-import { formatDate, formatMinutesDe } from '@correctiv/app-core/lib/format';
+import { formatDate, minutesOf } from '@correctiv/app-core/lib/format';
 import type { Video } from '@correctiv/app-core/types/models';
 import { useLocale, useVideo } from '@/lib/store/core';
 import { openExternal } from '@/lib/openExternal';
@@ -24,6 +24,12 @@ const COPY = defineMessages({
     defaultMessage: 'Video',
     description:
       "The video route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it, so nobody sees it there. `video.kicker` is the word above the video's own title and `video.frameTitle` names the embed.",
+  },
+  duration: {
+    id: 'video.duration',
+    defaultMessage: '{count, plural, one {# min} other {# min}}',
+    description:
+      'Beside the publication date under a video. {count} is a whole number of minutes, rounded up from one; both branches read the same in English because the abbreviation does not inflect, and a language whose does needs both.',
   },
   none: { id: 'video.none', defaultMessage: 'No video selected.' },
   unavailable: { id: 'video.unavailable', defaultMessage: 'Video unavailable' },
@@ -216,7 +222,9 @@ function VideoMeta({ video }: { video: Video }) {
       : days === 1
         ? intl.formatMessage(COPY.yesterday)
         : formatDate(video.publishedAt, locale);
-  const duration = video.durationSec ? formatMinutesDe(video.durationSec) : '';
+  const duration = video.durationSec
+    ? intl.formatMessage(COPY.duration, { count: minutesOf(video.durationSec) })
+    : '';
   const views = video.views != null ? intl.formatMessage(COPY.views, { count: video.views }) : '';
   const channel = channelOf(video);
   const host = (video.url || '').replace(/^https?:\/\//, '').split('/')[0];

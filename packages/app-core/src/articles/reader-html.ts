@@ -109,16 +109,19 @@ export interface ReaderHtmlOptions {
    * A browser hyphenates and a screen reader chooses a voice by this attribute, so
    * a German article announced as English is read out in an English accent with no
    * hyphenation. It was the literal `"de"` here until
-   * [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host
-   * a locale to pass; the default keeps every caller that has not been told about
-   * it rendering exactly what it rendered before.
+   * [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host a
+   * locale to pass, and then a `= 'de'` default for one release, which a cold review
+   * caught: the sibling module that formats this document's dates refuses to default a
+   * locale in as many words, because a default is the constant back under another name
+   * and its whole failure mode is being invisible. Required, so a host that forgets it
+   * cannot silently claim German.
    *
    * It is the LOCALE and not the article's own language, which this document does
    * not know: the words around the article are the app's, and the app is in one
    * language at a time. The day an English app shows a German article, that is a
    * `lang` on the body rather than a second argument here.
    */
-  locale?: Locale;
+  locale: Locale;
 }
 
 const ROOT_FONT_PX = 16;
@@ -126,9 +129,9 @@ const ROOT_FONT_PX = 16;
 export function buildReaderHtml(
   article: Article,
   copy: ReaderCopy,
-  options: ReaderHtmlOptions = {},
+  options: ReaderHtmlOptions,
 ): string {
-  const { css = [], stylesheets = [], textScale = 1, locale = 'de' } = options;
+  const { css = [], stylesheets = [], textScale = 1, locale } = options;
 
   const rootStyle = `font-size:${ROOT_FONT_PX * textScale}px`;
   const links = stylesheets

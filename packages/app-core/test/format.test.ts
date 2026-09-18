@@ -5,6 +5,7 @@ import {
   formatDateShort,
   formatDateWeekday,
   formatMinutesDe,
+  minutesOf,
   formatNumber,
   formatTimeHm,
 } from '../src/lib/format';
@@ -161,6 +162,18 @@ describe('formatTimeHm', () => {
 
   it('truncates fractional seconds', () => {
     expect(formatTimeHm(59.9)).toBe('0:59');
+  });
+});
+
+describe('minutesOf, the number a duration is called', () => {
+  it('rounds to the nearest whole minute', () => {
+    expect(minutesOf(1500)).toBe(25);
+    expect(minutesOf(1530)).toBe(26);
+  });
+
+  it('never says nothing, because a clip that exists lasted some time', () => {
+    expect(minutesOf(0)).toBe(1);
+    expect(minutesOf(5)).toBe(1);
   });
 });
 

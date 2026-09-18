@@ -31,12 +31,31 @@ interface Formatters {
 /**
  * What a locale is called to `Intl`, which is not what it is called to this app.
  *
- * `'de'` and `'de-DE'` choose the same CLDR data for everything here, and the second
- * is what this file has always asked for. Kept rather than simplified, because
- * "which region's conventions" is a real question — Swiss German writes thousands
- * with an apostrophe — and the answer this app has shipped is Germany's.
+ * **`en-GB` is the choice that decides something, and it was nearly left unargued.**
+ * Measured against the four formats this file asks for: `de` and `de-DE` agree on all
+ * four, and `en` and `en-GB` disagree on the two long dates — "January 1, 2024" against
+ * "1 January 2024" — because the bare tag resolves to American order. The short numeric
+ * date and the number come out the same either way, so the region is not decorative
+ * here and it is not decisive everywhere either: it picks the order of a written-out
+ * date. British, because this repository's English is British
+ * throughout: its prose, its `defaultMessage`s and its own `toLocaleString('en-GB')` in
+ * the workbench.
+ *
+ * `de-DE` is kept for the same kind of reason even though it changes nothing today:
+ * "which region's conventions" is a real question — Swiss German writes thousands with
+ * an apostrophe — and the answer this app has shipped is Germany's.
+ *
+ * **One answer, read by two places.** `apps/mobile/src/i18n/Localisation.tsx` hands the
+ * same tag to `IntlProvider`, so that an ICU `{x, date}` in a catalogue and a call into
+ * this file cannot print the same day two ways. Nothing in the catalogue uses one yet;
+ * the first that does would have found the seam.
  */
-const REGION: Record<Locale, string> = { de: 'de-DE', en: 'en-GB' };
+export const REGION: Record<Locale, string> = { de: 'de-DE', en: 'en-GB' };
+
+/** The tag `Intl` wants for a locale this app names. */
+export function intlLocale(locale: Locale): string {
+  return REGION[locale];
+}
 
 const cache = new Map<Locale, Formatters>();
 
@@ -150,17 +169,32 @@ export function formatTimeHm(sec: number): string {
 }
 
 /**
+ * Seconds as the whole number of minutes a duration is called, never zero.
+ *
+ * The rounding and not the word, so a screen can hand the number to a descriptor
+ * and get its own language's spelling. `formatMinutesDe` below is the one caller
+ * that still wants the German with it.
+ */
+export function minutesOf(sec: number): number {
+  return Math.max(1, Math.round(sec / 60));
+}
+
+/**
  * "25 Min." — coarse episode length from seconds (podcast lists).
  *
- * **The one German the core still renders that no check names**, and it is here
- * rather than in the catalogue because lifting it is not a lift. `Min.` is not a
- * sentence a caller could be handed: the result goes into
- * `PodcastEpisode.durationLabel`, a FORMATTED string that
- * `services/podcast.service.ts` builds, `data/podcasts.ts` and `data/backstage.ts`
- * type out by hand, and `apps/mobile/src/lib/podcasts/offlineBundle.generated.ts`
- * carries 132 of. Getting the word out means the model carrying `durationSec` and
- * the two screens formatting it, which rewrites sample data and regenerates a
- * bundle — worth doing, and not inside somebody else's string lift (#141).
+ * **The one German the core still renders that no check names.** It was two
+ * callers until a cold review separated them, and only one of them was ever the
+ * hard case. The video screen had `Video.durationSec` on the model already, so
+ * lifting it was a descriptor and `minutesOf` above, which is what it now does.
+ *
+ * What is left is the podcast path, where `Min.` is not a sentence a caller could
+ * be handed: the result goes into `PodcastEpisode.durationLabel`, a FORMATTED
+ * string that `services/podcast.service.ts` builds, `data/podcasts.ts` and
+ * `data/backstage.ts` type out by hand, and
+ * `apps/mobile/src/lib/podcasts/offlineBundle.generated.ts` carries 132 of.
+ * Getting the word out of THAT means the episode model carrying `durationSec` and
+ * the screens formatting it, which rewrites sample data and regenerates a bundle —
+ * worth doing, and not inside somebody else's string lift (#141).
  *
  * `packages/app-core/test/localisation-seam.test.ts` cannot see it, and that is
  * not a hole to plug there: the net is the characters `äöüß„“`, and no cheap
@@ -168,7 +202,7 @@ export function formatTimeHm(sec: number): string {
  * the string is, the way the app names the four in `RecoveryScreen.tsx`.
  */
 export function formatMinutesDe(sec: number): string {
-  return `${Math.max(1, Math.round(sec / 60))} Min.`;
+  return `${minutesOf(sec)} Min.`;
 }
 
 /** Counts, grouped the way the locale groups them: responses, reports, views.
