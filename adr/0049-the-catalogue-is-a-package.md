@@ -1,6 +1,6 @@
 # ADR 0049 — The catalogue is a package, and the locale comes from the host
 
-Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219); §3 and §4 are not.**
+Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219), §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221). Carried out.**
 
 The split is deliberate and the line is behaviour: [#219](https://github.com/correctiv/correctiv-app/pull/219)
 moves files and changes nothing a reader sees, so it can be reviewed as a move. §3 and §4
@@ -137,9 +137,10 @@ put a data package in charge of the core's type; that is the wrong direction for
   value in the store rather than something read from the device": the second half stands and
   the first will not, once §4 is built. Its reason — that a phone set to English must not get
   an app half in English — is why the phone will still pass `'de'`.
-  **Deliberately not struck yet.** §4 is not in the tree, so in the tree the sentence is
-  still true, and a record struck ahead of the change that voids it is a record that lies
-  for however long the change takes. It is struck by the pull request that builds §4.
+  **Struck by [#221](https://github.com/correctiv/correctiv-app/pull/221)**, which is
+  the pull request that built §4, rather than by the one that wrote this section. A
+  record struck ahead of the change that voids it lies for however long the change
+  takes, and #219 sat unmerged for an afternoon.
 - [ADR 0026](0026-react-native-review-and-hardening.md) §6, "the compiled catalogues are build
   artifacts": **struck there now**, and not by this record — by the measurement. It was
   wrong on the day it was written rather than overtaken by anything, because nothing in

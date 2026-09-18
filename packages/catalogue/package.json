@@ -11,9 +11,13 @@
   },
   "devDependencies": {
     "@correctiv/app-core": "*",
-    "@correctiv/prose-and-code": "*"
+    "@correctiv/prose-and-code": "*",
+    "@formatjs/cli": "^6.16.28",
+    "@formatjs/icu-messageformat-parser": "^3.5.18",
+    "intl-messageformat": "^11.2.15"
   },
   "scripts": {
+    "compile": "node scripts/compile.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run"
   }

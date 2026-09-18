@@ -1,6 +1,7 @@
 import type { Locale } from '@correctiv/app-core/stores/settings';
 
 import { de } from './de';
+import { en } from './en.generated';
 
 /**
  * Every user-facing string the app ships, by locale.
@@ -26,8 +27,17 @@ import { de } from './de';
  * the core's settings slice without a catalogue here fails to typecheck — in one
  * place, for every host, rather than once per host as it did when this record sat in
  * the app's provider.
+ *
+ * **English is a catalogue here and not a fallback**, which is
+ * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §3. `defaultLocale="en"`
+ * would already print every `defaultMessage`, and it would print them along an ERROR
+ * path: the app's `onError` throws on `MISSING_TRANSLATION` under `__DEV__`, so a run
+ * in English without this file is 317 throws and a recovery screen. `en.generated.ts`
+ * is what makes the second language a thing somebody can look at rather than a thing
+ * that can be argued about. It is compiled from `en.json` by `npm run compile`, which
+ * is the step ADR 0026 §6 promised and nothing in this tree had ever run.
  */
-export const CATALOGUES: Record<Locale, Record<string, string>> = { de };
+export const CATALOGUES: Record<Locale, Record<string, string>> = { de, en };
 
-export { de };
+export { de, en };
 export type { Locale };

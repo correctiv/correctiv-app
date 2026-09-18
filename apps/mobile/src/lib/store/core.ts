@@ -151,6 +151,18 @@ function devToolsEnhancers(): StoreEnhancer[] {
 export const coreStore = createAppStore({
   enhancers: devToolsEnhancers(),
   devTools: false,
+  /*
+   * German, said here rather than assumed in the core
+   * (ADR 0049 §4). This is the app's product decision and this is the app: a phone
+   * set to English must not get an app half in English, so the host that ships to
+   * phones names the language it ships, and the core stops carrying a constant
+   * about somebody else's product.
+   *
+   * The workbench names its own, and a desktop host would name what the system
+   * answers. Nothing here changes what a reader sees; what changes is that the
+   * sentence is written where it is true.
+   */
+  locale: 'de',
 });
 
 /** Typed `useSelector`, so a selector's state argument is never `any`. */
@@ -176,7 +188,7 @@ export const useIsAdmitted = () => useAppSelector((s) => selectIsAdmitted(s.sess
 export const useActiveTab = () => useAppSelector((s) => s.settings.activeTab);
 export const useTextScale = () => useAppSelector((s) => s.settings.textScale);
 export const useTheme = () => useAppSelector((s) => s.settings.theme);
-/** The language to render in. Fixed at 'de'; `i18n/Localisation` is its one reader. */
+/** The language to render in. `'de'`, named by this host above; `i18n/Localisation` is its one reader. */
 export const useLocale = () => useAppSelector((s) => selectLocale(s.settings));
 
 export const useVideoIsActive = () => useAppSelector((s) => s.video.current !== null);

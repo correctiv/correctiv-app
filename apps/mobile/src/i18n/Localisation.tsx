@@ -3,10 +3,11 @@
 // order, and this one installs `Intl.PluralRules` on Hermes.
 import './polyfills';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { IntlProvider, ReactIntlErrorCode, type IntlConfig } from 'react-intl';
 
 import { CATALOGUES } from '@correctiv/catalogue';
+import type { Locale } from '@correctiv/app-core/stores/settings';
 import { useLocale } from '@/lib/store/core';
 
 /**
@@ -76,8 +77,31 @@ const onError: NonNullable<IntlConfig['onError']> = (error) => {
   console.error(error);
 };
 
+/**
+ * Keeps `<html lang>` on the language the app is actually rendering in.
+ *
+ * `app/+html.tsx` writes that attribute into the static export, and it can only
+ * write the settings slice's own default: it renders once, at export time, with no
+ * store anywhere. So the shell is a first guess, and this is the correction — it
+ * runs on the first render and whenever the language changes.
+ *
+ * **It was measured disagreeing.** With the host passing `'en'` the export still
+ * said `lang="de"`, because the shell had read the default. A browser hyphenates and
+ * a screen reader picks a voice by that attribute, so a wrong one is not cosmetic.
+ *
+ * A no-op off the web. `document` does not exist on a device, and a `.web.tsx`
+ * sibling for four lines would be a second file to keep in step.
+ */
+function useDocumentLanguage(locale: Locale): void {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.lang = locale;
+  }, [locale]);
+}
+
 export function Localisation({ children }: { children: ReactNode }) {
   const locale = useLocale();
+  useDocumentLanguage(locale);
   return (
     <IntlProvider
       locale={locale}

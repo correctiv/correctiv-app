@@ -102,6 +102,22 @@ export interface ReaderHtmlOptions {
   stylesheets?: string[];
   /** The app's text-size setting; scales the root font size. 1 = default. */
   textScale?: number;
+  /**
+   * What goes in `<html lang>`, which is not decoration.
+   *
+   * A browser hyphenates and a screen reader chooses a voice by this attribute, so
+   * a German article announced as English is read out in an English accent with no
+   * hyphenation. It was the literal `"de"` here until
+   * [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host
+   * a locale to pass; the default keeps every caller that has not been told about
+   * it rendering exactly what it rendered before.
+   *
+   * It is the LOCALE and not the article's own language, which this document does
+   * not know: the words around the article are the app's, and the app is in one
+   * language at a time. The day an English app shows a German article, that is a
+   * `lang` on the body rather than a second argument here.
+   */
+  locale?: string;
 }
 
 const ROOT_FONT_PX = 16;
@@ -111,7 +127,7 @@ export function buildReaderHtml(
   copy: ReaderCopy,
   options: ReaderHtmlOptions = {},
 ): string {
-  const { css = [], stylesheets = [], textScale = 1 } = options;
+  const { css = [], stylesheets = [], textScale = 1, locale = 'de' } = options;
 
   const rootStyle = `font-size:${ROOT_FONT_PX * textScale}px`;
   const links = stylesheets
@@ -172,7 +188,7 @@ export function buildReaderHtml(
   const footer = `<p class="support-line">${escapeHtml(copy.support)}</p>`;
 
   return `<!DOCTYPE html>
-<html lang="de" style="${rootStyle}">
+<html lang="${escapeHtml(locale)}" style="${rootStyle}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">

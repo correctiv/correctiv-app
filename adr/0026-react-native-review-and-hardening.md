@@ -343,9 +343,11 @@ lift the string out, once to find that it sat inside a condition.
 
 **German is what ships.** The language is fixed and there is no user-facing switch;
 a developer-only switch belongs in the workbench, which already carries route,
-appearance and app state in its address, and not in the app's settings. `locale` is
-therefore a fixed value in the store rather than something read from the device, and
-`expo-localization` is not needed for this step.
+appearance and app state in its address, and not in the app's settings. ~~`locale` is
+therefore a fixed value in the store~~ — it is supplied by the host at construction,
+voided by [ADR 0049](0049-the-catalogue-is-a-package.md) §4. The second half stands:
+it is still not read from the device, and the phone still passes `'de'` for the
+reason this paragraph gives. `expo-localization` is not needed for this step.
 
 **Where things live.** Message descriptors are plain objects — `{ id, defaultMessage }`
 — so they live wherever the string lives, screens in the app and core-owned

@@ -45,6 +45,11 @@ export function readerHtml(
   const { isDark, ...rest } = options;
   return buildReaderHtml(article, readerCopy(article, intl), {
     ...rest,
+    // The same `intl` the words came from, so the document's `lang` and its words
+    // cannot disagree. A browser hyphenates and a screen reader picks a voice by
+    // that attribute, and it was the literal "de" in the core until ADR 0049 §4
+    // gave a host a locale to pass.
+    locale: intl.locale,
     css: [READER_FONTS_CSS, THEME_CSS, ...(isDark ? [READER_DARK_CSS] : []), READER_LAYOUT_CSS],
   });
 }

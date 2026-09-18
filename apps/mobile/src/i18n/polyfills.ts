@@ -42,9 +42,14 @@ if (!('PluralRules' in Intl)) {
   // `./polyfill.js` and `./locale-data/*`, so the extensionless spellings the
   // README uses resolve to nothing under package exports.
   require('@formatjs/intl-pluralrules/polyfill.js');
-  // German only. The app ships one language, and the full locale data is
-  // megabytes.
+  // The two the catalogue has, and not one more. The full locale data is megabytes
+  // and Metro bundles every branch of this whether or not the condition fires, so
+  // each line is a bundle-size decision rather than a runtime one. German is what
+  // ships; English is here because the second language has to be renderable for a
+  // check or the workbench to exercise it at all (ADR 0049 §3), and a plural
+  // rendered without its data throws rather than degrading.
   require('@formatjs/intl-pluralrules/locale-data/de.js');
+  require('@formatjs/intl-pluralrules/locale-data/en.js');
 }
 
 if (!('Locale' in Intl)) {

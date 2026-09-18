@@ -16,7 +16,7 @@ import { podcastsReducer } from './podcasts';
 import { radioReducer } from './radio';
 import { savedArticlesReducer } from './savedArticles';
 import { sessionReducer } from './session';
-import { settingsReducer } from './settings';
+import { settingsInitialState, settingsReducer, type Locale } from './settings';
 import { spotlightReducer } from './spotlight';
 import { videoReducer } from './video';
 
@@ -118,12 +118,38 @@ export interface AppStoreOptions {
    * Expo plugin requires it, because two of them fight over the same connection.
    */
   devTools?: boolean;
+  /**
+   * The language this host renders in
+   * ([ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4).
+   *
+   * **The first piece of state a host may hand in, and deliberately the only one.**
+   * [ADR 0023](../../../../adr/0023-the-host-constructs-the-store.md) says the host
+   * constructs the store and passes enhancers, and its argument is about
+   * construction-time things that cannot be handed over afterwards. A locale is one:
+   * dispatched after construction it is right one render late, and one render of the
+   * wrong language is a screen somebody sees.
+   *
+   * Not a port. `CorePlatform` is what the core cannot do for itself — storage,
+   * blobs, audio, reporting. A language is not a capability, it is state, and it has
+   * a slice already.
+   *
+   * Omitted leaves the slice's own default, which is German. That is not a second
+   * place the product decision is written: it is what a store built by a test or by
+   * `createMemoryPlatform`'s neighbours gets, and every host that ships says so
+   * itself.
+   */
+  locale?: Locale;
 }
 
-export function createAppStore({ enhancers = [], devTools }: AppStoreOptions = {}) {
+export function createAppStore({ enhancers = [], devTools, locale }: AppStoreOptions = {}) {
   return configureStore({
     reducer: rootReducer,
     devTools,
+    // Only when the host said so, so that a store built without options is byte for
+    // byte the one every existing test already builds.
+    ...(locale === undefined
+      ? {}
+      : { preloadedState: { settings: { ...settingsInitialState, locale } } }),
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         immutableCheck: false,

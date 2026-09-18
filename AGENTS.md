@@ -203,8 +203,12 @@ excused by the check itself and not by this sentence
 ([ADR 0049](adr/0049-the-catalogue-is-a-package.md)).
 The package holds the strings and nothing else: a descriptor stays where its string
 is, the provider stays with the host, and the workbench keeps a catalogue of its own.
-German is the only language that ships: the locale is a fixed value in the core's
-settings slice, and a switch for it belongs in the workbench rather than in the app.
+German is the only language that ships, and English is a catalogue so that the
+second language can be looked at rather than asserted. **The locale is named by the
+host**, not written in the core: `apps/mobile` passes `'de'` to `createAppStore()`,
+the workbench passes what its address says, and a switch for a reader belongs in the
+workbench rather than in the app
+([ADR 0049](adr/0049-the-catalogue-is-a-package.md) §3 and §4).
 `apps/mobile/__tests__/localisation-seam.test.ts` is what enforces this. Two German
 strings are exempt and it names each one, not the file it sits in, with the reason: a
 channel's own name, and the recovery screen's lead, which cannot be a message because

@@ -30,6 +30,15 @@ const ROUTES = resolve(__dirname, '../src/app');
 const TAB_ROOT = /^\(tabs\)\//;
 /** Not a screen: the navigators. */
 const LAYOUT = /(^|\/)_layout(\.\w+)?\.tsx$/;
+/**
+ * Not a screen either: expo-router's `+`-prefixed conventions.
+ *
+ * `+html.tsx` is the HTML shell of the web export, rendered once at export time
+ * with no navigator anywhere near it, so asking it for a screen title is asking
+ * the document for the name of a page inside it. `+not-found.tsx` is the one
+ * exception and stays in — it IS a screen, it is pushed, and it carries a title.
+ */
+const SHELL = /(^|\/)\+(?!not-found)[\w.-]+\.tsx$/;
 
 function routeFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -185,7 +194,8 @@ describe('screen titles', () => {
     // of them, and a pushed route with no name of its own does not leave the tab
     // empty — it leaves it reading the screen underneath.
     const nameless = routes.filter(
-      ({ rel, titles }) => !TAB_ROOT.test(rel) && !LAYOUT.test(rel) && titles.length === 0,
+      ({ rel, titles }) =>
+        !TAB_ROOT.test(rel) && !LAYOUT.test(rel) && !SHELL.test(rel) && titles.length === 0,
     );
 
     expect(nameless.map((r) => r.rel)).toEqual([]);
