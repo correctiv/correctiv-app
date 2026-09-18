@@ -755,8 +755,8 @@
     "description": "The same line as preview.status.combination, for the one combination that is the app’s own default — the setting on system against a device reporting dark, which is the combination that has already shipped broken. {which} is preview.status.combination.n and is drawn in bold."
   },
   "preview.status.combination.n": {
-    "defaultMessage": "{n} of 4",
-    "description": "What goes in the bold of the two lines above. {n} is 1, 2, 3 or 4, and 4 is how many there are: the two explicit settings, then “system” against each of the two device schemes."
+    "defaultMessage": "{n} of {total}",
+    "description": "What goes in the bold of the two lines above. {n} is which combination is on screen and {total} how many there are: the two explicit settings, then “system” against each of the two device schemes. {total} is handed in from COMBINATIONS.length rather than written as a four, because a four typed in a catalogue is a second copy of a number the code already has."
   },
   "preview.status.published": {
     "defaultMessage": "Published build, no dev handle",
@@ -1213,8 +1213,8 @@
     "description": "Where the rows would be, when the field above hides every row there is. tools.console.empty is the other empty state, where there are none."
   },
   "tools.console.summary": {
-    "defaultMessage": "{shown} of {total} lines shown, {warnings} warnings, {errors} errors.",
-    "description": "Under the console rows. {shown} is how many rows the two toggles and the filter leave, {total} how many there are, and {warnings} and {errors} the split of the whole by level."
+    "defaultMessage": "{shown} of {total} lines shown, {warnings, plural, one {# warning} other {# warnings}}, {errors, plural, one {# error} other {# errors}}.",
+    "description": "Under the console rows. {shown} is how many rows the two toggles and the filter leave, {total} how many there are, and {warnings} and {errors} the split of the whole by level. The last two inflect: a run with one warning is an ordinary reading of this line, and the first version of this string said “1 warnings”."
   },
   "tools.inspect.arm": {
     "defaultMessage": "Pick element",

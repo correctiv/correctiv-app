@@ -11,5 +11,5 @@
  * arrives in English and stays that way.
  */
 export const drawing: Record<string, string> = {
-  'drawing.failed': 'Wurde nicht gezeichnet: {message}',
+  'drawing.failed': 'Nicht gezeichnet: {message}',
 };

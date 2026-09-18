@@ -25,7 +25,7 @@ export const diagrams: Record<string, string> = {
   'diagrams.list':
     'Jede Zeichnung trägt dasselbe noch einmal als Liste unter sich. Diese Liste ist keine Bildunterschrift: Sie ist die Seite für alle, die mit dem Bild nichts anfangen können.',
 
-  'diagrams.breadcrumb': 'Pfad',
+  'diagrams.breadcrumb': 'Navigationspfad',
   'diagrams.crumb': 'Diagramme',
   'diagrams.position': '{position} von {total}',
   'diagrams.others': 'Die anderen Diagramme',

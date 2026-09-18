@@ -22,7 +22,7 @@ export const preview: Record<string, string> = {
   'preview.status.setting': 'Einstellung <b>{setting}</b>, Gerät meldet <b>{scheme}</b>',
   'preview.status.combination': 'Kombination <b>{which}</b>',
   'preview.status.combination.default': 'Kombination <b>{which}</b>, die Voreinstellung',
-  'preview.status.combination.n': '{n} von 4',
+  'preview.status.combination.n': '{n} von {total}',
   'preview.status.unknown': 'unbekannt',
   'preview.status.size': '{width} × {height} bei {percent}%',
   'preview.status.published': 'Veröffentlichter Build, kein Dev-Handle',
