@@ -151,7 +151,8 @@ interface Reach {
  *
  * Three rather than one because they are three different mistakes and the failure
  * message should say which. The `workbench:` override keys the app declares —
- * `workbench:seeded`, `workbench:home-layout`, `workbench:home-time` — match none
+ * `workbench:seeded`, `workbench:home-layout`, `workbench:home-time`,
+ * `workbench:locale` — match none
  * of them, and that is deliberate: ADR 0040 §3 is that a shared spelling is not a
  * dependency. The app may declare a seam the workbench uses; it may not read the
  * workbench to know what to declare.
@@ -1004,6 +1005,7 @@ describe('the app does not depend on the workbench', () => {
     expect(caught("const SEEDED_KEY = 'workbench:seeded';")).toEqual([]);
     expect(caught("export const HOME_LAYOUT_OVERRIDE_KEY = 'workbench:home-layout';")).toEqual([]);
     expect(caught("export const HOME_TIME_OVERRIDE_KEY = 'workbench:home-time';")).toEqual([]);
+    expect(caught("export const PREVIEW_LOCALE_KEY = 'workbench:locale';")).toEqual([]);
     expect(caught("const label = 'open the workbench';")).toEqual([]);
   });
 

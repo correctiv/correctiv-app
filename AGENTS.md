@@ -219,8 +219,10 @@ German is the only language that ships, and English is a catalogue so that the
 second language can be looked at rather than asserted. **The locale is named by the
 host**, not written in the core: `apps/mobile` passes `SHIPPED_LOCALE` to
 `createAppStore()`, and a switch for a reader belongs in the workbench rather than in
-the app, which has the seam and no locale of its own to pass yet
-([ADR 0049](adr/0049-the-catalogue-is-a-package.md) §3 and §4).
+the app ([ADR 0049](adr/0049-the-catalogue-is-a-package.md) §3 and §4). That switch is
+the preview's `lg=`, which writes `workbench:locale` and reloads the frame, because the
+locale is construction state and there is no action to dispatch; the app declares the
+key in `apps/mobile/src/lib/locale.ts` beside the constant it overrides.
 `apps/mobile/__tests__/localisation-seam.test.ts` is what enforces this. Two German
 strings are exempt and it names each one, not the file it sits in, with the reason: a
 channel's own name, and the recovery screen's lead, which cannot be a message because

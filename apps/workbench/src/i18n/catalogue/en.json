@@ -24,15 +24,23 @@
   "frame.height": {
     "defaultMessage": "Height in CSS pixels"
   },
+  "frame.language": {
+    "defaultMessage": "App language",
+    "description": "The accessible name of the select that chooses which language the framed app runs in. This is the APP’s language, not this site’s, which is in the settings dialog. The bar carries no labels above its fields."
+  },
+  "frame.language.shipped": {
+    "defaultMessage": "As it ships",
+    "description": "The one option of the app-language select that is a word rather than a locale code: leave the app in the language it ships, which is what an address naming no language asks for."
+  },
   "frame.more": {
-    "defaultMessage": "More frame controls: zoom, reload, open without the frame",
-    "description": "The accessible name of the button that unfolds the three controls that do not fit below 640px."
+    "defaultMessage": "More frame controls: language, zoom, reload, open without the frame",
+    "description": "The accessible name of the button that unfolds the controls that do not fit below 640px."
   },
   "frame.more.fold": {
     "defaultMessage": "Fold away"
   },
   "frame.more.tip": {
-    "defaultMessage": "Zoom, reload, open without the frame"
+    "defaultMessage": "Language, zoom, reload, open without the frame"
   },
   "frame.orientation.landscape": {
     "defaultMessage": "Landscape",

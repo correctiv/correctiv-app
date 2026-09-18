@@ -87,7 +87,9 @@ export function rememberLanguage(next: Language, store: Storage | null = ownStor
  * lives in storage, because it is a fact about the reader; `PreviewState.theme` is
  * the *app's* and lives in the address, because it is a fact about what is being
  * looked at. The language of this interface is the first kind. The language of the
- * app inside the frame will be the second, and belongs in the address beside `t=`.
+ * app inside the frame is the second, and is in the address beside `t=` —
+ * `PreviewState.lang`, spelled `lg`, written to storage by
+ * `preview/frame/locale.ts`. Two settings, two homes, and neither reads the other.
  */
 export function useLanguage(): [Language, (next: Language) => void] {
   const [language, setLanguage] = useState<Language>(storedLanguage);

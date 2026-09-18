@@ -38,8 +38,8 @@ const VIEW = VIEWS.preview;
  * document of its own rather than a readout.
  *
  * **The two halves of the address meet here and nowhere else.** The shell owns
- * `tool` and `full`; the frame owns `d`, `o`, `z`, `w`, `h`, `t`, `s`, `check`,
- * `kl` and `kd`, which travel in `rest` untouched. `preview/store.ts` no longer
+ * `tool` and `full`; the frame owns `d`, `o`, `z`, `w`, `h`, `t`, `lg`, `s`, `tm`,
+ * `tl`, `check`, `kl` and `kd`, which travel in `rest` untouched. `preview/store.ts` no longer
  * writes history at all, so a link written before any of this still resolves and
  * writes back byte for byte.
  */

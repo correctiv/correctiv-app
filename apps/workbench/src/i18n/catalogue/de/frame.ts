@@ -3,7 +3,9 @@
  *
  * `Portrait`, `Landscape` and `Fit` stay as they are. The team says them in English and
  * they are what the control has always been labelled; translating them would rename a
- * control rather than translate a sentence.
+ * control rather than translate a sentence. The language select's two values, `de` and
+ * `en`, are not here at all for the sharper version of that reason: they are locale
+ * codes, so they are identifiers and not words.
  */
 export const frame: Record<string, string> = {
   'frame.toolbar': 'Rahmen',
@@ -23,9 +25,14 @@ export const frame: Record<string, string> = {
   'frame.orientation.portrait': 'Portrait',
   'frame.orientation.landscape': 'Landscape',
 
-  'frame.more': 'Weitere Bedienelemente des Rahmens: Zoom, neu laden, ohne Rahmen öffnen',
-  'frame.more.tip': 'Zoom, neu laden, ohne Rahmen öffnen',
+  'frame.more': 'Weitere Bedienelemente des Rahmens: Sprache, Zoom, neu laden, ohne Rahmen öffnen',
+  'frame.more.tip': 'Sprache, Zoom, neu laden, ohne Rahmen öffnen',
   'frame.more.fold': 'Einklappen',
+
+  // The language of the app in the frame, not this site's, which is in the settings
+  // dialog. The two values beside this select are `de` and `en`, so they are not ids.
+  'frame.language': 'Sprache der App',
+  'frame.language.shipped': 'Wie ausgeliefert',
 
   'frame.zoom': 'Zoom',
   'frame.zoom.fit': 'Fit',

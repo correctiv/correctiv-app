@@ -20,7 +20,11 @@ import { SHIPPED_LOCALE } from '@/lib/locale';
  * costs: with the host passing `'en'` the export still said `lang="de"`, because
  * the shell had read the CORE's answer rather than this host's.
  * `i18n/Localisation.tsx` corrects the attribute on the first render either way,
- * which is what an app that switches language at runtime would need anyway.
+ * which is what an app that switches language at runtime would need anyway — and
+ * it is the only thing that can follow `workbench:locale`, the preview's override
+ * (`lib/locale.ts`), because this file has already been written by the time a
+ * browser has a key at all. A framed page therefore arrives saying `lang="de"` and
+ * is corrected to what the store was built with.
  *
  * Everything else here is Expo's own default shell. `ScrollViewStyleReset` is the
  * one piece that is not optional — react-native-web's root scroller needs it, and

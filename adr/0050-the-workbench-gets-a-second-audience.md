@@ -1,6 +1,6 @@
 # ADR 0050 — The workbench gets a second audience, and the scope of its German follows from that
 
-Status: accepted, 2026-09-18. **§1 to §4 built in [#220](https://github.com/correctiv/correctiv-app/pull/220)**, for the frame's controls and the day's track; the module labels in `preview/home/document.ts` are named in §5 and are not.
+Status: accepted, 2026-09-18. **§1 to §4 built in [#220](https://github.com/correctiv/correctiv-app/pull/220)**, for the frame's controls and the day's track; the module labels in `preview/home/document.ts` are named in §5 and are not. §4's closing sentence, that the framed app's language belongs in the address beside `t=`, has since been built: the preview carries `lg=`.
 
 ## Context
 

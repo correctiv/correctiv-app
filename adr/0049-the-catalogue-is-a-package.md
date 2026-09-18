@@ -1,6 +1,6 @@
 # ADR 0049 — The catalogue is a package, and the locale comes from the host
 
-Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219); §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221).** §4 has one user, the phone: the seam is there and the workbench has no locale to pass yet.
+Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219); §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221).** §4 has the second user it named since the preview gained `lg=`: the phone passes `SHIPPED_LOCALE`, the workbench passes what its address says (`apps/workbench/src/preview/frame/locale.ts`). §4's "neither does yet" describes what #221 built and is what has moved; the desktop host is still the one that has not arrived.
 
 The split is deliberate and the line is behaviour: [#219](https://github.com/correctiv/correctiv-app/pull/219)
 moves files and changes nothing a reader sees, so it can be reviewed as a move. §3 and §4

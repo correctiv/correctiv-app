@@ -1,7 +1,9 @@
 import { parseTimeOfDay } from '@correctiv/app-core/lib/home-layout';
+import type { Locale } from '@correctiv/app-core/stores/settings';
 
 import type { ShellAddress } from '../shell/address';
 import { DEFAULT_DEVICE, DEVICES, HOST_DEVICE, preset } from './devices';
+import { isLocale } from './frame/locale';
 import { TOKENS, type Overrides, type Scheme } from './frame/tokens';
 
 /** The app's own appearance setting. `null` means "leave the app alone". */
@@ -23,6 +25,19 @@ export interface PreviewState {
   w: number;
   h: number;
   theme: ThemeSetting | null;
+  /**
+   * The language the framed app is built in, or `null` for the one it ships.
+   *
+   * Beside the appearance rather than in this site's own settings, which is the split
+   * ADR 0050 §4 makes: the reader's language is a fact about the reader and lives in
+   * storage, and the app's is a fact about what is on screen. It is also what stops a
+   * chosen language becoming durable state nobody can see, exactly as `time` above is —
+   * `frame/locale.ts` is the writer, and an address naming no language clears the key.
+   *
+   * `lg` because `l` alone reads as a `1` in a hash, and it is two letters like the
+   * other keys added since the original five.
+   */
+  lang: Locale | null;
   /** A storage fixture applied before the frame boots; see `frame/seed.ts`. */
   seed: string | null;
   /**
@@ -62,6 +77,7 @@ export const INITIAL: PreviewState = {
   w: preset(DEFAULT_DEVICE).w,
   h: preset(DEFAULT_DEVICE).h,
   theme: null,
+  lang: null,
   seed: null,
   time: null,
   timeline: true,
@@ -98,6 +114,7 @@ export function fromAddress(address: ShellAddress): PreviewState {
   const device = DEVICES.some((d) => d.id === asked) ? asked : INITIAL.device;
   const size = preset(device);
   const theme = p.get('t');
+  const lang = p.get('lg');
 
   return {
     route,
@@ -108,6 +125,10 @@ export function fromAddress(address: ShellAddress): PreviewState {
     w: Number(p.get('w')) || size.w || INITIAL.w,
     h: Number(p.get('h')) || size.h || INITIAL.h,
     theme: isTheme(theme) ? theme : null,
+    // Junk is no language at all rather than an error, the way `tm` below is read: a
+    // stale link should still open, and a code the app has no catalogue for would give
+    // it a provider with nothing in it rather than a setting that visibly failed.
+    lang: isLocale(lang) ? lang : null,
     seed: p.get('s'),
     // Junk is no time at all rather than an error: a stale link should still open.
     time: parseTimeOfDay(p.get('tm')) === null ? null : p.get('tm'),
@@ -160,6 +181,7 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
     p.set('h', String(state.h));
   }
   if (state.theme) p.set('t', state.theme);
+  if (state.lang) p.set('lg', state.lang);
   if (state.seed) p.set('s', state.seed);
   if (state.time) p.set('tm', state.time);
   if (!state.timeline) p.set('tl', '0');

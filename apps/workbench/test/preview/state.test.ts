@@ -29,6 +29,7 @@ describe('the frame’s half of the hash', () => {
       landscape: true,
       zoom: 0.5,
       theme: 'dark',
+      lang: 'en',
       seed: 'signed-in',
       check: true,
       timeline: false,
@@ -74,6 +75,40 @@ describe('the frame’s half of the hash', () => {
     expect([custom.w, custom.h]).toEqual([500, 900]);
     expect(write(custom)).toContain('w=500');
     expect(write({ ...custom, device: 'iphone-se' })).not.toContain('w=500');
+  });
+
+  /**
+   * The language the framed app is built in, which is written only when somebody has
+   * chosen one.
+   *
+   * ADR 0050 §4 puts it here rather than in this site's own settings: the reader's
+   * language is a fact about the reader and lives in storage, the app's is a fact
+   * about what is on screen. The absence of the key is what clears the override in
+   * `frame/locale.ts`, so a state that writes `lg=de` whenever the app happens to ship
+   * German would pin the app to German on the day it stops.
+   */
+  it('writes a chosen language and nothing when none is chosen', () => {
+    expect(write({ ...INITIAL, lang: null })).not.toContain('lg=');
+    expect(write({ ...INITIAL, lang: 'en' })).toContain('lg=en');
+    expect(write({ ...INITIAL, lang: 'de' })).toContain('lg=de');
+  });
+
+  /**
+   * Junk is no language rather than an error, which is how `tm` is already read: a
+   * stale link must still open. It matters more here than for an hour, because a code
+   * with no catalogue is not a setting that visibly fails — the app would render every
+   * English `defaultMessage` under a `lang` attribute claiming the language nobody has.
+   */
+  it.each([['fr'], ['EN'], ['de-DE'], [''], ['de,en']])(
+    'reads lg=%p as no language at all',
+    (junk) => {
+      expect(read(`#/?lg=${encodeURIComponent(junk)}`).lang).toBeNull();
+    },
+  );
+
+  it('reads a language the app has a catalogue for', () => {
+    expect(read('#/?lg=en').lang).toBe('en');
+    expect(read('#/?d=iphone-15-pro&t=dark&lg=de').lang).toBe('de');
   });
 
   it('drops an override it cannot trust rather than refusing the link', () => {

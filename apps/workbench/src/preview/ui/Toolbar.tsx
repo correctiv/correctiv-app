@@ -21,6 +21,7 @@ import { Separator } from '../../ui/kit/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { Pages } from './Pages';
 import { DEVICES, HOST_DEVICE } from '../devices';
+import { isLocale, LOCALES } from '../frame/locale';
 import { governs } from '../home/document';
 import { ROUTES } from '../routes';
 import { frameSize, type PreviewState } from '../state';
@@ -90,12 +91,27 @@ const COPY = defineMessages({
   },
   more: {
     id: 'frame.more',
-    defaultMessage: 'More frame controls: zoom, reload, open without the frame',
+    defaultMessage: 'More frame controls: language, zoom, reload, open without the frame',
     description:
-      'The accessible name of the button that unfolds the three controls that do not fit below 640px.',
+      'The accessible name of the button that unfolds the controls that do not fit below 640px.',
   },
-  moreTip: { id: 'frame.more.tip', defaultMessage: 'Zoom, reload, open without the frame' },
+  moreTip: {
+    id: 'frame.more.tip',
+    defaultMessage: 'Language, zoom, reload, open without the frame',
+  },
   moreFold: { id: 'frame.more.fold', defaultMessage: 'Fold away' },
+  language: {
+    id: 'frame.language',
+    defaultMessage: 'App language',
+    description:
+      'The accessible name of the select that chooses which language the framed app runs in. This is the APP’s language, not this site’s, which is in the settings dialog. The bar carries no labels above its fields.',
+  },
+  languageShipped: {
+    id: 'frame.language.shipped',
+    defaultMessage: 'As it ships',
+    description:
+      'The one option of the app-language select that is a word rather than a locale code: leave the app in the language it ships, which is what an address naming no language asks for.',
+  },
   zoom: {
     id: 'frame.zoom',
     defaultMessage: 'Zoom',
@@ -198,8 +214,8 @@ const ZOOMS: { value: string; label: string | null }[] = [
  * Below `sm`: the device select's own width narrows (the dropdown's options
  * are unaffected — only the closed control shows less of the chosen name),
  * orientation is a single icon toggle rather than a labelled two-segment
- * control, and zoom, reload and "open without the frame" fold behind one
- * `MoreHorizontal` button — `moreOpen` picks between that button and the
+ * control, and language, zoom, reload and "open without the frame" fold behind
+ * one `MoreHorizontal` button — `moreOpen` picks between that button and the
  * group it stands for, never both. Nothing here is deleted: a press reaches
  * everything the wider bar shows inline, one press further in. `sm:` and up
  * is unchanged, because a tablet or a desktop window already had the room
@@ -406,6 +422,42 @@ export function Toolbar({
           {intl.formatMessage(moreOpen ? COPY.moreFold : COPY.moreTip)}
         </TooltipContent>
       </Tooltip>
+
+      {/*
+        The app's own language, which is a way of looking at the app rather than a
+        setting of this site — ADR 0050 §4 puts the reader's language in storage and the
+        framed app's in the address, beside the appearance.
+
+        Here rather than in the Appearance panel because, unlike the theme, it needs no
+        dev handle: the theme travels as a dispatch and the published export has nothing
+        to dispatch to, while this one is a key in storage that any build reads when it
+        boots. A control that could work has no business being disabled.
+
+        Not hidden at the host's own size either, which the zoom and the orientation are:
+        those two are about a frame there is not one of, and a language is about the app.
+      */}
+      <select
+        className={cn(FIELD, 'shrink-0', !moreOpen && 'max-sm:hidden')}
+        aria-label={intl.formatMessage(COPY.language)}
+        value={state.lang ?? ''}
+        onChange={(e) => onChange({ lang: isLocale(e.target.value) ? e.target.value : null })}
+      >
+        <option value="">{intl.formatMessage(COPY.languageShipped)}</option>
+        {/*
+          The two values are locale codes and are not translated, which is the exemption
+          `ZOOMS` above takes for `50%` and `preview/routes.ts` takes for the app's own
+          screen names. `de` is what the address carries, what the catalogue directory is
+          called and what `<html lang>` says; a "German" here would be this site renaming
+          an identifier, and a German reader offered "Englisch" has been answered in the
+          language they are trying to leave (`ui/Settings.tsx` makes the same point about
+          its own picker).
+        */}
+        {LOCALES.map((code) => (
+          <option key={code} value={code}>
+            {code}
+          </option>
+        ))}
+      </select>
 
       {!host && (
         <select

@@ -64,7 +64,7 @@ import {
   signIn,
 } from '@correctiv/app-core/stores/session';
 import { locale as selectLocale, settingsActions } from '@correctiv/app-core/stores/settings';
-import { SHIPPED_LOCALE } from '@/lib/locale';
+import { previewLocale, SHIPPED_LOCALE } from '@/lib/locale';
 import {
   fetchIssues,
   recentIssues as selectRecentIssues,
@@ -160,8 +160,14 @@ export const coreStore = createAppStore({
    *
    * `lib/locale.ts` and not a literal, because the static export's `<html lang>`
    * needs the same answer and cannot reach a store to ask for it.
+   *
+   * Read here and only here, which is what makes a language a restart rather than
+   * a setting: the slice has no `setLocale` and this line runs once, when the store
+   * is built. On a phone `previewLocale()` is `null` before it touches anything —
+   * there is no `localStorage` to hold a key — so the expression below is
+   * `SHIPPED_LOCALE` everywhere the app actually ships.
    */
-  locale: SHIPPED_LOCALE,
+  locale: previewLocale() ?? SHIPPED_LOCALE,
 });
 
 /** Typed `useSelector`, so a selector's state argument is never `any`. */
@@ -187,7 +193,7 @@ export const useIsAdmitted = () => useAppSelector((s) => selectIsAdmitted(s.sess
 export const useActiveTab = () => useAppSelector((s) => s.settings.activeTab);
 export const useTextScale = () => useAppSelector((s) => s.settings.textScale);
 export const useTheme = () => useAppSelector((s) => s.settings.theme);
-/** The language to render in. `'de'`, named by this host above; `i18n/Localisation` is its one reader. */
+/** The language to render in, named by this host above; `i18n/Localisation` is its one reader. */
 export const useLocale = () => useAppSelector((s) => selectLocale(s.settings));
 
 export const useVideoIsActive = () => useAppSelector((s) => s.video.current !== null);

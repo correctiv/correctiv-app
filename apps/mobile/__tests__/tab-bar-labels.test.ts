@@ -132,9 +132,18 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
      * free: the constant could stay `'de'` while `createAppStore` is handed `'en'`
      * directly, and the first version of this check moved that hole rather than
      * closing it. Both ends, so there is nowhere to put the change.
+     *
+     * **`previewLocale()` in front of it is not a second language shipping.** It is
+     * the preview's `workbench:locale` override, and on a phone it answers `null`
+     * before it touches anything — there is no `localStorage` on a device to hold a
+     * key, which `lib/locale.ts` argues in full. So the value that reaches a tab bar
+     * anybody measures is still `SHIPPED_LOCALE`, and what this line holds is the
+     * shape: an override in front, the named constant behind it, and no literal
+     * anywhere. A `?? 'de'` there would be the same hole spelled differently.
      */
-    expect(read(STORE)).toMatch(/locale:\s*SHIPPED_LOCALE/);
+    expect(read(STORE)).toMatch(/locale:\s*previewLocale\(\)\s*\?\?\s*SHIPPED_LOCALE/);
     expect(read(STORE)).not.toMatch(/locale:\s*['"]/);
+    expect(read(STORE)).not.toMatch(/\?\?\s*['"]/);
   });
 });
 
