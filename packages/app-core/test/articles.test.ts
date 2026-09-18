@@ -241,7 +241,7 @@ describe('reader html', () => {
   };
 
   it('escapes editorial text but passes the sanitised body through', () => {
-    const html = buildReaderHtml(article, copy);
+    const html = buildReaderHtml(article, copy, { locale: 'de' });
     expect(html).toContain('Ein &lt;Titel&gt; &amp; ein &quot;Zitat&quot;');
     expect(html).toContain('<p>Text</p>');
   });
@@ -252,23 +252,31 @@ describe('reader html', () => {
    * prints a leading zero.
    */
   it('builds the meta line from authors, the app-formatted date and the reading time', () => {
-    expect(buildReaderHtml({ ...article, publishedText: '12.06.2026' }, copy)).toContain(
-      'by A. Autorin, B. Autor · 12. Juni 2026 · 5 min read',
-    );
+    expect(
+      buildReaderHtml({ ...article, publishedText: '12.06.2026' }, copy, { locale: 'de' }),
+    ).toContain('by A. Autorin, B. Autor · 12. Juni 2026 · 5 min read');
   });
 
   it('falls back to the printed date only when no date was parsable, and drops it if neither is', () => {
     expect(
-      buildReaderHtml({ ...article, publishedAt: '', publishedText: 'im Juni 2026' }, copy),
+      buildReaderHtml({ ...article, publishedAt: '', publishedText: 'im Juni 2026' }, copy, {
+        locale: 'de',
+      }),
     ).toContain('by A. Autorin, B. Autor · im Juni 2026 · 5 min read');
     expect(
-      buildReaderHtml({ ...article, publishedAt: '', publishedText: undefined }, copy),
+      buildReaderHtml({ ...article, publishedAt: '', publishedText: undefined }, copy, {
+        locale: 'de',
+      }),
     ).toContain('by A. Autorin, B. Autor · 5 min read');
   });
 
   /** An article with no named author prints no byline rather than an empty one. */
   it('drops the byline the host left out', () => {
-    const html = buildReaderHtml({ ...article, authors: [] }, { ...copy, byline: undefined });
+    const html = buildReaderHtml(
+      { ...article, authors: [] },
+      { ...copy, byline: undefined },
+      { locale: 'de' },
+    );
     expect(html).toContain('12. Juni 2026 · 5 min read');
     expect(html).not.toContain('·  ·');
   });
@@ -285,8 +293,10 @@ describe('reader html', () => {
    * badge quietly stops shouting.
    */
   it('shows the section as a badge, and the fact-check word when there is a verdict', () => {
-    expect(buildReaderHtml(article, copy)).toContain('<p class="badge">POLITIK</p>');
-    const checked = buildReaderHtml({ ...article, rating: 'falsch' }, copy);
+    expect(buildReaderHtml(article, copy, { locale: 'de' })).toContain(
+      '<p class="badge">POLITIK</p>',
+    );
+    const checked = buildReaderHtml({ ...article, rating: 'falsch' }, copy, { locale: 'de' });
     expect(checked).toContain('<p class="badge">FACT CHECK</p>');
     expect(checked).toContain('rating rating--refuted');
     expect(checked).toContain('<span class="rating__label">False</span>');
@@ -301,7 +311,11 @@ describe('reader html', () => {
    * it is the tone that makes it wrong: `rating--refuted` is the brand red.
    */
   it('prints no plaque at all when the host supplied no verdict for a rated article', () => {
-    const html = buildReaderHtml({ ...article, rating: 'falsch' }, { ...copy, verdict: undefined });
+    const html = buildReaderHtml(
+      { ...article, rating: 'falsch' },
+      { ...copy, verdict: undefined },
+      { locale: 'de' },
+    );
     expect(html).not.toContain('rating__label');
     expect(html).not.toContain('rating--refuted');
     // The badge still says what kind of article it is; only the wording is missing.
@@ -318,23 +332,27 @@ describe('reader html', () => {
    * is the failure this once shipped.
    */
   it('thanks the reader and never offers to join', () => {
-    const html = buildReaderHtml(article, copy);
+    const html = buildReaderHtml(article, copy, { locale: 'de' });
     expect(html).toContain('Made possible by supporters like you.');
     expect(html).not.toContain('correctiv://join');
   });
 
   it('takes CSS as inline text or as a stylesheet href, so either host can style it', () => {
-    expect(buildReaderHtml(article, copy, { css: ['body{color:red}'] })).toContain(
+    expect(buildReaderHtml(article, copy, { locale: 'de', css: ['body{color:red}'] })).toContain(
       '<style>body{color:red}</style>',
     );
-    expect(buildReaderHtml(article, copy, { stylesheets: ['assets/reader/reader.css'] })).toContain(
-      '<link rel="stylesheet" href="assets/reader/reader.css">',
-    );
+    expect(
+      buildReaderHtml(article, copy, { locale: 'de', stylesheets: ['assets/reader/reader.css'] }),
+    ).toContain('<link rel="stylesheet" href="assets/reader/reader.css">');
   });
 
   it('scales the root font size with the app text-size setting', () => {
-    expect(buildReaderHtml(article, copy, { textScale: 1 })).toContain('font-size:16px');
-    expect(buildReaderHtml(article, copy, { textScale: 1.25 })).toContain('font-size:20px');
+    expect(buildReaderHtml(article, copy, { locale: 'de', textScale: 1 })).toContain(
+      'font-size:16px',
+    );
+    expect(buildReaderHtml(article, copy, { locale: 'de', textScale: 1.25 })).toContain(
+      'font-size:20px',
+    );
   });
 });
 
@@ -369,10 +387,11 @@ describe('stripTags', () => {
  * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host a
  * locale to pass, and it had no test at all — which a cold review pointed out.
  *
- * The default is the interesting half. `buildReaderHtml` keeps `'de'` so that every
- * caller written before the option still renders exactly what it rendered, and the
- * app's own wrapper passes `intl.locale` so the words and the attribute cannot
- * disagree.
+ * There is no default, and that is the interesting half. `buildReaderHtml` had one
+ * for a release and a cold review took it back out: a default is the constant under
+ * another name, so a host that forgets the locale would silently claim German. The
+ * app's own wrapper passes `useLocale()` and deliberately not `intl.locale`, which
+ * `apps/mobile/src/lib/articles/reader.ts` argues where it takes the parameter.
  */
 describe('the reader document names its language', () => {
   const article: Article = {
@@ -392,8 +411,8 @@ describe('the reader document names its language', () => {
     support: 'Made possible by supporters like you.',
   };
 
-  it('says German when nobody said otherwise', () => {
-    expect(buildReaderHtml(article, copy)).toContain('<html lang="de"');
+  it('says German when the host says German', () => {
+    expect(buildReaderHtml(article, copy, { locale: 'de' })).toContain('<html lang="de"');
   });
 
   it('says what the host asked for', () => {

@@ -10,12 +10,13 @@
  */
 export const nav: Record<string, string> = {
   'nav.handbook': 'Handbuch',
-  'nav.components': 'Komponenten, die der App',
+  'nav.components': 'Komponenten der App',
   'nav.decisions': 'Entscheidungsprotokolle',
   'nav.design': 'Design, die Figma-Datei',
   'nav.diagrams': 'Architekturdiagramme',
   'nav.reference': 'Referenz, der Core',
   'nav.sources': 'Statusübersicht der Quellen',
+  'nav.strings': 'Texte der App',
   'nav.preview': 'Vorschau',
 
   'nav.title.component': '{name}, eine Komponente',

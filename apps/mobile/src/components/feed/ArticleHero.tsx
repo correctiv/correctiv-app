@@ -3,10 +3,11 @@ import { Pressable } from 'react-native';
 
 import { Bleed, Overline, Thumbnail, Typo } from '@/components/ui';
 import { FEEDS } from '@correctiv/app-core/data/feeds.config';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 
 import { useArticleMeta } from '@/lib/articles/useArticleMeta';
+import { useLocale } from '@/lib/store/core';
 
 /**
  * The two words the hero adds to a feed item, in ENGLISH; the German ships in
@@ -24,7 +25,7 @@ const COPY = defineMessages({
     id: 'article.readingTime',
     defaultMessage: '{count, plural, one {# min read} other {# min read}}',
     description:
-      'Under a headline in the feed. {count} is a number of minutes, and both branches read the same in English because English has no separate singular here; a language that does needs both.',
+      'Under a headline in the feed. {count} is a number of minutes, and both branches read the same in English because English has no separate singular here; a language that has one needs both.',
   },
 });
 
@@ -52,6 +53,7 @@ export function ArticleHero({
   onPress: (item: FeedItem) => void;
 }) {
   const intl = useIntl();
+  const locale = useLocale();
   const { heroImageUrl: imageUrl, readingMinutes } = useArticleMeta(
     item.url,
     item.imageUrl ?? undefined,
@@ -60,7 +62,7 @@ export function ArticleHero({
   const kicker = FEEDS[item.feed]?.badge ?? intl.formatMessage(COPY.kickerFallback);
   const byline = [
     item.author,
-    formatDateShortDe(item.publishedAt),
+    formatDateShort(item.publishedAt, locale),
     readingMinutes ? intl.formatMessage(COPY.readingTime, { count: readingMinutes }) : undefined,
   ]
     .filter(Boolean)

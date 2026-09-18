@@ -2,11 +2,11 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, View } from 'react-native';
 
 import type { SpotlightIssue } from '@correctiv/app-core/data/spotlight';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 
 import { Card, Hairline, Overline, SplitRow, Typo } from '@/components/ui';
 import { openExternal } from '@/lib/openExternal';
-import { useSpotlight } from '@/lib/store/core';
+import { useLocale, useSpotlight } from '@/lib/store/core';
 import { sizes } from '@/lib/theme';
 
 /**
@@ -89,6 +89,7 @@ export function SpotlightBriefing({ onOpenArchive }: { onOpenArchive: () => void
 }
 
 function IssueRow({ issue }: { issue: SpotlightIssue }) {
+  const locale = useLocale();
   return (
     <View>
       {/* A hairline above every row, including the first — it separates the
@@ -109,7 +110,7 @@ function IssueRow({ issue }: { issue: SpotlightIssue }) {
         style={{ minHeight: sizes.tapTarget }}
       >
         <Typo variant="text-s" weight="bold" color="on-canvas-muted">
-          {formatDateShortDe(issue.date)}
+          {formatDateShort(issue.date, locale)}
         </Typo>
         <Typo variant="text-m" numberOfLines={2} className="flex-1">
           {issue.subject}

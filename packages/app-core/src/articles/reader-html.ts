@@ -1,5 +1,5 @@
 import { escapeHtml } from '../lib/html';
-import { formatDateDe } from '../lib/format';
+import { formatDate } from '../lib/format';
 import { coreMessage } from '../i18n/messages';
 import { ratingTone } from './rating';
 import type { Locale } from '../stores/settings';
@@ -109,16 +109,19 @@ export interface ReaderHtmlOptions {
    * A browser hyphenates and a screen reader chooses a voice by this attribute, so
    * a German article announced as English is read out in an English accent with no
    * hyphenation. It was the literal `"de"` here until
-   * [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host
-   * a locale to pass; the default keeps every caller that has not been told about
-   * it rendering exactly what it rendered before.
+   * [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host a
+   * locale to pass, and then a `= 'de'` default for one release, which a cold review
+   * caught: the sibling module that formats this document's dates refuses to default a
+   * locale in as many words, because a default is the constant back under another name
+   * and its whole failure mode is being invisible. Required, so a host that forgets it
+   * cannot silently claim German.
    *
    * It is the LOCALE and not the article's own language, which this document does
    * not know: the words around the article are the app's, and the app is in one
    * language at a time. The day an English app shows a German article, that is a
    * `lang` on the body rather than a second argument here.
    */
-  locale?: Locale;
+  locale: Locale;
 }
 
 const ROOT_FONT_PX = 16;
@@ -126,9 +129,9 @@ const ROOT_FONT_PX = 16;
 export function buildReaderHtml(
   article: Article,
   copy: ReaderCopy,
-  options: ReaderHtmlOptions = {},
+  options: ReaderHtmlOptions,
 ): string {
-  const { css = [], stylesheets = [], textScale = 1, locale = 'de' } = options;
+  const { css = [], stylesheets = [], textScale = 1, locale } = options;
 
   const rootStyle = `font-size:${ROOT_FONT_PX * textScale}px`;
   const links = stylesheets
@@ -167,10 +170,10 @@ export function buildReaderHtml(
   // The app's own date format wins over the publisher's wording: correctiv.org prints
   // "04. August 2026" where every list in the app reads "4. August 2026", and the
   // reader is the one screen a date row appears in twice. `publishedText` stays as the
-  // fallback for a page with no parsable date — `formatDateDe` returns '' for one.
+  // fallback for a page with no parsable date — `formatDate` returns '' for one.
   const metaLine = [
     article.authors.length > 0 ? copy.byline : '',
-    formatDateDe(article.publishedAt) || article.publishedText,
+    formatDate(article.publishedAt, locale) || article.publishedText,
     copy.readingTime,
   ]
     .filter(Boolean)

@@ -13,6 +13,7 @@ import { Handbook } from './pages/Handbook';
 import { Document } from './pages/Document';
 import { Landing } from './pages/Landing';
 import { Reference } from './pages/Reference';
+import { Strings } from './pages/Strings';
 import { Decisions } from './pages/Decisions';
 import { Sources } from './pages/Sources';
 import { Preview } from './pages/Preview';
@@ -271,6 +272,8 @@ export function App() {
         return <DiagramIndex />;
       case 'reference':
         return <Reference />;
+      case 'strings':
+        return <Strings />;
       case 'sources':
         return <Sources />;
       case 'decisions':

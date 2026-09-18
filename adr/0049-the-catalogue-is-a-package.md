@@ -163,3 +163,11 @@ put a data package in charge of the core's type; that is the wrong direction for
   file per id namespace, and that directory is the only place under `apps/mobile/src` where a
   German character may be written." Both halves move: the directory is
   `packages/catalogue/src/de/`, and under `apps/mobile/src` there is now no such place at all.
+- **Nothing in [ADR 0026](0026-react-native-review-and-hardening.md) §6 about
+  `lib/format.ts`, and that is a correction.** An earlier draft of this record struck
+  "those tables are deletable rather than parameterisable" there. A cold review pointed
+  out that the sentence is not false: it is about the twelve month names and seven
+  weekday names, it says to delete them rather than parameterise THEM, and they were
+  deleted. Somebody acting on it today acts correctly. What §4 does is a later decision
+  about a different object — the formatter, not the tables — and AGENTS.md is explicit
+  that a claim which is merely overtaken is not struck. The strike is withdrawn.

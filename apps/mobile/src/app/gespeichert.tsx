@@ -3,10 +3,10 @@ import { defineMessages, useIntl } from 'react-intl';
 import { FlatList, Pressable, View, type ListRenderItemInfo } from 'react-native';
 
 import { Overline, ScreenHeader, Typo } from '@/components/ui';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 import type { SavedArticle } from '@correctiv/app-core/stores/savedArticles';
 import { openArticle } from '@/lib/openArticle';
-import { useCoreActions, useSavedArticles } from '@/lib/store/core';
+import { useCoreActions, useLocale, useSavedArticles } from '@/lib/store/core';
 import { sizes, useColors } from '@/lib/theme';
 
 /**
@@ -14,8 +14,9 @@ import { sizes, useColors } from '@/lib/theme';
  *
  * The two rows below carry a placeholder each rather than a join: an article's
  * title and the day it was saved are data, and where they sit in the sentence is
- * the language's business. The day itself is still `formatDateShortDe`, which pins
- * the German pattern on purpose.
+ * the language's business. The day itself is still `formatDateShort`, which pins
+ * the German pattern on purpose where the language is German, and takes the
+ * locale's own wording elsewhere.
  */
 const COPY = defineMessages({
   screenTitle: {
@@ -105,6 +106,7 @@ function SavedRow({ article }: { article: SavedArticle }) {
   const actions = useCoreActions();
   const colors = useColors();
   const intl = useIntl();
+  const locale = useLocale();
   return (
     <View className="flex-row items-start border-b border-stroke py-s">
       <Pressable
@@ -118,7 +120,7 @@ function SavedRow({ article }: { article: SavedArticle }) {
           {article.title}
         </Typo>
         <Typo variant="text-s" color="grey-500" className="mt-2xs">
-          {intl.formatMessage(COPY.savedOn, { date: formatDateShortDe(article.savedAt) })}
+          {intl.formatMessage(COPY.savedOn, { date: formatDateShort(article.savedAt, locale) })}
         </Typo>
       </Pressable>
       <Pressable

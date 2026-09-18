@@ -2,11 +2,11 @@ import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 import type { SpotlightIssue } from '@correctiv/app-core/data/spotlight';
-import { formatDateWeekdayDe } from '@correctiv/app-core/lib/format';
+import { formatDateWeekday } from '@correctiv/app-core/lib/format';
 
 import { Hairline, ScreenHeader, Typo } from '@/components/ui';
 import { openExternal } from '@/lib/openExternal';
-import { useSpotlight } from '@/lib/store/core';
+import { useLocale, useSpotlight } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -78,6 +78,7 @@ export default function SpotlightScreen() {
 }
 
 function IssueBlock({ issue }: { issue: SpotlightIssue }) {
+  const locale = useLocale();
   return (
     <View>
       <Hairline className="mt-m" />
@@ -88,7 +89,7 @@ function IssueBlock({ issue }: { issue: SpotlightIssue }) {
         className="pt-m active:opacity-70"
       >
         <Typo variant="text-s" weight="bold" color="accent">
-          {formatDateWeekdayDe(issue.date)}
+          {formatDateWeekday(issue.date, locale)}
         </Typo>
         <Typo variant="headline-xs" className="mt-4xs">
           {issue.subject}
