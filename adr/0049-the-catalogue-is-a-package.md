@@ -135,11 +135,18 @@ put a data package in charge of the core's type; that is the wrong direction for
 
 - [ADR 0026](0026-react-native-review-and-hardening.md) §6, "`locale` is therefore a fixed
   value in the store rather than something read from the device": the second half stands and
-  the first does not. The value is supplied by the host at construction (§4). Its reason —
-  that a phone set to English must not get an app half in English — is why the phone still
-  passes `'de'`.
+  the first will not, once §4 is built. Its reason — that a phone set to English must not get
+  an app half in English — is why the phone will still pass `'de'`.
+  **Deliberately not struck yet.** §4 is not in the tree, so in the tree the sentence is
+  still true, and a record struck ahead of the change that voids it is a record that lies
+  for however long the change takes. It is struck by the pull request that builds §4.
 - [ADR 0026](0026-react-native-review-and-hardening.md) §6, "the compiled catalogues are build
-  artifacts": true as of §3 and not before. Nothing compiled anything until then.
+  artifacts": **struck there now**, and not by this record — by the measurement. It was
+  wrong on the day it was written rather than overtaken by anything, because nothing in
+  this tree has ever run `formatjs compile`, so the clause beside it says so plainly with
+  the day it was measured and links nothing, which is what [AGENTS.md](../AGENTS.md) asks
+  for that case. §3 below is what would make it true; a claim waiting to become true is
+  still a claim a reader would act on and be wrong about.
 - [AGENTS.md](../AGENTS.md)'s "The German … lives in `apps/mobile/src/i18n/catalogue/de/`, one
   file per id namespace, and that directory is the only place under `apps/mobile/src` where a
   German character may be written." Both halves move: the directory is

@@ -338,7 +338,7 @@ function scan(root: string): Provenance {
 
   /**
    * A command that writes the file itself, for an artefact no script in the tree
-   * writes: `formatjs extract … --out-file src/i18n/catalogue/en.json`. The
+   * writes: `formatjs extract … --out-file ../../packages/catalogue/src/en.json`. The
    * output flag is required, or every `node scripts/adr.mjs new` would be read as
    * writing the script it runs.
    */

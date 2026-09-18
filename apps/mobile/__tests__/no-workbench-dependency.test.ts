@@ -425,7 +425,7 @@ function parses(text: string): boolean {
  * has a known limit that turns one into damage: it truncates a line at a `//`
  * preceded by whitespace, inside a string literal as readily as outside one. Any
  * `.json` in scope carrying `" … // … "` in a value would stop being JSON, and
- * `src/i18n/catalogue/` is in scope — a trip-wire under the copy deck, which is a
+ * `packages/catalogue/src/` is in scope — a trip-wire under the copy deck, which is a
  * red for a reason that has nothing to do with the workbench. So: JSONC is
  * stripped, JSON is read as written.
  */
