@@ -1,12 +1,17 @@
 # ADR 0048 — The gallery points at the editor rather than copying it
 
-Status: **proposed**, 2026-09-17, from finishing
+Status: accepted, 2026-09-18, from finishing
 [ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) and finding its last
-section answered by the work rather than waiting for it. Proposed and not accepted,
-because three of its four decisions are to stop, and stopping is the team's call rather
-than the carrying-out's; §3, the one thing it builds, is built in
-[#215](https://github.com/correctiv/correctiv-app/pull/215) because a sentence and a link
-are true whichever way the rest goes.
+section answered by the work rather than waiting for it. Four decisions, three of them to
+stop.
+
+It stood as **proposed** for a day, which would have been the first status of its kind
+here, because stopping is the team's call rather than the carrying-out's. The review
+answered it: all four decisions stand, and the question underneath §1 — where a block
+declares itself, if not in a component's folder — became
+[ADR 0054](0054-a-block-declares-where-it-may-appear.md). The status is the review's, and
+the record is left as it was argued. §3, the one thing it builds, is built in
+[#215](https://github.com/correctiv/correctiv-app/pull/215).
 
 ## Context
 
