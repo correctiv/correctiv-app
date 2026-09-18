@@ -1265,14 +1265,24 @@ function Row({
          * And above its neighbours while it travels, or a block gliding past a taller one
          * would pass behind it. `z-10` and not more: the control bar sits at `z-30` inside
          * whichever row a pointer is over, and this must not cover one.
+         *
+         * The shadow is what the fade costs. A translucent block crossing a neighbour
+         * mid-slide shows the neighbour through itself, which in a still reads as a smear
+         * — caught in `screens/evidence/236-konfigurator-drag.webp`, which is that frame.
+         * An edge under it is what keeps the two blocks apart for the tenth of a second
+         * they overlap, without making the block opaque and so taking the fade away.
          */
-        carried && 'z-10 opacity-60',
+        carried && 'z-10 opacity-60 shadow-xl',
         /*
          * `transform` and nothing else is transitioned. A transition on `all` would catch
          * the opacity above, so a block would fade in as it was picked up rather than
          * saying so at once, and it would catch the bar's own fade a second time.
          */
-        animate && 'transition-transform duration-150 ease-out',
+        /*
+         * Short. Long enough to be a slide rather than a jump, short enough that the
+         * overlap the shadow above is for is over before it is read as one.
+         */
+        animate && 'transition-transform duration-100 ease-out',
       )}
       style={{ transform: shift === 0 ? undefined : `translateY(${shift}px)` }}
       /*

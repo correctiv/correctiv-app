@@ -267,7 +267,7 @@ describe('one handle for the pointer, and the arrows for the keyboard', () => {
     // The faded-but-coloured mark on the carried block, against `HomeBlock`'s greyed one
     // for a block that is switched off. Two states that must not read as one at two
     // strengths.
-    expect(PANEL).toMatch(/carried && 'z-10 opacity-60'/);
+    expect(PANEL).toMatch(/carried && 'z-10 opacity-60 shadow-xl'/);
     expect(BLOCK).toMatch(/off && 'opacity-45 grayscale'/);
     // And no mark is mounted at all while a block is being carried, so nothing offers to
     // add into a list that is mid-answer.
