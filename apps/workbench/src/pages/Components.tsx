@@ -80,7 +80,12 @@ const COPY = defineMessages({
     description:
       'Read aloud as the group name of the two-way switch beside the filter, and never drawn.',
   },
-  drawnAll: { id: 'components.drawn.all', defaultMessage: 'All' },
+  drawnAll: {
+    id: 'components.drawn.all',
+    defaultMessage: 'All',
+    description:
+      'The first of the two choices beside the filter: every component, drawn here or not. strings.only.all is the same word on /strings, where it means every string rather than only the ones sharing an English or missing a wording.',
+  },
   drawnHere: {
     id: 'components.drawn.here',
     defaultMessage: 'Drawn here',

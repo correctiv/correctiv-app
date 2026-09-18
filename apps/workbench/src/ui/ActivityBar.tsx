@@ -45,7 +45,7 @@ const COPY = defineMessages({
     id: 'shell.activity.handbook',
     defaultMessage: 'Handbook',
     description:
-      'The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab.',
+      'The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab, and handbook.title is that page’s own heading.',
   },
   decisions: { id: 'shell.activity.decisions', defaultMessage: 'Decisions' },
   sources: { id: 'shell.activity.sources', defaultMessage: 'Sources' },
@@ -54,7 +54,7 @@ const COPY = defineMessages({
     id: 'shell.activity.reference',
     defaultMessage: 'Reference',
     description:
-      'The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reads the same in English.',
+      'The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reference.title is that page’s own heading; both read the same in English.',
   },
   components: {
     id: 'shell.activity.components',
@@ -66,7 +66,7 @@ const COPY = defineMessages({
     id: 'shell.activity.strings',
     defaultMessage: 'Strings',
     description:
-      'The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. The page’s own heading is written into its markup and is not a message, so there is no id here that reads the same.',
+      'The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. strings.title is that page’s own heading and reads the same in English; nav.strings is the longer name the browser tab carries.',
   },
 });
 

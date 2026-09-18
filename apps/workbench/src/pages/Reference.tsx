@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { defineMessages } from 'react-intl';
 
 import api from 'virtual:api';
 import type { ApiModule, ApiSymbol } from 'virtual:api';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { symbolId } from '../nav';
 import { href } from '../router';
 import { Slot } from '../shell/slots';
@@ -11,6 +13,90 @@ import { Toc } from '../ui/Toc';
 import { useSections } from '../ui/useSections';
 
 const { modules: MODULES, package: PACKAGE } = api.core;
+
+/**
+ * Everything this page says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/reference.ts`.
+ *
+ * **Most of what is on this page is deliberately not in here.** The heading, the
+ * lede, the filter and the two lines that stand in for something missing are this
+ * site's own words. Everything else a reader sees is TypeDoc out of
+ * `packages/app-core`, read through `virtual:api`: a module's subpath and its
+ * prose, and a symbol's kind, name, summary, signature and doc comment. Those are
+ * comments a developer wrote for a developer, and AGENTS.md keeps them English
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ * So a German reader gets a German frame around an English reference, which is
+ * the same seam `/components` has one route along.
+ *
+ * `packages/app-core` and `apps/mobile` stay in their own spelling inside the
+ * lede. They are paths, not words.
+ */
+const COPY = defineMessages({
+  title: {
+    id: 'reference.title',
+    defaultMessage: 'Reference',
+    description:
+      'The page’s heading. shell.activity.reference is the rail entry that opens this page and shell.search.group.reference is the palette’s group of the symbols on it; the three read the same in English and are three entries because one is a heading, one is a rail entry and one names a group of results.',
+  },
+  lede: {
+    id: 'reference.lede',
+    defaultMessage:
+      'Every exported symbol in <code>packages/app-core</code>, extracted from the source and its doc comments. The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.',
+    description:
+      'The paragraph under the heading. The two runs in <code> are paths in this repository and are left in their own spelling. <components> is the link to /components and the word inside it is that page’s own name.',
+  },
+
+  filter: {
+    id: 'reference.filter',
+    defaultMessage: 'Filter modules and symbols',
+    description:
+      'The accessible name of the filter box in the bar above the page. The bar carries no labels above its fields.',
+  },
+  filterPlaceholder: {
+    id: 'reference.filter.placeholder',
+    defaultMessage: 'Filter, for example loadArticle or stores/',
+    description:
+      'The placeholder in that box. The two examples are an exported function and a module’s subpath, one of each; a translation keeps them as they are, because they are identifiers in this repository and not words.',
+  },
+  filterSummary: {
+    id: 'reference.filter.summary',
+    defaultMessage:
+      '{modules, plural, one {# module} other {# modules}}, {symbols, plural, one {# symbol} other {# symbols}}',
+    description:
+      'The count beside the filter box, which follows what is typed into it. {modules} is how many of the core’s modules still match and {symbols} how many symbols inside them.',
+  },
+
+  empty: {
+    id: 'reference.empty',
+    defaultMessage: 'Nothing matches that.',
+    description:
+      'Where the list of modules would be, when the filter above the page matches no module and no symbol. shell.search.empty is the same sentence in the search palette and reads the same in English.',
+  },
+  noDoc: {
+    id: 'reference.symbol.noDoc',
+    defaultMessage: 'No doc comment.',
+    description: 'Stands in, on a symbol’s row, where the core’s source carries no prose to print.',
+  },
+});
+
+/**
+ * The two runs drawn inside `reference.lede`, at module scope.
+ *
+ * Beside the descriptor rather than inside the render, which is the shape
+ * `ui/Settings.tsx` already uses for its three: a component built during a render
+ * is remounted on every one of them, and `react/no-unstable-nested-components`
+ * says so.
+ */
+const code = (chunks: ReactNode[]) => <code className="font-mono">{chunks}</code>;
+
+const components = (chunks: ReactNode[]) => (
+  <a
+    href={href('/components')}
+    className="text-on-canvas underline decoration-accent underline-offset-2"
+  >
+    {chunks}
+  </a>
+);
 
 /**
  * The core's API, as a place to look something up rather than a site to read.
@@ -34,14 +120,19 @@ const { modules: MODULES, package: PACKAGE } = api.core;
  * two share is in `ui/Lookup.tsx`.
  *
  * A symbol with no prose is shown and marked rather than hidden. The gap is worth
- * seeing: 167 of the core's 327 exported symbols carry a doc comment, and the
- * ones that do carry real arguments rather than restatements of their signature.
+ * seeing: a large share of the core's exported symbols carry no doc comment at
+ * all, and the ones that do carry real arguments rather than restatements of
+ * their signature. This used to say "167 of the core's 327", which `npm run api`
+ * reported as 207 of 365 on 2026-09-18 with nothing anywhere going red. A count
+ * of what the build just counted has no business being typed here, so it is not
+ * a number with a check under it now; it is no number.
  *
  * The prose is HTML because the comments are Markdown and lean on backticks for
  * every identifier. The build renders it, from this repository's own source at the
  * commit being built, which is the same trust boundary as the documents.
  */
 export function Reference() {
+  const intl = useWorkbenchIntl();
   const [query, setQuery] = useState('');
   const sections = useSections('/reference', true);
 
@@ -64,11 +155,14 @@ export function Reference() {
       <Slot id="context-bar">
         <Filter
           id="ref-q"
-          label="Filter modules and symbols"
-          placeholder="Filter, for example loadArticle or stores/"
+          label={intl.formatMessage(COPY.filter)}
+          placeholder={intl.formatMessage(COPY.filterPlaceholder)}
           value={query}
           onChange={setQuery}
-          summary={`${modules.length} modules, ${symbolCount} symbols`}
+          summary={intl.formatMessage(COPY.filterSummary, {
+            modules: modules.length,
+            symbols: symbolCount,
+          })}
         />
       </Slot>
 
@@ -78,23 +172,21 @@ export function Reference() {
 
       <Page>
         <article className="min-w-0">
-          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">Reference</h1>
+          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">
+            {intl.formatMessage(COPY.title)}
+          </h1>
           <p className="mt-xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            Every exported symbol in <code className="font-mono">packages/app-core</code>, extracted
-            from the source and its doc comments. The core has no barrel, so a module here is the
-            subpath you import. This is a lookup surface; the architecture pages are the way in. The
-            app&apos;s own components are their own section:{' '}
-            <a
-              href={href('/components')}
-              className="text-on-canvas underline decoration-accent underline-offset-2"
-            >
-              Components
-            </a>
-            , which nothing outside <code className="font-mono">apps/mobile</code> can import.
+            {/* `intl.formatMessage` and never `<FormattedMessage>`: that component
+                reads react-intl's own context, which the app's provider shadows
+                inside an `AppHost`. `test/i18n.test.ts` fails on one, and
+                `i18n/Localisation.tsx` carries the measurement. */}
+            {intl.formatMessage(COPY.lede, { code, components })}
           </p>
 
           {modules.length === 0 && (
-            <p className="py-2xl text-center text-m text-on-canvas-muted">Nothing matches that.</p>
+            <p className="py-2xl text-center text-m text-on-canvas-muted">
+              {intl.formatMessage(COPY.empty)}
+            </p>
           )}
 
           {modules.map((module) => (
@@ -135,6 +227,8 @@ export function Reference() {
 
 /** One symbol: what kind of thing it is, its signature and its prose. */
 function Symbol({ module, symbol }: { module: ApiModule; symbol: ApiSymbol }) {
+  const intl = useWorkbenchIntl();
+
   return (
     <Disclosure
       id={symbolId(module.subpath, symbol.name)}
@@ -145,7 +239,10 @@ function Symbol({ module, symbol }: { module: ApiModule; symbol: ApiSymbol }) {
           </span>
           <span className="shrink-0 font-mono text-m font-semibold">{symbol.name}</span>
           <span className="min-w-0 flex-1 truncate text-s text-on-canvas-muted">
-            {symbol.summary || <span className="italic">No doc comment.</span>}
+            {/* The symbol's OWN prose, out of the core's source through TypeDoc. It
+                is a comment a developer wrote and stays English (ADR 0052 §1); what
+                stands in for a missing one is this site's sentence and does not. */}
+            {symbol.summary || <span className="italic">{intl.formatMessage(COPY.noDoc)}</span>}
           </span>
         </>
       }

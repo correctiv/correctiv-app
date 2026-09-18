@@ -215,15 +215,11 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   'pages/Components.tsx': 2,
   'pages/Decisions.tsx': 68,
   'pages/Design.tsx': 46,
-  'pages/DiagramIndex.tsx': 3,
-  'pages/DiagramView.tsx': 5,
   'pages/Document.tsx': 12,
-  'pages/Handbook.tsx': 10,
   'pages/Landing.tsx': 30,
-  'pages/Reference.tsx': 14,
+  // At its floor: one import line.
+  'pages/Reference.tsx': 1,
   'pages/Sources.tsx': 106,
-  // Including this page's own heading, which the board says out loud.
-  'pages/Strings.tsx': 23,
   'preview/AppFrame.tsx': 2,
   'preview/api.ts': 4,
   'preview/devices.ts': 11,

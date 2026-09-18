@@ -36,7 +36,7 @@ export const PAGE_TITLES: Record<string, PageTitle> = {
     id: 'nav.handbook',
     defaultMessage: 'Handbook',
     description:
-      'The documents area of this site, at /handbook. The word is this repository’s own name for it and appears in the browser tab and in the search palette.',
+      'The documents area of this site, at /handbook. The word is this repository’s own name for it and appears in the browser tab and in the search palette. handbook.title is the same word as that page’s own heading and shell.activity.handbook as the rail’s entry for it.',
   }),
   ...Object.fromEntries(DIAGRAMS.map((d) => [`/diagrams/${d.id}`, d.title])),
   '/components': wbMessage({ id: 'nav.components', defaultMessage: 'Components, the app’s own' }),

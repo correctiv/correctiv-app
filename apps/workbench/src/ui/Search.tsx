@@ -41,7 +41,7 @@ const COPY = defineMessages({
     id: 'shell.search.empty',
     defaultMessage: 'Nothing matches that.',
     description:
-      'Stands in for the list while what has been typed matches no row. components.empty is the same sentence under the components grid and reads the same in English.',
+      'Stands in for the list while what has been typed matches no row. components.empty is the same sentence under the components grid and reference.empty under /reference’s filter; all three read the same in English.',
   },
   page: {
     id: 'shell.search.kind.page',
@@ -78,7 +78,7 @@ const GROUP_LABELS = defineMessages({
     id: 'shell.search.group.reference',
     defaultMessage: 'Reference',
     description:
-      'The group of symbols the core exports. shell.activity.reference is the rail entry that opens that page and reads the same in English.',
+      'The group of symbols the core exports. shell.activity.reference is the rail entry that opens that page and reference.title is that page’s own heading; both read the same in English.',
   },
   Components: {
     id: 'shell.search.group.components',

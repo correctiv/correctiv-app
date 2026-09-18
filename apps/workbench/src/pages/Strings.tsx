@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { defineMessages } from 'react-intl';
 
 import model from 'virtual:strings';
 import type { StringEntry } from 'virtual:strings';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Slot } from '../shell/slots';
 import { Badge } from '../ui/kit/badge';
 import { Segmented } from '../ui/kit/segmented';
@@ -14,30 +16,124 @@ import { group, hasGap, haystackOf, keyOf, lookup, twinsOf } from './strings-mod
 const { locales: LOCALES, strings: ENTRIES } = model;
 
 /**
- * **This page's own words are English, like every other board on this site.**
+ * Everything this page says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/strings.ts`.
  *
- * A first version translated the heading, the lede and the filter, on the grounds
- * that a reader from the newsroom is who the board is for.
- * [ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) draws the
- * line elsewhere and a cold review caught it: §1 names the audience as somebody
- * arranging the home screen and excludes a translator by name, and §2 puts the body
- * of a publishing page on the English side, the sources board included. This is that
- * board's twin — a generated table with a heading, a lede and a filter — so it reads
- * the way `/sources`, `/reference` and `/components` read, and `nav.strings` and
- * `shell.activity.strings` stay German because the rail and the tab are the shell.
- *
- * Widening that audience may well be right, now that the strings have somewhere to be
- * looked at. It is a boundary, so it wants a record rather than a page that quietly
- * sits on the other side of one.
- *
- * Every id, every wording and every path below is data and is printed as it is
- * written, which is why the `de` column is German on an English page.
+ * **The board is a table of strings, so the line between the two kinds of text on
+ * it is unusually easy to see.** What is here is the frame: the heading, the two
+ * ledes, the filter, the segment beside it, the empty state and the two small
+ * lines a row prints about itself. What is NOT here is every cell: an id, a
+ * wording in either language, a description written for a translator and a path
+ * into the repository. Those are the rows of the table this page exists to show,
+ * and printing a translation of one would be printing something other than the
+ * string ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ * That is why the `de` column reads German whatever the setting says.
  *
  * **The column heads are the locale codes and not names**, and that is not an
- * omission. `de` and `en` are the keys of `translations`, the names of the catalogue
- * directories and the values the setting takes: identifiers, which this site leaves in
- * their own spelling wherever it prints one.
+ * omission either. `de` and `en` are the keys of `translations`, the names of the
+ * catalogue directories and the values the setting takes: identifiers, which this
+ * site leaves in their own spelling wherever it prints one.
+ *
+ * This page was English throughout until ADR 0052, on ADR 0050 §2's line, and the
+ * argument then was that it is `/sources`'s twin. What moved is the line rather
+ * than this page: §2 divided a page by position and 0052 divides it by author, so
+ * the board's own frame follows the setting and the rows it prints do not.
  */
+const COPY = defineMessages({
+  title: {
+    id: 'strings.title',
+    defaultMessage: 'Strings',
+    description:
+      'The page’s heading. shell.activity.strings is the rail entry that opens this page and reads the same in English; nav.strings is the longer name the browser tab and the search palette carry.',
+  },
+  lede: {
+    id: 'strings.lede',
+    defaultMessage:
+      "Every string the app or this site has a descriptor for, joined from the extraction and the catalogues. The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+    description:
+      'The first paragraph under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder.',
+  },
+  ledeProgress: {
+    id: 'strings.lede.progress',
+    defaultMessage:
+      'The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is not: what this page itself says is below, and several of this site’s other pages still write their words into their own markup instead of declaring them. Those are the ones missing here.',
+    description:
+      'The second paragraph under the heading, which says how much of each half of the board is really on it. The runs in <code> are the two surface names as the headings below spell them, and a path in this repository.',
+  },
+
+  filter: {
+    id: 'strings.filter',
+    defaultMessage: 'Filter strings by id, wording or description',
+    description:
+      'The accessible name of the filter box in the bar above the page. The bar carries no labels above its fields.',
+  },
+  filterPlaceholder: {
+    id: 'strings.filter.placeholder',
+    defaultMessage: 'Filter, for example gate., Anmelden or workbench',
+    description:
+      'The placeholder in that box. The three examples are a namespace, a German wording out of the app’s catalogue and a surface name, one of each; a translation keeps all three as they are, because each is a thing that appears in the table rather than a word.',
+  },
+  filterSummary: {
+    id: 'strings.filter.summary',
+    defaultMessage: '{shown} of {total} in {sections, plural, one {# section} other {# sections}}',
+    description:
+      'The count beside the filter box, which follows what is typed into it and what the segment beside it is set to. {shown} is how many rows are left, {total} how many the board holds altogether, and {sections} how many headings those rows are under.',
+  },
+
+  only: {
+    id: 'strings.only.legend',
+    defaultMessage: 'Which strings',
+    description:
+      'Read aloud as the group name of the three-way switch beside the filter, and never drawn.',
+  },
+  onlyAll: {
+    id: 'strings.only.all',
+    defaultMessage: 'All',
+    description:
+      'The first of the three choices: no restriction beyond what is typed in the box. components.drawn.all is the same word on /components, where it means every component rather than only the ones this site draws itself.',
+  },
+  onlySame: {
+    id: 'strings.only.same',
+    defaultMessage: 'Same English',
+    description:
+      'The second choice: only the strings whose English is word for word another string’s. strings.row.twins is the line a row prints to say which other ids those are.',
+  },
+  onlyUntranslated: {
+    id: 'strings.only.untranslated',
+    defaultMessage: 'Untranslated',
+    description:
+      'The third choice: only the strings one of the languages has no wording for. strings.row.untranslated is the badge that stands in that language’s cell, and reads the same in English.',
+  },
+
+  empty: {
+    id: 'strings.empty',
+    defaultMessage: 'No string matches that.',
+    description:
+      'Where the table would be, when nothing is left after the filter and the segment together. It names the thing rather than saying “nothing matches”, which reference.empty and shell.search.empty both do, because two controls narrowed this set and the sentence should say what was being looked for.',
+  },
+  twins: {
+    id: 'strings.row.twins',
+    defaultMessage: 'Same English as {ids}',
+    description:
+      'Under an id whose English is word for word another id’s. {ids} is the other ids, comma-separated, each an identifier and none of them translated.',
+  },
+  untranslated: {
+    id: 'strings.row.untranslated',
+    defaultMessage: 'Untranslated',
+    description:
+      'A badge in the cell of a language that has no wording for this id. strings.only.untranslated is the choice in the switch above that leaves only such rows standing, and reads the same in English.',
+  },
+});
+
+/**
+ * The one run drawn inside both ledes, at module scope.
+ *
+ * Beside the descriptors rather than inside the render, which is the shape
+ * `ui/Settings.tsx` already uses for its three: a component built during a render
+ * is remounted on every one of them, and `react/no-unstable-nested-components`
+ * says so.
+ */
+const code = (chunks: ReactNode[]) => <code className="font-mono">{chunks}</code>;
 
 /** The three answers the segment beside the filter gives. */
 type Only = 'all' | 'same' | 'untranslated';
@@ -88,6 +184,7 @@ const HAYSTACK = haystackOf(ENTRIES);
  * worse half of both answers.
  */
 export function Strings() {
+  const intl = useWorkbenchIntl();
   const [query, setQuery] = useState('');
   const [only, setOnly] = useState<Only>('all');
   const sections = useSections('/strings', true);
@@ -111,11 +208,15 @@ export function Strings() {
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-xs">
           <Filter
             id="strings-q"
-            label="Filter strings by id, wording or description"
-            placeholder="Filter, for example gate., Anmelden or workbench"
+            label={intl.formatMessage(COPY.filter)}
+            placeholder={intl.formatMessage(COPY.filterPlaceholder)}
             value={query}
             onChange={setQuery}
-            summary={`${shown} of ${ENTRIES.length} in ${groups.length} sections`}
+            summary={intl.formatMessage(COPY.filterSummary, {
+              shown,
+              total: ENTRIES.length,
+              sections: groups.length,
+            })}
           />
           {/*
             Two facts the free text cannot ask for, as one control rather than two
@@ -134,13 +235,13 @@ export function Strings() {
           */}
           <Segmented
             name="strings-only"
-            legend="Which strings"
+            legend={intl.formatMessage(COPY.only)}
             className="shrink-0"
             value={only}
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'same', label: 'Same English' },
-              { value: 'untranslated', label: 'Untranslated' },
+              { value: 'all', label: intl.formatMessage(COPY.onlyAll) },
+              { value: 'same', label: intl.formatMessage(COPY.onlySame) },
+              { value: 'untranslated', label: intl.formatMessage(COPY.onlyUntranslated) },
             ]}
             onChange={(value) => setOnly(value as Only)}
           />
@@ -153,31 +254,31 @@ export function Strings() {
 
       <Page>
         <article className="min-w-0">
-          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">Strings</h1>
+          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">
+            {intl.formatMessage(COPY.title)}
+          </h1>
           <p className="mt-xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            Every string the app or this site has a descriptor for, joined from the extraction and
-            the catalogues. The two are separate catalogues with separate audiences, so a heading
-            names both the surface and the namespace, and{' '}
-            <code className="font-mono">settings.title</code> below is two different strings. A
-            wording with <code className="font-mono">{'{braces}'}</code> is an ICU pattern, printed
-            as the pattern.
+            {/* `intl.formatMessage` and never `<FormattedMessage>`: that component
+                reads react-intl's own context, which the app's provider shadows
+                inside an `AppHost`. `test/i18n.test.ts` fails on one, and
+                `i18n/Localisation.tsx` carries the measurement. */}
+            {intl.formatMessage(COPY.lede, { code })}
           </p>
           <p className="mt-2xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            {/* Said plainly, because the first version of this page said "two strings
-                are missing" while the sentence above it had grown to cover both
-                surfaces. For the app that was true; for this site it was wrong by two
-                orders of magnitude, and this page's own heading is one of them. */}
-            The <code className="font-mono">app</code> half is complete but for two strings a user
-            reads that are deliberately not descriptors;{' '}
-            <code className="font-mono">apps/mobile/__tests__/localisation-seam.test.ts</code> names
-            both and why. The <code className="font-mono">workbench</code> half is not: much of what
-            this site says is still written into its own markup rather than extracted, and what is
-            below is what has been. This page&apos;s heading is one of the ones that has not.
+            {/* Said plainly, because the first version of this paragraph said "two
+                strings are missing" while the sentence above it had grown to cover
+                both surfaces. For the app that was true; for this site it was wrong
+                by two orders of magnitude. It has been wrong in the other direction
+                since too: it named this page's own heading as one of the strings
+                not extracted, which stopped being true the moment the heading
+                became `strings.title` above. Both mistakes are the same one, a
+                sentence that counts, so this one names no number. */}
+            {intl.formatMessage(COPY.ledeProgress, { code })}
           </p>
 
           {groups.length === 0 && (
             <p className="py-2xl text-center text-m text-on-canvas-muted">
-              No string matches that.
+              {intl.formatMessage(COPY.empty)}
             </p>
           )}
 
@@ -228,8 +329,14 @@ export function Strings() {
  * The narrow column holds only what is short: the id, and the ids that share its
  * English. Everything made of words — both wordings, the description and the
  * address — is in the wide one.
+ *
+ * **Every cell is printed as it is written.** The id, both wordings, the
+ * description and the path are the rows of the board, and the two lines this
+ * component says in its own voice are the only things here that follow the
+ * language setting.
  */
 function Row({ entry }: { entry: StringEntry }) {
+  const intl = useWorkbenchIntl();
   const twins = lookup(TWINS, entry);
 
   return (
@@ -241,7 +348,7 @@ function Row({ entry }: { entry: StringEntry }) {
              is "the same as WHICH one" — and the answer is often in another
              namespace, several screens down the page. */
           <p className="mt-3xs text-s leading-snug text-on-canvas-muted wrap-anywhere">
-            Same English as {twins.join(', ')}
+            {intl.formatMessage(COPY.twins, { ids: twins.join(', ') })}
           </p>
         )}
       </div>
@@ -258,7 +365,9 @@ function Row({ entry }: { entry: StringEntry }) {
                 {locale}
               </dt>
               <dd className="min-w-0 flex-1 text-m leading-relaxed">
-                {entry.translations[locale] ?? <Badge variant="outline">Untranslated</Badge>}
+                {entry.translations[locale] ?? (
+                  <Badge variant="outline">{intl.formatMessage(COPY.untranslated)}</Badge>
+                )}
               </dd>
             </div>
           ))}
@@ -267,7 +376,8 @@ function Row({ entry }: { entry: StringEntry }) {
         {/* What a translator is told. Printed for every id that carries one rather
             than only for the ones sharing a wording: it is the sentence that says
             where the string appears, and that is the question a board of this size
-            raises about any of them. */}
+            raises about any of them. Written for a translator, so it is written in
+            English and printed in English. */}
         {entry.description && (
           <p className="mt-2xs text-s leading-relaxed text-on-canvas-muted">{entry.description}</p>
         )}

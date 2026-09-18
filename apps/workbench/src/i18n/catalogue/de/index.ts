@@ -9,17 +9,25 @@
  * What is shared is the shape, not the strings.
  */
 import { components } from './components';
+import { diagrams } from './diagrams';
 import { frame } from './frame';
+import { handbook } from './handbook';
 import { home } from './home';
 import { nav } from './nav';
+import { reference } from './reference';
 import { settings } from './settings';
 import { shell } from './shell';
+import { strings } from './strings';
 
 export const de: Record<string, string> = {
   ...components,
+  ...diagrams,
   ...frame,
+  ...handbook,
   ...home,
   ...nav,
+  ...reference,
   ...settings,
   ...shell,
+  ...strings,
 };

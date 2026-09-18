@@ -181,3 +181,49 @@ describe('the records the code cites', () => {
     expect(broken).toEqual([]);
   });
 });
+
+/**
+ * The handbook's cards name the same documents the registry does, and since
+ * ADR 0052 they name them twice.
+ *
+ * A card's title used to be a string in `pages/Handbook.tsx` and `nav` in
+ * `plugin/registry.ts`, with nothing holding the two in step; the card became a
+ * descriptor when this site's own words started following the language setting,
+ * which did not remove the second copy, it only gave it a German side.
+ *
+ * So the ENGLISH is held here and the German is free. That is the shape the
+ * duplication actually has: the card and the palette have to agree on what the
+ * document is called, and only in the language the document is written in. A
+ * rename of `ARCHITECTURE.md`'s entry now fails here until the card follows.
+ */
+describe('the handbook names a document the way the registry does', () => {
+  // Read off the source rather than rendered, because rendering the page needs a
+  // provider and this is a question about two strings, not about a page.
+  const HANDBOOK = readFileSync(join(ROOT, 'apps/workbench/src/pages/Handbook.tsx'), 'utf8');
+  const EN = JSON.parse(
+    readFileSync(join(ROOT, 'apps/workbench/src/i18n/catalogue/en.json'), 'utf8'),
+  ) as Record<string, { defaultMessage: string }>;
+
+  /** `{ route: '/architecture', title: intl.formatMessage(COPY.architecture),` */
+  const CARDS = /route: '([^']+)',\s*\n\s*title: intl\.formatMessage\(COPY\.(\w+)\)/g;
+
+  it('gives every card the registry’s own name for the document, in English', () => {
+    const cards = [...HANDBOOK.matchAll(CARDS)];
+    // The floor: a regex that stopped matching would agree with everything.
+    expect(cards.length).toBeGreaterThanOrEqual(5);
+
+    const faults = cards.flatMap(([, route, key]) => {
+      const registered = DOCUMENTS.find((doc) => doc.route === route);
+      // `/diagrams` and `/provenance` are cards without a registered document;
+      // nothing wrote them a name, so the card's own is the only one.
+      if (!registered) return [];
+      const english = EN[`handbook.card.${key.toLowerCase()}`]?.defaultMessage;
+      if (english === registered.nav) return [];
+      return [
+        `${route}: the card says ${english ?? 'nothing'}, the registry says ${registered.nav}`,
+      ];
+    });
+
+    expect(faults).toEqual([]);
+  });
+});

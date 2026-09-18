@@ -131,7 +131,8 @@
     "defaultMessage": "Two renderings of one component. A difference between them is a finding, not a blemish; nothing checks them against each other, on purpose."
   },
   "components.drawn.all": {
-    "defaultMessage": "All"
+    "defaultMessage": "All",
+    "description": "The first of the two choices beside the filter: every component, drawn here or not. strings.only.all is the same word on /strings, where it means every string rather than only the ones sharing an English or missing a wording."
   },
   "components.drawn.here": {
     "defaultMessage": "Drawn here",
@@ -168,6 +169,32 @@
   "components.title": {
     "defaultMessage": "Components",
     "description": "The page’s heading. components.detail.crumb is the same word as the first step of the breadcrumb on a single component’s page, which links back here; nav.components is the longer name the rail and the browser tab carry."
+  },
+  "diagrams.breadcrumb": {
+    "defaultMessage": "Breadcrumb",
+    "description": "Read aloud as the name of the trail above the drawing, and never drawn. The trail itself is the handbook, the drawings, and where this one is in the set."
+  },
+  "diagrams.crumb": {
+    "defaultMessage": "Diagrams",
+    "description": "The second step of that trail, which is the name of the page it links to. diagrams.title is that page’s own heading and handbook.card.diagrams is the card that opens it; all three read the same in English and are three entries because one is a heading, one is a card and one is a link in a trail."
+  },
+  "diagrams.lede": {
+    "defaultMessage": "The same architecture the workbench explains in prose, drawn. Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step."
+  },
+  "diagrams.list": {
+    "defaultMessage": "Every drawing carries the same thing as a list underneath it. That list is not a caption: it is the page for anyone who cannot use the picture."
+  },
+  "diagrams.others": {
+    "defaultMessage": "The other diagrams",
+    "description": "Read aloud as the name of the navigation at the foot of the page, which holds the drawing before this one and the one after it, and is never drawn."
+  },
+  "diagrams.position": {
+    "defaultMessage": "{position} of {total}",
+    "description": "The last step of the trail, which says where this drawing is in the set rather than naming it: the drawing’s own title is the heading directly underneath. {position} is its number from one and {total} is how many drawings there are."
+  },
+  "diagrams.title": {
+    "defaultMessage": "Diagrams",
+    "description": "The page’s heading. handbook.card.diagrams is the card on /handbook that opens this page and diagrams.crumb is the step in a single drawing’s breadcrumb that leads back to it; all three read the same in English. nav.diagrams is the longer name the browser tab carries."
   },
   "frame.copied": {
     "defaultMessage": "Copied",
@@ -340,6 +367,72 @@
   "frame.zoom.fit": {
     "defaultMessage": "Fit",
     "description": "The one option of the zoom select that is a word rather than a percentage: scale the frame to whatever room the stage has."
+  },
+  "handbook.card.architecture": {
+    "defaultMessage": "Architecture"
+  },
+  "handbook.card.architecture.kind": {
+    "defaultMessage": "Explanation",
+    "description": "The kicker over the Architecture card: what kind of document it is."
+  },
+  "handbook.card.conventions": {
+    "defaultMessage": "Conventions"
+  },
+  "handbook.card.conventions.kind": {
+    "defaultMessage": "Rules",
+    "description": "The kicker over the Conventions card: what kind of document it is."
+  },
+  "handbook.card.diagrams": {
+    "defaultMessage": "Diagrams",
+    "description": "The card that opens the drawings. diagrams.title is the heading of the page it opens and diagrams.crumb is the step in a single drawing’s breadcrumb that leads back to it; all three read the same in English."
+  },
+  "handbook.card.diagrams.blurb": {
+    "defaultMessage": "The same architecture, drawn: the core and its host, which decisions still stand, what the app talks to, how the core is layered inside, how somebody signs in, and where an article comes from.",
+    "description": "The sentence under the Diagrams card, and the only card sentence on this page that is not read out of the repository: there is no Markdown document at that route to have written one."
+  },
+  "handbook.card.diagrams.kind": {
+    "defaultMessage": "Drawn",
+    "description": "The kicker over the Diagrams card. The other kickers on this page name a kind of prose; this one says the section is pictures."
+  },
+  "handbook.card.provenance": {
+    "defaultMessage": "Provenance"
+  },
+  "handbook.card.provenance.kind": {
+    "defaultMessage": "Generated",
+    "description": "The kicker over the Provenance card. It is the one document on this grid that is written by a program out of the repository rather than read out of it."
+  },
+  "handbook.card.readme": {
+    "defaultMessage": "Readme",
+    "description": "The card that opens README.md. It is the file’s own name and keeps its spelling in every language."
+  },
+  "handbook.card.readme.kind": {
+    "defaultMessage": "Start",
+    "description": "The kicker over the Readme card: this is the document to arrive at first."
+  },
+  "handbook.card.release": {
+    "defaultMessage": "Release",
+    "description": "The card that opens RELEASE.md. It is the file’s own name and keeps its spelling in every language."
+  },
+  "handbook.card.release.kind": {
+    "defaultMessage": "Process",
+    "description": "The kicker over the Release card: the document is a sequence of steps."
+  },
+  "handbook.card.traps": {
+    "defaultMessage": "Traps"
+  },
+  "handbook.card.traps.kind": {
+    "defaultMessage": "Hard-won",
+    "description": "The kicker over the Traps card. It says how the document was come by rather than what it is: every line in it was paid for by a failure that passed every check."
+  },
+  "handbook.lede": {
+    "defaultMessage": "The repository’s own documents, rendered where they live. Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind."
+  },
+  "handbook.records": {
+    "defaultMessage": "The decisions behind all of it are their own section, because a record is a different kind of document: it is never rewritten, and a claim a later decision made false is struck through where it stands rather than corrected."
+  },
+  "handbook.title": {
+    "defaultMessage": "Handbook",
+    "description": "The page’s heading. shell.activity.handbook is the rail entry that opens it and the word a document’s breadcrumb uses for this section; nav.handbook is the same word again as the page’s name in the browser tab and the search palette."
   },
   "home.block.empty": {
     "defaultMessage": "Draws nothing here.",
@@ -551,7 +644,7 @@
   },
   "nav.handbook": {
     "defaultMessage": "Handbook",
-    "description": "The documents area of this site, at /handbook. The word is this repository’s own name for it and appears in the browser tab and in the search palette."
+    "description": "The documents area of this site, at /handbook. The word is this repository’s own name for it and appears in the browser tab and in the search palette. handbook.title is the same word as that page’s own heading and shell.activity.handbook as the rail’s entry for it."
   },
   "nav.preview": {
     "defaultMessage": "Preview"
@@ -573,6 +666,34 @@
   "nav.title.notFound": {
     "defaultMessage": "Not found",
     "description": "The browser tab on an address this site answers with its 404 body."
+  },
+  "reference.empty": {
+    "defaultMessage": "Nothing matches that.",
+    "description": "Where the list of modules would be, when the filter above the page matches no module and no symbol. shell.search.empty is the same sentence in the search palette and reads the same in English."
+  },
+  "reference.filter": {
+    "defaultMessage": "Filter modules and symbols",
+    "description": "The accessible name of the filter box in the bar above the page. The bar carries no labels above its fields."
+  },
+  "reference.filter.placeholder": {
+    "defaultMessage": "Filter, for example loadArticle or stores/",
+    "description": "The placeholder in that box. The two examples are an exported function and a module’s subpath, one of each; a translation keeps them as they are, because they are identifiers in this repository and not words."
+  },
+  "reference.filter.summary": {
+    "defaultMessage": "{modules, plural, one {# module} other {# modules}}, {symbols, plural, one {# symbol} other {# symbols}}",
+    "description": "The count beside the filter box, which follows what is typed into it. {modules} is how many of the core’s modules still match and {symbols} how many symbols inside them."
+  },
+  "reference.lede": {
+    "defaultMessage": "Every exported symbol in <code>packages/app-core</code>, extracted from the source and its doc comments. The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.",
+    "description": "The paragraph under the heading. The two runs in <code> are paths in this repository and are left in their own spelling. <components> is the link to /components and the word inside it is that page’s own name."
+  },
+  "reference.symbol.noDoc": {
+    "defaultMessage": "No doc comment.",
+    "description": "Stands in, on a symbol’s row, where the core’s source carries no prose to print."
+  },
+  "reference.title": {
+    "defaultMessage": "Reference",
+    "description": "The page’s heading. shell.activity.reference is the rail entry that opens this page and shell.search.group.reference is the palette’s group of the symbols on it; the three read the same in English and are three entries because one is a heading, one is a rail entry and one names a group of results."
   },
   "settings.appearance": {
     "defaultMessage": "Appearance",
@@ -651,7 +772,7 @@
   },
   "shell.activity.handbook": {
     "defaultMessage": "Handbook",
-    "description": "The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab."
+    "description": "The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab, and handbook.title is that page’s own heading."
   },
   "shell.activity.label": {
     "defaultMessage": "Sections",
@@ -662,14 +783,14 @@
   },
   "shell.activity.reference": {
     "defaultMessage": "Reference",
-    "description": "The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reads the same in English."
+    "description": "The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reference.title is that page’s own heading; both read the same in English."
   },
   "shell.activity.sources": {
     "defaultMessage": "Sources"
   },
   "shell.activity.strings": {
     "defaultMessage": "Strings",
-    "description": "The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. The page’s own heading is written into its markup and is not a message, so there is no id here that reads the same."
+    "description": "The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. strings.title is that page’s own heading and reads the same in English; nav.strings is the longer name the browser tab carries."
   },
   "shell.boundary.heading": {
     "defaultMessage": "This view did not render"
@@ -754,7 +875,7 @@
   },
   "shell.search.empty": {
     "defaultMessage": "Nothing matches that.",
-    "description": "Stands in for the list while what has been typed matches no row. components.empty is the same sentence under the components grid and reads the same in English."
+    "description": "Stands in for the list while what has been typed matches no row. components.empty is the same sentence under the components grid and reference.empty under /reference’s filter; all three read the same in English."
   },
   "shell.search.group.components": {
     "defaultMessage": "Components",
@@ -768,7 +889,7 @@
   },
   "shell.search.group.reference": {
     "defaultMessage": "Reference",
-    "description": "The group of symbols the core exports. shell.activity.reference is the rail entry that opens that page and reads the same in English."
+    "description": "The group of symbols the core exports. shell.activity.reference is the rail entry that opens that page and reference.title is that page’s own heading; both read the same in English."
   },
   "shell.search.group.sections": {
     "defaultMessage": "Sections",
@@ -842,5 +963,57 @@
   "shell.toc.none": {
     "defaultMessage": "No headings on this page.",
     "description": "Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title."
+  },
+  "strings.empty": {
+    "defaultMessage": "No string matches that.",
+    "description": "Where the table would be, when nothing is left after the filter and the segment together. It names the thing rather than saying “nothing matches”, which reference.empty and shell.search.empty both do, because two controls narrowed this set and the sentence should say what was being looked for."
+  },
+  "strings.filter": {
+    "defaultMessage": "Filter strings by id, wording or description",
+    "description": "The accessible name of the filter box in the bar above the page. The bar carries no labels above its fields."
+  },
+  "strings.filter.placeholder": {
+    "defaultMessage": "Filter, for example gate., Anmelden or workbench",
+    "description": "The placeholder in that box. The three examples are a namespace, a German wording out of the app’s catalogue and a surface name, one of each; a translation keeps all three as they are, because each is a thing that appears in the table rather than a word."
+  },
+  "strings.filter.summary": {
+    "defaultMessage": "{shown} of {total} in {sections, plural, one {# section} other {# sections}}",
+    "description": "The count beside the filter box, which follows what is typed into it and what the segment beside it is set to. {shown} is how many rows are left, {total} how many the board holds altogether, and {sections} how many headings those rows are under."
+  },
+  "strings.lede": {
+    "defaultMessage": "Every string the app or this site has a descriptor for, joined from the extraction and the catalogues. The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+    "description": "The first paragraph under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder."
+  },
+  "strings.lede.progress": {
+    "defaultMessage": "The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is not: what this page itself says is below, and several of this site’s other pages still write their words into their own markup instead of declaring them. Those are the ones missing here.",
+    "description": "The second paragraph under the heading, which says how much of each half of the board is really on it. The runs in <code> are the two surface names as the headings below spell them, and a path in this repository."
+  },
+  "strings.only.all": {
+    "defaultMessage": "All",
+    "description": "The first of the three choices: no restriction beyond what is typed in the box. components.drawn.all is the same word on /components, where it means every component rather than only the ones this site draws itself."
+  },
+  "strings.only.legend": {
+    "defaultMessage": "Which strings",
+    "description": "Read aloud as the group name of the three-way switch beside the filter, and never drawn."
+  },
+  "strings.only.same": {
+    "defaultMessage": "Same English",
+    "description": "The second choice: only the strings whose English is word for word another string’s. strings.row.twins is the line a row prints to say which other ids those are."
+  },
+  "strings.only.untranslated": {
+    "defaultMessage": "Untranslated",
+    "description": "The third choice: only the strings one of the languages has no wording for. strings.row.untranslated is the badge that stands in that language’s cell, and reads the same in English."
+  },
+  "strings.row.twins": {
+    "defaultMessage": "Same English as {ids}",
+    "description": "Under an id whose English is word for word another id’s. {ids} is the other ids, comma-separated, each an identifier and none of them translated."
+  },
+  "strings.row.untranslated": {
+    "defaultMessage": "Untranslated",
+    "description": "A badge in the cell of a language that has no wording for this id. strings.only.untranslated is the choice in the switch above that leaves only such rows standing, and reads the same in English."
+  },
+  "strings.title": {
+    "defaultMessage": "Strings",
+    "description": "The page’s heading. shell.activity.strings is the rail entry that opens this page and reads the same in English; nav.strings is the longer name the browser tab and the search palette carry."
   }
 }
