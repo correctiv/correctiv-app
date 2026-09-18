@@ -1,5 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useRef, useSyncExternalStore } from 'react';
+import { defineMessages } from 'react-intl';
+
+import { useWorkbenchIntl } from '../../i18n/Localisation';
 
 import { MINUTES_IN_DAY, type MinuteOfDay } from '@correctiv/app-core/lib/home-layout';
 
@@ -10,6 +13,58 @@ import { timeOf } from './clock';
 import { formatTimeOfDay, momentAt, movedMoment, pointAt, withMoment } from './document';
 import { minuteFrom, openedAt, parseMinute, percent, snap, STEP } from './minutes';
 import { getLayout, setLayout, subscribeLayout } from './store';
+
+/**
+ * Everything the day says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/home.ts`.
+ *
+ * `home.*`, because the track is the home document's clock even though it hangs under
+ * the frame rather than in the tool; `frame.*` beside it is the bar's own vocabulary.
+ * The row shows three words and hides the rest: most of what is here is read aloud or
+ * appears on a tooltip, which is what ADR 0042 §4 buys by letting the labels go.
+ */
+const COPY = defineMessages({
+  heading: {
+    id: 'home.timeline.heading',
+    defaultMessage: 'The day',
+    description: 'The heading of the track under the frame. Read aloud and never seen.',
+  },
+  timeField: {
+    id: 'home.timeline.time',
+    defaultMessage: 'The time the frame is showing',
+    description: 'The label of the time field beside the track. Read aloud and never seen.',
+  },
+  live: {
+    id: 'home.timeline.live',
+    defaultMessage: 'Live',
+    description:
+      'The button that gives the app its own clock back, drawn beside the track. A term of art, and a different state from a simulated time that happens to be now.',
+  },
+  addPoint: {
+    id: 'home.timeline.addPoint',
+    defaultMessage: 'Make this minute a moment',
+    description:
+      'The accessible name of the button that names the playhead’s minute as a moment of the day. home.timeline.addPointShort is the same button’s visible word, which goes below 640px.',
+  },
+  addPointShort: {
+    id: 'home.timeline.addPointShort',
+    defaultMessage: 'Point here',
+    description:
+      'The visible word on the button whose accessible name is home.timeline.addPoint. It has an icon beside it and a whole sentence would not fit.',
+  },
+  momentDrag: {
+    id: 'home.timeline.momentDrag',
+    defaultMessage: 'The moment at {time}, drag to move it',
+    description:
+      'The accessible name of one stop on the track while the home tool is open and the stop can be moved. {time} is the moment’s time of day, as 18:30.',
+  },
+  momentGo: {
+    id: 'home.timeline.momentGo',
+    defaultMessage: 'Go to the moment at {time}',
+    description:
+      'The accessible name of one stop on the track while the home tool is shut, when pressing it only moves the playhead. {time} is the moment’s time of day, as 18:30.',
+  },
+});
 
 /** The hours that carry a number. Every three, because every one of them did not fit. */
 const HOURS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
@@ -78,6 +133,7 @@ export function Timeline({
    */
   compact: boolean;
 }) {
+  const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
 
   /*
@@ -123,7 +179,7 @@ export function Timeline({
         compact ? 'px-xs py-3xs' : 'px-s py-2xs',
       )}
     >
-      <h2 className="sr-only">The day</h2>
+      <h2 className="sr-only">{intl.formatMessage(COPY.heading)}</h2>
 
       <Track
         moments={layout.moments}
@@ -138,7 +194,7 @@ export function Timeline({
       />
 
       <label className="flex shrink-0 items-center gap-2xs">
-        <span className="sr-only">The time the frame is showing</span>
+        <span className="sr-only">{intl.formatMessage(COPY.timeField)}</span>
         <input
           type="time"
           step={STEP * 60}
@@ -170,7 +226,7 @@ export function Timeline({
         disabled={!simulated}
         onClick={() => onChange({ time: null })}
       >
-        Live
+        {intl.formatMessage(COPY.live)}
       </Button>
 
       {/*
@@ -189,13 +245,13 @@ export function Timeline({
           variant="outline"
           size="sm"
           className="shrink-0"
-          aria-label="Make this minute a moment"
+          aria-label={intl.formatMessage(COPY.addPoint)}
           disabled={momentAt(layout, snap(minute)) !== null}
           onClick={addPoint}
         >
           <Plus aria-hidden="true" />
           <span aria-hidden="true" className="max-sm:hidden">
-            Point here
+            {intl.formatMessage(COPY.addPointShort)}
           </span>
         </Button>
       )}
@@ -240,6 +296,7 @@ function Track({
   onGoTo: (minute: MinuteOfDay) => void;
   onMoveMoment: (from: MinuteOfDay, to: MinuteOfDay) => void;
 }) {
+  const intl = useWorkbenchIntl();
   const track = useRef<HTMLDivElement>(null);
   /** Which moment a drag is carrying, by the minute it was at when the drag began. */
   const dragging = useRef<MinuteOfDay | null>(null);
@@ -334,11 +391,9 @@ function Track({
         >
           <button
             type="button"
-            aria-label={
-              editing
-                ? `The moment at ${held.at}, drag to move it`
-                : `Go to the moment at ${held.at}`
-            }
+            aria-label={intl.formatMessage(editing ? COPY.momentDrag : COPY.momentGo, {
+              time: held.at,
+            })}
             className={cn(
               'mt-2xs size-[0.875rem] shrink-0 rounded-full border-2 border-accent',
               editing ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',

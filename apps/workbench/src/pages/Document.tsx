@@ -8,6 +8,7 @@ import { ArticlePath } from '../diagrams/ArticlePath';
 import { CoreAndHost } from '../diagrams/CoreAndHost';
 import { cn } from '../lib/cn';
 import { Slot } from '../shell/slots';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { sectionOf } from '../ui/ActivityBar';
 import { Badge } from '../ui/kit/badge';
 import { href } from '../router';
@@ -55,6 +56,7 @@ const DIAGRAMS: Record<string, ReactNode> = {
  * anything a reader can supply.
  */
 export function Document({ doc }: Props) {
+  const intl = useWorkbenchIntl();
   const article = useRef<HTMLElement>(null);
   const parts = useMemo(() => split(doc.html), [doc.html]);
 
@@ -76,8 +78,10 @@ export function Document({ doc }: Props) {
             <ol className="flex flex-wrap items-center gap-2xs">
               {/* The section the rail lights, rather than the word "Handbook",
                 which stopped being true the day a document of the design section
-                was published at `/design/plugin`. */}
-              <li>{sectionOf(doc.route)}</li>
+                was published at `/design/plugin`. A breadcrumb is navigation and
+                follows the language setting, so this formats the rail's own
+                descriptor; the document below it does not (ADR 0050 §2). */}
+              <li>{intl.formatMessage(sectionOf(doc.route))}</li>
               <li aria-hidden="true">/</li>
               <li className="text-on-canvas">{record ? `ADR ${record}` : doc.nav}</li>
             </ol>

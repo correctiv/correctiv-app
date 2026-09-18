@@ -420,5 +420,19 @@
       "5": ["The checks split along the same line"],
       "6": ["`Locale` stays in the core, and the catalogue answers to it"]
     }
+  },
+  "0050": {
+    "slugs": ["the-workbench-gets-a-second-audience"],
+    "decisions": {
+      "1": ["The workbench has a second audience, and it is named"],
+      "2": [
+        "What is translated is what that audience touches, and nothing else",
+        "The chrome follows the setting, the content does not",
+        "The shell and the tools follow the setting, a published page's body does not"
+      ],
+      "3": ["Two catalogues, one per audience, and neither reaches into the other"],
+      "4": ["The setting is the reader's, so it lives where the appearance does"],
+      "5": ["`document.ts`'s module labels are a decision this record does not make"]
+    }
   }
 }

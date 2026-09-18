@@ -9,9 +9,59 @@ import {
   Smartphone,
 } from 'lucide-react';
 
+import { defineMessages } from 'react-intl';
+
+import { useWorkbenchIntl } from '../i18n/Localisation';
+import type { WorkbenchMessage } from '../i18n/messages';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 import { cn } from '../lib/cn';
 import { href } from '../router';
+
+/**
+ * What the left rail says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * `shell.activity.*` rather than `nav.*`: these are the rail's own short words for
+ * a section, and `nav.*` is what a PAGE is called in the tab and in the palette.
+ * `Handbook` is both, one word in two places doing two jobs, which is why each of
+ * the two ids carries a description saying which.
+ */
+const COPY = defineMessages({
+  rail: {
+    id: 'shell.activity.label',
+    defaultMessage: 'Sections',
+    description:
+      'The accessible name of the rail down the left edge, which reaches every section of this site from every other. Read aloud and never drawn.',
+  },
+  overview: { id: 'shell.activity.overview', defaultMessage: 'Overview' },
+  app: {
+    id: 'shell.activity.app',
+    defaultMessage: 'The app',
+    description:
+      'The rail’s entry for /preview, where the app itself runs in a device frame. Second on the rail and before everything written down.',
+  },
+  handbook: {
+    id: 'shell.activity.handbook',
+    defaultMessage: 'Handbook',
+    description:
+      'The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab.',
+  },
+  decisions: { id: 'shell.activity.decisions', defaultMessage: 'Decisions' },
+  sources: { id: 'shell.activity.sources', defaultMessage: 'Sources' },
+  design: { id: 'shell.activity.design', defaultMessage: 'Design' },
+  reference: {
+    id: 'shell.activity.reference',
+    defaultMessage: 'Reference',
+    description:
+      'The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reads the same in English.',
+  },
+  components: {
+    id: 'shell.activity.components',
+    defaultMessage: 'Components',
+    description:
+      'The rail’s entry for the app’s own components. shell.search.group.components is the palette’s group of them and reads the same in English.',
+  },
+});
 
 interface Props {
   route: string;
@@ -27,7 +77,7 @@ interface Props {
  * see the app opens into.
  */
 export const ITEMS = [
-  { route: '/', label: 'Overview', Icon: House, match: (r: string) => r === '/' },
+  { route: '/', label: COPY.overview, Icon: House, match: (r: string) => r === '/' },
   /*
    * Second, and before everything written down. This site is the app's
    * development environment before it is its documentation, and the address
@@ -35,13 +85,13 @@ export const ITEMS = [
    */
   {
     route: '/preview',
-    label: 'The app',
+    label: COPY.app,
     Icon: Smartphone,
     match: (r: string) => r === '/preview',
   },
   {
     route: '/handbook',
-    label: 'Handbook',
+    label: COPY.handbook,
     Icon: BookText,
     // The documents and the drawings of them. `/architecture` and `/diagrams`
     // are inside this section, which is what every document's breadcrumb has
@@ -59,19 +109,19 @@ export const ITEMS = [
   },
   {
     route: '/decisions',
-    label: 'Decisions',
+    label: COPY.decisions,
     Icon: GitBranch,
     match: (r: string) => r.startsWith('/decisions'),
   },
   {
     route: '/sources',
-    label: 'Sources',
+    label: COPY.sources,
     Icon: ListTree,
     match: (r: string) => r.startsWith('/sources'),
   },
   {
     route: '/design',
-    label: 'Design',
+    label: COPY.design,
     Icon: PenTool,
     // `startsWith`, because the plugin's own documentation is published at
     // `/design/plugin` and a rail that lit nothing there would say the reader had
@@ -80,7 +130,7 @@ export const ITEMS = [
   },
   {
     route: '/reference',
-    label: 'Reference',
+    label: COPY.reference,
     Icon: Braces,
     match: (r: string) => r === '/reference',
   },
@@ -94,7 +144,7 @@ export const ITEMS = [
    */
   {
     route: '/components',
-    label: 'Components',
+    label: COPY.components,
     Icon: Component,
     // And again for `/components/<group>/<name>`, one page per component.
     match: (r: string) => r.startsWith('/components'),
@@ -102,24 +152,40 @@ export const ITEMS = [
 ];
 
 /**
- * Which section a route is in, in the rail's own words.
+ * Which section a route is in, in the rail's own words, **in English**.
  *
  * `pages/Document.tsx` used to hard-code "Handbook" in its breadcrumb, which was
  * true while every document was one. `/design/plugin` is a document of the design
  * section, so the breadcrumb asks the rail rather than asserting.
+ *
+ * **The descriptor, not the English**, and the reason is what the two would look
+ * like side by side. The breadcrumb sits on a page whose body stays English by
+ * [ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §2, so the
+ * first version of this returned `defaultMessage` — one word, one source, nothing
+ * to keep in step. What that produces on screen is a rail reading „Handbuch“ and a
+ * breadcrumb two centimetres away reading "Handbook", which is not a boundary a
+ * reader can see the sense of; it reads as a bug.
+ *
+ * A breadcrumb is navigation rather than prose, so it is the shell reaching into a
+ * page rather than the page speaking. It follows the setting, and the page's body
+ * below it does not.
  */
-export function sectionOf(route: string): string {
-  return ITEMS.find((item) => item.route !== '/' && item.match(route))?.label ?? 'Handbook';
+export function sectionOf(route: string): WorkbenchMessage {
+  const item = ITEMS.find((held) => held.route !== '/' && held.match(route));
+  return item?.label ?? COPY.handbook;
 }
 
 export function ActivityBar({ route }: Props) {
+  const intl = useWorkbenchIntl();
+
   return (
     <nav
-      aria-label="Sections"
+      aria-label={intl.formatMessage(COPY.rail)}
       className="flex w-[3rem] shrink-0 flex-col items-center gap-3xs border-r border-stroke bg-surface py-xs"
     >
       {ITEMS.map((item) => {
         const active = item.match(route);
+        const label = intl.formatMessage(item.label);
         return (
           <Tooltip key={item.route}>
             <TooltipTrigger asChild>
@@ -143,10 +209,10 @@ export function ActivityBar({ route }: Props) {
                   />
                 )}
                 <item.Icon aria-hidden="true" className="size-[1.125rem]" />
-                <span className="sr-only">{item.label}</span>
+                <span className="sr-only">{label}</span>
               </a>
             </TooltipTrigger>
-            <TooltipContent side="right">{item.label}</TooltipContent>
+            <TooltipContent side="right">{label}</TooltipContent>
           </Tooltip>
         );
       })}

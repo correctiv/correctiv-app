@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { defineMessages } from 'react-intl';
 
 import api from 'virtual:api';
 import docsModule from 'virtual:docs';
@@ -35,10 +36,12 @@ import {
 import { TooltipProvider } from './ui/kit/tooltip';
 import { SlotProvider, SlotTarget, slotsOf } from './shell/slots';
 import { useAddress, type ShellProps } from './shell/address';
-import { resolveView, type SectionId } from './shell/views';
+import { resolveView, type SectionId, type ViewKind } from './shell/views';
 import { cn } from './lib/cn';
 import { useMedia, WIDE } from './lib/useMedia';
-import { PAGE_TITLES } from './nav';
+import { PAGE_TITLES, pageTitleText, TITLE_COPY } from './nav';
+import { Localisation, useWorkbenchIntl } from './i18n/Localisation';
+import { useLanguage } from './i18n/language';
 import { useAppearance } from './theme';
 import { href, useLinkInterception, useRoute } from './router';
 
@@ -54,6 +57,69 @@ const COMPONENT_IDS = new Set(
 );
 
 const hasComponent = (group: string, name: string) => COMPONENT_IDS.has(`${group}/${name}`);
+
+/**
+ * The few words the shell itself draws, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * Everything else on any page comes from a view, and most views are the body of
+ * something this site publishes, which ADR 0050 §2 leaves in English. What is here
+ * is the frame: the link a keyboard lands on first, the clause under the file path,
+ * and the 404 — which is the shell's own body rather than a page's, because there
+ * is no document behind it to be the body of.
+ *
+ * `CORRECTIV app workbench` and the `— Workbench` suffix on every other tab are
+ * NOT here. They are the name of this site, and `nav.ts` leaves the `/` entry out
+ * for the same reason.
+ */
+const COPY = defineMessages({
+  skip: {
+    id: 'shell.skip',
+    defaultMessage: 'Skip to content',
+    description:
+      'The first thing a keyboard reaches on every page, hidden until it has focus, jumping past the header and both rails.',
+  },
+  builtFrom: {
+    id: 'shell.build',
+    defaultMessage: ' · built from {commit}',
+    description:
+      'Appended to the status line on /design alone, where which commit the page was built from is a fact about the view. {commit} is the seven-character hash. The separator is inside the string because it follows a path that is already there.',
+  },
+  notFoundHeading: {
+    id: 'shell.notFound.heading',
+    defaultMessage: 'No page at {route}',
+    description: 'The heading of this site’s own 404. {route} is the address that was asked for.',
+  },
+  notFoundLead: {
+    id: 'shell.notFound.lead',
+    defaultMessage:
+      'The workbench publishes the repository’s own documents. This address matches none of them. Press <kbd>⌘K</kbd> to search.',
+    description: 'Under the 404 heading. The tag wraps the key combination, drawn as a keycap.',
+  },
+  notFoundComponent: {
+    id: 'shell.notFound.component',
+    defaultMessage:
+      'The app has no such component. <back>Every component it does have</back> is one page back.',
+    description:
+      'A second paragraph, only under /components/…, which is the one family that lands on the 404 by being renamed rather than typed wrong. The tag wraps the words that link to the component index.',
+  },
+});
+
+/** The keycap inside `shell.notFound.lead`, at module scope so it is one component. */
+const kbd = (chunks: ReactNode[]) => <kbd className="font-mono">{chunks}</kbd>;
+
+/**
+ * The way back inside `shell.notFound.component`, at module scope for the same
+ * reason. Named `backLink` rather than `back`, which the ⌘J handler already has.
+ */
+const backLink = (chunks: ReactNode[]) => (
+  <a
+    className="text-on-canvas underline decoration-accent underline-offset-2"
+    href={href('/components')}
+  >
+    {chunks}
+  </a>
+);
 
 /**
  * One application, not a site with a tool bolted to the side of it.
@@ -77,6 +143,7 @@ const hasComponent = (group: string, name: string) => COMPONENT_IDS.has(`${group
 export function App() {
   const [route] = useRoute();
   const [appearance, setAppearance] = useAppearance();
+  const [language, setLanguage] = useLanguage();
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -145,15 +212,6 @@ export function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [address.tool, full, hasPanel, searchOpen, setAddress, view.sections]);
-
-  useEffect(() => {
-    document.title = route === '/' ? 'CORRECTIV app workbench' : `${titleOf()} — Workbench`;
-
-    function titleOf(): string {
-      if (view.kind === 'component') return `${params.name}, a component`;
-      return PAGE_TITLES[route] ?? doc?.title ?? 'Not found';
-    }
-  }, [doc, params.name, route, view.kind]);
 
   /*
    * The heading the hash names, scrolled to by this site rather than by the
@@ -237,106 +295,117 @@ export function App() {
   }
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <SlotProvider declared={slotsOf(view)}>
-        <div className="flex h-dvh flex-col bg-canvas text-on-canvas">
-          <a
-            href="#content"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-s focus:top-s focus:z-50 focus:rounded-md focus:bg-accent focus:px-s focus:py-xs focus:text-white"
-          >
-            Skip to content
-          </a>
+    /*
+      Two providers can be in the tree at once and only one of them is this site's.
 
-          {!full && (
-            <Header
-              onSearch={() => setSearchOpen(true)}
-              onSettings={() => setSettingsOpen(true)}
-              onFull={view.canGoFull ? () => setAddress({ full: true }) : undefined}
-            >
-              {/* The context bar, in the header at every width. Device,
+      `AppEnvironment`, which the preview and the component pages draw the app's own
+      components through, mounts the APP's `IntlProvider` with the app's catalogue
+      inside this one. That nesting is right: a component borrowed from the app keeps
+      the app's words, and the chrome around it keeps this site's. Two catalogues,
+      one per audience, and neither reaches into the other
+      ([ADR 0050](../../../adr/0050-the-workbench-gets-a-second-audience.md) §3).
+    */
+    <Localisation language={language}>
+      {/* Inside the provider, because the tab is chrome and a page's name follows
+          the language setting. It draws nothing, and it is a component rather than
+          an effect up here for the one reason that `useWorkbenchIntl()` needs to be
+          below `Localisation` and `App` is what mounts it. */}
+      <DocumentTitle route={route} kind={view.kind} name={params.name} document={doc?.title} />
+      <TooltipProvider delayDuration={300}>
+        <SlotProvider declared={slotsOf(view)}>
+          <div className="flex h-dvh flex-col bg-canvas text-on-canvas">
+            <SkipLink />
+
+            {!full && (
+              <Header
+                onSearch={() => setSearchOpen(true)}
+                onSettings={() => setSettingsOpen(true)}
+                onFull={view.canGoFull ? () => setAddress({ full: true }) : undefined}
+              >
+                {/* The context bar, in the header at every width. Device,
                   orientation, zoom and route belong above the frame and not on
                   the rail, so this is the one thing the two-level arrangement
                   keeps: the bar wraps at 390px rather than moving. */}
-              {view.contextBar && <SlotTarget id="context-bar" />}
-            </Header>
-          )}
-
-          <div
-            className={cn(
-              'relative flex flex-1',
-              // A floor rather than a share: the frame's row asks for every pixel
-              // the column has left and gives none of it up to `flex-shrink` on
-              // its own, because `min-h-0` alone lets a sibling's `max-height`
-              // decide how much this row gets. Below `wide`, the panel beneath it
-              // is capped and content-sized (see the panel wrapper below), not
-              // fixed, so without a floor a short window could still squeeze the
-              // frame to a sliver while the panel sat at its cap. 16rem keeps the
-              // frame the majority partner even then; the panel gives way first,
-              // because it alone carries `min-h-0` down to zero.
-              !wide && !full && hasPanel ? 'min-h-[16rem]' : 'min-h-0',
+                {view.contextBar && <SlotTarget id="context-bar" />}
+              </Header>
             )}
-          >
-            {!full && <ActivityBar route={route} />}
 
-            <ResizablePanelGroup className={cn('min-w-0 flex-1', !dragging && 'panels-animate')}>
-              {/*
+            <div
+              className={cn(
+                'relative flex flex-1',
+                // A floor rather than a share: the frame's row asks for every pixel
+                // the column has left and gives none of it up to `flex-shrink` on
+                // its own, because `min-h-0` alone lets a sibling's `max-height`
+                // decide how much this row gets. Below `wide`, the panel beneath it
+                // is capped and content-sized (see the panel wrapper below), not
+                // fixed, so without a floor a short window could still squeeze the
+                // frame to a sliver while the panel sat at its cap. 16rem keeps the
+                // frame the majority partner even then; the panel gives way first,
+                // because it alone carries `min-h-0` down to zero.
+                !wide && !full && hasPanel ? 'min-h-[16rem]' : 'min-h-0',
+              )}
+            >
+              {!full && <ActivityBar route={route} />}
+
+              <ResizablePanelGroup className={cn('min-w-0 flex-1', !dragging && 'panels-animate')}>
+                {/*
                 Keyed, both of them, because the right-hand one comes and goes.
                 Without keys React matches these children by position, so a panel
                 appearing changed places with a fragment and React answered by
                 throwing the panel away and building a new one. That took the
                 iframe with it, and the app came back blank.
               */}
-              <ResizablePanel key="main" minSize="30%">
-                {/*
+                <ResizablePanel key="main" minSize="30%">
+                  {/*
                   The one scroller. Every view is a block inside it, which is why
                   none of them carries a `main` or a height of its own.
                 */}
-                <main id="content" className="h-full min-h-0 overflow-auto">
-                  <Boundary route={route}>{page}</Boundary>
-                </main>
-              </ResizablePanel>
+                  <main id="content" className="h-full min-h-0 overflow-auto">
+                    <Boundary route={route}>{page}</Boundary>
+                  </main>
+                </ResizablePanel>
 
-              {wide && !full && (
-                <Fragment key="tools">
-                  <ResizableHandle className={cn(!panelOpen && 'hidden')} />
-                  <ResizablePanel
-                    panelRef={panelRef}
-                    collapsible
-                    collapsedSize="0%"
-                    defaultSize={view.panelWidth}
-                    minSize="14%"
-                    maxSize="55%"
-                    /* Only while a handle is held. Otherwise this fires on the layout
+                {wide && !full && (
+                  <Fragment key="tools">
+                    <ResizableHandle className={cn(!panelOpen && 'hidden')} />
+                    <ResizablePanel
+                      panelRef={panelRef}
+                      collapsible
+                      collapsedSize="0%"
+                      defaultSize={view.panelWidth}
+                      minSize="14%"
+                      maxSize="55%"
+                      /* Only while a handle is held. Otherwise this fires on the layout
                        the collapse itself causes and writes the old state straight
                        back, which is a toggle that does nothing. */
-                    onResize={(size) => {
-                      if (!dragging) return;
-                      if (size.asPercentage > 0) {
-                        dragged.current = `${size.asPercentage}%`;
-                      } else if (tool !== null) {
-                        // Dragged shut, which is the one way to close the panel
-                        // that is not the rail. The rail's mark follows, because
-                        // both read the same parameter.
-                        setTool(null);
-                      }
-                    }}
-                  >
-                    <div className="h-full w-full overflow-hidden [contain:paint]">
-                      <div className="h-full w-full min-w-[15rem]" inert={!panelOpen}>
-                        <ToolPanel view={view} tool={tool} />
+                      onResize={(size) => {
+                        if (!dragging) return;
+                        if (size.asPercentage > 0) {
+                          dragged.current = `${size.asPercentage}%`;
+                        } else if (tool !== null) {
+                          // Dragged shut, which is the one way to close the panel
+                          // that is not the rail. The rail's mark follows, because
+                          // both read the same parameter.
+                          setTool(null);
+                        }
+                      }}
+                    >
+                      <div className="h-full w-full overflow-hidden [contain:paint]">
+                        <div className="h-full w-full min-w-[15rem]" inert={!panelOpen}>
+                          <ToolPanel view={view} tool={tool} />
+                        </div>
                       </div>
-                    </div>
-                  </ResizablePanel>
-                </Fragment>
+                    </ResizablePanel>
+                  </Fragment>
+                )}
+              </ResizablePanelGroup>
+
+              {wide && !full && (
+                <ToolRail view={view} tool={tool} onTool={setTool} orientation="column" />
               )}
-            </ResizablePanelGroup>
+            </div>
 
-            {wide && !full && (
-              <ToolRail view={view} tool={tool} onTool={setTool} orientation="column" />
-            )}
-          </div>
-
-          {/*
+            {/*
             Narrow, the rail lies along the bottom and the panel stands on it.
             There is no width to divide at 390px — a fourteen per cent panel is
             fifty-five pixels, and the page it left behind is not a page — and
@@ -350,9 +419,9 @@ export function App() {
             frame. So the page keeps half the window, keeps its scroll and stays
             tappable, and the rail never moves under the reader's thumb.
           */}
-          {!wide && !full && hasPanel && (
-            <>
-              {/* Hidden rather than unmounted while it is shut, for the two
+            {!wide && !full && hasPanel && (
+              <>
+                {/* Hidden rather than unmounted while it is shut, for the two
                   reasons the docked panel collapses instead of unmounting: the
                   tools keep what is inside them, and the rail's `aria-controls`
                   keeps something to point at. The class is `hidden` and nothing
@@ -372,45 +441,104 @@ export function App() {
                   box merely being clipped with no way to reach what overflowed.
                   `min-h-0` lets it give way entirely to the frame's floor above
                   in a short window, rather than holding out for its cap. */}
-              <div
-                className={cn(
-                  'flex shrink-0 flex-col border-t border-stroke',
-                  panelOpen ? 'min-h-0 max-h-[min(34dvh,20rem)]' : 'hidden',
+                <div
+                  className={cn(
+                    'flex shrink-0 flex-col border-t border-stroke',
+                    panelOpen ? 'min-h-0 max-h-[min(34dvh,20rem)]' : 'hidden',
+                  )}
+                >
+                  <ToolPanel view={view} tool={tool} />
+                </div>
+                <ToolRail view={view} tool={tool} onTool={setTool} orientation="row" />
+              </>
+            )}
+
+            {!full && (
+              <StatusBar>
+                {view.statusBar ? (
+                  // Clipped, not wrapped. The line is one row tall by definition,
+                  // and a readout that ran past the end used to widen the page
+                  // itself: 120px of sideways scroll on a 1440px window.
+                  <SlotTarget id="status" className="flex min-w-0 flex-1 items-center gap-s" />
+                ) : (
+                  <FileOrTitle route={route} file={doc?.file} design={view.kind === 'design'} />
                 )}
-              >
-                <ToolPanel view={view} tool={tool} />
-              </div>
-              <ToolRail view={view} tool={tool} onTool={setTool} orientation="row" />
-            </>
-          )}
+              </StatusBar>
+            )}
+          </div>
 
-          {!full && (
-            <StatusBar>
-              {view.statusBar ? (
-                // Clipped, not wrapped. The line is one row tall by definition,
-                // and a readout that ran past the end used to widen the page
-                // itself: 120px of sideways scroll on a 1440px window.
-                <SlotTarget id="status" className="flex min-w-0 flex-1 items-center gap-s" />
-              ) : (
-                <FileOrTitle route={route} file={doc?.file} design={view.kind === 'design'} />
-              )}
-            </StatusBar>
-          )}
-        </div>
+          {full && <ShowChrome onShow={() => setAddress({ full: false })} />}
 
-        {full && <ShowChrome onShow={() => setAddress({ full: false })} />}
+          <Search open={searchOpen} onClose={() => setSearchOpen(false)} />
 
-        <Search open={searchOpen} onClose={() => setSearchOpen(false)} />
-
-        <Settings
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          appearance={appearance}
-          onAppearance={setAppearance}
-        />
-      </SlotProvider>
-    </TooltipProvider>
+          <Settings
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            appearance={appearance}
+            onAppearance={setAppearance}
+            language={language}
+            onLanguage={setLanguage}
+          />
+        </SlotProvider>
+      </TooltipProvider>
+    </Localisation>
   );
+}
+
+/**
+ * The first thing a keyboard reaches, and a component of its own for one reason.
+ *
+ * `useWorkbenchIntl()` has to be called below `Localisation`, and `App` is what
+ * mounts it — its own hooks run above its own provider. `DocumentTitle` is here
+ * for the same reason and says so at greater length.
+ */
+function SkipLink() {
+  const intl = useWorkbenchIntl();
+
+  return (
+    <a
+      href="#content"
+      className="sr-only focus:not-sr-only focus:absolute focus:left-s focus:top-s focus:z-50 focus:rounded-md focus:bg-accent focus:px-s focus:py-xs focus:text-white"
+    >
+      {intl.formatMessage(COPY.skip)}
+    </a>
+  );
+}
+
+/**
+ * The browser tab, which is the one piece of chrome that is not on the page.
+ *
+ * `— Workbench` and the site's own name are left as they are: both are the name
+ * of this site rather than a sentence about it, and `nav.ts` says the same of the
+ * `/` entry it does not translate.
+ */
+function DocumentTitle({
+  route,
+  kind,
+  name,
+  document: documentTitle,
+}: {
+  route: string;
+  kind: ViewKind;
+  name?: string;
+  /** A Markdown document's own h1, which is the repository's and stays as written. */
+  document?: string;
+}) {
+  const intl = useWorkbenchIntl();
+
+  useEffect(() => {
+    const page = PAGE_TITLES[route];
+    const title =
+      kind === 'component'
+        ? intl.formatMessage(TITLE_COPY.component, { name })
+        : page !== undefined
+          ? pageTitleText(page, (message) => intl.formatMessage(message))
+          : (documentTitle ?? intl.formatMessage(TITLE_COPY.notFound));
+
+    window.document.title = route === '/' ? 'CORRECTIV app workbench' : `${title} — Workbench`;
+  }, [documentTitle, intl, kind, name, route]);
+
+  return null;
 }
 
 /**
@@ -422,34 +550,34 @@ export function App() {
  * about the current view and this line is where those go on every other view.
  */
 function FileOrTitle({ route, file, design }: { route: string; file?: string; design: boolean }) {
+  const intl = useWorkbenchIntl();
+  const page = PAGE_TITLES[route];
+
   return (
     <span className={cn('truncate', file && 'font-mono')}>
-      {file ?? PAGE_TITLES[route] ?? route}
-      {design && ` · built from ${docsModule.commit.slice(0, 7)}`}
+      {file ??
+        (page === undefined
+          ? route
+          : pageTitleText(page, (message) => intl.formatMessage(message)))}
+      {design && intl.formatMessage(COPY.builtFrom, { commit: docsModule.commit.slice(0, 7) })}
     </span>
   );
 }
 
 function NotFound({ route }: { route: string }) {
+  const intl = useWorkbenchIntl();
+
   return (
     <div className="mx-auto max-w-content px-m py-2xl">
-      <h1 className="text-headline-l font-semibold">No page at {route}</h1>
-      <p className="mt-s text-on-canvas-muted">
-        The workbench publishes the repository&apos;s own documents. This address matches none of
-        them. Press <kbd className="font-mono">⌘K</kbd> to search.
-      </p>
+      <h1 className="text-headline-l font-semibold">
+        {intl.formatMessage(COPY.notFoundHeading, { route })}
+      </h1>
+      <p className="mt-s text-on-canvas-muted">{intl.formatMessage(COPY.notFoundLead, { kbd })}</p>
       {/* The one family that lands here by being renamed rather than by being
           typed wrong, so it gets the way back that a bare 404 cannot give. */}
       {route.startsWith('/components/') && (
         <p className="mt-s text-on-canvas-muted">
-          The app has no such component.{' '}
-          <a
-            className="text-on-canvas underline decoration-accent underline-offset-2"
-            href={href('/components')}
-          >
-            Every component it does have
-          </a>{' '}
-          is one page back.
+          {intl.formatMessage(COPY.notFoundComponent, { back: backLink })}
         </p>
       )}
     </div>

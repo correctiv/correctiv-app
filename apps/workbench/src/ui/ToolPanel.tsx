@@ -1,3 +1,4 @@
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { SlotTarget } from '../shell/slots';
 import { SECTION_TITLES, type SectionId, type ViewDeclaration } from '../shell/views';
 
@@ -47,17 +48,20 @@ export function ToolPanel({
   /** The one tool showing, or `null` while the panel is shut. */
   tool: SectionId | null;
 }) {
+  // Before the early return, because it is a hook and a panel-less view takes that
+  // branch on its very first render.
+  const intl = useWorkbenchIntl();
   if (view.panelTitle === null) return null;
 
   return (
     <aside
       id={TOOL_PANEL_ID}
-      aria-label={view.panelTitle}
+      aria-label={intl.formatMessage(view.panelTitle)}
       className="flex h-full min-h-0 flex-col bg-canvas"
     >
       <div className="flex h-[2.25rem] shrink-0 items-center border-b border-stroke px-s">
         <h2 className="truncate text-s font-semibold uppercase tracking-wider text-on-canvas-muted">
-          {tool === null ? view.panelTitle : SECTION_TITLES[tool]}
+          {intl.formatMessage(tool === null ? view.panelTitle : SECTION_TITLES[tool])}
         </h2>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">

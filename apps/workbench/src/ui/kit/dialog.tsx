@@ -1,9 +1,28 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import type { ComponentProps } from 'react';
+import { defineMessages } from 'react-intl';
 
+import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { Button } from './button';
 import { cn } from '../../lib/cn';
+
+/**
+ * The one word this primitive says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * Everything else a dialog draws comes from whoever mounted it. This is the corner
+ * button Radix does not name, and it is read aloud rather than drawn — the mark on
+ * it is an icon.
+ */
+const COPY = defineMessages({
+  close: {
+    id: 'shell.dialog.close',
+    defaultMessage: 'Close',
+    description:
+      'The accessible name of the × in the corner of every dialog on this site. Read aloud and never seen.',
+  },
+});
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -40,6 +59,8 @@ export function DialogContent({
   children,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content>) {
+  const intl = useWorkbenchIntl();
+
   return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
@@ -59,7 +80,7 @@ export function DialogContent({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Close"
+            aria-label={intl.formatMessage(COPY.close)}
             className="absolute right-xs top-xs size-[1.75rem]"
           >
             <X aria-hidden="true" />

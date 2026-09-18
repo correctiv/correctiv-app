@@ -1,0 +1,652 @@
+{
+  "frame.copied": {
+    "defaultMessage": "Copied",
+    "description": "Announced in a live region for a second and a half after the address has been copied. Read aloud and never seen."
+  },
+  "frame.copyLink": {
+    "defaultMessage": "Copy this view as a link",
+    "description": "Both the copy button’s accessible name and its tooltip."
+  },
+  "frame.day.hide": {
+    "defaultMessage": "Put the day away"
+  },
+  "frame.day.hideTip": {
+    "defaultMessage": "The day · press to put it away"
+  },
+  "frame.day.show": {
+    "defaultMessage": "Show the day under the frame",
+    "description": "Says what pressing does while the timeline is away, and is both the button’s accessible name and its tooltip."
+  },
+  "frame.device": {
+    "defaultMessage": "Device",
+    "description": "The accessible name of the select that picks which device the app is framed at. The bar carries no labels above its fields."
+  },
+  "frame.height": {
+    "defaultMessage": "Height in CSS pixels"
+  },
+  "frame.more": {
+    "defaultMessage": "More frame controls: zoom, reload, open without the frame",
+    "description": "The accessible name of the button that unfolds the three controls that do not fit below 640px."
+  },
+  "frame.more.fold": {
+    "defaultMessage": "Fold away"
+  },
+  "frame.more.tip": {
+    "defaultMessage": "Zoom, reload, open without the frame"
+  },
+  "frame.orientation.landscape": {
+    "defaultMessage": "Landscape",
+    "description": "One of the two segments of the orientation control. A term of art."
+  },
+  "frame.orientation.landscapeTip": {
+    "defaultMessage": "Landscape · press to rotate",
+    "description": "The tooltip on the one-icon orientation toggle below 640px, saying which way the frame is up now."
+  },
+  "frame.orientation.legend": {
+    "defaultMessage": "Orientation",
+    "description": "The legend of the two-segment orientation control at 640px and up. Read aloud and not drawn."
+  },
+  "frame.orientation.portrait": {
+    "defaultMessage": "Portrait",
+    "description": "One of the two segments of the orientation control. A term of art."
+  },
+  "frame.orientation.portraitTip": {
+    "defaultMessage": "Portrait · press to rotate",
+    "description": "The tooltip on the one-icon orientation toggle below 640px, saying which way the frame is up now."
+  },
+  "frame.orientation.toLandscape": {
+    "defaultMessage": "Switch to landscape"
+  },
+  "frame.orientation.toPortrait": {
+    "defaultMessage": "Switch to portrait"
+  },
+  "frame.pages.artikel": {
+    "defaultMessage": "the reader, a WebView"
+  },
+  "frame.pages.empty": {
+    "defaultMessage": "No page of that name. The field beside this one takes any address.",
+    "description": "Stands in for the list when the typed filter matches nothing. The field it points at is the route field to the right of this button."
+  },
+  "frame.pages.formular": {
+    "defaultMessage": "the participation form"
+  },
+  "frame.pages.gallery": {
+    "defaultMessage": "Component gallery",
+    "description": "The app’s own gallery screen, which this site named because the screen is a development surface with no name in the product."
+  },
+  "frame.pages.gallery.note": {
+    "defaultMessage": "every component, twice, on both surfaces"
+  },
+  "frame.pages.gespeichert": {
+    "defaultMessage": "a FlatList",
+    "description": "Beside the saved-articles screen. A FlatList is React Native’s own name for the component, and is not translated."
+  },
+  "frame.pages.group.screens": {
+    "defaultMessage": "Screens",
+    "description": "The group of the app’s screens that are not tabs and take no id."
+  },
+  "frame.pages.group.tabs": {
+    "defaultMessage": "Tabs",
+    "description": "The group of the app’s five tab-bar screens, in the page picker."
+  },
+  "frame.pages.group.withAnId": {
+    "defaultMessage": "With an id",
+    "description": "The group of route shapes whose last segment names one article, project or claim. The address in each row is one example of the shape."
+  },
+  "frame.pages.group.worthReaching": {
+    "defaultMessage": "Worth being able to reach",
+    "description": "The group of two addresses that are not screens of the app in the ordinary sense: its component gallery and its 404."
+  },
+  "frame.pages.home": {
+    "defaultMessage": "Home",
+    "description": "The app’s first tab. One of the three entries in the picker this site had to name itself, because the screen carries no name of its own the way Entdecken and Mediathek do."
+  },
+  "frame.pages.notFound": {
+    "defaultMessage": "Not found",
+    "description": "The app’s own 404 screen, in the picker. nav.title.notFound is this SITE’s 404 in the browser tab and reads the same in English."
+  },
+  "frame.pages.notFound.note": {
+    "defaultMessage": "any address the app has no route for"
+  },
+  "frame.pages.onboarding": {
+    "defaultMessage": "a modal"
+  },
+  "frame.pages.open": {
+    "defaultMessage": "Go to a page",
+    "description": "Four things at once, all the same words: the button’s accessible name, its tooltip, the dialog’s own name and the placeholder in the field that filters the list."
+  },
+  "frame.pages.player": {
+    "defaultMessage": "a modal over the running audio"
+  },
+  "frame.pages.serie": {
+    "defaultMessage": "the second FlatList",
+    "description": "Beside the podcast series screen. A FlatList is React Native’s own name for the component, and is not translated; the first one is frame.pages.gespeichert."
+  },
+  "frame.raw": {
+    "defaultMessage": "Open the app on its own, without the frame",
+    "description": "The accessible name of the button that leaves this site for the app itself. frame.raw.tip is the shorter tooltip beside it."
+  },
+  "frame.raw.devTip": {
+    "defaultMessage": "Open the app without the frame · a dev server applies no base path, so this lands on the app’s 404"
+  },
+  "frame.raw.tip": {
+    "defaultMessage": "Open the app without the frame"
+  },
+  "frame.reload": {
+    "defaultMessage": "Reload the frame",
+    "description": "Both the reload button’s accessible name and its tooltip."
+  },
+  "frame.route": {
+    "defaultMessage": "Route",
+    "description": "The accessible name of the field the app’s address is typed into."
+  },
+  "frame.stage.heading": {
+    "defaultMessage": "App frame",
+    "description": "The heading of the area the app is drawn in, read aloud and never seen. frame.stage.title is the frame element’s own name one level in."
+  },
+  "frame.stage.title": {
+    "defaultMessage": "App preview",
+    "description": "The name of the iframe the app runs in, which is what a screen reader says before it steps into it. frame.stage.heading is the heading above it."
+  },
+  "frame.toolbar": {
+    "defaultMessage": "Frame",
+    "description": "The accessible name of the whole control bar above the framed app. Read aloud and never seen."
+  },
+  "frame.width": {
+    "defaultMessage": "Width in CSS pixels"
+  },
+  "frame.zoom": {
+    "defaultMessage": "Zoom",
+    "description": "The accessible name of the select that scales the frame."
+  },
+  "frame.zoom.fit": {
+    "defaultMessage": "Fit",
+    "description": "The one option of the zoom select that is a word rather than a percentage: scale the frame to whatever room the stage has."
+  },
+  "home.block.empty": {
+    "defaultMessage": "Draws nothing here.",
+    "description": "Stands under a block that measured no height at all, in place of an empty box that would read as a block that is broken."
+  },
+  "home.block.unknown": {
+    "defaultMessage": "Not drawn: this app has no module named <name>{module}</name>.",
+    "description": "Stands in for a block whose module this app has no renderer for, which happens while the document is ahead of the app. {module} is the word the document used, drawn in a monospace face."
+  },
+  "home.document.changed": {
+    "defaultMessage": "changed",
+    "description": "The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and reads the same in English."
+  },
+  "home.document.copied": {
+    "defaultMessage": "Copied.",
+    "description": "Confirms that the whole document is on the clipboard. frame.copied is the shorter word the address bar uses for a link."
+  },
+  "home.document.copy": {
+    "defaultMessage": "Copy the document",
+    "description": "What the published site offers instead of Save, because there is no dev server to write the file with."
+  },
+  "home.document.copyNote": {
+    "defaultMessage": "This is the published site, so there is no server to write with and nothing here reaches the repository. Copy the document and put it in <code>packages/app-core/src/data/home.layout.json</code>, or open <code>/preview</code> on a dev server, where Save is offered.",
+    "description": "The same, on the published site, where there is no Save. The tag wraps a repository path and an address, both drawn in a monospace face."
+  },
+  "home.document.follow": {
+    "defaultMessage": "Scroll the frame to the block under the pointer"
+  },
+  "home.document.refused": {
+    "defaultMessage": "refused",
+    "description": "The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated."
+  },
+  "home.document.revert": {
+    "defaultMessage": "Back to the file",
+    "description": "Throws away every edit of this session and goes back to the document as the repository has it."
+  },
+  "home.document.rule": {
+    "defaultMessage": "A moment carries only what changes at it.",
+    "description": "The one sentence above the editor, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
+  },
+  "home.document.save": {
+    "defaultMessage": "Save to the repository"
+  },
+  "home.document.saveNote": {
+    "defaultMessage": "Save writes <code>packages/app-core/src/data/home.layout.json</code> through the dev server, which refuses anything the core will not parse. The next step is a pull request rather than a write, the way the sources job already does it (ADR 0036 §15).",
+    "description": "Says what Save does before anybody presses it, on a dev server. The tag wraps a repository path, drawn in a monospace face."
+  },
+  "home.document.unchanged": {
+    "defaultMessage": "unchanged"
+  },
+  "home.palette.addHere": {
+    "defaultMessage": "Add a block {where}",
+    "description": "The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as \"at the top of the day\" or \"after the lead article\"."
+  },
+  "home.palette.addModule": {
+    "defaultMessage": "Add {name}. {what}",
+    "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
+  },
+  "home.palette.lead": {
+    "defaultMessage": "It goes {where}. Every module the app holds is offered; the frame beside this is where an arrangement is judged, not this list.",
+    "description": "The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the top of the day\"."
+  },
+  "home.palette.title": {
+    "defaultMessage": "Add a block",
+    "description": "The heading of the dialog that hairline opens. home.palette.addHere is the hairline’s own name and says where as well; this one is read under it and does not."
+  },
+  "home.point.midnight": {
+    "defaultMessage": "midnight",
+    "description": "Stands where a time of day would, for the end of the last stretch of the day. Reads inside home.point.startLead and home.point.span."
+  },
+  "home.point.noMoments": {
+    "defaultMessage": "This document has no moments, so the home screen is the same at every hour."
+  },
+  "home.point.remove": {
+    "defaultMessage": "Remove the moment at {time}",
+    "description": "The accessible name of the button that deletes the moment being edited. {time} is its time of day, as 18:30."
+  },
+  "home.point.span": {
+    "defaultMessage": "until {until} · {changes, plural, =0 {nothing changes here yet} other {# changed here}}",
+    "description": "Beside the time field: how long this moment lasts and how much it changes. {until} is when the next point takes over, as 18:30, or the word for midnight; {changes} is how many blocks this moment differs on."
+  },
+  "home.point.start": {
+    "defaultMessage": "The day’s start",
+    "description": "Names the point being edited when it is the document itself rather than one of its moments."
+  },
+  "home.point.startLead": {
+    "defaultMessage": "The document as it stands, in effect from midnight until {until}. Every moment inherits from it.",
+    "description": "Under the day’s start. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none."
+  },
+  "home.point.time": {
+    "defaultMessage": "The time of this moment",
+    "description": "The label of the time field at the head of the editor. Read aloud, not drawn."
+  },
+  "home.row.changed": {
+    "defaultMessage": "changed",
+    "description": "The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and reads the same in English."
+  },
+  "home.row.moveDown": {
+    "defaultMessage": "Move {block} down",
+    "description": "The keyboard’s route through the order, by ADR 0047 §2. {block} is the block’s own name and arrives in English out of document.ts."
+  },
+  "home.row.moveUp": {
+    "defaultMessage": "Move {block} up",
+    "description": "The keyboard’s route through the order, by ADR 0047 §2. {block} is the block’s own name and arrives in English out of document.ts."
+  },
+  "home.row.off": {
+    "defaultMessage": "off",
+    "description": "The badge on a block that is switched off at the point being edited, so it keeps its row and loses its drawing."
+  },
+  "home.row.offAt": {
+    "defaultMessage": "Not on screen at {time}.",
+    "description": "Stands where a switched-off block’s drawing would be, while a moment is being edited. {time} is the moment’s time of day, as 18:30."
+  },
+  "home.row.offAtStart": {
+    "defaultMessage": "Not on screen at the start of the day.",
+    "description": "Stands where a switched-off block’s drawing would be, while the day’s start is being edited."
+  },
+  "home.row.remove": {
+    "defaultMessage": "Remove {block} from the day",
+    "description": "Takes the block out of the document altogether, which is a different act from switching it off at an hour. {block} is the block’s own name, in English out of document.ts."
+  },
+  "home.row.switchOffAt": {
+    "defaultMessage": "Switch {block} off at {time}",
+    "description": "The same button while a moment is being edited. {block} is the block’s own name, in English out of document.ts; {time} is the moment’s time of day, as 18:30."
+  },
+  "home.row.switchOffAtStart": {
+    "defaultMessage": "Switch {block} off from the start of the day",
+    "description": "The accessible name of the eye button on a block that is on, while the day’s start is being edited. {block} is the block’s own name and arrives in English out of document.ts."
+  },
+  "home.row.switchOnAt": {
+    "defaultMessage": "Switch {block} on at {time}",
+    "description": "The same button while a moment is being edited. {block} is the block’s own name, in English out of document.ts; {time} is the moment’s time of day, as 18:30."
+  },
+  "home.row.switchOnAtStart": {
+    "defaultMessage": "Switch {block} on from the start of the day",
+    "description": "The accessible name of the eye button on a block that is off, while the day’s start is being edited. {block} is the block’s own name and arrives in English out of document.ts."
+  },
+  "home.save.http": {
+    "defaultMessage": "HTTP {status}",
+    "description": "Stands in for a refusal the server sent no sentence with. {status} is the numeric response status."
+  },
+  "home.save.refusedWith": {
+    "defaultMessage": "{said} ({codes})",
+    "description": "A refusal that came with codes. {said} is the dev server’s own sentence, which is not translated; {codes} is a comma-separated list of LayoutProblemCode, which is the core’s vocabulary and is never translated."
+  },
+  "home.save.repository": {
+    "defaultMessage": "the repository",
+    "description": "Stands where a path would inside home.save.written, on the one answer that reports success without naming a file."
+  },
+  "home.save.written": {
+    "defaultMessage": "Written to {path}.",
+    "description": "Confirms that the dev server wrote the document. {path} is the repository path it wrote, or home.save.repository where the server named none."
+  },
+  "home.setHere": {
+    "defaultMessage": "set here",
+    "description": "The mark on a value this moment sets, as against one it inherits from the point before it. Drawn white on the accent, beside a control."
+  },
+  "home.setting.noPin": {
+    "defaultMessage": "The newest investigation (no pin)",
+    "description": "The first option of the article picker, which leaves the module to its own default instead of naming an article."
+  },
+  "home.setting.sample": {
+    "defaultMessage": "These are <code>packages/app-core/src/data/home-pins.ts</code>, standing in for {standsIn}. Real articles, a fixed list, not today’s.",
+    "description": "Beside the sample-data badge. The tag wraps a repository path, drawn in a monospace face; {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts."
+  },
+  "home.setting.sampleBadge": {
+    "defaultMessage": "sample data",
+    "description": "Marks the article picker as a checked-in stand-in rather than a live feed. Read out of the source inventory, so it goes by itself on the day the row turns live."
+  },
+  "home.timeline.addPoint": {
+    "defaultMessage": "Make this minute a moment",
+    "description": "The accessible name of the button that names the playhead’s minute as a moment of the day. home.timeline.addPointShort is the same button’s visible word, which goes below 640px."
+  },
+  "home.timeline.addPointShort": {
+    "defaultMessage": "Point here",
+    "description": "The visible word on the button whose accessible name is home.timeline.addPoint. It has an icon beside it and a whole sentence would not fit."
+  },
+  "home.timeline.heading": {
+    "defaultMessage": "The day",
+    "description": "The heading of the track under the frame. Read aloud and never seen."
+  },
+  "home.timeline.live": {
+    "defaultMessage": "Live",
+    "description": "The button that gives the app its own clock back, drawn beside the track. A term of art, and a different state from a simulated time that happens to be now."
+  },
+  "home.timeline.momentDrag": {
+    "defaultMessage": "The moment at {time}, drag to move it",
+    "description": "The accessible name of one stop on the track while the home tool is open and the stop can be moved. {time} is the moment’s time of day, as 18:30."
+  },
+  "home.timeline.momentGo": {
+    "defaultMessage": "Go to the moment at {time}",
+    "description": "The accessible name of one stop on the track while the home tool is shut, when pressing it only moves the playhead. {time} is the moment’s time of day, as 18:30."
+  },
+  "home.timeline.time": {
+    "defaultMessage": "The time the frame is showing",
+    "description": "The label of the time field beside the track. Read aloud and never seen."
+  },
+  "nav.components": {
+    "defaultMessage": "Components, the app’s own"
+  },
+  "nav.decisions": {
+    "defaultMessage": "Decision records"
+  },
+  "nav.design": {
+    "defaultMessage": "Design, the Figma file"
+  },
+  "nav.diagrams": {
+    "defaultMessage": "Architecture diagrams"
+  },
+  "nav.handbook": {
+    "defaultMessage": "Handbook",
+    "description": "The documents area of this site, at /handbook. The word is this repository’s own name for it and appears in the browser tab and in the search palette."
+  },
+  "nav.preview": {
+    "defaultMessage": "Preview"
+  },
+  "nav.reference": {
+    "defaultMessage": "Reference, the core"
+  },
+  "nav.sources": {
+    "defaultMessage": "Sources status board"
+  },
+  "nav.title.component": {
+    "defaultMessage": "{name}, a component",
+    "description": "The browser tab on a component’s own page. {name} is the component’s own name, which is an identifier and is never translated."
+  },
+  "nav.title.notFound": {
+    "defaultMessage": "Not found",
+    "description": "The browser tab on an address this site answers with its 404 body."
+  },
+  "settings.appearance": {
+    "defaultMessage": "Appearance",
+    "description": "The heading of the light/dark group, and the same words again as that group’s legend, which is read aloud and not drawn. shell.section.appearance is the preview tool that pins the framed app and reads the same in English."
+  },
+  "settings.build": {
+    "defaultMessage": "This build"
+  },
+  "settings.build.note": {
+    "defaultMessage": "Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were measured by hand on <day>{measured}</day>, {age}.",
+    "description": "The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was and arrives as English prose out of lib/measured.ts, so the sentence has to read around an English fragment."
+  },
+  "settings.keyboard": {
+    "defaultMessage": "Keyboard"
+  },
+  "settings.language": {
+    "defaultMessage": "Language · Sprache",
+    "description": "The heading of the language group, and the same words again as its legend. Every translation of it carries BOTH language names, because this is the one control a reader has to find in a language they may not be reading yet; what a translation changes is which of the two comes first."
+  },
+  "settings.lede": {
+    "defaultMessage": "For this browser. Nothing here is sent anywhere or shared with the app in the frame, which keeps its own setting."
+  },
+  "settings.mode.dark": {
+    "defaultMessage": "Dark"
+  },
+  "settings.mode.dark.hint": {
+    "defaultMessage": "Always dark"
+  },
+  "settings.mode.light": {
+    "defaultMessage": "Light"
+  },
+  "settings.mode.light.hint": {
+    "defaultMessage": "Always light"
+  },
+  "settings.mode.system": {
+    "defaultMessage": "System",
+    "description": "The third appearance choice, and the default: whatever the device is set to. settings.mode.system.hint is the line under it."
+  },
+  "settings.mode.system.hint": {
+    "defaultMessage": "Follow the device"
+  },
+  "settings.shortcut.leaveFull": {
+    "defaultMessage": "Leave full screen on the app view"
+  },
+  "settings.shortcut.panel": {
+    "defaultMessage": "The tool panel, whatever the open view puts there"
+  },
+  "settings.shortcut.search": {
+    "defaultMessage": "Search documents, sections and the API"
+  },
+  "settings.title": {
+    "defaultMessage": "Settings",
+    "description": "The heading of this dialog. shell.header.settings is the button in the header that opens it and reads the same in English."
+  },
+  "shell.activity.app": {
+    "defaultMessage": "The app",
+    "description": "The rail’s entry for /preview, where the app itself runs in a device frame. Second on the rail and before everything written down."
+  },
+  "shell.activity.components": {
+    "defaultMessage": "Components",
+    "description": "The rail’s entry for the app’s own components. shell.search.group.components is the palette’s group of them and reads the same in English."
+  },
+  "shell.activity.decisions": {
+    "defaultMessage": "Decisions"
+  },
+  "shell.activity.design": {
+    "defaultMessage": "Design"
+  },
+  "shell.activity.handbook": {
+    "defaultMessage": "Handbook",
+    "description": "The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab."
+  },
+  "shell.activity.label": {
+    "defaultMessage": "Sections",
+    "description": "The accessible name of the rail down the left edge, which reaches every section of this site from every other. Read aloud and never drawn."
+  },
+  "shell.activity.overview": {
+    "defaultMessage": "Overview"
+  },
+  "shell.activity.reference": {
+    "defaultMessage": "Reference",
+    "description": "The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reads the same in English."
+  },
+  "shell.activity.sources": {
+    "defaultMessage": "Sources"
+  },
+  "shell.boundary.heading": {
+    "defaultMessage": "This view did not render"
+  },
+  "shell.boundary.lead": {
+    "defaultMessage": "The rest of the workbench still works: pick another section on the left, or press <kbd>⌘K</kbd> to search. The error is below and in the browser console.",
+    "description": "Under the heading of a view that threw. The tag wraps the key combination, drawn as a keycap."
+  },
+  "shell.boundary.retry": {
+    "defaultMessage": "Try this view again",
+    "description": "Clears the error and renders the same route once more, for a failure that was a one-off rather than a bug in the view."
+  },
+  "shell.build": {
+    "defaultMessage": "· built from {commit}",
+    "description": "Appended to the status line on /design alone, where which commit the page was built from is a fact about the view. {commit} is the seven-character hash. The separator is inside the string because it follows a path that is already there."
+  },
+  "shell.chrome.show": {
+    "defaultMessage": "Show the toolbar and sidebars",
+    "description": "The accessible name of the one control left on screen while the chrome is away, which is the only way back."
+  },
+  "shell.chrome.showTip": {
+    "defaultMessage": "Show the toolbar · Esc",
+    "description": "The tooltip on the same button, naming the key that does it too. Esc is the key’s own name and is not translated."
+  },
+  "shell.dialog.close": {
+    "defaultMessage": "Close",
+    "description": "The accessible name of the × in the corner of every dialog on this site. Read aloud and never seen."
+  },
+  "shell.header.full": {
+    "defaultMessage": "Give the app the whole screen"
+  },
+  "shell.header.fullTip": {
+    "defaultMessage": "The app on its own",
+    "description": "The tooltip on the button whose accessible name is shell.header.full. Shorter, because a tooltip is read beside the thing it describes."
+  },
+  "shell.header.search": {
+    "defaultMessage": "Search the workbench",
+    "description": "The accessible name of the button in the header that opens the palette. shell.search.dialog is the palette itself, which is named the same and is a different element."
+  },
+  "shell.header.searchShort": {
+    "defaultMessage": "Search",
+    "description": "The one word drawn inside the search button at md and up, beside its icon and its ⌘K. The button’s full accessible name is shell.header.search."
+  },
+  "shell.header.settings": {
+    "defaultMessage": "Settings",
+    "description": "Both the accessible name and the tooltip of the button that opens the settings dialog. settings.title is that dialog’s own heading and reads the same in English."
+  },
+  "shell.header.source": {
+    "defaultMessage": "The source on GitHub",
+    "description": "Both the accessible name and the tooltip of the link to the repository every page of this site is rendered from."
+  },
+  "shell.notFound.component": {
+    "defaultMessage": "The app has no such component. <back>Every component it does have</back> is one page back.",
+    "description": "A second paragraph, only under /components/…, which is the one family that lands on the 404 by being renamed rather than typed wrong. The tag wraps the words that link to the component index."
+  },
+  "shell.notFound.heading": {
+    "defaultMessage": "No page at {route}",
+    "description": "The heading of this site’s own 404. {route} is the address that was asked for."
+  },
+  "shell.notFound.lead": {
+    "defaultMessage": "The workbench publishes the repository’s own documents. This address matches none of them. Press <kbd>⌘K</kbd> to search.",
+    "description": "Under the 404 heading. The tag wraps the key combination, drawn as a keycap."
+  },
+  "shell.panel.component": {
+    "defaultMessage": "Component",
+    "description": "The name of the right panel on a component’s own page, whose tools are its rendering, its device, its props and its source."
+  },
+  "shell.panel.design": {
+    "defaultMessage": "Design tools"
+  },
+  "shell.panel.tools": {
+    "defaultMessage": "Tools",
+    "description": "The name of the right panel on /preview, which holds the seven tools for inspecting the framed app."
+  },
+  "shell.rail.closeTip": {
+    "defaultMessage": "{tool} · press to close",
+    "description": "The tooltip on the rail button of the tool that is open, where pressing shuts the panel. {tool} is that tool’s own name, already translated — shell.section.console and its neighbours."
+  },
+  "shell.search.dialog": {
+    "defaultMessage": "Search the workbench",
+    "description": "The accessible name of the palette itself. shell.header.search is the button that opens it, which is named the same and is a different element."
+  },
+  "shell.search.empty": {
+    "defaultMessage": "Nothing matches that.",
+    "description": "Stands in for the list while what has been typed matches no row."
+  },
+  "shell.search.group.components": {
+    "defaultMessage": "Components",
+    "description": "The group of the app’s own components. shell.activity.components is the rail entry that opens that page and reads the same in English."
+  },
+  "shell.search.group.documents": {
+    "defaultMessage": "Documents"
+  },
+  "shell.search.group.pages": {
+    "defaultMessage": "Pages"
+  },
+  "shell.search.group.reference": {
+    "defaultMessage": "Reference",
+    "description": "The group of symbols the core exports. shell.activity.reference is the rail entry that opens that page and reads the same in English."
+  },
+  "shell.search.group.sections": {
+    "defaultMessage": "Sections",
+    "description": "The group of headings found inside documents. shell.activity.label is the rail down the left edge, which is named the same and holds the sections of the SITE rather than of a document."
+  },
+  "shell.search.kind.document": {
+    "defaultMessage": "Document",
+    "description": "Drawn at the right of a row for a Markdown document that is not a decision record. A record says ADR and its number instead, which is not translated."
+  },
+  "shell.search.kind.page": {
+    "defaultMessage": "Page",
+    "description": "Drawn at the right of a row for a page this site answers itself, as against a document rendered from the repository’s Markdown."
+  },
+  "shell.search.placeholder": {
+    "defaultMessage": "Search documents, sections, the core’s API and the components",
+    "description": "In the empty field at the top of the palette, naming the five things it searches at once."
+  },
+  "shell.section.appearance": {
+    "defaultMessage": "Appearance",
+    "description": "The preview tool that pins the framed app to light or dark. Not the site’s own setting, which is settings.appearance in the settings dialog."
+  },
+  "shell.section.console": {
+    "defaultMessage": "Console"
+  },
+  "shell.section.contents": {
+    "defaultMessage": "On this page",
+    "description": "The in-page contents, which every long view has. Also the name of the panel itself on those views, because the contents are the only thing in it."
+  },
+  "shell.section.designClients": {
+    "defaultMessage": "Desktop clients"
+  },
+  "shell.section.designCode": {
+    "defaultMessage": "Where it reaches the code"
+  },
+  "shell.section.designLinks": {
+    "defaultMessage": "Open",
+    "description": "The design view’s tool holding the links that open the Figma file, in the browser and in the desktop app. One word, on a rail icon."
+  },
+  "shell.section.device": {
+    "defaultMessage": "Device",
+    "description": "The component view’s tool for the size a component is drawn at. frame.device is the select on the bar above the app and reads the same in English."
+  },
+  "shell.section.home": {
+    "defaultMessage": "Home layout"
+  },
+  "shell.section.inspect": {
+    "defaultMessage": "Inspect"
+  },
+  "shell.section.measure": {
+    "defaultMessage": "Measure"
+  },
+  "shell.section.props": {
+    "defaultMessage": "Props"
+  },
+  "shell.section.rendering": {
+    "defaultMessage": "Rendering"
+  },
+  "shell.section.source": {
+    "defaultMessage": "Source"
+  },
+  "shell.section.state": {
+    "defaultMessage": "State"
+  },
+  "shell.section.tokens": {
+    "defaultMessage": "Tokens"
+  },
+  "shell.skip": {
+    "defaultMessage": "Skip to content",
+    "description": "The first thing a keyboard reaches on every page, hidden until it has focus, jumping past the header and both rails."
+  },
+  "shell.toc.none": {
+    "defaultMessage": "No headings on this page.",
+    "description": "Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title."
+  }
+}

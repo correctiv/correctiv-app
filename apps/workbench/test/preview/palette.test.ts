@@ -120,7 +120,9 @@ describe('the marks and the verbs they carry', () => {
     // `removed` is the half that knows. A row calling `filter` on the sections itself
     // would leave `change-id-unknown` behind on every parse.
     expect(PANEL).toMatch(/removed\(layout, section\.id\)/);
-    expect(PANEL).toMatch(/aria-label=\{`Remove \$\{spoken\} from the day`\}/);
+    expect(PANEL).toMatch(
+      /aria-label=\{intl\.formatMessage\(COPY\.rowRemove, \{ block: spoken \}\)\}/,
+    );
   });
 
   it('names a specimen without wrapping the app’s own controls in a button', () => {
@@ -180,17 +182,22 @@ describe('one handle for the pointer, and the arrows for the keyboard', () => {
      * measured in a cold review, which is ADR 0047 §2's route that must work pointing the
      * wrong way with every check passing.
      */
-    const button = (label: string) => {
-      // A plain string, because what is being looked for is source text containing a
-      // template literal, and a template literal looking for one is unreadable.
-      const at = PANEL.indexOf('aria-label={`Move ${spoken} ' + label + '`}');
+    const button = (way: 'Up' | 'Down') => {
+      // The label is a message now, so what names the button in the source is the
+      // descriptor's key rather than the words. `{ block: spoken }` is asked for in
+      // the same string: the name a row's controls are read out with is the whole of
+      // what `blockName` exists for, and a label that lost it would name two rows the
+      // same wherever one module appears twice.
+      const at = PANEL.indexOf(
+        `aria-label={intl.formatMessage(COPY.move${way}, { block: spoken })}`,
+      );
       expect(at).toBeGreaterThan(-1);
       return PANEL.slice(at, PANEL.indexOf('</Button>', at));
     };
-    expect(button('up')).toMatch(/onMove\(-1\)/);
-    expect(button('up')).not.toMatch(/onMove\(1\)/);
-    expect(button('down')).toMatch(/onMove\(1\)/);
-    expect(button('down')).not.toMatch(/onMove\(-1\)/);
+    expect(button('Up')).toMatch(/onMove\(-1\)/);
+    expect(button('Up')).not.toMatch(/onMove\(1\)/);
+    expect(button('Down')).toMatch(/onMove\(1\)/);
+    expect(button('Down')).not.toMatch(/onMove\(-1\)/);
   });
 
   it('ends both routes at one function', () => {

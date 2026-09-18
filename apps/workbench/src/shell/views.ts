@@ -14,7 +14,16 @@
  * the page tree in to ask about a string is a test that stops being run. The
  * icons live beside the chrome that draws them, in `ui/ToolRail.tsx`, keyed by
  * the same type, so a section with a title and no icon is a type error.
+ *
+ * **The titles here are descriptors and not strings**, for that same reason. A
+ * section's name is chrome and follows the language setting
+ * ([ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §2),
+ * but `defineMessages` comes from `react-intl`, which imports React. `wbMessage()`
+ * is the identity function that stands in; `src/i18n/messages.ts` says why it takes
+ * one descriptor per call. Whoever draws one formats it — `ui/ToolRail.tsx` and
+ * `ui/ToolPanel.tsx` are the two.
  */
+import { wbMessage, type WorkbenchMessage } from '../i18n/messages';
 
 /** Every place a page can put something the shell draws. */
 export type SectionId =
@@ -70,7 +79,7 @@ export interface ViewDeclaration {
    */
   sections: readonly SectionId[];
   /** The rail and the panel are named this; `null` exactly when `sections` is empty. */
-  panelTitle: string | null;
+  panelTitle: WorkbenchMessage | null;
   /** Docked width. A heading list wants a fifth, a console wants a third. */
   panelWidth: '19%' | '24%' | '31%';
   /** Whether the header's context bar is filled by this view. */
@@ -89,6 +98,61 @@ export interface ViewDeclaration {
    */
   fullWhenNarrow: boolean;
 }
+
+/**
+ * What a section is called, wherever it is drawn.
+ *
+ * Here rather than passed by the page, because the id is in the URL under
+ * `tool=`: a page that could rename its own section would be renaming something
+ * a link already refers to.
+ *
+ * Above the table that uses it, and that is not tidiness: `reading()` reads
+ * `contents` out of here while `VIEWS` is being built, and a `const` declared
+ * further down the file is in its temporal dead zone at that moment.
+ */
+export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
+  contents: wbMessage({
+    id: 'shell.section.contents',
+    defaultMessage: 'On this page',
+    description:
+      'The in-page contents, which every long view has. Also the name of the panel itself on those views, because the contents are the only thing in it.',
+  }),
+  appearance: wbMessage({
+    id: 'shell.section.appearance',
+    defaultMessage: 'Appearance',
+    description:
+      'The preview tool that pins the framed app to light or dark. Not the site’s own setting, which is settings.appearance in the settings dialog.',
+  }),
+  state: wbMessage({ id: 'shell.section.state', defaultMessage: 'State' }),
+  home: wbMessage({ id: 'shell.section.home', defaultMessage: 'Home layout' }),
+  console: wbMessage({ id: 'shell.section.console', defaultMessage: 'Console' }),
+  tokens: wbMessage({ id: 'shell.section.tokens', defaultMessage: 'Tokens' }),
+  measure: wbMessage({ id: 'shell.section.measure', defaultMessage: 'Measure' }),
+  inspect: wbMessage({ id: 'shell.section.inspect', defaultMessage: 'Inspect' }),
+  'design-links': wbMessage({
+    id: 'shell.section.designLinks',
+    defaultMessage: 'Open',
+    description:
+      'The design view’s tool holding the links that open the Figma file, in the browser and in the desktop app. One word, on a rail icon.',
+  }),
+  'design-clients': wbMessage({
+    id: 'shell.section.designClients',
+    defaultMessage: 'Desktop clients',
+  }),
+  'design-code': wbMessage({
+    id: 'shell.section.designCode',
+    defaultMessage: 'Where it reaches the code',
+  }),
+  rendering: wbMessage({ id: 'shell.section.rendering', defaultMessage: 'Rendering' }),
+  device: wbMessage({
+    id: 'shell.section.device',
+    defaultMessage: 'Device',
+    description:
+      'The component view’s tool for the size a component is drawn at. frame.device is the select on the bar above the app and reads the same in English.',
+  }),
+  props: wbMessage({ id: 'shell.section.props', defaultMessage: 'Props' }),
+  source: wbMessage({ id: 'shell.section.source', defaultMessage: 'Source' }),
+};
 
 /** No panel: a landing page, an index, a set of doors. */
 function plain(kind: ViewKind): ViewDeclaration {
@@ -117,7 +181,10 @@ function reading(kind: ViewKind, contextBar = false): ViewDeclaration {
   return {
     ...plain(kind),
     sections: ['contents'],
-    panelTitle: 'On this page',
+    // The same descriptor the rail entry carries, not a second id with the same
+    // English in it: the panel and its one tool are called the same thing here on
+    // purpose, and two ids would be one string to translate twice.
+    panelTitle: SECTION_TITLES.contents,
     contextBar,
   };
 }
@@ -143,7 +210,7 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
   design: {
     kind: 'design',
     sections: ['design-links', 'design-clients', 'design-code'],
-    panelTitle: 'Design tools',
+    panelTitle: wbMessage({ id: 'shell.panel.design', defaultMessage: 'Design tools' }),
     // Four download cards and three pointer cards need more than a heading list
     // and less than a console, and a third would leave the Figma frame half the
     // window at 1280.
@@ -157,7 +224,12 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
   component: {
     kind: 'component',
     sections: ['rendering', 'device', 'props', 'source'],
-    panelTitle: 'Component',
+    panelTitle: wbMessage({
+      id: 'shell.panel.component',
+      defaultMessage: 'Component',
+      description:
+        'The name of the right panel on a component’s own page, whose tools are its rendering, its device, its props and its source.',
+    }),
     panelWidth: '31%',
     contextBar: true,
     statusBar: true,
@@ -168,38 +240,18 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
   preview: {
     kind: 'preview',
     sections: ['appearance', 'state', 'home', 'console', 'tokens', 'measure', 'inspect'],
-    panelTitle: 'Tools',
+    panelTitle: wbMessage({
+      id: 'shell.panel.tools',
+      defaultMessage: 'Tools',
+      description:
+        'The name of the right panel on /preview, which holds the seven tools for inspecting the framed app.',
+    }),
     panelWidth: '31%',
     contextBar: true,
     statusBar: true,
     canGoFull: true,
     fullWhenNarrow: true,
   },
-};
-
-/**
- * What a section is called, wherever it is drawn.
- *
- * Here rather than passed by the page, because the id is in the URL under
- * `tool=`: a page that could rename its own section would be renaming something
- * a link already refers to.
- */
-export const SECTION_TITLES: Record<SectionId, string> = {
-  contents: 'On this page',
-  appearance: 'Appearance',
-  state: 'State',
-  home: 'Home layout',
-  console: 'Console',
-  tokens: 'Tokens',
-  measure: 'Measure',
-  inspect: 'Inspect',
-  'design-links': 'Open',
-  'design-clients': 'Desktop clients',
-  'design-code': 'Where it reaches the code',
-  rendering: 'Rendering',
-  device: 'Device',
-  props: 'Props',
-  source: 'Source',
 };
 
 export interface ResolvedView {

@@ -30,6 +30,18 @@ and the one nobody edits. "Handbook" is the documents area inside it, `/handbook
 nothing wider; the ADRs were written when it was the name of the whole site, which
 `adr/README.md` says in a note.
 
+**Its interface has a second audience, so part of it is German.** The home
+configurator is designed for the newsroom to own ([ADR 0036](adr/0036-the-home-screen-becomes-data.md) §1).
+The line is **the shell and the tools against a published page's body**: what frames
+a view follows the language setting — header, rails, panel, settings, search, status
+line, browser tab — and so do the preview and the configurator. The body of a page
+that publishes does not: the landing prose, the handbook, the records, the reference,
+the drawings and the sources board stay English, and that is the rule below holding
+rather than an omission. The strings work exactly as the app's — an English
+`defaultMessage` in the source, German as data in `apps/workbench/src/i18n/catalogue/de/`
+— and the two catalogues are separate because the audiences are.
+([ADR 0050](adr/0050-the-workbench-gets-a-second-audience.md))
+
 The device frame reaches into the app by same-origin property access, so the two
 halves have to be one origin. The Pages deploy assembles them into one artifact and
 the dev server proxies `/app`; do not give the workbench a second origin, because the

@@ -62,6 +62,7 @@
     "workbench:renders": "npm run renders -w @correctiv/workbench",
     "workbench:renders:dist": "npm run renders:dist -w @correctiv/workbench",
     "workbench:home-live": "npm run home-live -w @correctiv/workbench",
+    "workbench:i18n:extract": "npm run i18n:extract -w @correctiv/workbench",
     "app": "npm run web -w @correctiv/mobile",
     "prepare": "husky || true"
   },
