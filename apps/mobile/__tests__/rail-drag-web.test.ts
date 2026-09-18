@@ -144,14 +144,22 @@ function rail({ scrollWidth = 1164, clientWidth = 1000 } = {}) {
   return { node, captures };
 }
 
-/** The click a release leaves behind, and whether anything stopped it. */
+/**
+ * The click a release leaves behind, and whether anything stopped it.
+ *
+ * It takes its own listener off again, which matters beyond tidiness: `listeners()`
+ * above records every `document.addEventListener` while it is installed, so a helper
+ * that added one and left it would show up as the code under test failing to clean up.
+ */
 function click(node: HTMLElement) {
   const event = new MouseEvent('click', { bubbles: true, cancelable: true });
   let reachedTheRoot = false;
-  document.addEventListener('click', () => {
+  const atTheRoot = () => {
     reachedTheRoot = true;
-  });
+  };
+  document.addEventListener('click', atTheRoot);
   node.dispatchEvent(event);
+  document.removeEventListener('click', atTheRoot);
   // React's delegated listener sits on the root container, so a click that never
   // arrives there is a click no card's `onPress` will ever see.
   return { swallowed: !reachedTheRoot, defaultPrevented: event.defaultPrevented };
@@ -387,6 +395,9 @@ describe('the teardown', () => {
     node.dispatchEvent(pointer('pointerdown', { x: 500 }));
     document.dispatchEvent(pointer('pointermove', { x: 400 }));
     document.dispatchEvent(pointer('pointerup', { x: 400 }));
+    // A whole gesture including the click, so the accounting covers the listener
+    // that only a completed drag reaches.
+    expect(click(node).swallowed).toBe(true);
 
     release();
     spy.restore();
