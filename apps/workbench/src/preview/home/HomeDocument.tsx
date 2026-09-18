@@ -414,11 +414,17 @@ export function HomeDocument({
 
   return (
     <>
-      <p className={NOTE}>
-        The home screen as a day. The track under the frame is midnight to midnight, and each stop
-        on it is a moment the document names; a moment carries only what changes at it. The list
-        below is the whole day in the document’s order. The frame is one minute of it.
-      </p>
+      {/*
+        One sentence, and it is the one the interface cannot draw.
+
+        This was four. The other three described the track above it (midnight to
+        midnight), the list below it (the day in the document's order) and the frame
+        beside it (one minute of it) — three things a reader is looking at while they
+        read that they are looking at them. What is left is the rule that makes the
+        rest legible and that nothing on screen states: a moment holds the difference
+        and not the state.
+      */}
+      <p className={NOTE}>A moment carries only what changes at it.</p>
 
       <label className="flex items-center gap-2xs text-s text-on-canvas">
         <input

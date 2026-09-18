@@ -19,15 +19,6 @@ interface Props {
   onResize: (size: { w: number; h: number }) => void;
   onLoad: () => void;
   /**
-   * Whether to print the sentence under the frame that says what this view is.
-   *
-   * The demo audience's, and not the inspector audience's. It used to be read off
-   * `state.tools` and `state.full`, which are the shell's now and not the frame's,
-   * so the page that knows both decides and this one draws. Off whenever a tool
-   * is open, because the sentence points at a rail the reader has evidently found.
-   */
-  hint: boolean;
-  /**
    * The day, drawn between the frame and whatever is below it, or nothing.
    *
    * A node rather than a flag, because whether there is a timeline at all is a
@@ -75,7 +66,6 @@ export function Stage({
   frameRef,
   onResize,
   onLoad,
-  hint,
   timeline,
 }: Props) {
   const { w, h } = size;
@@ -213,25 +203,6 @@ export function Stage({
       </div>
 
       {timeline}
-
-      {/*
-        The sentence the demo audience gets, and the one the inspector's audience
-        does not. Written out of the tree, so a screen reader cannot read out a
-        hint about a sidebar that is already open, and gone in full screen too,
-        where it would name a bar and a shortcut that are not on the screen.
-
-        Below 64rem it is `display: none`, which takes it out of the accessibility
-        tree as well. Five lines of prose under a phone-sized frame on a
-        phone-sized screen is a third of the room the app has, spent explaining
-        controls that are one tap away.
-      */}
-      {hint && (
-        <p className="mx-auto hidden max-w-[42rem] shrink-0 px-m pb-m text-center text-m text-on-canvas-muted lg:block">
-          This is the app at device size. Pick a device or a route in the bar above; the address in
-          the status line reproduces exactly what you see. The rail on the right has the console,
-          the colour tokens and the element picker.
-        </p>
-      )}
     </div>
   );
 }

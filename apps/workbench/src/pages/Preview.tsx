@@ -113,7 +113,6 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
         frameRef={preview.frameRef}
         onResize={preview.onResize}
         onLoad={preview.onLoad}
-        hint={address.tool === null && !full && wide}
         timeline={
           timeline ? (
             <Timeline
