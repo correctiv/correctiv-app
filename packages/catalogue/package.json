@@ -1,0 +1,20 @@
+{
+  "name": "@correctiv/catalogue",
+  "description": "Every user-facing string the app ships, by locale: the German that reaches a reader and the English the descriptors were written in. Data only — no UI framework, no platform SDK, no React.",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@correctiv/app-core": "*",
+    "@correctiv/prose-and-code": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run"
+  }
+}

@@ -8,7 +8,7 @@ import { formatDateShortDe } from '@correctiv/app-core/lib/format';
 
 /**
  * Everything this screen says, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/diary.ts` (ADR 0026 §6). The entry itself is content
+ * `packages/catalogue/src/de/diary.ts` (ADR 0026 §6). The entry itself is content
  * from `@correctiv/app-core/data/backstage`.
  *
  * `unknownId` carries the German quotation marks INSIDE the message rather than

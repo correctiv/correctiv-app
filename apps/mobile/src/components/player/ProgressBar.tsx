@@ -4,7 +4,7 @@ import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 
 /**
  * The bar's spoken name, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/player.ts` (ADR 0026 §6). The bar has no text, so this
+ * `packages/catalogue/src/de/player.ts` (ADR 0026 §6). The bar has no text, so this
  * is all a screen reader has.
  */
 const COPY = defineMessages({

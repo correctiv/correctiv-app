@@ -15,7 +15,7 @@ import { useColors } from '@/lib/theme';
 
 /**
  * Everything this screen says, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/project.ts` (ADR 0026 §6). The project's name and
+ * `packages/catalogue/src/de/project.ts` (ADR 0026 §6). The project's name and
  * description are content from `@correctiv/app-core/data/projects`.
  *
  * `unknownId` carries the German quotation marks INSIDE the message rather than

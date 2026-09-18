@@ -390,9 +390,11 @@ jobs:
           set -euo pipefail
           npm run typecheck -w @correctiv/mobile
           npm run typecheck -w @correctiv/app-core
+          npm run typecheck -w @correctiv/catalogue
           npm run typecheck -w @correctiv/design-tokens
           npm run test -w @correctiv/mobile
           npm run test -w @correctiv/app-core
+          npm run test -w @correctiv/catalogue
           npm run test -w @correctiv/design-tokens
 
       # The same command, and a cache of its own again, so that neither export can

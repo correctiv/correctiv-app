@@ -6,7 +6,7 @@ import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
 
 /**
  * The screen's one word, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/backstage.ts` (ADR 0026 §6). The badge says `Club`,
+ * `packages/catalogue/src/de/backstage.ts` (ADR 0026 §6). The badge says `Club`,
  * which is a mark and carries no id. Everything else on the page is the report.
  */
 const COPY = defineMessages({

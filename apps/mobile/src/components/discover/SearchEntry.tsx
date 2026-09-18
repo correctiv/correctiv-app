@@ -7,7 +7,7 @@ import { useColors } from '@/lib/theme';
 
 /**
  * What the entry point says, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/discover.ts`. The label is what a screen reader
+ * `packages/catalogue/src/de/discover.ts`. The label is what a screen reader
  * announces, which is as user-facing as the line beside it.
  */
 const COPY = defineMessages({

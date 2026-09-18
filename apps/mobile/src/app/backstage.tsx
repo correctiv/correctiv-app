@@ -20,7 +20,7 @@ import { useColors } from '@/lib/theme';
 
 /**
  * The shelf labels and actions, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/backstage.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/backstage.ts` (ADR 0026 §6).
  *
  * Three words on this screen are NOT here, and deliberately: `Backstage` (the
  * header, the headline) and `Club` (the badge) are marks, and a catalogue entry

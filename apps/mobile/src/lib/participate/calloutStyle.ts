@@ -4,7 +4,7 @@ import type { Callout } from '@correctiv/app-core/data/callouts';
 
 /**
  * The words this module answers with, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/callout.ts`.
+ * `packages/catalogue/src/de/callout.ts`.
  *
  * Descriptors rather than strings, because there is no React here and therefore
  * no `useIntl()` to call: this is a plain function two components share, so it

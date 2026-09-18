@@ -11,7 +11,7 @@ import { colors, sizes } from '@/lib/theme';
 
 /**
  * The banner's own words, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/mediathek.ts` (ADR 0026 §6). The station's name and its
+ * `packages/catalogue/src/de/mediathek.ts` (ADR 0026 §6). The station's name and its
  * strapline are NOT here: they are `SALON5_RADIO_COPY` in `lib/audio/tracks.ts`,
  * because the lock screen prints the same words and the thunk that starts the
  * stream is handed them from there.

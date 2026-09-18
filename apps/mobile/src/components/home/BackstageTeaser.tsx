@@ -8,7 +8,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The card's one action, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/backstage.ts` (ADR 0026 §6). The badge says `Backstage`,
+ * `packages/catalogue/src/de/backstage.ts` (ADR 0026 §6). The badge says `Backstage`,
  * which is a mark and carries no id; the diary entry and the bonus episode are
  * content.
  *

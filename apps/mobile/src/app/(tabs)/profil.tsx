@@ -21,7 +21,7 @@ import { sizes } from '@/lib/theme';
  * Everything a person reads on the profile, in one place.
  *
  * The `defaultMessage` of each is ENGLISH and the German that ships is in
- * `src/i18n/catalogue/de/profile.ts`, which is the shape ADR 0026 §6 decided and
+ * `packages/catalogue/src/de/profile.ts`, which is the shape ADR 0026 §6 decided and
  * `components/gate/LoginGate.tsx` set out. The tier names are NOT here: they name a
  * domain enum the door prints too, so they sit in `lib/membership/tierLabel.ts`.
  *

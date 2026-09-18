@@ -12,7 +12,7 @@ import { openExternal } from '@/lib/openExternal';
 
 /**
  * The tab's own name, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/discover.ts`. Everything else on this screen is the
+ * `packages/catalogue/src/de/discover.ts`. Everything else on this screen is the
  * catalogue from `@correctiv/app-core/data/projects`, which is content.
  */
 const COPY = defineMessages({

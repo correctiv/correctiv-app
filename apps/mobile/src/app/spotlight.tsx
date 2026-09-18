@@ -11,7 +11,7 @@ import { useColors } from '@/lib/theme';
 
 /**
  * The two sentences the archive adds, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/home.ts` (ADR 0026 §6) — the same namespace as the card
+ * `packages/catalogue/src/de/home.ts` (ADR 0026 §6) — the same namespace as the card
  * on Home, because they are the same feature seen from two places.
  *
  * `Spotlight` itself is a mark and carries no id, in the header and in the

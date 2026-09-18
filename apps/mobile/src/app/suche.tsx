@@ -18,7 +18,7 @@ const DEBOUNCE_MS = 300;
 
 /**
  * Everything a person reads on this screen, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/search.ts`.
+ * `packages/catalogue/src/de/search.ts`.
  *
  * `noResults` carries its own quotation marks. German sets them low-then-high and
  * English does not, so the marks are part of the sentence and belong with the

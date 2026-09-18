@@ -21,7 +21,7 @@ export function generateStaticParams(): { id: string }[] {
 
 /**
  * Everything a person reads on this screen, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/claim.ts`.
+ * `packages/catalogue/src/de/claim.ts`.
  *
  * `quote` is a message even though the claim itself is content: the marks around
  * it are typography, German sets them low-then-high and English does not, so they

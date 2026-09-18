@@ -8,7 +8,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The row's spoken names, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/mediathek.ts` (ADR 0026 §6). The row shows no words of
+ * `packages/catalogue/src/de/mediathek.ts` (ADR 0026 §6). The row shows no words of
  * its own — these two are what a screen reader says instead of "button".
  */
 const COPY = defineMessages({

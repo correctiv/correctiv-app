@@ -5,7 +5,7 @@
  * a fact check can carry, the words the reader document prints — and it renders
  * none of it. A descriptor names a string; the host holds the `intl` instance that
  * turns one into text, and the German that ships is data in
- * `apps/mobile/src/i18n/catalogue/de/core.ts` ([ADR 0026](../../../../adr/0026-react-native-review-and-hardening.md) §6).
+ * `packages/catalogue/src/de/core.ts` ([ADR 0026](../../../../adr/0026-react-native-review-and-hardening.md) §6).
  *
  * `react-intl`'s `defineMessages` would be the obvious wrapper and is not
  * available: it comes from a package that imports React, which

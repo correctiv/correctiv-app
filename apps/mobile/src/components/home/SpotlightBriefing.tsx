@@ -11,7 +11,7 @@ import { sizes } from '@/lib/theme';
 
 /**
  * The card's own words, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/home.ts` (ADR 0026 §6). `Spotlight` is the overline and
+ * `packages/catalogue/src/de/home.ts` (ADR 0026 §6). `Spotlight` is the overline and
  * is a mark, so it carries no id.
  *
  * The link says its words twice, once seen and once spoken, and they differ: the

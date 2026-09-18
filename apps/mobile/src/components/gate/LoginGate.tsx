@@ -17,7 +17,7 @@ import { sizes, typography, useColors } from '@/lib/theme';
  * Everything a person reads on the door, in one place.
  *
  * The `defaultMessage` of each is ENGLISH and the German that ships is in
- * `src/i18n/catalogue/de/gate.ts`, which is the shape ADR 0026 §6 decided: the
+ * `packages/catalogue/src/de/gate.ts`, which is the shape ADR 0026 §6 decided: the
  * source reads in one language and the other one is data. Nothing here is
  * rendered as written — `formatMessage` answers with the catalogue's German.
  *

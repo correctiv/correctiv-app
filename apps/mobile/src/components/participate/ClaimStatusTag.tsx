@@ -8,7 +8,7 @@ import { useColors, type Palette } from '@/lib/theme';
 
 /**
  * The checking status of a claim, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/participate.ts` and the verdict in `de/core.ts`
+ * `packages/catalogue/src/de/participate.ts` and the verdict in `de/core.ts`
  * (ADR 0026 §6).
  *
  * The wording used to come from `claimStatusTag()` in the core's `data/claims.ts`,

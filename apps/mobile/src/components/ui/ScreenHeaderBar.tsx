@@ -11,7 +11,7 @@ import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The back control's word, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/ui.ts` (ADR 0026 §6).
+ * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
  *
  * **Exported, and this is the only declaration of `ui.back` in the app.** Three
  * places say it: this bar, `ScreenHeader.tsx` — which hands the same word to the

@@ -12,7 +12,7 @@ import type { EntitlementSource } from '@correctiv/app-core/types/models';
  * Everything a person reads on this screen, in one place.
  *
  * The `defaultMessage` of each is ENGLISH and the German that ships is in
- * `src/i18n/catalogue/de/settings.ts` — the shape ADR 0026 §6 decided, and the one
+ * `packages/catalogue/src/de/settings.ts` — the shape ADR 0026 §6 decided, and the one
  * `components/gate/LoginGate.tsx` set out.
  */
 const COPY = defineMessages({

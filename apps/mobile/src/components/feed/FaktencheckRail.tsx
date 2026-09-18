@@ -7,7 +7,7 @@ import { sizes } from '@/lib/theme';
 
 /**
  * The badge every card carries, in ENGLISH; the German ships in
- * `src/i18n/catalogue/de/home.ts` (ADR 0026 §6). The headlines are the articles'.
+ * `packages/catalogue/src/de/home.ts` (ADR 0026 §6). The headlines are the articles'.
  */
 const COPY = defineMessages({
   badge: {

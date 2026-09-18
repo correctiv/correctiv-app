@@ -17,7 +17,7 @@ const GOAL = 3000;
 
 /**
  * The card's own two words, in ENGLISH; the German is in
- * `src/i18n/catalogue/de/callout.ts`. Everything else it says comes from
+ * `packages/catalogue/src/de/callout.ts`. Everything else it says comes from
  * `lib/participate/calloutStyle.ts`, which answers for the card and the home
  * teaser alike.
  */

@@ -9,7 +9,7 @@ import { formatDateShortDe } from '@correctiv/app-core/lib/format';
 
 /**
  * Everything a person reads on this screen, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/faktenforum.ts`.
+ * `packages/catalogue/src/de/faktenforum.ts`.
  *
  * The screen's own name is not among them, and it is written out twice below
  * rather than lifted: Faktenforum is the product's name, the same word in every

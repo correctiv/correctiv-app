@@ -206,9 +206,13 @@ in one obvious place per screen, not interpolated through the markup — and its
 another file imports takes the name of what it belongs to (`HEADER_COPY`), because
 the importer has a `COPY` of its own, and a `Record` of labels for a domain's values
 is named for the domain (`TIER_LABELS`) rather than folded into the copy. The German,
-formal *Sie*, lives in
-`apps/mobile/src/i18n/catalogue/de/`, one file per id namespace, and that directory
-is the only place under `apps/mobile/src` where a German character may be written.
+formal *Sie*, is a package: `packages/catalogue/src/de/`, one file per id namespace.
+It is not in the app at all, so `apps/mobile/src` now holds no catalogue and the walk
+over it has no exception for one — bar the two strings named below, which are
+excused by the check itself and not by this sentence
+([ADR 0049](adr/0049-the-catalogue-is-a-package.md)).
+The package holds the strings and nothing else: a descriptor stays where its string
+is, the provider stays with the host, and the workbench keeps a catalogue of its own.
 German is the only language that ships: the locale is a fixed value in the core's
 settings slice, and a switch for it belongs in the workbench rather than in the app.
 `apps/mobile/__tests__/localisation-seam.test.ts` is what enforces this. Two German
