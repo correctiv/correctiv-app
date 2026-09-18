@@ -10,7 +10,9 @@ drafts failed, and the argument for it is good: an area line left the settings
 dialog in English, and a chrome line could not be finished.
 
 It has the same shape of failure one step further out, and a single screenshot shows
-it. With the site set to German, `/components` reads:
+it: [`screens/evidence/230-komponenten-vorher.webp`](../screens/evidence/230-komponenten-vorher.webp),
+taken from the published build on 2026-09-18, before this record. With the site set
+to German, `/components` reads:
 
 - the header, the rails, the status line and the settings dialog: German
 - the filter above the page, its placeholder and its summary: **English**
