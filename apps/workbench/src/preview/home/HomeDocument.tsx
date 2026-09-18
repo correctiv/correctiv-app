@@ -167,7 +167,7 @@ const COPY = defineMessages({
     id: 'home.document.changed',
     defaultMessage: 'changed',
     description:
-      'The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and reads the same in English.',
+      'The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
   },
   unchanged: { id: 'home.document.unchanged', defaultMessage: 'unchanged' },
   saveNote: {
@@ -249,7 +249,7 @@ const COPY = defineMessages({
     id: 'home.row.changed',
     defaultMessage: 'changed',
     description:
-      'The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and reads the same in English.',
+      'The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
   },
   switchOnAtStart: {
     id: 'home.row.switchOnAtStart',

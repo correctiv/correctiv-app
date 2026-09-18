@@ -1,7 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
+import { defineMessages } from 'react-intl';
 
 import { BASE, driveRoute, keepFramePath, navigate } from './frame/handle';
 import { holdTheDoorOpen } from './frame/seed';
+import { useWorkbenchIntl } from '../i18n/Localisation';
+
+/**
+ * Everything this file says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/preview.ts`.
+ *
+ * Two lines, and they are the only words this component owns: everything else on
+ * screen while it is mounted is the app's, drawn inside the frame. The frame's
+ * own accessible name is not here either, because it is a prop — the caller knows
+ * what it is framing and this file does not.
+ */
+const COPY = defineMessages({
+  booting: {
+    id: 'preview.frame.booting',
+    defaultMessage: 'Booting the app…',
+    description:
+      'Over the frame while the app’s bundle is still starting, in a live region. preview.frame.stuck replaces it if the app never arrives.',
+  },
+  stuck: {
+    id: 'preview.frame.stuck',
+    defaultMessage: 'The app did not load. The preview has its console.',
+    description:
+      'Replaces preview.frame.booting after six seconds with nothing drawn. “The preview” is this site’s /preview view, whose console tool shows what the app said on its way down.',
+  },
+});
 
 /** Between attempts to hand the route to the app's router, in milliseconds. */
 const RETRY = 200;
@@ -148,6 +174,7 @@ export function AppFrame({
   /** Drawn smaller to fit the box it stands in, the way `ui/Stage.tsx` does. */
   scale?: number;
 }) {
+  const intl = useWorkbenchIntl();
   const ref = useRef<HTMLIFrameElement>(null);
   const [state, setState] = useState<'booting' | 'drawn' | 'stuck'>('booting');
 
@@ -242,9 +269,7 @@ export function AppFrame({
           // `output` and not `p role="status"`: oxlint asks for the element whose
           // implicit role that is, and the two are the same announcement.
           <output className="absolute inset-0 grid place-items-center px-s text-center text-s text-on-canvas-muted">
-            {state === 'booting'
-              ? 'Booting the app…'
-              : 'The app did not load. The preview has its console.'}
+            {intl.formatMessage(state === 'booting' ? COPY.booting : COPY.stuck)}
           </output>
         )}
         {/* eslint-disable-next-line react/iframe-missing-sandbox */}

@@ -1,4 +1,5 @@
 import { DEVICES } from './devices';
+import { wbMessage, type WorkbenchMessage } from '../i18n/messages';
 import type { LogEntry } from './frame/console';
 import { activeScheme, appTheme, frameRoute, frameScheme, handleOf } from './frame/handle';
 import { audit } from './frame/measure';
@@ -27,6 +28,14 @@ import { getState, set } from './store';
  * It turns "navigate, then sleep 2000, then screenshot" into one await, and it
  * is the difference between a screenshot of the app and a screenshot of its
  * first paint.
+ *
+ * **Nothing here is formatted for a reader.** A device's label, a fixture's label
+ * and hint, and a finding's sentence all leave as descriptors — an id and an
+ * English `defaultMessage` — rather than as whatever language the person at the
+ * keyboard has this site set to. A caller that matches on a word therefore goes on
+ * matching after somebody switches the setting, which is the same reason the three
+ * verbs read the store rather than the screen
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
  */
 export interface FrameInfo {
   /** Whether the app left a dev handle behind; false in the static export. */
@@ -54,7 +63,7 @@ export interface PreviewApi {
   ready(): Promise<void>;
   devices(): typeof DEVICES;
   routes(): typeof ROUTES;
-  fixtures(): { id: string; label: string; hint: string }[];
+  fixtures(): { id: string; label: WorkbenchMessage; hint: WorkbenchMessage }[];
   logs(): ReturnType<typeof getLogs>;
   /** Runs the measure checks now and returns them, without touching the panel. */
   audit(): ReturnType<typeof audit>;
@@ -111,16 +120,55 @@ function liveStatus(): Status {
  */
 export const COMBINATIONS: {
   n: number;
-  label: string;
+  label: WorkbenchMessage;
   theme: ThemeSetting;
   /** Absent where the setting alone decides, i.e. 1 and 2. */
   scheme?: Scheme;
   isDefault?: boolean;
 }[] = [
-  { n: 1, label: 'Setting light', theme: 'light' },
-  { n: 2, label: 'Setting dark', theme: 'dark' },
-  { n: 3, label: 'System · light device', theme: 'system', scheme: 'light' },
-  { n: 4, label: 'System · dark device', theme: 'system', scheme: 'dark', isDefault: true },
+  {
+    n: 1,
+    label: wbMessage({
+      id: 'tools.appearance.combination.1',
+      defaultMessage: 'Setting light',
+      description:
+        'The first of the four appearance combinations: the app’s own setting explicitly on light, whatever the device reports. “light” is the literal value of that setting, printed in its own spelling two rows above in the same panel, and is not translated.',
+    }),
+    theme: 'light',
+  },
+  {
+    n: 2,
+    label: wbMessage({
+      id: 'tools.appearance.combination.2',
+      defaultMessage: 'Setting dark',
+      description:
+        'The second of the four appearance combinations: the app’s own setting explicitly on dark, whatever the device reports. “dark” is the literal value of that setting and is not translated.',
+    }),
+    theme: 'dark',
+  },
+  {
+    n: 3,
+    label: wbMessage({
+      id: 'tools.appearance.combination.3',
+      defaultMessage: 'System · light device',
+      description:
+        'The third of the four appearance combinations: the app’s setting on system, against a device reporting light. Both “system” and “light” are literal values and are not translated.',
+    }),
+    theme: 'system',
+    scheme: 'light',
+  },
+  {
+    n: 4,
+    label: wbMessage({
+      id: 'tools.appearance.combination.4',
+      defaultMessage: 'System · dark device',
+      description:
+        'The fourth of the four appearance combinations, and the app’s default: the setting on system, against a device reporting dark. This is the one that has already shipped broken. Both “system” and “dark” are literal values and are not translated.',
+    }),
+    theme: 'system',
+    scheme: 'dark',
+    isDefault: true,
+  },
 ];
 
 export function combinationOf(setting: ThemeSetting | null, scheme: Scheme | null): number | null {

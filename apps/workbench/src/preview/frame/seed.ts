@@ -16,7 +16,26 @@
  * `persist()` writes back only the keys a slice declares, so anything invented
  * here is dropped on the app's first write; and a payload that is not valid JSON
  * is not ignored but **deleted**, and the slice starts empty.
+ *
+ * ## What is a message here and what is not
+ *
+ * A fixture's name and the line under it are this site's own words and follow the
+ * language setting
+ * ([ADR 0052](../../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ * Everything else in this file is the payload — an account, an entitlement, two
+ * saved articles, a submitted form — and none of it is read by anybody on this
+ * page: it is written into storage for the app to find, so it is in whatever
+ * spelling the app expects. `Handbuch` is the sharpest case and its own docblock
+ * below says why it is German and must stay German.
+ *
+ * `wbMessage()` and not `defineMessages`, because this module runs before the
+ * frame boots and may not pull React in; `src/i18n/messages.ts` says why it takes
+ * one descriptor per call. `preview/ui/Panels.tsx` is what formats them;
+ * `window.preview.fixtures()` hands the descriptors on as they are, so an
+ * automation reads a stable id and the English rather than whatever language the
+ * person at the keyboard has chosen.
  */
+import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 
 /**
  * The app's two MMKV stores, as they land in `localStorage` on the web target.
@@ -100,9 +119,9 @@ const NO_ACCESS = {
 
 export interface Fixture {
   id: string;
-  label: string;
+  label: WorkbenchMessage;
   /** What this is for, in one line. Shown next to the control. */
-  hint: string;
+  hint: WorkbenchMessage;
   write(store: Storage): void;
 }
 
@@ -152,26 +171,44 @@ function clearApp(store: Storage): void {
 export const FIXTURES: Fixture[] = [
   {
     id: 'fresh',
-    label: 'Fresh install',
-    hint: 'Nothing stored. The app starts at the door, signed out.',
+    label: wbMessage({ id: 'fixtures.fresh', defaultMessage: 'Fresh install' }),
+    hint: wbMessage({
+      id: 'fixtures.fresh.hint',
+      defaultMessage: 'Nothing stored. The app starts at the door, signed out.',
+      description:
+        'The line under the “Fresh install” fixture. “The door” is the sign-in gate the app’s root layout renders in place of every route until a session carries an entitlement; every hint in this group calls it that.',
+    }),
     write: () => {},
   },
   {
     id: 'signed-in',
-    label: 'Signed in',
-    hint: "A member's first start: through the door, into the onboarding.",
+    label: wbMessage({ id: 'fixtures.signedIn', defaultMessage: 'Signed in' }),
+    hint: wbMessage({
+      id: 'fixtures.signedIn.hint',
+      defaultMessage: "A member's first start: through the door, into the onboarding.",
+    }),
     write: (s) => kv(s, 'session', SIGNED_IN),
   },
   {
     id: 'no-access',
-    label: 'Signed in, no app access',
-    hint: "The door's fourth state: a 0 € member, sent to the upgrade.",
+    label: wbMessage({ id: 'fixtures.noAccess', defaultMessage: 'Signed in, no app access' }),
+    hint: wbMessage({
+      id: 'fixtures.noAccess.hint',
+      defaultMessage: "The door's fourth state: a 0 € member, sent to the upgrade.",
+      description:
+        'The line under the “Signed in, no app access” fixture. The 0 € tier is CORRECTIV’s free membership, which does not include the app; 0 € is a price and stays as it is written.',
+    }),
     write: (s) => kv(s, 'session', NO_ACCESS),
   },
   {
     id: 'onboarded',
-    label: 'Onboarded',
-    hint: 'The ordinary case: the app starts on Home.',
+    label: wbMessage({ id: 'fixtures.onboarded', defaultMessage: 'Onboarded' }),
+    hint: wbMessage({
+      id: 'fixtures.onboarded.hint',
+      defaultMessage: 'The ordinary case: the app starts on Home.',
+      description:
+        'The line under the “Onboarded” fixture. “Home” is the app’s first tab, which the app itself calls “Start”.',
+    }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
       kv(s, 'settings', ONBOARDED);
@@ -179,8 +216,13 @@ export const FIXTURES: Fixture[] = [
   },
   {
     id: 'saved',
-    label: 'Saved articles',
-    hint: '/gespeichert is otherwise empty and shows only its empty state.',
+    label: wbMessage({ id: 'fixtures.saved', defaultMessage: 'Saved articles' }),
+    hint: wbMessage({
+      id: 'fixtures.saved.hint',
+      defaultMessage: '/gespeichert is otherwise empty and shows only its empty state.',
+      description:
+        'The line under the “Saved articles” fixture. /gespeichert is a route in the app and stays in its own spelling.',
+    }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
       kv(s, 'settings', ONBOARDED);
@@ -206,8 +248,13 @@ export const FIXTURES: Fixture[] = [
   },
   {
     id: 'interests',
-    label: 'Interests picked',
-    hint: 'A personalised Home: extra feeds, and modules in a different order.',
+    label: wbMessage({ id: 'fixtures.interests', defaultMessage: 'Interests picked' }),
+    hint: wbMessage({
+      id: 'fixtures.interests.hint',
+      defaultMessage: 'A personalised Home: extra feeds, and modules in a different order.',
+      description:
+        'The line under the “Interests picked” fixture. “Home” is the app’s first tab, which the app itself calls “Start”; a module is one block of that screen.',
+    }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
       kv(s, 'settings', ONBOARDED);
@@ -216,8 +263,16 @@ export const FIXTURES: Fixture[] = [
   },
   {
     id: 'submitted',
-    label: 'Callout answered',
-    hint: 'The form then shows its thanks instead of its questions.',
+    label: wbMessage({
+      id: 'fixtures.submitted',
+      defaultMessage: 'Callout answered',
+      description:
+        'A fixture in the state tool. A callout is an open call to readers to send something in; the app calls that screen “Mitmachen”.',
+    }),
+    hint: wbMessage({
+      id: 'fixtures.submitted.hint',
+      defaultMessage: 'The form then shows its thanks instead of its questions.',
+    }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
       kv(s, 'settings', ONBOARDED);
@@ -234,8 +289,18 @@ export const FIXTURES: Fixture[] = [
   },
   {
     id: 'bundle',
-    label: 'Bundled content only',
-    hint: "Forces the bundle fallback, the feeds' 'offline' status.",
+    label: wbMessage({
+      id: 'fixtures.bundle',
+      defaultMessage: 'Bundled content only',
+      description:
+        'A fixture in the state tool: the app falls back to the articles shipped inside the binary, because nothing fresher is in the cache.',
+    }),
+    hint: wbMessage({
+      id: 'fixtures.bundle.hint',
+      defaultMessage: "Forces the bundle fallback, the feeds' 'offline' status.",
+      description:
+        'The line under the “Bundled content only” fixture. “offline” is the literal value of the feed status in the core’s own state and stays as it is written.',
+    }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
       kv(s, 'settings', ONBOARDED);
@@ -249,8 +314,13 @@ export const FIXTURES: Fixture[] = [
   },
   {
     id: 'big-type',
-    label: 'Largest text scale',
-    hint: 'A++ (1.15), the setting the reader breaks under first.',
+    label: wbMessage({ id: 'fixtures.bigType', defaultMessage: 'Largest text scale' }),
+    hint: wbMessage({
+      id: 'fixtures.bigType.hint',
+      defaultMessage: 'A++ (1.15), the setting the reader breaks under first.',
+      description:
+        'The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the factor it multiplies by. “The reader” here is the article view, not a person.',
+    }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
       kv(s, 'settings', { ...ONBOARDED, textScale: 1.15 });

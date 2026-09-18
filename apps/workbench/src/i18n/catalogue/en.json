@@ -170,6 +170,26 @@
     "defaultMessage": "Components",
     "description": "The page’s heading. components.detail.crumb is the same word as the first step of the breadcrumb on a single component’s page, which links back here; nav.components is the longer name the rail and the browser tab carry."
   },
+  "devices.breakpoint": {
+    "defaultMessage": "Tablet breakpoint (48rem)",
+    "description": "Not a device: the width the reader’s own stylesheet changes at, worth being able to sit exactly on. 48rem is a CSS length and stays as it is written."
+  },
+  "devices.custom": {
+    "defaultMessage": "Custom",
+    "description": "The last entry in the device picker: a width and a height the reader types, or drags the stage handles to. Choosing it is what makes the two number fields on the bar appear."
+  },
+  "devices.desktop": {
+    "defaultMessage": "Desktop",
+    "description": "A size, not a model: a window the size a desktop screen opens one at. devices.laptop is the smaller of the same pair."
+  },
+  "devices.host": {
+    "defaultMessage": "This screen, full size",
+    "description": "The first entry in the device picker: no device frame at all, the app drawn at whatever size the page has. It states a size rather than naming one, because this is the one entry with no number beside it."
+  },
+  "devices.laptop": {
+    "defaultMessage": "Laptop",
+    "description": "A size, not a model: a window the size a laptop opens one at. devices.desktop is the larger of the same pair."
+  },
   "diagrams.breadcrumb": {
     "defaultMessage": "Breadcrumb",
     "description": "Read aloud as the name of the trail above the drawing, and never drawn. The trail itself is the handbook, the drawings, and where this one is in the set."
@@ -195,6 +215,73 @@
   "diagrams.title": {
     "defaultMessage": "Diagrams",
     "description": "The page’s heading. handbook.card.diagrams is the card on /handbook that opens this page and diagrams.crumb is the step in a single drawing’s breadcrumb that leads back to it; all three read the same in English. nav.diagrams is the longer name the browser tab carries."
+  },
+  "drawing.failed": {
+    "defaultMessage": "Did not render: {message}",
+    "description": "Stands where a component of the app should have been drawn, on a surface of this site, after that component threw. {message} is the error’s own message out of the app’s source and is not translated."
+  },
+  "fixtures.bigType": {
+    "defaultMessage": "Largest text scale"
+  },
+  "fixtures.bigType.hint": {
+    "defaultMessage": "A++ (1.15), the setting the reader breaks under first.",
+    "description": "The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the factor it multiplies by. “The reader” here is the article view, not a person."
+  },
+  "fixtures.bundle": {
+    "defaultMessage": "Bundled content only",
+    "description": "A fixture in the state tool: the app falls back to the articles shipped inside the binary, because nothing fresher is in the cache."
+  },
+  "fixtures.bundle.hint": {
+    "defaultMessage": "Forces the bundle fallback, the feeds' 'offline' status.",
+    "description": "The line under the “Bundled content only” fixture. “offline” is the literal value of the feed status in the core’s own state and stays as it is written."
+  },
+  "fixtures.fresh": {
+    "defaultMessage": "Fresh install"
+  },
+  "fixtures.fresh.hint": {
+    "defaultMessage": "Nothing stored. The app starts at the door, signed out.",
+    "description": "The line under the “Fresh install” fixture. “The door” is the sign-in gate the app’s root layout renders in place of every route until a session carries an entitlement; every hint in this group calls it that."
+  },
+  "fixtures.interests": {
+    "defaultMessage": "Interests picked"
+  },
+  "fixtures.interests.hint": {
+    "defaultMessage": "A personalised Home: extra feeds, and modules in a different order.",
+    "description": "The line under the “Interests picked” fixture. “Home” is the app’s first tab, which the app itself calls “Start”; a module is one block of that screen."
+  },
+  "fixtures.noAccess": {
+    "defaultMessage": "Signed in, no app access"
+  },
+  "fixtures.noAccess.hint": {
+    "defaultMessage": "The door's fourth state: a 0 € member, sent to the upgrade.",
+    "description": "The line under the “Signed in, no app access” fixture. The 0 € tier is CORRECTIV’s free membership, which does not include the app; 0 € is a price and stays as it is written."
+  },
+  "fixtures.onboarded": {
+    "defaultMessage": "Onboarded"
+  },
+  "fixtures.onboarded.hint": {
+    "defaultMessage": "The ordinary case: the app starts on Home.",
+    "description": "The line under the “Onboarded” fixture. “Home” is the app’s first tab, which the app itself calls “Start”."
+  },
+  "fixtures.saved": {
+    "defaultMessage": "Saved articles"
+  },
+  "fixtures.saved.hint": {
+    "defaultMessage": "/gespeichert is otherwise empty and shows only its empty state.",
+    "description": "The line under the “Saved articles” fixture. /gespeichert is a route in the app and stays in its own spelling."
+  },
+  "fixtures.signedIn": {
+    "defaultMessage": "Signed in"
+  },
+  "fixtures.signedIn.hint": {
+    "defaultMessage": "A member's first start: through the door, into the onboarding."
+  },
+  "fixtures.submitted": {
+    "defaultMessage": "Callout answered",
+    "description": "A fixture in the state tool. A callout is an open call to readers to send something in; the app calls that screen “Mitmachen”."
+  },
+  "fixtures.submitted.hint": {
+    "defaultMessage": "The form then shows its thanks instead of its questions."
   },
   "frame.copied": {
     "defaultMessage": "Copied",
@@ -444,7 +531,7 @@
   },
   "home.document.changed": {
     "defaultMessage": "changed",
-    "description": "The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and reads the same in English."
+    "description": "The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
   },
   "home.document.copied": {
     "defaultMessage": "Copied.",
@@ -528,7 +615,7 @@
   },
   "home.row.changed": {
     "defaultMessage": "changed",
-    "description": "The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and reads the same in English."
+    "description": "The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
   },
   "home.row.moveDown": {
     "defaultMessage": "Move {block} down",
@@ -666,6 +753,46 @@
   "nav.title.notFound": {
     "defaultMessage": "Not found",
     "description": "The browser tab on an address this site answers with its 404 body."
+  },
+  "preview.frame.booting": {
+    "defaultMessage": "Booting the app…",
+    "description": "Over the frame while the app’s bundle is still starting, in a live region. preview.frame.stuck replaces it if the app never arrives."
+  },
+  "preview.frame.stuck": {
+    "defaultMessage": "The app did not load. The preview has its console.",
+    "description": "Replaces preview.frame.booting after six seconds with nothing drawn. “The preview” is this site’s /preview view, whose console tool shows what the app said on its way down."
+  },
+  "preview.status.app": {
+    "defaultMessage": "App is <b>{scheme}</b>",
+    "description": "The first thing the status line says, beside a swatch of that colour: which palette the framed app is actually painting with. {scheme} is “light” or “dark”, or the word for an unreadable value, and is drawn in bold."
+  },
+  "preview.status.combination": {
+    "defaultMessage": "combination <b>{which}</b>",
+    "description": "Which of the four appearance combinations TROUBLESHOOTING.md numbers is on screen, shown from 1024px up. {which} is preview.status.combination.n, or the word for an unreadable value, and is drawn in bold. preview.status.combination.default is the same line for the fourth one."
+  },
+  "preview.status.combination.default": {
+    "defaultMessage": "combination <b>{which}</b>, the default",
+    "description": "The same line as preview.status.combination, for the one combination that is the app’s own default — the setting on system against a device reporting dark, which is the combination that has already shipped broken. {which} is preview.status.combination.n and is drawn in bold."
+  },
+  "preview.status.combination.n": {
+    "defaultMessage": "{n} of 4",
+    "description": "What goes in the bold of the two lines above. {n} is 1, 2, 3 or 4, and 4 is how many there are: the two explicit settings, then “system” against each of the two device schemes."
+  },
+  "preview.status.published": {
+    "defaultMessage": "Published build, no dev handle",
+    "description": "Shown from 1024px up when the frame holds the exported app rather than the dev server. The dev handle is what the appearance tool and the inspector write through, so both are inert without it; each of those two says so itself in its own panel."
+  },
+  "preview.status.setting": {
+    "defaultMessage": "setting <b>{setting}</b>, device reports <b>{scheme}</b>",
+    "description": "The two halves the line above resolves from, shown from 768px up. {setting} is the app’s own appearance setting, “light”, “dark” or “system”; {scheme} is what the device says it prefers, “light” or “dark”. Either can be the word for an unreadable value. Both are drawn in bold."
+  },
+  "preview.status.size": {
+    "defaultMessage": "{width} × {height} at {percent}%",
+    "description": "The frame’s own size, always shown. {width} and {height} are CSS pixels and {percent} is how far the frame is scaled down to fit the page, 100 when it is not."
+  },
+  "preview.status.unknown": {
+    "defaultMessage": "unknown",
+    "description": "Stands in this line wherever a reading could not be taken: the app’s setting, what the device reports, or which combination the two make. The published export leaves no dev handle, so the setting is unreadable there by design."
   },
   "reference.empty": {
     "defaultMessage": "Nothing matches that.",
@@ -948,7 +1075,8 @@
     "defaultMessage": "Rendering"
   },
   "shell.section.source": {
-    "defaultMessage": "Source"
+    "defaultMessage": "Source",
+    "description": "The component view’s tool for where a component is written: the file, and a link into the repository. tools.inspect.handover.source is the field of the inspector’s handover block that names one line of one file, and reads the same in English."
   },
   "shell.section.state": {
     "defaultMessage": "State"
@@ -1015,5 +1143,269 @@
   "strings.title": {
     "defaultMessage": "Strings",
     "description": "The page’s heading. shell.activity.strings is the rail entry that opens this page and reads the same in English; nav.strings is the longer name the browser tab and the search palette carry."
+  },
+  "tools.appearance.combination.1": {
+    "defaultMessage": "Setting light",
+    "description": "The first of the four appearance combinations: the app’s own setting explicitly on light, whatever the device reports. “light” is the literal value of that setting, printed in its own spelling two rows above in the same panel, and is not translated."
+  },
+  "tools.appearance.combination.2": {
+    "defaultMessage": "Setting dark",
+    "description": "The second of the four appearance combinations: the app’s own setting explicitly on dark, whatever the device reports. “dark” is the literal value of that setting and is not translated."
+  },
+  "tools.appearance.combination.3": {
+    "defaultMessage": "System · light device",
+    "description": "The third of the four appearance combinations: the app’s setting on system, against a device reporting light. Both “system” and “light” are literal values and are not translated."
+  },
+  "tools.appearance.combination.4": {
+    "defaultMessage": "System · dark device",
+    "description": "The fourth of the four appearance combinations, and the app’s default: the setting on system, against a device reporting dark. This is the one that has already shipped broken. Both “system” and “dark” are literal values and are not translated."
+  },
+  "tools.appearance.default": {
+    "defaultMessage": "default",
+    "description": "A badge on the one of the four combinations that is the app’s own: the setting on system, against a device reporting dark."
+  },
+  "tools.appearance.device": {
+    "defaultMessage": "Device reports",
+    "description": "Over what the device says it prefers, beside a swatch of it. The value beside it is “light” or “dark” and is not translated. preview.status.setting says the same thing in the status line, inside a sentence."
+  },
+  "tools.appearance.here": {
+    "defaultMessage": "here",
+    "description": "A badge saying that this combination can be reached from this panel. The other two rows carry “DevTools” instead, which is a product’s name and is not translated."
+  },
+  "tools.appearance.legend": {
+    "defaultMessage": "App setting",
+    "description": "The legend of the three-way control that writes that setting, drawn above it. tools.appearance.setting is the readout of the same thing two rows up and reads “App setting says”."
+  },
+  "tools.appearance.needsDev": {
+    "defaultMessage": "<code>expo export</code> sets <code>__DEV__</code> false, so the published build leaves no dev handle and this setting cannot be written from here. Run the workbench against <code>npm run web</code>.",
+    "description": "Why the control above it is disabled. The three runs in <code> are a command, a build-time constant and a command, and none of them is translated."
+  },
+  "tools.appearance.note": {
+    "defaultMessage": "An iframe cannot be given a scheme of its own, so the two marked DevTools are reached by emulating <code>prefers-color-scheme</code> under Rendering.",
+    "description": "Under the list of four combinations. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated."
+  },
+  "tools.appearance.onScreen": {
+    "defaultMessage": "on screen",
+    "description": "A badge on whichever of the four combinations the frame is actually in."
+  },
+  "tools.appearance.setting": {
+    "defaultMessage": "App setting says",
+    "description": "Over the value of the framed app’s own appearance setting, read back out of its store. The value beside it is “light”, “dark” or “system” and is not translated."
+  },
+  "tools.appearance.unknown": {
+    "defaultMessage": "unknown",
+    "description": "Stands in either of the two readouts above where the value could not be read: the published export leaves no dev handle, so the app’s own setting is unreadable there by design. preview.status.unknown is the same word in the status line and covers the combination as well."
+  },
+  "tools.console.clear": {
+    "defaultMessage": "Clear",
+    "description": "Throws away every console row collected so far. The frame is not reloaded."
+  },
+  "tools.console.empty": {
+    "defaultMessage": "Nothing since the last navigation.",
+    "description": "Where the rows would be, when the app has said nothing at all. tools.console.noMatch is the other empty state, where it has said something and the filter hides all of it."
+  },
+  "tools.console.filter": {
+    "defaultMessage": "Filter console lines",
+    "description": "The accessible name of the field that narrows the list of console rows."
+  },
+  "tools.console.filter.placeholder": {
+    "defaultMessage": "filter",
+    "description": "The placeholder inside that field, lower case because the field is one line tall."
+  },
+  "tools.console.levels": {
+    "defaultMessage": "Levels shown",
+    "description": "Read aloud as the group name of the two level toggles, and never drawn. The toggles themselves say “warn” and “error”, which are the console’s own level names and are not translated."
+  },
+  "tools.console.log": {
+    "defaultMessage": "App console",
+    "description": "The accessible name of the live region holding the rows. What is in it is the app’s own output and is never translated."
+  },
+  "tools.console.mark.errors": {
+    "defaultMessage": "{count, plural, one {error} other {errors}}",
+    "description": "The word beside the number on the console tool’s icon in the rail, read aloud and also its tooltip. {count} is the number itself, which is drawn separately, so this is the noun alone. An error outranks a warning, so the icon carries this whenever there is one."
+  },
+  "tools.console.mark.warnings": {
+    "defaultMessage": "{count, plural, one {warning} other {warnings}}",
+    "description": "The same as tools.console.mark.errors for the lesser of the two levels, which the icon carries when there is no error. {count} is the number, drawn separately."
+  },
+  "tools.console.noMatch": {
+    "defaultMessage": "Nothing matches the filter.",
+    "description": "Where the rows would be, when the field above hides every row there is. tools.console.empty is the other empty state, where there are none."
+  },
+  "tools.console.summary": {
+    "defaultMessage": "{shown} of {total} lines shown, {warnings} warnings, {errors} errors.",
+    "description": "Under the console rows. {shown} is how many rows the two toggles and the filter leave, {total} how many there are, and {warnings} and {errors} the split of the whole by level."
+  },
+  "tools.inspect.arm": {
+    "defaultMessage": "Pick element",
+    "description": "Arms the picker. tools.inspect.armed is what the same button says once it is armed."
+  },
+  "tools.inspect.armed": {
+    "defaultMessage": "Picker armed, click in the frame",
+    "description": "What the button says while the picker is waiting for a click inside the framed app. tools.inspect.arm is what it says before that."
+  },
+  "tools.inspect.block": {
+    "defaultMessage": "Handover block",
+    "description": "The accessible name of the read-only field holding the plain text that gets pasted into a chat. What is in it is tools.inspect.handover.*, with paths and an address."
+  },
+  "tools.inspect.copy": {
+    "defaultMessage": "Copy for agent",
+    "description": "Copies that block to the clipboard."
+  },
+  "tools.inspect.handover.context": {
+    "defaultMessage": "Context",
+    "description": "The third field of the handover block: the rest of the owner chain, at most three lines, the first of which carries this word. tools.inspect.handover.source is the one line the person chose."
+  },
+  "tools.inspect.handover.element": {
+    "defaultMessage": "Element",
+    "description": "The first field of the plain-text block the inspector builds for pasting into a chat. What follows it is the element’s own text or accessibility label, in quotation marks. The four field names are padded to a common width, so a translation is free to be longer or shorter than the English."
+  },
+  "tools.inspect.handover.noLabel": {
+    "defaultMessage": "(no label)",
+    "description": "Stands in the Element field for a node with no text and no accessibility label, rather than printing a pair of empty quotation marks. tools.inspect.noLabel says the same thing in the panel above and is worded as a sentence there."
+  },
+  "tools.inspect.handover.source": {
+    "defaultMessage": "Source",
+    "description": "The second field of the handover block: the one file and line the person chose out of the owner chain. tools.inspect.handover.context is every other line of that chain, and shell.section.source is the component view’s tool of the same name, which reads the same in English."
+  },
+  "tools.inspect.handover.view": {
+    "defaultMessage": "View",
+    "description": "The last field of the handover block: this page’s own address, which is what lets whoever picks the note up put the same thing back on screen."
+  },
+  "tools.inspect.needsDev": {
+    "defaultMessage": "The source line comes from the owner stack React keeps beside each node, and a production bundle keeps none. The picker stays disarmed here.",
+    "description": "Why the picker below it is disabled in the published export."
+  },
+  "tools.inspect.noLabel": {
+    "defaultMessage": "Element with no label",
+    "description": "Where the picked element’s own text would be, for a node that has none and no accessibility label either. tools.inspect.handover.noLabel says the same thing inside the plain-text block, where it is parenthesised."
+  },
+  "tools.inspect.noSource": {
+    "defaultMessage": "No source: either nothing in this node’s owner chain is app code, or the bundle keeps no owner stacks at all, which is every production build.",
+    "description": "Shown where the owner chain would be, for a pick that resolved to no app code."
+  },
+  "tools.inspect.note": {
+    "defaultMessage": "The block carries this view’s address.",
+    "description": "Under the block, saying the one thing about it that is not obvious from reading it: whoever picks the note up can put the same thing back on screen."
+  },
+  "tools.inspect.nothing": {
+    "defaultMessage": "Nothing chosen.",
+    "description": "Where the picked element’s own text would be, before anything has been picked."
+  },
+  "tools.inspect.open": {
+    "defaultMessage": "Open in editor",
+    "description": "Opens the chosen file at the chosen line, through the dev server’s own open-in-editor endpoint."
+  },
+  "tools.inspect.stack": {
+    "defaultMessage": "Source stack, innermost first",
+    "description": "The legend over the owner chain, whose rows are a radio group: only the person looking knows which level they meant."
+  },
+  "tools.measure.check.offPalette": {
+    "defaultMessage": "Colours off the palette",
+    "description": "The third of the three checks. tools.measure.kind.offPalette is the same check named on a finding, where it is a badge and reads shorter."
+  },
+  "tools.measure.check.overflow": {
+    "defaultMessage": "Horizontal overflow",
+    "description": "The first of the three checks, as a name and a count. tools.measure.kind.overflow is the same check named on a finding, where it is a badge and reads shorter."
+  },
+  "tools.measure.check.tapTarget": {
+    "defaultMessage": "Tap targets under {minimum} px",
+    "description": "The second of the three checks. {minimum} is the smallest side this check accepts, in CSS pixels, taken from the check itself so the two cannot part."
+  },
+  "tools.measure.finding.node": {
+    "defaultMessage": "Reaches {right}px, past the {viewport}px edge.",
+    "description": "A finding in the measure tool, about one element. {right} is the element’s right edge in CSS pixels, measured from the left of the frame, and {viewport} is how wide the frame is. tools.measure.finding.page is the same fault reported against the whole page."
+  },
+  "tools.measure.finding.offPalette": {
+    "defaultMessage": "{property}: {value} is not a {scheme} token.",
+    "description": "A finding in the measure tool: a colour that is in no token of the palette the app is painting with. {property} is the CSS property in its own spelling, “color” or “backgroundColor”; {value} is the colour as the browser reports it, such as rgb(255, 0, 0); {scheme} is “light” or “dark”, the name of the palette, and all three stay as they are written."
+  },
+  "tools.measure.finding.page": {
+    "defaultMessage": "The page scrolls sideways: {content}px of content in {viewport}px.",
+    "description": "A finding in the measure tool, about the framed page as a whole. {content} is how wide the scrolling content is in CSS pixels and {viewport} is how wide the frame is. tools.measure.finding.node is the same fault reported against one element."
+  },
+  "tools.measure.finding.tapTarget": {
+    "defaultMessage": "{width}×{height}px, under the {minimum}px a thumb needs.",
+    "description": "A finding in the measure tool: a link or a button too small to hit. {width} and {height} are the element’s own size in CSS pixels and {minimum} is the smallest side this check accepts."
+  },
+  "tools.measure.kind.offPalette": {
+    "defaultMessage": "colour",
+    "description": "A badge on a finding, saying which of the three checks found it. tools.measure.check.offPalette is the same check in the list above."
+  },
+  "tools.measure.kind.overflow": {
+    "defaultMessage": "overflow",
+    "description": "A badge on a finding, saying which of the three checks found it. tools.measure.check.overflow is the same check in the list above, where it has room for a full name."
+  },
+  "tools.measure.kind.tapTarget": {
+    "defaultMessage": "tap target",
+    "description": "A badge on a finding, saying which of the three checks found it. tools.measure.check.tapTarget is the same check in the list above."
+  },
+  "tools.measure.lightNote": {
+    "defaultMessage": "Colours are ambiguous in light: several tokens share #ffffff, several share #333333, and a value match cannot say which was meant. Re-run in dark, where the palette spreads over more distinct values.",
+    "description": "Shown after a run against the light palette, because a colour check can only match values and the light palette puts many tokens on one value. The two hex colours and the two palette names stay as they are written."
+  },
+  "tools.measure.mark": {
+    "defaultMessage": "{count, plural, one {finding} other {findings}}",
+    "description": "The word beside the number on the measure tool’s icon in the rail, read aloud and also its tooltip. {count} is the number itself, which is drawn separately, so this is the noun alone."
+  },
+  "tools.measure.none": {
+    "defaultMessage": "Nothing found across {count} elements.",
+    "description": "Where the findings would be, after a run that produced none. {count} is how many elements were looked at."
+  },
+  "tools.measure.outline": {
+    "defaultMessage": "Outline boxes",
+    "description": "A toggle that draws a one-pixel outline around every element in the frame, so a box can be seen rather than measured."
+  },
+  "tools.measure.run": {
+    "defaultMessage": "Run checks",
+    "description": "Runs all three checks over the framed app as it stands now."
+  },
+  "tools.measure.scanned": {
+    "defaultMessage": "Ran across {count} elements.",
+    "description": "Beside the run button after a run. {count} is how many elements the checks looked at. tools.measure.none says the same number where nothing at all was found."
+  },
+  "tools.needsDev": {
+    "defaultMessage": "Needs a development build",
+    "description": "A badge over the reason a control in this panel is disabled. Two of the six tools carry one, the appearance tool and the inspector, and each writes its own reason under it: tools.appearance.needsDev and tools.inspect.needsDev."
+  },
+  "tools.state.legend": {
+    "defaultMessage": "Fixture · choosing one reloads the frame",
+    "description": "The legend over the list of storage fixtures. A fixture is written into storage before the app boots, which is why choosing one costs a load. The fixtures themselves are fixtures.* and live with the data they write."
+  },
+  "tools.state.none": {
+    "defaultMessage": "Leave alone",
+    "description": "The first row of the fixture list and the default: seed nothing, so whatever is already in storage stays. It is not a fixture, which is why it is here and not in fixtures.*."
+  },
+  "tools.state.none.hint": {
+    "defaultMessage": "Whatever the last visit left in storage.",
+    "description": "The line under “Leave alone”."
+  },
+  "tools.tokens.changed": {
+    "defaultMessage": "changed",
+    "description": "A badge on a colour row whose value has been overridden. tools.tokens.changedCount counts the same rows at the foot of the tool; home.document.changed and home.row.changed are the same word in the home tool and read the same in English."
+  },
+  "tools.tokens.changedCount": {
+    "defaultMessage": "{count} changed",
+    "description": "The number of overridden colours, beside the two buttons. {count} may be zero, in which case both buttons are disabled."
+  },
+  "tools.tokens.copy": {
+    "defaultMessage": "Copy CSS",
+    "description": "Copies the overridden colours as a block of custom properties, ready to paste into a stylesheet."
+  },
+  "tools.tokens.lede": {
+    "defaultMessage": "Overriding the <b>{scheme}</b> scheme, which is the one the app is painting with.",
+    "description": "The first line of the tokens tool. {scheme} is “light” or “dark”, the name of the palette, drawn in bold and not translated."
+  },
+  "tools.tokens.reset": {
+    "defaultMessage": "Reset overrides",
+    "description": "Puts every colour back to the palette’s own value, in this scheme."
+  },
+  "tools.tokens.text": {
+    "defaultMessage": "Text too",
+    "description": "A checkbox: also chase text and icon colours, which cannot follow a custom property because react-native-web resolves them in JavaScript and writes them inline."
+  },
+  "tools.tokens.textNote": {
+    "defaultMessage": "Text is chased by value, so it is a best effort rather than a rule.",
+    "description": "The caveat under that checkbox."
   }
 }

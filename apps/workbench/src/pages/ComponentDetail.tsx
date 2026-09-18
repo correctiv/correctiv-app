@@ -18,7 +18,7 @@ import { Segmented } from '../ui/kit/segmented';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/kit/tooltip';
 import { Source } from '../ui/Lookup';
 import { AppFrame } from '../preview/AppFrame';
-import { DEFAULT_DEVICE, DEVICES, preset } from '../preview/devices';
+import { DEFAULT_DEVICE, deviceOption, DEVICES, preset } from '../preview/devices';
 import { FRAME_ROOM, fitScale } from '../preview/scale';
 
 const { groups } = api.components;
@@ -449,7 +449,7 @@ export function ComponentDetail({
           >
             {DEVICES.filter((d) => d.id !== 'custom').map((d) => (
               <option key={d.id} value={d.id}>
-                {d.w === 0 ? d.label : `${d.label}, ${d.w}×${d.h}`}
+                {deviceOption(intl, d)}
               </option>
             ))}
           </select>

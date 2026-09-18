@@ -1,5 +1,93 @@
+import { defineMessages } from 'react-intl';
+import type { ReactNode } from 'react';
+
 import { cn } from '../../lib/cn';
 import { COMBINATIONS, type Status } from '../api';
+import { useWorkbenchIntl } from '../../i18n/Localisation';
+
+/**
+ * Everything this line says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/preview.ts`.
+ *
+ * `preview.status.*`, one namespace with `preview/AppFrame.tsx`, because both are
+ * the preview view's own furniture rather than one of the six tools in the rail —
+ * those are `tools.*`.
+ *
+ * **What the app reports is not translated and what this site says about it is.**
+ * `light`, `dark` and `system` arrive here as the literal values of the app's own
+ * appearance setting and of what the device reports, and they are printed in bold
+ * in their own spelling; `preview.status.unknown` is what stands in where one of
+ * them could not be read, and that IS a word
+ * ([ADR 0052](../../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ */
+const COPY = defineMessages({
+  app: {
+    id: 'preview.status.app',
+    defaultMessage: 'App is <b>{scheme}</b>',
+    description:
+      'The first thing the status line says, beside a swatch of that colour: which palette the framed app is actually painting with. {scheme} is “light” or “dark”, or the word for an unreadable value, and is drawn in bold.',
+  },
+  setting: {
+    id: 'preview.status.setting',
+    defaultMessage: 'setting <b>{setting}</b>, device reports <b>{scheme}</b>',
+    description:
+      'The two halves the line above resolves from, shown from 768px up. {setting} is the app’s own appearance setting, “light”, “dark” or “system”; {scheme} is what the device says it prefers, “light” or “dark”. Either can be the word for an unreadable value. Both are drawn in bold.',
+  },
+  combination: {
+    id: 'preview.status.combination',
+    defaultMessage: 'combination <b>{which}</b>',
+    description:
+      'Which of the four appearance combinations TROUBLESHOOTING.md numbers is on screen, shown from 1024px up. {which} is preview.status.combination.n, or the word for an unreadable value, and is drawn in bold. preview.status.combination.default is the same line for the fourth one.',
+  },
+  combinationDefault: {
+    id: 'preview.status.combination.default',
+    defaultMessage: 'combination <b>{which}</b>, the default',
+    description:
+      'The same line as preview.status.combination, for the one combination that is the app’s own default — the setting on system against a device reporting dark, which is the combination that has already shipped broken. {which} is preview.status.combination.n and is drawn in bold.',
+  },
+  which: {
+    id: 'preview.status.combination.n',
+    defaultMessage: '{n} of 4',
+    description:
+      'What goes in the bold of the two lines above. {n} is 1, 2, 3 or 4, and 4 is how many there are: the two explicit settings, then “system” against each of the two device schemes.',
+  },
+  unknown: {
+    id: 'preview.status.unknown',
+    defaultMessage: 'unknown',
+    description:
+      'Stands in this line wherever a reading could not be taken: the app’s setting, what the device reports, or which combination the two make. The published export leaves no dev handle, so the setting is unreadable there by design.',
+  },
+  size: {
+    id: 'preview.status.size',
+    defaultMessage: '{width} × {height} at {percent}%',
+    description:
+      'The frame’s own size, always shown. {width} and {height} are CSS pixels and {percent} is how far the frame is scaled down to fit the page, 100 when it is not.',
+  },
+  published: {
+    id: 'preview.status.published',
+    defaultMessage: 'Published build, no dev handle',
+    description:
+      'Shown from 1024px up when the frame holds the exported app rather than the dev server. The dev handle is what the appearance tool and the inspector write through, so both are inert without it; each of those two says so itself in its own panel.',
+  },
+});
+
+/**
+ * The bold run drawn inside these lines, in its two faces, at module scope.
+ *
+ * Beside the descriptors rather than inside the render, which is the shape
+ * `ui/Settings.tsx` and `pages/Components.tsx` already use: a component built
+ * during a render is remounted on every one of them, and
+ * `react/no-unstable-nested-components` says so.
+ *
+ * The combination's is the monospaced one, because what is inside it is a count
+ * and a total rather than a word, and a proportional face would move the line
+ * every time the number changed.
+ */
+const b = (chunks: ReactNode[]) => <b className="text-on-canvas">{chunks}</b>;
+
+const counted = (chunks: ReactNode[]) => (
+  <b className="font-mono tabular-nums text-on-canvas">{chunks}</b>
+);
 
 /**
  * Which appearance combination is actually on screen, plus size and zoom.
@@ -22,7 +110,9 @@ export function Readout({
   size: { w: number; h: number };
   scale: number;
 }) {
+  const intl = useWorkbenchIntl();
   const combo = COMBINATIONS.find((c) => c.n === status.combination);
+  const unknown = intl.formatMessage(COPY.unknown);
   return (
     <>
       <span className="flex shrink-0 items-center gap-2xs">
@@ -39,24 +129,30 @@ export function Readout({
             status.active === 'dark' ? 'bg-neutral-700' : 'bg-white',
           )}
         />
-        App is <b className="text-on-canvas">{status.active}</b>
+        {intl.formatMessage(COPY.app, { scheme: status.active, b })}
       </span>
 
       <span className="hidden shrink-0 md:inline">
-        setting <b className="text-on-canvas">{status.appTheme ?? 'unknown'}</b>, device reports{' '}
-        <b className="text-on-canvas">{status.scheme ?? 'unknown'}</b>
+        {intl.formatMessage(COPY.setting, {
+          setting: status.appTheme ?? unknown,
+          scheme: status.scheme ?? unknown,
+          b,
+        })}
       </span>
 
       <span className="hidden shrink-0 lg:inline">
-        combination{' '}
-        <b className="font-mono tabular-nums text-on-canvas">
-          {combo ? `${combo.n} of 4` : 'unknown'}
-        </b>
-        {combo?.isDefault && ', the default'}
+        {intl.formatMessage(combo?.isDefault ? COPY.combinationDefault : COPY.combination, {
+          which: combo ? intl.formatMessage(COPY.which, { n: combo.n }) : unknown,
+          b: counted,
+        })}
       </span>
 
       <span className="shrink-0 tabular-nums">
-        {size.w} × {size.h} at {Math.round(scale * 100)}%
+        {intl.formatMessage(COPY.size, {
+          width: size.w,
+          height: size.h,
+          percent: Math.round(scale * 100),
+        })}
       </span>
 
       {/*
@@ -72,7 +168,7 @@ export function Readout({
       */}
       {!status.handle && (
         <span className="hidden shrink-0 text-on-canvas-accent lg:inline">
-          Published build, no dev handle
+          {intl.formatMessage(COPY.published)}
         </span>
       )}
     </>

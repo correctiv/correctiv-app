@@ -190,8 +190,6 @@ describe('the walk reads the site it is checking', () => {
  * language.
  */
 const STILL_IN_THE_MARKUP: Record<string, number> = {
-  // One line, printed when a borrowed component throws.
-  'components/AppHost.tsx': 1,
   // The six drawings. ADR 0052 §1 names their titles and captions, so they are in
   // scope; a good part of each number is module and file names inside the boxes,
   // which will stay. They are the largest single piece of this and want a pass of
@@ -220,17 +218,20 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   // At its floor: one import line.
   'pages/Reference.tsx': 1,
   'pages/Sources.tsx': 106,
-  'preview/AppFrame.tsx': 2,
-  'preview/api.ts': 4,
-  'preview/devices.ts': 11,
-  'preview/frame/measure.ts': 4,
-  'preview/frame/seed.ts': 20,
+  // At its floor: six product names. A phone is called the same thing in every
+  // language, and `Laptop`, `Desktop`, `Custom` and the two descriptions beside
+  // them are words and are messages.
+  'preview/devices.ts': 6,
+  // At its floor: two headlines out of CORRECTIV's own journalism, standing in the
+  // fixture that seeds a saved-articles list. Content, the way the app's own
+  // offline bundle is content.
+  'preview/frame/seed.ts': 2,
+  // At its floor: the name of a browser panel, and a token prefix in monospace.
+  'preview/ui/Panels.tsx': 2,
   // The app's screen names. That file's own docblock argues they are marks — the
   // app calls a route „Entdecken“ in German and nothing else — so some of this is a
   // floor rather than debt, and separating the two is that pass's job.
   'preview/routes.ts': 22,
-  'preview/ui/Panels.tsx': 65,
-  'preview/ui/Readout.tsx': 11,
   // At its floor: the wordmark, and the wordmark with the product word after it.
   // `ui/Header.tsx` argues both as names, and a translator is not being asked to
   // rename the organisation.

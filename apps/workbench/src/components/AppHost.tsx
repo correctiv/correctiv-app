@@ -32,7 +32,37 @@ import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from '
 import { AppEnvironment } from '@/lib/env/AppEnvironment';
 import type { ThemeSetting } from '@/lib/theme';
 
+import { useWorkbenchIntl } from '../i18n/Localisation';
+import { wbMessage } from '../i18n/messages';
 import { storedAppearance } from '../theme';
+
+/**
+ * Everything this file says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/drawing.ts`.
+ *
+ * One line, and it is the lead of the fallback below. What follows it is
+ * `error.message`, which the app's own code threw and which stays in whatever
+ * words it was thrown in
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ * The console line beside it is a developer's and is not a message at all.
+ *
+ * **`wbMessage()` and not `defineMessages`, in a file that plainly has React**,
+ * which is the one place in this site where the two reasons come apart.
+ * `test/environment.test.ts` forbids `react-intl` in THIS file by name, because
+ * the fault it is holding off is a second `IntlProvider` here drawing every
+ * specimen against a catalogue of the workbench's own. `defineMessages` is not
+ * that and touches no context, but the rule is written as the import and is
+ * worth more broad than exact, so this takes the other declaration rather than
+ * widening it. One descriptor per call, as `src/i18n/messages.ts` says.
+ */
+const COPY = {
+  failed: wbMessage({
+    id: 'drawing.failed',
+    defaultMessage: 'Did not render: {message}',
+    description:
+      'Stands where a component of the app should have been drawn, on a surface of this site, after that component threw. {message} is the error’s own message out of the app’s source and is not translated.',
+  }),
+};
 
 /**
  * A device with no notch, stated rather than measured.
@@ -150,6 +180,23 @@ export class DrawnBoundary extends Component<
 
   render() {
     if (this.state.message === null) return this.props.children;
-    return <p className="text-s text-on-canvas-muted">Did not render: {this.state.message}</p>;
+    return <Failed message={this.state.message} />;
   }
+}
+
+/**
+ * The fallback's one line, as a function so that it can reach a hook.
+ *
+ * `DrawnBoundary` is a class, because `getDerivedStateFromError` has no hook, and
+ * a class cannot call `useWorkbenchIntl()`. The app's own `RecoveryScreen` has the
+ * harder version of this problem and is exempted from its seam check for it: there
+ * the provider is INSIDE the subtree being caught, so there is nothing to format
+ * against. Here the provider is `App.tsx`'s, well above every boundary, so the
+ * fallback only has to be a component to reach it.
+ */
+function Failed({ message }: { message: string }) {
+  const intl = useWorkbenchIntl();
+  return (
+    <p className="text-s text-on-canvas-muted">{intl.formatMessage(COPY.failed, { message })}</p>
+  );
 }

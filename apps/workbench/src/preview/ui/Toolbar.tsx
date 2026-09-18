@@ -20,7 +20,7 @@ import { Segmented } from '../../ui/kit/segmented';
 import { Separator } from '../../ui/kit/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { Pages } from './Pages';
-import { DEVICES, HOST_DEVICE } from '../devices';
+import { deviceOption, DEVICES, HOST_DEVICE } from '../devices';
 import { isLocale, LOCALES } from '../frame/locale';
 import { governs } from '../home/document';
 import { ROUTES } from '../routes';
@@ -286,7 +286,7 @@ export function Toolbar({
       >
         {DEVICES.map((d) => (
           <option key={d.id} value={d.id}>
-            {d.w === 0 ? d.label : `${d.label}, ${d.w}×${d.h}`}
+            {deviceOption(intl, d)}
           </option>
         ))}
       </select>

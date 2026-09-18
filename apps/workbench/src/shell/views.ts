@@ -152,7 +152,12 @@ export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
       'The component view’s tool for the size a component is drawn at. frame.device is the select on the bar above the app and reads the same in English.',
   }),
   props: wbMessage({ id: 'shell.section.props', defaultMessage: 'Props' }),
-  source: wbMessage({ id: 'shell.section.source', defaultMessage: 'Source' }),
+  source: wbMessage({
+    id: 'shell.section.source',
+    defaultMessage: 'Source',
+    description:
+      'The component view’s tool for where a component is written: the file, and a link into the repository. tools.inspect.handover.source is the field of the inspector’s handover block that names one line of one file, and reads the same in English.',
+  }),
 };
 
 /** No panel: a landing page, an index, a set of doors. */

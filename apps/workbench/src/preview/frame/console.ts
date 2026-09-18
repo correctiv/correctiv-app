@@ -10,6 +10,19 @@
  * Same-origin makes this a property assignment rather than a protocol: the
  * frame's `console` is an object this page can reach. The originals are always
  * called, so the browser's own DevTools sees exactly what it saw before.
+ *
+ * **Nothing collected here is a message, and that is a decision.** A row in the
+ * console panel is a transcript of what the app said — a React warning, a failed
+ * request, a stack trace — and the app's own source is English, so the row is
+ * English however this site is set. The one word this file contributes is the
+ * `Unhandled rejection:` in front of a rejected promise, and it names the browser
+ * event that produced the row, beside the `error` and `warn` the panel prints in
+ * their own spelling for the same reason. A German word in front of an English
+ * stack trace would be the half-translated line
+ * [ADR 0052](../../../../../adr/0052-the-sites-own-words-follow-the-setting.md)
+ * exists to stop, with the halves the other way round; it would also stop matching
+ * what somebody types into the panel's filter, which they type in English because
+ * the thing they are looking for is.
  */
 export type Level = 'error' | 'warn';
 
