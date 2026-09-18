@@ -1,6 +1,6 @@
 # ADR 0052 — The site's own words follow the setting, the repository's are printed as they are written
 
-Status: accepted, 2026-09-18.
+Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty.
 
 ## Context
 
