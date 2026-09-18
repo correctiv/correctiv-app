@@ -453,7 +453,8 @@
       "1": ["The line is the site's own words against the repository's"],
       "2": ["One check holds it, and it is the one the app already has"],
       "3": ["The mechanism is shared, the argument is not"],
-      "4": ["`content/` is a record and is printed as written"]
+      "4": ["`content/` is a record and is printed as written"],
+      "5": ["`plugin/registry.ts` is in scope by §1 and out of reach of the extraction"]
     }
   }
 }
