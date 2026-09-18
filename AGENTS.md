@@ -37,9 +37,11 @@ everything a person reads that is written in `apps/workbench/src` follows the
 language setting — the shell, the tools, and every heading, lede, empty state,
 legend and accessible name on every page. What the site reads in at build time and
 prints is left in its own language: the Markdown under `virtual:docs`, the JSDoc
-under `virtual:api`, the records' own text, the app's wordings on `/strings`, and
-`content/sources.manifest.ts`. So `/handbook` is a German page listing English
-documents, and that seam is on purpose. An earlier line drew this by position, "the
+under `virtual:api`, the records' own text and the app's wordings on `/strings`.
+So `/handbook` is a German page listing English documents, and that seam is on
+purpose. `content/sources.manifest.ts` is hand-written here and is the one argued
+exception rather than an instance of the rule; ADR 0052 §4 says why, and names the
+case against itself. An earlier line drew this by position, "the
 shell and the tools against a published page's body", and could not be finished —
 a page's heading and a JSDoc comment out of the app sit a centimetre apart.
 `apps/workbench/test/rendered-literals.test.ts` is what holds it, the same

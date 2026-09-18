@@ -31,13 +31,17 @@ import { ROOT } from '../plugin/collect.ts';
  * test. A rule stated as "no literal a person reads" has this one, and the two are
  * the same rule from opposite sides.
  *
- * **What this site excludes and the app does not.** Nothing, by author — every
- * literal under `src/` is this site's own writing, including the drawings' labels,
- * which ADR 0052 §1 names. What the site prints from the repository never reaches
- * this walk at all: the Markdown, the TypeDoc and the records arrive through
- * `virtual:docs`, `virtual:api` and `virtual:strings` at build time, so they are
- * not literals in any file here. That is the line drawing itself rather than
- * needing a list.
+ * **What this site excludes and the app does not.** No directory, and no author —
+ * every literal under `src/` was written here, the drawings' labels included, which
+ * ADR 0052 §1 names. What the site prints from the repository never reaches this
+ * walk at all: the Markdown and the records arrive through `virtual:docs`, the
+ * TypeDoc through `virtual:api` and the app's own wordings through
+ * `virtual:strings`, at build time, so none of them is a literal in any file here.
+ * That is the line drawing itself rather than needing a list.
+ *
+ * Written here is not the same as invented here, and the table below marks the
+ * places where it is not: `preview/routes.ts` holds the app's screen names, which
+ * that file's own docblock argues are marks.
  *
  * **The ratchet is the plan.** This arrives with most of the site still unmigrated,
  * and one change that translated all of it would be a review nobody can do. So the
@@ -65,13 +69,18 @@ const site = ({ file }: { file: string }): string => file;
  * `heading`, `detail`, `text`), and the DOM attributes it actually writes
  * (`aria-label`, `title`).
  *
- * `alt` is not here, and the app's list has it. This site draws no `<img>` at all;
- * the one `alt` under `src/` is a variant key in `ui/kit/badge.tsx` holding
- * Tailwind classes, so watching the name would have manufactured a finding rather
- * than caught one. That is the cost of naming the visible props stated from the
- * other side: a name nobody writes does not excuse anything, and here it invents
- * something. The first `<img alt>` on this site arrives unguarded, and adding it
- * here is the second half of writing it.
+ * `alt` is not here, and the app's list has it. This site draws no `<img>` at all,
+ * so nothing here means by `alt` what the platform means. What it does mean is two
+ * other things, and a cold review measured both: on the drawings it is a BOOLEAN,
+ * `<CoreAndHost alt={false} />` and the `alt` prop in `diagrams/shared.tsx`, which
+ * says whether to draw the list under a drawing; and in `ui/kit/badge.tsx` it is a
+ * variant key holding Tailwind classes. Watching the name therefore catches one
+ * string, and that string is a class list, so it manufactures a finding rather
+ * than finding one.
+ *
+ * The first `<img alt>` on this site arrives unguarded, and adding it here is the
+ * second half of writing it. A first version of this paragraph said the variant
+ * key was the only `alt` in the tree, which is wrong by 45 occurrences.
  *
  * `description` is deliberately NOT here, which is the opposite of the app's
  * choice and is measured: every `description:` in this tree sits inside a
@@ -102,10 +111,13 @@ const VISIBLE: ReadonlySet<string> = new Set([
  * A descriptor block is a message by construction, so nothing inside one is a
  * literal nobody can reach.
  *
- * `wbMessage` is this site's own spelling, for the two modules that hold titles and
- * may not import React (`src/i18n/messages.ts` argues it). Both names are typed a
- * second time in `package.json` under `i18n:extract`, so renaming one is two edits
- * there and a third here.
+ * `wbMessage` is this site's own spelling, for the modules that hold strings and
+ * may not import React — `shell/views.ts`, `preview/routes.ts`, `nav.ts` and
+ * `preview/home/write.ts` today; `src/i18n/messages.ts` argues why. `wbMessage` is
+ * typed a second time in `package.json` under `i18n:extract`, as
+ * `--additional-function-names`, so renaming it is two edits there and a third
+ * here. `defineMessages` is not: FormatJS knows it, and this list has to name it
+ * because the walk does not.
  */
 const DESCRIPTORS = ['defineMessages', 'wbMessage'];
 
@@ -123,15 +135,23 @@ const total = (of: (reading: LiteralReading) => number) =>
 
 describe('the walk reads the site it is checking', () => {
   it('finds files, elements, text and visible props (guards against an empty walk)', () => {
-    // Four stages, four numbers, because a walk that found the files and parsed
-    // nothing satisfies a floor on the files alone. Each is far enough below the
-    // real figure to need no maintenance and far enough above zero that a branch
-    // which stopped matching cannot pass it.
+    // Three stages, three numbers, because a walk that found the files and parsed
+    // nothing satisfies a floor on the files alone. Each survives this site being
+    // migrated: files only grow, extraction turns a text child into an expression
+    // without removing the element around it, and `slots` counts a visible prop's
+    // NAME whether or not it still carries a literal.
+    //
+    // **There is no floor on text nodes**, and a cold review is why. There was one,
+    // at 400 against 889 — and 840 of those 889 are the literals this whole file
+    // exists to remove, 564 of them in the drawings alone. The pass the table below
+    // schedules would have taken the figure to 318 and had to lower its own floor,
+    // which is the opposite of what a floor is for. What guards that branch of the
+    // walk instead is the fixture at the bottom of this file, which asserts a text
+    // child is read at all.
     expect(
       floorFaults({
         'files under src/': { found: FILES.length, atLeast: 80 },
         'JSX elements parsed': { found: total((r) => r.elements), atLeast: 1000 },
-        'JSX text nodes': { found: total((r) => r.texts), atLeast: 400 },
         'visible props and keys': { found: total((r) => r.slots), atLeast: 150 },
       }),
     ).toEqual([]);
@@ -215,8 +235,9 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   'preview/routes.ts': 22,
   'preview/ui/Panels.tsx': 65,
   'preview/ui/Readout.tsx': 11,
-  // At its floor: the wordmark, twice. A translator is not being asked to rename
-  // the organisation.
+  // At its floor: the wordmark, and the wordmark with the product word after it.
+  // `ui/Header.tsx` argues both as names, and a translator is not being asked to
+  // rename the organisation.
   'ui/Header.tsx': 2,
   // At its floor: „English“ and „Deutsch“ and the hint under each, which are
   // written in the language of the row they belong to. `ui/Settings.tsx`'s own
@@ -250,8 +271,17 @@ describe('the site says its own words through a descriptor', () => {
     expect(found('<Filter label="Some words" />')).toEqual(['label=']);
     expect(found('<Filter className="grid gap-xs" />')).toEqual([]);
     // A descriptor call is a message by construction, subtree and all.
-    expect(found("wbMessage({ id: 'a.b', defaultMessage: 'Some words' })")).toEqual([]);
-    expect(found("defineMessages({ a: { id: 'a.b', defaultMessage: 'Some words' } })")).toEqual([]);
+    //
+    // The fixture carries a VISIBLE name, and that is the whole of it. A cold
+    // review emptied `DESCRIPTORS` and all six cases stayed green, because the
+    // pair this once used — `id` and `defaultMessage` — is invisible to the walk
+    // either way, so the case passed for a reason that had nothing to do with the
+    // list it claimed to be testing.
+    expect(found("wbMessage({ id: 'a.b', title: 'Some words' })")).toEqual([]);
+    expect(found("defineMessages({ a: { id: 'a.b', title: 'Some words' } })")).toEqual([]);
+    // And the same property one call out IS found, or the two above would pass
+    // against a walk that had stopped reading properties at all.
+    expect(found("notAMessage({ id: 'a.b', title: 'Some words' })")).toEqual(['title:']);
     // And the word test: a separator between two halves of a line is not a word.
     expect(found('<p>·</p>')).toEqual([]);
   });

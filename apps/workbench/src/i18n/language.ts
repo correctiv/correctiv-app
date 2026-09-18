@@ -14,9 +14,14 @@ import { useCallback, useEffect, useState } from 'react';
  * sign-in and hosting are answered.
  *
  * So the scope is decided by audience and not by completeness
- * ([ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §2):
- * what somebody outside development uses is translated, the documents and the
- * reference are not.
+ * ([ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §2).
+ * Where that scope ENDS has moved:
+ * [ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1
+ * draws it between what this site wrote and what it prints from the repository,
+ * so a page's own heading and lede follow the setting too, and what stays English
+ * is the Markdown, the TypeDoc and the records themselves. An earlier version of
+ * this paragraph said "the documents and the reference are not", which was §2's
+ * line and is now wrong about the reference's own words.
  */
 export type Language = 'en' | 'de';
 

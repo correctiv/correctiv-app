@@ -64,7 +64,7 @@ const COPY = defineMessages({
     defaultMessage:
       'The app’s bundle draws this in a device frame, which needs more width than there is here.',
     description:
-      'Shown in place of the drawing when the component can only be drawn by the app and the window is too narrow for a device frame. The button under it is components.detail.full.',
+      'Shown in place of the drawing whenever the app’s bundle is what would draw it and the window is too narrow for a device frame: for a component this site cannot draw at all, and for one where the reader has asked for the bundle. The button under it is components.detail.full.',
   },
   full: {
     id: 'components.detail.full',
@@ -94,18 +94,19 @@ const COPY = defineMessages({
     id: 'components.detail.drawnBy',
     defaultMessage: 'Drawn by',
     description:
-      'The heading of the rail tool that switches between the two renderings, and the group name of its switch.',
+      'Read aloud as the group name of the switch between the two renderings, and NEVER drawn: `ui/kit/segmented.tsx` hides a legend unless `showLegend` is passed, and this one does not pass it. The heading a reader sees over the switch is shell.section.rendering. So the two options below have to stand on their own, and a translation that made them agree grammatically with this line would leave a sighted reader with fragments.',
   },
   drawnBySite: {
     id: 'components.detail.drawnBy.site',
     defaultMessage: 'This site',
     description:
-      'The first rendering: the component mounted in the workbench’s own React tree. “This site” is the workbench, as against the app.',
+      'The first rendering: the component mounted in the workbench’s own React tree. “This site” is the workbench, as against the app. It is read under components.detail.drawnBy, which is not drawn, so it has to be a phrase that stands alone.',
   },
   drawnByBundle: {
     id: 'components.detail.drawnBy.bundle',
     defaultMessage: 'The app’s bundle',
-    description: 'The second rendering: the shipped app, in a device frame.',
+    description:
+      'The second rendering: the shipped app, in a device frame. Like components.detail.drawnBy.site it has to stand alone, because the line naming what it answers is read aloud and never drawn.',
   },
   notDrawn: {
     id: 'components.detail.notDrawn',

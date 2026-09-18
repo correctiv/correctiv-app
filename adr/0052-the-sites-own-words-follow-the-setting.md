@@ -11,11 +11,15 @@ dialog in English, and a chrome line could not be finished.
 
 It has the same shape of failure one step further out, and a single screenshot shows
 it. `screens/evidence/230-komponenten-vorher.webp` is that shot, taken on
-2026-09-18 from a build of `main` before this record, in a browser asking for
-German. Named as a path and not linked, which is what every other record here does:
-this file is also rendered on the website, where a relative link out of `adr/`
-resolves against the page's own address and reaches nothing. With the site set to
-German, `/components` reads:
+2026-09-18 from `main` before this record, in a browser asking for German, with the
+settings dialog open so that all four of the readings below are in one frame. A
+first version of it was cropped and showed only three, which a cold review caught;
+TROUBLESHOOTING.md's rule is that a screenshot is evidence only about the part of
+the screen it shows. Named as a path and not linked, which is what every other
+record here does: this file is also rendered on the website, where a relative link
+out of `adr/` resolves against the page's own address and reaches nothing.
+
+With the site set to German, `/components` reads:
 
 - the header, the rails, the status line and the settings dialog: German
 - the filter above the page, its placeholder and its summary: **English**
@@ -49,10 +53,10 @@ accessible name on every page, and the titles and captions of the drawings in
 `src/diagrams/`.
 
 **What this site prints from the repository, it prints as it is written.** Text this
-site did not author and reads at build time: the Markdown under `virtual:docs`, the
-TypeDoc and JSDoc under `virtual:api`, the records' own titles, notes and clauses,
-the app's wordings on `/strings`, and the specimen labels it borrows from the app's
-gallery. Those are English because AGENTS.md keeps the repository English, which is
+site did not author and reads in at build time: the Markdown and the records' own
+titles, notes and clauses under `virtual:docs`, the TypeDoc and JSDoc under
+`virtual:api`, the app's wordings under `virtual:strings`, and the specimen labels
+it borrows from the app's gallery through `components/direct.tsx`. Those are English because AGENTS.md keeps the repository English, which is
 the same rule ADR 0050 §2 was reaching for.
 
 **A mixed page is still the answer, and now it is a legible one.** `/handbook` is a
@@ -82,7 +86,10 @@ nobody can do.
 The walk moves into [`packages/prose-and-code`](../packages/prose-and-code/README.md)
 and both checks call it. What stays in each test file is that check's own argument:
 which props a person reads in that package, which calls are descriptors there, what
-is excluded and why, and every excuse with its reason. That is the split the
+is excluded and why, and how the debt is excused. The app names every one of its
+eighteen literals with a reason; this site counts over a thousand by file, and its
+own docblock argues that choice by size. Two arguments, one mechanism, which is the
+split working. That is the split the
 package's README already states, applied to the first mechanism with two callers.
 
 ### 4. `content/` is a record and is printed as written

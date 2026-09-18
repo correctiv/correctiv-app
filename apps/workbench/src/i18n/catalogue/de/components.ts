@@ -13,6 +13,14 @@
  * So a German reader gets a German page around English component documentation,
  * and that seam is the decision rather than an unfinished translation.
  *
+ * **The line "Gezeichnet von" is never drawn.** `ui/kit/segmented.tsx` draws a
+ * legend only with `showLegend`, which that page does not pass, so it is read
+ * aloud and nothing else. The two answers under it therefore have to be nominative
+ * and stand on their own. They were written as datives agreeing with it, "Dieser
+ * Site" and "Dem Bundle der App", which left a sighted reader two fragments with
+ * nothing governing them. A cold review found it in this change's own evidence
+ * shot.
+ *
  * `Props`, `Barrel` and the names of the components themselves are left in their
  * own spelling. They are what the code calls these things, and a reader of this
  * page has the code open.
@@ -20,7 +28,7 @@
 export const components: Record<string, string> = {
   'components.title': 'Komponenten',
   'components.lede':
-    'Jede Komponente, aus der die App ihre Bildschirme baut, aus <code>{root}</code> gelesen, mit ihren Props, deren Typen und dem Prosatext, den die Quelle mitbringt. Jede Karte zeichnet ihre Komponente, aus dem Quelltext der App, im React-Baum dieser Site; eine Karte, die nicht die ganze Komponente fasst, sagt das an ihrer Unterkante. Die eigene Seite einer Komponente hat jedes Exemplar vollständig, daneben das Bundle der App und eine Gerätegröße. Die Exporte des Cores sind ein eigener Abschnitt: <reference>Reference</reference>, eine Bibliothek, die auch als solche importiert wird.',
+    'Jede Komponente, aus der die App ihre Ansichten baut, aus <code>{root}</code> gelesen, mit ihren Props, deren Typen und dem Prosatext, den die Quelle mitbringt. Jede Karte zeichnet ihre Komponente, aus dem Quelltext der App, im React-Baum dieser Site; eine Karte, die nicht die ganze Komponente fasst, sagt das an ihrer Unterkante. Die eigene Seite einer Komponente hat jedes Exemplar vollständig, daneben das Bundle der App und eine Gerätegröße. Die Exporte des Cores sind ein eigener Abschnitt: <reference>Referenz</reference>, eine Bibliothek, die auch als solche importiert wird.',
 
   'components.prose':
     'Der Satz unter jedem Namen ist der Doc-Kommentar der Komponente selbst, aus dem Quelltext der App, und bleibt englisch: ein Kommentar ist für die geschrieben, die den Code lesen.',
@@ -48,7 +56,7 @@ export const components: Record<string, string> = {
   'components.card.noDoc': 'Kein Doc-Kommentar.',
   'components.card.props': '{count, plural, one {# Prop} other {# Props}}',
 
-  'components.detail.breadcrumb': 'Pfad',
+  'components.detail.breadcrumb': 'Navigationspfad',
   'components.detail.crumb': 'Komponenten',
 
   'components.detail.tooNarrow':
@@ -59,8 +67,8 @@ export const components: Record<string, string> = {
   'components.detail.reload': 'Den Rahmen neu laden',
 
   'components.detail.drawnBy': 'Gezeichnet von',
-  'components.detail.drawnBy.site': 'Dieser Site',
-  'components.detail.drawnBy.bundle': 'Dem Bundle der App',
+  'components.detail.drawnBy.site': 'Diese Site',
+  'components.detail.drawnBy.bundle': 'Das Bundle der App',
   'components.detail.notDrawn': 'Hier nicht gezeichnet: {reason} Das Bundle zeichnet sie.',
   'components.detail.notDrawn.reason': 'der Katalog der App hat kein Exemplar dafür.',
   'components.detail.twoRenderings':
@@ -70,10 +78,10 @@ export const components: Record<string, string> = {
   'components.detail.frameHolds.dist': 'der veröffentlichte Export',
 
   'components.detail.device': 'Gerät',
-  'components.detail.size.auto': 'Der Platz, den diese Seite ihr gibt, welcher auch immer.',
+  'components.detail.size.auto': 'Der Platz, den diese Seite ihr gibt, so groß er eben ist.',
   'components.detail.size.frame': '{width} × {height} bei {percent}%',
   'components.detail.size.column':
-    'Spalte bei {width} px gedeckelt. Die Höhe ist die der Komponente selbst.',
+    'Spalte auf {width} px begrenzt. Die Höhe ist die der Komponente selbst.',
 
   'components.detail.props.none': 'Keine.',
   'components.detail.prop.optional': 'optional',

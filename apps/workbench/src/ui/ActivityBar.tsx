@@ -177,16 +177,19 @@ export const ITEMS = [
  * section, so the breadcrumb asks the rail rather than asserting.
  *
  * **The descriptor, not the English**, and the reason is what the two would look
- * like side by side. The breadcrumb sits on a page whose body stays English by
- * [ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §2, so the
- * first version of this returned `defaultMessage` — one word, one source, nothing
- * to keep in step. What that produces on screen is a rail reading „Handbuch“ and a
- * breadcrumb two centimetres away reading "Handbook", which is not a boundary a
- * reader can see the sense of; it reads as a bug.
+ * like side by side. The breadcrumb sits over a document this site prints as the
+ * repository wrote it, so the first version of this returned `defaultMessage` —
+ * one word, one source, nothing to keep in step. What that produces on screen is
+ * a rail reading „Handbuch“ and a breadcrumb two centimetres away reading
+ * "Handbook", which is not a boundary a reader can see the sense of; it reads as
+ * a bug.
  *
  * A breadcrumb is navigation rather than prose, so it is the shell reaching into a
- * page rather than the page speaking. It follows the setting, and the page's body
- * below it does not.
+ * page rather than the page speaking, and it follows the setting. What stays in
+ * its own language under it is the DOCUMENT
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1);
+ * an earlier version of this paragraph said "the page's body below it does not",
+ * which was ADR 0050 §2's line and is no longer true of a page's own words.
  */
 export function sectionOf(route: string): WorkbenchMessage {
   const item = ITEMS.find((held) => held.route !== '/' && held.match(route));
