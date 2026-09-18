@@ -4,7 +4,14 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { filesUnder, floorFaults, ratchet, under, withoutComments } from '../src/index';
+import {
+  excusesWithoutReason,
+  filesUnder,
+  floorFaults,
+  ratchet,
+  under,
+  withoutComments,
+} from '../src/index';
 
 /**
  * This package is Apache-2.0 inside a repository that is AGPL-3.0-or-later, and a
@@ -25,9 +32,10 @@ import { filesUnder, floorFaults, ratchet, under, withoutComments } from '../src
  *    of `src/` reaches the same files by another spelling, and a rule written only
  *    against the package NAMES would let it through.
  *
- * A dependency on something Apache-2.0 may take is a different question and is not
- * decided here, because this package has no dependencies. If it ever acquires one,
- * the licence of THAT is a thing to check, and this file is where it would go.
+ * A dependency on something Apache-2.0 may take is a different question, and it is
+ * now decided here: `LICENCES_SOMEBODY_READ` below is the list, one line per
+ * dependency naming what it ships under, and the last two cases hold it in both
+ * directions.
  */
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -49,6 +57,18 @@ const THE_REPOSITORY_IS_AGPL = [
   '@correctiv/workbench',
   '@correctiv/design-tokens',
 ];
+
+/**
+ * What this package takes from outside, and what each one ships under.
+ *
+ * The reason is the licence, read off the dependency's own manifest on the day it
+ * was added, because that is the only fact this list exists to carry. A name here
+ * without one is a dependency nobody looked at, which is the case below.
+ */
+const LICENCES_SOMEBODY_READ: Record<string, string> = {
+  typescript:
+    'Apache-2.0, the same licence as this package: the compiler, for the one pattern here that parses a syntax tree instead of matching text. `node_modules/typescript/package.json` says so, read on 2026-09-18 at 6.0.3.',
+};
 
 /** Every module a file imports, `import` and `require` alike. */
 function imports(source: string): string[] {
@@ -114,16 +134,25 @@ describe('the licence boundary', () => {
     expect(readFileSync(resolve(PKG, 'LICENSE'), 'utf8')).toContain('Apache License');
   });
 
-  it('declares no dependency, so nothing arrives under a licence nobody read', () => {
-    // Not a rule forever — it is the state today and the thing to notice when it
-    // changes. A ratchet rather than a ban: an entry here is a promise that
-    // somebody checked what the dependency is licensed under.
+  it('declares every dependency under a licence somebody read', () => {
+    // A ratchet rather than a ban: an entry here is a promise that somebody
+    // checked what the dependency is licensed under, and the reason beside it is
+    // that check written down. The list was empty until the parse arrived, which
+    // is the thing to notice — a package that reaches for a second one has to
+    // answer the same question again, here, in the same form.
     const manifest = JSON.parse(readFileSync(resolve(PKG, 'package.json'), 'utf8')) as {
       dependencies?: Record<string, string>;
     };
-    const { arrivals, stale } = ratchet(Object.keys(manifest.dependencies ?? {}), {});
+    const { arrivals, stale } = ratchet(
+      Object.keys(manifest.dependencies ?? {}),
+      LICENCES_SOMEBODY_READ,
+    );
 
     expect(arrivals).toEqual([]);
     expect(stale).toEqual([]);
+  });
+
+  it('says which licence, for every dependency on that list', () => {
+    expect(excusesWithoutReason(LICENCES_SOMEBODY_READ)).toEqual([]);
   });
 });

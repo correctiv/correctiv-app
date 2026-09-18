@@ -303,12 +303,20 @@ own. Do not introduce eslint or prettier.
 [`packages/prose-and-code`](packages/prose-and-code/README.md)** rather than by hand:
 the walk, the floor that stops it passing on nothing, the excuse list asserted in both
 directions, the drift check, the comment strippers with the guard that says when one
-has eaten a file, and the number in a sentence held to what the code counts.
-Its README says what each one catches, and that is the only place that says it — a
-check here carries the argument for its own rule and not the argument for the
-mechanism. The package is Apache-2.0 inside an AGPL repository
+has eaten a file, the number in a sentence held to what the code counts, and the
+parse that finds the literals a person reads. Its README says what each one catches,
+and that is the only place that says it — a check here carries the argument for its
+own rule and not the argument for the mechanism. The parse is where that division
+is easiest to see: `apps/mobile/__tests__/rendered-literals.test.ts` holds which
+props a person reads in the app, which calls are already messages and every excuse
+with its reason, and holds not one line of the compiler walk under it — so a second
+host reading its own `src/` names its own three lists rather than copying the walk.
+The package is Apache-2.0 inside an AGPL repository
 ([ADR 0043](adr/0043-two-concepts-become-packages-and-the-shell-stays.md) §3), so it
-may import nothing else in here; everything else here may import it.
+may import nothing else in here; everything else here may import it. It may import
+something from outside, and `typescript` is the first — the licence of a dependency
+is a question `test/licence-boundary.test.ts` asks by name, in a list that says what
+each one ships under.
 
 **A green check proves nothing about how the app looks or whether it runs.** After a
 route, a bundle config or a platform split, run `npm run build:web`, then

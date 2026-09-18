@@ -29,7 +29,10 @@ build-time module that collects the same faults and throws, so that a site does 
 build with a page that is confidently wrong.
 
 Node and TypeScript. No framework, no build step, no compiler flag: one module of
-source that a bundler, a test runner's transform, or Node itself can read.
+source that a bundler, a test runner's transform, or Node itself can read. One
+dependency, and it is the compiler — pattern 6 parses rather than matches, and
+because this is one module every consumer loads it, including the ones that only
+walk a directory.
 
 ## The patterns, and the failure each one catches
 
@@ -93,6 +96,26 @@ match satisfies it. A fraction of the set — `records.length / 4` — is not a 
 anybody maintains as the set grows, and it fires while the output is merely
 incomplete rather than a lie. This is written down because the repository this came
 from shipped the other thing, and the guard passed while the page was wrong.
+
+**6. A literal a person reads, off the syntax tree.** `renderedLiterals`. Every
+user-facing string is supposed to be a message with an id, and the one that is not
+ships in the only language somebody typed it in. Nothing else catches it: a type
+checker sees a string in a position that takes one, a linter sees the same, a check
+for non-English characters sees no umlaut in `Save`, and the extractor's own output
+lists what WAS extracted — the missing string is exactly the one missing from it.
+This parses a file and returns the literals in a JSX text child, in a brace beside
+one, and on the prop and property names the caller says a person reads, following
+the four shapes that CHOOSE a string rather than computing one (a ternary, a
+`&&`/`||`/`??` fallback, a `+` between literals, an array joined with `.join`). It
+parses instead of matching for a reason this package can state against itself:
+pattern 4's strippers are regular expressions that can eat a string literal, and a
+check whose whole subject is string literals would come back clean on the file they
+ate. A comment is trivia to a parser and never a node, so a rule's own explanation
+and commented-out markup are both invisible with nothing removed from the text.
+Which props are visible and which calls are already descriptors stay at your call
+site, because both are read off the components rather than off the framework. One
+known gap, in the docblock and asserted in the test beside it: the four shapes are
+followed in a text child only, so a ternary on a prop walks past.
 
 **And the one nothing else does: a number in prose.** `numberInProse`,
 `spelledNumber`. "All 49 existing call sites" in a contributor guide, a Node version
