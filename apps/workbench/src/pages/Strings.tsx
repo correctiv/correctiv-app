@@ -9,7 +9,7 @@ import { Filter, Source } from '../ui/Lookup';
 import { Page } from '../ui/Page';
 import { Toc } from '../ui/Toc';
 import { useSections } from '../ui/useSections';
-import { group, hasGap, haystackOf, twinsOf } from './strings-model.ts';
+import { group, hasGap, haystackOf, keyOf, twinsOf } from './strings-model.ts';
 
 const { locales: LOCALES, strings: ENTRIES } = model;
 
@@ -30,8 +30,8 @@ const { locales: LOCALES, strings: ENTRIES } = model;
  * looked at. It is a boundary, so it wants a record rather than a page that quietly
  * sits on the other side of one.
  *
- * Every id, every wording and every path below is the app's own data and is printed as
- * it is written, which is why the `de` column is German on an English page.
+ * Every id, every wording and every path below is data and is printed as it is
+ * written, which is why the `de` column is German on an English page.
  *
  * **The column heads are the locale codes and not names**, and that is not an
  * omission. `de` and `en` are the keys of `translations`, the names of the catalogue
@@ -46,7 +46,20 @@ const TWINS = twinsOf(ENTRIES);
 const HAYSTACK = haystackOf(ENTRIES);
 
 /**
- * Every user-facing string the app ships, in both languages, beside its address.
+ * Every user-facing string this repository has, in both languages, beside its
+ * address.
+ *
+ * **Two surfaces, one board.** The app's strings and this site's own are separate
+ * catalogues on purpose — two audiences, and the app may never depend on the
+ * workbench (ADR 0050 §3, ADR 0040). That is a fact about where they live, and the
+ * question somebody arrives with does not respect it: they saw a wording on a
+ * screen and they do not know, or care, which half of the repository drew it. So
+ * the board joins them and states which is which, rather than being two boards a
+ * reader has to guess between.
+ *
+ * `settings.title` is an id in BOTH, and `home` and `settings` are namespaces in
+ * both. A heading is therefore a surface and a namespace together, and everything
+ * here that maps by a row maps by `keyOf` rather than by the id.
  *
  * `/reference` and `/components` answer "what is there"; this answers "what does
  * it say", which is a question with two audiences. A developer arrives with an id
@@ -83,14 +96,14 @@ export function Strings() {
     const q = query.trim().toLowerCase();
     return group(
       ENTRIES.filter((entry) => {
-        if (only === 'same' && !TWINS.has(entry.id)) return false;
+        if (only === 'same' && !TWINS.has(keyOf(entry))) return false;
         if (only === 'untranslated' && !hasGap(entry, LOCALES)) return false;
-        return q === '' || (HAYSTACK.get(entry.id) ?? '').includes(q);
+        return q === '' || (HAYSTACK.get(keyOf(entry)) ?? '').includes(q);
       }),
     );
   }, [only, query]);
 
-  const shown = groups.reduce((n, namespace) => n + namespace.entries.length, 0);
+  const shown = groups.reduce((n, section) => n + section.entries.length, 0);
 
   return (
     <>
@@ -99,10 +112,10 @@ export function Strings() {
           <Filter
             id="strings-q"
             label="Filter strings by id, wording or description"
-            placeholder="Filter, for example gate. or Anmelden"
+            placeholder="Filter, for example gate., Anmelden or workbench"
             value={query}
             onChange={setQuery}
-            summary={`${shown} of ${ENTRIES.length} in ${groups.length} namespaces`}
+            summary={`${shown} of ${ENTRIES.length} in ${groups.length} sections`}
           />
           {/*
             Two facts the free text cannot ask for, as one control rather than two
@@ -141,11 +154,14 @@ export function Strings() {
         <article className="min-w-0">
           <h1 className="text-headline-xl font-bold leading-tight tracking-tight">Strings</h1>
           <p className="mt-xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            Every string the app has a descriptor for, joined from the extraction and the
-            catalogues. Two strings a user reads are deliberately not descriptors, so they are not
-            here; <code className="font-mono">localisation-seam.test.ts</code> is the list. A
-            wording with <code className="font-mono">{'{braces}'}</code> is an ICU pattern, printed
-            as the pattern.
+            Every string the app or this site has a descriptor for, joined from the extraction and
+            the catalogues. The two are separate catalogues with separate audiences, so a heading
+            names both the surface and the namespace, and{' '}
+            <code className="font-mono">settings.title</code> below is two different strings. Two
+            strings a user reads are deliberately not descriptors, so they are not here;{' '}
+            <code className="font-mono">localisation-seam.test.ts</code> is the list. A wording with{' '}
+            <code className="font-mono">{'{braces}'}</code> is an ICU pattern, printed as the
+            pattern.
           </p>
 
           {groups.length === 0 && (
@@ -154,18 +170,24 @@ export function Strings() {
             </p>
           )}
 
-          {groups.map((namespace) => (
+          {groups.map((section) => (
             /* `mt` and not `mb`, the same way `/reference` carries it: the filter
                is in the header, so the first section brings its own space. */
-            <section className="mt-xl" key={namespace.name}>
+            <section className="mt-xl" key={`${section.surface}-${section.name}`}>
               <h2
-                id={`ns-${namespace.name}`}
+                id={`ns-${section.surface}-${section.name}`}
                 className="scroll-mt-[4.75rem] font-mono text-headline-m font-semibold leading-tight wrap-anywhere"
               >
-                {namespace.name}
+                {/* The surface is set back from the namespace, because the namespace
+                    is what a reader is looking for and the surface is which of the
+                    two it is in. Both in the same monospace, because both are
+                    identifiers: `app` and `workbench` are the directories these
+                    strings come out of and the word the filter box matches on. */}
+                <span className="text-on-canvas-muted">{section.surface} · </span>
+                {section.name}
               </h2>
               <ul className="mt-s divide-y divide-stroke overflow-hidden rounded-md border border-stroke">
-                {namespace.entries.map((entry) => (
+                {section.entries.map((entry) => (
                   <li key={entry.id}>
                     <Row entry={entry} />
                   </li>
@@ -194,7 +216,7 @@ export function Strings() {
  * address — is in the wide one.
  */
 function Row({ entry }: { entry: StringEntry }) {
-  const twins = TWINS.get(entry.id);
+  const twins = TWINS.get(keyOf(entry));
 
   return (
     <div className="grid gap-2xs px-s py-s md:grid-cols-[minmax(0,15rem)_1fr] md:gap-m">
@@ -237,6 +259,11 @@ function Row({ entry }: { entry: StringEntry }) {
         )}
 
         {/*
+          The address of the descriptor BLOCK, which is what FormatJS reports:
+          every id in one `COPY` lands on the same line (`strings-model.ts` has
+          the count). That is the place to be taken to, and it is not a claim
+          about which line the id is on.
+
           In the WIDE column, under the words, and not beside the id where it
           looks like it belongs. A path is one long token and `Source` breaks it
           anywhere rather than take the page sideways: in a 15rem column that put

@@ -1,5 +1,5 @@
 /**
- * The four pure computations behind `/strings`, apart from the page.
+ * The pure computations behind `/strings`, apart from the page.
  *
  * Each takes its input as an argument rather than closing over `virtual:strings`,
  * so a test can hand it a handful of fixtures without the build-time join that
@@ -9,16 +9,37 @@
  */
 
 /**
- * One user-facing string of the app, joined from the three places that each know
- * part of it: the extraction knows the id and where the descriptor is written, the
- * catalogues know the words, and the descriptor knows what a translator needs.
+ * Which of the two sets of strings a row belongs to.
+ *
+ * `'app'` is what ships through a store; `'workbench'` is this site's own
+ * interface. They are separate catalogues because the audiences are
+ * ([ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §3),
+ * and they are on one board because somebody looking up a wording does not know
+ * which of the two they saw it on.
+ *
+ * A string rather than a union of the two names: this comes out of a generated
+ * file, and a type that promised more than the file guarantees would be a promise
+ * nothing checks.
+ */
+export type Surface = string;
+
+/**
+ * One user-facing string, joined from the three places that each know part of it:
+ * the extraction knows the id and where the descriptor is written, the catalogues
+ * know the words, and the descriptor knows what a translator needs.
  *
  * Declared here rather than in `virtual:strings` so that this module — and a test
  * of it — need not resolve that virtual module at all. `virtual-strings.d.ts`
  * imports the type from here instead of declaring its own.
  */
 export interface StringEntry {
+  /**
+   * Unique only WITH `surface`. `settings.title` is an id in both of them, and so
+   * is every id a future shared namespace produces; `keyOf` is the whole key and
+   * everything in this module that maps by an entry maps by that.
+   */
   id: string;
+  surface: Surface;
   /** The part before the first dot, which is the screen or the area it belongs to. */
   namespace: string;
   /**
@@ -34,9 +55,33 @@ export interface StringEntry {
   description: string | null;
   /** Repository-relative, so it is an address somebody can paste into an editor. */
   file: string;
+  /**
+   * The line the DESCRIPTOR BLOCK starts on, not the line the id is on.
+   *
+   * `@formatjs/cli --extract-source-location` reports the position of the
+   * `defineMessages(...)` call, so every id in one `COPY` block carries the same
+   * line — 60 of the 139 positions in today's table are shared by two ids or more,
+   * and `artikel.tsx:31` is shared by eight. That is the block a reader wants to
+   * be taken to, so it is a fair address; it is not the promise "your id is on
+   * this line", and a first version of this comment made that promise.
+   */
   line: number;
   /** Every language's wording, `null` where a catalogue has no entry. */
   translations: Record<string, string | null>;
+}
+
+/**
+ * What identifies a row: the surface and the id together.
+ *
+ * Written once here rather than inline at each of the three places that need it,
+ * because getting it wrong is silent. A `Map` keyed by the id alone kept one of
+ * `app`'s `settings.title` and `workbench`'s and dropped the other, and the page
+ * would have shown a description against the wrong wording rather than failing.
+ */
+export function keyOf(entry: Pick<StringEntry, 'surface' | 'id'>): string {
+  // A space around the separator, because it is also what the heading prints and
+  // what an error out of `scripts/strings.mjs` names a section by. One spelling.
+  return `${entry.surface} \u00b7 ${entry.id}`;
 }
 
 /**
@@ -56,21 +101,31 @@ export interface StringEntry {
  * of one. `apps/mobile/__tests__/localisation-seam.test.ts` already refuses an id
  * without a `defaultMessage`, so `scripts/strings.mjs`'s `?? ''` cannot fire today;
  * the line is here because this function is what the page trusts, not the seam test.
+ *
+ * **Within a surface and never across it.** `settings.title` reads "Settings" in
+ * both sets of strings, and that is not a coincidence a translator has to resolve:
+ * they are two catalogues with two audiences, and whoever writes the German for one
+ * of them never opens the other. Pairing them would put a line on 40-odd rows
+ * pointing at strings the reader cannot act on, which is how a real signal — the
+ * four ids inside the app that genuinely do coincide — gets lost in noise.
  */
 export function twinsOf(entries: readonly StringEntry[]): Map<string, string[]> {
-  const byEnglish = new Map<string, string[]>();
+  const byEnglish = new Map<string, StringEntry[]>();
   for (const entry of entries) {
     if (entry.english === '') continue;
-    byEnglish.set(entry.english, [...(byEnglish.get(entry.english) ?? []), entry.id]);
+    const wording = `${entry.surface} \u00b7 ${entry.english}`;
+    byEnglish.set(wording, [...(byEnglish.get(wording) ?? []), entry]);
   }
 
   const twins = new Map<string, string[]>();
-  for (const ids of byEnglish.values()) {
-    if (ids.length < 2) continue;
-    for (const id of ids)
+  for (const group of byEnglish.values()) {
+    if (group.length < 2) continue;
+    for (const entry of group)
       twins.set(
-        id,
-        ids.filter((other) => other !== id),
+        keyOf(entry),
+        // The bare ids, because the row printing them is in that surface already
+        // and repeating its name on each is noise.
+        group.filter((other) => other.id !== entry.id).map((other) => other.id),
       );
   }
   return twins;
@@ -87,30 +142,49 @@ export function hasGap(entry: StringEntry, locales: readonly string[]): boolean 
  * The id, every language's wording and the description, because all three are
  * things somebody arrives knowing: the id from a stack trace, a wording from a
  * screenshot, and the description from the argument about what a string meant.
+ *
+ * And the surface, which is what lets the box answer "which of these two sets" as
+ * well: typing `workbench` narrows to this site's own strings and `app` to the
+ * app's. A third control in the bar would have said the same thing and taken the
+ * room the filter needs at 390px, and the surface is a word a reader already has.
  */
 export function haystackOf(entries: readonly StringEntry[]): Map<string, string> {
   return new Map(
     entries.map((entry) => [
-      entry.id,
-      [entry.id, entry.english, ...Object.values(entry.translations), entry.description ?? '']
+      keyOf(entry),
+      [
+        entry.surface,
+        entry.id,
+        entry.english,
+        ...Object.values(entry.translations),
+        entry.description ?? '',
+      ]
         .join(' ')
         .toLowerCase(),
     ]),
   );
 }
 
-export interface Namespace {
+export interface Section {
+  surface: Surface;
   name: string;
   entries: StringEntry[];
 }
 
-/** The entries in the order they arrive, cut at each change of namespace. */
-export function group(entries: readonly StringEntry[]): Namespace[] {
-  const groups: Namespace[] = [];
+/**
+ * The entries in the order they arrive, cut at each change of section.
+ *
+ * A section is a surface and a namespace together. Cutting on the namespace alone
+ * would have run `app · settings` and `workbench · settings` into one heading the
+ * moment the second surface arrived — two sets of strings under one name, with the
+ * file path under each row as the only thing saying which was which.
+ */
+export function group(entries: readonly StringEntry[]): Section[] {
+  const sections: Section[] = [];
   for (const entry of entries) {
-    const last = groups.at(-1);
-    if (last?.name === entry.namespace) last.entries.push(entry);
-    else groups.push({ name: entry.namespace, entries: [entry] });
+    const last = sections.at(-1);
+    if (last?.name === entry.namespace && last.surface === entry.surface) last.entries.push(entry);
+    else sections.push({ surface: entry.surface, name: entry.namespace, entries: [entry] });
   }
-  return groups;
+  return sections;
 }
