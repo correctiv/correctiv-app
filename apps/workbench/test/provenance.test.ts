@@ -102,6 +102,13 @@ describe('the provenance scan', () => {
   });
 
   it('reads the ledger as the append-only record it is', () => {
+    /*
+     * A record that has been written and not yet staged fails this with two bare
+     * numbers and nothing saying why: the scan counts TRACKED files and the ledger
+     * counts entries, so `npm run adr:lock` has seen the new record and `git` has
+     * not. `git add` it. Found twice on 2026-09-18, in two sessions, and neither
+     * the assertion nor the page it writes said a word about it.
+     */
     expect(provenance.ledger.records).toBe(provenance.records);
     expect(provenance.ledger.decisions).toBeGreaterThanOrEqual(provenance.ledger.records);
     // Every number keeps every heading it has carried, so the texts can only

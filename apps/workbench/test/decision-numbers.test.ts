@@ -522,7 +522,14 @@ describe('the citations', () => {
     expect(
       report(
         'A citation names a decision no record makes. A number is never reused, so a decision ' +
-          'that was removed leaves a gap and a citation of it has to be rewritten, not renumbered.',
+          'that was removed leaves a gap and a citation of it has to be rewritten, not renumbered.' +
+          '\n\nIf the line below does not look like a citation you wrote: a `§` takes the record ' +
+          'named most recently within ' +
+          String(REACH) +
+          ' characters, and a record naming another one and then writing a bare `§` of its own ' +
+          'reads as that other record\u2019s section. Two records did exactly that on 2026-09-18, ' +
+          'one in a status line and one in an index row. Name the record, or say which decision ' +
+          'in words.',
         dangling,
       ),
     ).toBe('');
