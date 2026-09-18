@@ -60,6 +60,32 @@ describe('the slot a carried block would take', () => {
     }
   });
 
+  it('is two places out if the pointer is compared with the blocks’ centres', () => {
+    /*
+     * The counterfactual ADR 0053 §2 rests on, pinned rather than asserted in prose. The
+     * record says a centre-based model answers slot 3 for a grab that must answer slot 1;
+     * that number is the whole argument for measuring a top edge, and until this case it
+     * was typed in three places and checked in none.
+     *
+     * The model, in one line: where the pointer is, against the centres of the blocks the
+     * carried one would be placed among.
+     */
+    const from = 1;
+    const rows = drawn(HEIGHTS, from, from);
+    const pointer = rows[from]!.top + rows[from]!.height / 2;
+
+    const rest = rows.filter((_, i) => i !== from);
+    const lifted = rows[from]!.height;
+    const byCentre = rest.filter((box, i) => {
+      const top = i >= from ? box.top - lifted : box.top;
+      return pointer >= top + box.height / 2;
+    }).length;
+
+    expect(byCentre).toBe(3);
+    // And the model this repository has, on the same input.
+    expect(slotFrom(rows, from, rows[from]!.top)).toBe(1);
+  });
+
   it('takes the ends when the block is carried past either end of the list', () => {
     const rows = drawn(HEIGHTS, 3, 3);
     expect(slotFrom(rows, 3, -400)).toBe(0);
@@ -190,6 +216,18 @@ describe('the panel scrolling under a block held at its edge', () => {
     }
     for (const y of [PANEL.bottom + MARGIN, PANEL.bottom + 900, PANEL.bottom + 100_000]) {
       expect(scrollStep(y, PANEL, MARGIN, fastest)).toBe(fastest);
+    }
+  });
+
+  it('has the editor’s own margin and speed as its defaults', () => {
+    /*
+     * The app calls `scrollStep(held.y, { top, bottom })` and passes neither. Every case
+     * above passes `margin` explicitly, so until this line a mutation of the default — 64
+     * to 400, or to 4 — survived the whole suite. `MARGIN` above claims these are the
+     * editor's numbers; this is what makes the claim true of the call the editor makes.
+     */
+    for (const y of [PANEL.top + 10, PANEL.top + 100, PANEL.bottom - 10, PANEL.bottom + 40]) {
+      expect(scrollStep(y, PANEL)).toBe(scrollStep(y, PANEL, MARGIN, 18));
     }
   });
 

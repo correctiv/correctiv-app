@@ -232,7 +232,7 @@ difference in standard. An arrangement reachable only by mouse would be this rep
 shipping, in the tool it uses to build the app, the thing it spent a pull request removing
 from the app on the same day.
 
-### 8. Settings expand under their block, and a count is a slider
+### 8. Settings ~~expand under their block~~ open beside it, and a count is a slider
 
 ~~A block's settings open under it, in the list,~~ A block's settings open beside it, in a
 popover, where the block they belong to is drawn — voided by

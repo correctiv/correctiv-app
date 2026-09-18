@@ -82,10 +82,16 @@ function restingSeams(rows: readonly Drawn[], held: number): number[] {
 /**
  * Which slot the carried block would take, counted in the list **without** it.
  *
- * `rows` is every row as drawn, in the order drawn, which during a carry is the order a
- * release would produce. `held` is where the carried block sits among them. `top` is that
- * block's own top edge — the pointer minus wherever inside the block it was grabbed —
+ * `rows` is every row, `held` is where the carried block sits among them, and `top` is
+ * that block's own top edge — the pointer minus wherever inside the block it was grabbed —
  * in the same coordinates as `Drawn.top`.
+ *
+ * **This one does not care which order `rows` is in**, and `shiftFor` and `liftFor` beside
+ * it do. `restingSeams` reduces the drawn tops to the resting tops by one subtraction, so
+ * the answer is the same whether it is handed the document's order with `held = from`,
+ * which is what the panel does, or a list with the block already moved, which is what the
+ * test does when it feeds an answer back in. The other two are told a row's place in the
+ * document and mean it.
  *
  * The answer is an index into the other blocks: 0 puts the carried block above all of
  * them, `rows.length - 1` below all of them. That is the same number `moved()` wants as a
@@ -171,11 +177,11 @@ export function liftFor(rows: readonly Drawn[], from: number, slot: number): num
 /**
  * How far to scroll the panel this frame, while a block is carried against one of its edges.
  *
- * ADR 0053's "What is still open" named this and it is now built: a carry holds the
- * pointer, so the only way to reach the far end of the day was a wheel, and on a touch
- * screen there was no way at all. `HomeBlock` draws at the phone's own width, so the
- * shipped day is several times the height of the panel — measured on the dev server at an
- * iPhone 15 Pro, twelve blocks over 3356px in a panel a quarter of that.
+ * ADR 0053 §2. A carry holds the pointer, so without this the only way to reach the far
+ * end of the day was a wheel, and on a touch screen there was no way at all. `HomeBlock`
+ * draws at the phone's own width, so the day is several times the height of the panel it
+ * is arranged in; §2 carries the measurement, on the day it was measured, and this does
+ * not keep a second copy of it.
  *
  * Positive scrolls DOWN, and nought is the ordinary answer: the block is nowhere near an
  * edge and nothing should move.

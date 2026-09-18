@@ -109,10 +109,12 @@ import { canSave, publish, save, type SaveResult } from './write';
  * cannot: the frame cannot show what is not on screen at this hour, and a list that
  * repeated the frame would be the worse of two renderings of one fact.
  *
- * A block switched off at the playhead keeps its row and loses its drawing (§2). That is
- * the decision the interview turned on: a list that hid what is off would make "remove"
- * mean *not on the home screen at all* and *not at this hour* with nothing on screen
- * telling the two apart, and it would make a second callout unpickable and so
+ * A block switched off at the playhead is drawn greyed rather than collapsed away — ADR
+ * 0045 §2 kept its row and took the drawing, and ADR 0053 §1 keeps the drawing, because in
+ * a list that is a screen a collapsed block is a hole. What §2 was defending is untouched
+ * and is the decision the interview turned on: a list that hid what is off would make
+ * "remove" mean *not on the home screen at all* and *not at this hour* with nothing on
+ * screen telling the two apart, and it would make a second callout unpickable and so
  * unrepeatable except by adding a third.
  *
  * ## Two things it will not let itself do
@@ -515,8 +517,8 @@ export function HomeDocument({
    * alone, so a wheel during a carry left the block drawn at a place that had scrolled
    * away. Capture, because the panel is what scrolls and a scroll does not bubble.
    *
-   * **And a block held at an edge scrolls the panel**, which is ADR 0053 §2's open point
-   * built. The pointer is captured for the length of a carry, so without this the only
+   * **And a block held at an edge scrolls the panel**, which ADR 0053 §2 decides. The
+   * pointer is captured for the length of a carry, so without this the only
    * way to reach the far end of the day was a wheel, and on a touch screen there was no
    * way at all. The speed is `scrollStep`, which is arithmetic and has a test; this is
    * the frame loop around it.
@@ -538,7 +540,16 @@ export function HomeDocument({
      * The box found once per carry rather than once per frame: it cannot change while a
      * pointer is down, and `scroller` walks and calls `getComputedStyle` on every ancestor.
      */
-    const panel = scroller(list.current);
+    /*
+     * The panel, or nothing. `scroller` falls back to the document's own scrolling element
+     * when no ancestor scrolls, which is right for `frame/reveal.ts` and wrong here twice
+     * over: its rect is the whole page rather than the part of it on screen, so the margins
+     * would land off screen, and scrolling it would move the workbench instead of the list.
+     * It is also the case where there is nothing to do — a list that does not overflow its
+     * panel has no far end to reach.
+     */
+    const found = scroller(list.current);
+    const panel = found === list.current?.ownerDocument.scrollingElement ? null : found;
     let frame = requestAnimationFrame(function tick() {
       const held = carrying.current;
       if (held === null) return;
@@ -755,29 +766,45 @@ export function HomeDocument({
       if (held !== null) carry(aimed(held, event.clientY));
     },
     onPointerUp: (event: PointerEvent<HTMLElement>) => {
-      const held = mine(event);
       /*
-       * Two things decide whether this is a drop or an abandon, and both are read from
-       * the event rather than from what the last move left behind.
-       *
-       * The slot is recomputed here, because a wheel between the last move and the release
-       * moves every row without producing a move event. And a release away from the list
-       * puts the block back: without that test, letting go anywhere at all reordered the
-       * day, including out over the phone frame nine hundred pixels away — which is the
-       * only way out of a drag somebody has started and thought better of, since ADR 0047
-       * §1 gives the handle no key to press.
-       *
-       * Measured BEFORE the carry is put down, and the order is load-bearing: `measure`
-       * reads the list, and the render that follows `carry(null)` takes every transform
-       * off it.
+       * **An event from another pointer leaves this carry alone**, and the two cases were
+       * one line until a cold review separated them. `mine` answers `null` both when
+       * nothing is carrying and when the release belongs to a DIFFERENT pointer, and
+       * clearing the carry on the second of those is the two-finger failure `Carry`'s
+       * `pointer` field exists for, arriving from the other end: one finger drags the
+       * header, a second finger rests on another row's handle and lifts, and the first
+       * finger's block is put down mid-gesture. The `pointer` field stops the hijack; this
+       * stops the abandon. `onPointerCancel` below already had the right shape.
        */
-      if (held === null || !overList(event.clientX)) {
+      const held = mine(event);
+      if (held === null) return;
+
+      /*
+       * A release away from the list puts the block back. Without that test, letting go
+       * anywhere at all reordered the day, including out over the phone frame nine hundred
+       * pixels away — which is the only way out of a drag somebody has started and thought
+       * better of, since ADR 0047 §1 gives the handle no key to press.
+       */
+      if (!overList(event.clientX)) {
         carry(null);
         return;
       }
-      const { slot } = aimed(held, event.clientY);
+
+      /*
+       * **The slot on screen, and not a fresh reading of it.** This used to re-ask with the
+       * release's own `clientY`, against a stale slot left by the last `pointermove` — a
+       * wheel moves every row without producing a move event. That hole is closed at the
+       * other end now: the `scroll` listener re-aims on any scroll, the panel's own
+       * autoscroll included, so `held.slot` is what the last painted frame showed.
+       *
+       * Re-asking here is then not merely redundant but wrong by a frame. While the
+       * autoscroll is running at up to eighteen pixels a frame, and a block half as tall as
+       * that stands beside the seam, one unpainted frame of scroll can cross a midpoint —
+       * so the block would land one place from where the hand let go of it. What somebody
+       * saw is what they meant.
+       */
       carry(null);
-      setLayout(moved(layout, held.id, slot - held.from));
+      setLayout(moved(layout, held.id, held.slot - held.from));
     },
     // A touch the browser takes over — a scroll gesture, a call coming in — ends the drag
     // without an up, and the block has to go back rather than stay picked up for ever.
@@ -872,7 +899,7 @@ export function HomeDocument({
         **The order here is the document's, always**, which is ADR 0053 §2: while a block is
         carried every row is offset by a `transform` instead, so the list a person sees is
         the answer a release would write without the DOM having moved at all. `sameSection`
-        is what keeps a carry from redrawing twelve blocks per pointer event.
+        is what keeps a carry from redrawing the whole list per pointer event.
       */}
       <AppHost>
         <ol
@@ -1178,13 +1205,18 @@ function Row({
   after: ReactNode;
   /**
    * What the drag handle listens to. ADR 0047 §1: a pointer route and nothing else, so
-   * this is the whole of it and there is no key to press.
+   * these are the whole of it and there is no key to press.
    *
-   * One handler, because the capture is taken on the list rather than here — ADR 0053 §2
-   * and `gripFor` say why a handle that held the pointer itself lost it on the first
-   * reflow.
+   * The capture is taken here, on the handle, which ADR 0053 §2 is what allows: nothing
+   * moves in the DOM during a carry, so there is no removal for the browser to release it
+   * on. `gripFor` carries the measurement of what happened when something did.
    */
-  grip: { onPointerDown: (event: PointerEvent<HTMLElement>) => void };
+  grip: {
+    onPointerDown: (event: PointerEvent<HTMLElement>) => void;
+    onPointerMove: (event: PointerEvent<HTMLElement>) => void;
+    onPointerUp: (event: PointerEvent<HTMLElement>) => void;
+    onPointerCancel: (event: PointerEvent<HTMLElement>) => void;
+  };
   /** Whether this is the block a pointer is carrying right now. */
   carried: boolean;
   /**

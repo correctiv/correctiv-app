@@ -114,8 +114,8 @@
    * platform does — a native button on a desktop does not change the cursor. The effect
    * on a page built out of `<button>` is that nothing on it answers the one question a
    * hand asks before it presses: is this a thing. Reported from the editor, where the
-   * hairline that adds a block is ten pixels of target and gave no sign at all of being
-   * under the cursor.
+   * hairline that adds a block was a few pixels of target and gave no sign at all of
+   * being under the cursor.
    *
    * Here rather than as `cursor-pointer` on each component, because "everywhere" is the
    * requirement and a class per control is a list that goes out of date silently. A

@@ -233,10 +233,12 @@ in place.**
 [ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) §8, **one claim, struck
 in place.**
 
-- **"A block's settings open under it, in the list."** They open beside it. §3 above keeps
+- **"A block's settings open under it, in the list", and the clause of its own heading that
+  says the same, "Settings expand under their block".** They open beside it. §3 above keeps
   the rest of that sentence, "where the block they belong to is drawn", and says what had
-  to be true of the container for it to survive. That section's slider and its
-  no-empty-section rule are untouched.
+  to be true of the container for it to survive. Both are struck where they stand, because
+  a heading is what somebody reads when they cite a section by its number. That section's
+  slider and its no-empty-section rule are untouched.
 
 [ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) §5 and §7, **read and
 deliberately not struck.**

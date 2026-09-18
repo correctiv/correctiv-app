@@ -135,12 +135,12 @@ export function InsertMark({
            * phone, so a control that took height of its own would put the list back to a
            * stack of cards one hairline at a time.
            *
-           * **Twenty pixels of target for one pixel of mark.** It was ten, and it was
+           * **A target several times the mark it carries.** It was narrower, and it was
            * reported as hard to hit — a hairline gives no edge to aim at, and until the
            * base stylesheet put the pointer cursor back there was nothing to say when the
-           * aim had landed either. The box straddles the seam, so it takes ten pixels off
-           * the bottom of one drawing and ten off the top of the next, which is a price
-           * only a block with something in its very first row would notice.
+           * aim had landed either. The box straddles the seam, so it takes half its height
+           * off the bottom of one drawing and half off the top of the next, which is a
+           * price only a block with something in its very first row would notice.
            */
           className="group relative flex h-[1.25rem] w-full shrink-0 items-center focus-visible:outline-none"
         >
@@ -155,7 +155,7 @@ export function InsertMark({
               'w-full transition-all',
               // Nothing at all until it is pointed at. ADR 0053 §1 makes the list a screen,
               // and a hairline drawn across every seam of it would be a rule the phone has
-              // not got, twelve times over.
+              // not got, once per block.
               'h-px bg-transparent',
               // Two pixels once it is, rather than one: the line is what confirms the aim,
               // and a one-pixel confirmation under a twenty-pixel target is a mark a person

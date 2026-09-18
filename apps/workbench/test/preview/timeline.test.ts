@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { floorFaults } from '@correctiv/prose-and-code';
+
 import { ROOT } from '../../plugin/collect.ts';
 import { governs } from '../../src/preview/home/document';
 import { code } from '../source.ts';
@@ -47,6 +49,29 @@ const BLOCK = read('apps/workbench/src/preview/home/HomeBlock.tsx');
 const MINUTES = read('apps/workbench/src/preview/home/minutes.ts');
 const HOOK = read('apps/workbench/src/preview/Preview.tsx');
 const REVEAL = read('apps/workbench/src/preview/frame/reveal.ts');
+
+describe('the files this reads', () => {
+  it('read them, rather than matching nothing in an empty string', () => {
+    /*
+     * The first case in a file that reads the repository asserts that it READ it.
+     * `prose-and-code`'s README argues why: every assertion below is of the shape "the
+     * source says this" or "the source does not say that", and an empty source passes
+     * the second kind silently. A path that moved or a stripper that ate a file turns
+     * this suite green over a panel that is no longer there.
+     */
+    expect(
+      floorFaults({
+        'pages/Preview.tsx': { found: PAGE.length, atLeast: 1000 },
+        'preview/ui/Stage.tsx': { found: STAGE.length, atLeast: 1000 },
+        'preview/home/Timeline.tsx': { found: TIMELINE.length, atLeast: 3000 },
+        'preview/home/HomeDocument.tsx': { found: PANEL.length, atLeast: 8000 },
+        'preview/home/HomeBlock.tsx': { found: BLOCK.length, atLeast: 1000 },
+        'preview/home/minutes.ts': { found: MINUTES.length, atLeast: 500 },
+        'preview/frame/reveal.ts': { found: REVEAL.length, atLeast: 500 },
+      }),
+    ).toEqual([]);
+  });
+});
 
 describe('which routes the document governs', () => {
   /*

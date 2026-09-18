@@ -76,8 +76,8 @@ export const home: Record<string, string> = {
     'Eingefügt wird: {where}. Angeboten wird jedes Modul, das die App hat; beurteilt wird eine Anordnung im Rahmen daneben, nicht in dieser Liste.',
   'home.palette.addModule': '{name} hinzufügen. {what}',
 
-  // What a block says instead of a drawing (`preview/home/HomeBlock.tsx`). Seit ADR 0053
-  // §1 zeigt die Liste keine Namen mehr, deshalb trägt der zweite Satz den Namen selbst.
+  // What a block says instead of a drawing (`preview/home/HomeBlock.tsx`). Since ADR 0053
+  // §1 the list shows no names, so the second of these carries the block's own name.
   'home.block.unknown': 'Nicht gezeichnet: Diese App hat kein Modul namens <name>{module}</name>.',
   'home.block.empty': '{block} zeichnet hier nichts.',
 

@@ -381,7 +381,10 @@
         "One handle, two ways, and the arrow buttons go",
         "One handle, two ways, ~~and the arrow buttons go~~ and the arrow buttons stay"
       ],
-      "8": ["Settings expand under their block, and a count is a slider"],
+      "8": [
+        "Settings expand under their block, and a count is a slider",
+        "Settings ~~expand under their block~~ open beside it, and a count is a slider"
+      ],
       "9": [
         "A module declares its settings beside itself, and a generator carries them into the core"
       ],
