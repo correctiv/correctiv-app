@@ -163,3 +163,9 @@ put a data package in charge of the core's type; that is the wrong direction for
   file per id namespace, and that directory is the only place under `apps/mobile/src` where a
   German character may be written." Both halves move: the directory is
   `packages/catalogue/src/de/`, and under `apps/mobile/src` there is now no such place at all.
+- [ADR 0026](0026-react-native-review-and-hardening.md) §6, "those tables are deletable
+  rather than parameterisable". Struck there. The tables did go and the section was right
+  about that; what it missed is that deleting them left the locale written into
+  `lib/format.ts` as four `'de-DE'` formatters and three patterns assembled in German word
+  order. §4 makes the language a parameter, so the module takes one too, and the German
+  assembly is asked for only when the language is German.

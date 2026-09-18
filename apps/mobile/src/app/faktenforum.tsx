@@ -5,7 +5,8 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { ClaimStatusTag } from '@/components/participate/ClaimStatusTag';
 import { Card, ScreenHeader, Typo } from '@/components/ui';
 import { claims, type Claim } from '@correctiv/app-core/data/claims';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
+import { useLocale } from '@/lib/store/core';
 
 /**
  * Everything a person reads on this screen, in ENGLISH; the German that ships is
@@ -68,6 +69,7 @@ export default function FaktenforumScreen() {
 
 function ClaimRow({ claim }: { claim: Claim }) {
   const intl = useIntl();
+  const locale = useLocale();
   return (
     <Pressable
       accessibilityRole="link"
@@ -83,7 +85,7 @@ function ClaimRow({ claim }: { claim: Claim }) {
         <Typo variant="text-s" color="grey-500" className="mt-2xs">
           {intl.formatMessage(COPY.submitted, {
             shortId: claim.shortId,
-            date: formatDateShortDe(claim.submittedAt),
+            date: formatDateShort(claim.submittedAt, locale),
           })}
         </Typo>
       </Card>

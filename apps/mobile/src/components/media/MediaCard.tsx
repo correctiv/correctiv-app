@@ -3,8 +3,9 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, View } from 'react-native';
 
 import { Thumbnail, Typo } from '@/components/ui';
-import { formatDateShortDe, formatTimeHm } from '@correctiv/app-core/lib/format';
+import { formatDateShort, formatTimeHm } from '@correctiv/app-core/lib/format';
 import type { Video } from '@correctiv/app-core/types/models';
+import { useLocale } from '@/lib/store/core';
 import { colors, sizes } from '@/lib/theme';
 
 /**
@@ -31,6 +32,7 @@ const COPY = defineMessages({
  */
 export function MediaCard({ video, onPress }: { video: Video; onPress: (video: Video) => void }) {
   const intl = useIntl();
+  const locale = useLocale();
   const duration = video.durationSec ? formatTimeHm(video.durationSec) : null;
 
   return (
@@ -74,7 +76,7 @@ export function MediaCard({ video, onPress }: { video: Video; onPress: (video: V
         {video.title}
       </Typo>
       <Typo variant="text-s" color="grey-500">
-        {formatDateShortDe(video.publishedAt)}
+        {formatDateShort(video.publishedAt, locale)}
       </Typo>
     </Pressable>
   );

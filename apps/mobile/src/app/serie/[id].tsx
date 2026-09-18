@@ -6,10 +6,10 @@ import { EpisodeRow } from '@/components/media/EpisodeRow';
 import { ScreenHeader, Typo } from '@/components/ui';
 import { PODCAST_CHANNELS } from '@correctiv/app-core/data/feeds.config';
 import type { PodcastEpisode, PodcastSeries } from '@correctiv/app-core/data/podcasts';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { playEpisode, togglePlay } from '@/lib/audio/player';
 import { useEpisodeStatus } from '@/lib/audio/useAudio';
-import { usePodcastSeries } from '@/lib/store/core';
+import { useLocale, usePodcastSeries } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -134,12 +134,13 @@ export default function SerieScreen() {
 
 function SeriesEpisodeRow({ series, episode }: { series: PodcastSeries; episode: PodcastEpisode }) {
   const status = useEpisodeStatus(episode.id);
+  const locale = useLocale();
 
   return (
     <EpisodeRow
       episodeId={episode.id}
       title={episode.title}
-      meta={`${formatDateShortDe(episode.date)} · ${episode.durationLabel}`}
+      meta={`${formatDateShort(episode.date, locale)} · ${episode.durationLabel}`}
       onPress={() => {
         if (status !== 'off') {
           togglePlay();

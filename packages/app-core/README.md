@@ -23,7 +23,7 @@ Subpath imports mirror the source tree; there is no barrel:
 import { configurePlatform } from '@correctiv/app-core';            // ports only
 import { loadArticle } from '@correctiv/app-core/articles/load';
 import { feedsStore } from '@correctiv/app-core/stores/feeds';
-import { formatDateDe } from '@correctiv/app-core/lib/format';
+import { formatDate } from '@correctiv/app-core/lib/format';
 import type { Article } from '@correctiv/app-core/articles/types';
 ```
 

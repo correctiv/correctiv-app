@@ -13,9 +13,10 @@ import {
   verlagPerk,
   type DiaryEntry,
 } from '@correctiv/app-core/data/backstage';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
+import { useLocale } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -64,6 +65,7 @@ const COPY = defineMessages({
  */
 export default function BackstageScreen() {
   const intl = useIntl();
+  const locale = useLocale();
 
   return (
     <View className="flex-1 bg-canvas">
@@ -109,7 +111,7 @@ export default function BackstageScreen() {
         <SectionCard label={intl.formatMessage(COPY.letter)} tone="surface" className="mt-m">
           <Typo variant="headline-xs">{clubNewsletter.subject}</Typo>
           <Typo variant="text-s" color="grey-500" className="mt-4xs">
-            {formatDateShortDe(clubNewsletter.date)}
+            {formatDateShort(clubNewsletter.date, locale)}
           </Typo>
           {clubNewsletter.paragraphs.map((paragraph) => (
             <Typo key={paragraph.slice(0, 24)} variant="text-s" className="mt-s">
@@ -134,7 +136,7 @@ export default function BackstageScreen() {
             <Card key={event.id} className="mt-2xs">
               <Typo variant="headline-xs">{event.title}</Typo>
               <Typo variant="text-s" color="grey-500" className="mt-4xs">
-                {formatDateShortDe(event.date)} · {event.location}
+                {formatDateShort(event.date, locale)} · {event.location}
               </Typo>
               <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
                 {event.description}

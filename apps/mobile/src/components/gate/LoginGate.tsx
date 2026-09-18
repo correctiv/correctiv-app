@@ -5,12 +5,12 @@ import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react
 
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
 import { Button, Card, Hairline, Overline, SafeAreaView, SplitRow, Typo } from '@/components/ui';
-import { formatDateDe } from '@correctiv/app-core/lib/format';
+import { formatDate } from '@correctiv/app-core/lib/format';
 import type { SignInFailure } from '@correctiv/app-core/services/auth.service';
 import { accessShortfall, type AccessShortfall } from '@correctiv/app-core/stores/session';
 import { TIER_LABELS } from '@/lib/membership/tierLabel';
 import { openExternal } from '@/lib/openExternal';
-import { useCoreActions, useSession } from '@/lib/store/core';
+import { useCoreActions, useLocale, useSession } from '@/lib/store/core';
 import { sizes, typography, useColors } from '@/lib/theme';
 
 /**
@@ -353,10 +353,13 @@ function NoAccess({ shortfall }: { shortfall: AccessShortfall }) {
   const intl = useIntl();
   const actions = useCoreActions();
   const session = useSession();
+  const locale = useLocale();
   const entitlement = session.entitlement;
 
   const lapsedOn =
-    shortfall === 'lapsed' && entitlement?.validUntil ? formatDateDe(entitlement.validUntil) : null;
+    shortfall === 'lapsed' && entitlement?.validUntil
+      ? formatDate(entitlement.validUntil, locale)
+      : null;
 
   return (
     <>

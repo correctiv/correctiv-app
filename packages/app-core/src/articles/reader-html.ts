@@ -1,5 +1,5 @@
 import { escapeHtml } from '../lib/html';
-import { formatDateDe } from '../lib/format';
+import { formatDate } from '../lib/format';
 import { coreMessage } from '../i18n/messages';
 import { ratingTone } from './rating';
 import type { Locale } from '../stores/settings';
@@ -167,10 +167,10 @@ export function buildReaderHtml(
   // The app's own date format wins over the publisher's wording: correctiv.org prints
   // "04. August 2026" where every list in the app reads "4. August 2026", and the
   // reader is the one screen a date row appears in twice. `publishedText` stays as the
-  // fallback for a page with no parsable date — `formatDateDe` returns '' for one.
+  // fallback for a page with no parsable date — `formatDate` returns '' for one.
   const metaLine = [
     article.authors.length > 0 ? copy.byline : '',
-    formatDateDe(article.publishedAt) || article.publishedText,
+    formatDate(article.publishedAt, locale) || article.publishedText,
     copy.readingTime,
   ]
     .filter(Boolean)

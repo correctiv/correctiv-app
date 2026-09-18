@@ -1,18 +1,58 @@
-// Built once at module scope rather than per call, because nothing about them
-// varies: one locale, one option bag, every time. This is not a speed claim —
-// nobody has measured either shape, and ADR 0026 holds that "a performance
-// recommendation stays a measurement task until a runtime problem is demonstrated".
-// If that measurement is ever taken, the honest starting point is that the move to
-// Intl raised the work per call rather than lowering it: formatDateWeekdayDe now
-// makes two formatToParts() calls per list row where it made two array lookups.
-const weekdayFormatter = new Intl.DateTimeFormat('de-DE', { weekday: 'long' });
-const dayMonthYearFormatter = new Intl.DateTimeFormat('de-DE', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-const dayMonthFormatter = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long' });
-const numberFormatter = new Intl.NumberFormat('de-DE');
+import type { Locale } from '../stores/settings';
+
+/**
+ * A date or a number, in the language the host said it renders in.
+ *
+ * **Everything here was pinned to `'de-DE'`**, in four module-scope formatters and
+ * three hand-assembled patterns, and the functions were named for it. That was
+ * right while the locale was a constant in the core: one locale, one option bag,
+ * every time. [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 made
+ * the language a thing the host names, and a date that ignores it is the half of a
+ * translated app that nobody notices until they read "12. June 2026".
+ *
+ * So the locale is a parameter. Not read from a module-scope value, and not
+ * defaulted: a default would be the constant back under another name, and the whole
+ * failure mode is that it is invisible.
+ *
+ * **Built once per locale rather than once.** The formatters were module constants
+ * because nothing about them varied. Something does now, so they are cached by
+ * locale instead. That is not a speed claim — nobody has measured either shape, and
+ * ADR 0026 holds that "a performance recommendation stays a measurement task until a
+ * runtime problem is demonstrated". It is the same reasoning arriving at a map
+ * instead of a constant.
+ */
+interface Formatters {
+  weekday: Intl.DateTimeFormat;
+  dayMonthYear: Intl.DateTimeFormat;
+  dayMonth: Intl.DateTimeFormat;
+  number: Intl.NumberFormat;
+}
+
+/**
+ * What a locale is called to `Intl`, which is not what it is called to this app.
+ *
+ * `'de'` and `'de-DE'` choose the same CLDR data for everything here, and the second
+ * is what this file has always asked for. Kept rather than simplified, because
+ * "which region's conventions" is a real question — Swiss German writes thousands
+ * with an apostrophe — and the answer this app has shipped is Germany's.
+ */
+const REGION: Record<Locale, string> = { de: 'de-DE', en: 'en-GB' };
+
+const cache = new Map<Locale, Formatters>();
+
+function formatters(locale: Locale): Formatters {
+  const held = cache.get(locale);
+  if (held) return held;
+  const tag = REGION[locale];
+  const built: Formatters = {
+    weekday: new Intl.DateTimeFormat(tag, { weekday: 'long' }),
+    dayMonthYear: new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'long', year: 'numeric' }),
+    dayMonth: new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'long' }),
+    number: new Intl.NumberFormat(tag),
+  };
+  cache.set(locale, built);
+  return built;
+}
 
 /** The slice of `Intl.DateTimeFormat` the assembly below uses. Named so a test can
  * stand in for a runtime whose `formatToParts()` has a hole. */
@@ -44,32 +84,62 @@ export function assembleDateParts(
   return assemble(byType) ?? formatter.format(date);
 }
 
-/** "12. Juni 2026" — day, a literal ". ", month, a space, year. */
-function dayMonthYear(d: Date): string {
-  return assembleDateParts(dayMonthYearFormatter, d, ({ day, month, year }) =>
-    day && month && year ? `${day}. ${month} ${year}` : undefined,
+/**
+ * The hand-assembled patterns are GERMAN'S, and every other language gets its own.
+ *
+ * `assembleDateParts` reads the fields by name and throws the locale's separators
+ * away, which is deliberate: byte-identity with the tables this replaced was the
+ * goal, and a pinned pattern cannot drift when CLDR changes its mind. That argument
+ * is about German and holds only for German. `${day}. ${month} ${year}` in English
+ * is "12. June 2026", which is not a date anybody writes.
+ *
+ * So the assembly is asked for only when the locale is the one it was written for,
+ * and every other language takes the formatter's own `format()` — which is the
+ * branch `assembleDateParts` already had for a runtime whose `formatToParts()` has a
+ * hole. The German output is unchanged to the byte; English is CLDR's.
+ */
+const assembled = (locale: Locale, assemble: (parts: DateParts) => string | undefined) =>
+  locale === 'de' ? assemble : () => undefined;
+
+/** "12. Juni 2026" in German, and whatever the locale writes elsewhere. */
+function dayMonthYear(d: Date, locale: Locale): string {
+  return assembleDateParts(
+    formatters(locale).dayMonthYear,
+    d,
+    assembled(locale, ({ day, month, year }) =>
+      day && month && year ? `${day}. ${month} ${year}` : undefined,
+    ),
   );
 }
 
-/** "Freitag, 12. Juni 2026" — home header date per the design draft */
-export function formatDateWeekdayDe(iso: string | Date): string {
+/** "Freitag, 12. Juni 2026" — the home header's date, per the design draft. */
+export function formatDateWeekday(iso: string | Date, locale: Locale): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   if (Number.isNaN(d.getTime())) return '';
-  const weekday = assembleDateParts(weekdayFormatter, d, (parts) => parts.weekday);
-  return `${weekday}, ${dayMonthYear(d)}`;
+  const weekday = assembleDateParts(formatters(locale).weekday, d, (parts) => parts.weekday);
+  /*
+   * The comma and the space are German's too, and they are the one piece this
+   * cannot hand to `Intl`: there is no option bag that produces "weekday, date" as
+   * one call, so the two are formatted apart and joined here. Every language this
+   * app is likely to grow puts a comma there, and the day one does not, this is the
+   * line to look at — named rather than left to be discovered.
+   */
+  return `${weekday}, ${dayMonthYear(d, locale)}`;
 }
 
-export function formatDateDe(iso: string | Date): string {
+export function formatDate(iso: string | Date, locale: Locale): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   if (Number.isNaN(d.getTime())) return '';
-  return dayMonthYear(d);
+  return dayMonthYear(d, locale);
 }
 
-export function formatDateShortDe(iso: string | Date): string {
+export function formatDateShort(iso: string | Date, locale: Locale): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   if (Number.isNaN(d.getTime())) return '';
-  return assembleDateParts(dayMonthFormatter, d, ({ day, month }) =>
-    day && month ? `${day}. ${month}` : undefined,
+  return assembleDateParts(
+    formatters(locale).dayMonth,
+    d,
+    assembled(locale, ({ day, month }) => (day && month ? `${day}. ${month}` : undefined)),
   );
 }
 
@@ -101,12 +171,13 @@ export function formatMinutesDe(sec: number): string {
   return `${Math.max(1, Math.round(sec / 60))} Min.`;
 }
 
-/** Counts, with the German thousands dot: responses, reports, views. Every caller
- * passes a whole number, and that is the contract — this is a counter's formatter,
- * not a general-purpose one. It no longer refuses to round, though: the hand-rolled
- * grouping it replaced never touched a fraction, `Intl.NumberFormat` defaults to
- * three decimals, and 1234.5678 therefore reads "1.234,568". An average or a rate
- * wants its own formatter with the precision written down, not this one. */
-export function formatNumberDe(n: number): string {
-  return numberFormatter.format(n);
+/** Counts, grouped the way the locale groups them: responses, reports, views.
+ * Every caller passes a whole number, and that is the contract — this is a
+ * counter's formatter, not a general-purpose one. It no longer refuses to round,
+ * though: the hand-rolled grouping it replaced never touched a fraction,
+ * `Intl.NumberFormat` defaults to three decimals, and 1234.5678 therefore reads
+ * "1.234,568" in German. An average or a rate wants its own formatter with the
+ * precision written down, not this one. */
+export function formatNumber(n: number, locale: Locale): string {
+  return formatters(locale).number.format(n);
 }

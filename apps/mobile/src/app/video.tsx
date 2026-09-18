@@ -4,9 +4,9 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { VideoFrame } from '@/components/media/VideoFrame';
 import { Button, Overline, ScreenHeader, Typo } from '@/components/ui';
-import { formatDateDe, formatMinutesDe } from '@correctiv/app-core/lib/format';
+import { formatDate, formatMinutesDe } from '@correctiv/app-core/lib/format';
 import type { Video } from '@correctiv/app-core/types/models';
-import { useVideo } from '@/lib/store/core';
+import { useLocale, useVideo } from '@/lib/store/core';
 import { openExternal } from '@/lib/openExternal';
 import { colors } from '@/lib/theme';
 
@@ -14,9 +14,9 @@ import { colors } from '@/lib/theme';
  * Everything this screen says, in ENGLISH; the German ships in
  * `packages/catalogue/src/de/video.ts` (ADR 0026 §6).
  *
- * `views` is an ICU plural. It replaces a `formatNumberDe` call: `#` inside a
+ * `views` is an ICU plural. It replaces a `formatNumber` call: `#` inside a
  * plural is formatted by the provider's locale, so the thousands separator is
- * still the German one and the count now picks its own noun.
+ * still the language's own and the count now picks its own noun.
  */
 const COPY = defineMessages({
   screenTitle: {
@@ -208,13 +208,14 @@ function PeertubeStage({
 /** Kicker, title, source, description, link — the same for both sources. */
 function VideoMeta({ video }: { video: Video }) {
   const intl = useIntl();
+  const locale = useLocale();
   const days = daysSince(video.publishedAt);
   const when =
     days <= 0
       ? intl.formatMessage(COPY.today)
       : days === 1
         ? intl.formatMessage(COPY.yesterday)
-        : formatDateDe(video.publishedAt);
+        : formatDate(video.publishedAt, locale);
   const duration = video.durationSec ? formatMinutesDe(video.durationSec) : '';
   const views = video.views != null ? intl.formatMessage(COPY.views, { count: video.views }) : '';
   const channel = channelOf(video);

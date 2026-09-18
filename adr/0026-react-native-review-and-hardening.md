@@ -389,8 +389,15 @@ first time a string says "vor drei Tagen".
 names and seven weekday names exist because "The NS runtime has no German ICU", and
 NativeScript left this tree with [ADR 0007](0007-removing-the-nativescript-host.md) on
 2026-08-12. `Intl.DateTimeFormat` and `Intl.NumberFormat` are both present, so those
-tables are deletable rather than parameterisable. Confirm on a device first, and on
-iOS separately.
+tables are deletable ~~rather than parameterisable~~ — and parameterisable as well,
+which this paragraph did not see. Voided by
+[ADR 0049](0049-the-catalogue-is-a-package.md) §4: the tables did go, and what
+replaced them was four formatters pinned to `'de-DE'` and three patterns assembled by
+hand in German word order. Deleting the tables answered the question this section
+asked and left the locale written into the module in a form that reads like
+plumbing rather than like a decision. It is a parameter now, and the German assembly
+is asked for only when the language is German. Confirm on a device first, and on iOS
+separately.
 
 **[AGENTS.md](../AGENTS.md) has to change with this**, because it currently says
 German "for everything a user reads, and only there" and that multilingual support is

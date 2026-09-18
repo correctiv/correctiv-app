@@ -4,7 +4,8 @@ import { ScrollView, View } from 'react-native';
 
 import { Overline, ScreenHeader, Typo } from '@/components/ui';
 import { diaries } from '@correctiv/app-core/data/backstage';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
+import { useLocale } from '@/lib/store/core';
 
 /**
  * Everything this screen says, in ENGLISH; the German ships in
@@ -45,6 +46,7 @@ export function generateStaticParams(): { id: string }[] {
 /** One research-diary entry: series, title, date, body copy. */
 export default function TagebuchScreen() {
   const intl = useIntl();
+  const locale = useLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entry = diaries.find((d) => d.id === id) ?? null;
 
@@ -72,7 +74,7 @@ export default function TagebuchScreen() {
             {entry.title}
           </Typo>
           <Typo variant="text-s" color="grey-500" className="mt-2xs">
-            {formatDateShortDe(entry.date)}
+            {formatDateShort(entry.date, locale)}
           </Typo>
 
           {entry.body.map((paragraph) => (
