@@ -41,6 +41,22 @@ export interface DocumentSource {
  * published as "Conventions" because that is what it is; its filename is an
  * artefact of which tool reads it first.
  */
+/**
+ * **`nav` and `blurb` are this site's own words, and they do not follow the
+ * language setting.** By
+ * [ADR 0052](../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1 they
+ * would: they are hand-written in this package, about the repository rather than
+ * by it. What stops them is the extraction, not the record. `package.json`'s
+ * `i18n:extract` walks `src/**` and this file is in `plugin/`, so a descriptor
+ * written here extracts to nothing and would ship as an English default with no
+ * German behind it and nothing going red.
+ *
+ * ADR 0052 §5 names the gap. Until it closes, a document has ONE name and it is
+ * here: `pages/Handbook.tsx`'s cards print `nav` rather than carrying a second
+ * copy, and `pages/Document.tsx`'s breadcrumb prints the same. Do not add a
+ * descriptor beside one of these expecting it to be extracted, and do not write a
+ * second name for a document anywhere else.
+ */
 export const DOCUMENTS: DocumentSource[] = [
   {
     id: 'architecture',

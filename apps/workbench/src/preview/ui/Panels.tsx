@@ -171,9 +171,10 @@ const COPY = defineMessages({
   },
   consoleSummary: {
     id: 'tools.console.summary',
-    defaultMessage: '{shown} of {total} lines shown, {warnings} warnings, {errors} errors.',
+    defaultMessage:
+      '{shown} of {total} lines shown, {warnings, plural, one {# warning} other {# warnings}}, {errors, plural, one {# error} other {# errors}}.',
     description:
-      'Under the console rows. {shown} is how many rows the two toggles and the filter leave, {total} how many there are, and {warnings} and {errors} the split of the whole by level.',
+      'Under the console rows. {shown} is how many rows the two toggles and the filter leave, {total} how many there are, and {warnings} and {errors} the split of the whole by level. The last two inflect: a run with one warning is an ordinary reading of this line, and the first version of this string said “1 warnings”.',
   },
   markErrors: {
     id: 'tools.console.mark.errors',

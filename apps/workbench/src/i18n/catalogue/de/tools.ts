@@ -17,9 +17,9 @@
  * property and `#ffffff` a colour. `DevTools`, `Rendering`, `expo export` and
  * `npm run web` are a browser's name, one of its panels, and two commands.
  *
- * Two things this file says in German where the English says something shorter:
- * a fixture's own name and line are `fixtures.*`, and the storage those write is
- * not user-facing at all.
+ * Two things this file does NOT hold, so that looking for them here is short: a
+ * fixture's own name and the line under it are `fixtures.*`, and the storage a
+ * fixture writes is not user-facing at all.
  */
 export const tools: Record<string, string> = {
   'tools.needsDev': 'Braucht einen Development-Build',
@@ -103,7 +103,7 @@ export const tools: Record<string, string> = {
   'tools.inspect.nothing': 'Nichts ausgewählt.',
   'tools.inspect.noSource':
     'Keine Quelle: entweder ist nichts in der Owner-Kette dieses Knotens Code der App, oder das Bundle führt überhaupt keine Owner-Stacks, was auf jeden Produktions-Build zutrifft.',
-  'tools.inspect.stack': 'Quell-Stack, innerster zuerst',
+  'tools.inspect.stack': 'Der Quell-Stack, der innerste zuerst',
   'tools.inspect.block': 'Übergabeblock',
   'tools.inspect.copy': 'Für einen Agenten kopieren',
   'tools.inspect.open': 'Im Editor öffnen',

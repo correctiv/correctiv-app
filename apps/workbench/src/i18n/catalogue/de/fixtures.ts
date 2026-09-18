@@ -16,6 +16,12 @@
  * layout renders in place of every route, and `/gespeichert`, `A++` and `offline`
  * stay in their own spelling because each is what the app itself calls the thing.
  */
+/*
+ * „Start" and not „Startseite", which is what this said first. The app's own
+ * German for that tab is „Start" (`de/frame.ts`'s `frame.pages.home`), and the
+ * descriptors on these two hints say so to a translator: a fixture's hint names
+ * a screen, so it has to use the name the reader will see on it.
+ */
 export const fixtures: Record<string, string> = {
   'fixtures.fresh': 'Frische Installation',
   'fixtures.fresh.hint': 'Nichts gespeichert. Die App startet an der Tür, abgemeldet.',
@@ -28,14 +34,14 @@ export const fixtures: Record<string, string> = {
     'Der vierte Zustand der Tür: ein 0-€-Mitglied, weitergeleitet zum Upgrade.',
 
   'fixtures.onboarded': 'Onboarding abgeschlossen',
-  'fixtures.onboarded.hint': 'Der Normalfall: die App startet auf der Startseite.',
+  'fixtures.onboarded.hint': 'Der Normalfall: die App startet auf dem Tab Start.',
 
   'fixtures.saved': 'Gespeicherte Artikel',
   'fixtures.saved.hint': '/gespeichert ist sonst leer und zeigt nur seinen Leerzustand.',
 
   'fixtures.interests': 'Interessen gewählt',
   'fixtures.interests.hint':
-    'Eine personalisierte Startseite: zusätzliche Feeds, Module in anderer Reihenfolge.',
+    'Start, personalisiert: zusätzliche Feeds, Module in anderer Reihenfolge.',
 
   'fixtures.submitted': 'Callout beantwortet',
   'fixtures.submitted.hint': 'Das Formular zeigt dann seinen Dank statt seiner Fragen.',

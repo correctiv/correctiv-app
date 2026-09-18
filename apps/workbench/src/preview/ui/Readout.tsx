@@ -47,9 +47,9 @@ const COPY = defineMessages({
   },
   which: {
     id: 'preview.status.combination.n',
-    defaultMessage: '{n} of 4',
+    defaultMessage: '{n} of {total}',
     description:
-      'What goes in the bold of the two lines above. {n} is 1, 2, 3 or 4, and 4 is how many there are: the two explicit settings, then “system” against each of the two device schemes.',
+      'What goes in the bold of the two lines above. {n} is which combination is on screen and {total} how many there are: the two explicit settings, then “system” against each of the two device schemes. {total} is handed in from COMBINATIONS.length rather than written as a four, because a four typed in a catalogue is a second copy of a number the code already has.',
   },
   unknown: {
     id: 'preview.status.unknown',
@@ -142,7 +142,9 @@ export function Readout({
 
       <span className="hidden shrink-0 lg:inline">
         {intl.formatMessage(combo?.isDefault ? COPY.combinationDefault : COPY.combination, {
-          which: combo ? intl.formatMessage(COPY.which, { n: combo.n }) : unknown,
+          which: combo
+            ? intl.formatMessage(COPY.which, { n: combo.n, total: COMBINATIONS.length })
+            : unknown,
           b: counted,
         })}
       </span>
