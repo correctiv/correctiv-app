@@ -500,5 +500,14 @@
       "4": ["What stays out of the app's bundle is decided by the import, not by the bundler"],
       "5": ["The field is written before the second screen, and the screen is not"]
     }
+  },
+  "0055": {
+    "slugs": ["the-rail-takes-a-mouse-and-the-app-owns-the-affordance"],
+    "decisions": {
+      "1": ["The affordance goes into the app's web target, and the workbench gets nothing"],
+      "2": ["One component, one platform pair, and the arithmetic in a module a test can run"],
+      "3": ["A press becomes a drag at six pixels, and that click is swallowed"],
+      "4": ["The vertical wheel keeps scrolling the page"]
+    }
   }
 }
