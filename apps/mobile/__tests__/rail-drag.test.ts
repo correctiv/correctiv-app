@@ -42,6 +42,23 @@ describe('heldAt', () => {
     expect(heldAt(grab, PODCASTS, 420)).toBe(80);
   });
 
+  /**
+   * The rail starts from where it already stood, and every other case in this
+   * file hides that.
+   *
+   * Drop `grab.left` from the sum — `-(x - grab.x)`, a drag that always begins
+   * from nought — and the ten other assertions here stay green. The ones sharing
+   * the `grab` above have `left: 0`, where the term adds nothing; the ones that
+   * set it drag far enough to land on a clamp, and a clamp gives the same answer
+   * whatever it was handed. So this case is deliberately away from both ends:
+   * 100 is neither 0 nor `reach`, and it is the only number on this page that
+   * the term itself decides.
+   */
+  it('carries on from where the grab found the rail', () => {
+    // Grabbed 80 along, hand back 20 to the left, so the rail is 20 further on.
+    expect(heldAt({ x: 500, left: 80 }, PODCASTS, 480)).toBe(100);
+  });
+
   it('stops at the end rather than running past it', () => {
     expect(heldAt(grab, PODCASTS, 0)).toBe(164);
   });

@@ -82,12 +82,17 @@ export function heldAt(grab: Grab, extent: Extent, x: number): number {
 /**
  * Whether a press that has travelled this far is a drag.
  *
- * `travelled` is the pointer's furthest distance from the grab during the press,
- * not its distance at the release and not how far the rail moved. Both of the
- * others are wrong in a case that happens: a drag into the end of a rail moves
- * the pointer three hundred pixels and the rail none, and a drag out and back
- * ends where it started. Either would let go of a press that was plainly a drag
- * and open whatever card was under the cursor.
+ * `travelled` is the pointer's furthest HORIZONTAL distance from the grab during
+ * the press, not its distance at the release and not how far the rail moved.
+ * Both of the others are wrong in a case that happens: a drag into the end of a
+ * rail moves the pointer three hundred pixels and the rail none, and a drag out
+ * and back ends where it started. Either would let go of a press that was
+ * plainly a drag and open whatever card was under the cursor.
+ *
+ * Horizontal and not the diagonal, which is a decision rather than a shortcut: a
+ * rail only moves sideways, so a press that slides forty pixels straight down
+ * has asked for nothing this can give and still opens the card under it. The
+ * caller is what measures that distance; this only says where the line is.
  */
 export function isDrag(travelled: number): boolean {
   return travelled >= GRIP;

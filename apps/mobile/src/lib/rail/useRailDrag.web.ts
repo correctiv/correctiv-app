@@ -27,7 +27,7 @@ import { heldAt, isDrag, reach, type Extent, type Grab } from './drag';
  * **The vertical wheel is deliberately left alone.** Translating it into
  * horizontal movement is the other half of what such a component usually does,
  * and the measurement above is the argument against it: the page scrolls
- * correctly under the pointer today, the Mediathek stacks three rails down one
+ * correctly under the pointer today, the Mediathek stacks several rails down one
  * screen, and a reader scrolling past them would find the page stop and a row
  * slide sideways instead. Fixing a gesture that works is a worse trade than
  * leaving one gesture to the hand.
@@ -93,7 +93,11 @@ interface Press {
    * early for the rest of one gesture.
    */
   readonly extent: Extent;
-  /** The pointer's furthest distance from the grab so far; see `isDrag`. */
+  /**
+   * The pointer's furthest HORIZONTAL distance from the grab so far; see
+   * `isDrag`, which says why the furthest rather than the latest and why the
+   * vertical component is thrown away.
+   */
   travelled: number;
   /** Whether that distance has passed `GRIP` at any point during this press. */
   dragging: boolean;
@@ -104,10 +108,17 @@ interface Press {
  *
  * Separate from the hook because it is plain DOM: no React, nothing to re-run,
  * and every listener it adds is removed by the function it returns.
+ *
+ * Exported for `__tests__/rail-drag-web.test.ts` and for nothing else — `Rail`
+ * reaches this file through the hook. The export is the whole of what makes the
+ * part that can actually go wrong testable: the `pointerType` gate, the capture
+ * held back to the threshold, the capture-phase swallow and this teardown are
+ * all here, and a test that had to mount a `ScrollView` to reach them would be
+ * testing react-native-web's ref forwarding instead.
  */
-function railDrag(node: HTMLElement): () => void {
+export function railDrag(node: HTMLElement): () => void {
   let press: Press | null = null;
-  /** Set by a drag, read and cleared by the click that follows it. */
+  /** Set by a drag that was RELEASED, read and cleared by the click that follows it. */
   let swallow = false;
 
   const down = (event: PointerEvent) => {
@@ -193,7 +204,14 @@ function railDrag(node: HTMLElement): () => void {
 
   const end = (event: PointerEvent) => {
     if (press === null || event.pointerId !== press.pointer) return;
-    swallow = press.dragging;
+    /*
+     * A release arms the swallow; a CANCEL must not. Both end the press and both
+     * arrive here, but only a release is followed by the `click` that reads the
+     * flag and clears it. Setting it on a cancel leaves it armed with nothing
+     * coming to consume it, and the next real click on this rail — a whole
+     * gesture later — is the one that gets eaten.
+     */
+    swallow = event.type === 'pointerup' && press.dragging;
     press = null;
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', end);

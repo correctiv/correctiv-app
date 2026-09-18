@@ -81,7 +81,24 @@ files to keep in step, for a difference that is entirely behavioural.
 
 The arithmetic is `lib/rail/drag.ts`, which touches no DOM and no React, so
 `__tests__/rail-drag.test.ts` can state its rules: the same split
-`apps/workbench/src/preview/home/fit.ts` makes, for the same reason.
+`apps/workbench/src/preview/home/fit.ts` makes, for the same reason. The browser half
+is reached by `__tests__/rail-drag-web.test.ts`, which is why `railDrag` is exported
+at all — the arithmetic is four lines, and the listeners talking to each other above it
+are where this can actually go wrong.
+
+**And `drag.ts` is not in the core, though by the letter of AGENTS.md it looks core-shaped.**
+That rule — behaviour goes in `packages/app-core`, ask whether what you are writing is a
+screen — is stated more forcefully than the workbench boundary this record spends its
+first decision on, so it deserves the answer rather than the silence. `drag.ts` is pure
+arithmetic with no UI framework and would compile there untouched. It stays in the app
+because what it computes is not behaviour the core has an opinion about: it is the
+pixel arithmetic of one component's pointer affordance on one platform, meaningless
+without the `<div>` it is scrolling, and the core has no rails and no pointers. The
+precedent is `apps/workbench/src/preview/home/fit.ts`, cited above for its testing split
+and relevant twice: that module is arithmetic in a host too, for the same reason.
+The line being drawn is that a module is core-shaped when its *subject* is the app's
+domain, not merely when its *syntax* imports nothing — and if that reading is ever
+rejected, `fit.ts` moves with it.
 
 **The anchor is the grab, not the previous move**, and that is the one rule in there
 worth arguing. Summing per-move deltas — which is what the `dragscroll` this borrows from
@@ -159,18 +176,58 @@ what focuses an element, so a rail's cards would stop taking focus from a click.
 loss for a real keyboard user in exchange for a tidier implementation. `selectstart` and
 `dragstart` are refused instead, and only while a button is down on the rail.
 
+That last sentence is worth less than it sounds, and the honest version is this. Measured
+on 2026-09-18 against the assembled site: a rail card is a `<div role="link" tabindex="0">`
+with no `href`, it does take focus, and then **neither Enter nor Space does anything at
+all** — no `click`, no `onPress`, no navigation. The same element's `click()`, called
+directly, navigates, so the handler is there and nothing reaches it. react-native-web
+treats `role="link"` as natively interactive and so does not synthesise the keyboard
+activation it adds for other roles, while a `<div>` is not something the browser activates
+either, and no `href` means there is no link for it to follow.
+
+So the keyboard user this paragraph is protecting cannot open a rail card today by any
+means, and what the choice above actually preserves is the focus ring on the way past. The
+reasoning still holds — keeping focus is right, and it is what the fix for that defect will
+need — but it is preserving one step of a path whose second step does not exist. Pre-existing,
+not caused by this record and not fixed by it; see the keyboard item below.
+
 ## What is still open
 
 - **Nothing here has run on a phone**, because there is nothing to run: the native half
   is a no-op and hands `ScrollView` no ref, which is the tree it had before. The web
   half is measured in Chrome and in Chrome only. Firefox and Safari are unrun, and the
   pointer-capture and `selectstart` behaviour is where they would differ if they do.
-- **A rail is still not reachable by the keyboard as a rail.** Tabbing to a card scrolls
-  it into view, which is how a keyboard gets down a rail today, and a rail whose items
-  are not focusable would have no keyboard path at all. None exists in the app now.
+- **A rail is still not reachable by the keyboard as a rail**, and the cards in it are
+  worse off than that. Tabbing to a card scrolls it into view, which is how a keyboard
+  gets down a rail today — but the card, once focused, cannot be opened: neither Enter nor
+  Space produces a `click` or an `onPress`, for the reason given under `preventDefault()` above.
+  Tabbing through a rail is therefore a tour of things that cannot be activated. That is
+  pre-existing, is not caused by anything in this record, and is not fixed by it; it is
+  written down here because the record's own reasoning leans on that reader twice and a
+  later reader should not have to measure it again.
   [ADR 0047](0047-the-handle-is-the-pointers-and-the-arrows-are-the-keyboards.md) made
   exactly this split for the home editor's handle, and the same question is open here
   with nobody asking it yet.
+- **A mouse can no longer select text inside a rail**, which this record should have said
+  on the day and did not. `selectstart` is refused for the whole press rather than only
+  past the threshold, so no press on a rail can start a selection however short it is.
+  Measured on the assembled site: pressing on a card headline and sweeping five pixels —
+  one under `GRIP`, so never a drag — selects nothing, while the identical gesture on the
+  page's own text a few centimetres away selects a word.
+
+  Stated carefully, because the obvious phrasing is wrong: it is **not** that a
+  double-click selects less inside a rail than outside. A double-click on a card cannot
+  select at all in either case, because its first click is a click and opens the card.
+  The capability lost is the ordinary press-and-sweep, and losing it is invisible until
+  somebody tries to copy a headline.
+
+  It is probably the right trade — a selection started inside a rail and dragged is
+  exactly the gesture this is replacing, and refusing only past `GRIP` would mean a
+  selection that appears for six pixels and is then taken away, which reads as a glitch
+  rather than as a rule. But it is a capability removed from every rail in the app in
+  exchange for one added, nobody has been asked whether the headline text was ever worth
+  copying, and the alternative that keeps both — refuse only once `dragging` is true, and
+  clear any selection made on the way — is untried rather than rejected.
 - **Right-to-left is not considered.** `scrollLeft` is signed differently across
   browsers in an RTL document; German is the only language that ships
   ([ADR 0049](0049-the-catalogue-is-a-package.md)), so the arithmetic assumes LTR and
