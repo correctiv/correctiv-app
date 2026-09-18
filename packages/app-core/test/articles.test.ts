@@ -387,10 +387,11 @@ describe('stripTags', () => {
  * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host a
  * locale to pass, and it had no test at all — which a cold review pointed out.
  *
- * The default is the interesting half. `buildReaderHtml` keeps `'de'` so that every
- * caller written before the option still renders exactly what it rendered, and the
- * app's own wrapper passes `intl.locale` so the words and the attribute cannot
- * disagree.
+ * There is no default, and that is the interesting half. `buildReaderHtml` had one
+ * for a release and a cold review took it back out: a default is the constant under
+ * another name, so a host that forgets the locale would silently claim German. The
+ * app's own wrapper passes `useLocale()` and deliberately not `intl.locale`, which
+ * `apps/mobile/src/lib/articles/reader.ts` argues where it takes the parameter.
  */
 describe('the reader document names its language', () => {
   const article: Article = {

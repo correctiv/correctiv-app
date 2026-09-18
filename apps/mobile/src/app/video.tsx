@@ -29,7 +29,7 @@ const COPY = defineMessages({
     id: 'video.duration',
     defaultMessage: '{count, plural, one {# min} other {# min}}',
     description:
-      'Beside the publication date under a video. {count} is a whole number of minutes, rounded up from one; both branches read the same in English because the abbreviation does not inflect, and a language whose does needs both.',
+      'Beside the publication date under a video. {count} is a whole number of minutes, never less than one; both branches read the same in English because the abbreviation does not inflect, and a language whose does needs both.',
   },
   none: { id: 'video.none', defaultMessage: 'No video selected.' },
   unavailable: { id: 'video.unavailable', defaultMessage: 'Video unavailable' },

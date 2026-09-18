@@ -40,7 +40,7 @@ import { useLocale } from '@/lib/store/core';
  * What a formatting failure does, and the one that matters is
  * `MISSING_TRANSLATION`.
  *
- * It is the failure mode `defaultLocale="en"` buys: an id with no German entry
+ * It is the failure mode the English fallback buys: an id with no German entry
  * renders the English `defaultMessage` on a German phone, which is a screen that
  * works, reads wrong, and reports nothing. react-intl's own `onError` logs it and
  * carries on — and a console line is precisely what happened during issue #99,
@@ -106,14 +106,24 @@ export function Localisation({ children }: { children: ReactNode }) {
   return (
     <IntlProvider
       /*
-        The region, not the bare tag, and the same one `lib/format.ts` formats a date
-        with. `'en'` resolves to American order inside `Intl` and `'en-GB'` does not,
-        so a provider given `'en'` beside a `formatDate` given `'en-GB'` would print
-        one day two ways. Nothing in the catalogue carries an ICU `{x, date}` today;
-        this is what keeps the first one that does from finding it.
+        The region on BOTH, and the same one `lib/format.ts` formats a date with.
+        `'en'` resolves to American order inside `Intl` and `'en-GB'` does not, so a
+        provider given `'en'` beside a `formatDate` given `'en-GB'` would print one
+        day two ways. Nothing in the catalogue carries an ICU `{x, date}` today; this
+        is what keeps the first one that does from finding it.
+
+        `defaultLocale` has to go through the same function and not stay `'en'`, which
+        a cold review measured: react-intl formats a FALLBACK `defaultMessage` with
+        `defaultLocale` rather than with `locale`, so half the seam would have stayed
+        open on the branch every string in this repository takes when its catalogue
+        has no entry. It also keeps the two tags equal for English — the missing
+        translation guard compares them case-insensitively, and `'en-gb'` against
+        `'en'` would raise `MISSING_TRANSLATION` for every English string whose
+        `defaultMessage` IS the right answer, which `onError` below throws on in
+        development.
       */
       locale={intlLocale(locale)}
-      defaultLocale="en"
+      defaultLocale={intlLocale('en')}
       messages={CATALOGUES[locale]}
       onError={onError}
     >

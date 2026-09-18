@@ -32,12 +32,16 @@ interface Formatters {
  * What a locale is called to `Intl`, which is not what it is called to this app.
  *
  * **`en-GB` is the choice that decides something, and it was nearly left unargued.**
- * Measured against the four formats this file asks for: `de` and `de-DE` agree on all
- * four, and `en` and `en-GB` disagree on the two long dates — "January 1, 2024" against
- * "1 January 2024" — because the bare tag resolves to American order. The short numeric
- * date and the number come out the same either way, so the region is not decorative
- * here and it is not decisive everywhere either: it picks the order of a written-out
- * date. British, because this repository's English is British
+ * Measured against the four formats this file asks for — `weekday`, `dayMonthYear`,
+ * `dayMonth` and `number`. `de` and `de-DE` agree on all four. `en` and `en-GB`
+ * disagree on the two that write the month out, `dayMonthYear` and `dayMonth`:
+ * "January 1, 2024" against "1 January 2024", because the bare tag resolves to
+ * American order. The weekday and the number come out the same either way. So the
+ * region is not decorative here and it is not decisive everywhere either: it picks
+ * the order of a written-out date, which is what `formatDate` and `formatDateShort`
+ * both print. A first version of this paragraph said the short date was one of the
+ * two that agree; it is `dayMonth` and it is one of the two that differ.
+ * British, because this repository's English is British
  * throughout: its prose, its `defaultMessage`s and its own `toLocaleString('en-GB')` in
  * the workbench.
  *
@@ -50,7 +54,7 @@ interface Formatters {
  * this file cannot print the same day two ways. Nothing in the catalogue uses one yet;
  * the first that does would have found the seam.
  */
-export const REGION: Record<Locale, string> = { de: 'de-DE', en: 'en-GB' };
+const REGION: Record<Locale, string> = { de: 'de-DE', en: 'en-GB' };
 
 /** The tag `Intl` wants for a locale this app names. */
 export function intlLocale(locale: Locale): string {
