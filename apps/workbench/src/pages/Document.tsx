@@ -203,7 +203,7 @@ export function Document({ doc }: Props) {
                 which stopped being true the day a document of the design section
                 was published at `/design/plugin`. A breadcrumb is navigation and
                 follows the language setting, so this formats the rail's own
-                descriptor; the document below it does not (ADR 0050 §2). */}
+                descriptor; the document below it does not (ADR 0052 §1). */}
               <li>{intl.formatMessage(sectionOf(doc.route))}</li>
               <li aria-hidden="true">/</li>
               <li className="text-on-canvas">{record ? `ADR ${record}` : doc.nav}</li>
@@ -404,10 +404,19 @@ function Diagram({ id }: { id: string }) {
  *
  * **The word is handed in rather than typed here**, because it is this site's
  * label on the repository's sentence and so follows the language setting
- * (ADR 0052 §1). That also makes the already-annotated branch below do more than
- * skip: the document's HTML sits under `dangerouslySetInnerHTML`, so React
- * re-renders none of it when the setting changes, and a chip drawn in the other
- * language would stay in it until the reader navigated away.
+ * (ADR 0052 §1).
+ *
+ * **The already-annotated branch below really does only skip**, and an earlier
+ * version of this paragraph claimed otherwise: it said React re-renders none of
+ * the document's HTML because it sits under `dangerouslySetInnerHTML`, so that
+ * branch had to redraw a chip in the new language. A cold review measured the
+ * opposite. Marking the `<ins>` nodes and three of the document's own paragraphs
+ * and forcing one re-render left every marker gone and nine fresh `<del>` in
+ * place: React rewrites that subtree on every render, which is the whole reason
+ * the effect above runs after every render rather than on a dependency list. So
+ * the language switch is served by the annotation running again from scratch,
+ * and this branch is reached only by StrictMode's second effect call in
+ * development.
  */
 function annotateRetired(root: HTMLElement | null, word: string): void {
   if (!root) return;

@@ -19,9 +19,10 @@
  * two are what this team says out loud; `landing.layout.core` would read oddly
  * as „Kern“ beside a row headed `packages/app-core`.
  *
- * „Protokoll“ is the word for a record here and in `landing.door.decisions.kind`.
- * `/decisions` is not translated yet, so that page will have to agree with this
- * one rather than the other way round.
+ * „Protokoll“ is the word for a record here and in `landing.door.decisions.kind`,
+ * and it is the word `/decisions` and a document's own frame use, which landed
+ * in the same change. An earlier version of this sentence said that board was
+ * not translated yet, which was already false when it was written.
  */
 export const landing: Record<string, string> = {
   'landing.title': 'Die CORRECTIV-App und alles, was darüber aufgeschrieben ist',
@@ -32,9 +33,9 @@ export const landing: Record<string, string> = {
 
   'landing.status.heading': 'Was die App liest',
   'landing.status.note':
-    'Eine Zahl je Eintrag im Manifest, weshalb die Statusübersicht auf mehr kommt: Sie zeichnet die Artikel-Familie als ihre {feeds} Feeds, denn veraltet ist immer ein Feed. Die Zahlen stammen aus einem Lauf gegen die Live-Quellen vom {measured}, {days, plural, =0 {heute} =1 {gestern} other {vor # Tagen}}, den ein wöchentlicher Job neu nimmt. Während Sie das hier lesen, aktualisiert sich nichts, denn die Feeds senden keinen CORS-Header, über den ein Browser sie neu nehmen könnte.',
+    'Eine Zahl je Eintrag im Manifest, weshalb die Statusübersicht auf mehr kommt: Sie zeichnet die Artikelfamilie als ihre {feeds} Feeds, denn veraltet ist immer ein Feed. Die Zahlen stammen aus einem Lauf gegen die Livequellen vom {measured}, {age}, den ein wöchentlicher Job neu nimmt. Während Sie das hier lesen, aktualisiert sich nichts, denn die Feeds senden keinen CORS-Header, über den ein Browser sie neu nehmen könnte.',
 
-  'landing.figure.live': 'Live-Quellen',
+  'landing.figure.live': 'Livequellen',
   'landing.figure.sample': 'Beispieldatensätze',
   'landing.figure.noSource': 'Gewünscht, ohne Quelle',
   'landing.figure.questions': 'Offene redaktionelle Fragen',

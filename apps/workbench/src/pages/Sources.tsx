@@ -94,13 +94,15 @@ const SECTION_LEDE = 'mt-2xs max-w-content text-m text-on-canvas-muted';
  * of what the app reads, and a ledger is quoted rather than narrated. §4 names the
  * questions as the case against itself, so read that section before moving them.
  *
- * **Two English fragments arrive inside German sentences and neither is a
- * mistake.** `{age}` comes from `src/lib/measured.ts`, which works the distance
- * from today out in the reader's browser and answers in words; `settings.build.note`
- * already reads around the same fragment. `{posts}` and `{newest}` come from
- * `feedFigures()` in the manifest, which answers `every post`, `none` or `unknown`
- * where it cannot answer with a number. Both are named on the descriptors that
- * carry them, so a translator is not left guessing what lands in the hole.
+ * **Two English fragments used to arrive inside German sentences and both are
+ * gone.** `{age}` came out of `src/lib/measured.ts` as English prose, so this
+ * page read „gemessen (2 days ago)“; that function takes the formatter now.
+ * `{posts}` and `{newest}` came out of `feedFigures()` as the English words
+ * "every post", "none" and "unknown", and as a count grouped for one language;
+ * the manifest hands out a finding and `saysCount` and `saysNewest` below word
+ * it. A first version of this paragraph said both were deliberate and named
+ * them as such on the descriptors, which a cold review caught in the same commit
+ * that removed them.
  */
 const COPY = defineMessages({
   stateLive: {
@@ -269,14 +271,14 @@ const COPY = defineMessages({
     id: 'sources.feed.newest',
     defaultMessage: 'newest: <f>{newest}</f>',
     description:
-      'The second line of the Measured cell on an article feed’s row. {newest} is the day of the newest post in that feed, or the word “none” or “unknown” where the run could not say; it arrives from feedFigures() in content/sources.manifest.ts, which this site prints as it is written, so it may be English inside a translated sentence. <f> draws it in monospace so it never wraps.',
+      'The second line of the Measured cell on an article feed’s row. {newest} is the day of the newest post in that feed, or sources.newest.none or sources.newest.unknown where the run could not say. The manifest reports the finding and saysNewest() words it, so this hole is filled in the reader’s own language. <f> draws it in monospace so it never wraps.',
   },
   feedRun: {
     id: 'sources.feed.run',
     defaultMessage:
       '{category}. The run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.',
     description:
-      'The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it. {measured} is the ISO day of the last run. {posts} and {newest} come from feedFigures() in content/sources.manifest.ts and may be a number or one of the English words “every post”, “none” and “unknown”, which this site prints as they are written. <f> draws a figure in monospace.',
+      'The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it and is not translated. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace.',
   },
   feedUnmeasured: {
     id: 'sources.feed.unmeasured',
@@ -481,7 +483,7 @@ const COPY = defineMessages({
     id: 'sources.findings.figures',
     defaultMessage: '{category}: <f>{posts}</f>, newest <f>{newest}</f>.',
     description:
-      'The figures on such a card. {category} is the feed’s category as the manifest writes it; {posts} and {newest} come from feedFigures() in content/sources.manifest.ts and may be a number or one of the English words “every post”, “none” and “unknown”, which this site prints as they are written. <f> draws each figure in monospace.',
+      'The figures on such a card. {category} is the feed’s category as the manifest writes it and is not translated; {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*. <f> draws each figure in monospace.',
   },
   findingsRest: {
     id: 'sources.findings.rest',
@@ -1237,17 +1239,25 @@ function Tile({ value, name, count, checked, onSelect, mark, children }: TilePro
 /**
  * The run's finding for a feed, in words.
  *
- * `content/sources.manifest.ts` hands out the finding and not the sentence, which
- * is what stopped `posts.toLocaleString('en-GB')` putting `2,956` above `7.822` in
- * one column on the German page. A count goes through the formatter so its digits
- * are grouped the way the reader's language groups them; the other three answers
- * are words and are messages.
+ * `content/sources.manifest.ts` hands out the finding and not the sentence. A
+ * count goes through the formatter, so its digits are grouped the way the
+ * reader's language groups them and not the way a locale pinned in a ledger
+ * grouped them; the other three answers are words and are messages. That file's
+ * own header carries the measurement and what it is and is not a fact about.
  */
 function saysCount(intl: IntlShape, count: FeedCount): string {
-  if (count.kind === 'count') return intl.formatNumber(count.posts);
-  if (count.kind === 'everyPost') return intl.formatMessage(COPY.countEveryPost);
-  if (count.kind === 'none') return intl.formatMessage(COPY.countNone);
-  return intl.formatMessage(COPY.countUnknown);
+  // A switch and not a fall-through, so that a fifth kind is a typecheck error
+  // here rather than a row silently reading „keine Antwort“.
+  switch (count.kind) {
+    case 'count':
+      return intl.formatNumber(count.posts);
+    case 'everyPost':
+      return intl.formatMessage(COPY.countEveryPost);
+    case 'none':
+      return intl.formatMessage(COPY.countNone);
+    case 'unknown':
+      return intl.formatMessage(COPY.countUnknown);
+  }
 }
 
 /**
@@ -1258,9 +1268,14 @@ function saysCount(intl: IntlShape, count: FeedCount): string {
  * gave "The run found unknown", which is not a sentence in either language.
  */
 function saysNewest(intl: IntlShape, newest: FeedNewest): string {
-  if (newest.kind === 'day') return newest.day;
-  if (newest.kind === 'none') return intl.formatMessage(COPY.newestNone);
-  return intl.formatMessage(COPY.newestUnknown);
+  switch (newest.kind) {
+    case 'day':
+      return newest.day;
+    case 'none':
+      return intl.formatMessage(COPY.newestNone);
+    case 'unknown':
+      return intl.formatMessage(COPY.newestUnknown);
+  }
 }
 
 export function Sources() {
@@ -1348,7 +1363,14 @@ export function Sources() {
             <p className="text-s uppercase tracking-wider text-on-canvas-muted">
               {intl.formatMessage(COPY.eyebrow)}
             </p>
-            <h1 className="mt-2xs text-headline-xxl font-bold leading-tight tracking-tight">
+            {/* `hyphens-auto`, because German compounds a heading into one word and
+                the largest type on the site has no room for it: „Entscheidungs-
+                protokolle" is 23 characters and pushed the whole page sideways at
+                500px, measured on 2026-09-18, where the English wrapped and did
+                not. The browser hyphenates by `<html lang>`, which `i18n/language.ts`
+                keeps on the language being rendered, so this works because that does.
+                `break-words` is the fallback for a language it has no patterns for. */}
+            <h1 className="mt-2xs text-headline-xxl font-bold leading-tight tracking-tight hyphens-auto break-words">
               {intl.formatMessage(COPY.title)}
             </h1>
             <p className="mt-s max-w-content text-l leading-normal text-on-canvas-muted">

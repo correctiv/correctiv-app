@@ -798,7 +798,14 @@ export function Decisions() {
             <p className="text-s uppercase tracking-wider text-on-canvas-muted">
               {intl.formatMessage(COPY.eyebrow)}
             </p>
-            <h1 className="mt-2xs text-headline-xxl font-bold leading-tight tracking-tight">
+            {/* `hyphens-auto`, because German compounds a heading into one word and
+                the largest type on the site has no room for it: „Entscheidungs-
+                protokolle" is 23 characters and pushed the whole page sideways at
+                500px, measured on 2026-09-18, where the English wrapped and did
+                not. The browser hyphenates by `<html lang>`, which `i18n/language.ts`
+                keeps on the language being rendered, so this works because that does.
+                `break-words` is the fallback for a language it has no patterns for. */}
+            <h1 className="mt-2xs text-headline-xxl font-bold leading-tight tracking-tight hyphens-auto break-words">
               {intl.formatMessage(COPY.title)}
             </h1>
             <p className="mt-s max-w-content text-l leading-normal text-on-canvas-muted">

@@ -7,7 +7,7 @@
  * why the function that says it in words has to be handed the language.
  *
  * German counts the days the same way English does, so the plural has the two
- * branches the source has and no more. „heute" and „gestern" are the two days
+ * branches the source has and no more. "heute" and "gestern" are the two days
  * that have a name rather than a number, in both.
  */
 export const measured: Record<string, string> = {

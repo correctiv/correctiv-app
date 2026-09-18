@@ -13,12 +13,21 @@
  * calls the answer rather than an unfinished translation.
  *
  * „Aussage“ for a claim and „Protokoll“ for a record, the same two words
- * `landing.ts` uses. `/decisions` has not been translated yet, so that board
- * will have to agree with these rather than the other way round.
+ * `landing.ts` and `decisions.ts` use.
  *
- * „zurückgezogen“ for a claim that a later decision made false. „überholt“ was
- * the other candidate and says the wrong thing: a struck claim is not merely out
- * of date, the record it stands in no longer asserts it.
+ * **„Streichung“ and not „zurückgezogen“**, which is what this file said first.
+ * `/decisions` landed in the same change and its vocabulary block argues the
+ * four words that board uses: a claim a later decision made false is
+ * „gestrichen“ and the mark through it is a „Streichung“. A reader meeting
+ * „gestrichene Aussagen“ on the board and „zurückgezogen“ on the page one click
+ * behind it would read the two as two mechanisms, which is the failure
+ * `ui/ActivityBar.tsx`'s `sectionOf()` argues against and ADR 0052 §5 names.
+ * A cold review found both files in the same commit, each unaware of the other.
+ *
+ * The badge is a NOUN in German where the English is a participle. „9
+ * gestrichen“ is the same ellipsis as „Komponenten, die der App“; „9
+ * Streichungen“ stands on its own and inflects, which is what the English
+ * descriptor's plural slot was put there for.
  */
 // `documentFrame` and not `document`, which is the only name in this directory
 // that does not match its namespace: `document` is a browser global, and a
@@ -26,10 +35,10 @@
 export const documentFrame: Record<string, string> = {
   'document.breadcrumb': 'Navigationspfad',
 
-  'document.retired.badge': '{count, plural, one {# zurückgezogen} other {# zurückgezogen}}',
+  'document.retired.badge': '{count, plural, one {# Streichung} other {# Streichungen}}',
   'document.retired.note':
     '{count, plural, one {Eine Aussage auf dieser Seite ist} other {Aussagen auf dieser Seite sind}} an Ort und Stelle durchgestrichen, mit dem daneben, was sie aufgehoben hat.',
-  'document.retired.tag': 'zurückgezogen',
+  'document.retired.tag': 'gestrichen',
 
   'document.source':
     'Diese Seite ist <fileLink>{file}</fileLink> im Repository, hier gerendert. Sie ist keine Kopie, es gibt also genau eine Stelle zum Bearbeiten.',

@@ -17,8 +17,8 @@
  * stay in their own spelling because each is what the app itself calls the thing.
  */
 /*
- * „Start" and not „Startseite", which is what this said first. The app's own
- * German for that tab is „Start" (`de/frame.ts`'s `frame.pages.home`), and the
+ * "Start" and not "Startseite", which is what this said first. The app's own
+ * German for that tab is "Start" (`de/frame.ts`'s `frame.pages.home`), and the
  * descriptors on these two hints say so to a translator: a fixture's hint names
  * a screen, so it has to use the name the reader will see on it.
  */

@@ -63,7 +63,7 @@ export const decisions: Record<string, string> = {
 
   'decisions.careful.title': 'Diese mit Vorsicht lesen',
   'decisions.careful.lede':
-    '{careful, plural, one {<f>#</f> Protokoll} other {<f>#</f> Protokolle}}, bei denen Protokoll und Repository nicht dieselbe Geschichte erzählen: {withdrawn, plural, one {eines, dessen eigene Statuszeile durchgestrichen ist} other {#, deren eigene Statuszeilen durchgestrichen sind}}, und {rest, plural, one {eines, das etwas entschieden hat} other {#, die etwas entschieden haben}}, was laut Index nicht gebaut oder nicht auf jeder Plattform geprüft ist. Alles andere auf dieser Übersicht wurde umgesetzt.',
+    '{careful, plural, one {<f>#</f> Protokoll, bei dem Protokoll und Repository nicht dieselbe Geschichte erzählen} other {<f>#</f> Protokolle, bei denen Protokoll und Repository nicht dieselbe Geschichte erzählen}}: {withdrawn, plural, one {eines, dessen eigene Statuszeile durchgestrichen ist} other {#, deren eigene Statuszeilen durchgestrichen sind}}, und {rest, plural, one {eines, das etwas entschieden hat} other {#, die etwas entschieden haben}}, was laut Index nicht gebaut oder nicht auf jeder Plattform geprüft ist. Alles andere auf dieser Übersicht wurde umgesetzt.',
   'decisions.careful.row': 'Zeile',
   'decisions.careful.read': 'Das Protokoll lesen',
 
@@ -90,7 +90,7 @@ export const decisions: Record<string, string> = {
   'decisions.struck.none': 'keine',
   'decisions.struck.count':
     '{count, plural, one {<n>#</n><w>Aussage</w>} other {<n>#</n><w>Aussagen</w>}}',
-  'decisions.struck.by': 'von',
+  'decisions.struck.by': 'durch',
   'decisions.struck.finding': 'einem späteren Befund',
 
   'decisions.detail.index': 'Der Index sagt:',
@@ -99,7 +99,7 @@ export const decisions: Record<string, string> = {
   'decisions.detail.noClause':
     'Auf diese Streichung folgt kein Zusatz. Das Protokoll sagt es im Text darum herum.',
   'decisions.detail.voids':
-    '{count, plural, one {Gestrichene Aussage in} other {Gestrichene Aussagen in}}',
+    '{count, plural, one {Es hat eine Aussage gestrichen in} other {Es hat Aussagen gestrichen in}}',
   'decisions.detail.read': 'ADR {number} lesen',
 
   'decisions.footer.build':

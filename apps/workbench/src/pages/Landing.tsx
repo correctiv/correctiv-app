@@ -3,7 +3,7 @@ import { defineMessages, type MessageDescriptor } from 'react-intl';
 import type { ReactNode } from 'react';
 
 import { COUNTS, FEEDS, MEASURED_ON } from '../../content/sources.manifest';
-import { daysSince } from '../lib/measured';
+import { ageInWords } from '../lib/measured';
 import docsModule from 'virtual:docs';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Badge } from '../ui/kit/badge';
@@ -56,9 +56,9 @@ const COPY = defineMessages({
   statusNote: {
     id: 'landing.status.note',
     defaultMessage:
-      'One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {days, plural, =0 {today} =1 {yesterday} other {# days ago}}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.',
+      'One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {age}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.',
     description:
-      'The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {days} is how many days ago that was, worked out in the reader’s browser, so the sentence says it twice over. “The board” is /sources.',
+      'The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over. “The board” is /sources.',
   },
 
   figureLive: {
@@ -346,15 +346,14 @@ export function Landing() {
                 {intl.formatMessage(COPY.statusHeading)}
               </h2>
               <p className="mt-xs text-m leading-relaxed text-on-canvas-muted">
-                {/* The age is a plural inside the sentence rather than a phrase
-                    built beside it (`lib/measured.ts`'s `ageInWords`, which
-                    `ui/Settings.tsx` still hands an English fragment). A day is
-                    a number, so the message can say it in whatever language is
-                    rendering, and German can put it where German wants it. */}
+                {/* The age goes in as a value out of `lib/measured.ts`, which is
+                    the one place this site says it, rather than as a second copy
+                    of the same plural. It is still a hole in this sentence, so
+                    German can put it where German wants it. */}
                 {intl.formatMessage(COPY.statusNote, {
                   feeds: FEEDS.length,
                   measured: MEASURED_ON,
-                  days: daysSince(MEASURED_ON),
+                  age: ageInWords(intl, MEASURED_ON),
                 })}
               </p>
             </div>

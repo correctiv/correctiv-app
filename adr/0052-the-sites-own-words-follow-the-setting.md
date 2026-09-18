@@ -117,6 +117,25 @@ it belongs to.
 Translating the rows is a bigger decision than this record makes, and it wants the
 measurement of who actually reads that board.
 
+**Two clauses added on 2026-09-18, when the first page that prints this file was
+migrated.**
+
+The fence is around the file's WORDS and not around the file. `feedFigures()` in it
+returned `posts.toLocaleString('en-GB')`, a locale pinned in a ledger, which is not
+a word the ledger wrote: it is the page's job done in the wrong place, and it put a
+German reader's `2.956` and an English `2,956` in one column. The function hands out
+the finding now and `pages/Sources.tsx` words it. A measurement belongs to the
+ledger; how it reads belongs to the page.
+
+And the second of the two arguments above is thinner than it was. "German above the
+English row it belongs to" described an oddity on a page that was otherwise English.
+That board's heading, lede, filters, column heads, state names and every sentence
+around the questions are German now, so the mixing it warns of is the page's normal
+and decided state. The first argument is the one still carrying §4: `SOURCES.md` is
+the document of record for those questions, and the repository's documents stay in
+their own language. Whoever revisits this should know that one leg is load-bearing
+and the other is not.
+
 ### 5. `plugin/registry.ts` is in scope by §1 and out of reach of the extraction
 
 Added on 2026-09-18, after the first four sections had landed, because migrating

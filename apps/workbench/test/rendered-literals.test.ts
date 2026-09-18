@@ -212,7 +212,8 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   // At its floor: two import lines.
   'pages/Components.tsx': 2,
   // At its floor: three record numbers and the four client labels, which are the
-  // names of operating systems and of a fork.
+  // platforms' own names. The fork's name is inside a descriptor and not one of
+  // these seven.
   'pages/Design.tsx': 7,
   // At its floor: the word before a record's number.
   'pages/Document.tsx': 1,

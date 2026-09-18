@@ -78,7 +78,7 @@ export const sources: Record<string, string> = {
     '<strong>Weder der Feed noch seine Kategorie haben in diesem Lauf geantwortet</strong>, die Zahlen oben sind also unbekannt und nicht null. Was eine fehlgeschlagene Messung gefunden hat, steht in ihrer Zeile in <code>apps/workbench/content/sources.measured.ts</code>.',
   'sources.feed.configured': 'Konfiguriert in <code>{module}</code>.',
 
-  'sources.reads.none': 'keine, keine Quelle benannt',
+  'sources.reads.none': 'nichts, keine Quelle benannt',
   'sources.standsIn': 'steht stellvertretend für {what}',
   'sources.measured.used': '{used} von {available} genutzt',
   'sources.measured.reachable': 'erreichbar',

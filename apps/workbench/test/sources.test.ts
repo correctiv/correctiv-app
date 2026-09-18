@@ -377,11 +377,16 @@ describe('the run against the configuration it is supposed to cover', () => {
 
     expect(figures.map((f) => f.posts.kind).filter((k) => !COUNTS.includes(k))).toEqual([]);
     expect(figures.map((f) => f.newest.kind).filter((k) => !NEWESTS.includes(k))).toEqual([]);
-    // A counted answer carries a number and a dated one carries a day. Collected
-    // rather than asserted inside the loop, because a conditional `expect` is one
-    // that can silently never run.
+    // A counted answer carries a number and a dated one carries a day. `isFinite`
+    // and not `> 0`: a category that exists and has published nothing is a real
+    // measurement of zero, and a weekly run that found one would otherwise have
+    // failed the build over somebody else's CMS. Collected rather than asserted
+    // inside the loop, because a conditional `expect` is one that can silently
+    // never run.
     expect(
-      figures.flatMap((f) => (f.posts.kind === 'count' && f.posts.posts <= 0 ? [f.posts] : [])),
+      figures.flatMap((f) =>
+        f.posts.kind === 'count' && !Number.isFinite(f.posts.posts) ? [f.posts] : [],
+      ),
     ).toEqual([]);
     expect(
       figures.flatMap((f) => (f.newest.kind === 'day' && !f.newest.day ? [f.newest] : [])),

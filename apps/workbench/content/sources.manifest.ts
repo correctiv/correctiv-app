@@ -208,10 +208,16 @@ export const FEEDS: Feed[] = [
  *
  * **It hands out the finding and not the sentence**, which it did not always do.
  * It used to return two ready strings, and one of them was
- * `posts.toLocaleString('en-GB')`. On the German page that put `2,956` directly
- * above `7.822` in the same column, and a German reader reads the first of those
- * as three; the other three answers arrived as the English words "every post",
- * "none" and "unknown" inside a German sentence. Measured on 2026-09-18.
+ * `posts.toLocaleString('en-GB')`: a locale pinned in a ledger, which is the
+ * page's job done in the wrong place.
+ *
+ * It became visible while `/sources` was being translated, not before. The page
+ * migrated first and put its own figures through the formatter, so for one
+ * commit the German board grouped `7.822` its own way and `2.956` the English
+ * way, from two lines a few files apart. A first version of this paragraph told
+ * that as a fact about `main`, where both figures went through the same pinned
+ * locale and the page had no German at all; a cold review measured it and there
+ * was no such page to see it on. The bug was real, the story was not.
  *
  * This file is the ledger [ADR 0052](../../../adr/0052-the-sites-own-words-follow-the-setting.md) §4
  * fences off, and that fence is around its WORDS. A number grouped for one

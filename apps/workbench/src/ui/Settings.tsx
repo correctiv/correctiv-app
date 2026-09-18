@@ -88,9 +88,9 @@ const COPY = defineMessages({
   buildNote: {
     id: 'settings.build.note',
     defaultMessage:
-      'Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were measured by hand on <day>{measured}</day>, {age}.',
+      'Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were taken on <day>{measured}</day>, {age}, by the job that re-takes them weekly.',
     description:
-      'The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was and arrives as English prose out of lib/measured.ts, so the sentence has to read around an English fragment.',
+      'The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was, formatted from measured.age in the reader’s own language. It used to arrive as English prose and this description used to say so.',
   },
 });
 

@@ -1157,8 +1157,8 @@
     "description": "The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the paragraph beside it explains."
   },
   "landing.status.note": {
-    "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {days, plural, =0 {today} =1 {yesterday} other {# days ago}}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
-    "description": "The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {days} is how many days ago that was, worked out in the reader’s browser, so the sentence says it twice over. “The board” is /sources."
+    "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {age}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
+    "description": "The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over. “The board” is /sources."
   },
   "landing.title": {
     "defaultMessage": "The CORRECTIV app, and everything written down about it"
@@ -1287,8 +1287,8 @@
     "defaultMessage": "This build"
   },
   "settings.build.note": {
-    "defaultMessage": "Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were measured by hand on <day>{measured}</day>, {age}.",
-    "description": "The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was and arrives as English prose out of lib/measured.ts, so the sentence has to read around an English fragment."
+    "defaultMessage": "Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were taken on <day>{measured}</day>, {age}, by the job that re-takes them weekly.",
+    "description": "The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was, formatted from measured.age in the reader’s own language. It used to arrive as English prose and this description used to say so."
   },
   "settings.keyboard": {
     "defaultMessage": "Keyboard"
@@ -1623,11 +1623,11 @@
   },
   "sources.feed.newest": {
     "defaultMessage": "newest: <f>{newest}</f>",
-    "description": "The second line of the Measured cell on an article feed’s row. {newest} is the day of the newest post in that feed, or the word “none” or “unknown” where the run could not say; it arrives from feedFigures() in content/sources.manifest.ts, which this site prints as it is written, so it may be English inside a translated sentence. <f> draws it in monospace so it never wraps."
+    "description": "The second line of the Measured cell on an article feed’s row. {newest} is the day of the newest post in that feed, or sources.newest.none or sources.newest.unknown where the run could not say. The manifest reports the finding and saysNewest() words it, so this hole is filled in the reader’s own language. <f> draws it in monospace so it never wraps."
   },
   "sources.feed.run": {
     "defaultMessage": "{category}. The run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.",
-    "description": "The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it. {measured} is the ISO day of the last run. {posts} and {newest} come from feedFigures() in content/sources.manifest.ts and may be a number or one of the English words “every post”, “none” and “unknown”, which this site prints as they are written. <f> draws a figure in monospace."
+    "description": "The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it and is not translated. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace."
   },
   "sources.feed.unmeasured": {
     "defaultMessage": "<strong>Neither the feed nor its category answered in that run</strong>, so the figures above are unknown rather than zero. What a failed probe found is on its row in <code>apps/workbench/content/sources.measured.ts</code>.",
@@ -1643,7 +1643,7 @@
   },
   "sources.findings.figures": {
     "defaultMessage": "{category}: <f>{posts}</f>, newest <f>{newest}</f>.",
-    "description": "The figures on such a card. {category} is the feed’s category as the manifest writes it; {posts} and {newest} come from feedFigures() in content/sources.manifest.ts and may be a number or one of the English words “every post”, “none” and “unknown”, which this site prints as they are written. <f> draws each figure in monospace."
+    "description": "The figures on such a card. {category} is the feed’s category as the manifest writes it and is not translated; {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*. <f> draws each figure in monospace."
   },
   "sources.findings.lede": {
     "defaultMessage": "A sample file is honest about what it is. A live feed that has stopped, or points at nothing, is not, because the app presents it as content. {ailing} of the {feeds} article feeds {ailing, plural, one {is} other {are}} in that state.",
