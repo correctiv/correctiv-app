@@ -393,7 +393,8 @@
     "defaultMessage": "Sources status board"
   },
   "nav.strings": {
-    "defaultMessage": "Strings, the app’s own"
+    "defaultMessage": "Strings, the app’s and this site’s",
+    "description": "The browser tab and the search palette for /strings. It said “the app’s own” until the board grew this site’s half, which made it a row ON that board asserting the board did not hold it."
   },
   "nav.title.component": {
     "defaultMessage": "{name}, a component",
@@ -498,7 +499,7 @@
   },
   "shell.activity.strings": {
     "defaultMessage": "Strings",
-    "description": "The rail’s entry for the board of every string the app ships, in both languages. strings.title is that page’s own heading and reads the same in English."
+    "description": "The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. The page’s own heading is written into its markup and is not a message, so there is no id here that reads the same."
   },
   "shell.boundary.heading": {
     "defaultMessage": "This view did not render"

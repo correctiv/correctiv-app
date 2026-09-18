@@ -66,7 +66,7 @@ const COPY = defineMessages({
     id: 'shell.activity.strings',
     defaultMessage: 'Strings',
     description:
-      'The rail’s entry for the board of every string the app ships, in both languages. strings.title is that page’s own heading and reads the same in English.',
+      'The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. The page’s own heading is written into its markup and is not a message, so there is no id here that reads the same.',
   },
 });
 
