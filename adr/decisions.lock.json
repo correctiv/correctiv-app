@@ -385,7 +385,10 @@
       "9": [
         "A module declares its settings beside itself, and a generator carries them into the core"
       ],
-      "10": ["The gallery gets a module's settings with the declaration"]
+      "10": [
+        "The gallery gets a module's settings with the declaration",
+        "~~The gallery gets a module's settings with the declaration~~ The editor has them, and the gallery points at it"
+      ]
     }
   },
   "0046": {
@@ -408,6 +411,15 @@
       "2": ["The arrow buttons stay, and they are the keyboard's route"],
       "3": ["Two controls, one operation, and the document never learns there were two"],
       "4": ["The keyboard drag is refused now and named as a thing that could be earned"]
+    }
+  },
+  "0048": {
+    "slugs": ["the-gallery-points-at-the-editor-rather-than-copying-it"],
+    "decisions": {
+      "1": ["The modules stay out of the gallery, and out of `src/components`"],
+      "2": ["A module's settings are worked in the editor, and that is the one place"],
+      "3": ["The gallery says where the modules are, and links to it"],
+      "4": ["`?c=` is left alone"]
     }
   },
   "0049": {
@@ -459,6 +471,16 @@
       "7": [
         "The home configurator's blocks say what they are in German, and the module takes a formatter"
       ]
+    }
+  },
+  "0054": {
+    "slugs": ["a-block-declares-where-it-may-appear"],
+    "decisions": {
+      "1": ["The declaration belongs to the block, not to the component"],
+      "2": ["A block names the screens it may appear on, and it may name more than one"],
+      "3": ["The structure stays in the app, the words stay in the workbench"],
+      "4": ["What stays out of the app's bundle is decided by the import, not by the bundler"],
+      "5": ["The field is written before the second screen, and the screen is not"]
     }
   }
 }

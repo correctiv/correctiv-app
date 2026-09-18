@@ -170,6 +170,10 @@
     "defaultMessage": "Every component the app builds its screens from, taken out of <code>{root}</code> with its props, their types and whatever prose the source carries. Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.",
     "description": "The paragraph under the heading. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. <reference> is the link to /reference and the word inside it is that page’s own name."
   },
+  "components.modules": {
+    "defaultMessage": "The home screen’s blocks are not here. They are compositions of one screen rather than components of the app, and each of them is drawn, with the settings it understands, in <editor>the home editor</editor>, beside the running app.",
+    "description": "A third paragraph under the lede, saying where the home screen’s blocks are, because they are deliberately not in the grid below. <editor> is the link to the home editor in /preview and the words inside it name that tool."
+  },
   "components.prose": {
     "defaultMessage": "The sentence under each name is the component’s own doc comment, out of the app’s source, and stays English: a comment is written for whoever reads the code.",
     "description": "A second short paragraph under the lede. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written."

@@ -55,6 +55,19 @@ const COPY = defineMessages({
       'A second short paragraph under the lede. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written.',
   },
 
+  /**
+   * ADR 0048 §3's whole carrying-out: a sentence and a link rather than a second
+   * surface. It is this site's own words about what this page does not hold, so
+   * it follows the setting like the lede above it, and the German is data.
+   */
+  modules: {
+    id: 'components.modules',
+    defaultMessage:
+      'The home screen’s blocks are not here. They are compositions of one screen rather than components of the app, and each of them is drawn, with the settings it understands, in <editor>the home editor</editor>, beside the running app.',
+    description:
+      'A third paragraph under the lede, saying where the home screen’s blocks are, because they are deliberately not in the grid below. <editor> is the link to the home editor in /preview and the words inside it name that tool.',
+  },
+
   filter: {
     id: 'components.filter',
     defaultMessage: 'Filter folders, components and props',
@@ -169,6 +182,23 @@ const code = (chunks: ReactNode[]) => <code className="font-mono">{chunks}</code
 const reference = (chunks: ReactNode[]) => (
   <a
     href={href('/reference')}
+    className="text-on-canvas underline decoration-accent underline-offset-2"
+  >
+    {chunks}
+  </a>
+);
+
+/**
+ * The run drawn inside `components.modules`, at module scope for the reason above.
+ *
+ * The tool is in the HASH and not the query, because `shell/address.ts` owns the
+ * grammar after the `#` on every route. Written as a query it is dropped on
+ * arrival, which is what the first version of this link did and what the browser
+ * rather than a check is how anyone found out.
+ */
+const editor = (chunks: ReactNode[]) => (
+  <a
+    href={`${href('/preview')}#/?tool=home`}
     className="text-on-canvas underline decoration-accent underline-offset-2"
   >
     {chunks}
@@ -336,30 +366,16 @@ export function Components() {
             {intl.formatMessage(COPY.prose)}
           </p>
 
-          {/*
-            Where the home screen's blocks are, and why they are not below.
-            [ADR 0048](../../../../adr/0048-the-gallery-points-at-the-editor-rather-than-copying-it.md)
-            §3: a sentence and a link rather than a second surface. They are not
-            components — `apps/mobile/src/lib/home/modules.tsx` argues that a specimen of
-            "the fact-check rail plus its heading" is the screen — and the editor already
-            draws every one of them with its settings, beside the running app. Somebody
-            reading this page had no reason to know that, which is the one thing ADR 0045
-            §10 was really missing.
-          */}
+          {/* Where the home screen's blocks are, and why they are not below.
+              [ADR 0048](../../../../adr/0048-the-gallery-points-at-the-editor-rather-than-copying-it.md)
+              §3: a sentence and a link rather than a second surface. They are not
+              components — `apps/mobile/src/lib/home/modules.tsx` argues that a specimen
+              of "the fact-check rail plus its heading" is the screen — and the editor
+              already draws every one of them with its settings, beside the running app.
+              Somebody reading this page had no reason to know that, which is the one
+              thing ADR 0045 §10 was really missing. */}
           <p className="mt-m max-w-content text-m leading-relaxed text-on-canvas-muted">
-            The home screen&apos;s blocks are not here. They are compositions of one screen rather
-            than components of the app, and each of them is drawn, with the settings it understands,
-            in{' '}
-            <a
-              // The tool is in the HASH and not the query, because `shell/address.ts`
-              // owns the grammar after the `#` on every route. Written as a query it is
-              // dropped on arrival, which is what the first version of this link did.
-              href={`${href('/preview')}#/?tool=home`}
-              className="text-on-canvas underline decoration-accent underline-offset-2"
-            >
-              the home editor
-            </a>
-            , beside the running app.
+            {intl.formatMessage(COPY.modules, { editor })}
           </p>
 
           {filtered.length === 0 && (

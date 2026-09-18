@@ -34,7 +34,7 @@ a block's settings open under it with a slider or a picker (0045 §8). Somebody 
 to see what `latest-research` looks like with three items instead of five moves a slider
 and watches two drawings change: the row, and the app in the frame beside it.
 
-So 0045 ADR 0045 §10's own sentence now points the other way. There is a page that draws the
+So ADR 0045 §10's own sentence now points the other way. There is a page that draws the
 modules and carries the controls. Putting a second set in the gallery would be the second
 copy that sentence was written to avoid.
 
@@ -110,6 +110,17 @@ spends `modules.tsx`'s argument, which is not about folders but about what a spe
 for. If that argument is wrong, the record to change is that file's reasoning, not this
 one.
 
+**Declare beside the module which screens it may be used on, and let the gallery read
+that.** Raised in the review of this record, and it is the right shape for a question this
+record does not ask: `apps/mobile/src/lib/home/settings.ts` is already a declaration beside
+the modules that a generator carries into the core, and one more field on it would say
+where a block belongs. It does not dissolve §1, because the obstacle is the unit rather
+than the absence of a declaration: `latest-research` is a section header, a hairline and a
+row per item over a feed, `feed-status` draws no component at all, and a field on
+`FaktencheckRail` saying it may be used on the home screen would promise what that
+component alone cannot keep. What the declaration is right for is a second configurable
+screen, and [ADR 0054](0054-a-block-declares-where-it-may-appear.md) is where that goes.
+
 **Leave ADR 0045 §10 standing as an unbuilt intention.** Tempting, and it is what "not
 built" would
 normally mean. It is refused because ADR 0045 §10 is not waiting for time: it is waiting
@@ -167,6 +178,10 @@ open the editor with that row in view. Not built, and the first thing to reach f
 somebody asks for ADR 0045 §10 again, because it is the navigation half of what ADR 0045
 §10 wanted without
 the surface.
+
+**Where a block says which screen it belongs to**, which the review of this record raised
+and [ADR 0054](0054-a-block-declares-where-it-may-appear.md) answers. It touches nothing
+decided here; it is the question underneath §1 rather than an objection to it.
 
 **Whether a module ever becomes a component.** If one of the eleven turns out to be
 reusable off the home screen, it moves to `src/components`, the gallery finds it by the
