@@ -1,18 +1,98 @@
 import { Command } from 'cmdk';
 import { Component, FileText, Hash, LayoutGrid, Braces } from 'lucide-react';
 import { useMemo } from 'react';
+import { defineMessages } from 'react-intl';
 
 import api from 'virtual:api';
 import docsModule from 'virtual:docs';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { navigate } from '../router';
-import { PAGE_TITLES, symbolId } from '../nav';
+import { PAGE_TITLES, pageTitleText, symbolId } from '../nav';
+import type { WorkbenchMessage } from '../i18n/messages';
+
+/**
+ * What the palette says about itself, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * The furniture only. Every ROW in here is something the repository wrote — a
+ * document's title, a heading inside it, a symbol the core exports, a component's
+ * name and its summary — and ADR 0050 §2 leaves all of that in the language it was
+ * written in. What is translated is the frame around it: what to type, what to do
+ * when nothing matches, and what the five groups are called.
+ *
+ * `kind` is the one mixed column. `Page` and `Document` are this site classifying
+ * a row and are here; `ADR 0050`, a symbol's kind and a component's folder are the
+ * repository's own words and are not.
+ */
+const COPY = defineMessages({
+  dialog: {
+    id: 'shell.search.dialog',
+    defaultMessage: 'Search the workbench',
+    description:
+      'The accessible name of the palette itself. shell.header.search is the button that opens it, which is named the same and is a different element.',
+  },
+  placeholder: {
+    id: 'shell.search.placeholder',
+    defaultMessage: 'Search documents, sections, the core’s API and the components',
+    description:
+      'In the empty field at the top of the palette, naming the five things it searches at once.',
+  },
+  empty: {
+    id: 'shell.search.empty',
+    defaultMessage: 'Nothing matches that.',
+    description: 'Stands in for the list while what has been typed matches no row.',
+  },
+  page: {
+    id: 'shell.search.kind.page',
+    defaultMessage: 'Page',
+    description:
+      'Drawn at the right of a row for a page this site answers itself, as against a document rendered from the repository’s Markdown.',
+  },
+  document: {
+    id: 'shell.search.kind.document',
+    defaultMessage: 'Document',
+    description:
+      'Drawn at the right of a row for a Markdown document that is not a decision record. A record says ADR and its number instead, which is not translated.',
+  },
+});
+
+/**
+ * What each group of results is called, keyed by the group itself.
+ *
+ * A `Record` named for its domain rather than folded into `COPY`, which is the
+ * convention for a table of labels over a type's values. The KEY stays English and
+ * is never drawn: it is what `ICONS` and `Entry.group` are keyed by, and a
+ * translated key would be a lookup that misses.
+ */
+const GROUP_LABELS = defineMessages({
+  Pages: { id: 'shell.search.group.pages', defaultMessage: 'Pages' },
+  Documents: { id: 'shell.search.group.documents', defaultMessage: 'Documents' },
+  Sections: {
+    id: 'shell.search.group.sections',
+    defaultMessage: 'Sections',
+    description:
+      'The group of headings found inside documents. shell.activity.label is the rail down the left edge, which is named the same and holds the sections of the SITE rather than of a document.',
+  },
+  Reference: {
+    id: 'shell.search.group.reference',
+    defaultMessage: 'Reference',
+    description:
+      'The group of symbols the core exports. shell.activity.reference is the rail entry that opens that page and reads the same in English.',
+  },
+  Components: {
+    id: 'shell.search.group.components',
+    defaultMessage: 'Components',
+    description:
+      'The group of the app’s own components. shell.activity.components is the rail entry that opens that page and reads the same in English.',
+  },
+});
 
 interface Entry {
   route: string;
   title: string;
   kind: string;
   hint: string;
-  group: 'Pages' | 'Documents' | 'Sections' | 'Reference' | 'Components';
+  group: keyof typeof GROUP_LABELS;
 }
 
 interface Props {
@@ -30,11 +110,22 @@ interface Props {
  * They stay separate GROUPS, though, because `Button` is a component and no
  * amount of searching makes it importable from the core.
  */
-function buildIndex(): Entry[] {
+function buildIndex(format: (message: WorkbenchMessage) => string): Entry[] {
   const entries: Entry[] = [];
+  const page = format(COPY.page);
+  const document = format(COPY.document);
 
+  // A page's name follows the language setting and a document's does not, which
+  // is what `pageTitleText` resolves; everything below this loop is the
+  // repository's own words and is indexed as written.
   for (const [route, title] of Object.entries(PAGE_TITLES)) {
-    entries.push({ route, title, kind: 'Page', hint: '', group: 'Pages' });
+    entries.push({
+      route,
+      title: pageTitleText(title, format),
+      kind: page,
+      hint: '',
+      group: 'Pages',
+    });
   }
 
   for (const module of api.core.modules) {
@@ -70,7 +161,7 @@ function buildIndex(): Entry[] {
     entries.push({
       route: doc.route,
       title: doc.title,
-      kind: record ? `ADR ${record}` : 'Document',
+      kind: record ? `ADR ${record}` : document,
       hint: doc.blurb,
       group: 'Documents',
     });
@@ -98,7 +189,8 @@ const ICONS = {
 } as const;
 
 export function Search({ open, onClose }: Props) {
-  const index = useMemo(buildIndex, []);
+  const intl = useWorkbenchIntl();
+  const index = useMemo(() => buildIndex((message) => intl.formatMessage(message)), [intl]);
   const groups = useMemo(
     () =>
       (['Pages', 'Documents', 'Reference', 'Components', 'Sections'] as const).map((group) => ({
@@ -126,18 +218,18 @@ export function Search({ open, onClose }: Props) {
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
-      label="Search the workbench"
+      label={intl.formatMessage(COPY.dialog)}
       overlayClassName="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
       contentClassName="fixed left-1/2 top-[12vh] z-50 w-[min(40rem,92vw)] -translate-x-1/2 overflow-hidden rounded-lg border border-stroke bg-canvas shadow-2xl duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
     >
       <Command.Input
         autoFocus
-        placeholder="Search documents, sections, the core's API and the components"
+        placeholder={intl.formatMessage(COPY.placeholder)}
         className="w-full border-b border-stroke bg-transparent px-sm py-s text-m text-on-canvas outline-none placeholder:text-on-canvas-muted"
       />
       <Command.List className="max-h-[min(24rem,60vh)] overflow-y-auto p-xs">
         <Command.Empty className="px-s py-m text-center text-m text-on-canvas-muted">
-          Nothing matches that.
+          {intl.formatMessage(COPY.empty)}
         </Command.Empty>
 
         {groups.map(({ group, entries }) => {
@@ -145,7 +237,7 @@ export function Search({ open, onClose }: Props) {
           return (
             <Command.Group
               key={group}
-              heading={group}
+              heading={intl.formatMessage(GROUP_LABELS[group])}
               className="[&_[cmdk-group-heading]]:px-xs [&_[cmdk-group-heading]]:py-2xs [&_[cmdk-group-heading]]:text-s [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-on-canvas-muted"
             >
               {entries.map((entry) => (

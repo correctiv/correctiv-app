@@ -46,8 +46,17 @@ function ownStorage(): Storage | null {
 }
 
 export function storedLanguage(store: Storage | null = ownStorage()): Language {
-  const value = store?.getItem(LANGUAGE_KEY);
-  return value === 'de' ? 'de' : DEFAULT_LANGUAGE;
+  try {
+    if (store?.getItem(LANGUAGE_KEY) === 'de') return 'de';
+  } catch {
+    // Site data switched off. `ownStorage` catches the property access, which is
+    // the sandboxed-iframe case; this catches the CALL, which is the one a reader
+    // who has blocked storage hits. It is not hypothetical here: this is the lazy
+    // initialiser of `useState` in `useLanguage`, called from `App.tsx`'s first
+    // render, so an unguarded throw takes the whole site down rather than the
+    // setting. `theme.ts` learned the same thing first and says so there too.
+  }
+  return DEFAULT_LANGUAGE;
 }
 
 /**
@@ -61,8 +70,13 @@ export function storedLanguage(store: Storage | null = ownStorage()): Language {
  * the store is touched only when somebody chooses.
  */
 export function rememberLanguage(next: Language, store: Storage | null = ownStorage()): void {
-  if (next === DEFAULT_LANGUAGE) store?.removeItem(LANGUAGE_KEY);
-  else store?.setItem(LANGUAGE_KEY, next);
+  try {
+    if (next === DEFAULT_LANGUAGE) store?.removeItem(LANGUAGE_KEY);
+    else store?.setItem(LANGUAGE_KEY, next);
+  } catch {
+    // Site data switched off, or the quota is full. The choice does not survive the
+    // tab, and the click must still change the language on screen.
+  }
 }
 
 /**

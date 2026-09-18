@@ -39,4 +39,34 @@ export const frame: Record<string, string> = {
 
   'frame.copyLink': 'Diese Ansicht als Link kopieren',
   'frame.copied': 'Kopiert',
+
+  // The page list on the bar (`preview/ui/Pages.tsx`). What is inside the list —
+  // the groups, the labels, the notes — comes from `preview/routes.ts` and is
+  // still English.
+  'frame.pages.open': 'Zu einer Seite springen',
+  'frame.pages.empty': 'Keine Seite dieses Namens. Das Feld daneben nimmt jede beliebige Adresse.',
+
+  // The stage the frame stands on (`preview/ui/Stage.tsx`). Neither is drawn.
+  'frame.stage.heading': 'App-Rahmen',
+  'frame.stage.title': 'Vorschau der App',
+
+  // What is inside the page list (`preview/routes.ts`): the groups, the notes, and
+  // the three labels this site had to invent. The other labels are the app's own
+  // screen names, are already German, and are not ids at all.
+  'frame.pages.group.tabs': 'Tabs',
+  'frame.pages.group.screens': 'Screens',
+  'frame.pages.group.withAnId': 'Mit einer Id',
+  'frame.pages.group.worthReaching': 'Erreichbar sein sollte',
+
+  'frame.pages.home': 'Start',
+  'frame.pages.artikel': 'der Reader, eine WebView',
+  'frame.pages.gespeichert': 'eine FlatList',
+  'frame.pages.formular': 'das Mitmach-Formular',
+  'frame.pages.onboarding': 'ein Modal',
+  'frame.pages.player': 'ein Modal über dem laufenden Audio',
+  'frame.pages.serie': 'die zweite FlatList',
+  'frame.pages.gallery': 'Komponenten-Galerie',
+  'frame.pages.gallery.note': 'jede Komponente, zweimal, auf beiden Flächen',
+  'frame.pages.notFound': 'Nicht gefunden',
+  'frame.pages.notFound.note': 'jede Adresse, für die die App keine Route hat',
 };

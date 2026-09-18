@@ -212,24 +212,36 @@ const ROOT_SCRIPTS: Record<string, string> =
  * `npm run <name>`, whatever flags are arranged around it — but only the ROOT's
  * script of that name.
  *
- * **`-w` changes which script is meant, and reading past it is a false positive
- * with teeth.** `npm run i18n:extract -w @correctiv/workbench` runs the
- * WORKBENCH's `i18n:extract`. The root has a script of the same name that runs the
- * app's, so without this the root's `workbench:i18n:extract` was read as running
- * the app, and a script that only ever touches the workbench was reported as the
- * app reaching into it. Measured on 2026-09-18, when it refused exactly that.
+ * **`-w` changes which script is meant**, and the root's own `workbench:i18n:extract`
+ * is the case: `npm run i18n:extract -w @correctiv/workbench` runs the WORKBENCH's
+ * script, not the root's identically named one, so without this a script that only
+ * ever touches the workbench was reported as the app reaching into it.
  *
- * Narrow on purpose. A command with no `-w` is unchanged, and so is one whose `-w`
- * names the app: `npm run build -w @correctiv/mobile` still counts, because there
- * the workspace and the rule agree. Only a command that sends the script somewhere
- * else stops counting as running this one.
+ * **The `-w` has to be read out of the same command as the script name, and the
+ * first version of this read it out of the whole string.** A cold review got three
+ * things through that, each of which turns the rule off with no intent to:
+ *
+ *  - `npm run build:workbench && npm run build:web -w @correctiv/mobile` — the app's
+ *    release path building the workbench, with the app's own `-w` three words later
+ *    answering for it.
+ *  - the same shape one script apart, which is what a `pre`/`post` step looks like.
+ *  - `npm --prefix ../.. run build:workbench && tsc -w --noEmit` — an ordinary
+ *    watch flag. The capture takes the next token, `--noEmit`, and `/mobile/` fails
+ *    on it, so a TypeScript flag switched off a guard on the release path.
+ *
+ * So the search is scoped to the segment the name matched, `[^&|;\n]*`, which is
+ * the same slice the name itself is found in. A `-w` in a neighbouring command of a
+ * chain now says nothing about this one, which is the truth about how a shell reads
+ * it. Both halves are held by cases in the pretend manifests below rather than by
+ * the real repository happening to contain them.
  */
 function runsScript(command: string, script: string): boolean {
   const name = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (!new RegExp(`\\bnpm\\b[^&|;\\n]*?\\brun\\b\\s+["']?${name}(?![\\w:.-])`).test(command)) {
-    return false;
-  }
-  const workspace = /\s(?:-w|--workspace(?:=|\s))\s*["']?(@?[\w./@-]+)/.exec(command);
+  const call = new RegExp(
+    `\\bnpm\\b[^&|;\\n]*?\\brun\\b\\s+["']?${name}(?![\\w:.-])[^&|;\\n]*`,
+  ).exec(command);
+  if (call === null) return false;
+  const workspace = /\s(?:-w|--workspace)(?:=|\s+)["']?(@?[\w./@-]+)/.exec(call[0]);
   return workspace === null || /mobile/.test(workspace[1] ?? '');
 }
 
@@ -1042,6 +1054,43 @@ describe('the app does not depend on the workbench', () => {
     expect(runsScript('npm run workbench:renders', 'workbench')).toBe(false);
     expect(runsScript('npm run build -w @correctiv/workbench', 'web')).toBe(false);
     expect(runsScript('npm run build:web -w @correctiv/mobile', 'build:workbench')).toBe(false);
+
+    /*
+     * `-w` decides WHICH script of that name is meant, and it has to be read out of
+     * the same command as the name. A cold review got three shapes through a version
+     * that searched the whole string, and each is here so that the property is held
+     * by this table rather than by what the root manifest happens to contain today.
+     *
+     * The three that must stay TRUE are the exploits: a chain whose other command
+     * carries the app's own `-w`, the same one script apart, and a plain `tsc -w`,
+     * which captured `--noEmit` and turned the rule off from a TypeScript flag.
+     */
+    expect(
+      runsScript(
+        'npm run tokens -w @correctiv/design-tokens && npm run build:workbench',
+        'build:workbench',
+      ),
+    ).toBe(true);
+    expect(
+      runsScript(
+        'npm run build:workbench && npm run build:web -w @correctiv/mobile',
+        'build:workbench',
+      ),
+    ).toBe(true);
+    expect(
+      runsScript('npm --prefix ../.. run build:workbench && tsc -w --noEmit', 'build:workbench'),
+    ).toBe(true);
+    // And the false positive the clause exists for: the workbench's own script of a
+    // name the root also has. Both spellings of the flag, because npm takes both.
+    expect(runsScript('npm run i18n:extract -w @correctiv/workbench', 'i18n:extract')).toBe(false);
+    expect(
+      runsScript('npm run i18n:extract --workspace @correctiv/workbench', 'i18n:extract'),
+    ).toBe(false);
+    expect(
+      runsScript('npm run i18n:extract --workspace=@correctiv/workbench', 'i18n:extract'),
+    ).toBe(false);
+    // The other half, which nothing held before: `-w` naming the app still counts.
+    expect(runsScript('npm run build:web -w @correctiv/mobile', 'build:web')).toBe(true);
 
     const read = 'readFileSync';
     expect(

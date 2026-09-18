@@ -33,20 +33,40 @@ what the rest of this record is measured against.
 has no end; "what the newsroom uses should be German" has one, and the answer changes
 by itself as the tool grows rather than needing a list maintained by hand.
 
-### 2. What is translated is what that audience touches, and nothing else
+### 2. The shell and the tools follow the setting, a published page's body does not
 
-In: the home configurator, the day's track, and the controls around the framed app.
-Out: the records, the reference, the diagrams, the sources board, the repository's own
-Markdown, and the chrome of the documentation areas.
+**The shell** is everything that frames a view: the header, the two rails, the panel,
+the settings dialog, the search palette, the status line, the error boundary, the
+browser tab. **The tools** are the preview and the home configurator. Both follow the
+setting.
 
-**Not out because they are less important — out because of who reads them.** A record
-is an argument with the next developer, in the language the code is written in, and
-translating one would create a second copy of an argument that is already hard enough
-to keep true once. This is AGENTS.md's rule holding exactly where it always held.
+**A publishing page's body** does not: the landing page's prose, the handbook, the
+records, the reference, the drawings and their captions, the sources board.
+
+**Two earlier drafts of this line failed, and how they failed is the argument for
+this one.** The first drew it by area — the configurator and the frame's controls in,
+the documentation areas out — and a cold review found the panel tab *over* the
+configurator still reading "Home layout", and the settings dialog somebody has to open
+in order to choose German entirely in English. Both are the shell around something in
+scope, and an area line puts them on the wrong side of it while reading as though it
+had covered them.
+
+The second tried "chrome against content", which fixes that and then takes the landing
+page's prose with it, because that prose is not content this site republishes — it is
+the site's own writing about the repository, for the same reader as a record. A rule
+that cannot be finished is a rule that ends up overstated again.
+
+Shell-and-tools against a page's body is the line that holds both: it puts the
+settings dialog in, the landing page out, and it can be finished.
+
+**Content stays English because of who reads it, not because it matters less.** A
+record is an argument with the next developer, in the language the code is written in,
+and translating one would create a second copy of an argument that is already hard
+enough to keep true once. That is [AGENTS.md](../AGENTS.md)'s rule holding exactly
+where it always held.
 
 The visible cost is a mixed page: German chrome around an English document. That is a
-seam and it is on purpose. The alternative is translating the documentation, which is
-the thing the rule above refuses.
+seam and it is on purpose.
 
 ### 3. Two catalogues, one per audience, and neither reaches into the other
 

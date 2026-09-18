@@ -53,18 +53,21 @@ const SPECIMEN = 'max-h-[13rem]';
  * module: English prose, handed in as a value, so a German mark reads German around an
  * English fragment until those two tables are descriptors as well.
  *
- * **And all four are formatted under the APP's provider, not this site's.**
- * `HomeDocument` mounts one `AppHost` around the whole block list, both `InsertMark`
- * call sites are inside it, and `AppHost` mounts `AppEnvironment`, which mounts the
- * app's own `IntlProvider` (locale `de`, the app's catalogue). So the nearest provider
- * is the app's, none of these ids is in its catalogue, and each renders its English
- * `defaultMessage` and reports nothing — `vite.app.mjs` defines `__DEV__` false for
- * this site, and the app's `onError` throws only with it. Measured on the dev server
- * with the site in German: the bar above the frame read „Rahmen“ while the mark below
- * it read "Add a block at the top of the day". That is what the mark said before these
- * descriptors existed, so nothing changed today; what it costs is that the German
- * beside them is inert. Nothing here can fix it: the bridge belongs in
- * `components/AppHost.tsx`, which is where the second provider is mounted.
+ * **All four would have been formatted under the APP's provider, which is why this
+ * file calls `useWorkbenchIntl()` rather than `useIntl()`.** `HomeDocument` mounts one
+ * `AppHost` around the whole block list, both `InsertMark` call sites are inside it,
+ * and `AppHost` mounts `AppEnvironment`, which mounts the app's own `IntlProvider`.
+ * react-intl's context here is therefore the app's, which holds no `home.*` id, and
+ * each of these would have rendered its English `defaultMessage` and reported nothing
+ * — `vite.app.mjs` defines `__DEV__` false for this site, so the app's `onError`
+ * throws only with it. Measured that way on the dev server before the fix: the bar
+ * above the frame read „Rahmen“ while the mark below it read "Add a block at the top
+ * of the day".
+ *
+ * `useWorkbenchIntl()` reads a context of this site's own, which the app's provider
+ * cannot shadow because it is a different object, and `test/i18n.test.ts` fails on a
+ * `useIntl` anywhere outside `src/i18n/`. The German here is live; the fragments named
+ * above are what is still English, and ADR 0050 §5 says why.
  */
 const COPY = defineMessages({
   addHere: {

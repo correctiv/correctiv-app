@@ -23,9 +23,13 @@ const RENDERS = readFileSync(join(WORKBENCH, 'scripts/renders.mjs'), 'utf8');
  * but this file holds together. Rename it in one place and the browser check goes
  * quietly back to being green on a broken page.
  *
- * The attribute and not the heading, for the same reason: "This view did not
- * render" is prose, prose gets rewritten, and a rewritten heading would break the
- * check silently. This asserts the heading is NOT what is matched on.
+ * The attribute and not the heading, for the same reason and now for a second one:
+ * "This view did not render" is prose, prose gets rewritten, and since the shell
+ * follows the language setting it is also TRANSLATED — on a German page the words
+ * are not in the markup at all. A check matching on them would go quietly green on
+ * a broken page in either case. This asserts the heading is NOT what is matched on,
+ * and it reads the heading out of the descriptor's `defaultMessage`, which is where
+ * the English lives now.
  *
  * Read as text, which is what `direct.test.ts`, `shell.test.ts` and
  * `environment.test.ts` do and for the same reason: rendering the boundary to ask
@@ -36,7 +40,13 @@ describe('the seam between the error boundary and the browser check', () => {
   const MARKER = 'data-view-failed';
 
   it('marks the failed state where a machine can see it', () => {
-    expect(BOUNDARY).toContain(`${MARKER}={this.props.route}`);
+    // Two halves since the apology became a function component of its own — the
+    // class cannot call a hook and the words are formatted now. The marker is on
+    // the element that draws the failure, and the class is what hands it the route
+    // it names; asking only the first would pass on a `route` that came from
+    // nowhere.
+    expect(BOUNDARY).toContain(`${MARKER}={route}`);
+    expect(code(BOUNDARY)).toMatch(/<Failed\s+route=\{this\.props\.route\}/);
   });
 
   it('is what the browser check looks for', () => {

@@ -16,12 +16,32 @@ import {
   Terminal,
   type LucideIcon,
 } from 'lucide-react';
+import { defineMessages } from 'react-intl';
 
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { cn } from '../lib/cn';
 import { SlotTarget } from '../shell/slots';
 import { SECTION_TITLES, type SectionId, type ViewDeclaration } from '../shell/views';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 import { TOOL_PANEL_ID } from './ToolPanel';
+
+/**
+ * The one sentence this file writes itself, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * Every other word on the rail is a section's own name out of `shell/views.ts`,
+ * which is where those descriptors live because the ids are in the URL. This is
+ * the half the rail adds on top: the tooltip on the tool that is already open says
+ * what a second press does, which is the whole of the toggle ADR 0038 argues for.
+ */
+const COPY = defineMessages({
+  closeTip: {
+    id: 'shell.rail.closeTip',
+    defaultMessage: '{tool} · press to close',
+    description:
+      'The tooltip on the rail button of the tool that is open, where pressing shuts the panel. {tool} is that tool’s own name, already translated — shell.section.console and its neighbours.',
+  },
+});
 
 /**
  * The mark beside each tool's name.
@@ -87,12 +107,15 @@ export function ToolRail({
   /** `column` on the right edge, `row` along the bottom below the wide breakpoint. */
   orientation: 'column' | 'row';
 }) {
+  // Before the early return, because it is a hook and the panel-less views take
+  // that branch on their very first render.
+  const intl = useWorkbenchIntl();
   if (view.panelTitle === null) return null;
   const column = orientation === 'column';
 
   return (
     <nav
-      aria-label={view.panelTitle}
+      aria-label={intl.formatMessage(view.panelTitle)}
       className={cn(
         'flex shrink-0 items-center gap-3xs border-stroke bg-surface',
         column ? 'w-[3rem] flex-col border-l py-xs' : 'h-[3rem] justify-center border-t px-xs',
@@ -101,6 +124,7 @@ export function ToolRail({
       {view.sections.map((id) => {
         const Icon = SECTION_ICONS[id];
         const open = tool === id;
+        const title = intl.formatMessage(SECTION_TITLES[id]);
         return (
           <Tooltip key={id}>
             <TooltipTrigger asChild>
@@ -133,7 +157,7 @@ export function ToolRail({
                   />
                 )}
                 <Icon aria-hidden="true" className="size-[1.125rem]" />
-                <span className="sr-only">{SECTION_TITLES[id]}</span>
+                <span className="sr-only">{title}</span>
                 {/* A number the reader would act on, or nothing at all: the slot
                     is empty on every tool that has none, and `empty:hidden`
                     means an empty one takes no room and paints no dot.
@@ -149,8 +173,7 @@ export function ToolRail({
               </button>
             </TooltipTrigger>
             <TooltipContent side={column ? 'left' : 'top'}>
-              {SECTION_TITLES[id]}
-              {open ? ' · press to close' : ''}
+              {open ? intl.formatMessage(COPY.closeTip, { tool: title }) : title}
             </TooltipContent>
           </Tooltip>
         );

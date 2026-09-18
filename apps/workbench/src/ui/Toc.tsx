@@ -1,7 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
+import { defineMessages } from 'react-intl';
 
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { cn } from '../lib/cn';
+import { SECTION_TITLES } from '../shell/views';
 import type { Heading } from '../../plugin/markdown.ts';
+
+/**
+ * The one sentence this list writes itself, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * What it is CALLED is not here. The nav's accessible name is
+ * `SECTION_TITLES.contents`, the same descriptor the rail button and the panel's
+ * own heading use, because all three name one thing: a second id reading
+ * `On this page` would be one string translated three times and three chances for
+ * the panel to disagree with the nav inside it.
+ *
+ * The headings themselves are a document's, so they are not here either and never
+ * will be — this is the contents of a page that publishes, and ADR 0050 §2 leaves
+ * that body in the language it was written in.
+ */
+const COPY = defineMessages({
+  none: {
+    id: 'shell.toc.none',
+    defaultMessage: 'No headings on this page.',
+    description:
+      'Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title.',
+  },
+});
 
 interface Props {
   headings: Heading[];
@@ -20,6 +46,7 @@ interface Props {
  * heading itself is visible.
  */
 export function Toc({ headings }: Props) {
+  const intl = useWorkbenchIntl();
   const shown = useMemo(() => headings.filter((h) => h.depth === 2 || h.depth === 3), [headings]);
   const [active, setActive] = useState<string | null>(shown[0]?.id ?? null);
 
@@ -45,11 +72,11 @@ export function Toc({ headings }: Props) {
    * behind a title.
    */
   if (shown.length < 2) {
-    return <p className="p-s text-s text-on-canvas-muted">No headings on this page.</p>;
+    return <p className="p-s text-s text-on-canvas-muted">{intl.formatMessage(COPY.none)}</p>;
   }
 
   return (
-    <nav aria-label="On this page" className="p-s">
+    <nav aria-label={intl.formatMessage(SECTION_TITLES.contents)} className="p-s">
       <ul className="space-y-3xs text-m">
         {shown.map((heading) => (
           <li key={heading.id} className={heading.depth === 3 ? 'pl-s' : undefined}>

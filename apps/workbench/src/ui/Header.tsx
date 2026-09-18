@@ -1,10 +1,55 @@
 import { Maximize2, Search as SearchIcon, Settings as SettingsIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { defineMessages } from 'react-intl';
 
 import docsModule from 'virtual:docs';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Button } from './kit/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 import { href } from '../router';
+
+/**
+ * Everything this bar says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * `CORRECTIV` is not here, and neither is the sr-only `CORRECTIV workbench` beside
+ * it. Both are the name of the thing rather than a sentence about it, which is the
+ * same exemption `nav.ts` gives the `/` entry and `Settings.tsx` gives `English`
+ * and `Deutsch`.
+ */
+const COPY = defineMessages({
+  search: {
+    id: 'shell.header.search',
+    defaultMessage: 'Search the workbench',
+    description:
+      'The accessible name of the button in the header that opens the palette. shell.search.dialog is the palette itself, which is named the same and is a different element.',
+  },
+  searchShort: {
+    id: 'shell.header.searchShort',
+    defaultMessage: 'Search',
+    description:
+      'The one word drawn inside the search button at md and up, beside its icon and its ⌘K. The button’s full accessible name is shell.header.search.',
+  },
+  full: { id: 'shell.header.full', defaultMessage: 'Give the app the whole screen' },
+  fullTip: {
+    id: 'shell.header.fullTip',
+    defaultMessage: 'The app on its own',
+    description:
+      'The tooltip on the button whose accessible name is shell.header.full. Shorter, because a tooltip is read beside the thing it describes.',
+  },
+  source: {
+    id: 'shell.header.source',
+    defaultMessage: 'The source on GitHub',
+    description:
+      'Both the accessible name and the tooltip of the link to the repository every page of this site is rendered from.',
+  },
+  settings: {
+    id: 'shell.header.settings',
+    defaultMessage: 'Settings',
+    description:
+      'Both the accessible name and the tooltip of the button that opens the settings dialog. settings.title is that dialog’s own heading and reads the same in English.',
+  },
+});
 
 interface Props {
   onSearch: () => void;
@@ -26,6 +71,8 @@ interface Props {
  * from. ([ADR 0038](../../../../adr/0038-one-tool-at-a-time-in-a-rail.md))
  */
 export function Header({ onSearch, onSettings, onFull, children }: Props) {
+  const intl = useWorkbenchIntl();
+
   return (
     <header className="flex min-h-[2.75rem] shrink-0 flex-wrap items-center gap-xs border-b border-stroke bg-canvas py-4xs pl-3xs pr-s">
       <a
@@ -60,10 +107,10 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
         size="sm"
         onClick={onSearch}
         className="gap-xs text-on-canvas-muted"
-        aria-label="Search the workbench"
+        aria-label={intl.formatMessage(COPY.search)}
       >
         <SearchIcon aria-hidden="true" />
-        <span className="hidden md:inline">Search</span>
+        <span className="hidden md:inline">{intl.formatMessage(COPY.searchShort)}</span>
         <kbd className="hidden rounded-s border border-stroke px-3xs font-mono text-s md:inline">
           ⌘K
         </kbd>
@@ -76,13 +123,13 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
               variant="ghost"
               size="icon"
               onClick={onFull}
-              aria-label="Give the app the whole screen"
+              aria-label={intl.formatMessage(COPY.full)}
               className="size-[2rem]"
             >
               <Maximize2 aria-hidden="true" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">The app on its own</TooltipContent>
+          <TooltipContent side="bottom">{intl.formatMessage(COPY.fullTip)}</TooltipContent>
         </Tooltip>
       )}
 
@@ -98,13 +145,13 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
               href={docsModule.repo}
               target="_blank"
               rel="noreferrer noopener"
-              aria-label="The source on GitHub"
+              aria-label={intl.formatMessage(COPY.source)}
             >
               <GithubMark />
             </a>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">The source on GitHub</TooltipContent>
+        <TooltipContent side="bottom">{intl.formatMessage(COPY.source)}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -113,13 +160,13 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
             variant="ghost"
             size="icon"
             onClick={onSettings}
-            aria-label="Settings"
+            aria-label={intl.formatMessage(COPY.settings)}
             className="size-[2rem]"
           >
             <SettingsIcon aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Settings</TooltipContent>
+        <TooltipContent side="bottom">{intl.formatMessage(COPY.settings)}</TooltipContent>
       </Tooltip>
     </header>
   );

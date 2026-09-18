@@ -10,8 +10,14 @@
  */
 import { frame } from './frame';
 import { home } from './home';
+import { nav } from './nav';
+import { settings } from './settings';
+import { shell } from './shell';
 
 export const de: Record<string, string> = {
   ...frame,
   ...home,
+  ...nav,
+  ...settings,
+  ...shell,
 };

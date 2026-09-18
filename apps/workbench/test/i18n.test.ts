@@ -10,7 +10,13 @@ import { describe, expect, it } from 'vitest';
 import { filesUnder, floorFaults, under, withoutComments } from '@correctiv/prose-and-code';
 
 import { de } from '../src/i18n/catalogue/de';
-import { LANGUAGE_KEY, DEFAULT_LANGUAGE, LANGUAGES } from '../src/i18n/language';
+import {
+  DEFAULT_LANGUAGE,
+  LANGUAGES,
+  LANGUAGE_KEY,
+  rememberLanguage,
+  storedLanguage,
+} from '../src/i18n/language';
 
 /**
  * This site's own localisation seam, which is the app's with one thing reversed.
@@ -148,27 +154,63 @@ describe('the site formats against its own provider', () => {
    * `useWorkbenchIntl()` reads a context of this site's own, which nothing the app
    * mounts can shadow. So the rule is: never `useIntl` here.
    */
-  it('never calls useIntl outside the i18n directory', () => {
+  /**
+   * Every way react-intl hands out its own context, not only the obvious one.
+   *
+   * The first version of this looked for `useIntl` and nothing else, and a cold
+   * review walked past it with `<FormattedMessage>` — which is the single most
+   * idiomatic call in the library — and with `injectIntl`. Both read react-intl's
+   * context, so both get the app's provider inside an `AppHost`, which is the whole
+   * failure this rule exists to prevent.
+   *
+   * Worth saying why the gap was easy to miss: `RawIntlProvider` at the root means
+   * such a mistake WORKS on every page without an `AppHost` and fails only inside
+   * `/preview`'s home tool. The failure is positional, so it looks correct when it
+   * is tried on `/handbook`.
+   */
+  const READS_REACT_INTL_CONTEXT: [RegExp, string][] = [
+    [/\buseIntl\s*\(/, 'useIntl()'],
+    [/<\s*FormattedMessage\b/, '<FormattedMessage>'],
+    [/<\s*Formatted(Date|Time|Number|Plural|List|RelativeTime|DisplayName)\b/, '<Formatted…>'],
+    [/\binjectIntl\s*\(/, 'injectIntl()'],
+    [/\bWrappedComponentProps\b/, 'WrappedComponentProps'],
+  ];
+
+  it('reads react-intl’s own context nowhere outside the i18n directory', () => {
     const offenders = filesUnder(SRC, /\.tsx?$/)
       .filter((full) => !under(SRC, full).startsWith('i18n/'))
-      .filter((full) => /\buseIntl\s*\(/.test(withoutComments(readFileSync(full, 'utf8'))))
-      .map((full) => under(SRC, full));
+      .flatMap((full) => {
+        const source = withoutComments(readFileSync(full, 'utf8'));
+        return READS_REACT_INTL_CONTEXT.filter(([pattern]) => pattern.test(source)).map(
+          ([, what]) => `${under(SRC, full)}: ${what}`,
+        );
+      });
 
     expect(offenders).toEqual([]);
   });
 
-  it('imports useIntl from react-intl nowhere outside the i18n directory', () => {
-    // The call above is the mistake; this is the import that makes it available,
+  it('imports none of them from react-intl outside the i18n directory', () => {
+    // The calls above are the mistake; this is the import that makes one available,
     // and catching it too means the rule is legible at the top of a file rather
-    // than only where somebody used it.
+    // than only where somebody used it. `defineMessages` is deliberately not on the
+    // list: it is an identity function that touches no context.
+    const FORBIDDEN =
+      /\b(useIntl|FormattedMessage|FormattedDate|FormattedTime|FormattedNumber|FormattedPlural|FormattedList|FormattedRelativeTime|FormattedDisplayName|injectIntl|WrappedComponentProps|IntlProvider|RawIntlProvider)\b/;
     const offenders = filesUnder(SRC, /\.tsx?$/)
       .filter((full) => !under(SRC, full).startsWith('i18n/'))
-      .filter((full) =>
-        /import\s*\{[^}]*\buseIntl\b[^}]*\}\s*from\s*'react-intl'/.test(
-          withoutComments(readFileSync(full, 'utf8')),
-        ),
-      )
-      .map((full) => under(SRC, full));
+      .flatMap((full) => {
+        const source = withoutComments(readFileSync(full, 'utf8'));
+        return [...source.matchAll(/import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'react-intl'/g)]
+          .flatMap((match) => match[1]!.split(','))
+          .map((name) =>
+            name
+              .trim()
+              .split(/\s+as\s+/)[0]!
+              .trim(),
+          )
+          .filter((name) => FORBIDDEN.test(name))
+          .map((name) => `${under(SRC, full)}: ${name}`);
+      });
 
     expect(offenders).toEqual([]);
   });
@@ -233,7 +275,50 @@ describe('a translator is told what the string cannot tell them', () => {
   });
 });
 
+/** The browser that answers every storage call by refusing it. `theme.test.ts` has the same. */
+const blocked = {
+  getItem(): string {
+    throw new DOMException('site data is off', 'SecurityError');
+  },
+  setItem(): void {
+    throw new DOMException('site data is off', 'SecurityError');
+  },
+  removeItem(): void {
+    throw new DOMException('site data is off', 'SecurityError');
+  },
+} as unknown as Storage;
+
 describe('the language setting', () => {
+  it('lets the page render in a browser with site data switched off', () => {
+    /*
+     * The same case `theme.test.ts` holds for the appearance, and it is sharper
+     * here: `storedLanguage` is the lazy initialiser of `useState` in
+     * `useLanguage()`, which `App.tsx` calls on its first render. An unguarded
+     * throw there is not a setting that fails to persist, it is a blank site for
+     * anybody browsing with site data blocked.
+     *
+     * `ownStorage()` alone is not enough and that is the trap: it catches the
+     * property ACCESS, which is the sandboxed-iframe case, and a browser with site
+     * data switched off hands out a `Storage` whose methods throw instead.
+     */
+    expect(() => rememberLanguage('de', blocked)).not.toThrow();
+    expect(() => rememberLanguage('en', blocked)).not.toThrow();
+    expect(storedLanguage(blocked)).toBe(DEFAULT_LANGUAGE);
+    expect(storedLanguage(null)).toBe(DEFAULT_LANGUAGE);
+  });
+
+  it('writes the store only from a choice', () => {
+    // Issue #131's rule, kept rather than rediscovered: the default is the ABSENCE
+    // of the key, so a document that stamps its own reading back on mount deletes a
+    // choice it never saw. `theme.ts` paid for that once. One write, one delete,
+    // both inside `rememberLanguage`, and nothing in the effect.
+    const source = readFileSync(join(SRC, 'i18n', 'language.ts'), 'utf8');
+    expect(source.match(/\.setItem\(/g) ?? []).toHaveLength(1);
+    expect(source.match(/\.removeItem\(/g) ?? []).toHaveLength(1);
+    const effect = /useEffect\(\(\) => \{([\s\S]*?)\}, \[language\]\);/.exec(source);
+    expect(effect?.[1]).not.toMatch(/LANGUAGE_KEY|setItem|removeItem|rememberLanguage/);
+  });
+
   it('is written under the prefix this site owns', () => {
     expect(LANGUAGE_KEY.startsWith('workbench:')).toBe(true);
   });
@@ -248,8 +333,13 @@ describe('the language setting', () => {
 
   it('has a catalogue for every language but the default', () => {
     // The provider consults no catalogue for English on purpose: the source IS the
-    // English. One for German, none for English, and a third language would add a
-    // file here rather than a branch anywhere.
+    // English. One for German, none for English.
+    //
+    // A third language is NOT free, and an earlier version of this comment said it
+    // was. `Language`, `LANGUAGES`, `storedLanguage`'s `=== 'de'`, `CATALOGUES` and
+    // the picker's `TONGUES` are each a branch or a member that has to grow. What is
+    // free is that this assertion goes red until they have, so the list of edits is
+    // discovered rather than remembered.
     const needing = LANGUAGES.filter((language) => language !== DEFAULT_LANGUAGE);
     const merged = readFileSync(join(GERMAN, 'index.ts'), 'utf8');
     expect(needing).toEqual(['de']);
@@ -268,6 +358,12 @@ describe('the extracted English catalogue is current', () => {
    * The command is READ from `package.json` with its output redirected, rather than
    * repeated here: a copy would be the second place to keep in step, and the
    * committed artefact must not be rewritten by the test that judges it.
+   *
+   * The root `node_modules/.bin` on the PATH assumes npm hoisted `@formatjs/cli`,
+   * which it does because this package and `apps/mobile` ask for the same version.
+   * The day they diverge npm nests one of them and this fails for a reason that has
+   * nothing to do with the catalogue. Named rather than defended against: the fix
+   * then is to agree on a version, which is what you would want anyway.
    */
   it('is what `npm run i18n:extract` produces right now', () => {
     const script = (

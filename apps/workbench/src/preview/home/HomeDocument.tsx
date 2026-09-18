@@ -18,6 +18,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react';
+import { defineMessages } from 'react-intl';
 
 import {
   MINUTES_IN_DAY,
@@ -28,6 +29,7 @@ import {
 import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 
 import { SOURCES } from '../../../content/sources.manifest';
+import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
@@ -120,6 +122,217 @@ import { canSave, publish, save, type SaveResult } from './write';
  * typed here, so it disappears by itself on the day that row turns live.
  */
 
+/**
+ * Everything this tool says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/home.ts`.
+ *
+ * **Formatted through `useWorkbenchIntl()` and never `useIntl()`**, and here that is
+ * not a convention but the only thing that works: the block list is wrapped in one
+ * `AppHost`, which mounts the APP's `IntlProvider`, so react-intl's own context
+ * inside every `Row` below is the app's. It holds no `home.*` id, and each of these
+ * would have rendered its English default and reported nothing. `Palette.tsx` carries
+ * the measurement.
+ *
+ * What is NOT here is everything out of `./document.ts` — `moduleLabel`,
+ * `settingLabel`, `blockName` and `whereAt`. Those name the app's own modules and
+ * settings, ADR 0050 §5 defers them, and they arrive as English values inside the
+ * sentences below. The German is written to read around an English fragment, the way
+ * `de/home.ts` already does for `{where}`.
+ */
+const COPY = defineMessages({
+  rule: {
+    id: 'home.document.rule',
+    defaultMessage: 'A moment carries only what changes at it.',
+    description:
+      'The one sentence above the editor, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
+  },
+  follow: {
+    id: 'home.document.follow',
+    defaultMessage: 'Scroll the frame to the block under the pointer',
+  },
+  revert: {
+    id: 'home.document.revert',
+    defaultMessage: 'Back to the file',
+    description:
+      'Throws away every edit of this session and goes back to the document as the repository has it.',
+  },
+  save: { id: 'home.document.save', defaultMessage: 'Save to the repository' },
+  copy: {
+    id: 'home.document.copy',
+    defaultMessage: 'Copy the document',
+    description:
+      'What the published site offers instead of Save, because there is no dev server to write the file with.',
+  },
+  changed: {
+    id: 'home.document.changed',
+    defaultMessage: 'changed',
+    description:
+      'The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and reads the same in English.',
+  },
+  unchanged: { id: 'home.document.unchanged', defaultMessage: 'unchanged' },
+  saveNote: {
+    id: 'home.document.saveNote',
+    defaultMessage:
+      'Save writes <code>packages/app-core/src/data/home.layout.json</code> through the dev server, which refuses anything the core will not parse. The next step is a pull request rather than a write, the way the sources job already does it (ADR 0036 §15).',
+    description:
+      'Says what Save does before anybody presses it, on a dev server. The tag wraps a repository path, drawn in a monospace face.',
+  },
+  copyNote: {
+    id: 'home.document.copyNote',
+    defaultMessage:
+      'This is the published site, so there is no server to write with and nothing here reaches the repository. Copy the document and put it in <code>packages/app-core/src/data/home.layout.json</code>, or open <code>/preview</code> on a dev server, where Save is offered.',
+    description:
+      'The same, on the published site, where there is no Save. The tag wraps a repository path and an address, both drawn in a monospace face.',
+  },
+  copied: {
+    id: 'home.document.copied',
+    defaultMessage: 'Copied.',
+    description:
+      'Confirms that the whole document is on the clipboard. frame.copied is the shorter word the address bar uses for a link.',
+  },
+  refused: {
+    id: 'home.document.refused',
+    defaultMessage: 'refused',
+    description:
+      'The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated.',
+  },
+
+  midnight: {
+    id: 'home.point.midnight',
+    defaultMessage: 'midnight',
+    description:
+      'Stands where a time of day would, for the end of the last stretch of the day. Reads inside home.point.startLead and home.point.span.',
+  },
+  pointStart: {
+    id: 'home.point.start',
+    defaultMessage: 'The day’s start',
+    description:
+      'Names the point being edited when it is the document itself rather than one of its moments.',
+  },
+  pointStartLead: {
+    id: 'home.point.startLead',
+    defaultMessage:
+      'The document as it stands, in effect from midnight until {until}. Every moment inherits from it.',
+    description:
+      'Under the day’s start. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none.',
+  },
+  pointTime: {
+    id: 'home.point.time',
+    defaultMessage: 'The time of this moment',
+    description: 'The label of the time field at the head of the editor. Read aloud, not drawn.',
+  },
+  pointSpan: {
+    id: 'home.point.span',
+    defaultMessage:
+      'until {until} · {changes, plural, =0 {nothing changes here yet} other {# changed here}}',
+    description:
+      'Beside the time field: how long this moment lasts and how much it changes. {until} is when the next point takes over, as 18:30, or the word for midnight; {changes} is how many blocks this moment differs on.',
+  },
+  pointRemove: {
+    id: 'home.point.remove',
+    defaultMessage: 'Remove the moment at {time}',
+    description:
+      'The accessible name of the button that deletes the moment being edited. {time} is its time of day, as 18:30.',
+  },
+  noMoments: {
+    id: 'home.point.noMoments',
+    defaultMessage: 'This document has no moments, so the home screen is the same at every hour.',
+  },
+
+  rowOff: {
+    id: 'home.row.off',
+    defaultMessage: 'off',
+    description:
+      'The badge on a block that is switched off at the point being edited, so it keeps its row and loses its drawing.',
+  },
+  rowChanged: {
+    id: 'home.row.changed',
+    defaultMessage: 'changed',
+    description:
+      'The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and reads the same in English.',
+  },
+  switchOnAtStart: {
+    id: 'home.row.switchOnAtStart',
+    defaultMessage: 'Switch {block} on from the start of the day',
+    description:
+      'The accessible name of the eye button on a block that is off, while the day’s start is being edited. {block} is the block’s own name and arrives in English out of document.ts.',
+  },
+  switchOnAt: {
+    id: 'home.row.switchOnAt',
+    defaultMessage: 'Switch {block} on at {time}',
+    description:
+      'The same button while a moment is being edited. {block} is the block’s own name, in English out of document.ts; {time} is the moment’s time of day, as 18:30.',
+  },
+  switchOffAtStart: {
+    id: 'home.row.switchOffAtStart',
+    defaultMessage: 'Switch {block} off from the start of the day',
+    description:
+      'The accessible name of the eye button on a block that is on, while the day’s start is being edited. {block} is the block’s own name and arrives in English out of document.ts.',
+  },
+  switchOffAt: {
+    id: 'home.row.switchOffAt',
+    defaultMessage: 'Switch {block} off at {time}',
+    description:
+      'The same button while a moment is being edited. {block} is the block’s own name, in English out of document.ts; {time} is the moment’s time of day, as 18:30.',
+  },
+  moveUp: {
+    id: 'home.row.moveUp',
+    defaultMessage: 'Move {block} up',
+    description:
+      'The keyboard’s route through the order, by ADR 0047 §2. {block} is the block’s own name and arrives in English out of document.ts.',
+  },
+  moveDown: {
+    id: 'home.row.moveDown',
+    defaultMessage: 'Move {block} down',
+    description:
+      'The keyboard’s route through the order, by ADR 0047 §2. {block} is the block’s own name and arrives in English out of document.ts.',
+  },
+  rowRemove: {
+    id: 'home.row.remove',
+    defaultMessage: 'Remove {block} from the day',
+    description:
+      'Takes the block out of the document altogether, which is a different act from switching it off at an hour. {block} is the block’s own name, in English out of document.ts.',
+  },
+  offAtStart: {
+    id: 'home.row.offAtStart',
+    defaultMessage: 'Not on screen at the start of the day.',
+    description:
+      'Stands where a switched-off block’s drawing would be, while the day’s start is being edited.',
+  },
+  offAt: {
+    id: 'home.row.offAt',
+    defaultMessage: 'Not on screen at {time}.',
+    description:
+      'Stands where a switched-off block’s drawing would be, while a moment is being edited. {time} is the moment’s time of day, as 18:30.',
+  },
+
+  setHere: {
+    id: 'home.setHere',
+    defaultMessage: 'set here',
+    description:
+      'The mark on a value this moment sets, as against one it inherits from the point before it. Drawn white on the accent, beside a control.',
+  },
+  noPin: {
+    id: 'home.setting.noPin',
+    defaultMessage: 'The newest investigation (no pin)',
+    description:
+      'The first option of the article picker, which leaves the module to its own default instead of naming an article.',
+  },
+  sampleBadge: {
+    id: 'home.setting.sampleBadge',
+    defaultMessage: 'sample data',
+    description:
+      'Marks the article picker as a checked-in stand-in rather than a live feed. Read out of the source inventory, so it goes by itself on the day the row turns live.',
+  },
+  sample: {
+    id: 'home.setting.sample',
+    defaultMessage:
+      'These are <code>packages/app-core/src/data/home-pins.ts</code>, standing in for {standsIn}. Real articles, a fixed list, not today’s.',
+    description:
+      'Beside the sample-data badge. The tag wraps a repository path, drawn in a monospace face; {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts.',
+  },
+});
+
 /** A block a pointer has picked up: which one, where it started, where it would land. */
 interface Carry {
   /**
@@ -150,6 +363,15 @@ const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
   'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+
+/**
+ * The monospace run inside the two notes and the sample-data sentence.
+ *
+ * At module scope, the way `./HomeBlock.tsx` has its one tag: a component defined
+ * during a render is a new component on every render, which is what
+ * `react/no-unstable-nested-components` is about.
+ */
+const code = (chunks: ReactNode[]) => <code className={CODE}>{chunks}</code>;
 
 export function HomeDocument({
   state,
@@ -185,6 +407,7 @@ export function HomeDocument({
    */
   outline: (held: { id: string; follow: boolean } | null) => void;
 }) {
+  const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   const [result, setResult] = useState<SaveResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -424,7 +647,7 @@ export function HomeDocument({
         rest legible and that nothing on screen states: a moment holds the difference
         and not the state.
       */}
-      <p className={NOTE}>A moment carries only what changes at it.</p>
+      <p className={NOTE}>{intl.formatMessage(COPY.rule)}</p>
 
       <label className="flex items-center gap-2xs text-s text-on-canvas">
         <input
@@ -433,7 +656,7 @@ export function HomeDocument({
           onChange={(event) => setFollow(event.target.checked)}
           className="size-[0.875rem] shrink-0 accent-accent"
         />
-        Scroll the frame to the block under the pointer
+        {intl.formatMessage(COPY.follow)}
       </label>
 
       <PointHead
@@ -525,13 +748,21 @@ export function HomeDocument({
           onClick={() => setLayout(SHIPPED)}
         >
           <RotateCcw aria-hidden="true" />
-          Back to the file
+          {intl.formatMessage(COPY.revert)}
         </Button>
 
         {canSave ? (
-          <Button size="sm" disabled={!dirty} onClick={() => void save(layout).then(setResult)}>
+          <Button
+            size="sm"
+            disabled={!dirty}
+            onClick={() =>
+              void save(layout, (message, values) => intl.formatMessage(message, values)).then(
+                setResult,
+              )
+            }
+          >
             <Save aria-hidden="true" />
-            Save to the repository
+            {intl.formatMessage(COPY.save)}
           </Button>
         ) : (
           <Button
@@ -543,11 +774,11 @@ export function HomeDocument({
             }}
           >
             <Copy aria-hidden="true" />
-            Copy the document
+            {intl.formatMessage(COPY.copy)}
           </Button>
         )}
 
-        <span className={NOTE}>{dirty ? 'changed' : 'unchanged'}</span>
+        <span className={NOTE}>{intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}</span>
       </div>
 
       {/*
@@ -556,27 +787,13 @@ export function HomeDocument({
         telling the truth about itself, which is the shape the Tokens tool already has.
       */}
       <p className={NOTE}>
-        {canSave ? (
-          <>
-            Save writes <code className={CODE}>packages/app-core/src/data/home.layout.json</code>{' '}
-            through the dev server, which refuses anything the core will not parse. The next step is
-            a pull request rather than a write, the way the sources job already does it (ADR 0036
-            §15).
-          </>
-        ) : (
-          <>
-            This is the published site, so there is no server to write with and nothing here reaches
-            the repository. Copy the document and put it in{' '}
-            <code className={CODE}>packages/app-core/src/data/home.layout.json</code>, or open{' '}
-            <code className={CODE}>/preview</code> on a dev server, where Save is offered.
-          </>
-        )}
+        {intl.formatMessage(canSave ? COPY.saveNote : COPY.copyNote, { code })}
       </p>
 
       {copied && (
         <p className="flex items-center gap-xs text-s text-on-canvas">
           <Check aria-hidden="true" className="size-[0.875rem] shrink-0" />
-          Copied.
+          {intl.formatMessage(COPY.copied)}
         </p>
       )}
       {/*
@@ -590,7 +807,7 @@ export function HomeDocument({
             <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
           ) : (
             <span className="shrink-0 rounded-s bg-red-500 px-3xs font-mono text-[0.75rem] font-semibold uppercase text-white">
-              refused
+              {intl.formatMessage(COPY.refused)}
             </span>
           )}
           <span className="min-w-0">{result.message}</span>
@@ -622,22 +839,23 @@ function PointHead({
   onMove: (to: MinuteOfDay) => void;
   onRemove: () => void;
 }) {
-  const until = span.to === MINUTES_IN_DAY ? 'midnight' : formatTimeOfDay(span.to);
+  const intl = useWorkbenchIntl();
+  const until =
+    span.to === MINUTES_IN_DAY ? intl.formatMessage(COPY.midnight) : formatTimeOfDay(span.to);
 
   return (
     <div className={cn(CARD, 'flex flex-wrap items-center gap-xs p-xs')}>
       {point === null ? (
         <>
-          <span className="text-m font-semibold text-on-canvas">The day’s start</span>
-          <span className={NOTE}>
-            The document as it stands, in effect from midnight until {until}. Every moment inherits
-            from it.
+          <span className="text-m font-semibold text-on-canvas">
+            {intl.formatMessage(COPY.pointStart)}
           </span>
+          <span className={NOTE}>{intl.formatMessage(COPY.pointStartLead, { until })}</span>
         </>
       ) : (
         <>
           <label className="flex items-center gap-2xs">
-            <span className="sr-only">The time of this moment</span>
+            <span className="sr-only">{intl.formatMessage(COPY.pointTime)}</span>
             <input
               type="time"
               step={STEP * 60}
@@ -649,14 +867,12 @@ function PointHead({
               className={cn(FIELD, 'font-mono text-m font-semibold')}
             />
           </label>
-          <span className={NOTE}>
-            until {until} · {changes === 0 ? 'nothing changes here yet' : `${changes} changed here`}
-          </span>
+          <span className={NOTE}>{intl.formatMessage(COPY.pointSpan, { until, changes })}</span>
           <Button
             variant="ghost"
             size="icon"
             className="ml-auto size-[2rem]"
-            aria-label={`Remove the moment at ${formatTimeOfDay(point)}`}
+            aria-label={intl.formatMessage(COPY.pointRemove, { time: formatTimeOfDay(point) })}
             onClick={onRemove}
           >
             <Trash2 aria-hidden="true" />
@@ -664,9 +880,7 @@ function PointHead({
         </>
       )}
       {point === null && layout.moments.length === 0 && (
-        <span className={cn(NOTE, 'w-full')}>
-          This document has no moments, so the home screen is the same at every hour.
-        </span>
+        <span className={cn(NOTE, 'w-full')}>{intl.formatMessage(COPY.noMoments)}</span>
       )}
     </div>
   );
@@ -736,6 +950,7 @@ function Row({
   /** Whether this is the block a pointer is carrying right now. */
   carried: boolean;
 }) {
+  const intl = useWorkbenchIntl();
   const { name, what } = moduleLabel(section.module);
   /*
    * What the row's four controls call this block when they are read out. `name` alone is
@@ -743,6 +958,12 @@ function Row({
    * cost in the accessibility tree.
    */
   const spoken = blockName(section);
+  /*
+   * The point being edited, as a time, or `null` for the day's start. Read once here
+   * because four sentences below choose between two messages on it, and a second
+   * reading of `point` could disagree with the first.
+   */
+  const at = point === null ? null : formatTimeOfDay(point);
 
   /**
    * Where the keyboard goes when the arrow it just used switches itself off.
@@ -844,8 +1065,8 @@ function Row({
               >
                 {name}
               </span>
-              {off && <Badge variant="outline">off</Badge>}
-              {isChanged && <Badge>changed</Badge>}
+              {off && <Badge variant="outline">{intl.formatMessage(COPY.rowOff)}</Badge>}
+              {isChanged && <Badge>{intl.formatMessage(COPY.rowChanged)}</Badge>}
             </div>
             <div className={NOTE}>{what}</div>
           </div>
@@ -872,9 +1093,14 @@ function Row({
               aria-pressed={!off}
               className={cn('size-[2rem]', hiddenHere && 'text-accent')}
               aria-label={
-                off
-                  ? `Switch ${spoken} on ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
-                  : `Switch ${spoken} off ${point === null ? 'from the start of the day' : `at ${formatTimeOfDay(point)}`}`
+                at === null
+                  ? intl.formatMessage(off ? COPY.switchOnAtStart : COPY.switchOffAtStart, {
+                      block: spoken,
+                    })
+                  : intl.formatMessage(off ? COPY.switchOnAt : COPY.switchOffAt, {
+                      block: spoken,
+                      time: at,
+                    })
               }
               onClick={() => onHidden(!off)}
             >
@@ -886,7 +1112,7 @@ function Row({
               size="icon"
               className="size-[2rem]"
               disabled={index === 0}
-              aria-label={`Move ${spoken} up`}
+              aria-label={intl.formatMessage(COPY.moveUp, { block: spoken })}
               onClick={() => {
                 pressed.current = -1;
                 onMove(-1);
@@ -900,7 +1126,7 @@ function Row({
               size="icon"
               className="size-[2rem]"
               disabled={last}
-              aria-label={`Move ${spoken} down`}
+              aria-label={intl.formatMessage(COPY.moveDown, { block: spoken })}
               onClick={() => {
                 pressed.current = 1;
                 onMove(1);
@@ -923,7 +1149,7 @@ function Row({
               variant="ghost"
               size="icon"
               className="size-[2rem] hover:text-red-500"
-              aria-label={`Remove ${spoken} from the day`}
+              aria-label={intl.formatMessage(COPY.rowRemove, { block: spoken })}
               onClick={onRemove}
             >
               <Trash2 aria-hidden="true" />
@@ -950,8 +1176,9 @@ function Row({
         {deviceWidth !== null &&
           (off ? (
             <p className={cn(NOTE, 'rounded-s border border-dashed border-stroke px-2xs py-3xs')}>
-              Not on screen{' '}
-              {point === null ? 'at the start of the day' : `at ${formatTimeOfDay(point)}`}.
+              {at === null
+                ? intl.formatMessage(COPY.offAtStart)
+                : intl.formatMessage(COPY.offAt, { time: at })}
             </p>
           ) : (
             <div className="overflow-hidden rounded-s border border-stroke">
@@ -978,9 +1205,11 @@ function Row({
 
 /** The mark that says a value is this moment's rather than something it was handed. */
 function Here() {
+  const intl = useWorkbenchIntl();
+
   return (
     <span className="rounded-s bg-accent px-3xs py-4xs text-[0.6875rem] font-semibold uppercase text-white">
-      set here
+      {intl.formatMessage(COPY.setHere)}
     </span>
   );
 }
@@ -1014,6 +1243,7 @@ function Setting({
   disabled: boolean;
   onSet: (value: string | number | null | undefined) => void;
 }) {
+  const intl = useWorkbenchIntl();
   const { name, what } = settingLabel(module, spec);
   const setHere = point !== null && value !== inherited;
 
@@ -1041,7 +1271,7 @@ function Setting({
             onChange={(event) => onSet(event.target.value === '' ? null : event.target.value)}
             className={cn(FIELD, 'w-full')}
           >
-            <option value="">The newest investigation (no pin)</option>
+            <option value="">{intl.formatMessage(COPY.noPin)}</option>
             {HOME_PINS.map((item) => (
               <option key={item.url} value={item.url}>
                 {item.title}
@@ -1050,9 +1280,8 @@ function Setting({
           </select>
           {PIN_SOURCE?.status === 'sample' && (
             <span className={NOTE}>
-              <Badge variant="outline">sample data</Badge> These are{' '}
-              <code className={CODE}>packages/app-core/src/data/home-pins.ts</code>, standing in for{' '}
-              {PIN_SOURCE.standsIn}. Real articles, a fixed list, not today’s.
+              <Badge variant="outline">{intl.formatMessage(COPY.sampleBadge)}</Badge>{' '}
+              {intl.formatMessage(COPY.sample, { standsIn: PIN_SOURCE.standsIn, code })}
             </span>
           )}
         </>

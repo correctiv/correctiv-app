@@ -1,9 +1,35 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import { defineMessages } from 'react-intl';
 
+import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { OUTLINE } from '../AppFrame';
 import { HOST_DEVICE } from '../devices';
 import type { PreviewState } from '../state';
+
+/**
+ * The two names this stage carries, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/frame.ts`.
+ *
+ * Neither is drawn. One is the heading that says what the middle of the view is,
+ * for a reader walking the page by headings; the other is the frame's own name,
+ * which is what a screen reader announces before it steps into the app. Both are
+ * `frame.*`, because the stage is the frame's furniture.
+ */
+const COPY = defineMessages({
+  heading: {
+    id: 'frame.stage.heading',
+    defaultMessage: 'App frame',
+    description:
+      'The heading of the area the app is drawn in, read aloud and never seen. frame.stage.title is the frame element’s own name one level in.',
+  },
+  frameTitle: {
+    id: 'frame.stage.title',
+    defaultMessage: 'App preview',
+    description:
+      'The name of the iframe the app runs in, which is what a screen reader says before it steps into it. frame.stage.heading is the heading above it.',
+  },
+});
 
 /** Shared by the three drag handles, which differ only in edge and cursor. */
 const HANDLE =
@@ -68,6 +94,7 @@ export function Stage({
   onLoad,
   timeline,
 }: Props) {
+  const intl = useWorkbenchIntl();
   const { w, h } = size;
   const host = state.device === HOST_DEVICE;
   const right = useRef<HTMLDivElement>(null);
@@ -102,12 +129,12 @@ export function Stage({
        */
       <div className="flex h-full min-h-0 flex-col bg-canvas">
         <div ref={stageRef} className="min-h-0 flex-1">
-          <h2 className="sr-only">App frame</h2>
+          <h2 className="sr-only">{intl.formatMessage(COPY.heading)}</h2>
           {/* eslint-disable-next-line react/iframe-missing-sandbox */}
           <iframe
             className="block h-full w-full border-0 bg-transparent"
             ref={frameRef}
-            title="App preview"
+            title={intl.formatMessage(COPY.frameTitle)}
             allow="autoplay; fullscreen; encrypted-media"
             onLoad={onLoad}
           />
@@ -119,7 +146,7 @@ export function Stage({
 
   return (
     <div className="stage-grid flex h-full min-h-0 flex-col">
-      <h2 className="sr-only">App frame</h2>
+      <h2 className="sr-only">{intl.formatMessage(COPY.heading)}</h2>
 
       {/*
         The box the frame is measured against, and nothing else in it. The
@@ -168,7 +195,7 @@ export function Stage({
             <iframe
               className="block h-full w-full border-0 bg-transparent"
               ref={frameRef}
-              title="App preview"
+              title={intl.formatMessage(COPY.frameTitle)}
               allow="autoplay; fullscreen; encrypted-media"
               onLoad={onLoad}
             />

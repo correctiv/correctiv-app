@@ -20,17 +20,21 @@ import { fit } from './fit';
  * The two things a row says instead of a drawing, in ENGLISH; the German that ships is
  * `src/i18n/catalogue/de/home.ts`.
  *
- * **Formatted under the APP's provider, not this site's.** The caller mounts one
+ * **It would have been formatted under the APP's provider, which is why this file
+ * calls `useWorkbenchIntl()` rather than `useIntl()`.** The caller mounts one
  * `AppHost` around the whole list, `AppEnvironment` mounts the app's own
- * `IntlProvider` inside it (locale `de`, the app's catalogue), and this component is
- * below that — so the nearest provider is the app's and neither id is in its
- * catalogue. Both render their English `defaultMessage` and report nothing, because
- * `vite.app.mjs` defines `__DEV__` false for this site and the app's `onError` throws
- * only with it. Measured on the dev server with the site in German: the bar above the
- * frame read „Rahmen“ while a row under it read "Draws nothing here." That is what the
- * row already showed, so the descriptors change nothing today; what they cost is that
- * the German beside them is inert until `components/AppHost.tsx` carries this site's
- * `intl` across its own environment, which is not a change this file can make.
+ * `IntlProvider` inside it, and this component is below that — so react-intl's
+ * context here is the app's, which holds no `home.*` id. Each of these would have
+ * rendered its English `defaultMessage` and reported nothing, because
+ * `vite.app.mjs` defines `__DEV__` false for this site and the app's `onError`
+ * throws only with it. Measured that way on the dev server before the fix: the bar
+ * above the frame read „Rahmen“ while a row under it read "Draws nothing here."
+ *
+ * `useWorkbenchIntl()` reads a context object of this site's own, which the app's
+ * provider cannot shadow because it is a different object, and
+ * `test/i18n.test.ts` fails on a `useIntl` anywhere outside `src/i18n/`. So the
+ * German here is live; the evidence image in #220 shows „Zeichnet hier nichts.“
+ * inside the palette, which is this file's `empty` drawn under an `AppHost`.
  * `./Palette.tsx` is in the same position and says so too.
  */
 const COPY = defineMessages({
