@@ -2,9 +2,9 @@
 
 Status: accepted in shape, 2026-09-18, from the review of
 [ADR 0048](0048-the-gallery-points-at-the-editor-rather-than-copying-it.md), which
-proposed a mechanism rather than disputing the outcome. Five decisions, and nothing here
-is built: the last of them says which part is worth writing before a second configurable
-screen exists, and which part is waiting for one.
+proposed a mechanism rather than disputing the outcome. Nothing here is built, and the
+last decision below says which part is worth writing before a second configurable screen
+exists and which part is waiting for one.
 
 The number is 0054 and not 0053 because 0053 was being written in the same working tree at
 the same time, where `npm run adr:new` cannot see it: the script reads `origin/main` and
@@ -21,8 +21,8 @@ screen possible.
 
 Half of that shape is already here, which is the useful part of the answer.
 `apps/mobile/src/lib/home/settings.ts` is a declaration file beside the modules that holds
-no React and imports only types, because `scripts/generate-home-settings.mjs` reads it by
-importing it under Node's own type stripping and writes
+no React and imports only types, because `apps/mobile/scripts/generate-home-settings.mjs`
+reads it by importing it under Node's own type stripping and writes
 `packages/app-core/src/lib/home-settings.generated.ts` from it. ADR 0045 §9 put it there so
 that a module and its settings are one thing to write and one thing to read, and the
 generator is what crosses into the core without reversing the dependency.
@@ -88,9 +88,12 @@ This is the line worth writing down, because it is the one that a later change w
 ### 4. What stays out of the app's bundle is decided by the import, not by the bundler
 
 The suggestion assumed the production build could skip the declaration. It cannot be
-assumed here: the app bundles with Metro, `apps/mobile/metro.config.js` turns on no dead
-code elimination, and nothing in this repository measures whether an unused export survives
-into the export. Anything the app imports should be taken as shipping.
+assumed here: the app bundles with Metro and `apps/mobile/metro.config.js` turns on no dead
+code elimination. The one measurement this repository holds of a bundler dropping anything
+points the other way. `apps/mobile/src/lib/theme/font-assets.ts` records what a barrel of
+font cuts cost, because a `require()` of a file is a side effect no tree shaker drops, and
+the answer there was to keep the module out of the barrel rather than to expect the build
+to notice. Anything the app imports should be taken as shipping.
 
 That is not a problem, because the mechanism is the import and it is already in place.
 Defaults are imported and therefore ship, which is right, since the app reads them when

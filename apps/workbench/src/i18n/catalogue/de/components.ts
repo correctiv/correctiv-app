@@ -33,9 +33,8 @@ export const components: Record<string, string> = {
   'components.prose':
     'Der Satz unter jedem Namen ist der Doc-Kommentar der Komponente selbst, aus dem Quelltext der App, und bleibt englisch: ein Kommentar ist für die geschrieben, die den Code lesen.',
 
-  // Der Link heißt hier wie das Werkzeug im Rahmen, `shell.section.home`. Ein
-  // zweiter Name für dieselbe Fläche wäre für jemanden, der dem Link folgt, eine
-  // zweite Sache.
+  // The link carries the tool's own name, `shell.section.home`. A second name for
+  // one surface would read, to somebody following the link, as a second surface.
   'components.modules':
     'Die Blöcke der Startseite stehen nicht hier. Sie sind Kompositionen eines Bildschirms und keine Komponenten der App, und jeder von ihnen wird mit den Einstellungen, die er versteht, im <editor>Startseiten-Layout</editor> gezeichnet, neben der laufenden App.',
 
