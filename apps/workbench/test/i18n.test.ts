@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -374,15 +374,22 @@ describe('the extracted English catalogue is current', () => {
     const out = 'src/i18n/catalogue/en.json';
     expect(script).toContain(out);
 
-    const fresh = join(mkdtempSync(join(tmpdir(), 'wb-i18n-')), 'en.json');
-    execSync(script.replace(out, fresh), {
-      cwd: WORKBENCH,
-      env: {
-        ...process.env,
-        PATH: `${join(WORKBENCH, '../../node_modules/.bin')}:${process.env.PATH}`,
-      },
-    });
+    // Removed on the way out, or this test leaves one directory in `/tmp` per run
+    // and never takes one back. It had left 83 before anybody counted.
+    const dir = mkdtempSync(join(tmpdir(), 'wb-i18n-'));
+    try {
+      const fresh = join(dir, 'en.json');
+      execSync(script.replace(out, fresh), {
+        cwd: WORKBENCH,
+        env: {
+          ...process.env,
+          PATH: `${join(WORKBENCH, '../../node_modules/.bin')}:${process.env.PATH}`,
+        },
+      });
 
-    expect(readFileSync(ENGLISH, 'utf8')).toEqual(readFileSync(fresh, 'utf8'));
+      expect(readFileSync(ENGLISH, 'utf8')).toEqual(readFileSync(fresh, 'utf8'));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

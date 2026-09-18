@@ -3,7 +3,8 @@ import { defineMessages, useIntl } from 'react-intl';
 import { View } from 'react-native';
 
 import { Overline, SplitRow, Typo } from '@/components/ui';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
+import { useLocale } from '@/lib/store/core';
 import { colors } from '@/lib/theme';
 
 /**
@@ -20,8 +21,8 @@ const CLUB = 'CORRECTIV Club';
  *
  * The second line is ONE message with two placeholders rather than a tier and a
  * date glued together, because the order of the two, and the word between them,
- * are the translator's to decide. The date itself stays with `formatDateShortDe`,
- * which pins the German pattern deliberately.
+ * are the translator's to decide. The date itself stays with `formatDateShort`,
+ * which pins the German pattern deliberately where German is what renders.
  */
 const COPY = defineMessages({
   fallbackName: { id: 'profile.club.fallbackName', defaultMessage: 'Member' },
@@ -59,6 +60,7 @@ export function ClubCard({
   memberSince: string | null;
 }) {
   const intl = useIntl();
+  const locale = useLocale();
   return (
     <View className="mt-s rounded-md bg-accent-alternative p-m">
       <SplitRow>
@@ -75,7 +77,7 @@ export function ClubCard({
         {memberSince
           ? intl.formatMessage(COPY.tierSince, {
               tier: tierLabel,
-              date: formatDateShortDe(memberSince),
+              date: formatDateShort(memberSince, locale),
             })
           : tierLabel}
       </Typo>

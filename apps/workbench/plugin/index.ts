@@ -8,7 +8,9 @@ import { homeLayoutEndpoint } from './home-layout.ts';
 
 const MODULE_ID = 'virtual:docs';
 const API_ID = 'virtual:api';
+const STRINGS_ID = 'virtual:strings';
 const API_FILE = join(ROOT, 'apps/workbench/content/api.generated.json');
+const STRINGS_FILE = join(ROOT, 'apps/workbench/content/strings.generated.json');
 
 /**
  * Serves the repository's own Markdown to the workbench, parsed, at build time.
@@ -39,6 +41,7 @@ export function docsPlugin(): Plugin {
     resolveId(id) {
       if (id === MODULE_ID) return `\0${MODULE_ID}`;
       if (id === API_ID) return `\0${API_ID}`;
+      if (id === STRINGS_ID) return `\0${STRINGS_ID}`;
       return null;
     },
 
@@ -55,6 +58,18 @@ export function docsPlugin(): Plugin {
         }
         this.addWatchFile(API_FILE);
         return `export default ${readFileSync(API_FILE, 'utf8')};`;
+      }
+      if (id === `\0${STRINGS_ID}`) {
+        // Joined by `npm run strings`, which `npm run build` runs. Same treatment as
+        // the reference above and for the same reason: derived, large, and a clear
+        // failure beats a table that looks like the app has no strings.
+        if (!existsSync(STRINGS_FILE)) {
+          throw new Error(
+            'apps/workbench/content/strings.generated.json is missing. Run `npm run strings -w @correctiv/workbench`.',
+          );
+        }
+        this.addWatchFile(STRINGS_FILE);
+        return `export default ${readFileSync(STRINGS_FILE, 'utf8')};`;
       }
       if (id !== `\0${MODULE_ID}`) return null;
       const { module, files } = collectDocs(base);

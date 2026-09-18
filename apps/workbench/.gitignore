@@ -7,6 +7,11 @@ dist/
 # either.
 content/api.generated.json
 
+# Joined by `npm run strings` out of the extraction and the catalogues, which the
+# build runs too. Not committed for the same reason and one more: it carries a
+# source line per id, so it would be a diff on every line anybody moves.
+content/strings.generated.json
+
 # The measurement scratch (`scripts/measure-direct.mjs`): one throwaway entry and
 # one build output per component, removed when the run ends and worth nothing if a
 # run is interrupted.

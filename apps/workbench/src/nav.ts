@@ -45,6 +45,7 @@ export const PAGE_TITLES: Record<string, PageTitle> = {
   '/diagrams': wbMessage({ id: 'nav.diagrams', defaultMessage: 'Architecture diagrams' }),
   '/reference': wbMessage({ id: 'nav.reference', defaultMessage: 'Reference, the core' }),
   '/sources': wbMessage({ id: 'nav.sources', defaultMessage: 'Sources status board' }),
+  '/strings': wbMessage({ id: 'nav.strings', defaultMessage: 'Strings, the app’s own' }),
   '/preview': wbMessage({ id: 'nav.preview', defaultMessage: 'Preview' }),
 };
 
