@@ -40,11 +40,21 @@ export const PAGE_TITLES: Record<string, PageTitle> = {
   }),
   ...Object.fromEntries(DIAGRAMS.map((d) => [`/diagrams/${d.id}`, d.title])),
   '/components': wbMessage({ id: 'nav.components', defaultMessage: 'Components, the app’s own' }),
-  '/decisions': wbMessage({ id: 'nav.decisions', defaultMessage: 'Decision records' }),
+  '/decisions': wbMessage({
+    id: 'nav.decisions',
+    defaultMessage: 'Decision records',
+    description:
+      'The browser tab and the search palette for /decisions. decisions.title is the same two words as that page’s own heading, and shell.activity.decisions the shorter word the rail has room for.',
+  }),
   '/design': wbMessage({ id: 'nav.design', defaultMessage: 'Design, the Figma file' }),
   '/diagrams': wbMessage({ id: 'nav.diagrams', defaultMessage: 'Architecture diagrams' }),
   '/reference': wbMessage({ id: 'nav.reference', defaultMessage: 'Reference, the core' }),
-  '/sources': wbMessage({ id: 'nav.sources', defaultMessage: 'Sources status board' }),
+  '/sources': wbMessage({
+    id: 'nav.sources',
+    defaultMessage: 'Sources status board',
+    description:
+      'The browser tab and the search palette for /sources. sources.title is the same three words as that page’s own heading, and shell.activity.sources the shorter word the rail has room for.',
+  }),
   '/strings': wbMessage({
     id: 'nav.strings',
     defaultMessage: 'Strings, the app’s and this site’s',

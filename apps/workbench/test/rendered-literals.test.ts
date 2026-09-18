@@ -211,13 +211,11 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   'pages/ComponentDetail.tsx': 5,
   // At its floor: two import lines.
   'pages/Components.tsx': 2,
-  'pages/Decisions.tsx': 68,
   'pages/Design.tsx': 46,
   'pages/Document.tsx': 12,
   'pages/Landing.tsx': 30,
   // At its floor: one import line.
   'pages/Reference.tsx': 1,
-  'pages/Sources.tsx': 106,
   // At its floor: six product names. A phone is called the same thing in every
   // language, and `Laptop`, `Desktop`, `Custom` and the two descriptions beside
   // them are words and are messages.

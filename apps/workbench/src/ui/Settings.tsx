@@ -379,7 +379,7 @@ export function Settings({
             {intl.formatMessage(COPY.buildNote, {
               commit: docsModule.commit.slice(0, 7),
               measured: MEASURED_ON,
-              age: ageInWords(MEASURED_ON),
+              age: ageInWords(intl, MEASURED_ON),
               commitLink,
               code,
               day,

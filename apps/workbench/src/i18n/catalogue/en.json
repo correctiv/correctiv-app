@@ -170,6 +170,210 @@
     "defaultMessage": "Components",
     "description": "The page’s heading. components.detail.crumb is the same word as the first step of the breadcrumb on a single component’s page, which links back here; nav.components is the longer name the rail and the browser tab carry."
   },
+  "decisions.board.lede": {
+    "defaultMessage": "One row per record, oldest first. A row carrying a strike says why under its title: the clause of the newest one, cut to one sentence, and shown behind the text it struck where it only reads attached to it. A row expands to the index’s sentence about it, every claim struck inside it with the clause that voided it in full, and both directions of the retirement graph. Nothing in the detail is truncated. The tiles above filter the board as well.",
+    "description": "The paragraph under that heading, which says what a row holds."
+  },
+  "decisions.board.title": {
+    "defaultMessage": "The board",
+    "description": "The heading over the table of every record. sources.board.title is the same two words over the table on the sources board."
+  },
+  "decisions.caption": {
+    "defaultMessage": "Every architecture decision record in <code>adr/</code>, with what has since been struck inside it.",
+    "description": "The table’s caption, drawn as a line above it. <code> holds the directory in this repository the records are read out of, which stays in its own spelling."
+  },
+  "decisions.careful.lede": {
+    "defaultMessage": "{careful, plural, one {<f>#</f> record} other {<f>#</f> records}} where the record and the repository are not the same story: {withdrawn, plural, one {one whose own status line is struck through} other {# whose own status lines are struck through}}, and {rest, plural, one {one that decided something} other {# that decided something}} the index says is not built, or not checked on every platform. Everything else on this board was carried out.",
+    "description": "The line under that heading. {careful} is how many such records there are, {withdrawn} how many of them have a struck status line, and {rest} how many carry a caveat out of the index instead. All three are counted out of adr/. <f> draws the first figure in monospace."
+  },
+  "decisions.careful.read": {
+    "defaultMessage": "Read the record",
+    "description": "The link on such a card out to the record itself, rendered on this site."
+  },
+  "decisions.careful.row": {
+    "defaultMessage": "Row",
+    "description": "The link on such a card down to that record’s row in the table, which it also opens. sources.row is the same word on the sources board’s cards."
+  },
+  "decisions.careful.title": {
+    "defaultMessage": "Read these with care",
+    "description": "The heading over the cards for records a reader would be wrong to take at face value."
+  },
+  "decisions.collapseAll": {
+    "defaultMessage": "Collapse all",
+    "description": "The button that closes every row’s detail at once. sources.collapseAll is the same two words on the sources board."
+  },
+  "decisions.column.decision": {
+    "defaultMessage": "Decision",
+    "description": "The third column head, over each record’s own title, its caveats and the one line saying why something in it is no longer true."
+  },
+  "decisions.column.record": {
+    "defaultMessage": "Record",
+    "description": "The second column head, over each record’s number and the day it was written."
+  },
+  "decisions.column.standing": {
+    "defaultMessage": "Standing",
+    "description": "The first column head: whether the record still stands, carries a struck claim, or has been withdrawn."
+  },
+  "decisions.column.struck": {
+    "defaultMessage": "Struck claims",
+    "description": "The fourth column head, over how many claims are struck in that record and which later records struck them."
+  },
+  "decisions.detail.index": {
+    "defaultMessage": "The index says:",
+    "description": "Introduces the sentence adr/README.md writes about this record, inside the row’s detail. The sentence itself is the repository’s and is printed as it is written."
+  },
+  "decisions.detail.noClause": {
+    "defaultMessage": "No clause follows this strike. The record says why around it.",
+    "description": "Stands under a struck claim that has no clause after it, so that the gap reads as a fact about the record rather than as a parser that failed. The reason is in the paragraph after the strike, or was taken by a second strike beside it."
+  },
+  "decisions.detail.read": {
+    "defaultMessage": "Read ADR {number}",
+    "description": "The link out of the row’s detail to the record itself, rendered on this site. {number} is the record’s four-digit number. “ADR” is what this repository calls these documents and is left in its own spelling."
+  },
+  "decisions.detail.struck": {
+    "defaultMessage": "{count, plural, one {One claim is struck:} other {# claims are struck:}}",
+    "description": "Introduces the list of struck claims inside the row’s detail. {count} is how many claims are struck in this record."
+  },
+  "decisions.detail.voids": {
+    "defaultMessage": "{count, plural, one {It struck a claim in} other {It struck claims in}}",
+    "description": "Introduces the chips of the records this one struck something in, inside the row’s detail. {count} is how many records those are, and it is not drawn: the chips that follow are the list."
+  },
+  "decisions.details": {
+    "defaultMessage": "Details",
+    "description": "The button at the end of a row that opens its detail, and the name of the column those buttons sit in, which is read aloud and never drawn. sources.details is the same word on the sources board."
+  },
+  "decisions.expandAll": {
+    "defaultMessage": "Expand all",
+    "description": "The button that opens every row’s detail at once. sources.expandAll is the same two words on the sources board."
+  },
+  "decisions.eyebrow": {
+    "defaultMessage": "CORRECTIV community app · internal documentation",
+    "description": "The small line over the page heading, which says what site this is. sources.eyebrow is the same line word for word over the sources board, and the two are separate ids because each page owns its own header."
+  },
+  "decisions.filter": {
+    "defaultMessage": "Filter records",
+    "description": "The label over the text field above the table. sources.filter is the same shape of label over the sources board’s field and reads “Filter rows”."
+  },
+  "decisions.filter.placeholder": {
+    "defaultMessage": "number, title, or a claim",
+    "description": "The placeholder in that field, naming the three things the filter reads. It matches a record’s number, its title, its status, the index’s sentence and the text of every struck claim and clause."
+  },
+  "decisions.footer.build": {
+    "defaultMessage": "Every row, count and edge above is read out of the records themselves at build time. The workbench holds no copy of any of them, so this board cannot disagree with <code>adr/</code> — and when it cannot read one, the site does not build.",
+    "description": "The first line of the footer, which says where the board comes from. <code> holds the directory in this repository, which stays in its own spelling."
+  },
+  "decisions.footer.notes": {
+    "defaultMessage": "The index those sentences come from is published whole at <notes>Decisions, the notes</notes>, which carries the part a table of rows cannot: the notes for readers of the older records, and the rule above in full.",
+    "description": "The second line of the footer. <notes> is the link to /decisions-notes, and the words inside it are this site’s name for that page. The document behind it is adr/README.md and stays English."
+  },
+  "decisions.hide": {
+    "defaultMessage": "Hide",
+    "description": "What the Details button says while that row’s detail is open. sources.hide is the same word on the sources board."
+  },
+  "decisions.lede": {
+    "defaultMessage": "The choices this repository argued rather than assumed, and which of them still hold. A record says <em>why</em>; <architecture>the architecture</architecture> says what the thing is.",
+    "description": "The paragraph under the heading. <em> emphasises one word and <architecture> is the link to /architecture, which is the repository’s ARCHITECTURE.md rendered on this site."
+  },
+  "decisions.only": {
+    "defaultMessage": "Only what is not built or not checked",
+    "description": "The checkbox beside that field. It keeps the records whose own index entry says the decision was not carried out, or was not verified on every platform."
+  },
+  "decisions.reason.struck": {
+    "defaultMessage": "Why it was struck:",
+    "description": "Read aloud before the one line of reason under the title of a record carrying a struck claim, and never drawn. decisions.reason.withdrawn is the same announcement on a record whose own status line is struck through."
+  },
+  "decisions.reason.withdrawn": {
+    "defaultMessage": "Why it no longer stands:",
+    "description": "Read aloud before the one line of reason under a withdrawn record’s title, and never drawn. Without it the line is a fragment of a document and a screen reader gets no warning that the row has changed subject. decisions.reason.struck is the same announcement on a record that merely carries a struck claim."
+  },
+  "decisions.recordName": {
+    "defaultMessage": ", ADR {number}, {title}",
+    "description": "Read aloud after a control that would otherwise announce as a bare number or as the word Details, and never drawn. {number} is the record’s four-digit number and {title} its own English title out of adr/, which is not translated. The leading comma is a pause: the visible text comes first."
+  },
+  "decisions.rule.clauseless": {
+    "defaultMessage": "{count, plural, one {<f>#</f> of them carries no clause at all. The reason was written in the paragraph after the strike, or was taken by a second strike standing beside it, and neither is something reading the record recovers. That row says so where it stands, and the record itself has the answer.} other {<f>#</f> of them carry no clause at all. The reason was written in the paragraph after the strike, or was taken by a second strike standing beside it, and neither is something reading the record recovers. Those rows say so where they stand, and the record itself has the answer.}}",
+    "description": "The fourth paragraph of that note, drawn only while {count} is above zero. {count} is how many struck claims have no clause after them at all, which is a smaller set than the strikes naming no record. <f> draws the figure in monospace."
+  },
+  "decisions.rule.label": {
+    "defaultMessage": "How an expired claim is marked",
+    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group. It is never drawn."
+  },
+  "decisions.rule.never": {
+    "defaultMessage": "<strong>A record is never rewritten to look right in hindsight.</strong> A claim a later decision made <em>false</em> is struck through where it stands, with one clause saying what voided it and a link to the record that did. The argument around it is left intact, because the reasoning is the part worth keeping.",
+    "description": "The first paragraph of that note, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on."
+  },
+  "decisions.rule.struck": {
+    "defaultMessage": "So <f>{struck}</f> {struck, plural, one {claim is} other {claims are}} struck across these <f>{records}</f> records, and a record carrying one still stands. That is the discipline working, not a fault, and it is the thing this board exists to make visible: it is invisible in the documents themselves unless you open all {records}.",
+    "description": "The second paragraph of that note. {struck} is how many claims are struck through across every record, {records} how many records there are; both are counted out of adr/ at build time. <f> draws a figure in monospace so it is never mistaken for prose."
+  },
+  "decisions.rule.unattributed": {
+    "defaultMessage": "{count, plural, one {<f>#</f> of those strikes names no later record in its clause. It was struck by a re-measurement, or by a later section of the same record, so it has no arrow to draw and its clause is the only thing there is to say about it.} other {<f>#</f> of those strikes name no later record in their clause. They were struck by a re-measurement, or by a later section of the same record, so they have no arrow to draw and their clause is the only thing there is to say about them.}} That is what a row says under its title: one clause, cut to one sentence. The detail below has all of them, in full.",
+    "description": "The third paragraph of that note. {count} is how many struck claims name no record with a higher number, so the board has no edge to draw for them. <f> draws the figure in monospace. Both branches carry the whole first half of the paragraph, because the pronouns after the count change with it."
+  },
+  "decisions.show.legend": {
+    "defaultMessage": "Show which records",
+    "description": "Read aloud as the group name of the four filter tiles, and never drawn: the heading beside it is what a reader sees."
+  },
+  "decisions.show.title": {
+    "defaultMessage": "Show",
+    "description": "The heading over the four filter tiles. sources.show.title is the same word over the tiles of the sources board."
+  },
+  "decisions.showing": {
+    "defaultMessage": "Showing {shown} of {total, plural, one {# record} other {# records}}",
+    "description": "The live count beside the filters. {shown} is how many rows the filters leave and {total} how many records there are altogether."
+  },
+  "decisions.standing.partly": {
+    "defaultMessage": "Partly struck",
+    "description": "The chip on a record whose decision holds but which carries at least one struck claim, and the accessible name of the tile that filters for those."
+  },
+  "decisions.standing.partly.meaning": {
+    "defaultMessage": "The decision holds. Claims inside it do not, and are struck where they stand rather than rewritten.",
+    "description": "The line under the Partly struck tile, which says what that standing means."
+  },
+  "decisions.standing.stands": {
+    "defaultMessage": "Stands",
+    "description": "The chip on a record nothing has struck, and the accessible name of the tile that filters for those. It means the record is still true as written."
+  },
+  "decisions.standing.stands.meaning": {
+    "defaultMessage": "Nothing in them has been made false since they were written.",
+    "description": "The line under the Stands tile, which says what that standing means."
+  },
+  "decisions.standing.withdrawn": {
+    "defaultMessage": "No longer stands",
+    "description": "The chip on a record whose own status line is struck through, and the accessible name of the tile that filters for those. It is the one standing a reader could act on and be wrong."
+  },
+  "decisions.standing.withdrawn.meaning": {
+    "defaultMessage": "The status line itself is struck through. Read the record as history.",
+    "description": "The line under the No longer stands tile, which says what that standing means."
+  },
+  "decisions.struck.by": {
+    "defaultMessage": "by",
+    "description": "Introduces the chips of the later records that struck something in this one, in the Struck claims cell. Lower case and mid-sentence: the chips finish the line."
+  },
+  "decisions.struck.count": {
+    "defaultMessage": "{count, plural, one {<n>#</n><w>claim</w>} other {<n>#</n><w>claims</w>}}",
+    "description": "The count in the Struck claims cell, drawn only where {count} is above one: a single strike says nothing the standing chip has not already said. <n> draws the figure and <w> the word after it, which is why the two are tagged apart."
+  },
+  "decisions.struck.finding": {
+    "defaultMessage": "a later finding",
+    "description": "Stands where those chips would be, on the commonest case: a strike whose clause names no record, so there is nothing to link to. Deliberately not “by no later record”, which reads as missing data about the majority of the strikes on this board."
+  },
+  "decisions.struck.none": {
+    "defaultMessage": "none",
+    "description": "The Struck claims cell of a record nothing has been struck in. Lower case, because it completes the column head rather than starting a sentence."
+  },
+  "decisions.tile.all": {
+    "defaultMessage": "All records",
+    "description": "The first filter tile, which switches the standing filter off. It is also the tile’s accessible name, because the card as a whole is the control."
+  },
+  "decisions.tile.all.note": {
+    "defaultMessage": "Written between <f>{from}</f> and <f>{to}</f>, in the order they were taken.",
+    "description": "The line under that tile. {from} is the ISO day of the oldest record and {to} of the newest, both read out of adr/. <f> draws each day in monospace so it never wraps."
+  },
+  "decisions.title": {
+    "defaultMessage": "Decision records",
+    "description": "The page’s heading. nav.decisions is the same two words as the browser tab and the search palette carry for this page; shell.activity.decisions is the shorter word the rail has room for."
+  },
   "devices.breakpoint": {
     "defaultMessage": "Tablet breakpoint (48rem)",
     "description": "Not a device: the width the reader’s own stylesheet changes at, worth being able to sit exactly on. 48rem is a CSS length and stays as it is written."
@@ -721,7 +925,8 @@
     "defaultMessage": "Components, the app’s own"
   },
   "nav.decisions": {
-    "defaultMessage": "Decision records"
+    "defaultMessage": "Decision records",
+    "description": "The browser tab and the search palette for /decisions. decisions.title is the same two words as that page’s own heading, and shell.activity.decisions the shorter word the rail has room for."
   },
   "nav.design": {
     "defaultMessage": "Design, the Figma file"
@@ -740,7 +945,8 @@
     "defaultMessage": "Reference, the core"
   },
   "nav.sources": {
-    "defaultMessage": "Sources status board"
+    "defaultMessage": "Sources status board",
+    "description": "The browser tab and the search palette for /sources. sources.title is the same three words as that page’s own heading, and shell.activity.sources the shorter word the rail has room for."
   },
   "nav.strings": {
     "defaultMessage": "Strings, the app’s and this site’s",
@@ -1076,10 +1282,11 @@
   },
   "shell.section.source": {
     "defaultMessage": "Source",
-    "description": "The component view’s tool for where a component is written: the file, and a link into the repository. tools.inspect.handover.source is the field of the inspector’s handover block that names one line of one file, and reads the same in English."
+    "description": "The component view’s tool for where a component is written: the file, and a link into the repository. Two other ids read the same in English and mean something else: tools.inspect.handover.source is the field of the inspector’s handover block that names one line of one file, and sources.column.source is the column of the sources board that names where a row’s content comes from."
   },
   "shell.section.state": {
-    "defaultMessage": "State"
+    "defaultMessage": "State",
+    "description": "The preview tool onto the framed app’s own store. sources.column.state is the same word as the first column of the sources board and means something else there: the condition a content source is in."
   },
   "shell.section.tokens": {
     "defaultMessage": "Tokens"
@@ -1091,6 +1298,370 @@
   "shell.toc.none": {
     "defaultMessage": "No headings on this page.",
     "description": "Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title."
+  },
+  "sources.board.lede": {
+    "defaultMessage": "One row per source, per article feed, or per wanted source. A row expands to its full detail; nothing on this page is truncated. The state tiles above filter the board as well.",
+    "description": "The paragraph under that heading, which says what a row holds."
+  },
+  "sources.board.title": {
+    "defaultMessage": "The board",
+    "description": "The heading over the table of every source. decisions.board.title is the same two words over the table on the decisions board."
+  },
+  "sources.caption": {
+    "defaultMessage": "Every content source the app reads, stands in for, or still wants. Figures from the run of <f>{measured}</f>.",
+    "description": "The table’s caption, drawn as a line above it. {measured} is the ISO day of the last run, and <f> draws it in monospace."
+  },
+  "sources.collapseAll": {
+    "defaultMessage": "Collapse all",
+    "description": "The button that closes every row’s detail at once. decisions.collapseAll is the same two words on the decisions board."
+  },
+  "sources.column.flags": {
+    "defaultMessage": "Flags",
+    "description": "The sixth column head, over the badges a row wears: a finding, a scope, and the questions it raises."
+  },
+  "sources.column.kind": {
+    "defaultMessage": "Kind",
+    "description": "The second column head, over what the source carries: articles, audio, video and the rest. It is the short form of sources.groupBy.kind, which has room for both words."
+  },
+  "sources.column.measured": {
+    "defaultMessage": "Measured",
+    "description": "The fifth column head, over what the last run found. The ISO day of that run is drawn under it."
+  },
+  "sources.column.reads": {
+    "defaultMessage": "Reads from",
+    "description": "The fourth column head, over the endpoint the app calls and the file that configures it."
+  },
+  "sources.column.source": {
+    "defaultMessage": "Source",
+    "description": "The third column head, over the source’s own name and what it stands in for. shell.section.source is the same word as the name of the component view’s tool for where a component is written."
+  },
+  "sources.column.state": {
+    "defaultMessage": "State",
+    "description": "The first column head, over the chip saying whether a row is live, sample or without a source, and the first of the two ways to group the board. shell.section.state is the same word as the name of the preview’s state tool, which is the app’s Redux store rather than a source’s condition."
+  },
+  "sources.count.everyPost": {
+    "defaultMessage": "every post",
+    "description": "What the run found for the one feed that has no category, because it carries every post the site publishes. Dropped into the middle of sources.feed.run and sources.findings.figures after the verb, so it is lower case and carries no full stop."
+  },
+  "sources.count.none": {
+    "defaultMessage": "no posts",
+    "description": "What the run found for a feed whose category exists and holds nothing. Different from sources.count.unknown, which is a source that did not answer at all. Dropped in after the verb, so lower case."
+  },
+  "sources.count.unknown": {
+    "defaultMessage": "no answer",
+    "description": "Where the count would be, for a feed whose category did not answer. It is a finding and not a missing value: sources.count.none is a category that answered and was empty. sources.newest.unknown says the same thing in the slot for the newest post’s day and reads the same in English. Dropped in after the verb, so lower case."
+  },
+  "sources.details": {
+    "defaultMessage": "Details",
+    "description": "The button at the end of a row that opens its detail, and the name of the column those buttons sit in, which is read aloud and never drawn. decisions.details is the same word on the decisions board."
+  },
+  "sources.expandAll": {
+    "defaultMessage": "Expand all",
+    "description": "The button that opens every row’s detail at once. decisions.expandAll is the same two words on the decisions board."
+  },
+  "sources.eyebrow": {
+    "defaultMessage": "CORRECTIV community app · internal documentation",
+    "description": "The small line over the page heading, which says what site this is. decisions.eyebrow is the same line word for word over the decisions board, and the two are separate ids because each page owns its own header."
+  },
+  "sources.feed.configured": {
+    "defaultMessage": "Configured in <code>{module}</code>.",
+    "description": "Printed once, in the first article feed’s detail, naming where the seven feeds are configured. {module} is that file’s path in this repository and is not translated. <code> draws it in monospace."
+  },
+  "sources.feed.newest": {
+    "defaultMessage": "newest: <f>{newest}</f>",
+    "description": "The second line of the Measured cell on an article feed’s row. {newest} is the day of the newest post in that feed, or the word “none” or “unknown” where the run could not say; it arrives from feedFigures() in content/sources.manifest.ts, which this site prints as it is written, so it may be English inside a translated sentence. <f> draws it in monospace so it never wraps."
+  },
+  "sources.feed.run": {
+    "defaultMessage": "{category}. The run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.",
+    "description": "The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it. {measured} is the ISO day of the last run. {posts} and {newest} come from feedFigures() in content/sources.manifest.ts and may be a number or one of the English words “every post”, “none” and “unknown”, which this site prints as they are written. <f> draws a figure in monospace."
+  },
+  "sources.feed.unmeasured": {
+    "defaultMessage": "<strong>Neither the feed nor its category answered in that run</strong>, so the figures above are unknown rather than zero. What a failed probe found is on its row in <code>apps/workbench/content/sources.measured.ts</code>.",
+    "description": "Printed in an article feed’s detail when the last run reached neither the feed nor the category behind it. <strong> carries the finding and <code> the generated file in this repository, which stays in its own spelling."
+  },
+  "sources.filter": {
+    "defaultMessage": "Filter rows",
+    "description": "The label over the text field above the table. decisions.filter is the same shape of label over the decisions board’s field and reads “Filter records”."
+  },
+  "sources.filter.placeholder": {
+    "defaultMessage": "name, endpoint, file, question",
+    "description": "The placeholder in that field, naming four of the things the filter reads. It matches a row’s name, its endpoint, its module path, its note and the text of every question it raises."
+  },
+  "sources.findings.figures": {
+    "defaultMessage": "{category}: <f>{posts}</f>, newest <f>{newest}</f>.",
+    "description": "The figures on such a card. {category} is the feed’s category as the manifest writes it; {posts} and {newest} come from feedFigures() in content/sources.manifest.ts and may be a number or one of the English words “every post”, “none” and “unknown”, which this site prints as they are written. <f> draws each figure in monospace."
+  },
+  "sources.findings.lede": {
+    "defaultMessage": "A sample file is honest about what it is. A live feed that has stopped, or points at nothing, is not, because the app presents it as content. {ailing} of the {feeds} article feeds {ailing, plural, one {is} other {are}} in that state.",
+    "description": "The line under that heading. {ailing} is how many article feeds are stale or broken and {feeds} how many there are altogether."
+  },
+  "sources.findings.rest": {
+    "defaultMessage": "The other {count, plural, one {# article feed was} other {# article feeds were}} reading as expected in the run of <f>{measured}</f>. A feed can be stale for a good reason, which is what the note on each card is for.",
+    "description": "The line under those cards. {count} is how many article feeds are healthy and {measured} the ISO day of the last run. <f> draws the day in monospace."
+  },
+  "sources.findings.title": {
+    "defaultMessage": "Bad news first",
+    "description": "The heading over the cards for live feeds that have stopped or point at nothing."
+  },
+  "sources.flag.invented": {
+    "defaultMessage": "Invented",
+    "description": "A badge on the one sample file that stands in for nothing real: on screen it is a series that does not exist. The manifest’s own note is the finding; this is the word over it."
+  },
+  "sources.flag.mvp": {
+    "defaultMessage": "MVP",
+    "description": "A badge saying this source is wanted for the first release. The three letters are what the team calls that scope out loud and are left as they are."
+  },
+  "sources.flag.notMvp": {
+    "defaultMessage": "Not MVP",
+    "description": "A badge saying this source is wanted, but not for the first release."
+  },
+  "sources.flag.silent": {
+    "defaultMessage": "Did not answer",
+    "description": "A badge on a row whose source did not answer the last run. sources.measured.silent is the same finding in the Measured cell of the same row, in lower case because it completes a column head there."
+  },
+  "sources.flag.unused": {
+    "defaultMessage": "Unused, {unused} of {available}",
+    "description": "A badge on a row whose source carries more than the app reads. {unused} is how many are not read and {available} how many exist altogether."
+  },
+  "sources.footer.files": {
+    "defaultMessage": "Two files, and the split is the point. Every row, state and sentence above is read from <code>apps/workbench/content/sources.manifest.ts</code>, which a test checks against the core’s data directory: that is the argument, and it is written by hand. Every count, date and listener figure is read from <code>apps/workbench/content/sources.measured.ts</code>, which is generated and must not be edited.",
+    "description": "The first line of the footer, which says where the board comes from. Both <code> runs are paths in this repository and stay in their own spelling."
+  },
+  "sources.footer.remeasure": {
+    "defaultMessage": "To re-measure, run <code>node apps/workbench/scripts/measure-sources.mjs</code>. <code>.github/workflows/sources.yml</code> runs it weekly and opens a pull request when anything has moved. It reports and never gates: a source that is down, slow or has moved appears on this page and in that run’s summary, and fails nothing.",
+    "description": "The second line of the footer, which says how the figures are re-taken. The first <code> run is a command and the second a path in this repository; both stay in their own spelling."
+  },
+  "sources.gap.unknown": {
+    "defaultMessage": "unknown",
+    "description": "Stands in for the number of things a source carries, on a card where the last run could not count them. Lower case, because it sits inside a sentence."
+  },
+  "sources.gap.used": {
+    "defaultMessage": "<big>{used}</big> of <f>{available}</f> used",
+    "description": "The count on such a card. {used} is how many of the thing the app reads and {available} how many exist, or the word for an unknown where the last run could not say. <big> draws the first figure large, <f> the second in monospace."
+  },
+  "sources.gaps.lede": {
+    "defaultMessage": "{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken. Filled dots are what the app shows.",
+    "description": "The line under that heading. {count} is how many such sources there are. The dots it names are the row of small circles on each card, one per thing the source carries."
+  },
+  "sources.gaps.title": {
+    "defaultMessage": "Connected but unused",
+    "description": "The heading over the cards for sources the app reaches and reads only part of."
+  },
+  "sources.group.rows": {
+    "defaultMessage": "{count, plural, one {# row} other {# rows}}",
+    "description": "The count beside a group heading while the filters hide nothing in it. {count} is how many rows that group has."
+  },
+  "sources.group.rowsOf": {
+    "defaultMessage": "{shown} of {total, plural, one {# row} other {# rows}}",
+    "description": "The count beside a group heading while the filters hide some of it. {shown} is how many rows are left and {total} how many the group has."
+  },
+  "sources.group.sampleData": {
+    "defaultMessage": "Sample data",
+    "description": "The heading of the sample group in the table, and the name of the tile that filters for it. sources.state.sample is the shorter word the chip inside a row carries."
+  },
+  "sources.group.some.live": {
+    "defaultMessage": "{count} live",
+    "description": "Part of the breakdown after a group’s count, and only while the board is grouped by content kind, where one kind holds rows in several states. {count} is how many of the shown rows are live."
+  },
+  "sources.group.some.noSource": {
+    "defaultMessage": "{count} no source",
+    "description": "Part of that same breakdown. {count} is how many of the shown rows have no source at all."
+  },
+  "sources.group.some.sample": {
+    "defaultMessage": "{count} sample",
+    "description": "Part of that same breakdown. {count} is how many of the shown rows are fed by sample data."
+  },
+  "sources.groupBy": {
+    "defaultMessage": "Group by",
+    "description": "The legend over the two-way switch beside the filter, and drawn: it is the only labelled control in that bar."
+  },
+  "sources.groupBy.kind": {
+    "defaultMessage": "Content kind",
+    "description": "The second of the two ways to group the board: by what the source carries rather than by what condition it is in."
+  },
+  "sources.hide": {
+    "defaultMessage": "Hide",
+    "description": "What the Details button says while that row’s detail is open. decisions.hide is the same word on the decisions board."
+  },
+  "sources.kind.articles": {
+    "defaultMessage": "Articles",
+    "description": "One of the eight content kinds, in the Kind column and as a group heading. This one is the app’s article feeds out of correctiv.org."
+  },
+  "sources.kind.audio": {
+    "defaultMessage": "Audio",
+    "description": "One of the eight content kinds: podcasts and the live stream."
+  },
+  "sources.kind.club": {
+    "defaultMessage": "Club",
+    "description": "One of the eight content kinds: CORRECTIV’s membership club, which is a product of its own."
+  },
+  "sources.kind.community": {
+    "defaultMessage": "Community",
+    "description": "One of the eight content kinds: what members of the community contribute or take part in."
+  },
+  "sources.kind.directory": {
+    "defaultMessage": "Directory",
+    "description": "One of the eight content kinds: a list of places, people or events."
+  },
+  "sources.kind.newsletter": {
+    "defaultMessage": "Newsletter",
+    "description": "One of the eight content kinds: the newsletter archive."
+  },
+  "sources.kind.search": {
+    "defaultMessage": "Search",
+    "description": "One of the eight content kinds: what the app’s search reads."
+  },
+  "sources.kind.video": {
+    "defaultMessage": "Video",
+    "description": "One of the eight content kinds: PeerTube and YouTube."
+  },
+  "sources.lede": {
+    "defaultMessage": "For every kind of content the app shows: is it live data, sample data standing in for an API that does not exist yet, or a wanted feature with nothing to read.",
+    "description": "The paragraph under the heading, which names the three states the board sorts by."
+  },
+  "sources.measured.allAnswered": {
+    "defaultMessage": "Every source answered in that run, so nothing below is an unknown.",
+    "description": "Printed in that note in place of the list, when every source answered."
+  },
+  "sources.measured.label": {
+    "defaultMessage": "How these figures were measured",
+    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group. It is never drawn."
+  },
+  "sources.measured.noReason": {
+    "defaultMessage": "no reason recorded",
+    "description": "Stands inside that list where a source is marked as not having answered but the run wrote down no reason for it."
+  },
+  "sources.measured.note": {
+    "defaultMessage": "<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}</strong>, by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.",
+    "description": "The first paragraph of that note. {measured} is the ISO day of the last run; {age} is how long ago that was and arrives as English prose out of src/lib/measured.ts, worked out in the reader’s browser, so the sentence has to read around an English fragment; {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <strong> carries the measurement itself, <f> draws the day in monospace and <code> the script’s path in this repository."
+  },
+  "sources.measured.nothing": {
+    "defaultMessage": "nothing to measure",
+    "description": "The Measured cell of a row the run does not probe at all: a sample file, or a wanted feature. Lower case, because it completes the column head."
+  },
+  "sources.measured.reachable": {
+    "defaultMessage": "reachable",
+    "description": "The Measured cell of a source that answered the last run but has no count to report. Lower case, because it completes the column head."
+  },
+  "sources.measured.silent": {
+    "defaultMessage": "did not answer",
+    "description": "The Measured cell of a source that did not answer the last run. Lower case, because it completes the column head; sources.flag.silent is the same finding as a badge in the Flags column and is capitalised."
+  },
+  "sources.measured.silentSome": {
+    "defaultMessage": "<strong>{count, plural, one {One source} other {# sources}} did not answer:</strong> {list}. That is a finding and not a failure — nothing in this repository turns a source being down into a red build.",
+    "description": "Printed in that note when at least one source did not answer. {count} is how many, and {list} names each of them with the reason the run recorded, in the script’s own words. They are named rather than merely counted, because “three sources did not answer” reads the same whether three feeds are down or the script probed nothing at all."
+  },
+  "sources.measured.stale": {
+    "defaultMessage": "That is more than {days, plural, one {# day} other {# days}} ago, so the weekly run that keeps this page current has not landed in a quarter. The post counts and the newest-post dates below have almost certainly moved.",
+    "description": "Printed in that note only once the last run is old enough to distrust. {days} is the number of days this site treats as the limit, which is a quarter."
+  },
+  "sources.measured.used": {
+    "defaultMessage": "{used} of {available} used",
+    "description": "The Measured cell of a source the app reads only part of. {used} is how many of the thing the app reads and {available} how many exist."
+  },
+  "sources.newest.none": {
+    "defaultMessage": "none",
+    "description": "Where the day of the newest post would be, for a feed that answered with an empty channel. Dropped in after “newest”, so lower case and no full stop."
+  },
+  "sources.newest.unknown": {
+    "defaultMessage": "no answer",
+    "description": "Where the day of the newest post would be, for a feed that did not answer. sources.count.unknown says the same thing in the slot for the number of posts and reads the same in English; they are two entries because one follows a verb and one follows the word “newest”."
+  },
+  "sources.only": {
+    "defaultMessage": "Only rows with a finding: stale, broken, unused, invented",
+    "description": "The checkbox beside the filter field. The four words after the colon are the four findings this board draws, each of which is also a badge or a chip on the row itself."
+  },
+  "sources.question.chip": {
+    "defaultMessage": "Q{n}",
+    "description": "The short label of an open editorial question: the letter that stands for “question” and the question’s number. {n} is that number, counting from one, and it is also the circle beside the question itself further down the page. A translation may change the letter, and then both places change together, because both read this id."
+  },
+  "sources.question.chipName": {
+    "defaultMessage": ", open question {n}",
+    "description": "Read aloud after that short label, which would otherwise announce as a letter and a digit, and never drawn. {n} is the question’s number. The leading comma is a pause after the label."
+  },
+  "sources.question.link": {
+    "defaultMessage": "Open question {n}",
+    "description": "The link from a row, or from a finding card, down to the question that row raises. {n} is the question’s number."
+  },
+  "sources.questions.lede": {
+    "defaultMessage": "This page exists to get these answered. Each one is raised by a row above, and each row carries its question as a Q chip.",
+    "description": "The line under that heading. “Q chip” is the small badge on a row, whose label is sources.question.chip; a translation that changes the letter there changes it here too."
+  },
+  "sources.questions.title": {
+    "defaultMessage": "{count, plural, one {# open editorial question} other {# open editorial questions}}",
+    "description": "The heading over the list of questions this board exists to get answered. {count} is how many there are."
+  },
+  "sources.reads.none": {
+    "defaultMessage": "none, no source named",
+    "description": "The Reads from cell of a row with neither an endpoint nor a module: a wanted feature nobody has pointed at anything yet. Lower case, because it completes the column head."
+  },
+  "sources.row": {
+    "defaultMessage": "Row",
+    "description": "The link on a card down to that source’s row in the table, which it also opens. It is on the finding cards and on the unused cards both. decisions.careful.row is the same word on the decisions board’s cards."
+  },
+  "sources.rowName": {
+    "defaultMessage": ", {name}",
+    "description": "Read aloud after a Details button, which would otherwise announce as the bare word Details thirty times over, and never drawn. {name} is the row’s own name out of the manifest and is not translated. The leading comma is a pause after the visible word."
+  },
+  "sources.show.legend": {
+    "defaultMessage": "Show which rows",
+    "description": "Read aloud as the group name of the four filter tiles, and never drawn: the heading beside it is what a reader sees."
+  },
+  "sources.show.title": {
+    "defaultMessage": "Show",
+    "description": "The heading over the four filter tiles. decisions.show.title is the same word over the tiles of the decisions board."
+  },
+  "sources.showing": {
+    "defaultMessage": "Showing {shown} of {total, plural, one {# row} other {# rows}}",
+    "description": "The live count beside the filters. {shown} is how many rows the filters leave and {total} how many rows the board has."
+  },
+  "sources.standsIn": {
+    "defaultMessage": "stands in for {what}",
+    "description": "The second line under a row’s name, where a sample file stands in for something real. {what} is what it stands in for, in the manifest’s own words, and is not translated."
+  },
+  "sources.state.broken": {
+    "defaultMessage": "Live, broken",
+    "description": "The chip on a live source that points at nothing: configured, reached, and answering with an empty set. Still counted as live, which is why the first word is there."
+  },
+  "sources.state.live": {
+    "defaultMessage": "Live",
+    "description": "The chip on a row fed by a real source that is delivering, the accessible name of the tile that filters for those, and the heading of that group in the table. home.timeline.live is the same word in the preview’s day track, where it marks the minute the frame is showing as the real clock."
+  },
+  "sources.state.noSource": {
+    "defaultMessage": "No source",
+    "description": "The chip on a wanted feature with nothing to read at all, the accessible name of the tile that filters for those, and the heading of that group in the table."
+  },
+  "sources.state.sample": {
+    "defaultMessage": "Sample",
+    "description": "The chip on a row fed by a checked-in file standing in for an API that does not exist yet. sources.group.sampleData is the longer form used as the tile’s name and the group’s heading, where there is room for it."
+  },
+  "sources.state.stale": {
+    "defaultMessage": "Live, stale",
+    "description": "The chip on a live source that has stopped delivering. Both halves matter: the connection works, the content has not moved, and the row is still counted as live."
+  },
+  "sources.tile.all": {
+    "defaultMessage": "All rows",
+    "description": "The first filter tile, which switches the state filter off. It is also the tile’s accessible name, because the card as a whole is the control."
+  },
+  "sources.tile.all.note": {
+    "defaultMessage": "{rows, plural, one {# row} other {# rows}} over {entries, plural, one {# manifest entry} other {# manifest entries}}, with the article family drawn as its {feeds, plural, one {# feed} other {# feeds}}.",
+    "description": "The line under that tile, which explains why the board has more rows than the manifest has entries. {rows} is how many rows there are, {entries} how many entries the manifest has, and {feeds} how many article feeds the one article entry is drawn as."
+  },
+  "sources.tile.live.note": {
+    "defaultMessage": "{ok} reading as expected, {stale} stale, {broken} broken. The last two are the bad news below.",
+    "description": "The line under the Live tile. {ok} is how many live rows are delivering, {stale} how many have stopped, and {broken} how many point at nothing."
+  },
+  "sources.tile.noSource.note": {
+    "defaultMessage": "{count, plural, one {# wanted feature} other {# wanted features}} with nothing to read. {mvp} of them are MVP.",
+    "description": "The line under the No source tile. {count} is how many wanted features have no source at all, and {mvp} how many of those are wanted for the first release."
+  },
+  "sources.tile.sample.note": {
+    "defaultMessage": "{count, plural, one {# file} other {# files}} typed in the shape of the API that will replace them. On screen they look like live content.",
+    "description": "The line under the Sample data tile. {count} is how many checked-in files stand in for an API."
+  },
+  "sources.title": {
+    "defaultMessage": "Sources status board",
+    "description": "The page’s heading. nav.sources is the same three words as the browser tab and the search palette carry for this page; shell.activity.sources is the shorter word the rail has room for."
   },
   "strings.empty": {
     "defaultMessage": "No string matches that.",

@@ -1,7 +1,9 @@
 import { Download, ExternalLink, Maximize2, RotateCw } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import docsModule from 'virtual:docs';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { cn } from '../lib/cn';
 import { href } from '../router';
 import { Slot } from '../shell/slots';
@@ -21,6 +23,22 @@ const FIGMA_EMBED = `https://embed.figma.com/design/9n7x4eWzdZXVlRej7jWJHx/CORRE
 /** What the reader is told will be fetched, in the address bar's own words. */
 const FIGMA_EMBED_SHORT = 'embed.figma.com/design/9n7x…/CORRECTIV-App--Aufbau';
 
+/**
+ * The file's name, which is the same in every language and is written once.
+ *
+ * It reads twice on this page, in the sentence above the button and as the
+ * frame's accessible name, so it is a value handed to both rather than a word
+ * inside either. A translator is not being asked to rename a file.
+ */
+const FIGMA_NAME = 'CORRECTIV App, Aufbau';
+
+/** The three identifiers the tool panel prints, left in their own spelling. */
+const TOKENS_PACKAGE = '@correctiv/design-tokens';
+const TOKEN = 'bg-canvas';
+const PLUGIN_DIRECTORY = 'tools/figma-plugin';
+const PLUGIN_CODE = 'code.js';
+const PLUGIN_SPEC = 'spec.json';
+
 const LINK =
   'font-medium text-on-canvas underline decoration-accent underline-offset-2 hover:text-on-canvas-accent';
 
@@ -29,23 +47,243 @@ const CARD = 'rounded-md border border-stroke bg-canvas p-xs';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 
 /**
+ * Everything this page says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/design.ts`.
+ *
+ * **Nothing on this page comes out of the repository**, so
+ * [ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1
+ * takes all of it: the heading, the sentence about the file, the two headings in
+ * the box that says what a press will fetch, both buttons, and every line in the
+ * three tools on the right.
+ *
+ * **What it does not take is a name or an instruction to click.** `Figma`,
+ * `macOS`, `Windows`, `Linux`, `Apple silicon` and `figma-linux-next` are what
+ * those things are called wherever you are; `@correctiv/design-tokens`,
+ * `bg-canvas`, `tools/figma-plugin`, `code.js` and `spec.json` are identifiers,
+ * and each of them is handed in as a value so that a catalogue cannot reword one.
+ * The menu path in `design.clients.note` is the sharpest case and is the one
+ * exception kept INSIDE a message: a reader has to find those exact words in
+ * Figma's own English menu, so translating them would be translating the reader
+ * out of the instruction. Its description says so.
+ */
+const COPY = defineMessages({
+  title: {
+    id: 'design.title',
+    defaultMessage: 'Design',
+    description:
+      'The heading over the page that frames the Figma file. shell.activity.design is the same word on the rail, landing.door.design.title on the front page’s card, and nav.design is the longer name the browser tab carries.',
+  },
+  lede: {
+    id: 'design.lede',
+    defaultMessage:
+      'The app is designed in one Figma file, <b>{file}</b>. It is the source for the screens, and this workbench is the source for everything written down about them.',
+    description:
+      'The paragraph under the heading. {file} is the Figma file’s own name and is not translated; <b> draws it in bold.',
+  },
+  frameTitle: {
+    id: 'design.frameTitle',
+    defaultMessage: '{file}, in Figma',
+    description:
+      'The accessible name of the frame that holds the design file, read aloud and never drawn. {file} is the Figma file’s own name and is not translated.',
+  },
+
+  loads: {
+    id: 'design.loads',
+    defaultMessage: 'What loads',
+    description:
+      'The first heading in the box above the button, over the address a press will fetch. The address itself is printed in monospace and is not a message.',
+  },
+  loadsNote: {
+    id: 'design.loads.note',
+    defaultMessage: 'One request to figma.com, and none before the button is pressed.',
+  },
+  see: {
+    id: 'design.see',
+    defaultMessage: 'What you will see',
+    description: 'The second heading in that box, over what the frame will show once it loads.',
+  },
+  seeNote: {
+    id: 'design.see.note',
+    defaultMessage:
+      'The file, if you are signed in to Figma with access to it. Figma’s own sign-in screen if not. That screen is a permission and not a fault: this file is not shared publicly.',
+  },
+
+  full: {
+    id: 'design.full',
+    defaultMessage: 'Open full screen',
+    description:
+      'The button on the narrow layout, where the frame does not fit beside the page. It opens the view full screen and loads nothing; design.load is the button that fetches the file. components.detail.full is the same words on a component’s page, where what opens full screen is the app.',
+  },
+  fullNote: {
+    id: 'design.full.note',
+    defaultMessage:
+      'The frame needs the width of the screen, so it opens on its own. The file itself still loads on a press.',
+    description:
+      'The line under the full-screen button. design.load.note is the line under the other button, which does fetch the file.',
+  },
+  load: {
+    id: 'design.load',
+    defaultMessage: 'Load the Figma file',
+    description:
+      'The button that makes the one request to figma.com. Nothing is fetched until it is pressed, which is why the box above it says what will be.',
+  },
+  loadNote: {
+    id: 'design.load.note',
+    defaultMessage: 'from figma.com',
+    description:
+      'The line under the load button, naming the third party the request goes to. design.full.note is the line under the other button, which fetches nothing.',
+  },
+
+  restSide: {
+    id: 'design.rest.side',
+    defaultMessage:
+      'Everything else about the design, the clients, the plugin and where the colours reach the code, is on the right.',
+    description:
+      'Where the three tools are, on a layout wide enough to put them in the right-hand panel. design.rest.below is the same sentence for the layout that stacks them under the page.',
+  },
+  restBelow: {
+    id: 'design.rest.below',
+    defaultMessage:
+      'Everything else about the design, the clients, the plugin and where the colours reach the code, is below.',
+    description:
+      'Where the three tools are, on a layout too narrow for the right-hand panel. design.rest.side is the same sentence for the wide layout.',
+  },
+
+  open: {
+    id: 'design.open',
+    defaultMessage: 'Open in Figma',
+    description:
+      'The button in the bar above the page that leaves this site for the file in Figma itself. design.links.file is the same door in the tool panel, worded as a place rather than as an action.',
+  },
+  reload: {
+    id: 'design.reload',
+    defaultMessage: 'Reload the frame',
+    description:
+      'Both the reload button’s accessible name and its tooltip, on this page, where the frame holds the Figma file. frame.reload is the same words on the preview’s bar, where the frame holds a whole route of the app, and components.detail.reload on a component’s page, where it holds the gallery.',
+  },
+
+  linksFile: {
+    id: 'design.links.file',
+    defaultMessage: 'The file in Figma',
+    description:
+      'The first card in the Open tool, which leaves for the design file itself. design.open is the same door as a button in the bar above the page.',
+  },
+  linksApp: {
+    id: 'design.links.app',
+    defaultMessage: 'The app, at device size',
+    description: 'The second card in the Open tool, which goes to /preview.',
+  },
+  linksNote: {
+    id: 'design.links.note',
+    defaultMessage:
+      'The preview frames the running app at the size the file draws it, which is the comparison the file is for.',
+  },
+
+  clientsNote: {
+    id: 'design.clients.note',
+    defaultMessage:
+      'The plugin is loaded through Plugins, Development, Import plugin from manifest, and that menu exists only in the desktop app. Figma builds one for macOS and Windows; on Linux this project uses a fork.',
+    description:
+      'The line above the four downloads. “Plugins, Development, Import plugin from manifest” is Figma’s own menu and stays in English in every catalogue: it is not a description of a menu, it is the words a reader has to find in one. macOS, Windows and Linux are the platforms’ own names.',
+  },
+  official: {
+    id: 'design.clients.official',
+    defaultMessage: 'Official',
+    description:
+      'Under each of the three downloads Figma itself builds, as against the Linux fork under design.clients.fork.',
+  },
+  fork: {
+    id: 'design.clients.fork',
+    defaultMessage: 'figma-linux-next, a fork',
+    description:
+      'Under the Linux download. figma-linux-next is the project’s own name and is not translated; the rest says what it is, because Figma builds no client for Linux.',
+  },
+
+  colours: {
+    id: 'design.colours',
+    defaultMessage: 'The colours',
+    description:
+      'The first of the three cards saying where the design reaches the code. This one is about the shared palette.',
+  },
+  coloursNote: {
+    id: 'design.colours.note',
+    defaultMessage:
+      'Not redrawn from the file. <code>{pkg}</code> is generated and both the app and this site import the same stylesheet, so <code>{token}</code> means one thing in three places.',
+    description:
+      'The line in the colours card. {pkg} is the design-tokens package and {token} one of its classes; both are identifiers and are not translated. <code> draws each in monospace.',
+  },
+  board: {
+    id: 'design.board',
+    defaultMessage: 'The board',
+    description:
+      'The second of the three cards. The board is the inventory of screens the plugin draws into the Figma file.',
+  },
+  boardNote: {
+    id: 'design.board.note',
+    defaultMessage:
+      '<code>{path}</code> draws the screen inventory into the file from data in this repository, rather than anybody keeping a board in step by hand.',
+    description:
+      'The line in the board card. {path} is the plugin’s directory in this repository and is not translated; <code> draws it in monospace.',
+  },
+  plugin: {
+    id: 'design.plugin',
+    defaultMessage: 'The plugin',
+    description: 'The third of the three cards, about the program that draws the board.',
+  },
+  pluginNote: {
+    id: 'design.plugin.note',
+    defaultMessage:
+      'An interpreter rather than a builder: <code>{codeFile}</code> knows nothing about the app and draws whatever <code>{specFile}</code> describes. Its own documentation is a page of this site, with the three traps of the Linux client in it.',
+    description:
+      'The line in the plugin card. {codeFile} and {specFile} are two file names in the plugin’s directory and are not translated; <code> draws each in monospace.',
+  },
+  pluginDoc: {
+    id: 'design.plugin.doc',
+    defaultMessage: 'The Figma plugin',
+    description:
+      'The link to the plugin’s own documentation, which is that README rendered as a page of this site. It reads the same as the document’s name in the repository’s registry, which is not a message.',
+  },
+  pluginRepo: {
+    id: 'design.plugin.repo',
+    defaultMessage: 'In the repository',
+    description:
+      'The link beside it, which leaves this site for the plugin’s directory on GitHub at the commit this page was built from.',
+  },
+});
+
+/**
+ * The two runs drawn inside the messages above, at module scope.
+ *
+ * Beside the descriptors rather than inside the render, which is the shape
+ * `ui/Settings.tsx` and `pages/Components.tsx` already use: a component built
+ * during a render is remounted on every one of them, and
+ * `react/no-unstable-nested-components` says so.
+ */
+const b = (chunks: ReactNode[]) => <b className="font-semibold">{chunks}</b>;
+
+const code = (chunks: ReactNode[]) => <code className="font-mono">{chunks}</code>;
+
+/**
  * The desktop client, per platform.
  *
  * Figma ships one for macOS and one for Windows and none for Linux, which is why
  * the third is somebody else's build. All four addresses were checked on
  * 2026-09-05 and answered.
+ *
+ * The labels are the platforms' own names and stay as they are; the note beside
+ * each is a word about it and is a message.
  */
-const CLIENTS: { label: string; note: string; href: string }[] = [
+const CLIENTS: { label: string; note: MessageDescriptor; href: string }[] = [
   {
     label: 'macOS, Apple silicon',
-    note: 'Official',
+    note: COPY.official,
     href: 'https://desktop.figma.com/mac-arm/Figma.zip',
   },
-  { label: 'macOS, Intel', note: 'Official', href: 'https://desktop.figma.com/mac/Figma.zip' },
-  { label: 'Windows', note: 'Official', href: 'https://desktop.figma.com/win/FigmaSetup.exe' },
+  { label: 'macOS, Intel', note: COPY.official, href: 'https://desktop.figma.com/mac/Figma.zip' },
+  { label: 'Windows', note: COPY.official, href: 'https://desktop.figma.com/win/FigmaSetup.exe' },
   {
     label: 'Linux',
-    note: 'figma-linux-next, a fork',
+    note: COPY.fork,
     href: 'https://github.com/arximus88/figma-linux-next/releases/latest',
   },
 ];
@@ -67,6 +305,8 @@ const CLIENTS: { label: string; note: string; href: string }[] = [
  * to ask consent for.
  */
 export function Design({ onAddress, wide, full }: ShellProps) {
+  const intl = useWorkbenchIntl();
+
   /*
    * Page state and deliberately not in the address. `full=1` is shareable
    * because chrome is a preference; "the Figma file is loaded" must not be,
@@ -100,7 +340,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
           */
           <iframe
             key={reloads}
-            title="CORRECTIV App, Aufbau, in Figma"
+            title={intl.formatMessage(COPY.frameTitle, { file: FIGMA_NAME })}
             src={FIGMA_EMBED}
             allowFullScreen
             /*
@@ -136,27 +376,32 @@ export function Design({ onAddress, wide, full }: ShellProps) {
           */
           <div className="flex min-h-full flex-1 items-center justify-center px-m py-xl">
             <div className="w-full max-w-content">
-              <h1 className="text-headline-xl font-bold leading-tight tracking-tight">Design</h1>
+              <h1 className="text-headline-xl font-bold leading-tight tracking-tight">
+                {/* `intl.formatMessage` and never `<FormattedMessage>`: that
+                    component reads react-intl's own context, which the app's
+                    provider shadows inside an `AppHost`. `test/i18n.test.ts`
+                    fails on one, and `i18n/Localisation.tsx` carries the
+                    measurement. */}
+                {intl.formatMessage(COPY.title)}
+              </h1>
               <p className="mt-xs text-m leading-relaxed text-on-canvas">
-                The app is designed in one Figma file,{' '}
-                <b className="font-semibold">CORRECTIV App, Aufbau</b>. It is the source for the
-                screens, and this workbench is the source for everything written down about them.
+                {intl.formatMessage(COPY.lede, { file: FIGMA_NAME, b })}
               </p>
 
               <dl className="mt-m rounded-md border border-stroke bg-canvas p-sm text-s">
-                <dt className="font-semibold text-on-canvas">What loads</dt>
+                <dt className="font-semibold text-on-canvas">{intl.formatMessage(COPY.loads)}</dt>
                 <dd className="mt-4xs break-words font-mono text-on-canvas-muted">
                   {FIGMA_EMBED_SHORT}
                 </dd>
                 <dd className="mt-3xs leading-relaxed text-on-canvas-muted">
-                  One request to figma.com, and none before the button is pressed.
+                  {intl.formatMessage(COPY.loadsNote)}
                 </dd>
 
-                <dt className="mt-s font-semibold text-on-canvas">What you will see</dt>
+                <dt className="mt-s font-semibold text-on-canvas">
+                  {intl.formatMessage(COPY.see)}
+                </dt>
                 <dd className="mt-4xs leading-relaxed text-on-canvas-muted">
-                  The file, if you are signed in to Figma with access to it. Figma&apos;s own
-                  sign-in screen if not. That screen is a permission and not a fault: this file is
-                  not shared publicly.
+                  {intl.formatMessage(COPY.seeNote)}
                 </dd>
               </dl>
 
@@ -164,25 +409,21 @@ export function Design({ onAddress, wide, full }: ShellProps) {
                 {asPage ? (
                   <Button size="lg" onClick={() => onAddress({ full: true })}>
                     <Maximize2 aria-hidden="true" />
-                    Open full screen
+                    {intl.formatMessage(COPY.full)}
                   </Button>
                 ) : (
                   <Button size="lg" onClick={() => setFramed(true)}>
                     <ExternalLink aria-hidden="true" />
-                    Load the Figma file
+                    {intl.formatMessage(COPY.load)}
                   </Button>
                 )}
                 <p className={cn(NOTE, 'mt-2xs')}>
-                  {asPage
-                    ? 'The frame needs the width of the screen, so it opens on its own. The file itself still loads on a press.'
-                    : 'from figma.com'}
+                  {intl.formatMessage(asPage ? COPY.fullNote : COPY.loadNote)}
                 </p>
               </div>
 
               <p className={cn(NOTE, 'mt-m')}>
-                {wide
-                  ? 'Everything else about the design, the clients, the plugin and where the colours reach the code, is on the right.'
-                  : 'Everything else about the design, the clients, the plugin and where the colours reach the code, is below.'}
+                {intl.formatMessage(wide ? COPY.restSide : COPY.restBelow)}
               </p>
             </div>
           </div>
@@ -194,7 +435,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
           <Button variant="outline" size="sm" asChild>
             <a href={FIGMA_FILE} target="_blank" rel="noreferrer noopener">
               <ExternalLink aria-hidden="true" />
-              Open in Figma
+              {intl.formatMessage(COPY.open)}
             </a>
           </Button>
           <Tooltip>
@@ -202,14 +443,14 @@ export function Design({ onAddress, wide, full }: ShellProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Reload the frame"
+                aria-label={intl.formatMessage(COPY.reload)}
                 disabled={!framed}
                 onClick={() => setReloads((n) => n + 1)}
               >
                 <RotateCw aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Reload the frame</TooltipContent>
+            <TooltipContent side="bottom">{intl.formatMessage(COPY.reload)}</TooltipContent>
           </Tooltip>
         </div>
       </Slot>
@@ -226,7 +467,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
         >
           <span className="flex items-center gap-2xs text-m font-medium text-on-canvas">
             <ExternalLink aria-hidden="true" className="size-[0.875rem] shrink-0" />
-            The file in Figma
+            {intl.formatMessage(COPY.linksFile)}
           </span>
         </a>
         <a
@@ -236,20 +477,15 @@ export function Design({ onAddress, wide, full }: ShellProps) {
           )}
           href={href('/preview')}
         >
-          <span className="text-m font-medium text-on-canvas">The app, at device size</span>
+          <span className="text-m font-medium text-on-canvas">
+            {intl.formatMessage(COPY.linksApp)}
+          </span>
         </a>
-        <p className={NOTE}>
-          The preview frames the running app at the size the file draws it, which is the comparison
-          the file is for.
-        </p>
+        <p className={NOTE}>{intl.formatMessage(COPY.linksNote)}</p>
       </Slot>
 
       <Slot id="design-clients">
-        <p className={NOTE}>
-          The plugin is loaded through Plugins, Development, Import plugin from manifest, and that
-          menu exists only in the desktop app. Figma builds one for macOS and Windows; on Linux this
-          project uses a fork.
-        </p>
+        <p className={NOTE}>{intl.formatMessage(COPY.clientsNote)}</p>
         <ul className="flex flex-col gap-3xs">
           {CLIENTS.map((client) => (
             <li key={client.href}>
@@ -267,7 +503,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
                   <Download aria-hidden="true" className="size-[0.875rem] shrink-0" />
                   {client.label}
                 </span>
-                <span className={cn(NOTE, 'mt-4xs')}>{client.note}</span>
+                <span className={cn(NOTE, 'mt-4xs')}>{intl.formatMessage(client.note)}</span>
               </a>
             </li>
           ))}
@@ -276,11 +512,11 @@ export function Design({ onAddress, wide, full }: ShellProps) {
 
       <Slot id="design-code">
         <div className={CARD}>
-          <h4 className="text-m font-semibold text-on-canvas">The colours</h4>
+          <h4 className="text-m font-semibold text-on-canvas">
+            {intl.formatMessage(COPY.colours)}
+          </h4>
           <p className={cn(NOTE, 'mt-3xs')}>
-            Not redrawn from the file. <code className="font-mono">@correctiv/design-tokens</code>{' '}
-            is generated and both the app and this site import the same stylesheet, so{' '}
-            <code className="font-mono">bg-canvas</code> means one thing in three places.
+            {intl.formatMessage(COPY.coloursNote, { pkg: TOKENS_PACKAGE, token: TOKEN, code })}
           </p>
           <p className="mt-2xs text-s">
             <a className={LINK} href={href('/decisions/0010')}>
@@ -294,11 +530,9 @@ export function Design({ onAddress, wide, full }: ShellProps) {
         </div>
 
         <div className={CARD}>
-          <h4 className="text-m font-semibold text-on-canvas">The board</h4>
+          <h4 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.board)}</h4>
           <p className={cn(NOTE, 'mt-3xs')}>
-            <code className="font-mono">tools/figma-plugin</code> draws the screen inventory into
-            the file from data in this repository, rather than anybody keeping a board in step by
-            hand.
+            {intl.formatMessage(COPY.boardNote, { path: PLUGIN_DIRECTORY, code })}
           </p>
           <p className="mt-2xs text-s">
             <a className={LINK} href={href('/decisions/0021')}>
@@ -308,16 +542,17 @@ export function Design({ onAddress, wide, full }: ShellProps) {
         </div>
 
         <div className={CARD}>
-          <h4 className="text-m font-semibold text-on-canvas">The plugin</h4>
+          <h4 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.plugin)}</h4>
           <p className={cn(NOTE, 'mt-3xs')}>
-            An interpreter rather than a builder: <code className="font-mono">code.js</code> knows
-            nothing about the app and draws whatever <code className="font-mono">spec.json</code>{' '}
-            describes. Its own documentation is a page of this site, with the three traps of the
-            Linux client in it.
+            {intl.formatMessage(COPY.pluginNote, {
+              codeFile: PLUGIN_CODE,
+              specFile: PLUGIN_SPEC,
+              code,
+            })}
           </p>
           <p className="mt-2xs text-s">
             <a className={LINK} href={href('/design/plugin')}>
-              The Figma plugin
+              {intl.formatMessage(COPY.pluginDoc)}
             </a>
             {' · '}
             <a
@@ -326,7 +561,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
               target="_blank"
               rel="noreferrer noopener"
             >
-              In the repository
+              {intl.formatMessage(COPY.pluginRepo)}
             </a>
           </p>
         </div>

@@ -1,68 +1,301 @@
 import { ArrowRight } from 'lucide-react';
+import { defineMessages, type MessageDescriptor } from 'react-intl';
+import type { ReactNode } from 'react';
 
 import { COUNTS, FEEDS, MEASURED_ON } from '../../content/sources.manifest';
-import { ageInWords } from '../lib/measured';
+import { daysSince } from '../lib/measured';
 import docsModule from 'virtual:docs';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Badge } from '../ui/kit/badge';
 import { cn } from '../lib/cn';
 import { href } from '../router';
 import { Page } from '../ui/Page';
 
+/**
+ * Everything this page says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/landing.ts`.
+ *
+ * **The front page is entirely this site's own words**, which makes it the
+ * simplest case of [ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md)
+ * §1 and not an uninteresting one: the page reads three things out of the
+ * repository and translates none of them. The four figures and the measuring day
+ * come from `content/sources.manifest.ts`, which §4 keeps as a ledger; the record
+ * and struck-claim counts are counted off the parsed documents; the commit is the
+ * build's. Every one of those is a NUMBER or an identifier arriving as a value,
+ * so nothing crosses the line in either direction, and the sentences around them
+ * are ours.
+ *
+ * `docsModule.docs[].blurb` — the one-liner the repository writes about each of
+ * its own documents — is the thing on the other side of that line, and this page
+ * does not use it. `pages/Handbook.tsx` does, and its docblock argues the seam.
+ * The five door blurbs below are written here, about sections of this site rather
+ * than about files, so they are messages.
+ */
+const COPY = defineMessages({
+  title: {
+    id: 'landing.title',
+    defaultMessage: 'The CORRECTIV app, and everything written down about it',
+  },
+  lede: {
+    id: 'landing.lede',
+    defaultMessage:
+      'A community app for CORRECTIV members, built as one platform-free core with the Expo app as its host. The core holds every piece of behaviour and imports no UI framework and no platform SDK, which is why replacing the whole view layer once cost no behaviour at all.',
+  },
+  note: {
+    id: 'landing.note',
+    defaultMessage:
+      'This workbench publishes the repository’s own documents, unchanged and in place, and puts the running app next to them.',
+  },
+
+  statusHeading: {
+    id: 'landing.status.heading',
+    defaultMessage: 'What the app reads',
+    description:
+      'The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the paragraph beside it explains.',
+  },
+  statusNote: {
+    id: 'landing.status.note',
+    defaultMessage:
+      'One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {days, plural, =0 {today} =1 {yesterday} other {# days ago}}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.',
+    description:
+      'The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {days} is how many days ago that was, worked out in the reader’s browser, so the sentence says it twice over. “The board” is /sources.',
+  },
+
+  figureLive: {
+    id: 'landing.figure.live',
+    defaultMessage: 'Live sources',
+    description:
+      'The first of the four figures: entries the app reads from an endpoint that answers today.',
+  },
+  figureSample: {
+    id: 'landing.figure.sample',
+    defaultMessage: 'Sample data sets',
+    description:
+      'The second of the four figures: a checked-in file standing in for an API that does not exist yet.',
+  },
+  figureNoSource: {
+    id: 'landing.figure.noSource',
+    defaultMessage: 'Wanted, with no source',
+    description:
+      'The third of the four figures: something the app is meant to show and has nothing at all to read for.',
+  },
+  figureQuestions: {
+    id: 'landing.figure.questions',
+    defaultMessage: 'Open editorial questions',
+    description:
+      'The fourth of the four figures: questions the sources board raises that only the newsroom can answer.',
+  },
+
+  doorsHeading: {
+    id: 'landing.doors.heading',
+    defaultMessage: 'Where to go',
+    description: 'The heading over the five cards that open the sections of this site.',
+  },
+
+  previewKind: {
+    id: 'landing.door.preview.kind',
+    defaultMessage: 'The app, running',
+    description:
+      'The badge over the Preview card, saying what kind of thing is behind it. shell.activity.app is the rail’s shorter word for the same section.',
+  },
+  previewTitle: {
+    id: 'landing.door.preview.title',
+    defaultMessage: 'Preview',
+    description:
+      'The Preview card’s own name, on the front page. nav.preview is the same word as the page’s name in the browser tab and in the search palette.',
+  },
+  previewBlurb: {
+    id: 'landing.door.preview.blurb',
+    defaultMessage:
+      'The app itself at device size, with an inspector for its state, its console, its palette and its layout. No install and no emulator, and the address reproduces exactly what you see.',
+  },
+
+  sourcesKind: {
+    id: 'landing.door.sources.kind',
+    defaultMessage: 'Inventory',
+    description: 'The badge over the Sources card: the section is a list of what exists.',
+  },
+  sourcesTitle: {
+    id: 'landing.door.sources.title',
+    defaultMessage: 'Sources',
+    description:
+      'The Sources card’s own name, on the front page. shell.activity.sources is the same word on the rail; nav.sources is the longer name the browser tab carries.',
+  },
+  sourcesBlurb: {
+    id: 'landing.door.sources.blurb',
+    defaultMessage:
+      'For everything the app shows: whether it is a live source, a file standing in for an API that does not exist yet, or a wanted feature with nothing to read at all.',
+  },
+
+  handbookKind: {
+    id: 'landing.door.handbook.kind',
+    defaultMessage: 'Written down',
+    description: 'The badge over the Handbook card: the section is prose somebody wrote.',
+  },
+  handbookTitle: {
+    id: 'landing.door.handbook.title',
+    defaultMessage: 'Handbook',
+    description:
+      'The Handbook card’s own name, on the front page. shell.activity.handbook is the same word on the rail and in a document’s breadcrumb; nav.handbook is the page’s name in the browser tab.',
+  },
+  handbookBlurb: {
+    id: 'landing.door.handbook.blurb',
+    defaultMessage:
+      'What the system is and how to work in it: the architecture, the drawings of it, the conventions, and the traps that pass every check.',
+  },
+
+  decisionsKind: {
+    id: 'landing.door.decisions.kind',
+    defaultMessage: 'Records',
+    description:
+      'The badge over the Decisions card. A record is a kind of document that is never rewritten, which the row about adr/ further down the page states.',
+  },
+  decisionsTitle: {
+    id: 'landing.door.decisions.title',
+    defaultMessage: 'Decisions',
+    description:
+      'The Decisions card’s own name, on the front page. shell.activity.decisions is the same word on the rail; nav.decisions is the longer name the browser tab carries.',
+  },
+  decisionsBlurb: {
+    id: 'landing.door.decisions.blurb',
+    defaultMessage:
+      'Why the repository is the way it is, and which of its claims have since expired.',
+  },
+
+  designKind: {
+    id: 'landing.door.design.kind',
+    defaultMessage: 'Drawn by hand',
+    description:
+      'The badge over the Design card. It says the section is a drawing rather than prose or a list, and that a person drew it.',
+  },
+  designTitle: {
+    id: 'landing.door.design.title',
+    defaultMessage: 'Design',
+    description:
+      'The Design card’s own name, on the front page. shell.activity.design is the same word on the rail, design.title is the heading of the page it opens, and nav.design is the longer name the browser tab carries.',
+  },
+  designBlurb: {
+    id: 'landing.door.design.blurb',
+    defaultMessage:
+      'The Figma file the screens come from, and the three places it reaches the code.',
+  },
+
+  layoutHeading: {
+    id: 'landing.layout.heading',
+    defaultMessage: 'How the repository is laid out',
+    description:
+      'The heading over the four rows naming a directory of this repository and saying what is in it. The directory names themselves are paths and stay as they are.',
+  },
+  layoutCore: {
+    id: 'landing.layout.core',
+    defaultMessage:
+      'The model, the parsers, the services, the caches and all of the state. It imports no UI framework and no platform SDK, and a test fails the build if that ever changes.',
+  },
+  layoutMobile: {
+    id: 'landing.layout.mobile',
+    defaultMessage:
+      'The Expo app: iOS, Android and a web target. It holds the screens and one file implementing the ports.',
+  },
+  layoutTokens: {
+    id: 'landing.layout.tokens',
+    defaultMessage:
+      'The shared palette. CORRECTIV’s WordPress CMS consumes the same values, and so does this workbench, which is why no page here can fork the colours.',
+  },
+  layoutRecords: {
+    id: 'landing.layout.records',
+    defaultMessage:
+      '{records, plural, one {# record} other {# records}}. A record is never rewritten to look right in hindsight: a claim a later decision made false is struck through where it stands, and {retired, plural, one {# of them is} other {# of them are}}.',
+    description:
+      'The row about adr/. {records} is how many records the site publishes; {retired} is how many claims are struck through, counted over every document this site renders rather than over the records alone.',
+  },
+
+  footer: {
+    id: 'landing.footer',
+    defaultMessage:
+      '{licence} · <repoLink>{repo}</repoLink> · built from <commitLink>{commit}</commitLink>',
+    description:
+      'The line at the foot of the front page. {licence} is the SPDX identifier of this repository’s licence, {repo} its name on GitHub and {commit} the seven-character hash this site was built from; all three are identifiers and arrive as values so that none of them is translated. <repoLink> and <commitLink> are the two links.',
+  },
+});
+
+/**
+ * The two links drawn inside `landing.footer`, at module scope.
+ *
+ * Beside the descriptor rather than inside the render, which is the shape
+ * `ui/Settings.tsx` and `pages/Components.tsx` already use: a component built
+ * during a render is remounted on every one of them, and
+ * `react/no-unstable-nested-components` says so.
+ */
+const OUTSIDE = 'text-on-canvas underline decoration-accent underline-offset-2';
+
+const repoLink = (chunks: ReactNode[]) => (
+  <a href={docsModule.repo} target="_blank" rel="noreferrer noopener" className={OUTSIDE}>
+    {chunks}
+  </a>
+);
+
+const commitLink = (chunks: ReactNode[]) => (
+  <a
+    href={`${docsModule.repo}/commit/${docsModule.commit}`}
+    target="_blank"
+    rel="noreferrer noopener"
+    className={cn('font-mono', OUTSIDE)}
+  >
+    {chunks}
+  </a>
+);
+
+/** This repository's licence and its name on GitHub. Identifiers, not words. */
+const LICENCE = 'AGPL-3.0-or-later';
+const REPOSITORY = 'correctiv/correctiv-app';
+
 interface Door {
   route: string;
-  kind: string;
-  title: string;
-  blurb: string;
+  kind: MessageDescriptor;
+  title: MessageDescriptor;
+  blurb: MessageDescriptor;
   primary?: boolean;
 }
 
 const DOORS: Door[] = [
   {
     route: '/preview',
-    kind: 'The app, running',
-    title: 'Preview',
-    blurb:
-      'The app itself at device size, with an inspector for its state, its console, its palette and its layout. No install and no emulator, and the address reproduces exactly what you see.',
+    kind: COPY.previewKind,
+    title: COPY.previewTitle,
+    blurb: COPY.previewBlurb,
     primary: true,
   },
-  {
-    route: '/sources',
-    kind: 'Inventory',
-    title: 'Sources',
-    blurb:
-      'For everything the app shows: whether it is a live source, a file standing in for an API that does not exist yet, or a wanted feature with nothing to read at all.',
-  },
+  { route: '/sources', kind: COPY.sourcesKind, title: COPY.sourcesTitle, blurb: COPY.sourcesBlurb },
   {
     route: '/handbook',
-    kind: 'Written down',
-    title: 'Handbook',
-    blurb:
-      'What the system is and how to work in it: the architecture, the drawings of it, the conventions, and the traps that pass every check.',
+    kind: COPY.handbookKind,
+    title: COPY.handbookTitle,
+    blurb: COPY.handbookBlurb,
   },
   {
     route: '/decisions',
-    kind: 'Records',
-    title: 'Decisions',
-    blurb: 'Why the repository is the way it is, and which of its claims have since expired.',
+    kind: COPY.decisionsKind,
+    title: COPY.decisionsTitle,
+    blurb: COPY.decisionsBlurb,
   },
-  {
-    route: '/design',
-    kind: 'Drawn by hand',
-    title: 'Design',
-    blurb: 'The Figma file the screens come from, and the three places it reaches the code.',
-  },
+  { route: '/design', kind: COPY.designKind, title: COPY.designTitle, blurb: COPY.designBlurb },
 ];
 
 const RECORDS = docsModule.docs.filter((d) => d.route.startsWith('/decisions/')).length;
 const RETIRED = docsModule.docs.reduce((n, d) => n + d.retired.length, 0);
 
 /** The status strip, read off the manifest so no figure on this page was typed. */
-const FIGURES: { label: string; value: number }[] = [
-  { label: 'Live sources', value: COUNTS.live },
-  { label: 'Sample data sets', value: COUNTS.sample },
-  { label: 'Wanted, with no source', value: COUNTS.noSource },
-  { label: 'Open editorial questions', value: COUNTS.questions },
+const FIGURES: { id: string; label: MessageDescriptor; value: number }[] = [
+  { id: 'live', label: COPY.figureLive, value: COUNTS.live },
+  { id: 'sample', label: COPY.figureSample, value: COUNTS.sample },
+  { id: 'noSource', label: COPY.figureNoSource, value: COUNTS.noSource },
+  { id: 'questions', label: COPY.figureQuestions, value: COUNTS.questions },
 ];
+
+/** The row a directory of this repository gets, and the box its name sits in. */
+const ROW = 'grid gap-2xs py-s md:grid-cols-[16rem_1fr] md:gap-m';
+const PATH = 'rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-s';
+const WHAT = 'max-w-content text-m leading-relaxed text-on-canvas-muted';
 
 /**
  * The front page, which is an introduction and not a dashboard.
@@ -73,6 +306,8 @@ const FIGURES: { label: string; value: number }[] = [
  * the failure a website makes easy: two pages, two counts, both confident.
  */
 export function Landing() {
+  const intl = useWorkbenchIntl();
+
   return (
     <Page>
       <div className="min-w-0">
@@ -81,16 +316,17 @@ export function Landing() {
             id="title"
             className="max-w-content text-headline-xxl font-bold leading-tight tracking-tight"
           >
-            The CORRECTIV app, and everything written down about it
+            {intl.formatMessage(COPY.title)}
           </h1>
           <p className="mt-sm max-w-content text-l leading-relaxed">
-            A community app for CORRECTIV members, built as one platform-free core with the Expo app
-            as its host. The core holds every piece of behaviour and imports no UI framework and no
-            platform SDK, which is why replacing the whole view layer once cost no behaviour at all.
+            {/* `intl.formatMessage` and never `<FormattedMessage>`: that component
+                reads react-intl's own context, which the app's provider shadows
+                inside an `AppHost`. `test/i18n.test.ts` fails on one, and
+                `i18n/Localisation.tsx` carries the measurement. */}
+            {intl.formatMessage(COPY.lede)}
           </p>
           <p className="mt-s max-w-content text-m leading-relaxed text-on-canvas-muted">
-            This workbench publishes the repository’s own documents, unchanged and in place, and
-            puts the running app next to them.
+            {intl.formatMessage(COPY.note)}
           </p>
         </section>
 
@@ -107,23 +343,29 @@ export function Landing() {
                 id="status-heading"
                 className="text-s font-semibold uppercase tracking-wider text-on-canvas-muted"
               >
-                What the app reads
+                {intl.formatMessage(COPY.statusHeading)}
               </h2>
               <p className="mt-xs text-m leading-relaxed text-on-canvas-muted">
-                One per manifest entry, which is why the board counts more: it draws the article
-                family as its {FEEDS.length} feeds, because a feed is the thing that goes stale. The
-                figures come from a run against the live sources on {MEASURED_ON},{' '}
-                {ageInWords(MEASURED_ON)}, which a weekly job re-takes. Nothing refreshes while you
-                read this, because the feeds send no CORS header for a browser to re-take them
-                through.
+                {/* The age is a plural inside the sentence rather than a phrase
+                    built beside it (`lib/measured.ts`'s `ageInWords`, which
+                    `ui/Settings.tsx` still hands an English fragment). A day is
+                    a number, so the message can say it in whatever language is
+                    rendering, and German can put it where German wants it. */}
+                {intl.formatMessage(COPY.statusNote, {
+                  feeds: FEEDS.length,
+                  measured: MEASURED_ON,
+                  days: daysSince(MEASURED_ON),
+                })}
               </p>
             </div>
             <dl className="grid grid-cols-2 gap-sm self-start sm:grid-cols-4 lg:gap-m">
               {FIGURES.map((figure) => (
                 // The label above and the figure pushed to the bottom, so four
                 // figures share a baseline however many lines their labels take.
-                <div key={figure.label} className="flex h-full flex-col">
-                  <dt className="text-s leading-snug text-on-canvas-muted">{figure.label}</dt>
+                <div key={figure.id} className="flex h-full flex-col">
+                  <dt className="text-s leading-snug text-on-canvas-muted">
+                    {intl.formatMessage(figure.label)}
+                  </dt>
                   <dd className="mt-auto pt-3xs text-headline-xl font-bold leading-tight tabular-nums">
                     {figure.value}
                   </dd>
@@ -138,7 +380,7 @@ export function Landing() {
             id="doors-heading"
             className="text-s font-semibold uppercase tracking-wider text-on-canvas-muted"
           >
-            Where to go
+            {intl.formatMessage(COPY.doorsHeading)}
           </h2>
           <ul className="mt-s grid gap-s sm:grid-cols-2 lg:grid-cols-6">
             {DOORS.map((door) => (
@@ -158,16 +400,18 @@ export function Landing() {
                   {/* `self-start`, because a badge stretched across the card is a
                       banner and reads as one. */}
                   <Badge variant={door.primary ? 'accent' : 'outline'} className="self-start">
-                    {door.kind}
+                    {intl.formatMessage(door.kind)}
                   </Badge>
                   <h3 className="mt-s flex items-center gap-xs text-headline-m font-semibold leading-tight">
-                    {door.title}
+                    {intl.formatMessage(door.title)}
                     <ArrowRight
                       aria-hidden="true"
                       className="size-[1rem] text-on-canvas-muted transition-transform group-hover:translate-x-3xs"
                     />
                   </h3>
-                  <p className="mt-2xs text-m leading-relaxed text-on-canvas-muted">{door.blurb}</p>
+                  <p className="mt-2xs text-m leading-relaxed text-on-canvas-muted">
+                    {intl.formatMessage(door.blurb)}
+                  </p>
                 </a>
               </li>
             ))}
@@ -179,52 +423,37 @@ export function Landing() {
             id="layout-heading"
             className="text-s font-semibold uppercase tracking-wider text-on-canvas-muted"
           >
-            How the repository is laid out
+            {intl.formatMessage(COPY.layoutHeading)}
           </h2>
           <dl className="mt-s divide-y divide-stroke border-y border-stroke">
-            <div className="grid gap-2xs py-s md:grid-cols-[16rem_1fr] md:gap-m">
+            {/* The four directory names stay where they are, in the markup and
+                in their own spelling: nothing about `packages/app-core` is a
+                word, and `adr/` is a folder. The line beside each is a
+                sentence and is a message. */}
+            <div className={ROW}>
               <dt>
-                <code className="rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-s">
-                  packages/app-core
-                </code>
+                <code className={PATH}>packages/app-core</code>
               </dt>
-              <dd className="max-w-content text-m leading-relaxed text-on-canvas-muted">
-                The model, the parsers, the services, the caches and all of the state. It imports no
-                UI framework and no platform SDK, and a test fails the build if that ever changes.
-              </dd>
+              <dd className={WHAT}>{intl.formatMessage(COPY.layoutCore)}</dd>
             </div>
-            <div className="grid gap-2xs py-s md:grid-cols-[16rem_1fr] md:gap-m">
+            <div className={ROW}>
               <dt>
-                <code className="rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-s">
-                  apps/mobile
-                </code>
+                <code className={PATH}>apps/mobile</code>
               </dt>
-              <dd className="max-w-content text-m leading-relaxed text-on-canvas-muted">
-                The Expo app: iOS, Android and a web target. It holds the screens and one file
-                implementing the ports.
-              </dd>
+              <dd className={WHAT}>{intl.formatMessage(COPY.layoutMobile)}</dd>
             </div>
-            <div className="grid gap-2xs py-s md:grid-cols-[16rem_1fr] md:gap-m">
+            <div className={ROW}>
               <dt>
-                <code className="rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-s">
-                  packages/design-tokens
-                </code>
+                <code className={PATH}>packages/design-tokens</code>
               </dt>
-              <dd className="max-w-content text-m leading-relaxed text-on-canvas-muted">
-                The shared palette. CORRECTIV’s WordPress CMS consumes the same values, and so does
-                this workbench, which is why no page here can fork the colours.
-              </dd>
+              <dd className={WHAT}>{intl.formatMessage(COPY.layoutTokens)}</dd>
             </div>
-            <div className="grid gap-2xs py-s md:grid-cols-[16rem_1fr] md:gap-m">
+            <div className={ROW}>
               <dt>
-                <code className="rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-s">
-                  adr/
-                </code>
+                <code className={PATH}>adr/</code>
               </dt>
-              <dd className="max-w-content text-m leading-relaxed text-on-canvas-muted">
-                {RECORDS} records. A record is never rewritten to look right in hindsight: a claim a
-                later decision made false is struck through where it stands, and {RETIRED} of them
-                are.
+              <dd className={WHAT}>
+                {intl.formatMessage(COPY.layoutRecords, { records: RECORDS, retired: RETIRED })}
               </dd>
             </div>
           </dl>
@@ -232,24 +461,13 @@ export function Landing() {
 
         <footer className="mt-2xl border-t border-stroke pt-sm text-s text-on-canvas-muted">
           <p>
-            AGPL-3.0-or-later ·{' '}
-            <a
-              href={docsModule.repo}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-on-canvas underline decoration-accent underline-offset-2"
-            >
-              correctiv/correctiv-app
-            </a>{' '}
-            · built from{' '}
-            <a
-              href={`${docsModule.repo}/commit/${docsModule.commit}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="font-mono text-on-canvas underline decoration-accent underline-offset-2"
-            >
-              {docsModule.commit.slice(0, 7)}
-            </a>
+            {intl.formatMessage(COPY.footer, {
+              licence: LICENCE,
+              repo: REPOSITORY,
+              commit: docsModule.commit.slice(0, 7),
+              repoLink,
+              commitLink,
+            })}
           </p>
         </footer>
       </div>

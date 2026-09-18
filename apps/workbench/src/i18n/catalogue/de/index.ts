@@ -9,6 +9,7 @@
  * What is shared is the shape, not the strings.
  */
 import { components } from './components';
+import { decisions } from './decisions';
 import { devices } from './devices';
 import { diagrams } from './diagrams';
 import { drawing } from './drawing';
@@ -21,11 +22,13 @@ import { preview } from './preview';
 import { reference } from './reference';
 import { settings } from './settings';
 import { shell } from './shell';
+import { sources } from './sources';
 import { strings } from './strings';
 import { tools } from './tools';
 
 export const de: Record<string, string> = {
   ...components,
+  ...decisions,
   ...devices,
   ...diagrams,
   ...drawing,
@@ -38,6 +41,7 @@ export const de: Record<string, string> = {
   ...reference,
   ...settings,
   ...shell,
+  ...sources,
   ...strings,
   ...tools,
 };

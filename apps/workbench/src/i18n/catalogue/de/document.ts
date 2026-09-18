@@ -1,0 +1,42 @@
+/**
+ * German for the `document.*` ids: the frame a repository document is rendered
+ * in, and nothing inside it.
+ *
+ * **This namespace is the seam, one file wide.** The breadcrumb's name, the note
+ * about struck claims, the chip on each one, the line at the foot and the two
+ * cards to the neighbouring records are this site's own words and are here. The
+ * document itself is not: `doc.html` is the repository's Markdown rendered at
+ * build time, `doc.nav` and `doc.title` are its own name, `doc.file` is a path,
+ * and `ADR 0052` is a record's number. A German reader gets a German frame
+ * around an English document, which
+ * [ADR 0052](../../../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1
+ * calls the answer rather than an unfinished translation.
+ *
+ * „Aussage“ for a claim and „Protokoll“ for a record, the same two words
+ * `landing.ts` uses. `/decisions` has not been translated yet, so that board
+ * will have to agree with these rather than the other way round.
+ *
+ * „zurückgezogen“ for a claim that a later decision made false. „überholt“ was
+ * the other candidate and says the wrong thing: a struck claim is not merely out
+ * of date, the record it stands in no longer asserts it.
+ */
+// `documentFrame` and not `document`, which is the only name in this directory
+// that does not match its namespace: `document` is a browser global, and a
+// module-scope const of that name shadows it for the whole file.
+export const documentFrame: Record<string, string> = {
+  'document.breadcrumb': 'Navigationspfad',
+
+  'document.retired.badge': '{count, plural, one {# zurückgezogen} other {# zurückgezogen}}',
+  'document.retired.note':
+    '{count, plural, one {Eine Aussage auf dieser Seite ist} other {Aussagen auf dieser Seite sind}} an Ort und Stelle durchgestrichen, mit dem daneben, was sie aufgehoben hat.',
+  'document.retired.tag': 'zurückgezogen',
+
+  'document.source':
+    'Diese Seite ist <fileLink>{file}</fileLink> im Repository, hier gerendert. Sie ist keine Kopie, es gibt also genau eine Stelle zum Bearbeiten.',
+  'document.source.generated':
+    'Diese Seite ist <fileLink>{file}</fileLink> im Repository, und das ist das Programm, das diese Seite schreibt, nicht die Seite selbst. Sie entsteht beim Build aus dem Baum. Nichts darauf ist also eine Kopie von irgendetwas, und hier gibt es nichts zu bearbeiten.',
+
+  'document.neighbours': 'Die Protokolle vor und nach diesem',
+  'document.previous': 'Vorheriges · {nav}',
+  'document.next': 'Nächstes · {nav}',
+};

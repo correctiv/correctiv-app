@@ -124,7 +124,12 @@ export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
     description:
       'The preview tool that pins the framed app to light or dark. Not the site’s own setting, which is settings.appearance in the settings dialog.',
   }),
-  state: wbMessage({ id: 'shell.section.state', defaultMessage: 'State' }),
+  state: wbMessage({
+    id: 'shell.section.state',
+    defaultMessage: 'State',
+    description:
+      'The preview tool onto the framed app’s own store. sources.column.state is the same word as the first column of the sources board and means something else there: the condition a content source is in.',
+  }),
   home: wbMessage({ id: 'shell.section.home', defaultMessage: 'Home layout' }),
   console: wbMessage({ id: 'shell.section.console', defaultMessage: 'Console' }),
   tokens: wbMessage({ id: 'shell.section.tokens', defaultMessage: 'Tokens' }),
@@ -156,7 +161,7 @@ export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
     id: 'shell.section.source',
     defaultMessage: 'Source',
     description:
-      'The component view’s tool for where a component is written: the file, and a link into the repository. tools.inspect.handover.source is the field of the inspector’s handover block that names one line of one file, and reads the same in English.',
+      'The component view’s tool for where a component is written: the file, and a link into the repository. Two other ids read the same in English and mean something else: tools.inspect.handover.source is the field of the inspector’s handover block that names one line of one file, and sources.column.source is the column of the sources board that names where a row’s content comes from.',
   }),
 };
 

@@ -360,17 +360,32 @@ describe('the run against the configuration it is supposed to cover', () => {
     expect(vacuous).toEqual([]);
   });
 
+  const COUNTS = ['everyPost', 'none', 'unknown', 'count'];
+  const NEWESTS = ['none', 'unknown', 'day'];
+
   it('answers with a figure for every feed row the board prints', () => {
     // `unknown` is a legitimate answer and is drawn as one; what must not happen
     // is a row whose key joins to nothing, which would print `unknown` forever
     // and look like an outage.
     const orphans = FEEDS.filter((feed) => !PROBES.has(`feed:${feed.key}`));
     expect(orphans.map((feed) => feed.label)).toEqual([]);
-    for (const feed of FEEDS) {
-      const figures = feedFigures(feed);
-      expect(figures.posts.length).toBeGreaterThan(0);
-      expect(figures.newest.length).toBeGreaterThan(0);
-    }
+    // A finding rather than a sentence since 2026-09-18, so what is asserted is
+    // that every feed HAS one and that a counted one carries a number. The words
+    // are `pages/Sources.tsx`'s, because the digits of a count are grouped the
+    // way the reader's language groups them and a ledger cannot know that.
+    const figures = FEEDS.map((feed) => feedFigures(feed));
+
+    expect(figures.map((f) => f.posts.kind).filter((k) => !COUNTS.includes(k))).toEqual([]);
+    expect(figures.map((f) => f.newest.kind).filter((k) => !NEWESTS.includes(k))).toEqual([]);
+    // A counted answer carries a number and a dated one carries a day. Collected
+    // rather than asserted inside the loop, because a conditional `expect` is one
+    // that can silently never run.
+    expect(
+      figures.flatMap((f) => (f.posts.kind === 'count' && f.posts.posts <= 0 ? [f.posts] : [])),
+    ).toEqual([]);
+    expect(
+      figures.flatMap((f) => (f.newest.kind === 'day' && !f.newest.day ? [f.newest] : [])),
+    ).toEqual([]);
   });
 });
 
