@@ -1,8 +1,10 @@
 import { ExternalLink, Maximize2, RotateCw } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { defineMessages } from 'react-intl';
 
 import api from 'virtual:api';
 import type { ApiComponent } from 'virtual:api';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { directEntry } from '../components/direct';
 import { NOT_DRAWN } from '../components/direct-ids';
 import { DirectPreview } from '../components/DirectPreview';
@@ -30,6 +32,172 @@ const FIELD =
 type Rendering = 'direct' | 'bundle';
 
 /**
+ * Everything this page says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/components.ts`, which holds both this page's ids and
+ * `/components`'s — one namespace per area rather than one per file.
+ *
+ * **Three kinds of text on this page and only one of them is here.** This site's
+ * own words are: the breadcrumb, the two rail headings, every note under a
+ * control, and the lines that stand in for something missing. The component's own
+ * prose is not — `first.doc`, `row.propsDoc` and each `prop.doc` are JSDoc out of
+ * `apps/mobile/src/components`, rendered as HTML, and AGENTS.md keeps a comment
+ * English (ADR 0052 §1). Nor are the identifiers this page prints as labels: a
+ * prop's name, a type, `canvas` and `surface`, `.web.tsx`. Those are spellings,
+ * and this site leaves an identifier in its own.
+ */
+const COPY = defineMessages({
+  breadcrumb: {
+    id: 'components.detail.breadcrumb',
+    defaultMessage: 'Breadcrumb',
+    description:
+      'Read aloud as the name of the trail above the drawing, and never drawn. The trail itself is the components page, the folder, and this component.',
+  },
+  crumb: {
+    id: 'components.detail.crumb',
+    defaultMessage: 'Components',
+    description:
+      'The first step of that trail, which is the name of the page it links to. components.title is that page’s own heading and reads the same in English; the two move together and are two entries because one is a heading and one is a link in a trail.',
+  },
+
+  tooNarrow: {
+    id: 'components.detail.tooNarrow',
+    defaultMessage:
+      'The app’s bundle draws this in a device frame, which needs more width than there is here.',
+    description:
+      'Shown in place of the drawing when the component can only be drawn by the app and the window is too narrow for a device frame. The button under it is components.detail.full.',
+  },
+  full: {
+    id: 'components.detail.full',
+    defaultMessage: 'Open full screen',
+    description: 'The button under that line, which gives the frame the whole window.',
+  },
+  frameTitle: {
+    id: 'components.detail.frameTitle',
+    defaultMessage: '{name}, drawn in the app',
+    description:
+      'The accessible name of the iframe holding the app. {name} is the component’s name in the source, such as SectionCard, and is not translated.',
+  },
+  gallery: {
+    id: 'components.detail.gallery',
+    defaultMessage: 'The gallery in the preview',
+    description:
+      'A link into /preview. It says the gallery and not this component on purpose: the preview cannot carry a query on the app’s route, so the frame opens the whole gallery, and the label is what the link does.',
+  },
+  reload: {
+    id: 'components.detail.reload',
+    defaultMessage: 'Reload the frame',
+    description:
+      'Both the reload button’s accessible name and its tooltip, on a single component’s page, where the frame holds the app’s gallery. frame.reload is the same words on the preview’s own bar, where the frame holds a whole route.',
+  },
+
+  drawnBy: {
+    id: 'components.detail.drawnBy',
+    defaultMessage: 'Drawn by',
+    description:
+      'The heading of the rail tool that switches between the two renderings, and the group name of its switch.',
+  },
+  drawnBySite: {
+    id: 'components.detail.drawnBy.site',
+    defaultMessage: 'This site',
+    description:
+      'The first rendering: the component mounted in the workbench’s own React tree. “This site” is the workbench, as against the app.',
+  },
+  drawnByBundle: {
+    id: 'components.detail.drawnBy.bundle',
+    defaultMessage: 'The app’s bundle',
+    description: 'The second rendering: the shipped app, in a device frame.',
+  },
+  notDrawn: {
+    id: 'components.detail.notDrawn',
+    defaultMessage: 'Not drawn here: {reason} The bundle draws it.',
+    description:
+      'Printed under the switch when the first rendering is unavailable. {reason} is a sentence, already ending in a full stop, recorded for this component in components/direct-ids.ts, or components.detail.notDrawn.reason when none is.',
+  },
+  notDrawnReason: {
+    id: 'components.detail.notDrawn.reason',
+    defaultMessage: 'the app’s catalogue has no specimen for it.',
+    description:
+      'The {reason} in components.detail.notDrawn when nothing more specific is recorded. Lower case and ending in a full stop, because it is dropped into the middle of that sentence.',
+  },
+  twoRenderings: {
+    id: 'components.detail.twoRenderings',
+    defaultMessage:
+      'Two renderings of one component. A difference between them is a finding, not a blemish; nothing checks them against each other, on purpose.',
+  },
+  frameHolds: {
+    id: 'components.detail.frameHolds',
+    defaultMessage: 'The frame holds <strong>{build}</strong>.',
+    description:
+      'Says which build the device frame is showing. {build} is components.detail.frameHolds.dev or .dist, and <strong> draws it in bold. The tag and the hole have different names because react-intl resolves both out of one map.',
+  },
+  frameHoldsDev: {
+    id: 'components.detail.frameHolds.dev',
+    defaultMessage: 'the dev server through the proxy',
+    description:
+      'The {build} of components.detail.frameHolds on a development server. Lower case, because it is dropped into the middle of that sentence.',
+  },
+  frameHoldsDist: {
+    id: 'components.detail.frameHolds.dist',
+    defaultMessage: 'the published export',
+    description:
+      'The {build} of components.detail.frameHolds in the published build. Lower case, because it is dropped into the middle of that sentence.',
+  },
+
+  device: {
+    id: 'components.detail.device',
+    defaultMessage: 'Device',
+    description:
+      'The label over the select that picks the size the app is framed at. frame.device is the same word on the preview’s own bar, where it is read aloud rather than drawn.',
+  },
+  sizeAuto: {
+    id: 'components.detail.size.auto',
+    defaultMessage: 'The box this page gives it, whatever that is.',
+    description:
+      'Under the device select when no device is chosen: the drawing simply takes the room the page has.',
+  },
+  sizeFrame: {
+    id: 'components.detail.size.frame',
+    defaultMessage: '{width} × {height} at {percent}%',
+    description:
+      'Under the device select while the app’s bundle is drawing. {width} and {height} are the device’s size in CSS pixels and {percent} is how much the frame had to be scaled down to fit.',
+  },
+  sizeColumn: {
+    id: 'components.detail.size.column',
+    defaultMessage: 'Column capped at {width} px. The height is the component’s own.',
+    description:
+      'Under the device select while this site is drawing. {width} is the chosen device’s width in CSS pixels; there is no height, because a component drawn here is as tall as its content.',
+  },
+
+  propsNone: {
+    id: 'components.detail.props.none',
+    defaultMessage: 'None.',
+    description: 'Where the list of props would be, for a component that takes none.',
+  },
+  propOptional: {
+    id: 'components.detail.prop.optional',
+    defaultMessage: 'optional',
+    description:
+      'Appended after a prop’s type, behind a middle dot, for a prop that may be left out. The dot is drawn beside it and is not part of this string.',
+  },
+  propNoProse: {
+    id: 'components.detail.prop.noProse',
+    defaultMessage: 'No prose.',
+    description:
+      'Stands in where a prop carries no doc comment. components.card.noDoc says the same about a whole component and reads differently on purpose: that one is about the component’s own comment.',
+  },
+  inherits: {
+    id: 'components.detail.inherits',
+    defaultMessage:
+      'Plus everything in {types}, which this repository does not own and which is named here rather than expanded.',
+    description:
+      'Printed under the props of a component whose props type extends one from a library. {types} is the list of those type names, drawn in monospace and separated by commas, and is not translated.',
+  },
+});
+
+/** The one run drawn inside `components.detail.frameHolds`, at module scope. */
+const strong = (chunks: ReactNode[]) => <b className="font-semibold text-on-canvas">{chunks}</b>;
+
+/**
  * One component, drawn twice over, with its props beside it.
  *
  * `/components` is the grid and this is where a component gets room. The
@@ -55,6 +223,7 @@ export function ComponentDetail({
   wide,
   full,
 }: ShellProps & { group: string; name: string }) {
+  const intl = useWorkbenchIntl();
   const id = `${group}/${name}`;
   /*
    * Both halves of a platform split, because `?c=` carries no platform: the
@@ -113,11 +282,14 @@ export function ComponentDetail({
         )}
       >
         {!full && (
-          <nav aria-label="Breadcrumb" className="shrink-0 px-m py-s text-s text-on-canvas-muted">
+          <nav
+            aria-label={intl.formatMessage(COPY.breadcrumb)}
+            className="shrink-0 px-m py-s text-s text-on-canvas-muted"
+          >
             <ol className="flex flex-wrap items-center gap-2xs">
               <li>
                 <a className="hover:text-on-canvas" href={href('/components')}>
-                  Components
+                  {intl.formatMessage(COPY.crumb)}
                 </a>
               </li>
               <li aria-hidden="true">/</li>
@@ -170,13 +342,10 @@ export function ComponentDetail({
           </div>
         ) : asPage ? (
           <div className="flex min-h-[40dvh] flex-1 flex-col items-center justify-center px-m py-xl text-center">
-            <p className={cn(NOTE, 'max-w-content')}>
-              The app&apos;s bundle draws this in a device frame, which needs more width than there
-              is here.
-            </p>
+            <p className={cn(NOTE, 'max-w-content')}>{intl.formatMessage(COPY.tooNarrow)}</p>
             <Button size="lg" className="mt-s" onClick={() => onAddress({ full: true })}>
               <Maximize2 aria-hidden="true" />
-              Open full screen
+              {intl.formatMessage(COPY.full)}
             </Button>
           </div>
         ) : (
@@ -185,7 +354,7 @@ export function ComponentDetail({
               <AppFrame
                 key={`${id}-${device}-${reloads}`}
                 route={`/gallery?c=${id}&bare=1`}
-                title={`${name}, drawn in the app`}
+                title={intl.formatMessage(COPY.frameTitle, { name })}
                 size={size.w === 0 ? { w: box.w || 393, h: box.h || 640 } : size}
                 scale={size.w === 0 ? 1 : scale}
               />
@@ -209,7 +378,7 @@ export function ComponentDetail({
           <Button variant="outline" size="sm" asChild>
             <a href={`${href('/preview')}#/gallery?d=${device}`}>
               <ExternalLink aria-hidden="true" />
-              The gallery in the preview
+              {intl.formatMessage(COPY.gallery)}
             </a>
           </Button>
           <Tooltip>
@@ -217,14 +386,14 @@ export function ComponentDetail({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Reload the frame"
+                aria-label={intl.formatMessage(COPY.reload)}
                 disabled={rendering !== 'bundle'}
                 onClick={() => setReloads((n) => n + 1)}
               >
                 <RotateCw aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Reload the frame</TooltipContent>
+            <TooltipContent side="bottom">{intl.formatMessage(COPY.reload)}</TooltipContent>
           </Tooltip>
         </div>
       </Slot>
@@ -232,40 +401,44 @@ export function ComponentDetail({
       <Slot id="rendering">
         <Segmented
           name="rendering"
-          legend="Drawn by"
+          legend={intl.formatMessage(COPY.drawnBy)}
           value={rendering}
           options={[
-            { value: 'direct', label: 'This site' },
-            { value: 'bundle', label: "The app's bundle" },
+            { value: 'direct', label: intl.formatMessage(COPY.drawnBySite) },
+            { value: 'bundle', label: intl.formatMessage(COPY.drawnByBundle) },
           ]}
           onChange={(value) => setRest({ r: value === 'direct' ? null : value })}
           disabled={entry === undefined}
         />
         {entry === undefined ? (
           <p className={NOTE}>
-            Not drawn here: {NOT_DRAWN[id] ?? 'the app’s catalogue has no specimen for it.'} The
-            bundle draws it.
+            {/* A recorded reason wins; `direct-ids.ts` says in its own header that
+                one written there has to be a descriptor. */}
+            {intl.formatMessage(COPY.notDrawn, {
+              reason: NOT_DRAWN[id] ?? intl.formatMessage(COPY.notDrawnReason),
+            })}
           </p>
         ) : (
-          <p className={NOTE}>
-            Two renderings of one component. A difference between them is a finding, not a blemish;
-            nothing checks them against each other, on purpose.
-          </p>
+          <p className={NOTE}>{intl.formatMessage(COPY.twoRenderings)}</p>
         )}
         {rendering === 'bundle' && (
           <p className={NOTE}>
-            The frame holds{' '}
-            <b className="font-semibold text-on-canvas">
-              {import.meta.env.DEV ? 'the dev server through the proxy' : 'the published export'}
-            </b>
-            .
+            {/* `intl.formatMessage` and never `<FormattedMessage>`: that component
+                reads react-intl's own context, which the app's provider shadows
+                inside an `AppHost`. `test/i18n.test.ts` fails on one. */}
+            {intl.formatMessage(COPY.frameHolds, {
+              strong,
+              build: intl.formatMessage(
+                import.meta.env.DEV ? COPY.frameHoldsDev : COPY.frameHoldsDist,
+              ),
+            })}
           </p>
         )}
       </Slot>
 
       <Slot id="device">
         <label className="flex flex-col gap-2xs">
-          <span className={NOTE}>Device</span>
+          <span className={NOTE}>{intl.formatMessage(COPY.device)}</span>
           <select
             className={cn(FIELD, 'w-full')}
             value={device}
@@ -282,10 +455,14 @@ export function ComponentDetail({
         </label>
         <p className={cn(NOTE, 'tabular-nums')}>
           {size.w === 0
-            ? 'The box this page gives it, whatever that is.'
+            ? intl.formatMessage(COPY.sizeAuto)
             : rendering === 'bundle'
-              ? `${size.w} × ${size.h} at ${Math.round(scale * 100)}%`
-              : `Column capped at ${size.w} px. The height is the component's own.`}
+              ? intl.formatMessage(COPY.sizeFrame, {
+                  width: size.w,
+                  height: size.h,
+                  percent: Math.round(scale * 100),
+                })
+              : intl.formatMessage(COPY.sizeColumn, { width: size.w })}
         </p>
       </Slot>
 
@@ -319,6 +496,8 @@ export function ComponentDetail({
 
 /** One platform's props, as the grid the overview used to carry in its rows. */
 function Props({ row, split }: { row: ApiComponent; split: boolean }) {
+  const intl = useWorkbenchIntl();
+
   return (
     <div>
       {split && (
@@ -331,7 +510,7 @@ function Props({ row, split }: { row: ApiComponent; split: boolean }) {
         <div className="prose prose-sm mt-2xs" dangerouslySetInnerHTML={{ __html: row.propsDoc }} />
       )}
       {row.props.length === 0 ? (
-        <p className="mt-2xs text-m text-on-canvas-muted">None.</p>
+        <p className="mt-2xs text-m text-on-canvas-muted">{intl.formatMessage(COPY.propsNone)}</p>
       ) : (
         <dl className="mt-2xs divide-y divide-stroke border-y border-stroke">
           {row.props.map((prop) => (
@@ -343,14 +522,14 @@ function Props({ row, split }: { row: ApiComponent; split: boolean }) {
                 </code>
                 <p className="mt-3xs font-mono text-s text-on-canvas-muted wrap-anywhere">
                   {prop.type}
-                  {prop.optional && ' · optional'}
+                  {prop.optional && ` · ${intl.formatMessage(COPY.propOptional)}`}
                 </p>
               </dt>
               <dd className="mt-2xs min-w-0 text-m text-on-canvas-muted">
                 {prop.doc ? (
                   <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: prop.doc }} />
                 ) : (
-                  <span className="text-s italic">No prose.</span>
+                  <span className="text-s italic">{intl.formatMessage(COPY.propNoProse)}</span>
                 )}
               </dd>
             </div>
@@ -359,14 +538,17 @@ function Props({ row, split }: { row: ApiComponent; split: boolean }) {
       )}
       {row.inherits.length > 0 && (
         <p className="mt-s text-s text-on-canvas-muted">
-          Plus everything in{' '}
-          {row.inherits.map((type, index) => (
-            <span key={type}>
-              {index > 0 && ', '}
-              <code className="font-mono wrap-anywhere">{type}</code>
-            </span>
-          ))}
-          , which this repository does not own and which is named here rather than expanded.
+          {/* The list goes in as a VALUE and not as a tag, because a translation
+              may want it anywhere in the sentence and a tag can only wrap what the
+              English put inside it. */}
+          {intl.formatMessage(COPY.inherits, {
+            types: row.inherits.map((type, index) => (
+              <span key={type}>
+                {index > 0 && ', '}
+                <code className="font-mono wrap-anywhere">{type}</code>
+              </span>
+            )),
+          })}
         </p>
       )}
     </div>

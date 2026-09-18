@@ -135,6 +135,10 @@ const MODES: {
 /**
  * The three choices, and only one of them is a message.
  *
+ * The German row's hint said "Die Werkzeuge, nicht die Dokumente" until ADR 0052
+ * moved the line: it is the pages' own words too now, and what stays English is
+ * what this site prints from the repository rather than what it wrote.
+ *
  * **A language names itself.** A person looking for German does not read "German",
  * they read "Deutsch", and that is the one convention a language picker has that no
  * other picker does. So those two labels are NOT descriptors: translating them would
@@ -164,7 +168,7 @@ type Tongue = {
 export const TONGUES: Tongue[] = [
   { value: 'system', label: COPY.systemLanguage, hint: COPY.systemLanguageHint },
   { value: 'en', label: 'English', hint: 'The language every string is written in' },
-  { value: 'de', label: 'Deutsch', hint: 'Die Werkzeuge, nicht die Dokumente' },
+  { value: 'de', label: 'Deutsch', hint: 'Was diese Site selbst schreibt' },
 ];
 
 /**

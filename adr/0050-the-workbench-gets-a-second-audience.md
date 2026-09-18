@@ -1,6 +1,6 @@
 # ADR 0050 — The workbench gets a second audience, and the scope of its German follows from that
 
-Status: accepted, 2026-09-18. **§1 to §4 built in [#220](https://github.com/correctiv/correctiv-app/pull/220)**, for the frame's controls and the day's track; the module labels in `preview/home/document.ts` are named in §5 and are not. §4's closing sentence, that the framed app's language belongs in the address beside `t=`, has since been built in [#226](https://github.com/correctiv/correctiv-app/pull/226): the preview carries `lg=`. §4's default is struck: [ADR 0051](0051-the-workbench-starts-in-the-browsers-language.md) makes an untouched browser get the language it asks for.
+Status: accepted, 2026-09-18. **§1 to §4 built in [#220](https://github.com/correctiv/correctiv-app/pull/220)**, for the frame's controls and the day's track; the module labels in `preview/home/document.ts` are named in §5 and are not. §4's closing sentence, that the framed app's language belongs in the address beside `t=`, has since been built in [#226](https://github.com/correctiv/correctiv-app/pull/226): the preview carries `lg=`. §4's default is struck: [ADR 0051](0051-the-workbench-starts-in-the-browsers-language.md) makes an untouched browser get the language it asks for. §2's line is struck: [ADR 0052](0052-the-sites-own-words-follow-the-setting.md) draws it between this site's own words and the repository's.
 
 ## Context
 
@@ -40,8 +40,13 @@ the settings dialog, the search palette, the status line, the error boundary, th
 browser tab. **The tools** are the preview and the home configurator. Both follow the
 setting.
 
-**A publishing page's body** does not: the landing page's prose, the handbook, the
-records, the reference, the drawings and their captions, the sources board.
+~~**A publishing page's body** does not: the landing page's prose, the handbook, the
+records, the reference, the drawings and their captions, the sources board.~~
+[ADR 0052](0052-the-sites-own-words-follow-the-setting.md) draws the line between
+what this site WROTE and what it prints from the repository instead, because this
+one names a place and means an author: `Components` is this site's heading and the
+sentence under each card is a JSDoc comment out of the app, and they sit a
+centimetre apart on the same page.
 
 **Two earlier drafts of this line failed, and how they failed is the argument for
 this one.** The first drew it by area — the configurator and the frame's controls in,
@@ -56,8 +61,11 @@ page's prose with it, because that prose is not content this site republishes �
 the site's own writing about the repository, for the same reader as a record. A rule
 that cannot be finished is a rule that ends up overstated again.
 
-Shell-and-tools against a page's body is the line that holds both: it puts the
-settings dialog in, the landing page out, and it can be finished.
+~~Shell-and-tools against a page's body is the line that holds both: it puts the
+settings dialog in, the landing page out, and it can be finished.~~ It could not:
+[ADR 0052](0052-the-sites-own-words-follow-the-setting.md) measured a page whose
+filter, in the shell's own context bar, was still English, and named the reason a
+position line runs out — the two kinds of text are on the same page.
 
 **Content stays English because of who reads it, not because it matters less.** A
 record is an argument with the next developer, in the language the code is written in,

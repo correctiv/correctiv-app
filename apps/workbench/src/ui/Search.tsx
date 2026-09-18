@@ -40,7 +40,8 @@ const COPY = defineMessages({
   empty: {
     id: 'shell.search.empty',
     defaultMessage: 'Nothing matches that.',
-    description: 'Stands in for the list while what has been typed matches no row.',
+    description:
+      'Stands in for the list while what has been typed matches no row. components.empty is the same sentence under the components grid and reads the same in English.',
   },
   page: {
     id: 'shell.search.kind.page',

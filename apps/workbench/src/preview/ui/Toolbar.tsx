@@ -131,7 +131,8 @@ const COPY = defineMessages({
   reload: {
     id: 'frame.reload',
     defaultMessage: 'Reload the frame',
-    description: 'Both the reload button’s accessible name and its tooltip.',
+    description:
+      'Both the reload button’s accessible name and its tooltip, on the preview’s own bar. The frame there holds a whole route of the app. components.detail.reload is the same words on a single component’s page, where the frame holds the gallery.',
   },
   raw: {
     id: 'frame.raw',

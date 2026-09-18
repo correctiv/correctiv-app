@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { defineMessages } from 'react-intl';
 
 import api from 'virtual:api';
 import type { ApiComponent, ApiComponentGroup } from 'virtual:api';
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { useClipped } from '../components/clipped';
 import { directEntry, DRAWN_IDS } from '../components/direct';
 import { NOT_DRAWN } from '../components/direct-ids';
@@ -16,6 +18,149 @@ import { Toc } from '../ui/Toc';
 import { useSections } from '../ui/useSections';
 
 const { alias, groups, root } = api.components;
+
+/**
+ * Everything this page says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/components.ts`.
+ *
+ * **What is here and what is not is the whole of ADR 0052 on one page.** The
+ * heading, the lede, the filter, the segment and every line a card prints about
+ * itself are this site's own words and are here. The sentence under each
+ * component's name is not: it is the JSDoc comment out of
+ * `apps/mobile/src/components`, read through `virtual:api`, and AGENTS.md keeps
+ * a comment English because a developer reads it. The two sit a centimetre apart
+ * on this page, which is why the line ADR 0050 §2 drew by position could not be
+ * finished here.
+ */
+const COPY = defineMessages({
+  title: {
+    id: 'components.title',
+    defaultMessage: 'Components',
+    description:
+      'The page’s heading. components.detail.crumb is the same word as the first step of the breadcrumb on a single component’s page, which links back here; nav.components is the longer name the rail and the browser tab carry.',
+  },
+  lede: {
+    id: 'components.lede',
+    defaultMessage:
+      'Every component the app builds its screens from, taken out of <code>{root}</code> with its props, their types and whatever prose the source carries. Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.',
+    description:
+      'The paragraph under the heading. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. <reference> is the link to /reference and the word inside it is that page’s own name.',
+  },
+
+  filter: {
+    id: 'components.filter',
+    defaultMessage: 'Filter folders, components and props',
+    description:
+      'The accessible name of the filter box in the bar above the page. The bar carries no labels above its fields.',
+  },
+  filterPlaceholder: {
+    id: 'components.filter.placeholder',
+    defaultMessage: 'Filter, for example Typo, onPress or reader',
+    description:
+      'The placeholder in that box. The three examples are a component, a prop and a folder, one of each; a translation keeps them as they are, because they are identifiers in this repository and not words.',
+  },
+  filterSummary: {
+    id: 'components.filter.summary',
+    defaultMessage: '{folders} folders, {components} components, {drawn} drawn here',
+    description:
+      'The count beside the filter box, which follows what is typed into it. {folders} is how many folders still match, {components} how many components, and {drawn} how many of those this site draws in its own React tree rather than in the app’s bundle.',
+  },
+
+  drawn: {
+    id: 'components.drawn.legend',
+    defaultMessage: 'Which components',
+    description:
+      'Read aloud as the group name of the two-way switch beside the filter, and never drawn.',
+  },
+  drawnAll: { id: 'components.drawn.all', defaultMessage: 'All' },
+  drawnHere: {
+    id: 'components.drawn.here',
+    defaultMessage: 'Drawn here',
+    description:
+      'The second of the two choices: only the components this site can draw in its own React tree. “Here” is this page, as against the app’s bundle in a device frame.',
+  },
+
+  empty: {
+    id: 'components.empty',
+    defaultMessage: 'Nothing matches that.',
+    description:
+      'Where the grid would be, when the filter above the page matches no folder, component or prop. shell.search.empty is the same sentence in the search palette and reads the same in English.',
+  },
+  barrel: {
+    id: 'components.barrel',
+    defaultMessage: 'This folder has a barrel, so a caller names the folder and not the file.',
+    description:
+      'Printed under a folder that has an index file re-exporting its components. A “barrel” is the index file; the line above it shows the import a caller writes.',
+  },
+  alsoExported: {
+    id: 'components.alsoExported',
+    defaultMessage: 'Also exported here',
+    description:
+      'The heading over what a folder’s files export beside their components: helpers, constants, sample data.',
+  },
+
+  cardBundle: {
+    id: 'components.card.bundle',
+    defaultMessage: 'Drawn in the app’s bundle',
+    description:
+      'A badge on a card whose component this site cannot draw itself. It states where the drawing happens rather than reporting a failure: the component’s own page frames the app and draws it there.',
+  },
+  cardBundleNote: {
+    id: 'components.card.bundleNote',
+    defaultMessage: 'Its page draws it in the shipped app.',
+    description:
+      'The line under that badge when no more specific reason is recorded for this component in components/direct-ids.ts.',
+  },
+  cardClipped: {
+    id: 'components.card.clipped',
+    defaultMessage: 'Clipped · {height} px tall',
+    description:
+      'Printed over the lower edge of a card that cannot show the whole of its component. {height} is the component’s real height in CSS pixels, measured in the browser. Read by eye only: the same fact is in the accessible name of the link over the drawing, components.card.specimens.clipped.',
+  },
+  cardSpecimens: {
+    id: 'components.card.specimens',
+    defaultMessage: 'Every specimen of {name}',
+    description:
+      'The accessible name of the link covering a card’s drawing, which opens that component’s own page. {name} is the component’s name in the source, such as SectionCard, and is not translated. components.card.specimens.clipped is the same link when the card is cutting the component off.',
+  },
+  cardSpecimensClipped: {
+    id: 'components.card.specimens.clipped',
+    defaultMessage: 'Every specimen of {name}, which this card clips at {height} px',
+    description:
+      'The same link as components.card.specimens, on a card that cannot show the whole component. {name} is the component’s name in the source and is not translated; {height} is the component’s real height in CSS pixels. It carries the fact that the note over the drawing states visually, because that note is hidden from a screen reader.',
+  },
+  cardNoDoc: {
+    id: 'components.card.noDoc',
+    defaultMessage: 'No doc comment.',
+    description:
+      'Stands in where a component’s source carries no prose to print. reference.symbol.noDoc says the same thing about a symbol on /reference.',
+  },
+  cardProps: {
+    id: 'components.card.props',
+    defaultMessage: '{count, plural, one {# prop} other {# props}}',
+    description:
+      'The count in a card’s bottom-right corner. {count} is how many props the component takes, and may be zero.',
+  },
+});
+
+/**
+ * The two runs drawn inside `components.lede`, at module scope.
+ *
+ * Beside the descriptor rather than inside the render, which is the shape
+ * `ui/Settings.tsx` already uses for its three: a component built during a render
+ * is remounted on every one of them, and `react/no-unstable-nested-components`
+ * says so.
+ */
+const code = (chunks: ReactNode[]) => <code className="font-mono">{chunks}</code>;
+
+const reference = (chunks: ReactNode[]) => (
+  <a
+    href={href('/reference')}
+    className="text-on-canvas underline decoration-accent underline-offset-2"
+  >
+    {chunks}
+  </a>
+);
 
 /** The card's box, which is `ui/CardGrid.tsx`'s without its single-link shape. */
 const CARD =
@@ -76,6 +221,7 @@ function useAskedFor(): void {
  * because the set changes with the grid, the window and the app.
  */
 export function Components() {
+  const intl = useWorkbenchIntl();
   const [query, setQuery] = useState('');
   const [only, setOnly] = useState<'all' | 'drawn'>('all');
   useAskedFor();
@@ -130,20 +276,24 @@ export function Components() {
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-xs">
           <Filter
             id="comp-q"
-            label="Filter folders, components and props"
-            placeholder="Filter, for example Typo, onPress or reader"
+            label={intl.formatMessage(COPY.filter)}
+            placeholder={intl.formatMessage(COPY.filterPlaceholder)}
             value={query}
             onChange={setQuery}
-            summary={`${filtered.length} folders, ${count} components, ${drawnCount} drawn here`}
+            summary={intl.formatMessage(COPY.filterSummary, {
+              folders: filtered.length,
+              components: count,
+              drawn: drawnCount,
+            })}
           />
           <Segmented
             name="drawn"
-            legend="Which components"
+            legend={intl.formatMessage(COPY.drawn)}
             className="shrink-0"
             value={only}
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'drawn', label: 'Drawn here' },
+              { value: 'all', label: intl.formatMessage(COPY.drawnAll) },
+              { value: 'drawn', label: intl.formatMessage(COPY.drawnHere) },
             ]}
             onChange={(value) => setOnly(value === 'drawn' ? 'drawn' : 'all')}
           />
@@ -156,25 +306,21 @@ export function Components() {
 
       <Page>
         <article className="min-w-0">
-          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">Components</h1>
+          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">
+            {intl.formatMessage(COPY.title)}
+          </h1>
           <p className="mt-xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            Every component the app builds its screens from, taken out of{' '}
-            <code className="font-mono">{root}</code> with its props, their types and whatever prose
-            the source carries. Every card draws its component, from the app&apos;s source, in this
-            site&apos;s own React tree, and a card too small to hold the whole of one says so at its
-            lower edge; the component&apos;s own page has every specimen whole, the app&apos;s
-            bundle beside it, and a device size. The core&apos;s exports are a separate section:{' '}
-            <a
-              href={href('/reference')}
-              className="text-on-canvas underline decoration-accent underline-offset-2"
-            >
-              Reference
-            </a>
-            , which is a library and imported as one.
+            {/* `intl.formatMessage` and never `<FormattedMessage>`: that component
+                reads react-intl's own context, and this page mounts the app's
+                provider inside every card through `AppHost`. `test/i18n.test.ts`
+                fails on one, and `i18n/Localisation.tsx` carries the measurement. */}
+            {intl.formatMessage(COPY.lede, { root, code, reference })}
           </p>
 
           {filtered.length === 0 && (
-            <p className="py-2xl text-center text-m text-on-canvas-muted">Nothing matches that.</p>
+            <p className="py-2xl text-center text-m text-on-canvas-muted">
+              {intl.formatMessage(COPY.empty)}
+            </p>
           )}
 
           {filtered.map((group) => (
@@ -192,7 +338,7 @@ export function Components() {
               </p>
               {group.barrel && (
                 <p className="mt-3xs max-w-content text-s text-on-canvas-muted">
-                  This folder has a barrel, so a caller names the folder and not the file.
+                  {intl.formatMessage(COPY.barrel)}
                 </p>
               )}
 
@@ -241,7 +387,7 @@ export function Components() {
                   {/* Not components, and not hidden either: these are exports of
                       the same files that a screen imports beside the component. */}
                   <h3 className="text-s font-semibold uppercase tracking-wider text-on-canvas-muted">
-                    Also exported here
+                    {intl.formatMessage(COPY.alsoExported)}
                   </h3>
                   <ul className="mt-2xs divide-y divide-stroke overflow-hidden rounded-md border border-stroke">
                     {group.helpers.map((helper) => (
@@ -300,6 +446,7 @@ function ComponentCard({
   group: string;
   component: ApiComponent;
 }) {
+  const intl = useWorkbenchIntl();
   const entry = directEntry(id);
   const route = `/components/${group}/${component.name}`;
   const { stage, column, clipped, natural } = useClipped<HTMLDivElement, HTMLDivElement>();
@@ -317,9 +464,13 @@ function ComponentCard({
             href={href(route)}
             className="flex h-full flex-col items-center justify-center gap-2xs px-s text-center"
           >
-            <Badge variant="outline">Drawn in the app&apos;s bundle</Badge>
+            <Badge variant="outline">{intl.formatMessage(COPY.cardBundle)}</Badge>
             <span className="text-s text-on-canvas-muted">
-              {NOT_DRAWN[id] ?? 'Its page draws it in the shipped app.'}
+              {/* A recorded reason wins, and `direct-ids.ts` says in its own header
+                  that one written there has to be a descriptor: this walk cannot see
+                  a string in a `Record`, so that file is where the rule has to be
+                  stated rather than enforced. */}
+              {NOT_DRAWN[id] ?? intl.formatMessage(COPY.cardBundleNote)}
             </span>
           </a>
         ) : (
@@ -382,7 +533,7 @@ function ComponentCard({
                    component runs out of card, not that a band was painted. */
                 className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end bg-linear-to-t from-canvas from-40% to-transparent px-s pb-2xs pt-ml text-s text-on-canvas-muted tabular-nums"
               >
-                Clipped · {natural} px tall
+                {intl.formatMessage(COPY.cardClipped, { height: natural })}
               </p>
             )}
             {/*
@@ -412,8 +563,11 @@ function ComponentCard({
               href={href(route)}
               aria-label={
                 clipped
-                  ? `Every specimen of ${component.name}, which this card clips at ${natural} px`
-                  : `Every specimen of ${component.name}`
+                  ? intl.formatMessage(COPY.cardSpecimensClipped, {
+                      name: component.name,
+                      height: natural,
+                    })
+                  : intl.formatMessage(COPY.cardSpecimens, { name: component.name })
               }
               className="absolute inset-0 rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
             />
@@ -440,7 +594,12 @@ function ComponentCard({
         </p>
 
         <p className="mt-3xs line-clamp-2 text-m leading-relaxed text-on-canvas-muted">
-          {component.summary || <span className="italic">No doc comment.</span>}
+          {/* The component's OWN prose, out of the app's source through TypeDoc. It
+              is a comment a developer wrote and stays English (ADR 0052 §1); what
+              stands in for a missing one is this site's sentence and does not. */}
+          {component.summary || (
+            <span className="italic">{intl.formatMessage(COPY.cardNoDoc)}</span>
+          )}
         </p>
 
         <p className="mt-auto flex items-baseline gap-s pt-s font-mono text-s text-on-canvas-muted">
@@ -448,7 +607,7 @@ function ComponentCard({
             {component.file}
           </span>
           <span className="shrink-0 tabular-nums">
-            {component.props.length === 1 ? '1 prop' : `${component.props.length} props`}
+            {intl.formatMessage(COPY.cardProps, { count: component.props.length })}
           </span>
         </p>
       </div>

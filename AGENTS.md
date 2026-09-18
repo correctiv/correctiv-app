@@ -32,15 +32,23 @@ nothing wider; the ADRs were written when it was the name of the whole site, whi
 
 **Its interface has a second audience, so part of it is German.** The home
 configurator is designed for the newsroom to own ([ADR 0036](adr/0036-the-home-screen-becomes-data.md) §1).
-The line is **the shell and the tools against a published page's body**: what frames
-a view follows the language setting — header, rails, panel, settings, search, status
-line, browser tab — and so do the preview and the configurator. The body of a page
-that publishes does not: the landing prose, the handbook, the records, the reference,
-the drawings and the sources board stay English, and that is the rule below holding
-rather than an omission. The strings work exactly as the app's — an English
+The line is **what this site wrote against what it prints from the repository**:
+everything a person reads that is written in `apps/workbench/src` follows the
+language setting — the shell, the tools, and every heading, lede, empty state,
+legend and accessible name on every page. What the site reads in at build time and
+prints is left in its own language: the Markdown under `virtual:docs`, the JSDoc
+under `virtual:api`, the records' own text, the app's wordings on `/strings`, and
+`content/sources.manifest.ts`. So `/handbook` is a German page listing English
+documents, and that seam is on purpose. An earlier line drew this by position, "the
+shell and the tools against a published page's body", and could not be finished —
+a page's heading and a JSDoc comment out of the app sit a centimetre apart.
+`apps/workbench/test/rendered-literals.test.ts` is what holds it, the same
+language-blind AST walk the app uses, against a per-file ratchet.
+The strings work exactly as the app's — an English
 `defaultMessage` in the source, German as data in `apps/workbench/src/i18n/catalogue/de/`
 — and the two catalogues are separate because the audiences are.
-([ADR 0050](adr/0050-the-workbench-gets-a-second-audience.md))
+([ADR 0050](adr/0050-the-workbench-gets-a-second-audience.md),
+[ADR 0052](adr/0052-the-sites-own-words-follow-the-setting.md))
 
 The device frame reaches into the app by same-origin property access, so the two
 halves have to be one origin. The Pages deploy assembles them into one artifact and
