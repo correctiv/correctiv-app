@@ -1,3 +1,5 @@
+import { defineMessages } from 'react-intl';
+
 import { cn } from '../lib/cn';
 import { href } from '../router';
 import {
@@ -23,6 +25,40 @@ import {
   T16,
   WIRE,
 } from './shared';
+
+/**
+ * What this drawing is CALLED, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/signIn.ts`.
+ *
+ * **Two ids and not the drawing.** Every label inside the picture, the caption
+ * and the list under it are still literals in this file, which
+ * `test/rendered-literals.test.ts` counts and ADR 0052 §1 puts in scope. They
+ * are left to a pass of their own, and the reason is a collision rather than
+ * effort: `test/diagrams-sign-in.test.ts` reads this drawing's ENGLISH PROSE out
+ * of the drawing through `drawnText`, and holds "1500 ms", "under 4 characters",
+ * "30 days" and the four session states to the constants in
+ * `packages/app-core/src/services/auth.service.ts`. `drawnText` reads the file
+ * and never the render, so a label moved into a descriptor disappears from it
+ * and takes its check with it. Moving this drawing means deciding what that
+ * check reads instead, which is a decision and not a translation.
+ *
+ * Named rather than called `COPY` for the reason every drawing's block is:
+ * another module imports it.
+ */
+export const SIGN_IN_COPY = defineMessages({
+  title: {
+    id: 'signIn.title',
+    defaultMessage: 'How somebody signs in, and what is behind the door',
+    description:
+      'The drawing’s name, as the heading of its own page and on the card that opens it.',
+  },
+  lede: {
+    id: 'signIn.lede',
+    defaultMessage:
+      'The door is real and everything past it is not. The root layout renders it instead of the route tree, and what it asks is a function that waits a second and a half and reads a table of email addresses. Above the red line is what this repository does; below it is what the whiteboard plans, drawn as an absence because that is what it is.',
+    description: 'The paragraph under that heading.',
+  },
+});
 
 /**
  * The drawing on its own, with no description attached by default.

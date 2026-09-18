@@ -11,13 +11,12 @@ import { diagramRoute } from './DiagramView';
  * `src/i18n/catalogue/de/diagrams.ts`, which holds both this page's ids and a
  * single drawing's — one namespace per area rather than one per file.
  *
- * **What a card says about a drawing is not here.** A card's title and its
- * sentence are `title` and `lede` off the drawing's own module in `src/diagrams/`.
- * Those are this site's own words too by
- * [ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1, and
- * they are a separate pass: a label in an SVG is sized by its own text, so a
- * longer German word reflows the drawing it sits in, and that is a question about
- * each picture rather than about this page.
+ * **What a card says about a drawing is not here, and is a message all the
+ * same.** A card's title and its sentence are `title` and `lede` off the
+ * drawing's own module in `src/diagrams/`, where they are descriptors in that
+ * drawing's own namespace. This page formats them; it does not hold them. A
+ * drawing's name belongs to the drawing
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
  */
 const COPY = defineMessages({
   title: {
@@ -53,13 +52,13 @@ const COPY = defineMessages({
 export function DiagramIndex() {
   const intl = useWorkbenchIntl();
 
-  const cards: Card[] = DIAGRAMS.map(({ id, title, lede, Drawing }, i) => ({
+  const cards: Card[] = DIAGRAMS.map(({ id, title, lede, ledeValues, Drawing }, i) => ({
     route: diagramRoute(id),
-    // The number is the reading order and the title is the drawing's own, out of
-    // `src/diagrams/`. Neither is a word, so neither is a message: `1. ` is the
-    // same in both languages, and the title is translated where it is written.
-    title: `${i + 1}. ${title}`,
-    blurb: lede,
+    // The number is the reading order and is no word: `1. ` is the same in both
+    // languages. The title beside it is the drawing's own descriptor, out of
+    // `src/diagrams/`, formatted here and written there.
+    title: `${i + 1}. ${intl.formatMessage(title)}`,
+    blurb: intl.formatMessage(lede, ledeValues),
     preview: (
       <span
         aria-hidden="true"

@@ -1,3 +1,5 @@
+import { defineMessages } from 'react-intl';
+
 import { cn } from '../lib/cn';
 import { chainLayout, standingWord, type ChainArc, type ChainNode } from './layout';
 import {
@@ -43,6 +45,38 @@ import type { Standing } from '../../plugin/decisions.ts';
  */
 export const LAYOUT = chainLayout(docs.decisions, docs.strikes);
 const SUMMARY = LAYOUT.summary;
+
+/**
+ * What this drawing is CALLED, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/decisionsChain.ts`.
+ *
+ * **Two ids and not the drawing.** The picture, its legend, its caption and the
+ * list under it are still literals in this file, which
+ * `test/rendered-literals.test.ts` counts and ADR 0052 §1 puts in scope. They
+ * are the hardest of the six to move and are left to a pass of their own: every
+ * sentence under this drawing is assembled from the records at build time, so
+ * translating it means turning `voidersSentence` and `join` into ICU rather than
+ * into strings. The title and the lede are here because `diagrams/index.ts`
+ * takes them, and the table of drawings had to speak one language or the other.
+ *
+ * Named rather than called `COPY` for the reason every drawing's block is:
+ * another module imports it.
+ */
+export const DECISIONS_CHAIN_COPY = defineMessages({
+  title: {
+    id: 'decisionsChain.title',
+    defaultMessage: 'Which decisions still stand, and which of their claims do not',
+    description:
+      'The drawing’s name, as the heading of its own page and on the card that opens it.',
+  },
+  lede: {
+    id: 'decisionsChain.lede',
+    defaultMessage:
+      '{records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through where it stands and the later record names what it retired. Read a row to see whether a record still holds; follow the arcs to see who amended it.',
+    description:
+      'The paragraph under that heading. {records} is how many records adr/ holds, counted by the drawing’s own layout rather than typed. test/diagrams.test.ts holds it to that count, so the placeholder has to stay at the front of the sentence.',
+  },
+});
 
 /** The ring that says how a record stands. Four marks, each named in the legend. */
 const NODE_MARK: Record<Standing | 'quiet', string> = {

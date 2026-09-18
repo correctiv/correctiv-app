@@ -142,10 +142,12 @@ describe('the walk reads the site it is checking', () => {
     // NAME whether or not it still carries a literal.
     //
     // **There is no floor on text nodes**, and a cold review is why. There was one,
-    // at 400 against 889 — and 840 of those 889 are the literals this whole file
-    // exists to remove, 564 of them in the drawings alone. The pass the table below
-    // schedules would have taken the figure to 318 and had to lower its own floor,
-    // which is the opposite of what a floor is for. What guards that branch of the
+    // at 400 against 889 — and 840 of those 889 were the literals this whole file
+    // exists to remove, 564 of them in the drawings alone, measured on the day the
+    // floor came out. The pass the table below schedules would have taken the
+    // figure to 318 and had to lower its own floor, which is the opposite of what a
+    // floor is for. Three of the six drawings have been through that pass since, so
+    // the two figures are a reading and not a total. What guards that branch of the
     // walk instead is the fixture at the bottom of this file, which asserts a text
     // child is read at all.
     expect(
@@ -190,22 +192,30 @@ describe('the walk reads the site it is checking', () => {
  * language.
  */
 const STILL_IN_THE_MARKUP: Record<string, number> = {
-  // The six drawings. ADR 0052 §1 names their titles and captions, so they are in
-  // scope; a good part of each number is module and file names inside the boxes,
-  // which will stay. They are the largest single piece of this and want a pass of
-  // their own, because a label is sized by its text and a longer German word
-  // reflows a diagram.
+  // **Three of the six drawings have been through the pass and three have not.**
+  // What stopped the other three is not effort: `test/drawn.ts`'s `drawnText`
+  // reads a drawing's ENGLISH out of its own source and holds it to the code, and
+  // `diagrams-article-path.test.ts` and `diagrams-sign-in.test.ts` assert whole
+  // sentences of those two that way. A label that becomes a descriptor leaves
+  // `drawnText` and takes its check with it, so moving them means first deciding
+  // what those checks read instead. `DecisionsChain.tsx` and `layout.ts` are a
+  // third case again: their caption, legend and every list entry are assembled
+  // from `adr/` at build time by two string builders, and moving them means
+  // turning those into ICU.
   'diagrams/ArticlePath.tsx': 117,
-  'diagrams/CoreAndHost.tsx': 102,
   'diagrams/DecisionsChain.tsx': 32,
-  'diagrams/InsideCore.tsx': 115,
-  'diagrams/Services.tsx': 47,
   'diagrams/SignIn.tsx': 151,
-  'diagrams/index.ts': 6,
   'diagrams/layout.ts': 6,
-  // The frame around a drawing rather than a drawing: the scroll region's name and
-  // the heading over the list underneath.
-  'diagrams/shared.tsx': 2,
+  // At its floor: two package paths, the eight directory chips, the five port
+  // interfaces and `Expo / React Native`.
+  'diagrams/CoreAndHost.tsx': 16,
+  // At its floor: two package paths, every directory and service module, the five
+  // port interfaces, `configurePlatform()`, four SDK names and a subpath import.
+  'diagrams/InsideCore.tsx': 33,
+  // At its floor: two package paths, a service module and `beabee`. The hosts and
+  // product names in its rows are string literals because `test/diagrams.test.ts`
+  // parses them off the source.
+  'diagrams/Services.tsx': 4,
   // At its floor. `canvas`, `surface`, `.tsx`, `.web.tsx` and an import line: this
   // site prints an identifier in its own spelling.
   'pages/ComponentDetail.tsx': 5,

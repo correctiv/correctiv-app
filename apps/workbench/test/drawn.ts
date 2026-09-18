@@ -48,7 +48,15 @@ export function diagramSources(): { name: string; text: string }[] {
  * as `{row.call}` is a JSX expression and is invisible here, correctly: this
  * function reads the file, not the render. A drawing with labels in an array
  * exports the array and is checked against it directly, which is the stronger
- * reading of the two and the reason `ArticlePath.tsx` exports `RUNGS`.
+ * reading of the two and the reason `ArticlePath.tsx` exports `RUNGS`. The same
+ * follows for a label that has become a message descriptor, and that is why three
+ * of the drawings are still English: see `test/rendered-literals.test.ts`'s table.
+ *
+ * **Do not write the opening tag of an `svg` element in a comment in one of these
+ * files.** The match above starts at the first one in the file and runs to the
+ * first closing tag after it, so a docblock mentioning the element by name puts
+ * its own prose inside the drawing. Found by `pathsDrawn` reporting two test files
+ * as paths a drawing names and cannot find.
  */
 export function drawnText(name: string): string {
   const source = readFileSync(join(DIAGRAMS, name), 'utf8');

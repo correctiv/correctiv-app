@@ -1,3 +1,5 @@
+import { defineMessages } from 'react-intl';
+
 import { cn } from '../lib/cn';
 import {
   ArrowMarker,
@@ -17,6 +19,42 @@ import {
   T16,
   WIRE,
 } from './shared';
+
+/**
+ * What this drawing is CALLED, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/articlePath.ts`.
+ *
+ * **Two ids and not the drawing.** Every label inside the picture, the caption
+ * and the list under it are still literals in this file, which
+ * `test/rendered-literals.test.ts` counts and ADR 0052 §1 puts in scope. They
+ * are left to a pass of their own, and the reason is a collision rather than
+ * effort: `test/diagrams-article-path.test.ts` reads this drawing's ENGLISH
+ * PROSE out of the drawing through `drawnText`, and holds "15 articles",
+ * "6 feed snapshots", "128 entries", "two families", "four faces" and the
+ * `ContentBundle` method list to what `packages/app-core` actually holds.
+ * `drawnText` reads the file and never the render, so a label moved into a
+ * descriptor disappears from it and takes its check with it. Moving this
+ * drawing means deciding what that check reads instead, which is a decision and
+ * not a translation.
+ *
+ * Named rather than called `COPY` for the reason every drawing's block is:
+ * another module imports it.
+ */
+export const ARTICLE_PATH_COPY = defineMessages({
+  title: {
+    id: 'articlePath.title',
+    defaultMessage: 'Where an article comes from',
+    description:
+      'The drawing’s name, as the heading of its own page and on the card that opens it.',
+  },
+  lede: {
+    id: 'articlePath.lede',
+    defaultMessage:
+      'Five rungs, tried in order, and the first that answers is the answer. The snapshot compiled into the app comes first, because the promise is that the reader opens with no Wi-Fi; the cache behind the second and the fifth is bounded three ways; and what reaches the screen is one string a WebView is handed.',
+    description:
+      'The paragraph under that heading. A rung is this drawing’s own word for one step of the cascade in packages/app-core/src/articles/load.ts.',
+  },
+});
 
 /**
  * The five rungs, in the order `articles/load.ts` tries them.

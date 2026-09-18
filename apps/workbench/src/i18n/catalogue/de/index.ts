@@ -8,8 +8,11 @@
  * [ADR 0040](../../../../../../adr/0040-the-app-does-not-depend-on-the-workbench.md)).
  * What is shared is the shape, not the strings.
  */
+import { articlePath } from './articlePath';
 import { components } from './components';
+import { coreAndHost } from './coreAndHost';
 import { decisions } from './decisions';
+import { decisionsChain } from './decisionsChain';
 import { design } from './design';
 import { devices } from './devices';
 import { diagrams } from './diagrams';
@@ -19,20 +22,26 @@ import { fixtures } from './fixtures';
 import { frame } from './frame';
 import { handbook } from './handbook';
 import { home } from './home';
+import { insideCore } from './insideCore';
 import { landing } from './landing';
 import { measured } from './measured';
 import { nav } from './nav';
 import { preview } from './preview';
 import { reference } from './reference';
+import { services } from './services';
 import { settings } from './settings';
 import { shell } from './shell';
+import { signIn } from './signIn';
 import { sources } from './sources';
 import { strings } from './strings';
 import { tools } from './tools';
 
 export const de: Record<string, string> = {
+  ...articlePath,
   ...components,
+  ...coreAndHost,
   ...decisions,
+  ...decisionsChain,
   ...design,
   ...devices,
   ...diagrams,
@@ -42,13 +51,16 @@ export const de: Record<string, string> = {
   ...frame,
   ...handbook,
   ...home,
+  ...insideCore,
   ...landing,
   ...measured,
   ...nav,
   ...preview,
   ...reference,
+  ...services,
   ...settings,
   ...shell,
+  ...signIn,
   ...sources,
   ...strings,
   ...tools,

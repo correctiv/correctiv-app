@@ -21,9 +21,9 @@ const LINK =
  * this page says in its own voice. The title, the lede, the picture and the list
  * under it come out of the drawing's own module in `src/diagrams/`, and so do the
  * two titles the links at the foot carry. Those are this site's words as well by
- * [ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1 and
- * are a separate pass, because an SVG label is sized by its text and a longer
- * German word reflows the drawing around it.
+ * [ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1,
+ * and they are descriptors in the drawing's own namespace; this page formats
+ * them and holds none of them.
  *
  * The first step of the breadcrumb is not here either, and that one is not
  * waiting for anybody: it is `sectionOf()`, the rail's own word for whichever
@@ -109,8 +109,12 @@ export function DiagramView({ meta }: { meta: DiagramMeta }) {
       {/* The drawing's own title and lede, out of `src/diagrams/`. This site wrote
           them and they follow the setting too, but where they are written rather
           than here (ADR 0052 §1). */}
-      <h1 className="max-w-content text-headline-xl font-semibold tracking-tight">{meta.title}</h1>
-      <p className="mt-xs max-w-content text-l leading-normal text-on-canvas-muted">{meta.lede}</p>
+      <h1 className="max-w-content text-headline-xl font-semibold tracking-tight">
+        {intl.formatMessage(meta.title)}
+      </h1>
+      <p className="mt-xs max-w-content text-l leading-normal text-on-canvas-muted">
+        {intl.formatMessage(meta.lede, meta.ledeValues)}
+      </p>
 
       <Figure />
 
@@ -121,14 +125,14 @@ export function DiagramView({ meta }: { meta: DiagramMeta }) {
         {previous ? (
           <a className={LINK} href={href(diagramRoute(previous.id))}>
             <ArrowLeft aria-hidden="true" className="size-[0.875rem]" />
-            {previous.title}
+            {intl.formatMessage(previous.title)}
           </a>
         ) : (
           <span />
         )}
         {next && (
           <a className={cn(LINK, 'ml-auto')} href={href(diagramRoute(next.id))}>
-            {next.title}
+            {intl.formatMessage(next.title)}
             <ArrowRight aria-hidden="true" className="size-[0.875rem]" />
           </a>
         )}

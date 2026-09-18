@@ -1,4 +1,12 @@
 {
+  "articlePath.lede": {
+    "defaultMessage": "Five rungs, tried in order, and the first that answers is the answer. The snapshot compiled into the app comes first, because the promise is that the reader opens with no Wi-Fi; the cache behind the second and the fifth is bounded three ways; and what reaches the screen is one string a WebView is handed.",
+    "description": "The paragraph under that heading. A rung is this drawing’s own word for one step of the cascade in packages/app-core/src/articles/load.ts."
+  },
+  "articlePath.title": {
+    "defaultMessage": "Where an article comes from",
+    "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
+  },
   "components.alsoExported": {
     "defaultMessage": "Also exported here",
     "description": "The heading over what a folder’s files export beside their components: helpers, constants, sample data."
@@ -169,6 +177,214 @@
   "components.title": {
     "defaultMessage": "Components",
     "description": "The page’s heading. components.detail.crumb is the same word as the first step of the breadcrumb on a single component’s page, which links back here; nav.components is the longer name the rail and the browser tab carry."
+  },
+  "coreAndHost.adapter": {
+    "defaultMessage": "<muted>adapter </muted><file>lib/platform/expo.ts</file><muted> and </muted><file>lib/audio/backend.ts</file><muted>, the whole cost of adding a host</muted>",
+    "description": "The band across the top of the host’s box, centred. <file> marks a repository path in monospace, which stays as it is written; <muted> is the quieter type around the two paths."
+  },
+  "coreAndHost.alt.adapter": {
+    "defaultMessage": "<code>apps/mobile/src/lib/platform/expo.ts</code> answers four of them: the two storage interfaces, the content bundle and the reporter. <code>apps/mobile/src/lib/audio/backend.ts</code> answers the audio one, and <code>apps/mobile/src/app/_layout.tsx</code> composes it onto the other four, so that reasoning about where state is stored does not drag in an audio SDK. Those two files are the whole cost of adding a host.",
+    "description": "What that term says. <code> marks a repository path, which stays as it is written."
+  },
+  "coreAndHost.alt.adapter.term": {
+    "defaultMessage": "The adapter",
+    "description": "The third term in the list under the drawing."
+  },
+  "coreAndHost.alt.audio": {
+    "defaultMessage": "<code>AudioBackend</code>: the core needs playback, as status ticks. This host answers with expo-audio’s status events.",
+    "description": "One port in that list. <code> marks the interface name, which stays."
+  },
+  "coreAndHost.alt.blob": {
+    "defaultMessage": "<code>BlobStore</code>: the core needs the HTTP cache, asynchronously. This host answers with a second MMKV store, which the core’s cache bounds and evicts from. Two stores rather than one is what makes eviction unable to reach a bookmark.",
+    "description": "One port in that list. <code> marks the interface name, which stays."
+  },
+  "coreAndHost.alt.bundle": {
+    "defaultMessage": "<code>ContentBundle</code>: the core needs what shipped inside the app. This host answers with generated TS modules.",
+    "description": "One port in that list. <code> marks the interface name, which stays."
+  },
+  "coreAndHost.alt.core": {
+    "defaultMessage": "Holds stores, articles, media, services, data, lib, ports and types. It imports no UI framework and no platform SDK. <code>packages/app-core/test/boundary.test.ts</code> fails the build on an import matching its list.",
+    "description": "What that term says. The eight names are the directories of the package and stay as they are written; <code> marks the path of the test."
+  },
+  "coreAndHost.alt.core.term": {
+    "defaultMessage": "<code>packages/app-core</code>, the behaviour",
+    "description": "The first term in the list under the drawing. <code> marks the package path, which stays as it is written."
+  },
+  "coreAndHost.alt.error": {
+    "defaultMessage": "<code>ErrorReporter</code>: the core needs to be heard, for a fault no screen shows. This host answers with one log line, and no provider is chosen yet. It is the one the core does not need in order to work, which is why its default reports nowhere and why the call returns nothing for anyone to wait on. The host’s own error boundary reports through the same implementation, but it reaches it directly rather than across this line.",
+    "description": "One port in that list. <code> marks the interface name, which stays."
+  },
+  "coreAndHost.alt.host": {
+    "defaultMessage": "Expo / React Native, targeting iOS, Android and web.",
+    "description": "What that term says. The framework and platform names stay as they are written."
+  },
+  "coreAndHost.alt.host.term": {
+    "defaultMessage": "<code>apps/mobile</code>, the host",
+    "description": "The last term in that list. <code> marks the package path, which stays as it is written."
+  },
+  "coreAndHost.alt.keyValue": {
+    "defaultMessage": "<code>KeyValueStore</code>: the core needs small settings, asynchronously. This host answers with MMKV, in the store that holds what the reader chose.",
+    "description": "One port in that list. <code> marks the interface name, which stays."
+  },
+  "coreAndHost.alt.ports.term": {
+    "defaultMessage": "Five ports, the only crossing between the two",
+    "description": "The second term in that list. The count is read out of this file by test/diagrams.test.ts and held to what CorePlatform declares, so it is load-bearing in English."
+  },
+  "coreAndHost.alt.storage": {
+    "defaultMessage": "Both storage ports are asynchronous. What separates them is what they hold, a settings string against a megabyte of cached feeds.",
+    "description": "The sentence closing that list of ports."
+  },
+  "coreAndHost.answers": {
+    "defaultMessage": "this host answers with",
+    "description": "The heading of the lower half of every one of the five port cards, drawn once per card. coreAndHost.needs is the heading of the upper half."
+  },
+  "coreAndHost.asynchronously": {
+    "defaultMessage": "asynchronously",
+    "description": "The second line of what the core needs, on the first two cards. One id because both cards say the word for the same reason: the interface returns a promise."
+  },
+  "coreAndHost.audio.answer.1": {
+    "defaultMessage": "expo-audio’s",
+    "description": "First of two lines of what this host answers AudioBackend with; coreAndHost.audio.answer.2 is the second. expo-audio is the package name and stays."
+  },
+  "coreAndHost.audio.answer.2": {
+    "defaultMessage": "status events",
+    "description": "Second of the two lines that begin at coreAndHost.audio.answer.1."
+  },
+  "coreAndHost.audio.needs.1": {
+    "defaultMessage": "playback, as",
+    "description": "First of two lines of what the core needs of AudioBackend; coreAndHost.audio.needs.2 is the second."
+  },
+  "coreAndHost.audio.needs.2": {
+    "defaultMessage": "status ticks",
+    "description": "Second of the two lines that begin at coreAndHost.audio.needs.1: the backend reports by handing the core a status at intervals rather than by firing events it has to subscribe to."
+  },
+  "coreAndHost.blob.answer.1": {
+    "defaultMessage": "a second MMKV store,",
+    "description": "First of two lines of what this host answers BlobStore with; coreAndHost.blob.answer.2 is the second."
+  },
+  "coreAndHost.blob.answer.2": {
+    "defaultMessage": "bounded and evictable",
+    "description": "Second of the two lines that begin at coreAndHost.blob.answer.1: the core’s cache holds this store to a size and drops the oldest entry when it is over."
+  },
+  "coreAndHost.blob.needs": {
+    "defaultMessage": "the HTTP cache,",
+    "description": "First line of what the core needs of BlobStore; coreAndHost.asynchronously is the second."
+  },
+  "coreAndHost.bundle.answer": {
+    "defaultMessage": "generated TS modules",
+    "description": "What this host answers ContentBundle with, on one line. TS is TypeScript, abbreviated because the card is 172 units wide."
+  },
+  "coreAndHost.bundle.needs.1": {
+    "defaultMessage": "what shipped inside",
+    "description": "First of two lines of what the core needs of ContentBundle; coreAndHost.bundle.needs.2 is the second."
+  },
+  "coreAndHost.bundle.needs.2": {
+    "defaultMessage": "the app",
+    "description": "Second of the two lines that begin at coreAndHost.bundle.needs.1."
+  },
+  "coreAndHost.calls": {
+    "defaultMessage": "the core calls",
+    "description": "The verb on the four arrows running down from the core into the ports it needs in order to work. coreAndHost.reports is the verb on the fifth arrow."
+  },
+  "coreAndHost.caption": {
+    "defaultMessage": "The core declares the five interfaces and calls them, and a test keeps the line from moving. Four of them it needs in order to work. <code>ErrorReporter</code> it needs in order to be heard: its default reports nowhere, nothing waits for the call, and an unconfigured core goes quiet rather than breaking. This host answers four of them in <code>apps/mobile/src/lib/platform/expo.ts</code> and the audio one in <code>apps/mobile/src/lib/audio/backend.ts</code>, which <code>apps/mobile/src/app/_layout.tsx</code> composes onto the other four. Adding a second host means writing those two files again.",
+    "description": "The rest of that caption. <code> marks an interface name or a repository path, which stay as they are written. \"the five interfaces\" is read out of this file by test/diagrams.test.ts and held to what CorePlatform declares, so the number and the noun beside it are load-bearing in English."
+  },
+  "coreAndHost.caption.lead": {
+    "defaultMessage": "Everything that behaves lives above the ports; everything that touches a platform lives below them.",
+    "description": "The bold opening of the caption under the drawing."
+  },
+  "coreAndHost.core.rule": {
+    "defaultMessage": "Imports no UI framework and no platform SDK. That rule is what gives the package its value.",
+    "description": "The sentence inside the core’s box, under the row of directory chips."
+  },
+  "coreAndHost.core.side": {
+    "defaultMessage": "behaviour, all of it",
+    "description": "The right-hand label on the core’s box, opposite the package path. coreAndHost.host.side is the same label on the host’s box below."
+  },
+  "coreAndHost.core.test": {
+    "defaultMessage": "<file>packages/app-core/test/boundary.test.ts</file> fails the build if a platform import ever appears.",
+    "description": "The line under that sentence. <file> marks a repository path drawn in monospace, which stays as it is written."
+  },
+  "coreAndHost.error.answer.1": {
+    "defaultMessage": "one log line, and no",
+    "description": "First of two lines of what this host answers ErrorReporter with; coreAndHost.error.answer.2 is the second."
+  },
+  "coreAndHost.error.answer.2": {
+    "defaultMessage": "provider chosen yet",
+    "description": "Second of the two lines that begin at coreAndHost.error.answer.1: no reporting service has been picked."
+  },
+  "coreAndHost.error.needs.1": {
+    "defaultMessage": "to be heard: a fault",
+    "description": "First of two lines of what the core needs of ErrorReporter; coreAndHost.error.needs.2 is the second. This is the one card whose upper half says what the core needs in order to be heard rather than in order to work."
+  },
+  "coreAndHost.error.needs.2": {
+    "defaultMessage": "no screen shows",
+    "description": "Second of the two lines that begin at coreAndHost.error.needs.1: a fault nothing in the interface tells the reader about."
+  },
+  "coreAndHost.host.side": {
+    "defaultMessage": "the host, all of the platform",
+    "description": "The right-hand label on the host’s box, opposite the package path. coreAndHost.core.side is the same label on the core’s box above."
+  },
+  "coreAndHost.host.targets": {
+    "defaultMessage": "targets iOS, Android and web",
+    "description": "The last line in the host’s box, under the framework names. The three platform names stay as they are written."
+  },
+  "coreAndHost.implements": {
+    "defaultMessage": "the host implements",
+    "description": "The one verb on all five arrows running back up from the host into the ports, because the host answers the fifth exactly as it answers the other four."
+  },
+  "coreAndHost.keyValue.answer.1": {
+    "defaultMessage": "MMKV, one store the",
+    "description": "First of two lines of what this host answers KeyValueStore with; coreAndHost.keyValue.answer.2 is the second. MMKV is the name of the storage library and stays."
+  },
+  "coreAndHost.keyValue.answer.2": {
+    "defaultMessage": "cache cannot reach",
+    "description": "Second of the two lines that begin at coreAndHost.keyValue.answer.1. Together they read as one phrase."
+  },
+  "coreAndHost.keyValue.needs": {
+    "defaultMessage": "small settings,",
+    "description": "First line of what the core needs of KeyValueStore; coreAndHost.asynchronously is the second. Each line fits a card 172 units wide at 12px, so about 27 characters."
+  },
+  "coreAndHost.lede": {
+    "defaultMessage": "All behaviour on one side, all platform on the other. The only crossing is five named ports, and the two small files that answer them are the whole cost of adding a host.",
+    "description": "The paragraph under that heading."
+  },
+  "coreAndHost.needs": {
+    "defaultMessage": "the core needs",
+    "description": "The heading of the upper half of every one of the five port cards, drawn once per card. coreAndHost.answers is the heading of the lower half."
+  },
+  "coreAndHost.reports": {
+    "defaultMessage": "the core reports",
+    "description": "The verb on the fifth arrow down, which has one of its own because the port it reaches is not something the core needs in order to work. coreAndHost.calls is the verb on the other four."
+  },
+  "coreAndHost.storage": {
+    "defaultMessage": "storage ports",
+    "description": "The name of the dashed frame around the first two cards, drawn over the frame’s top edge with a halo behind it."
+  },
+  "coreAndHost.storage.note.1": {
+    "defaultMessage": "both asynchronous, split only",
+    "description": "First of four hand-wrapped lines under the two storage cards; the others are coreAndHost.storage.note.2, .3 and .4. All four are centred between two arrows 194 units apart, so no line may be wider than that."
+  },
+  "coreAndHost.storage.note.2": {
+    "defaultMessage": "by what they hold, a settings",
+    "description": "Second of the four lines that begin at coreAndHost.storage.note.1."
+  },
+  "coreAndHost.storage.note.3": {
+    "defaultMessage": "string against a megabyte",
+    "description": "Third of the four lines that begin at coreAndHost.storage.note.1."
+  },
+  "coreAndHost.storage.note.4": {
+    "defaultMessage": "of cached feeds",
+    "description": "Last of the four lines that begin at coreAndHost.storage.note.1."
+  },
+  "coreAndHost.svg.title": {
+    "defaultMessage": "The core and its host: packages/app-core above, apps/mobile below, joined only by five ports",
+    "description": "The accessible name of the picture, read aloud in place of it. Never drawn on the page. The two package names are paths and stay as they are."
+  },
+  "coreAndHost.title": {
+    "defaultMessage": "The core and its host",
+    "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
   },
   "decisions.board.lede": {
     "defaultMessage": "One row per record, oldest first. A row carrying a strike says why under its title: the clause of the newest one, cut to one sentence, and shown behind the text it struck where it only reads attached to it. A row expands to the index’s sentence about it, every claim struck inside it with the clause that voided it in full, and both directions of the retirement graph. Nothing in the detail is truncated. The tiles above filter the board as well.",
@@ -374,6 +590,14 @@
     "defaultMessage": "Decision records",
     "description": "The page’s heading. nav.decisions is the same two words as the browser tab and the search palette carry for this page; shell.activity.decisions is the shorter word the rail has room for."
   },
+  "decisionsChain.lede": {
+    "defaultMessage": "{records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through where it stands and the later record names what it retired. Read a row to see whether a record still holds; follow the arcs to see who amended it.",
+    "description": "The paragraph under that heading. {records} is how many records adr/ holds, counted by the drawing’s own layout rather than typed. test/diagrams.test.ts holds it to that count, so the placeholder has to stay at the front of the sentence."
+  },
+  "decisionsChain.title": {
+    "defaultMessage": "Which decisions still stand, and which of their claims do not",
+    "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
+  },
   "design.board": {
     "defaultMessage": "The board",
     "description": "The second of the three cards. The board is the inventory of screens the plugin draws into the Figma file."
@@ -514,6 +738,14 @@
   "diagrams.crumb": {
     "defaultMessage": "Diagrams",
     "description": "The second step of that trail, which is the name of the page it links to. diagrams.title is that page’s own heading and handbook.card.diagrams is the card that opens it; all three read the same in English and are three entries because one is a heading, one is a card and one is a link in a trail."
+  },
+  "diagrams.figure.alt": {
+    "defaultMessage": "The same diagram as a list",
+    "description": "The heading over the list beneath a drawing. That list is not a caption: it is the page for anyone who cannot use the picture."
+  },
+  "diagrams.figure.scroll": {
+    "defaultMessage": "Diagram {number}, scrollable",
+    "description": "The name of the box a drawing scrolls sideways inside, read aloud and never drawn. {number} is the drawing’s place in the set, counted from one, and is the same number the page shows in its breadcrumb."
   },
   "diagrams.lede": {
     "defaultMessage": "The same architecture the workbench explains in prose, drawn. Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step."
@@ -1050,6 +1282,166 @@
     "defaultMessage": "The time the frame is showing",
     "description": "The label of the time field beside the track. Read aloud and never seen."
   },
+  "insideCore.alt.articles": {
+    "defaultMessage": "<term>articles</term>: the Article model and its load cascade. <code>articles/extract</code> holds two backends, a string one and a DOM one, behind one <code>ArticleExtractor</code> type. Beside it, <term>media</term>, with one rule: only one medium plays at a time.",
+    "description": "One layer in that list. <term> marks a directory’s name and <code> a path or a type name; all of them stay as they are written."
+  },
+  "insideCore.alt.boundary": {
+    "defaultMessage": "Below the contracts is a hard boundary. The platform SDKs (react-native, expo, expo-audio, react-native-mmkv) sit on the far side and nothing in the package imports them. <code>packages/app-core/test/boundary.test.ts</code> holds that line by refusing a list of names: react-native, expo, node built-ins, the NativeScript scopes, and the view layers the core used to be tied to. It matches the start of the import, so the storage SDK is caught by the <code>react-native</code> entry rather than needing one of its own. The same file also checks that <code>ports/index.ts</code> still declares all five ports, so a capability cannot reach the host without being named there.",
+    "description": "The paragraph after that list. <code> marks a path or a package name, which stay as they are written, and so do the four package names in the brackets. The port count is read out of this file by test/diagrams.test.ts and held to what CorePlatform declares, so it is load-bearing in English."
+  },
+  "insideCore.alt.conventions": {
+    "defaultMessage": "Two conventions: derived values are exported selectors taking state, never store methods. Imports use subpaths and no barrel, for example <code>@correctiv/app-core/stores/session</code>, because the root entry exposes only the ports.",
+    "description": "The last paragraph under the drawing. <code> marks an import path, which stays as it is written."
+  },
+  "insideCore.alt.lede": {
+    "defaultMessage": "<code>packages/app-core</code>, 58 TypeScript files. Imports point down the stack. Layers from the top:",
+    "description": "The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English."
+  },
+  "insideCore.alt.lib": {
+    "defaultMessage": "<term>lib</term>: dependency-free string and date helpers.",
+    "description": "One layer in that list. <term> marks the directory’s name."
+  },
+  "insideCore.alt.ports": {
+    "defaultMessage": "<term>ports</term> and <term>types</term>, the contracts: <code>ports/index.ts</code>, one file, declares <code>KeyValueStore</code>, <code>BlobStore</code>, <code>ContentBundle</code>, <code>AudioBackend</code>, <code>ErrorReporter</code> and <code>configurePlatform()</code>. The drawing puts the first four on one row and <code>ErrorReporter</code> on the next, because the first four are what the core needs in order to work and this one is what it needs in order to be heard: the app runs without it, which is why its default reports nowhere. Beside them, <term>types</term>, one file of shared contracts.",
+    "description": "The last layer in that list. <term> marks a directory’s name and <code> a path, an interface or a function; all of them stay as they are written."
+  },
+  "insideCore.alt.services": {
+    "defaultMessage": "<term>services</term>, 10 files: auth, cache, http, peertube, podcast, radio, rss, search, spotlight, wp. Beside it, <term>data</term>, 11 files of typed content.",
+    "description": "One layer in that list. <term> marks a directory’s name; the ten names after the colon are the files in it and stay as they are written."
+  },
+  "insideCore.alt.stores": {
+    "defaultMessage": "<term>stores</term>: one Redux Toolkit store with 12 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.",
+    "description": "One layer in that list. <term> marks the directory’s name, which stays as it is written, and <code> a function name."
+  },
+  "insideCore.articles": {
+    "defaultMessage": "the Article model and its load cascade",
+    "description": "What the articles layer holds. Article is the name of the type and stays; the cascade is the order the five rungs of the sixth drawing are tried in."
+  },
+  "insideCore.boundary": {
+    "defaultMessage": "hard boundary, nothing crosses it",
+    "description": "The label under the red line across the drawing."
+  },
+  "insideCore.boundary.test": {
+    "defaultMessage": "<file>packages/app-core/test/boundary.test.ts</file> fails the build on an import matching its list: react-native, expo, node built-ins",
+    "description": "The line under that label. <file> marks a repository path in monospace, which stays as it is written, and so do the three names at the end: two are packages and the third is Node’s own modules."
+  },
+  "insideCore.caption": {
+    "defaultMessage": "The ports are declared here and implemented outside; the SDKs under the red line are the host’s business, and a test keeps them out. The root entry exports only the ports, so a host reaches anything else by its path.",
+    "description": "The rest of that caption."
+  },
+  "insideCore.caption.lead": {
+    "defaultMessage": "Every layer imports downward, and the lowest one is a set of interfaces.",
+    "description": "The bold opening of the caption under the drawing."
+  },
+  "insideCore.convention": {
+    "defaultMessage": "convention",
+    "description": "The heading of both callout boxes on the right, drawn once in each. One id because the two say the same word for the same reason."
+  },
+  "insideCore.data.content.1": {
+    "defaultMessage": "typed content,",
+    "description": "First of two hand-wrapped lines in the data layer; insideCore.data.content.2 is the second."
+  },
+  "insideCore.data.content.2": {
+    "defaultMessage": "checked by the compiler",
+    "description": "Second of the two lines that begin at insideCore.data.content.1."
+  },
+  "insideCore.data.files": {
+    "defaultMessage": "11 files",
+    "description": "How many files the data layer holds, beside its name. insideCore.services.files is the same label on the layer beside it."
+  },
+  "insideCore.extractors": {
+    "defaultMessage": "two backends behind one <file>ArticleExtractor</file>",
+    "description": "The line beside the two small chips reading string and DOM. <file> marks a type name in monospace, which stays as it is written."
+  },
+  "insideCore.files": {
+    "defaultMessage": "58 TypeScript files",
+    "description": "The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English."
+  },
+  "insideCore.imports": {
+    "defaultMessage": "imports point down the stack",
+    "description": "The label on the long arrow down the left edge, set on its side. It is as long as the stack is tall, about 500 units, so length is not the constraint here."
+  },
+  "insideCore.lede": {
+    "defaultMessage": "58 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
+    "description": "The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English."
+  },
+  "insideCore.lib": {
+    "defaultMessage": "dependency-free string and date helpers",
+    "description": "What the lib layer holds, on one line beside its name."
+  },
+  "insideCore.media.rule": {
+    "defaultMessage": "one rule:",
+    "description": "First of three hand-wrapped lines in the media layer; insideCore.media.rule.2 and .3 are the others. The chip is 192 units wide and the lines start 16 units in, so none may run past about 175."
+  },
+  "insideCore.media.rule.2": {
+    "defaultMessage": "only one medium",
+    "description": "Second of the three lines that begin at insideCore.media.rule."
+  },
+  "insideCore.media.rule.3": {
+    "defaultMessage": "plays at a time",
+    "description": "Last of the three lines that begin at insideCore.media.rule."
+  },
+  "insideCore.ports.file": {
+    "defaultMessage": "<file>ports/index.ts</file>, 1 file",
+    "description": "What the ports layer is, beside its name. <file> marks a repository path in monospace, which stays as it is written."
+  },
+  "insideCore.ports.split": {
+    "defaultMessage": "four to work, one to be heard",
+    "description": "Why the port chips are drawn on two rows: the four on the first are what the core needs in order to work, and ErrorReporter on the second is what it needs in order to be heard. Right-aligned at 480 and the label to its left ends near 245, so it has about 230 units at 11px."
+  },
+  "insideCore.rootEntry": {
+    "defaultMessage": "The root entry exposes only the ports.",
+    "description": "The last line of the lower callout, under the example import."
+  },
+  "insideCore.sdks": {
+    "defaultMessage": "platform SDKs, reached by the host only",
+    "description": "The label beside the four greyed-out package chips below the red line."
+  },
+  "insideCore.selectors.1": {
+    "defaultMessage": "Derived values are exported selectors",
+    "description": "First of two hand-wrapped lines in the upper callout; insideCore.selectors.2 is the second. The box is 280 units wide and the text starts 14 units in, so no line may run past about 265."
+  },
+  "insideCore.selectors.2": {
+    "defaultMessage": "taking state, never store methods.",
+    "description": "Second of the two lines that begin at insideCore.selectors.1."
+  },
+  "insideCore.services.files": {
+    "defaultMessage": "10 files",
+    "description": "How many files the services layer holds, beside its name. insideCore.data.files and insideCore.types.files are the same label on the two layers beside it; insideCore.ports.file is the one on the ports layer."
+  },
+  "insideCore.stores": {
+    "defaultMessage": "one Redux Toolkit store, 12 slices",
+    "description": "What the stores layer holds. Redux Toolkit is the library’s name and a slice is its own word for one part of a store; both stay."
+  },
+  "insideCore.stores.host": {
+    "defaultMessage": "The host constructs the instance.",
+    "description": "The second of the two sentences that begin at insideCore.stores.owns."
+  },
+  "insideCore.stores.owns": {
+    "defaultMessage": "The core owns the slices and exports <file>createAppStore()</file>.",
+    "description": "The first of two sentences inside the stores layer; insideCore.stores.host is the second. <file> marks a function name in monospace, which stays as it is written."
+  },
+  "insideCore.subpaths": {
+    "defaultMessage": "Subpath imports, no barrel:",
+    "description": "The first line of the lower callout. The import line under it is an example and is drawn as written; insideCore.rootEntry is the line after it. A barrel is a module that re-exports a folder, and this package has none."
+  },
+  "insideCore.svg.title": {
+    "defaultMessage": "Inside packages/app-core: stores over articles and media, over services and data, over lib, over the ports and types, with a hard boundary below and the platform SDKs on the far side of it",
+    "description": "The accessible name of the picture, read aloud in place of it. Never drawn on the page. Every lower-case name in it is a directory of the package and stays as it is written."
+  },
+  "insideCore.title": {
+    "defaultMessage": "Inside the core",
+    "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
+  },
+  "insideCore.types": {
+    "defaultMessage": "the shared contracts",
+    "description": "What the types layer holds, on one line under its name."
+  },
+  "insideCore.types.files": {
+    "defaultMessage": "1 file",
+    "description": "How many files the types layer holds, beside its name. insideCore.ports.file says the same of the layer beside it and names the file as well."
+  },
   "landing.door.decisions.blurb": {
     "defaultMessage": "Why the repository is the way it is, and which of its claims have since expired."
   },
@@ -1278,6 +1670,150 @@
   "reference.title": {
     "defaultMessage": "Reference",
     "description": "The page’s heading. shell.activity.reference is the rail entry that opens this page and shell.search.group.reference is the palette’s group of the symbols on it; the three read the same in English and are three entries because one is a heading, one is a rail entry and one names a group of results."
+  },
+  "services.alt.beabee": {
+    "defaultMessage": "One login for the website and the app. It answers with the tier, whether the app is included, why, and for how long. The app asks it once at the door and renders its routes only on a yes. Simulated today in <code>packages/app-core/src/services/auth.service.ts</code>; nothing reaches a network, and the screen that calls it says so.",
+    "description": "The rest of that paragraph. <code> marks a file path, which stays as it is written."
+  },
+  "services.alt.beabee.lead": {
+    "defaultMessage": "beabee, identity and membership.",
+    "description": "The bold opening of the first paragraph of the list under the drawing."
+  },
+  "services.alt.closing": {
+    "defaultMessage": "The counts, the dates each figure was measured on, and the wanted features with no source at all are on the sources board.",
+    "description": "The last paragraph of the list under the drawing."
+  },
+  "services.alt.live.castopod": {
+    "defaultMessage": "<code>salon5.correctiv.net</code>, CORRECTIV’s own Castopod, standard podcast RSS per show.",
+    "description": "One entry in that list. <code> marks a host name, which stays as it is written."
+  },
+  "services.alt.live.heading": {
+    "defaultMessage": "Content the app reads live",
+    "description": "The heading over the list of sources the app really reaches over the network."
+  },
+  "services.alt.live.icecast": {
+    "defaultMessage": "<code>icecast.correctiv.net</code>, live radio, three mounts.",
+    "description": "One entry in that list. <code> marks a host name, which stays as it is written."
+  },
+  "services.alt.live.peertube": {
+    "defaultMessage": "<code>tube.funfacts.de</code>, CORRECTIV’s own PeerTube, nine channels.",
+    "description": "One entry in that list. <code> marks a host name, which stays as it is written."
+  },
+  "services.alt.live.wordpress": {
+    "defaultMessage": "<code>correctiv.org</code>, WordPress REST: articles by category, the newsletter archive, and search.",
+    "description": "One entry in that list. <code> marks a host name, which stays as it is written."
+  },
+  "services.alt.live.youtube": {
+    "defaultMessage": "YouTube, Atom feeds.",
+    "description": "One entry in that list. Both words are names and stay as they are."
+  },
+  "services.alt.sample.atlas": {
+    "defaultMessage": "abriss-atlas.de, which has no public API.",
+    "description": "One entry in that list. The host name stays as it is written."
+  },
+  "services.alt.sample.crowdnewsroom": {
+    "defaultMessage": "beabee CrowdNewsroom, for the callouts.",
+    "description": "One entry in that list. beabee CrowdNewsroom is a product name and stays."
+  },
+  "services.alt.sample.faktenforum": {
+    "defaultMessage": "Faktenforum, a GraphQL backend, for the claims.",
+    "description": "One entry in that list. Faktenforum and GraphQL are names and stay."
+  },
+  "services.alt.sample.heading": {
+    "defaultMessage": "Content that is a file standing in for a service",
+    "description": "The heading over the list of sources the app does not reach yet."
+  },
+  "services.app": {
+    "defaultMessage": "the app",
+    "description": "The heading on the box standing for the whole app, with the two package paths under it."
+  },
+  "services.app.requests": {
+    "defaultMessage": "every request below is the core’s",
+    "description": "The last line inside that box: every wire leaving it is a call the core makes, not the host. It has the width of the box, about 195 units at 12px, and no more."
+  },
+  "services.ask": {
+    "defaultMessage": "who is this, and may they be here",
+    "description": "The question on the wire from the app up to beabee, drawn over the line with a halo behind it. It is the one question no content source answers."
+  },
+  "services.beabee.answer.1": {
+    "defaultMessage": "one login for website and app: the tier, whether",
+    "description": "First of two hand-wrapped lines under that; services.beabee.answer.2 is the second. SVG does not wrap, so the break is set by hand and a translation may put it at a different word."
+  },
+  "services.beabee.answer.2": {
+    "defaultMessage": "the app is included, why, and for how long",
+    "description": "Second of the two lines that begin at services.beabee.answer.1. Together they read as one sentence."
+  },
+  "services.beabee.role": {
+    "defaultMessage": "identity and membership",
+    "description": "The line under the product name beabee, saying what it answers about."
+  },
+  "services.caption": {
+    "defaultMessage": "Its answer decides whether the app renders its routes at all, which no content source does, so it is drawn on its own wire. That answer is simulated today, in <code>services/auth.service.ts</code>, and the shape of the answer is the contract. Five content sources are live; three are files typed in the shape of the API meant to replace them. Which is which, and the figures behind each, is the <board>sources board</board>.",
+    "description": "The rest of that caption. <code> marks a file path, which stays as it is written. <board> is the link to /sources and the words inside it are that page’s own name. The two counts are held to the drawing’s own rows by test/diagrams.test.ts, which reads this sentence, so the words around each number are load-bearing in English."
+  },
+  "services.caption.lead": {
+    "defaultMessage": "beabee is the door; the rest is what is behind it.",
+    "description": "The bold opening of the caption under the drawing."
+  },
+  "services.content": {
+    "defaultMessage": "CONTENT",
+    "description": "The heading over the band of content sources, drawn in capitals above a rule. German capitalises the same way."
+  },
+  "services.lede": {
+    "defaultMessage": "One of these is not like the others. beabee answers who somebody is and whether their membership includes the app; everything else answers what to show them. Most of the content is live today, and the identity half is still simulated.",
+    "description": "The paragraph under that heading. beabee is a product name and stays."
+  },
+  "services.legend.live": {
+    "defaultMessage": "live today, over the network",
+    "description": "The legend for a solid wire and a filled dot. services.legend.sample is the other half."
+  },
+  "services.legend.sample": {
+    "defaultMessage": "a checked-in file, shaped like the API that will replace it",
+    "description": "The legend for a dashed wire and a broken ring. It runs to the right edge of the drawing, so it has about 330 units at 11px and no more."
+  },
+  "services.row.atlas": {
+    "defaultMessage": "no public API exists",
+    "description": "Why abriss-atlas.de is drawn as a file rather than as a service."
+  },
+  "services.row.atom": {
+    "defaultMessage": "Atom feeds",
+    "description": "What YouTube answers with. Atom is the name of the feed format and stays."
+  },
+  "services.row.castopod": {
+    "defaultMessage": "Castopod, podcast RSS per show",
+    "description": "What salon5.correctiv.net answers. Castopod is the product and stays."
+  },
+  "services.row.crowdnewsroom": {
+    "defaultMessage": "the callouts",
+    "description": "What beabee CrowdNewsroom would answer: the invitations to take part that the app shows on its Mitmachen screen."
+  },
+  "services.row.faktenforum": {
+    "defaultMessage": "GraphQL, the claims",
+    "description": "What Faktenforum would answer. A claim here is a statement the community fact-checks, which the app itself calls a Behauptung."
+  },
+  "services.row.icecast": {
+    "defaultMessage": "live radio, three mounts",
+    "description": "What icecast.correctiv.net answers. A mount is Icecast’s own word for one stream on a server."
+  },
+  "services.row.peertube": {
+    "defaultMessage": "PeerTube, nine channels",
+    "description": "What tube.funfacts.de answers. PeerTube is the product and stays."
+  },
+  "services.row.wordpress": {
+    "defaultMessage": "WordPress REST: posts, newsletters, search",
+    "description": "What correctiv.org answers. WordPress REST is the name of the interface and stays; posts, newsletters and search are what it returns."
+  },
+  "services.simulated": {
+    "defaultMessage": "simulated today",
+    "description": "A badge on club yellow over the beabee box. It fits a chip 150 units wide at 11px, so a longer wording needs the chip widened with it."
+  },
+  "services.svg.title": {
+    "defaultMessage": "The app, the identity system it asks about membership, and the content sources it reads",
+    "description": "The accessible name of the picture, read aloud in place of it. Never drawn on the page."
+  },
+  "services.title": {
+    "defaultMessage": "The app and what it talks to",
+    "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
   },
   "settings.appearance": {
     "defaultMessage": "Appearance",
@@ -1552,6 +2088,14 @@
   "shell.toc.none": {
     "defaultMessage": "No headings on this page.",
     "description": "Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title."
+  },
+  "signIn.lede": {
+    "defaultMessage": "The door is real and everything past it is not. The root layout renders it instead of the route tree, and what it asks is a function that waits a second and a half and reads a table of email addresses. Above the red line is what this repository does; below it is what the whiteboard plans, drawn as an absence because that is what it is.",
+    "description": "The paragraph under that heading."
+  },
+  "signIn.title": {
+    "defaultMessage": "How somebody signs in, and what is behind the door",
+    "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
   },
   "sources.board.lede": {
     "defaultMessage": "One row per source, per article feed, or per wanted source. A row expands to its full detail; nothing on this page is truncated. The state tiles above filter the board as well.",

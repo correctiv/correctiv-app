@@ -1,10 +1,16 @@
-import { ArticlePath, ArticlePathDrawing } from './ArticlePath';
-import { CoreAndHost, CoreAndHostDrawing } from './CoreAndHost';
-import { DecisionsChain, DecisionsChainDrawing, LAYOUT as DECISIONS } from './DecisionsChain';
-import { InsideCore, InsideCoreDrawing } from './InsideCore';
-import { Services, ServicesDrawing } from './Services';
-import { SignIn, SignInDrawing } from './SignIn';
+import { ArticlePath, ArticlePathDrawing, ARTICLE_PATH_COPY } from './ArticlePath';
+import { CoreAndHost, CoreAndHostDrawing, CORE_AND_HOST_COPY } from './CoreAndHost';
+import {
+  DecisionsChain,
+  DecisionsChainDrawing,
+  DECISIONS_CHAIN_COPY,
+  LAYOUT as DECISIONS,
+} from './DecisionsChain';
+import { InsideCore, InsideCoreDrawing, INSIDE_CORE_COPY } from './InsideCore';
+import { Services, ServicesDrawing, SERVICES_COPY } from './Services';
+import { SignIn, SignInDrawing, SIGN_IN_COPY } from './SignIn';
 
+import type { MessageDescriptor } from 'react-intl';
 import type { ReactNode } from 'react';
 
 /**
@@ -15,14 +21,29 @@ import type { ReactNode } from 'react';
  * scroll box, the caption and the list with it. Anything that only wants the
  * picture, at a size it has to know in advance, takes `Drawing` and the two
  * numbers beside it.
+ *
+ * **The name and the sentence are descriptors and not strings**, because they
+ * are this site's own words and follow the language setting
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ * They are declared in the drawing's own module and only listed here: a drawing's
+ * name belongs to the drawing, and this table would otherwise be a second place
+ * holding words. `DiagramIndex` and `DiagramView` format them.
  */
 export interface DiagramMeta {
   /** The section id it already carries, which is also its route segment. */
   id: string;
-  /** The `<h2>` text as it stands today, WITHOUT the leading number. */
-  title: string;
-  /** The lede paragraph's text as it stands today, as a plain string. */
-  lede: string;
+  /** The `<h2>` text, WITHOUT the leading number, as a descriptor. */
+  title: MessageDescriptor;
+  /** The lede paragraph, as a descriptor. */
+  lede: MessageDescriptor;
+  /**
+   * What the lede's placeholders hold, for the one drawing whose lede counts.
+   *
+   * The decisions drawing reads the record count off its own layout, so the
+   * sentence under it cannot be a fixed string in either language. Every other
+   * lede takes no argument and leaves this off.
+   */
+  ledeValues?: Record<string, number>;
   /** The `<svg>`'s own width and height in its coordinate space, from its classes. */
   width: number;
   height: number;
@@ -41,8 +62,8 @@ export interface DiagramMeta {
 export const DIAGRAMS: DiagramMeta[] = [
   {
     id: 'core-host',
-    title: 'The core and its host',
-    lede: 'All behaviour on one side, all platform on the other. The only crossing is five named ports, and the two small files that answer them are the whole cost of adding a host.',
+    title: CORE_AND_HOST_COPY.title,
+    lede: CORE_AND_HOST_COPY.lede,
     width: 1100,
     height: 710,
     Figure: CoreAndHost,
@@ -50,7 +71,7 @@ export const DIAGRAMS: DiagramMeta[] = [
   },
   {
     id: 'decisions',
-    title: 'Which decisions still stand, and which of their claims do not',
+    title: DECISIONS_CHAIN_COPY.title,
     // The count said twenty-three while `adr/` held twenty-four, which is the
     // failure `AGENTS.md` names under "Facts that expire"; the drawing under it was
     // worse, because it was typed in full and drew 0001 to 0023 while the sentence
@@ -59,7 +80,8 @@ export const DIAGRAMS: DiagramMeta[] = [
     // `DECISIONS` is that module's `LAYOUT` rather than a second `chainLayout` call
     // here: two calls would agree by luck, and the height is a function of how many
     // records `adr/` holds, so it cannot be typed beside the two that are fixed.
-    lede: `${DECISIONS.summary.records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through where it stands and the later record names what it retired. Read a row to see whether a record still holds; follow the arcs to see who amended it.`,
+    lede: DECISIONS_CHAIN_COPY.lede,
+    ledeValues: { records: DECISIONS.summary.records },
     width: DECISIONS.width,
     height: DECISIONS.height,
     Figure: DecisionsChain,
@@ -67,8 +89,8 @@ export const DIAGRAMS: DiagramMeta[] = [
   },
   {
     id: 'services',
-    title: 'The app and what it talks to',
-    lede: 'One of these is not like the others. beabee answers who somebody is and whether their membership includes the app; everything else answers what to show them. Most of the content is live today, and the identity half is still simulated.',
+    title: SERVICES_COPY.title,
+    lede: SERVICES_COPY.lede,
     // The one drawing sized by its viewBox rather than a height class, because it
     // is `h-auto`: 980 by 580 is what the viewBox says.
     width: 980,
@@ -78,8 +100,8 @@ export const DIAGRAMS: DiagramMeta[] = [
   },
   {
     id: 'inside-core',
-    title: 'Inside the core',
-    lede: '58 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.',
+    title: INSIDE_CORE_COPY.title,
+    lede: INSIDE_CORE_COPY.lede,
     width: 1040,
     height: 746,
     Figure: InsideCore,
@@ -87,8 +109,8 @@ export const DIAGRAMS: DiagramMeta[] = [
   },
   {
     id: 'sign-in',
-    title: 'How somebody signs in, and what is behind the door',
-    lede: 'The door is real and everything past it is not. The root layout renders it instead of the route tree, and what it asks is a function that waits a second and a half and reads a table of email addresses. Above the red line is what this repository does; below it is what the whiteboard plans, drawn as an absence because that is what it is.',
+    title: SIGN_IN_COPY.title,
+    lede: SIGN_IN_COPY.lede,
     width: 1100,
     height: 864,
     Figure: SignIn,
@@ -96,8 +118,8 @@ export const DIAGRAMS: DiagramMeta[] = [
   },
   {
     id: 'article-path',
-    title: 'Where an article comes from',
-    lede: 'Five rungs, tried in order, and the first that answers is the answer. The snapshot compiled into the app comes first, because the promise is that the reader opens with no Wi-Fi; the cache behind the second and the fifth is bounded three ways; and what reaches the screen is one string a WebView is handed.',
+    title: ARTICLE_PATH_COPY.title,
+    lede: ARTICLE_PATH_COPY.lede,
     width: 1100,
     height: 856,
     Figure: ArticlePath,

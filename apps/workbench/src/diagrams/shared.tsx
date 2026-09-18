@@ -1,5 +1,8 @@
+import { defineMessages } from 'react-intl';
+
 import type { ReactNode } from 'react';
 
+import { useWorkbenchIntl } from '../i18n/Localisation';
 import { cn } from '../lib/cn';
 
 /*
@@ -230,6 +233,29 @@ export const ON_ALTERNATIVE = 'fill-neutral-700';
  * page shows. Reading it from `diagrams/index.ts` is what the drawings cannot do:
  * that module imports every one of them, so asking it back would be a cycle.
  */
+/**
+ * The two things the frame around a drawing says in its own voice, in ENGLISH;
+ * the German that ships is `src/i18n/catalogue/de/diagrams.ts`.
+ *
+ * They are in the `diagrams.*` namespace rather than in a drawing's, because
+ * this frame is drawn six times and belongs to none of the six. Nothing outside
+ * this file reads them, so the block keeps the plain name.
+ */
+const COPY = defineMessages({
+  scroll: {
+    id: 'diagrams.figure.scroll',
+    defaultMessage: 'Diagram {number}, scrollable',
+    description:
+      'The name of the box a drawing scrolls sideways inside, read aloud and never drawn. {number} is the drawing’s place in the set, counted from one, and is the same number the page shows in its breadcrumb.',
+  },
+  alt: {
+    id: 'diagrams.figure.alt',
+    defaultMessage: 'The same diagram as a list',
+    description:
+      'The heading over the list beneath a drawing. That list is not a caption: it is the page for anyone who cannot use the picture.',
+  },
+});
+
 export function DiagramFigure({
   number,
   altId,
@@ -247,15 +273,24 @@ export function DiagramFigure({
   /** The list under the figure, which is the page for anyone who cannot see it. */
   children: ReactNode;
 }) {
+  const intl = useWorkbenchIntl();
+
   return (
     <figure className={FIGURE}>
-      <section className={SCROLL_BOX} aria-label={`Diagram ${number}, scrollable`} tabIndex={0}>
+      {/* `intl.formatMessage` and never `<FormattedMessage>`: that component reads
+          react-intl's own context, which the app's provider shadows inside an
+          `AppHost`. `test/i18n.test.ts` fails on one. */}
+      <section
+        className={SCROLL_BOX}
+        aria-label={intl.formatMessage(COPY.scroll, { number })}
+        tabIndex={0}
+      >
         {drawing}
       </section>
       <figcaption className={CAPTION}>{caption}</figcaption>
       {alt && (
         <div className={ALT} id={altId}>
-          <h3>The same diagram as a list</h3>
+          <h3>{intl.formatMessage(COPY.alt)}</h3>
           {children}
         </div>
       )}

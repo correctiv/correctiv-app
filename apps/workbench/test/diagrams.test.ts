@@ -232,6 +232,152 @@ describe('the drawings, against what they draw', () => {
   });
 });
 
+/**
+ * The same figures, on the other side of the seam.
+ *
+ * **A figure that moved into a `defaultMessage` gained a second copy nothing was
+ * reading.** The two checks above walk `src/diagrams/`, which is where a drawing's
+ * English lives; the German for the same label lives in
+ * `src/i18n/catalogue/de/`, which they do not walk. So from the moment three of
+ * the drawings were translated, „alle fünf Ports" and „58 TypeScript-Dateien"
+ * were figures about this repository with nothing holding them to it, and the
+ * English going red would have left the German quietly wrong. Found by the pass
+ * that made them, and named here rather than left in a comment: AGENTS.md's rule
+ * is that the check goes in with the fact.
+ *
+ * **Two assertions and not one**, because the two kinds of figure fail
+ * differently. A spelled-out number is a different word in each language and needs
+ * the German words below. A numeral is the same characters in both, so what holds
+ * it is that the German carries the numeral the English carries — which also
+ * covers a figure no pattern here has been written for yet.
+ */
+describe('a figure a drawing spells out is the same figure in German', () => {
+  const CATALOGUE = join(ROOT, 'apps/workbench/src/i18n/catalogue/de');
+
+  /** The namespaces the six drawings and their frame write into. */
+  const DRAWING_NAMESPACES = [
+    'coreAndHost',
+    'insideCore',
+    'services',
+    'articlePath',
+    'signIn',
+    'decisionsChain',
+    'diagrams',
+  ];
+
+  const german = () =>
+    DRAWING_NAMESPACES.map((name) => ({
+      name: `de/${name}.ts`,
+      text: readFileSync(join(CATALOGUE, `${name}.ts`), 'utf8'),
+    }));
+
+  /**
+   * Nought to ten in German, which is as far as any drawing counts in words.
+   *
+   * `numberInProse` takes the English list out of `@correctiv/prose-and-code`,
+   * and this one stays here: a mechanism does not know which languages a caller
+   * ships, and this site ships two.
+   */
+  const GERMAN_WORDS = [
+    'kein',
+    'ein',
+    'zwei',
+    'drei',
+    'vier',
+    'fünf',
+    'sechs',
+    'sieben',
+    'acht',
+    'neun',
+    'zehn',
+  ];
+
+  it('spells the port count the way the core declares it', () => {
+    const claims =
+      /\b(kein|eine?|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|\d+)\s+(?:Ports|Schnittstellen)\b/gi;
+    const expected = ports().length;
+    const faults: string[] = [];
+    let found = 0;
+
+    for (const { name, text } of german()) {
+      for (const [whole, word] of text.matchAll(claims)) {
+        found += 1;
+        const said = GERMAN_WORDS.indexOf(word.toLowerCase().replace(/^eine$/, 'ein'));
+        const value = said >= 0 ? said : Number(word);
+        if (value !== expected)
+          faults.push(`${name}: “${whole.trim()}” where the core declares ${expected}`);
+      }
+    }
+
+    // A pattern that has stopped matching agrees with everything, and this one
+    // matches German that somebody may rephrase.
+    expect(found).toBeGreaterThan(0);
+    expect(faults).toEqual([]);
+  });
+
+  /**
+   * One id's German, out of the file its namespace names.
+   *
+   * A hand-rolled read rather than an import of the catalogue, because this is a
+   * question about what is WRITTEN: the merged object would let an id from
+   * another namespace stand in for a missing one.
+   */
+  const germanFor = (id: string, text: string): string | undefined => {
+    const at = text.indexOf(`'${id}':`);
+    if (at === -1) return undefined;
+    const rest = text.slice(at + id.length + 3);
+    const opens = rest.indexOf("'");
+    if (opens === -1) return undefined;
+    let out = '';
+    for (let i = opens + 1; i < rest.length; i += 1) {
+      if (rest[i] === '\\') {
+        out += rest[i + 1];
+        i += 1;
+        continue;
+      }
+      if (rest[i] === "'") break;
+      out += rest[i];
+    }
+    return out;
+  };
+
+  it('carries every numeral the English carries', () => {
+    // Two digits and up. A single digit is „ein"/„eine" as often as „1" and would
+    // report a rephrasing as a fault; a year or a count is what this is for.
+    const NUMERALS = /\b\d{2,}\b/g;
+    const english = JSON.parse(readFileSync(join(CATALOGUE, '..', 'en.json'), 'utf8')) as Record<
+      string,
+      { defaultMessage: string }
+    >;
+    const catalogue = Object.fromEntries(german().map(({ name, text }) => [name, text]));
+
+    const faults: string[] = [];
+    let checked = 0;
+
+    for (const [id, { defaultMessage }] of Object.entries(english)) {
+      const namespace = id.split('.')[0]!;
+      if (!DRAWING_NAMESPACES.includes(namespace)) continue;
+      const numerals = [...new Set([...defaultMessage.matchAll(NUMERALS)].map((m) => m[0]))];
+      if (numerals.length === 0) continue;
+      checked += 1;
+      // The ID's own German and not the whole file. Reading the file was the
+      // first version and it could not fail: a figure deleted from one entry was
+      // still somewhere else in the same file, and the check agreed. Measured.
+      const text = germanFor(id, catalogue[`de/${namespace}.ts`] ?? '');
+      if (text === undefined) {
+        faults.push(`de/${namespace}.ts has no entry for ${id}`);
+        continue;
+      }
+      for (const numeral of numerals) {
+        if (!text.includes(numeral)) faults.push(`${id}: the German is missing ${numeral}`);
+      }
+    }
+
+    expect(checked).toBeGreaterThan(0);
+    expect(faults).toEqual([]);
+  });
+});
+
 const { module: DOCS } = collectDocs();
 const RECORDS = DOCS.decisions;
 const CHAIN = chainLayout(RECORDS, DOCS.strikes);
@@ -432,13 +578,22 @@ describe('the decisions drawing, against `adr/`', () => {
    * without rendering it, and the two fixed drawings have theirs typed. This one's
    * height is a function of the record count, so a number typed there would be the
    * old defect moved one file across.
+   *
+   * THE COUNT IS NOW A PLACEHOLDER, which is the same claim in two halves. The
+   * lede is a message descriptor since ADR 0052 §1 took the drawings' own words,
+   * so the sentence cannot carry the number as text in either language: what it
+   * carries is `{records}`, and `ledeValues` carries what goes in the hole. Both
+   * halves are asserted, because a lede that lost its placeholder and a
+   * `ledeValues` that lost its count are two different ways to print the wrong
+   * number, and each one passes the other's check.
    */
   it('publishes the size it computed, and the count in its lede', () => {
     const meta = META.find((diagram) => diagram.id === 'decisions');
     expect(meta).toBeDefined();
     expect(meta?.height).toBe(CHAIN.height);
     expect(meta?.width).toBe(CHAIN.width);
-    expect(meta?.lede.startsWith(`${RECORDS.length} records`)).toBe(true);
+    expect(meta?.lede.defaultMessage).toMatch(/^\{records\} records\b/);
+    expect(meta?.ledeValues?.records).toBe(RECORDS.length);
   });
 
   /**
