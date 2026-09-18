@@ -1,7 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
-import { filesUnder, floorFaults } from '@correctiv/prose-and-code';
+import { filesUnder, floorFaults, withoutComments } from '@correctiv/prose-and-code';
 
 /**
  * Guards the web target against the one failure mode that does not announce
@@ -86,13 +86,34 @@ function tabLabels(rel: string): string[] {
    * carry a `description` now, so the brace no longer follows the default and
    * three rows fell out — caught by the count below rather than passing quietly,
    * which is what that assertion is for.
+   *
+   * **A chunk is a region, so what is in the region has to be the code.** The first
+   * version of this read `id:` from anywhere inside the chunk, and a cold review
+   * walked straight past it: a comment saying `// Same as the native file, id:
+   * 'ui.tabDiscover', defaultMessage: 'Discover'.` above a descriptor whose real id
+   * had been changed to `ui.tabHome` left the check green and the web bar shipping
+   * two tabs called "Start" — the exact failure the assertion below says it catches.
+   * A cross-referencing comment is the natural thing to write here, because these
+   * two files are written out twice by hand precisely because nothing can be
+   * imported between them.
+   *
+   * Two guards, because each covers the other's gap. `withoutComments` takes out
+   * the prose; it truncates at a `//` inside a string literal, which is why it
+   * cannot be the only one. Anchoring `id:` and `defaultMessage:` to the start of a
+   * line rejects anything that follows a `//` or a ` * ` on the same line, which is
+   * every comment style in this repo but one — a bare line inside a block comment,
+   * which is what the stripper is for. A label that ever contains `//` costs a
+   * dropped row and therefore a red count, which is the loud failure.
    */
-  return block[1]
+  return withoutComments(block[1])
     .split(/\n(?=\s{2}\w+: \{)/)
     .map((chunk) => {
       const key = /^\s*(\w+):\s*\{/.exec(chunk);
-      const id = /\bid:\s*'([^']+)'/.exec(chunk);
-      const message = /\bdefaultMessage:\s*'((?:[^'\\]|\\.)*)'/.exec(chunk);
+      // Preceded by the descriptor's own opening brace or by nothing but the start
+      // of a line, which is the two layouts oxfmt produces and neither of the two a
+      // comment produces (`// …` and ` * …`).
+      const id = /(?:^|\{)\s*id:\s*'([^']+)'/m.exec(chunk);
+      const message = /(?:^|,)\s*defaultMessage:\s*\n?\s*'((?:[^'\\]|\\.)*)'/m.exec(chunk);
       return key && id && message ? `${key[1]}: ${id[1]} = ${message[1]}` : null;
     })
     .filter((row): row is string => row !== null);
