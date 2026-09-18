@@ -1,0 +1,148 @@
+{
+  "frame.copied": {
+    "defaultMessage": "Copied",
+    "description": "Announced in a live region for a second and a half after the address has been copied. Read aloud and never seen."
+  },
+  "frame.copyLink": {
+    "defaultMessage": "Copy this view as a link",
+    "description": "Both the copy button’s accessible name and its tooltip."
+  },
+  "frame.day.hide": {
+    "defaultMessage": "Put the day away"
+  },
+  "frame.day.hideTip": {
+    "defaultMessage": "The day · press to put it away"
+  },
+  "frame.day.show": {
+    "defaultMessage": "Show the day under the frame",
+    "description": "Says what pressing does while the timeline is away, and is both the button’s accessible name and its tooltip."
+  },
+  "frame.device": {
+    "defaultMessage": "Device",
+    "description": "The accessible name of the select that picks which device the app is framed at. The bar carries no labels above its fields."
+  },
+  "frame.height": {
+    "defaultMessage": "Height in CSS pixels"
+  },
+  "frame.more": {
+    "defaultMessage": "More frame controls: zoom, reload, open without the frame",
+    "description": "The accessible name of the button that unfolds the three controls that do not fit below 640px."
+  },
+  "frame.more.fold": {
+    "defaultMessage": "Fold away"
+  },
+  "frame.more.tip": {
+    "defaultMessage": "Zoom, reload, open without the frame"
+  },
+  "frame.orientation.landscape": {
+    "defaultMessage": "Landscape",
+    "description": "One of the two segments of the orientation control. A term of art."
+  },
+  "frame.orientation.landscapeTip": {
+    "defaultMessage": "Landscape · press to rotate",
+    "description": "The tooltip on the one-icon orientation toggle below 640px, saying which way the frame is up now."
+  },
+  "frame.orientation.legend": {
+    "defaultMessage": "Orientation",
+    "description": "The legend of the two-segment orientation control at 640px and up. Read aloud and not drawn."
+  },
+  "frame.orientation.portrait": {
+    "defaultMessage": "Portrait",
+    "description": "One of the two segments of the orientation control. A term of art."
+  },
+  "frame.orientation.portraitTip": {
+    "defaultMessage": "Portrait · press to rotate",
+    "description": "The tooltip on the one-icon orientation toggle below 640px, saying which way the frame is up now."
+  },
+  "frame.orientation.toLandscape": {
+    "defaultMessage": "Switch to landscape"
+  },
+  "frame.orientation.toPortrait": {
+    "defaultMessage": "Switch to portrait"
+  },
+  "frame.raw": {
+    "defaultMessage": "Open the app on its own, without the frame",
+    "description": "The accessible name of the button that leaves this site for the app itself. frame.raw.tip is the shorter tooltip beside it."
+  },
+  "frame.raw.devTip": {
+    "defaultMessage": "Open the app without the frame · a dev server applies no base path, so this lands on the app’s 404"
+  },
+  "frame.raw.tip": {
+    "defaultMessage": "Open the app without the frame"
+  },
+  "frame.reload": {
+    "defaultMessage": "Reload the frame",
+    "description": "Both the reload button’s accessible name and its tooltip."
+  },
+  "frame.route": {
+    "defaultMessage": "Route",
+    "description": "The accessible name of the field the app’s address is typed into."
+  },
+  "frame.toolbar": {
+    "defaultMessage": "Frame",
+    "description": "The accessible name of the whole control bar above the framed app. Read aloud and never seen."
+  },
+  "frame.width": {
+    "defaultMessage": "Width in CSS pixels"
+  },
+  "frame.zoom": {
+    "defaultMessage": "Zoom",
+    "description": "The accessible name of the select that scales the frame."
+  },
+  "frame.zoom.fit": {
+    "defaultMessage": "Fit",
+    "description": "The one option of the zoom select that is a word rather than a percentage: scale the frame to whatever room the stage has."
+  },
+  "home.block.empty": {
+    "defaultMessage": "Draws nothing here.",
+    "description": "Stands under a block that measured no height at all, in place of an empty box that would read as a block that is broken."
+  },
+  "home.block.unknown": {
+    "defaultMessage": "Not drawn: this app has no module named <name>{module}</name>.",
+    "description": "Stands in for a block whose module this app has no renderer for, which happens while the document is ahead of the app. {module} is the word the document used, drawn in a monospace face."
+  },
+  "home.palette.addHere": {
+    "defaultMessage": "Add a block {where}",
+    "description": "The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as \"at the top of the day\" or \"after the lead article\"."
+  },
+  "home.palette.addModule": {
+    "defaultMessage": "Add {name}. {what}",
+    "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
+  },
+  "home.palette.lead": {
+    "defaultMessage": "It goes {where}. Every module the app holds is offered; the frame beside this is where an arrangement is judged, not this list.",
+    "description": "The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the top of the day\"."
+  },
+  "home.palette.title": {
+    "defaultMessage": "Add a block",
+    "description": "The heading of the dialog that hairline opens. home.palette.addHere is the hairline’s own name and says where as well; this one is read under it and does not."
+  },
+  "home.timeline.addPoint": {
+    "defaultMessage": "Make this minute a moment",
+    "description": "The accessible name of the button that names the playhead’s minute as a moment of the day. home.timeline.addPointShort is the same button’s visible word, which goes below 640px."
+  },
+  "home.timeline.addPointShort": {
+    "defaultMessage": "Point here",
+    "description": "The visible word on the button whose accessible name is home.timeline.addPoint. It has an icon beside it and a whole sentence would not fit."
+  },
+  "home.timeline.heading": {
+    "defaultMessage": "The day",
+    "description": "The heading of the track under the frame. Read aloud and never seen."
+  },
+  "home.timeline.live": {
+    "defaultMessage": "Live",
+    "description": "The button that gives the app its own clock back, drawn beside the track. A term of art, and a different state from a simulated time that happens to be now."
+  },
+  "home.timeline.momentDrag": {
+    "defaultMessage": "The moment at {time}, drag to move it",
+    "description": "The accessible name of one stop on the track while the home tool is open and the stop can be moved. {time} is the moment’s time of day, as 18:30."
+  },
+  "home.timeline.momentGo": {
+    "defaultMessage": "Go to the moment at {time}",
+    "description": "The accessible name of one stop on the track while the home tool is shut, when pressing it only moves the playhead. {time} is the moment’s time of day, as 18:30."
+  },
+  "home.timeline.time": {
+    "defaultMessage": "The time the frame is showing",
+    "description": "The label of the time field beside the track. Read aloud and never seen."
+  }
+}

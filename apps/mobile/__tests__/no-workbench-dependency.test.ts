@@ -208,10 +208,29 @@ const ROOT_SCRIPTS: Record<string, string> =
     }
   ).scripts ?? {};
 
-/** `npm run <name>`, whatever flags are arranged around it. */
+/**
+ * `npm run <name>`, whatever flags are arranged around it — but only the ROOT's
+ * script of that name.
+ *
+ * **`-w` changes which script is meant, and reading past it is a false positive
+ * with teeth.** `npm run i18n:extract -w @correctiv/workbench` runs the
+ * WORKBENCH's `i18n:extract`. The root has a script of the same name that runs the
+ * app's, so without this the root's `workbench:i18n:extract` was read as running
+ * the app, and a script that only ever touches the workbench was reported as the
+ * app reaching into it. Measured on 2026-09-18, when it refused exactly that.
+ *
+ * Narrow on purpose. A command with no `-w` is unchanged, and so is one whose `-w`
+ * names the app: `npm run build -w @correctiv/mobile` still counts, because there
+ * the workspace and the rule agree. Only a command that sends the script somewhere
+ * else stops counting as running this one.
+ */
 function runsScript(command: string, script: string): boolean {
   const name = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`\\bnpm\\b[^&|;\\n]*?\\brun\\b\\s+["']?${name}(?![\\w:.-])`).test(command);
+  if (!new RegExp(`\\bnpm\\b[^&|;\\n]*?\\brun\\b\\s+["']?${name}(?![\\w:.-])`).test(command)) {
+    return false;
+  }
+  const workspace = /\s(?:-w|--workspace(?:=|\s))\s*["']?(@?[\w./@-]+)/.exec(command);
+  return workspace === null || /mobile/.test(workspace[1] ?? '');
 }
 
 /**

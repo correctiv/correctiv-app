@@ -1,5 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { defineMessages } from 'react-intl';
+
+import { useWorkbenchIntl } from '../../i18n/Localisation';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 
@@ -41,6 +44,56 @@ import { HomeBlock } from './HomeBlock';
 /** How tall a specimen may be before it is cut off, and why it may be cut off at all. */
 const SPECIMEN = 'max-h-[13rem]';
 
+/**
+ * Everything the palette says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/home.ts`.
+ *
+ * Two of the values these take are not this file's to translate. `where` comes from
+ * `whereAt` in `./document.ts`, and `name` and `what` from `MODULE_LABELS` in the same
+ * module: English prose, handed in as a value, so a German mark reads German around an
+ * English fragment until those two tables are descriptors as well.
+ *
+ * **And all four are formatted under the APP's provider, not this site's.**
+ * `HomeDocument` mounts one `AppHost` around the whole block list, both `InsertMark`
+ * call sites are inside it, and `AppHost` mounts `AppEnvironment`, which mounts the
+ * app's own `IntlProvider` (locale `de`, the app's catalogue). So the nearest provider
+ * is the app's, none of these ids is in its catalogue, and each renders its English
+ * `defaultMessage` and reports nothing — `vite.app.mjs` defines `__DEV__` false for
+ * this site, and the app's `onError` throws only with it. Measured on the dev server
+ * with the site in German: the bar above the frame read „Rahmen“ while the mark below
+ * it read "Add a block at the top of the day". That is what the mark said before these
+ * descriptors existed, so nothing changed today; what it costs is that the German
+ * beside them is inert. Nothing here can fix it: the bridge belongs in
+ * `components/AppHost.tsx`, which is where the second provider is mounted.
+ */
+const COPY = defineMessages({
+  addHere: {
+    id: 'home.palette.addHere',
+    defaultMessage: 'Add a block {where}',
+    description:
+      'The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as "at the top of the day" or "after the lead article".',
+  },
+  title: {
+    id: 'home.palette.title',
+    defaultMessage: 'Add a block',
+    description:
+      'The heading of the dialog that hairline opens. home.palette.addHere is the hairline’s own name and says where as well; this one is read under it and does not.',
+  },
+  lead: {
+    id: 'home.palette.lead',
+    defaultMessage:
+      'It goes {where}. Every module the app holds is offered; the frame beside this is where an arrangement is judged, not this list.',
+    description:
+      'The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as "at the top of the day".',
+  },
+  addModule: {
+    id: 'home.palette.addModule',
+    defaultMessage: 'Add {name}. {what}',
+    description:
+      'The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile.',
+  },
+});
+
 export function InsertMark({
   where,
   deviceWidth,
@@ -62,6 +115,7 @@ export function InsertMark({
   dropping?: boolean;
   onAdd: (module: string) => void;
 }) {
+  const intl = useWorkbenchIntl();
   const [open, setOpen] = useState(false);
 
   return (
@@ -76,7 +130,7 @@ export function InsertMark({
         */}
         <button
           type="button"
-          aria-label={`Add a block ${where}`}
+          aria-label={intl.formatMessage(COPY.addHere, { where })}
           className="group relative flex h-s w-full shrink-0 items-center focus-visible:outline-none"
         >
           {/*
@@ -112,10 +166,11 @@ export function InsertMark({
       </DialogTrigger>
 
       <DialogContent className="w-[min(60rem,92vw)]">
-        <DialogTitle className="text-l font-semibold text-on-canvas">Add a block</DialogTitle>
+        <DialogTitle className="text-l font-semibold text-on-canvas">
+          {intl.formatMessage(COPY.title)}
+        </DialogTitle>
         <DialogDescription className="mt-3xs text-s leading-relaxed text-on-canvas-muted">
-          It goes {where}. Every module the app holds is offered; the frame beside this is where an
-          arrangement is judged, not this list.
+          {intl.formatMessage(COPY.lead, { where })}
         </DialogDescription>
 
         {/*
@@ -166,6 +221,7 @@ function Specimen({
   deviceWidth: number;
   onPick: () => void;
 }) {
+  const intl = useWorkbenchIntl();
   const { name, what } = moduleLabel(module);
   const section: HomeSection = { id: `palette-${module}`, module };
 
@@ -193,9 +249,7 @@ function Specimen({
         onClick={onPick}
         className="peer absolute inset-0 z-10 rounded-md focus-visible:outline-none"
       >
-        <span className="sr-only">
-          Add {name}. {what}
-        </span>
+        <span className="sr-only">{intl.formatMessage(COPY.addModule, { name, what })}</span>
       </button>
       <div
         // eslint-disable-next-line react/no-unknown-property

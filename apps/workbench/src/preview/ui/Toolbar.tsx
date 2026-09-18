@@ -10,6 +10,9 @@ import {
   RotateCw,
   X,
 } from 'lucide-react';
+import { defineMessages } from 'react-intl';
+
+import { useWorkbenchIntl } from '../../i18n/Localisation';
 
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
@@ -22,6 +25,122 @@ import { governs } from '../home/document';
 import { ROUTES } from '../routes';
 import { frameSize, type PreviewState } from '../state';
 import type { Status } from '../api';
+
+/**
+ * Everything this bar says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/frame.ts`.
+ *
+ * `frame.*` and not `home.*`: these are the frame's own controls — which device, which
+ * way up, which route — and the home tool that borrows the row beside them has a
+ * namespace of its own. The bar is one row tall and shows almost no words, so most of
+ * what is here is an accessible name or a tooltip rather than a label anybody reads.
+ */
+const COPY = defineMessages({
+  toolbar: {
+    id: 'frame.toolbar',
+    defaultMessage: 'Frame',
+    description:
+      'The accessible name of the whole control bar above the framed app. Read aloud and never seen.',
+  },
+  device: {
+    id: 'frame.device',
+    defaultMessage: 'Device',
+    description:
+      'The accessible name of the select that picks which device the app is framed at. The bar carries no labels above its fields.',
+  },
+  width: { id: 'frame.width', defaultMessage: 'Width in CSS pixels' },
+  height: { id: 'frame.height', defaultMessage: 'Height in CSS pixels' },
+  dayHide: { id: 'frame.day.hide', defaultMessage: 'Put the day away' },
+  dayShow: {
+    id: 'frame.day.show',
+    defaultMessage: 'Show the day under the frame',
+    description:
+      'Says what pressing does while the timeline is away, and is both the button’s accessible name and its tooltip.',
+  },
+  dayHideTip: { id: 'frame.day.hideTip', defaultMessage: 'The day · press to put it away' },
+  toPortrait: { id: 'frame.orientation.toPortrait', defaultMessage: 'Switch to portrait' },
+  toLandscape: { id: 'frame.orientation.toLandscape', defaultMessage: 'Switch to landscape' },
+  portraitTip: {
+    id: 'frame.orientation.portraitTip',
+    defaultMessage: 'Portrait · press to rotate',
+    description:
+      'The tooltip on the one-icon orientation toggle below 640px, saying which way the frame is up now.',
+  },
+  landscapeTip: {
+    id: 'frame.orientation.landscapeTip',
+    defaultMessage: 'Landscape · press to rotate',
+    description:
+      'The tooltip on the one-icon orientation toggle below 640px, saying which way the frame is up now.',
+  },
+  orientation: {
+    id: 'frame.orientation.legend',
+    defaultMessage: 'Orientation',
+    description:
+      'The legend of the two-segment orientation control at 640px and up. Read aloud and not drawn.',
+  },
+  portrait: {
+    id: 'frame.orientation.portrait',
+    defaultMessage: 'Portrait',
+    description: 'One of the two segments of the orientation control. A term of art.',
+  },
+  landscape: {
+    id: 'frame.orientation.landscape',
+    defaultMessage: 'Landscape',
+    description: 'One of the two segments of the orientation control. A term of art.',
+  },
+  more: {
+    id: 'frame.more',
+    defaultMessage: 'More frame controls: zoom, reload, open without the frame',
+    description:
+      'The accessible name of the button that unfolds the three controls that do not fit below 640px.',
+  },
+  moreTip: { id: 'frame.more.tip', defaultMessage: 'Zoom, reload, open without the frame' },
+  moreFold: { id: 'frame.more.fold', defaultMessage: 'Fold away' },
+  zoom: {
+    id: 'frame.zoom',
+    defaultMessage: 'Zoom',
+    description: 'The accessible name of the select that scales the frame.',
+  },
+  zoomFit: {
+    id: 'frame.zoom.fit',
+    defaultMessage: 'Fit',
+    description:
+      'The one option of the zoom select that is a word rather than a percentage: scale the frame to whatever room the stage has.',
+  },
+  route: {
+    id: 'frame.route',
+    defaultMessage: 'Route',
+    description: 'The accessible name of the field the app’s address is typed into.',
+  },
+  reload: {
+    id: 'frame.reload',
+    defaultMessage: 'Reload the frame',
+    description: 'Both the reload button’s accessible name and its tooltip.',
+  },
+  raw: {
+    id: 'frame.raw',
+    defaultMessage: 'Open the app on its own, without the frame',
+    description:
+      'The accessible name of the button that leaves this site for the app itself. frame.raw.tip is the shorter tooltip beside it.',
+  },
+  rawTip: { id: 'frame.raw.tip', defaultMessage: 'Open the app without the frame' },
+  rawDevTip: {
+    id: 'frame.raw.devTip',
+    defaultMessage:
+      'Open the app without the frame · a dev server applies no base path, so this lands on the app’s 404',
+  },
+  copyLink: {
+    id: 'frame.copyLink',
+    defaultMessage: 'Copy this view as a link',
+    description: 'Both the copy button’s accessible name and its tooltip.',
+  },
+  copied: {
+    id: 'frame.copied',
+    defaultMessage: 'Copied',
+    description:
+      'Announced in a live region for a second and a half after the address has been copied. Read aloud and never seen.',
+  },
+});
 
 /** The context bar's one field shape, so its selects and inputs agree. */
 const FIELD =
@@ -37,11 +156,18 @@ interface Props {
   onRaw: () => void;
 }
 
-const ZOOMS: { value: string; label: string }[] = [
+/**
+ * The scales the frame offers.
+ *
+ * Three of them are a number and read the same in every language. `fit` is a word, so
+ * it carries no label of its own here and `COPY.zoomFit` says it where the option is
+ * drawn; a literal left in this table would be an English string nothing renders.
+ */
+const ZOOMS: { value: string; label: string | null }[] = [
   { value: '0.5', label: '50%' },
   { value: '0.75', label: '75%' },
   { value: '1', label: '100%' },
-  { value: 'fit', label: 'Fit' },
+  { value: 'fit', label: null },
 ];
 
 /**
@@ -88,6 +214,7 @@ export function Toolbar({
   onReload,
   onRaw,
 }: Props) {
+  const intl = useWorkbenchIntl();
   const size = frameSize(state);
   // Left shut until asked, and not reset when the frame's own state changes —
   // it is a fact about what this bar is showing, not about the frame.
@@ -122,11 +249,11 @@ export function Toolbar({
     <div
       className="flex min-w-0 flex-1 flex-wrap items-center gap-2xs"
       role="toolbar"
-      aria-label="Frame"
+      aria-label={intl.formatMessage(COPY.toolbar)}
     >
       <select
         className={cn(FIELD, 'shrink-0 max-w-[7rem] sm:max-w-[13rem]')}
-        aria-label="Device"
+        aria-label={intl.formatMessage(COPY.device)}
         value={state.device}
         onChange={(e) =>
           onChange({
@@ -161,7 +288,7 @@ export function Toolbar({
             type="number"
             min={240}
             max={2400}
-            aria-label="Width in CSS pixels"
+            aria-label={intl.formatMessage(COPY.width)}
             value={size.w}
             onChange={(e) =>
               onChange({
@@ -180,7 +307,7 @@ export function Toolbar({
             type="number"
             min={320}
             max={2400}
-            aria-label="Height in CSS pixels"
+            aria-label={intl.formatMessage(COPY.height)}
             value={size.h}
             onChange={(e) =>
               onChange({
@@ -202,14 +329,14 @@ export function Toolbar({
               size="icon"
               aria-pressed={state.timeline}
               className="shrink-0"
-              aria-label={state.timeline ? 'Put the day away' : 'Show the day under the frame'}
+              aria-label={intl.formatMessage(state.timeline ? COPY.dayHide : COPY.dayShow)}
               onClick={() => onChange({ timeline: !state.timeline })}
             >
               <CalendarClock aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {state.timeline ? 'The day · press to put it away' : 'Show the day under the frame'}
+            {intl.formatMessage(state.timeline ? COPY.dayHideTip : COPY.dayShow)}
           </TooltipContent>
         </Tooltip>
       )}
@@ -221,7 +348,7 @@ export function Toolbar({
               variant="ghost"
               size="icon"
               className="shrink-0 sm:hidden"
-              aria-label={landscape ? 'Switch to portrait' : 'Switch to landscape'}
+              aria-label={intl.formatMessage(landscape ? COPY.toPortrait : COPY.toLandscape)}
               onClick={() => onChange({ landscape: !state.landscape })}
             >
               {landscape ? (
@@ -232,7 +359,7 @@ export function Toolbar({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {landscape ? 'Landscape' : 'Portrait'} · press to rotate
+            {intl.formatMessage(landscape ? COPY.landscapeTip : COPY.portraitTip)}
           </TooltipContent>
         </Tooltip>
       )}
@@ -240,12 +367,12 @@ export function Toolbar({
       {!host && (
         <Segmented
           name="orientation"
-          legend="Orientation"
+          legend={intl.formatMessage(COPY.orientation)}
           className="hidden shrink-0 sm:block"
           value={landscape ? 'landscape' : 'portrait'}
           options={[
-            { value: 'portrait', label: 'Portrait' },
-            { value: 'landscape', label: 'Landscape' },
+            { value: 'portrait', label: intl.formatMessage(COPY.portrait) },
+            { value: 'landscape', label: intl.formatMessage(COPY.landscape) },
           ]}
           // A radio group fires only when the value actually changes, so the one
           // thing ever being asked for here is the other way round.
@@ -269,21 +396,21 @@ export function Toolbar({
             size="icon"
             aria-pressed={moreOpen}
             className="shrink-0 sm:hidden"
-            aria-label="More frame controls: zoom, reload, open without the frame"
+            aria-label={intl.formatMessage(COPY.more)}
             onClick={() => setMoreOpen((open) => !open)}
           >
             {moreOpen ? <X aria-hidden="true" /> : <MoreHorizontal aria-hidden="true" />}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          {moreOpen ? 'Fold away' : 'Zoom, reload, open without the frame'}
+          {intl.formatMessage(moreOpen ? COPY.moreFold : COPY.moreTip)}
         </TooltipContent>
       </Tooltip>
 
       {!host && (
         <select
           className={cn(FIELD, 'shrink-0', !moreOpen && 'max-sm:hidden')}
-          aria-label="Zoom"
+          aria-label={intl.formatMessage(COPY.zoom)}
           value={String(state.zoom)}
           onChange={(e) =>
             onChange({ zoom: e.target.value === 'fit' ? 'fit' : Number(e.target.value) })
@@ -291,7 +418,7 @@ export function Toolbar({
         >
           {ZOOMS.map((z) => (
             <option key={z.value} value={z.value}>
-              {z.label}
+              {z.label ?? intl.formatMessage(COPY.zoomFit)}
             </option>
           ))}
         </select>
@@ -303,7 +430,7 @@ export function Toolbar({
         className={cn(FIELD, 'min-w-[5.5rem] flex-1 font-mono sm:min-w-[8rem]')}
         type="text"
         list="routes"
-        aria-label="Route"
+        aria-label={intl.formatMessage(COPY.route)}
         spellCheck={false}
         autoComplete="off"
         value={routeField}
@@ -332,13 +459,13 @@ export function Toolbar({
             variant="ghost"
             size="icon"
             className={cn(!moreOpen && 'max-sm:hidden')}
-            aria-label="Reload the frame"
+            aria-label={intl.formatMessage(COPY.reload)}
             onClick={onReload}
           >
             <RotateCw aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Reload the frame</TooltipContent>
+        <TooltipContent side="bottom">{intl.formatMessage(COPY.reload)}</TooltipContent>
       </Tooltip>
 
       {/*
@@ -357,16 +484,14 @@ export function Toolbar({
             variant="ghost"
             size="icon"
             className={cn(!moreOpen && 'max-sm:hidden')}
-            aria-label="Open the app on its own, without the frame"
+            aria-label={intl.formatMessage(COPY.raw)}
             onClick={onRaw}
           >
             <ExternalLink aria-hidden="true" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          {status.handle
-            ? 'Open the app without the frame · a dev server applies no base path, so this lands on the app’s 404'
-            : 'Open the app without the frame'}
+          {intl.formatMessage(status.handle ? COPY.rawDevTip : COPY.rawTip)}
         </TooltipContent>
       </Tooltip>
     </div>
@@ -388,6 +513,7 @@ export function Toolbar({
  * point of it is that a knob moved and the link changed with it.
  */
 export function LinkBar({ hash }: { hash: string }) {
+  const intl = useWorkbenchIntl();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -420,7 +546,7 @@ export function LinkBar({ hash }: { hash: string }) {
             variant="ghost"
             size="icon"
             className="size-[1.375rem] shrink-0"
-            aria-label="Copy this view as a link"
+            aria-label={intl.formatMessage(COPY.copyLink)}
             onClick={() => {
               void navigator.clipboard.writeText(window.location.href);
               setCopied(true);
@@ -433,11 +559,11 @@ export function LinkBar({ hash }: { hash: string }) {
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top">Copy this view as a link</TooltipContent>
+        <TooltipContent side="top">{intl.formatMessage(COPY.copyLink)}</TooltipContent>
       </Tooltip>
       {/* `output`, not a span with `role="status"`: same live region, and the
           element the linter and the platform both name for it. */}
-      <output className="sr-only">{copied ? 'Copied' : ''}</output>
+      <output className="sr-only">{copied ? intl.formatMessage(COPY.copied) : ''}</output>
     </span>
   );
 }

@@ -1,16 +1,34 @@
-import { Moon, Sun, SunMoon } from 'lucide-react';
+import { Languages, Moon, Sun, SunMoon } from 'lucide-react';
 
 import docsModule from 'virtual:docs';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog';
 import { cn } from '../lib/cn';
 import { MEASURED_ON } from '../../content/sources.manifest';
 import { ageInWords } from '../lib/measured';
+import type { Language } from '../i18n/language';
 import type { Appearance } from '../theme';
 
 const MODES: { value: Appearance; label: string; hint: string; Icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', hint: 'Always light', Icon: Sun },
   { value: 'dark', label: 'Dark', hint: 'Always dark', Icon: Moon },
   { value: 'system', label: 'System', hint: 'Follow the device', Icon: SunMoon },
+];
+
+/**
+ * The two languages, named in themselves rather than in the reader's.
+ *
+ * A person looking for German does not read "German", they read "Deutsch". That is
+ * the one convention a language picker has that no other picker does, and it is why
+ * these labels are NOT message descriptors: translating them would mean a German
+ * reader sees "Englisch", which is the wrong answer to the only question this
+ * control asks.
+ *
+ * The hint beside each one is this site's prose and follows the language setting
+ * like everything else.
+ */
+const TONGUES: { value: Language; label: string; hint: string }[] = [
+  { value: 'en', label: 'English', hint: 'The language every string is written in' },
+  { value: 'de', label: 'Deutsch', hint: 'Die Werkzeuge, nicht die Dokumente' },
 ];
 
 const SHORTCUTS: [string, string][] = [
@@ -37,11 +55,15 @@ export function Settings({
   onOpenChange,
   appearance,
   onAppearance,
+  language,
+  onLanguage,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appearance: Appearance;
   onAppearance: (next: Appearance) => void;
+  language: Language;
+  onLanguage: (next: Language) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,6 +118,55 @@ export function Settings({
                 <span className="col-start-2 row-start-1 text-m font-medium">{mode.label}</span>
                 <span className="col-start-2 row-start-2 text-s text-on-canvas-muted">
                   {mode.hint}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        </section>
+
+        <section className="mt-l" aria-labelledby="s-language">
+          <h3 id="s-language" className={SECTION}>
+            Language · Sprache
+          </h3>
+          {/*
+            The tools, not the documents. The records, the reference and the
+            repository's own Markdown stay English, because the audience that reads
+            them reads English by AGENTS.md's rule. What follows this setting is what
+            somebody outside development uses, which today is the home configurator
+            and the controls around the frame (ADR 0050 §2).
+
+            The heading carries both languages because it is the one control a reader
+            has to find in a language they may not be reading yet.
+          */}
+          <fieldset className="mt-xs grid gap-2xs sm:grid-cols-2">
+            <legend className="sr-only">Language · Sprache</legend>
+            {TONGUES.map((tongue) => (
+              <label
+                key={tongue.value}
+                lang={tongue.value}
+                className={cn(
+                  'grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-x-xs',
+                  'rounded-md border p-xs transition-colors',
+                  'border-stroke text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
+                  'has-[:checked]:border-accent has-[:checked]:bg-surface has-[:checked]:text-on-canvas',
+                  'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="language"
+                  value={tongue.value}
+                  checked={language === tongue.value}
+                  onChange={() => onLanguage(tongue.value)}
+                  className="sr-only"
+                />
+                <Languages
+                  aria-hidden="true"
+                  className="col-start-1 row-start-1 row-span-2 size-[1rem] shrink-0 self-center"
+                />
+                <span className="col-start-2 row-start-1 text-m font-medium">{tongue.label}</span>
+                <span className="col-start-2 row-start-2 text-s text-on-canvas-muted">
+                  {tongue.hint}
                 </span>
               </label>
             ))}
