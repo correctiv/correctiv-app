@@ -183,7 +183,26 @@ describe('what a package says it exports', () => {
     expect(missing).toEqual([]);
   });
 
-  it('can produce a specifier for every file under a wildcard', () => {
+  /**
+   * Every FILE under the wildcard, found by walking rather than by listing.
+   *
+   * The first version of this listed the directory's own entries and asked whether
+   * each name ended in the suffix. That reports a subdirectory as unreachable, and
+   * a subdirectory usually is not: under `./src/*.ts`, `src/neu/index.ts` is reached
+   * perfectly well as `neu/index`. A check that fires when nothing is wrong teaches
+   * people to merge past it, so it walks to the files and asks about those.
+   *
+   * What it catches is the half of the catalogue's trap that was a real hole:
+   * `src/en.json` under `./src/*.ts` is a file no specifier can name.
+   */
+  it('can name every file under a wildcard', () => {
+    const filesUnderDirectory = (directory: string, prefix = ''): string[] =>
+      readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory()
+          ? filesUnderDirectory(join(directory, entry.name), `${prefix}${entry.name}/`)
+          : [`${prefix}${entry.name}`],
+      );
+
     const unreachable = manifests.flatMap(({ path, manifest }) =>
       Object.entries(manifest.exports ?? {})
         .filter(([key]) => key.includes('*'))
@@ -195,15 +214,54 @@ describe('what a package says it exports', () => {
           if (!existsSync(directory)) {
             return [`${manifest.name}: "${key}" → ${prefix}*, and ${prefix} is not there`];
           }
-          return readdirSync(directory)
-            .filter((entry) => !entry.endsWith(suffix))
+          return filesUnderDirectory(directory)
+            .filter((file) => !file.endsWith(suffix))
             .map(
-              (entry) =>
-                `${manifest.name}: ${prefix}${entry} cannot be reached through "${key}": "${target}"`,
+              (file) =>
+                `${manifest.name}: ${prefix}${file} can be named by no specifier of "${key}": "${target}"`,
             );
         }),
     );
 
     expect(unreachable).toEqual([]);
+  });
+
+  /**
+   * And a directory under the wildcard is reachable by its own bare name.
+   *
+   * This is the other half of the trap, and the half a file-by-file walk cannot
+   * see. `@correctiv/catalogue/de` is what somebody writes when they want the
+   * German; under `./src/*.ts` it maps to `src/de.ts`, which is not a file, while
+   * `de/index` maps correctly — so every FILE is reachable and the specifier a
+   * person would actually type is not.
+   *
+   * The rule that follows is short: a wildcard over a directory holding
+   * subdirectories must not append anything. `@correctiv/app-core` and
+   * `@correctiv/catalogue` write `./src/*` for that reason; `@correctiv/design-tokens`
+   * writes `./src/*.ts` and may, because its `src/` is flat. The day it is not, this
+   * says which of the two spellings it has to move to.
+   */
+  it('reaches a directory under a wildcard by its own name', () => {
+    const offenders = manifests.flatMap(({ path, manifest }) =>
+      Object.entries(manifest.exports ?? {})
+        .filter(([key]) => key.includes('*'))
+        .flatMap(([key, target]) => {
+          const star = target.indexOf('*');
+          const prefix = target.slice(0, star);
+          const suffix = target.slice(star + 1);
+          if (suffix === '') return [];
+          const directory = join(dirname(path), prefix);
+          if (!existsSync(directory)) return [];
+          return readdirSync(directory, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map(
+              (entry) =>
+                `${manifest.name}: "${key}": "${target}" appends \`${suffix}\`, so ${prefix}${entry.name} ` +
+                `is only reachable as ${entry.name}/<file>. Drop the suffix, as app-core does.`,
+            );
+        }),
+    );
+
+    expect(offenders).toEqual([]);
   });
 });
