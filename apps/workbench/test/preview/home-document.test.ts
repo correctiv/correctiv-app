@@ -19,7 +19,6 @@ import {
   HOME_TIME_KEY,
   inheritedAt,
   added,
-  deltaTo,
   mintId,
   moduleLabel,
   MODULE_LABELS,
@@ -252,33 +251,22 @@ describe('the vocabulary the editor offers', () => {
   });
 
   /**
-   * The arithmetic that is wrong in every first attempt at a drag, and wrong by exactly
-   * one place — the amount nobody notices in a screenshot.
+   * The property a drop rests on, now that there is no conversion in front of it.
+   *
+   * ADR 0053 §2 replaced the gap-to-distance arithmetic — `deltaTo`, which was wrong by
+   * exactly one place in every first attempt and by the amount nobody notices in a
+   * screenshot — with a slot counted among the OTHER blocks. `carry.ts` answers that slot
+   * and has its own test; what is checked here is the other half of the claim, that
+   * `moved` takes it unconverted and puts the block exactly there.
    */
-  it('turns a gap into a distance, allowing for the block leaving its own place', () => {
-    // Moving UP: the gaps above the block do not shift, so the gap IS the destination.
-    expect(deltaTo(5, 0)).toBe(-5);
-    expect(deltaTo(5, 4)).toBe(-1);
-    // Moving DOWN: the block leaves first, so every gap below it has shifted up by one.
-    expect(deltaTo(5, 7)).toBe(1);
-    expect(deltaTo(5, 12)).toBe(6);
-    // The two gaps either side of the block itself are both "stay where you are".
-    expect(deltaTo(5, 5)).toBe(0);
-    expect(deltaTo(5, 6)).toBe(0);
-
-    // And the property that matters, over the whole shipped document: dropping a block
-    // into gap `g` puts it where a reader pointed.
+  it('lands a block at the slot it was dropped in, counted among the other blocks', () => {
     const order = ids(SHIPPED);
+
     for (let from = 0; from < order.length; from += 1) {
-      for (let gap = 0; gap <= order.length; gap += 1) {
-        const after = ids(moved(SHIPPED, order[from]!, deltaTo(from, gap)));
-        const rest = order.filter((id) => id !== order[from]);
-        const want = [
-          ...rest.slice(0, gap > from ? gap - 1 : gap),
-          order[from]!,
-          ...rest.slice(gap > from ? gap - 1 : gap),
-        ];
-        expect(after).toEqual(want);
+      const rest = order.filter((id) => id !== order[from]);
+      for (let slot = 0; slot < order.length; slot += 1) {
+        const after = ids(moved(SHIPPED, order[from]!, slot - from));
+        expect(after).toEqual([...rest.slice(0, slot), order[from]!, ...rest.slice(slot)]);
       }
     }
   });

@@ -8,6 +8,7 @@ import {
   GripVertical,
   RotateCcw,
   Save,
+  SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
 import {
@@ -32,12 +33,15 @@ import { SOURCES } from '../../../content/sources.manifest';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { say } from '../../i18n/messages';
 import { AppHost } from '../../components/AppHost';
+import { scroller } from '../scroller';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { DEFAULT_DEVICE, preset } from '../devices';
 import { timeOf } from './clock';
 import type { PreviewState } from '../state';
+import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
 import { InsertMark } from './Palette';
 import { minuteFrom, openedAt, parseMinute, STEP } from './minutes';
@@ -62,7 +66,6 @@ import {
   withHidden,
   withoutMoment,
   blockName,
-  deltaTo,
   whereAt,
   withSetting,
   type CountSetting,
@@ -246,13 +249,13 @@ const COPY = defineMessages({
     id: 'home.row.off',
     defaultMessage: 'off',
     description:
-      'The badge on a block that is switched off at the point being edited, so it keeps its row and loses its drawing.',
+      'Read out for a block that is switched off at the point being edited. Since ADR 0053 §1 the block is still drawn, greyed and faded, so on screen this is a small mark in the gutter and the sentence exists for a reader who cannot see that it is grey.',
   },
   rowChanged: {
     id: 'home.row.changed',
     defaultMessage: 'changed',
     description:
-      'The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
+      'Read out for a block this moment changes something about. home.document.changed is the word beside the Save button and tools.tokens.changed the badge on an overridden colour; all three read the same in English. On screen this is a dot in the gutter, so the sentence is what carries it to somebody who cannot see the colour.',
   },
   switchOnAtStart: {
     id: 'home.row.switchOnAtStart',
@@ -296,17 +299,23 @@ const COPY = defineMessages({
     description:
       'Takes the block out of the document altogether, which is a different act from switching it off at an hour. {block} is the block’s own name, in English out of document.ts.',
   },
+  details: {
+    id: 'home.row.details',
+    defaultMessage: 'Settings and details for {block}',
+    description:
+      'The accessible name of the button that opens a block’s popover: its name, what it draws, its id, and whatever settings its module declares. {block} is the block’s own name, in English out of document.ts.',
+  },
   offAtStart: {
     id: 'home.row.offAtStart',
     defaultMessage: 'Not on screen at the start of the day.',
     description:
-      'Stands where a switched-off block’s drawing would be, while the day’s start is being edited.',
+      'Says when a switched-off block is off, in its details popover. The block itself is drawn greyed since ADR 0053 §1, which says THAT it is off but not from when.',
   },
   offAt: {
     id: 'home.row.offAt',
     defaultMessage: 'Not on screen at {time}.',
     description:
-      'Stands where a switched-off block’s drawing would be, while a moment is being edited. {time} is the moment’s time of day, as 18:30.',
+      'The same, while a moment is being edited rather than the day’s start. {time} is the moment’s time of day, as 18:30.',
   },
 
   setHere: {
@@ -349,19 +358,58 @@ interface Carry {
    */
   pointer: number;
   id: string;
+  /** Where the block was in `layout.sections` when it was picked up. */
   from: number;
-  gap: number;
+  /**
+   * Where it would land, counted among the OTHER blocks, which is what `./carry.ts`
+   * answers and what `moved()` takes as a destination. It is also where the block is
+   * currently drawn, because ADR 0053 §2 draws the list in the order a release would
+   * produce.
+   */
+  slot: number;
+  /**
+   * How far down inside the block the pointer took hold of it.
+   *
+   * Without it the slot would be decided by the pointer rather than by the block, and
+   * `./carry.ts` records what that costs on a list of blocks this uneven: grabbing the
+   * hero halfway down put it two places below where it started before anything had moved.
+   */
+  grab: number;
+  /**
+   * The list as it rests, measured when the slot was last asked for.
+   *
+   * Held rather than re-measured during a render, because a render that measures is a
+   * render that can disagree with the one before it. Every row's offset comes out of this
+   * (`shiftFor`, `liftFor`), so the whole preview is one reading of the list.
+   */
+  rows: Drawn[];
   /**
    * Where the pointer was, so that a scroll can re-ask the question without a move.
    *
-   * The gap was recomputed on `pointermove` alone, so a wheel during a carry left the
-   * mark lit on a gap that had scrolled out of sight, and a release there dropped at it.
+   * The slot was recomputed on `pointermove` alone, so a wheel during a carry left the
+   * block drawn at a place that had scrolled out of sight, and a release there dropped at it.
    */
   y: number;
 }
 
-/** The dock's ground is `surface`, so a row inside it steps back to `canvas`. */
+/** The dock's ground is `surface`, so a card inside it steps back to `canvas`. */
 const CARD = 'rounded-md border border-stroke bg-canvas';
+
+/**
+ * The strip down the left of every block, which is the one thing the list keeps that the
+ * app has not got.
+ *
+ * ADR 0053 §1 makes the list the screen, and the hazard that comes with it is a list that
+ * is mistaken for the app — the frame is a foot to the right and it is the one that
+ * answers a tap. So the column is not flush with the panel: it stands beside a gutter
+ * carrying the handle and the two marks a person may not have to hover to see, and that
+ * gutter is what says, without a word, that this is an editor rather than a screen.
+ *
+ * A number because the block column is sized against it: `wide` below is the phone plus
+ * this, so a drawing at a scale of 1 leaves the marks their own room instead of standing
+ * under them.
+ */
+const GUTTER = 26;
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
@@ -463,9 +511,19 @@ export function HomeDocument({
    * Without it, and before the release outside the list became an abandon, a drag
    * somebody had thought better of had no way out but finding the original gap again.
    *
-   * **A scroll re-asks where the pointer is.** The gap was recomputed on `pointermove`
-   * alone, so a wheel during a carry left the mark lit on a gap that had scrolled away.
-   * Capture, because the panel is what scrolls and a scroll does not bubble.
+   * **A scroll re-asks where the pointer is.** The slot was recomputed on `pointermove`
+   * alone, so a wheel during a carry left the block drawn at a place that had scrolled
+   * away. Capture, because the panel is what scrolls and a scroll does not bubble.
+   *
+   * **And a block held at an edge scrolls the panel**, which is ADR 0053 §2's open point
+   * built. The pointer is captured for the length of a carry, so without this the only
+   * way to reach the far end of the day was a wheel, and on a touch screen there was no
+   * way at all. The speed is `scrollStep`, which is arithmetic and has a test; this is
+   * the frame loop around it.
+   *
+   * It re-asks nothing itself. Moving the panel fires the `scroll` above, which is
+   * already the line that recomputes the slot from the remembered pointer — so the list
+   * reorders under a hand that is holding still, which is the whole point of it.
    */
   useEffect(() => {
     if (carried === null) return;
@@ -474,15 +532,32 @@ export function HomeDocument({
     };
     const followed = () => {
       const held = carrying.current;
-      if (held !== null) carry({ ...held, gap: gapAt(held.y) });
+      if (held !== null) carry(aimed(held, held.y));
     };
+    /*
+     * The box found once per carry rather than once per frame: it cannot change while a
+     * pointer is down, and `scroller` walks and calls `getComputedStyle` on every ancestor.
+     */
+    const panel = scroller(list.current);
+    let frame = requestAnimationFrame(function tick() {
+      const held = carrying.current;
+      if (held === null) return;
+      if (panel !== null) {
+        const box = panel.getBoundingClientRect();
+        const step = scrollStep(held.y, { top: box.top, bottom: box.bottom });
+        if (step !== 0) panel.scrollTop += step;
+      }
+      frame = requestAnimationFrame(tick);
+    });
+
     window.addEventListener('keydown', abandon);
     window.addEventListener('scroll', followed, true);
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener('keydown', abandon);
       window.removeEventListener('scroll', followed, true);
     };
-    // `carry` and `gapAt` are rebuilt every render and close over nothing that changes
+    // `carry` and `aimed` are rebuilt every render and close over nothing that changes
     // while a pointer is down; what decides whether this listens at all is the carry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carried !== null]);
@@ -564,12 +639,56 @@ export function HomeDocument({
     return box === undefined || (x > box.left - 96 && x < box.right + 96);
   };
 
-  const gapAt = (y: number): number => {
-    const rows = list.current === null ? [] : [...list.current.children];
-    const above = rows.findIndex(
-      (row) => y < row.getBoundingClientRect().top + row.clientHeight / 2,
-    );
-    return above === -1 ? rows.length : above;
+  /**
+   * The list as it rests, and where its top edge is, at this instant.
+   *
+   * Measured on every move rather than once at the grab: a drawing inside a row can still
+   * finish measuring itself while a block is carried, and boxes read once would be stale
+   * by exactly the amount that makes a drop land one place out.
+   *
+   * **Heights from the boxes, tops summed from the heights.** Every row carries a
+   * `translateY` while a block is being carried (ADR 0053 §2), and a rect would have that
+   * folded in — asking the list where it is would then be asking it where this function
+   * last put it. The document's order does not change during a carry, so a running sum of
+   * the heights IS the resting layout, and a transform cannot disturb a height.
+   *
+   * List-RELATIVE, which is what makes a scroll during a carry free: the list moves with
+   * its own rows, so the same pointer over the same block gives the same numbers whatever
+   * the panel has scrolled to.
+   */
+  const measure = (): { rows: Drawn[]; listTop: number } | null => {
+    const node = list.current;
+    if (node === null) return null;
+
+    let top = 0;
+    const rows: Drawn[] = [...node.children].map((row) => {
+      const height = row.getBoundingClientRect().height;
+      const box = { top, height };
+      top += height;
+      return box;
+    });
+
+    return { rows, listTop: node.getBoundingClientRect().top };
+  };
+
+  /**
+   * The carry as it would be with the pointer at `y`: where the block lands, and the
+   * reading of the list that says so.
+   *
+   * The arithmetic on top of the measurement is `./carry.ts`, out there because a test in
+   * this package can run that module and cannot run this one. What is handed to it is the
+   * BLOCK's top edge and not the pointer's — `carry.ts` records what that difference cost
+   * on a list of blocks this uneven.
+   */
+  const aimed = (held: Carry, y: number): Carry => {
+    const seen = measure();
+    if (seen === null) return { ...held, y };
+    return {
+      ...held,
+      rows: seen.rows,
+      slot: slotFrom(seen.rows, held.from, y - seen.listTop - held.grab),
+      y,
+    };
   };
 
   /** Both at once, because one of them is for drawing and the other is for landing. */
@@ -597,34 +716,68 @@ export function HomeDocument({
        * picked the block up and the right-button release reordered the day — measured —
        * and a middle drag on Linux is the autoscroll gesture, which nobody means as an
        * edit. A second pointer while one is already carrying is refused outright rather
-       * than allowed to take over: taking over is the two-finger failure above.
+       * than allowed to take over: taking over is the two-finger failure `Carry` records.
        */
       if (event.button !== 0 || !event.isPrimary || carrying.current !== null) return;
       // Or the browser starts a text selection across the whole panel instead.
       event.preventDefault();
+      /*
+       * **The capture stays on the handle, and ADR 0053 §2 is what allows that.** A first
+       * version of §2 really reordered the list while a block was carried, and the handle
+       * lost the pointer on the first move that changed anything: React reorders keyed
+       * children with `insertBefore`, the DOM performs that as a remove and an insert, and
+       * Chrome releases an implicit capture the moment the capturing element is removed.
+       * Measured on the dev server — `lostpointercapture` fired, and the block followed the
+       * hand exactly once and then stopped. Nothing moves in the DOM now, so nothing here
+       * has to be defended against it.
+       */
       event.currentTarget.setPointerCapture(event.pointerId);
-      carry({ pointer: event.pointerId, id, from, gap: from, y: event.clientY });
+      /*
+       * Where inside the block the hand took hold of it. Read off the row rather than off
+       * the handle, because the handle is 16 pixels at the top of a block that can be four
+       * hundred tall and the block is the thing being positioned.
+       */
+      const row = event.currentTarget.closest('li');
+      const grab = row === null ? 0 : event.clientY - row.getBoundingClientRect().top;
+      const seen = measure();
+      carry({
+        pointer: event.pointerId,
+        id,
+        from,
+        slot: from,
+        grab,
+        rows: seen?.rows ?? [],
+        y: event.clientY,
+      });
     },
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
       const held = mine(event);
-      if (held !== null) carry({ ...held, gap: gapAt(event.clientY), y: event.clientY });
+      if (held !== null) carry(aimed(held, event.clientY));
     },
     onPointerUp: (event: PointerEvent<HTMLElement>) => {
       const held = mine(event);
-      carry(null);
       /*
        * Two things decide whether this is a drop or an abandon, and both are read from
        * the event rather than from what the last move left behind.
        *
-       * The gap is recomputed here, because a wheel between the last move and the release
+       * The slot is recomputed here, because a wheel between the last move and the release
        * moves every row without producing a move event. And a release away from the list
        * puts the block back: without that test, letting go anywhere at all reordered the
        * day, including out over the phone frame nine hundred pixels away — which is the
        * only way out of a drag somebody has started and thought better of, since ADR 0047
        * §1 gives the handle no key to press.
+       *
+       * Measured BEFORE the carry is put down, and the order is load-bearing: `measure`
+       * reads the list, and the render that follows `carry(null)` takes every transform
+       * off it.
        */
-      if (held === null || !overList(event.clientX)) return;
-      setLayout(moved(layout, held.id, deltaTo(held.from, gapAt(event.clientY))));
+      if (held === null || !overList(event.clientX)) {
+        carry(null);
+        return;
+      }
+      const { slot } = aimed(held, event.clientY);
+      carry(null);
+      setLayout(moved(layout, held.id, slot - held.from));
     },
     // A touch the browser takes over — a scroll gesture, a call coming in — ends the drag
     // without an up, and the block has to go back rather than stay picked up for ever.
@@ -637,6 +790,27 @@ export function HomeDocument({
   const inherited = inheritedAt(layout, point);
   const edited = changedAt(layout, minute);
   const dirty = differs(layout);
+
+  /**
+   * How far each row is drawn from where the document lays it out, while a block is carried.
+   *
+   * ADR 0053 §2. The list keeps the document's order for the length of a carry and every
+   * row is put where a release would put it with a `transform`, which costs no layout and
+   * can therefore be transitioned. Nothing is written until the drop, so an abandoned
+   * carry — Escape, a release off the list, a touch the browser takes over — needs no undo,
+   * because nothing was done.
+   *
+   * The arithmetic is `./carry.ts` and its test holds the property the whole thing rests
+   * on: a row's resting top plus its offset is exactly where the committed document would
+   * lay it out. So clearing the transforms and writing the new order is, on screen, a
+   * no-op, and the drop cannot jump.
+   */
+  const offsetOf = (id: string, index: number): number => {
+    if (carried === null) return 0;
+    if (id === carried.id) return liftFor(carried.rows, carried.from, carried.slot);
+    const height = carried.rows[carried.from]?.height ?? 0;
+    return shiftFor(index, carried.from, carried.slot, height);
+  };
 
   return (
     <>
@@ -684,18 +858,35 @@ export function HomeDocument({
         per row would be one of each per row; `components/AppHost.tsx` says the rest.
       */}
       {/*
-        The day, and before every block a place to put one. ADR 0045 §6 wants the mark at
+        The day, and on every seam a place to put a block. ADR 0045 §6 wants the mark at
         each end too, so there is one more of them than there are blocks.
 
-        **Each mark lives inside the row it comes before**, and the last one lives outside
-        the list, because a `list` may own only `listitem`s. The marks were their own
-        `role="presentation"` items for a while and Chrome did report the twelve blocks as
-        twelve items — but thirteen buttons as non-`listitem` children of a list is a thing
-        other assistive technology may resolve differently, and a structure that is simply
-        valid needs no prediction about who resolves what.
+        **Each mark lives inside a row**, the one it comes before, and the very last inside
+        the last row — a `list` may own only `listitem`s, and since ADR 0053 §1 they take no
+        height of their own anyway, so there is nothing left to be gained by putting one
+        outside. The marks were their own `role="presentation"` items for a while and Chrome
+        did report the twelve blocks as twelve items, but thirteen buttons as non-`listitem`
+        children of a list is a thing other assistive technology may resolve differently,
+        and a structure that is simply valid needs no prediction about who resolves what.
+
+        **The order here is the document's, always**, which is ADR 0053 §2: while a block is
+        carried every row is offset by a `transform` instead, so the list a person sees is
+        the answer a release would write without the DOM having moved at all. `sameSection`
+        is what keeps a carry from redrawing twelve blocks per pointer event.
       */}
       <AppHost>
-        <ol ref={list} className="flex flex-col">
+        <ol
+          ref={list}
+          className="mx-auto flex w-full flex-col"
+          /*
+           * The phone's own width plus the gutter, centred in whatever the panel has.
+           * ADR 0045 §3 refuses to scale a block UP, so on a wide window the drawing would
+           * otherwise stand in a row half again its size with the controls floating out in
+           * the empty half. `Stage.tsx` centres the device frame with `m-auto` for the same
+           * reason, and this is the list's version of it.
+           */
+          style={{ maxWidth: deviceWidth + GUTTER }}
+        >
           {layout.sections.map((section, index) => (
             <Row
               key={section.id}
@@ -708,15 +899,34 @@ export function HomeDocument({
               deviceWidth={drawing ? deviceWidth : null}
               follow={follow}
               before={
-                <InsertMark
-                  where={whereAt(intl, layout, index)}
-                  deviceWidth={deviceWidth}
-                  dropping={carried !== null && carried.gap === index}
-                  onAdd={(module) => setLayout(added(layout, index, module))}
-                />
+                carried === null ? (
+                  <InsertMark
+                    where={whereAt(intl, layout, index)}
+                    deviceWidth={deviceWidth}
+                    onAdd={(module) => setLayout(added(layout, index, module))}
+                  />
+                ) : null
+              }
+              after={
+                carried === null && index === layout.sections.length - 1 ? (
+                  <InsertMark
+                    where={whereAt(intl, layout, layout.sections.length)}
+                    deviceWidth={deviceWidth}
+                    onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
+                  />
+                ) : null
               }
               grip={gripFor(section.id, index)}
               carried={carried?.id === section.id}
+              shift={offsetOf(section.id, index)}
+              /*
+               * Only while something is being carried. The transition has to be gone in the
+               * same commit that writes the new order, or the transforms would animate back
+               * to nought while the layout jumps to meet them, and one move would be drawn
+               * twice. React batches `carry(null)` and `setLayout` into one update, so this
+               * goes at the same moment the offsets do.
+               */
+              animate={carried !== null}
               onMove={(delta) => setLayout(moved(layout, section.id, delta))}
               onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
               onSetting={(key, value) =>
@@ -727,13 +937,6 @@ export function HomeDocument({
             />
           ))}
         </ol>
-        {/* The last gap, which has no block after it to live in. */}
-        <InsertMark
-          where={whereAt(intl, layout, layout.sections.length)}
-          deviceWidth={deviceWidth}
-          dropping={carried !== null && carried.gap === layout.sections.length}
-          onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
-        />
       </AppHost>
 
       <div className="flex flex-wrap items-center gap-xs">
@@ -890,13 +1093,34 @@ function PointHead({
 }
 
 /**
- * One place, in the state it is in at the point being edited.
+ * One place, drawn where it stands in the day.
  *
- * Every control says whether what it shows is **inherited** or **set here**, because
- * that is the one question the model asks of a person and a control that hid it would
- * make the panel a set of independent forms again. Setting a control back to what it
- * inherits takes the change out of the document, so there is no separate revert to
- * press and no way to leave a change behind that says nothing.
+ * ADR 0053 §1 takes the card off it: no border, no gap between it and its neighbours, no
+ * name and no sentence. What is left is the block as the app draws it, a gutter beside it,
+ * and a bar of controls that appears when a pointer or the keyboard is in the row.
+ *
+ * ## The controls are revealed, not conditional
+ *
+ * They are in the tree at all times, and only their opacity and their pointer events
+ * follow the hover. That is the whole of what lets ADR 0045 §7 survive this change: the
+ * arrow buttons are the keyboard's route through the order, §7 says in as many words that
+ * an arrangement reachable only by a mouse would be this repository shipping the thing it
+ * spent [#199](https://github.com/correctiv/correctiv-app/pull/199) taking out of the app,
+ * and a control that is `hidden` until hovered is exactly that. `group-focus-within` is
+ * what shows the bar to somebody tabbing into it.
+ *
+ * The focus restoration below matters more here than it did in the card, and is the same
+ * code: pressing "Move up" until the block reaches the top disables that button, the
+ * browser blurs it, and focus lands on `<body>` — which in a revealed bar also closes the
+ * bar over the block somebody was moving.
+ *
+ * ## Where the state is said, now that there is no room to say it
+ *
+ * Every control still answers the one question the model asks — **inherited** or **set
+ * here**. What changed is where. The gutter carries the two marks that must not need a
+ * hover to be seen, and the popover carries the per-value ones beside the values they are
+ * about (§3). Both marks carry their own sentence for a reader who cannot see a grey
+ * drawing or an accent dot, because the badges that used to say the words are gone.
  */
 function Row({
   section,
@@ -908,8 +1132,11 @@ function Row({
   deviceWidth,
   follow,
   before,
+  after,
   grip,
   carried,
+  shift,
+  animate,
   onMove,
   onHidden,
   onSetting,
@@ -938,32 +1165,49 @@ function Row({
   outline: (held: { id: string; follow: boolean } | null) => void;
   /** Whether hovering this row scrolls the frame to it. The panel's setting, not the row's. */
   follow: boolean;
-  /** The gap above this block, as a control. It is drawn inside the row so the list stays a list. */
+  /**
+   * The seam above this block, as a control, and below it on the last row only.
+   *
+   * Both are laid over the seam rather than set in it: ADR 0053 §1 leaves no gap between
+   * two blocks to put a control in, so the mark takes no height of its own and straddles
+   * the join. `null` while a block is being carried, because the carried block is already
+   * showing where it would land and a row of hairlines offering to add would be a second
+   * answer to a question nobody asked.
+   */
   before: ReactNode;
+  after: ReactNode;
   /**
    * What the drag handle listens to. ADR 0047 §1: a pointer route and nothing else, so
-   * these are the whole of it and there is no key to press.
+   * this is the whole of it and there is no key to press.
+   *
+   * One handler, because the capture is taken on the list rather than here — ADR 0053 §2
+   * and `gripFor` say why a handle that held the pointer itself lost it on the first
+   * reflow.
    */
-  grip: {
-    onPointerDown: (event: PointerEvent<HTMLElement>) => void;
-    onPointerMove: (event: PointerEvent<HTMLElement>) => void;
-    onPointerUp: (event: PointerEvent<HTMLElement>) => void;
-    onPointerCancel: (event: PointerEvent<HTMLElement>) => void;
-  };
+  grip: { onPointerDown: (event: PointerEvent<HTMLElement>) => void };
   /** Whether this is the block a pointer is carrying right now. */
   carried: boolean;
+  /**
+   * How far from its resting place this row is drawn, in pixels, while a block is carried.
+   *
+   * A `transform` and never a change of order: ADR 0053 §2 keeps the document's order in
+   * the DOM for the length of a carry, so that the preview costs no layout, can be
+   * transitioned, and cannot lose the pointer it is being dragged by.
+   */
+  shift: number;
+  /** Whether that offset is animated, which is true exactly while something is carried. */
+  animate: boolean;
 }) {
   const intl = useWorkbenchIntl();
-  const { label, what } = moduleLabel(section.module);
   /*
-   * What the row's four controls call this block when they are read out. `label` alone
-   * is the module's, and two sections of one module share it — `document.ts` says what
-   * that cost in the accessibility tree.
+   * What the row's controls call this block when they are read out. The module's own name
+   * alone is not enough, because two sections of one module share it — `document.ts` says
+   * what that cost in the accessibility tree.
    */
   const spoken = blockName(intl, section);
   /*
    * The point being edited, as a time, or `null` for the day's start. Read once here
-   * because four sentences below choose between two messages on it, and a second
+   * because several sentences below choose between two messages on it, and a second
    * reading of `point` could disagree with the first.
    */
   const at = point === null ? null : formatTimeOfDay(point);
@@ -994,215 +1238,358 @@ function Row({
     const wanted = was === -1 ? (index === 0 ? down : up) : last ? up : down;
     wanted.current?.focus();
   }, [index, last]);
+
+  /**
+   * Whether the block's popover is open, held here rather than left to Radix.
+   *
+   * The bar this opens from is revealed by a hover, and a popover whose trigger fades out
+   * from under the pointer the moment somebody moves across to read it is a control that
+   * cannot be used. So the open state feeds back into the bar below.
+   */
+  const [open, setOpen] = useState(false);
+
   const off = Boolean(section.hidden);
   const specs = settingsFor(section.module);
   const hiddenHere = point !== null && Boolean(inherited.hidden) !== off;
 
   return (
-    <li className="flex flex-col">
-      {before}
-      {/*
-        Nothing below makes the card operable; the handlers only relay whether the
-        pointer or the focus is somewhere inside it, and every control a person can act on
-        is one of its own buttons and labels.
+    /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */
+    <li
+      className={cn(
+        'group relative flex',
+        /*
+         * The carried block: faded and in COLOUR, against a switched-off block, which is
+         * faded and grey (`HomeBlock.tsx`). Two marks that have to be told apart at a
+         * glance, and opacity alone would have made them one mark at two strengths.
+         *
+         * And above its neighbours while it travels, or a block gliding past a taller one
+         * would pass behind it. `z-10` and not more: the control bar sits at `z-30` inside
+         * whichever row a pointer is over, and this must not cover one.
+         */
+        carried && 'z-10 opacity-60',
+        /*
+         * `transform` and nothing else is transitioned. A transition on `all` would catch
+         * the opacity above, so a block would fade in as it was picked up rather than
+         * saying so at once, and it would catch the bar's own fade a second time.
+         */
+        animate && 'transition-transform duration-150 ease-out',
+      )}
+      style={{ transform: shift === 0 ? undefined : `translateY(${shift}px)` }}
+      /*
+        Nothing here makes the row operable; the handlers only relay whether the pointer or
+        the focus is somewhere inside it, and every control a person can act on is one of
+        its own buttons and labels.
 
         `outline` is called with `section.id` whether or not `off` is true, and this row
         does not check it first. A moment can hide a place at the point being previewed —
         `off` is exactly that fact — and the deliberate choice is to let the lookup in
         `frame/highlight.ts` discover the absence itself: it finds no matching element and
-        clears whatever mark was there, which is the same quiet nothing a mistyped id or
-        an unrendered module would produce. The `off` badge below already tells a person
-        the row is not on screen; the outline does not need to say it twice, and a row
-        cannot drift out of sync with a mechanism it does no filtering of its own.
+        clears whatever mark was there, which is the same quiet nothing a mistyped id or an
+        unrendered module would produce. The greyed drawing already tells a person the
+        block is not on screen; the outline does not need to say it twice, and a row cannot
+        drift out of sync with a mechanism it does no filtering of its own.
+      */
+      onPointerEnter={() => outline({ id: section.id, follow })}
+      onPointerLeave={() => outline(null)}
+      onFocus={() => outline({ id: section.id, follow })}
+      onBlur={() => outline(null)}
+    >
+      {/*
+        The gutter, which is the one thing this list has that the app has not. It is what
+        stops the column being mistaken for the app — the frame a foot to the right is the
+        one that answers a tap — and it is where the two marks live that a person must not
+        have to hover to see.
       */}
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
-      <div
-        className={cn(
-          CARD,
-          'group flex flex-col gap-2xs p-xs',
-          isChanged && 'border-accent',
-          carried && 'opacity-50',
-        )}
-        onPointerEnter={() => outline({ id: section.id, follow })}
-        onPointerLeave={() => outline(null)}
-        onFocus={() => outline({ id: section.id, follow })}
-        onBlur={() => outline(null)}
-      >
-        <div className="flex min-w-0 items-start gap-xs">
-          {/*
-            ADR 0047 §1: the pointer's route, and nothing else. No `tabindex`, no role and
-            `aria-hidden`, because a handle that looked focusable while doing nothing on a
-            key would be the untested route wearing the tested one's clothes. The arrows
-            two controls along are the keyboard's, by ADR 0047 §2.
+      <div className="flex shrink-0 flex-col items-center gap-4xs pt-3xs" style={{ width: GUTTER }}>
+        {/*
+          ADR 0047 §1: the pointer's route, and nothing else. No `tabindex`, no role and
+          `aria-hidden`, because a handle that looked focusable while doing nothing on a
+          key would be the untested route wearing the tested one's clothes. The arrows in
+          the bar are the keyboard's, by ADR 0047 §2.
 
-            `touch-none`, or a touch on the handle scrolls the panel instead of carrying
-            the block, and the pointer capture never sees a move.
-          */}
-          <span
-            {...grip}
-            aria-hidden="true"
-            className={cn(
-              // A hit area wider than the mark in it. Sixteen pixels of icon is a target
-              // a pointer has to aim at, and `-m-3xs p-3xs` grows what can be grabbed
-              // without moving anything on screen.
-              '-m-3xs shrink-0 touch-none p-3xs text-stroke-strong transition-colors',
-              // Brighter when the pointer is anywhere on the row, not only on the grip
-              // itself. ADR 0047's "What it costs" hands the affordance to the
-              // carrying-out, and a cold review said the grip read as decoration: a mark
-              // that answers to the whole row is what says it is a control before
-              // somebody has found its own few pixels.
-              carried
-                ? 'cursor-grabbing text-accent'
-                : 'cursor-grab group-hover:text-on-canvas-muted hover:text-on-canvas',
-            )}
-          >
-            <GripVertical aria-hidden="true" className="size-[1rem]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2xs">
-              <span
-                className={cn(
-                  'text-m font-semibold',
-                  off ? 'text-on-canvas-muted' : 'text-on-canvas',
-                )}
-              >
-                {say(intl, label)}
-              </span>
-              {off && <Badge variant="outline">{intl.formatMessage(COPY.rowOff)}</Badge>}
-              {isChanged && <Badge>{intl.formatMessage(COPY.rowChanged)}</Badge>}
-            </div>
-            <div className={NOTE}>{intl.formatMessage(what)}</div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-4xs">
-            {/*
-            ADR 0045 §5: this was a checkbox labelled "Shown", under the name, with a
-            badge beside it saying the value was set here. What the checkbox had to do
-            was tell a person the block was off, and the collapsed row does that now
-            without a word — so what is left is the switching, which is an act rather
-            than a field, and an act is a button.
-
-            The two verbs live at two levels and §5 is where the pair is argued. On and
-            off are a MOMENT'S: they change what a block is doing at an hour, and they
-            are here. Add and remove are the DAY'S: they change which blocks exist at
-            all, and they are ADR 0045 §4 and §6, which are not built. When they are,
-            §5's "the switch is the same control a person already used to put the block
-            there" is the sentence this button has to answer to, and it may well stop
-            being a button of its own.
-          */}
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-pressed={!off}
-              className={cn('size-[2rem]', hiddenHere && 'text-accent')}
-              aria-label={
-                at === null
-                  ? intl.formatMessage(off ? COPY.switchOnAtStart : COPY.switchOffAtStart, {
-                      block: spoken,
-                    })
-                  : intl.formatMessage(off ? COPY.switchOnAt : COPY.switchOffAt, {
-                      block: spoken,
-                      time: at,
-                    })
-              }
-              onClick={() => onHidden(!off)}
-            >
-              {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            </Button>
-            <Button
-              ref={up}
-              variant="ghost"
-              size="icon"
-              className="size-[2rem]"
-              disabled={index === 0}
-              aria-label={intl.formatMessage(COPY.moveUp, { block: spoken })}
-              onClick={() => {
-                pressed.current = -1;
-                onMove(-1);
-              }}
-            >
-              <ArrowUp aria-hidden="true" />
-            </Button>
-            <Button
-              ref={down}
-              variant="ghost"
-              size="icon"
-              className="size-[2rem]"
-              disabled={last}
-              aria-label={intl.formatMessage(COPY.moveDown, { block: spoken })}
-              onClick={() => {
-                pressed.current = 1;
-                onMove(1);
-              }}
-            >
-              <ArrowDown aria-hidden="true" />
-            </Button>
-            {/*
-            ADR 0045 §4: remove always deletes, and §5 is why that is not ambiguous —
-            switching a block off is the eye two buttons to the left, and the row
-            collapsing is what tells the two apart on screen.
-
-            No confirmation, and that is a decision rather than an omission. The document
-            is not the file until Save, "Back to the file" is one press away and undoes
-            every edit in the session, and a dialog in front of an edit that is already
-            reversible teaches people to dismiss dialogs. What the label carries instead
-            is the word: `Remove`, not `Hide`.
-          */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-[2rem] hover:text-red-500"
-              aria-label={intl.formatMessage(COPY.rowRemove, { block: spoken })}
-              onClick={onRemove}
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-xs">
-          {hiddenHere && <Here />}
-          <code className={cn(CODE, 'ml-auto text-on-canvas-muted')}>{section.id}</code>
-        </div>
+          `touch-none`, or a touch on the handle scrolls the panel instead of carrying the
+          block, and the pointer capture never sees a move.
+        */}
+        <span
+          {...grip}
+          aria-hidden="true"
+          className={cn(
+            // A hit area wider than the mark in it. Sixteen pixels of icon is a target a
+            // pointer has to aim at, and the padding grows what can be grabbed without
+            // moving anything on screen.
+            'shrink-0 touch-none p-4xs text-stroke-strong transition-colors',
+            // Brighter when the pointer is anywhere on the row, not only on the grip
+            // itself. ADR 0047's "What it costs" hands the affordance to the carrying-out,
+            // and a cold review said the grip read as decoration: a mark that answers to
+            // the whole row is what says it is a control before somebody has found its own
+            // few pixels.
+            carried
+              ? 'cursor-grabbing text-accent'
+              : 'cursor-grab group-hover:text-on-canvas-muted hover:text-on-canvas',
+          )}
+        >
+          <GripVertical aria-hidden="true" className="size-[1rem]" />
+        </span>
 
         {/*
-        ADR 0045 §3, and §2 is the `off` branch. A block that is not on screen at the
-        playhead keeps its row and loses its picture — the whole day stays visible and
-        every block stays addressable, and only the drawing is spent on what is showing.
-        The sentence is drawn rather than nothing at all, because an empty gap would read
-        as a block with nothing in it rather than one that is switched off.
-
-        `deviceWidth` being null is the third case and it is not one a reader ever sees:
-        the panel is mounted behind the rail whether or not it is open, and nothing is
-        drawn while it is shut.
-      */}
-        {deviceWidth !== null &&
-          (off ? (
-            <p className={cn(NOTE, 'rounded-s border border-dashed border-stroke px-2xs py-3xs')}>
-              {at === null
-                ? intl.formatMessage(COPY.offAtStart)
-                : intl.formatMessage(COPY.offAt, { time: at })}
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-s border border-stroke">
-              <HomeBlock section={section} deviceWidth={deviceWidth} />
-            </div>
-          ))}
-
-        {specs.map((spec) => (
-          <Setting
-            key={spec.key}
-            module={section.module}
-            spec={spec}
-            value={section.settings?.[spec.key]}
-            inherited={inherited.settings?.[spec.key]}
-            point={point}
-            disabled={off}
-            onSet={(value) => onSetting(spec.key, value)}
-          />
-        ))}
+          The two marks, each with the word it stands for. On screen they are an icon and a
+          dot; read out they are the badges this row used to carry, which is the half of
+          them that had to survive ADR 0053 §1 taking the badges away. Colour and grey are
+          not information a person can be assumed to have.
+        */}
+        {off && (
+          <span className="text-on-canvas-muted">
+            <EyeOff aria-hidden="true" className="size-[0.75rem]" />
+            <span className="sr-only">{intl.formatMessage(COPY.rowOff)}</span>
+          </span>
+        )}
+        {isChanged && (
+          <span>
+            <span aria-hidden="true" className="block size-[0.375rem] rounded-full bg-accent" />
+            <span className="sr-only">{intl.formatMessage(COPY.rowChanged)}</span>
+          </span>
+        )}
       </div>
+
+      {/*
+        The popover is opened around the WHOLE block area rather than around its button,
+        and `PopoverAnchor` is why: Radix places the panel against the anchor when there is
+        one and against the trigger when there is not, and the trigger already sits at the
+        panel's right edge. Anchored to it, "left" means left of a control that is nearly
+        at the window's right, so the panel opens over the list. Measured at 1800px: it
+        landed at x=1287 in a panel starting at x=1230, covering the blocks above the one
+        it was about. Anchored to the block, the same word puts it out over the stage.
+      */}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverAnchor asChild>
+          <div className="relative min-w-0 flex-1">
+            {/*
+          Laid over the seam above this block, taking no height, so that two blocks meet
+          the way they meet on the phone. ADR 0045 §6 is unchanged in what it asks for — a
+          thin control between every pair and at each end — and only in what it may spend
+          on it.
+        */}
+            <span className="absolute inset-x-0 top-0 z-20 -translate-y-1/2">{before}</span>
+
+            {/*
+          ADR 0053 §1. A block switched off at the playhead is drawn greyed rather than
+          collapsed away: the whole day stays a screen, and a person can point at the block
+          they mean whether or not it is showing. `HomeBlock` is what greys it, because it
+          is what draws it.
+
+          `deviceWidth` being null is the case a reader never sees: the panel is mounted
+          behind the rail whether or not it is open, and nothing is drawn while it is shut.
+        */}
+            {deviceWidth !== null && <HomeBlock section={section} deviceWidth={deviceWidth} />}
+
+            {/*
+          The bar. `pointer-events-none` while it is invisible, or an unseen row of buttons
+          sits over the top corner of every block and swallows what is aimed at the drawing
+          underneath; focus is unaffected by that property, which is what keeps the
+          keyboard's route through it open.
+        */}
+            <div
+              className={cn(
+                'absolute right-3xs top-3xs z-30 flex items-center gap-4xs',
+                'rounded-md border border-stroke bg-canvas/95 p-4xs shadow-lg',
+                'pointer-events-none opacity-0 transition-opacity',
+                'group-hover:pointer-events-auto group-hover:opacity-100',
+                'group-focus-within:pointer-events-auto group-focus-within:opacity-100',
+                open && 'pointer-events-auto opacity-100',
+                // Not over a block that is being carried: the block is answering a different
+                // question just then, and a row of controls riding along with it invites a
+                // press on something that is moving.
+                carried && 'hidden',
+              )}
+            >
+              {/*
+            ADR 0045 §5: this was a checkbox labelled "Shown", under the name, with a badge
+            beside it saying the value was set here. What the checkbox had to do was tell a
+            person the block was off, and the greyed drawing does that now without a word —
+            so what is left is the switching, which is an act rather than a field, and an
+            act is a button.
+
+            The two verbs live at two levels and §5 is where the pair is argued. On and off
+            are a MOMENT'S: they change what a block is doing at an hour, and they are
+            here. Add and remove are the DAY'S: they change which blocks exist at all.
+          */}
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-pressed={!off}
+                className={cn('size-[1.75rem]', hiddenHere && 'text-accent')}
+                aria-label={
+                  at === null
+                    ? intl.formatMessage(off ? COPY.switchOnAtStart : COPY.switchOffAtStart, {
+                        block: spoken,
+                      })
+                    : intl.formatMessage(off ? COPY.switchOnAt : COPY.switchOffAt, {
+                        block: spoken,
+                        time: at,
+                      })
+                }
+                onClick={() => onHidden(!off)}
+              >
+                {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              </Button>
+              <Button
+                ref={up}
+                variant="ghost"
+                size="icon"
+                className="size-[1.75rem]"
+                disabled={index === 0}
+                aria-label={intl.formatMessage(COPY.moveUp, { block: spoken })}
+                onClick={() => {
+                  pressed.current = -1;
+                  onMove(-1);
+                }}
+              >
+                <ArrowUp aria-hidden="true" />
+              </Button>
+              <Button
+                ref={down}
+                variant="ghost"
+                size="icon"
+                className="size-[1.75rem]"
+                disabled={last}
+                aria-label={intl.formatMessage(COPY.moveDown, { block: spoken })}
+                onClick={() => {
+                  pressed.current = 1;
+                  onMove(1);
+                }}
+              >
+                <ArrowDown aria-hidden="true" />
+              </Button>
+
+              {/*
+            ADR 0053 §3. The name, the sentence about the module, the id and the module's
+            own settings, in a panel beside the block rather than under it. What ADR 0045
+            §8 decided is kept and only its form has moved: a setting is judged by what it
+            does to the block, so the popover opens to the side and leaves the block it is
+            about on screen. `ui/kit/popover.tsx` is where that side is chosen.
+          */}
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn('size-[1.75rem]', open && 'text-accent')}
+                  aria-label={intl.formatMessage(COPY.details, { block: spoken })}
+                >
+                  <SlidersHorizontal aria-hidden="true" />
+                </Button>
+              </PopoverTrigger>
+
+              {/*
+            ADR 0045 §4: remove always deletes, and §5 is why that is not ambiguous —
+            switching a block off is the eye three buttons to the left, and the drawing
+            going grey is what tells the two apart on screen.
+
+            No confirmation, and that is a decision rather than an omission. The document is
+            not the file until Save, "Back to the file" is one press away and undoes every
+            edit in the session, and a dialog in front of an edit that is already reversible
+            teaches people to dismiss dialogs. What the label carries instead is the word:
+            `Remove`, not `Hide`.
+          */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-[1.75rem] hover:text-red-500"
+                aria-label={intl.formatMessage(COPY.rowRemove, { block: spoken })}
+                onClick={onRemove}
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </div>
+
+            {/* The last seam of the day, which has no block after it to live above. */}
+            {after !== null && (
+              <span className="absolute inset-x-0 bottom-0 z-20 translate-y-1/2">{after}</span>
+            )}
+          </div>
+        </PopoverAnchor>
+
+        <PopoverContent>
+          <Details
+            section={section}
+            inherited={inherited}
+            point={point}
+            at={at}
+            off={off}
+            hiddenHere={hiddenHere}
+            specs={specs}
+            onSetting={onSetting}
+          />
+        </PopoverContent>
+      </Popover>
     </li>
+  );
+}
+
+/**
+ * What a block is, and what this moment does to it, beside the block rather than under it.
+ *
+ * ADR 0053 §3 moves ADR 0045 §8's content here and keeps its reason. What is in it is
+ * everything the card used to print around the drawing and could not go on printing once
+ * the drawing became the row: the module's name, the sentence about what it draws, the id
+ * an address is written with, when the block is off, and the settings the module declares.
+ *
+ * A module with no settings gets no empty section promising one, which is most of them,
+ * and `home-settings.ts` already says why that is a fact about the modules rather than a
+ * gap to fill. The popover still opens, because the name and the id are in it.
+ */
+function Details({
+  section,
+  inherited,
+  point,
+  at,
+  off,
+  hiddenHere,
+  specs,
+  onSetting,
+}: {
+  section: HomeSection;
+  inherited: HomeSection;
+  point: Point;
+  /** The point as a time, or `null` at the day's start. Read once by the row above. */
+  at: string | null;
+  off: boolean;
+  hiddenHere: boolean;
+  specs: readonly SettingSpec[];
+  onSetting: (key: string, value: string | number | null | undefined) => void;
+}) {
+  const intl = useWorkbenchIntl();
+  const { label, what } = moduleLabel(section.module);
+
+  return (
+    <div className="flex flex-col gap-2xs">
+      <div className="flex flex-wrap items-baseline gap-2xs">
+        <span className="text-m font-semibold text-on-canvas">{say(intl, label)}</span>
+        <code className={cn(CODE, 'ml-auto text-on-canvas-muted')}>{section.id}</code>
+      </div>
+      <p className={NOTE}>{intl.formatMessage(what)}</p>
+
+      {off && (
+        <p className={cn(NOTE, 'flex flex-wrap items-center gap-2xs')}>
+          {at === null
+            ? intl.formatMessage(COPY.offAtStart)
+            : intl.formatMessage(COPY.offAt, { time: at })}
+          {hiddenHere && <Here />}
+        </p>
+      )}
+
+      {specs.map((spec) => (
+        <Setting
+          key={spec.key}
+          module={section.module}
+          spec={spec}
+          value={section.settings?.[spec.key]}
+          inherited={inherited.settings?.[spec.key]}
+          point={point}
+          disabled={off}
+          onSet={(value) => onSetting(spec.key, value)}
+        />
+      ))}
+    </div>
   );
 }
 

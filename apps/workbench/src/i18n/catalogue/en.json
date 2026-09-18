@@ -1091,8 +1091,8 @@
     "description": "The page’s heading. shell.activity.handbook is the rail entry that opens it and the word a document’s breadcrumb uses for this section; nav.handbook is the same word again as the page’s name in the browser tab and the search palette."
   },
   "home.block.empty": {
-    "defaultMessage": "Draws nothing here.",
-    "description": "Stands under a block that measured no height at all, in place of an empty box that would read as a block that is broken."
+    "defaultMessage": "{block} draws nothing here.",
+    "description": "Stands in for a block that measured no height at all, in place of an empty box that would read as a block that is broken. {block} is the module’s own name, which this strip carries because the list around it shows no names."
   },
   "home.block.name": {
     "defaultMessage": "{name} ({id})",
@@ -1263,7 +1263,11 @@
   },
   "home.row.changed": {
     "defaultMessage": "changed",
-    "description": "The badge on a block this moment changes something about. home.document.changed is the word beside the Save button and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
+    "description": "Read out for a block this moment changes something about. home.document.changed is the word beside the Save button and tools.tokens.changed the badge on an overridden colour; all three read the same in English. On screen this is a dot in the gutter, so the sentence is what carries it to somebody who cannot see the colour."
+  },
+  "home.row.details": {
+    "defaultMessage": "Settings and details for {block}",
+    "description": "The accessible name of the button that opens a block’s popover: its name, what it draws, its id, and whatever settings its module declares. {block} is the block’s own name, in English out of document.ts."
   },
   "home.row.moveDown": {
     "defaultMessage": "Move {block} down",
@@ -1275,15 +1279,15 @@
   },
   "home.row.off": {
     "defaultMessage": "off",
-    "description": "The badge on a block that is switched off at the point being edited, so it keeps its row and loses its drawing."
+    "description": "Read out for a block that is switched off at the point being edited. Since ADR 0053 §1 the block is still drawn, greyed and faded, so on screen this is a small mark in the gutter and the sentence exists for a reader who cannot see that it is grey."
   },
   "home.row.offAt": {
     "defaultMessage": "Not on screen at {time}.",
-    "description": "Stands where a switched-off block’s drawing would be, while a moment is being edited. {time} is the moment’s time of day, as 18:30."
+    "description": "The same, while a moment is being edited rather than the day’s start. {time} is the moment’s time of day, as 18:30."
   },
   "home.row.offAtStart": {
     "defaultMessage": "Not on screen at the start of the day.",
-    "description": "Stands where a switched-off block’s drawing would be, while the day’s start is being edited."
+    "description": "Says when a switched-off block is off, in its details popover. The block itself is drawn greyed since ADR 0053 §1, which says THAT it is off but not from when."
   },
   "home.row.remove": {
     "defaultMessage": "Remove {block} from the day",

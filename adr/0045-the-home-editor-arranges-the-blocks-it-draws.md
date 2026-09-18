@@ -103,11 +103,16 @@ repeated the frame would be a second rendering of one fact and the worse of the 
 the frame is the app itself. A frame that repeated the list could not show what is not
 there.
 
-### 2. A block that is not on screen at the playhead collapses to its row
+### 2. A block that is not on screen at the playhead ~~collapses to its row~~ is drawn greyed
 
 Its header row stays — the name, the drag handle, and the mark that says it is off here.
-The drawing goes away, and comes back when the block comes back. The whole day stays
-visible and every block stays addressable; only the picture is spent on what is showing.
+~~The drawing goes away, and comes back when the block comes back.~~ The drawing stays and
+is greyed — voided by [ADR 0053](0053-the-editor-is-the-screen-and-the-drag-is-the-answer.md)
+§1, which takes the row away with the rest of the card and finds that in a list that is a
+screen, a collapsed block is a hole and a hole is the one thing nobody can point at. The
+whole day stays visible and every block stays addressable; ~~only the picture is spent on
+what is showing~~ — same voiding: that was a judgement about a list of cards, where a
+collapsed card is still a card.
 
 **This is the decision the interview turned on**, and the argument is worth the space
 because the obvious alternative is wrong in a way that is hard to see afterwards.
@@ -229,7 +234,11 @@ from the app on the same day.
 
 ### 8. Settings expand under their block, and a count is a slider
 
-A block's settings open under it, in the list, where the block they belong to is drawn. A
+~~A block's settings open under it, in the list,~~ A block's settings open beside it, in a
+popover, where the block they belong to is drawn — voided by
+[ADR 0053](0053-the-editor-is-the-screen-and-the-drag-is-the-answer.md) §3, which keeps
+this section's reason and changes only where the panel stands, because ADR 0053 §1 leaves
+nothing under a block to open into. A
 block whose module declares no settings has no control for them and no empty section
 promising one — which is most of them, and `home-settings.ts` already says why that is a
 fact about the modules rather than a gap to fill.

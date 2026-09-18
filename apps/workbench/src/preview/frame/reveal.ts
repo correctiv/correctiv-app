@@ -16,9 +16,13 @@
  * one document scrolling itself.
  *
  * So the scroller is found inside the frame's own document and scrolled by a delta. The
- * delta is `scrollDelta` below, which is arithmetic and has a test; the rest is the walk
- * that finds the box, which is four lines and a `getComputedStyle`.
+ * delta is `scrollDelta` below, which is arithmetic and has a test; finding the box is
+ * `../scroller.ts`, which moved out of this file when the home editor needed the same walk
+ * for a panel in THIS document, and which says why it is a walk rather than an element
+ * somebody could name.
  */
+
+import { scroller } from '../scroller';
 
 /** Breathing room, so a revealed block is not flush against the edge it came in at. */
 const MARGIN = 12;
@@ -45,28 +49,6 @@ export function scrollDelta(
     return Math.min(box.bottom - room.bottom + margin, box.top - room.top - margin);
   }
   return 0;
-}
-
-/**
- * The nearest ancestor that actually scrolls, or the document if it is the one that does.
- *
- * "Actually" is the `scrollHeight > clientHeight` test: the app's tree is full of boxes
- * with `overflow: auto` that have nothing to scroll, and the first one of those would
- * swallow the scroll and move nothing.
- */
-function scroller(node: Element): Element | null {
-  const view = node.ownerDocument.defaultView;
-  if (view === null) return null;
-
-  for (let held = node.parentElement; held !== null; held = held.parentElement) {
-    const overflow = view.getComputedStyle(held).overflowY;
-    if ((overflow === 'auto' || overflow === 'scroll') && held.scrollHeight > held.clientHeight) {
-      return held;
-    }
-  }
-
-  const root = node.ownerDocument.scrollingElement;
-  return root !== null && root.scrollHeight > root.clientHeight ? root : null;
 }
 
 /**

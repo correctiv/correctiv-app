@@ -76,9 +76,10 @@ export const home: Record<string, string> = {
     'Eingefügt wird: {where}. Angeboten wird jedes Modul, das die App hat; beurteilt wird eine Anordnung im Rahmen daneben, nicht in dieser Liste.',
   'home.palette.addModule': '{name} hinzufügen. {what}',
 
-  // What a row says instead of a drawing (`preview/home/HomeBlock.tsx`).
+  // What a block says instead of a drawing (`preview/home/HomeBlock.tsx`). Seit ADR 0053
+  // §1 zeigt die Liste keine Namen mehr, deshalb trägt der zweite Satz den Namen selbst.
   'home.block.unknown': 'Nicht gezeichnet: Diese App hat kein Modul namens <name>{module}</name>.',
-  'home.block.empty': 'Zeichnet hier nichts.',
+  'home.block.empty': '{block} zeichnet hier nichts.',
 
   // The editing surface (`preview/home/HomeDocument.tsx`). `{block}` comes out of
   // `preview/home/document.ts` and is German. `{standsIn}` comes out of
@@ -110,7 +111,7 @@ export const home: Record<string, string> = {
   'home.point.noMoments':
     'Dieses Dokument hat keine Momente, die Startseite sieht also zu jeder Stunde gleich aus.',
 
-  // One block's row, and its four controls.
+  // One block, and the controls that appear over it.
   'home.row.off': 'aus',
   'home.row.changed': 'geändert',
   'home.row.switchOnAtStart': '{block} ab dem Beginn des Tages einschalten',
@@ -120,6 +121,7 @@ export const home: Record<string, string> = {
   'home.row.moveUp': '{block} nach oben schieben',
   'home.row.moveDown': '{block} nach unten schieben',
   'home.row.remove': '{block} aus dem Tag entfernen',
+  'home.row.details': 'Einstellungen und Angaben zu {block}',
   'home.row.offAtStart': 'Zu Beginn des Tages nicht auf dem Bildschirm.',
   'home.row.offAt': 'Um {time} nicht auf dem Bildschirm.',
 

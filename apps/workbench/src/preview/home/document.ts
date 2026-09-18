@@ -394,22 +394,6 @@ export function moved(layout: HomeLayout, id: string, delta: number): HomeLayout
   return { ...layout, sections };
 }
 
-/**
- * How far a block has to travel to land in a gap, which is not the gap's own number.
- *
- * The list's gaps are numbered the way an insertion is: gap 0 is above the first block,
- * gap `n` is below the last. A drop names a gap; `moved` takes a distance. They differ by
- * one whenever the block is moving DOWN, because the block leaves its own place before it
- * arrives and every gap below it shifts up by one as it goes.
- *
- * Written out and tested rather than inlined at the drop, because it is the arithmetic
- * that is wrong in every first attempt at a drag, and wrong by exactly one place, which
- * is the amount nobody notices in a screenshot.
- */
-export function deltaTo(from: number, gap: number): number {
-  return (gap > from ? gap - 1 : gap) - from;
-}
-
 // --- adding and removing a block ---------------------------------------------------
 
 /**

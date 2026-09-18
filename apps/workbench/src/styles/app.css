@@ -107,6 +107,45 @@
       sans-serif;
   }
 
+  /*
+   * The pointer cursor, which Tailwind v4 takes away.
+   *
+   * Its Preflight sets `cursor: default` on every `button`, on the grounds that the
+   * platform does — a native button on a desktop does not change the cursor. The effect
+   * on a page built out of `<button>` is that nothing on it answers the one question a
+   * hand asks before it presses: is this a thing. Reported from the editor, where the
+   * hairline that adds a block is ten pixels of target and gave no sign at all of being
+   * under the cursor.
+   *
+   * Here rather than as `cursor-pointer` on each component, because "everywhere" is the
+   * requirement and a class per control is a list that goes out of date silently. A
+   * control that should NOT say pointer is the exception and says so on itself: the drag
+   * handle is `cursor-grab`, and the classes win because Tailwind's utilities outrank
+   * this layer.
+   *
+   * `:not(:disabled)` rather than a blanket rule, or a control that refuses to be pressed
+   * would still invite the press. The second block says what those get instead, which is
+   * the platform's own answer and not `not-allowed`: a disabled arrow at the end of the
+   * list is ordinary, not an error.
+   */
+  button:not(:disabled),
+  summary,
+  select:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='range']:not(:disabled),
+  label:has(> input[type='checkbox']:not(:disabled)),
+  label:has(> input[type='radio']:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled {
+    cursor: default;
+  }
+
   /* The preview stage, which is the one piece of decoration worth keeping: a
      graph-paper ground behind the device, so the frame reads as a thing standing
      on a surface rather than a white box on a white page. */

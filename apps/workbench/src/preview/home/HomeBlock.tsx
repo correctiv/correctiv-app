@@ -14,6 +14,9 @@ import { sameSection } from './section';
 import { HOME_MODULES } from '@/lib/home/modules';
 
 import { DrawnBoundary } from '../../components/AppHost';
+import { cn } from '../../lib/cn';
+import { say } from '../../i18n/messages';
+import { moduleLabel } from './document';
 import { fit } from './fit';
 
 /**
@@ -46,9 +49,9 @@ const COPY = defineMessages({
   },
   empty: {
     id: 'home.block.empty',
-    defaultMessage: 'Draws nothing here.',
+    defaultMessage: '{block} draws nothing here.',
     description:
-      'Stands under a block that measured no height at all, in place of an empty box that would read as a block that is broken.',
+      'Stands in for a block that measured no height at all, in place of an empty box that would read as a block that is broken. {block} is the module’s own name, which this strip carries because the list around it shows no names.',
   },
 });
 
@@ -187,9 +190,31 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
    */
   const height = natural === null ? undefined : natural * scale;
 
+  /*
+   * ADR 0053 §1: a block switched off at this point is DRAWN, greyed and faded, rather
+   * than collapsed to a row. The list is the day as a screen, and a hole in it would be
+   * the one thing a person cannot point at.
+   *
+   * `grayscale` and not a lower opacity alone, because the two marks in this list have to
+   * be told apart at a glance: off is colourless, and a block being carried is faded and
+   * keeps its colour (§2). Opacity on its own would have made them the same mark at two
+   * strengths.
+   *
+   * On the shell rather than on the drawing inside it: a filter creates a containing block
+   * for `position: fixed` descendants, and the modules draw plain boxes, but the shell is
+   * also where the scale transform already is and one stacking context is cheaper to
+   * reason about than two. Neither property affects layout, so the measurement below is
+   * untouched by it.
+   */
+  const off = Boolean(section.hidden);
+
   return (
     <>
-      <div ref={shell} className="overflow-hidden" style={{ height }}>
+      <div
+        ref={shell}
+        className={cn('overflow-hidden', off && 'opacity-45 grayscale')}
+        style={{ height }}
+      >
         {/*
         A flex column, because that is what the app's own parent is: a module's
         outermost element is a `View`, which is laid out by its parent, and a
@@ -235,8 +260,13 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
         that way rather than left standing as a rule with nothing under it.
       */}
       {natural === 0 && (
-        <p className="px-2xs py-3xs text-s leading-relaxed text-on-canvas-muted">
-          {intl.formatMessage(COPY.empty)}
+        <p
+          className={cn(
+            'px-2xs py-3xs text-s leading-relaxed text-on-canvas-muted',
+            off && 'opacity-45',
+          )}
+        >
+          {intl.formatMessage(COPY.empty, { block: say(intl, moduleLabel(section.module).label) })}
         </p>
       )}
     </>

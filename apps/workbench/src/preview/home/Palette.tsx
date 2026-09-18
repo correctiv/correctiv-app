@@ -105,22 +105,12 @@ const COPY = defineMessages({
 export function InsertMark({
   where,
   deviceWidth,
-  dropping = false,
   onAdd,
 }: {
   /** Said in words, for the dialog and for the mark's own label: "at the top", "after X". */
   where: string;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
-  /**
-   * Whether a block being dragged would land here.
-   *
-   * The drop indicator is a state of this control rather than a line drawn over the list,
-   * because the marks are already one per gap, at exactly the places a block can land in.
-   * A second thing drawn at the same positions would be a second answer to "where are the
-   * gaps", and the two would part the first time one of them moved.
-   */
-  dropping?: boolean;
   onAdd: (module: string) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -139,7 +129,20 @@ export function InsertMark({
         <button
           type="button"
           aria-label={intl.formatMessage(COPY.addHere, { where })}
-          className="group relative flex h-s w-full shrink-0 items-center focus-visible:outline-none"
+          /*
+           * The caller lays this over the join rather than setting it between two blocks.
+           * ADR 0053 §1 leaves no gap to sit in: the blocks meet the way they meet on the
+           * phone, so a control that took height of its own would put the list back to a
+           * stack of cards one hairline at a time.
+           *
+           * **Twenty pixels of target for one pixel of mark.** It was ten, and it was
+           * reported as hard to hit — a hairline gives no edge to aim at, and until the
+           * base stylesheet put the pointer cursor back there was nothing to say when the
+           * aim had landed either. The box straddles the seam, so it takes ten pixels off
+           * the bottom of one drawing and ten off the top of the next, which is a price
+           * only a block with something in its very first row would notice.
+           */
+          className="group relative flex h-[1.25rem] w-full shrink-0 items-center focus-visible:outline-none"
         >
           {/*
             One unbroken hairline, with the `+` laid over its middle rather than set
@@ -149,25 +152,30 @@ export function InsertMark({
           <span
             aria-hidden="true"
             className={cn(
-              'h-px w-full transition-colors',
-              'bg-stroke group-hover:bg-accent group-focus-visible:bg-accent',
-              open && 'bg-accent',
-              // Thicker only for a drop: the open state is a dialog asking what to add,
-              // and a line that got heavier for it would be saying something about a
-              // landing that is not happening.
-              dropping && 'h-[2px] bg-accent',
+              'w-full transition-all',
+              // Nothing at all until it is pointed at. ADR 0053 §1 makes the list a screen,
+              // and a hairline drawn across every seam of it would be a rule the phone has
+              // not got, twelve times over.
+              'h-px bg-transparent',
+              // Two pixels once it is, rather than one: the line is what confirms the aim,
+              // and a one-pixel confirmation under a twenty-pixel target is a mark a person
+              // has to look for to believe.
+              'group-hover:h-[2px] group-hover:bg-accent',
+              'group-focus-visible:h-[2px] group-focus-visible:bg-accent',
+              open && 'h-[2px] bg-accent',
             )}
           />
           <Plus
             aria-hidden="true"
             className={cn(
-              'absolute left-1/2 size-[0.875rem] -translate-x-1/2 rounded-full bg-surface',
+              // `bg-canvas` and not the dock's `surface`: since ADR 0053 §1 this disc sits
+              // over a drawing of the app rather than over the panel's own ground. Ringed,
+              // because a bare glyph over a photograph is a glyph nobody can read.
+              'absolute left-1/2 size-[1.125rem] -translate-x-1/2 rounded-full p-[1px]',
+              'bg-canvas ring-1 ring-accent',
               'text-accent opacity-0 transition-opacity',
               'group-hover:opacity-100 group-focus-visible:opacity-100',
               open && 'opacity-100',
-              // Not while a block is being dropped here: the thickened line says where it
-              // lands, and a plus sign beside it would say "add" about a move.
-              dropping && 'opacity-0',
             )}
           />
         </button>
