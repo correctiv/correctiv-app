@@ -9,6 +9,7 @@ import { IntlProvider, ReactIntlErrorCode, type IntlConfig } from 'react-intl';
 import { CATALOGUES } from '@correctiv/catalogue';
 import { intlLocale } from '@correctiv/app-core/lib/format';
 import type { Locale } from '@correctiv/app-core/stores/settings';
+import { isOwnDocument } from '@/lib/ownDocument';
 import { useLocale } from '@/lib/store/core';
 
 /**
@@ -90,12 +91,21 @@ const onError: NonNullable<IntlConfig['onError']> = (error) => {
  * said `lang="de"`, because the shell had read the default. A browser hyphenates and
  * a screen reader picks a voice by that attribute, so a wrong one is not cosmetic.
  *
- * A no-op off the web. `document` does not exist on a device, and a `.web.tsx`
- * sibling for four lines would be a second file to keep in step.
+ * **Only a document the app wrote.** This provider is mountable inside a page the
+ * app did not produce, and the root element of such a page is not the app's to
+ * write: measured on 2026-09-18, a page served in English got `lang="de"` from
+ * here, which is this same correction doing the exact harm it was written to undo.
+ * `lib/ownDocument.ts` is the whole of the answer — the shell marks the one
+ * document that is the app's, and an unmarked root is left alone. The app
+ * therefore states what it owns rather than naming who else might be hosting it.
+ *
+ * A no-op off the web as well. `document` does not exist on a device, `isOwnDocument()`
+ * answers that too, and a `.web.tsx` sibling for four lines would be a second file
+ * to keep in step.
  */
 function useDocumentLanguage(locale: Locale): void {
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (!isOwnDocument()) return;
     document.documentElement.lang = locale;
   }, [locale]);
 }

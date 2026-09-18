@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from 'react';
 
 import { SHIPPED_LOCALE } from '@/lib/locale';
+import { OWN_DOCUMENT_MARK } from '@/lib/ownDocument';
 
 /**
  * The HTML shell of the web export, which Expo otherwise writes for us.
@@ -22,13 +23,21 @@ import { SHIPPED_LOCALE } from '@/lib/locale';
  * `i18n/Localisation.tsx` corrects the attribute on the first render either way,
  * which is what an app that switches language at runtime would need anyway.
  *
+ * **`OWN_DOCUMENT_MARK` is the other half of that correction.** The effect that
+ * writes `<html lang>` runs wherever the app's provider is mounted, and the
+ * provider is mountable inside somebody else's page, whose root element is not
+ * the app's to touch. This file renders the only `<html>` the app owns, so
+ * marking it here is how the app tells its own document from a borrowed one
+ * without knowing anything about who borrowed it. `lib/ownDocument.ts` carries
+ * the argument and the measurement.
+ *
  * Everything else here is Expo's own default shell. `ScrollViewStyleReset` is the
  * one piece that is not optional — react-native-web's root scroller needs it, and
  * leaving it out gives the page two scrollbars.
  */
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang={SHIPPED_LOCALE}>
+    <html lang={SHIPPED_LOCALE} {...OWN_DOCUMENT_MARK}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
