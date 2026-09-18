@@ -64,6 +64,7 @@ import {
   signIn,
 } from '@correctiv/app-core/stores/session';
 import { locale as selectLocale, settingsActions } from '@correctiv/app-core/stores/settings';
+import { SHIPPED_LOCALE } from '@/lib/locale';
 import {
   fetchIssues,
   recentIssues as selectRecentIssues,
@@ -152,17 +153,15 @@ export const coreStore = createAppStore({
   enhancers: devToolsEnhancers(),
   devTools: false,
   /*
-   * German, said here rather than assumed in the core
-   * (ADR 0049 §4). This is the app's product decision and this is the app: a phone
-   * set to English must not get an app half in English, so the host that ships to
-   * phones names the language it ships, and the core stops carrying a constant
-   * about somebody else's product.
+   * The language this host ships, named by this host (ADR 0049 §4). A phone set to
+   * English must not get an app half in English, so the app that ships to phones
+   * says which language that is, and the core stops carrying a constant about
+   * somebody else's product.
    *
-   * The workbench names its own, and a desktop host would name what the system
-   * answers. Nothing here changes what a reader sees; what changes is that the
-   * sentence is written where it is true.
+   * `lib/locale.ts` and not a literal, because the static export's `<html lang>`
+   * needs the same answer and cannot reach a store to ask for it.
    */
-  locale: 'de',
+  locale: SHIPPED_LOCALE,
 });
 
 /** Typed `useSelector`, so a selector's state argument is never `any`. */

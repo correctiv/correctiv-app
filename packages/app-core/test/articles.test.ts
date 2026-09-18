@@ -359,3 +359,51 @@ describe('stripTags', () => {
     expect(stripTags('<p>Hallo   <strong>Welt</strong></p>')).toBe('Hallo Welt');
   });
 });
+
+/**
+ * The language the article document announces itself in.
+ *
+ * `<html lang>` is what a browser hyphenates by and what a screen reader picks a
+ * voice from, so a German article announced as English is read out in an English
+ * accent with no hyphenation. It was the literal `"de"` here until
+ * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host a
+ * locale to pass, and it had no test at all — which a cold review pointed out.
+ *
+ * The default is the interesting half. `buildReaderHtml` keeps `'de'` so that every
+ * caller written before the option still renders exactly what it rendered, and the
+ * app's own wrapper passes `intl.locale` so the words and the attribute cannot
+ * disagree.
+ */
+describe('the reader document names its language', () => {
+  const article: Article = {
+    url: 'https://correctiv.org/faktencheck/2026/06/12/x/',
+    title: 'Ein Titel',
+    excerpt: 'Der Lead.',
+    authors: ['A. Autorin'],
+    publishedAt: '2026-06-12T15:20:06.000Z',
+    publishedText: '12. Juni 2026',
+    readingMinutes: 5,
+    bodyHtml: '<p>Text</p>',
+  };
+  const copy: ReaderCopy = {
+    factcheckBadge: 'Fact check',
+    byline: 'by A. Autorin',
+    readingTime: '5 min read',
+    support: 'Made possible by supporters like you.',
+  };
+
+  it('says German when nobody said otherwise', () => {
+    expect(buildReaderHtml(article, copy)).toContain('<html lang="de"');
+  });
+
+  it('says what the host asked for', () => {
+    expect(buildReaderHtml(article, copy, { locale: 'en' })).toContain('<html lang="en"');
+  });
+
+  it('carries exactly one', () => {
+    // A second `<html lang` would mean the shell was built twice, which is the
+    // shape a careless template edit leaves behind.
+    const html = buildReaderHtml(article, copy, { locale: 'en' });
+    expect(html.match(/<html lang=/g) ?? []).toHaveLength(1);
+  });
+});

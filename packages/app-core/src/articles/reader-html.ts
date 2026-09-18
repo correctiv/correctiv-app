@@ -2,6 +2,7 @@ import { escapeHtml } from '../lib/html';
 import { formatDateDe } from '../lib/format';
 import { coreMessage } from '../i18n/messages';
 import { ratingTone } from './rating';
+import type { Locale } from '../stores/settings';
 import type { Article } from './types';
 
 /**
@@ -117,7 +118,7 @@ export interface ReaderHtmlOptions {
    * language at a time. The day an English app shows a German article, that is a
    * `lang` on the body rather than a second argument here.
    */
-  locale?: string;
+  locale?: Locale;
 }
 
 const ROOT_FONT_PX = 16;

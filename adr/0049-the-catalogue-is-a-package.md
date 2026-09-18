@@ -1,6 +1,6 @@
 # ADR 0049 — The catalogue is a package, and the locale comes from the host
 
-Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219), §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221). Carried out.**
+Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219); §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221).** §4 has one user, the phone: the seam is there and the workbench has no locale to pass yet.
 
 The split is deliberate and the line is behaviour: [#219](https://github.com/correctiv/correctiv-app/pull/219)
 moves files and changes nothing a reader sees, so it can be reviewed as a move. §3 and §4
@@ -93,8 +93,11 @@ switch for English belongs in the workbench where ADR 0026 §6 put it.
 
 ### 4. The locale is supplied by the host, not written into the core
 
-`createAppStore()` gains one option. The phone passes `'de'`, the workbench passes what its
-address says, and a desktop host would pass what `GLib.get_language_names()` answers.
+`createAppStore()` gains one option. The phone passes `'de'`; the workbench **would**
+pass what its address says and a desktop host what `GLib.get_language_names()` answers,
+and neither does yet. What this section builds is the seam, not its second user — a
+cold review caught the first wording claiming all three in the present tense, which
+would have sent somebody looking for plumbing that is not there.
 
 **Why the store and not a port.** `CorePlatform` is what the core cannot do for itself —
 storage, blobs, audio, error reporting. A locale is not a capability, it is state, and it has
@@ -105,7 +108,15 @@ render late is a screen that flashes the wrong language.
 
 **Why not the device.** ADR 0026 §6's reason stands and is not weakened by this: a phone set
 to English must not get an app half in English. What changes is only where the decision is
-written. The constant moves from the core to the host that knows the answer.
+written.
+
+**The core keeps a default, and that is not the same constant.** A cold review read "the
+constant moves from the core to the host" and checked: `'de'` is still in the settings
+slice. It is, and it has to be — a store built by a test, or by a host that has not
+decided, needs one. What moved is the DECISION: `apps/mobile/src/lib/locale.ts` is where
+this product says which language it ships, the store binding and the web export's
+`<html lang>` both read it from there, and `apps/mobile/__tests__/tab-bar-labels.test.ts`
+holds both ends so the language cannot be changed in one of them alone.
 
 ### 5. The checks split along the same line
 

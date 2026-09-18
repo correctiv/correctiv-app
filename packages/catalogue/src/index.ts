@@ -39,5 +39,8 @@ import { en } from './en.generated';
  */
 export const CATALOGUES: Record<Locale, Record<string, string>> = { de, en };
 
+/** The language a catalogue comparison uses as its reference side. */
+export const DEFAULT_LOCALE: Locale = 'de';
+
 export { de, en };
 export type { Locale };

@@ -354,12 +354,15 @@ reason this paragraph gives. `expo-localization` is not needed for this step.
 vocabulary in the core, and the core imports no React, which
 `packages/app-core/test/boundary.test.ts` enforces. The `intl` instance and the
 provider are the host's. Extraction runs over both workspaces and ~~the compiled
-catalogues are build artifacts~~ — wrong on the day this was written and still wrong:
-nothing in this tree has ever compiled a catalogue. `formatjs extract` runs and
-writes `en.json`, which is read by a check and by nobody at run time; `formatjs
-compile` has no script, no CI step and no output anywhere. Measured 2026-09-18.
-The German that ships is hand-written data, which the rest of this section
-describes correctly. For `packages/app-core/src/data/`, which holds around
+catalogues are build artifacts~~ — wrong on the day this was written: nothing in this
+tree had ever compiled a catalogue. `formatjs extract` ran and wrote `en.json`, read
+by a check and by nobody at run time; `formatjs compile` had no script, no CI step
+and no output anywhere. Measured 2026-09-18, and **made true the same day** by
+[ADR 0049](0049-the-catalogue-is-a-package.md) §3, which compiles `en.generated.ts`
+and puts a drift check under it. The sentence stays struck because it was not true
+when it was written, and a reader who acted on it that morning would have gone
+looking for something that was not there. The German that ships is still
+hand-written data, which the rest of this section describes correctly. For `packages/app-core/src/data/`, which holds around
 230 German strings, the line is: *would this string still exist if the content came
 from a CMS?* If yes it is UI vocabulary in data's clothing and goes in the catalogue;
 if no it is content and follows the same rule as articles, which this record does not

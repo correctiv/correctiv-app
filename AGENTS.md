@@ -205,9 +205,9 @@ The package holds the strings and nothing else: a descriptor stays where its str
 is, the provider stays with the host, and the workbench keeps a catalogue of its own.
 German is the only language that ships, and English is a catalogue so that the
 second language can be looked at rather than asserted. **The locale is named by the
-host**, not written in the core: `apps/mobile` passes `'de'` to `createAppStore()`,
-the workbench passes what its address says, and a switch for a reader belongs in the
-workbench rather than in the app
+host**, not written in the core: `apps/mobile` passes `SHIPPED_LOCALE` to
+`createAppStore()`, and a switch for a reader belongs in the workbench rather than in
+the app, which has the seam and no locale of its own to pass yet
 ([ADR 0049](adr/0049-the-catalogue-is-a-package.md) §3 and §4).
 `apps/mobile/__tests__/localisation-seam.test.ts` is what enforces this. Two German
 strings are exempt and it names each one, not the file it sits in, with the reason: a

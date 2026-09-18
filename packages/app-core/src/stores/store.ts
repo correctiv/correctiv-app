@@ -46,8 +46,30 @@ const combined = combineReducers({
   video: videoReducer,
 });
 
-const rootReducer: typeof combined = (state, action) =>
-  combined(resetStore.match(action) ? undefined : state, action);
+/**
+ * The reducer a store is built with, and the one thing a reset must not throw away.
+ *
+ * `combined(undefined, …)` asks every slice for its OWN initial state, which is the
+ * whole point of a reset — and `preloadedState` is not consulted, so a host's locale
+ * went back to the slice's default. Measured by a cold review on 2026-09-18:
+ * `createAppStore({ locale: 'en' })` then one `resetStore()` gave `'de'`.
+ *
+ * That is not a test-only path. `resetStore` is on the preview frame's dev handle,
+ * so it is a control somebody presses; reset the frame and the app would flip
+ * language while the address still said the other one, with nothing reporting it.
+ *
+ * A locale is **construction** state and not user state, which is the whole of §4:
+ * everything else in this tree is something a person did and a reset undoes, and the
+ * language is something the host said and has not stopped saying. So the reset
+ * restores every slice and then puts that one field back.
+ */
+function reducerFor(locale: Locale | undefined): typeof combined {
+  return (state, action) => {
+    const next = combined(resetStore.match(action) ? undefined : state, action);
+    if (locale === undefined || !resetStore.match(action)) return next;
+    return { ...next, settings: { ...next.settings, locale } };
+  };
+}
 
 /**
  * One Redux store for the whole core.
@@ -143,7 +165,7 @@ export interface AppStoreOptions {
 
 export function createAppStore({ enhancers = [], devTools, locale }: AppStoreOptions = {}) {
   return configureStore({
-    reducer: rootReducer,
+    reducer: reducerFor(locale),
     devTools,
     // Only when the host said so, so that a store built without options is byte for
     // byte the one every existing test already builds.

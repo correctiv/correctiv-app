@@ -427,3 +427,35 @@ describe('persist across several slices', () => {
     vi.useRealTimers();
   });
 });
+
+/**
+ * The one piece of state a host hands in at construction
+ * ([ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §4).
+ *
+ * Three assertions, and the middle one is the reason this block exists. A cold
+ * review found that `resetStore` asked every slice for its own initial state and
+ * so handed the host's locale back to the core's default — measured, `'en'` in and
+ * `'de'` out. `resetStore` is on the preview frame's dev handle, so that is a
+ * control somebody presses, not a test-only path.
+ */
+describe('the locale the host names', () => {
+  it('reaches the store it was handed to', () => {
+    expect(createAppStore({ locale: 'en' }).getState().settings.locale).toBe('en');
+  });
+
+  it("survives a reset, because it is the host's and not the reader's", () => {
+    const store = createAppStore({ locale: 'en' });
+    store.dispatch(resetStore());
+    expect(store.getState().settings.locale).toBe('en');
+  });
+
+  it('leaves a store built without one exactly as it was', () => {
+    // The option is additive: every existing caller builds the same tree it always
+    // did, and a reset there still returns the slice's own default.
+    const store = createAppStore();
+    expect(store.getState().settings.locale).toBe('de');
+    store.dispatch(resetStore());
+    expect(store.getState().settings.locale).toBe('de');
+    expect(createAppStore().getState()).toEqual(createAppStore({ locale: 'de' }).getState());
+  });
+});

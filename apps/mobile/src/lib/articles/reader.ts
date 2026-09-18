@@ -36,20 +36,22 @@ import { READER_FONTS_CSS } from '@/lib/theme/readerFonts.generated';
  * `ReaderCopy` gives: the document is a string handed to a WebView, so nothing
  * inside it can reach a provider. `intl` is a parameter rather than a hook because
  * this is not a component, and `app/artikel.tsx` already holds one.
+ *
+ * **`locale` travels beside the words rather than being read off `intl`.** It fills
+ * the document's `<html lang>`, which a browser hyphenates by and a screen reader
+ * picks a voice from, so it must be the language the words are actually in.
+ * `intl.locale` is typed `string` by react-intl and would have to be cast; the
+ * caller has `useLocale()`, which is the same value already typed `Locale`, so the
+ * caller passes it and nothing is asserted away.
  */
 export function readerHtml(
   article: Article,
   intl: IntlShape,
-  options: Pick<ReaderHtmlOptions, 'textScale'> & { isDark?: boolean } = {},
+  options: Pick<ReaderHtmlOptions, 'textScale' | 'locale'> & { isDark?: boolean } = {},
 ): string {
   const { isDark, ...rest } = options;
   return buildReaderHtml(article, readerCopy(article, intl), {
     ...rest,
-    // The same `intl` the words came from, so the document's `lang` and its words
-    // cannot disagree. A browser hyphenates and a screen reader picks a voice by
-    // that attribute, and it was the literal "de" in the core until ADR 0049 §4
-    // gave a host a locale to pass.
-    locale: intl.locale,
     css: [READER_FONTS_CSS, THEME_CSS, ...(isDark ? [READER_DARK_CSS] : []), READER_LAYOUT_CSS],
   });
 }

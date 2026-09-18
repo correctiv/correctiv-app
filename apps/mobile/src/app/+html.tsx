@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react';
 
-import { settingsInitialState } from '@correctiv/app-core/stores/settings';
+import { SHIPPED_LOCALE } from '@/lib/locale';
 
 /**
  * The HTML shell of the web export, which Expo otherwise writes for us.
@@ -11,14 +11,16 @@ import { settingsInitialState } from '@correctiv/app-core/stores/settings';
  * reader announcing German prose in an English voice. Measured on the export on
  * 2026-09-18, before this file.
  *
- * `lang` is read off the settings slice's own initial value rather than typed here,
- * so this file cannot be the second place the app's language is written. The store
- * cannot be asked: this component renders once, statically, at export time, and
- * there is no store then — which is also why it is the INITIAL value and not the
- * host's. They agree today because `lib/store/core.ts` passes the same `'de'`, and
- * the day they do not, the attribute is a static document's best answer rather than
- * a lie: an app that switched language at runtime would set `document.documentElement.lang`
- * itself, the way the workbench does.
+ * `lang` comes from `lib/locale.ts`, the one place this app names the language it
+ * ships, so this file is not a second place it is written. The store cannot be
+ * asked: this component renders once, statically, at export time, and there is no
+ * store then.
+ *
+ * It read the settings slice's own default first, and a cold review showed what that
+ * costs: with the host passing `'en'` the export still said `lang="de"`, because
+ * the shell had read the CORE's answer rather than this host's.
+ * `i18n/Localisation.tsx` corrects the attribute on the first render either way,
+ * which is what an app that switches language at runtime would need anyway.
  *
  * Everything else here is Expo's own default shell. `ScrollViewStyleReset` is the
  * one piece that is not optional — react-native-web's root scroller needs it, and
@@ -26,7 +28,7 @@ import { settingsInitialState } from '@correctiv/app-core/stores/settings';
  */
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang={settingsInitialState.locale}>
+    <html lang={SHIPPED_LOCALE}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />

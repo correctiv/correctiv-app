@@ -26,7 +26,17 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, '..', 'src');
 const IN = join(SRC, 'en.json');
-const OUT = join(SRC, 'en.generated.ts');
+/**
+ * Where to write, and it is an argument so that the check does not have to write
+ * over the file it is judging.
+ *
+ * The drift check used to run this, compare, and restore in a `finally`. That works
+ * until it does not: a Ctrl-C between the write and the restore leaves the
+ * regenerated file in the tree, and if the file was stale the interrupted run has
+ * quietly repaired the thing it exists to report. Handing it a path in a temporary
+ * directory costs one argument and removes the window.
+ */
+const OUT = process.argv[2] ?? join(SRC, 'en.generated.ts');
 
 const scratch = join(mkdtempSync(join(tmpdir(), 'catalogue-')), 'en.json');
 execFileSync(

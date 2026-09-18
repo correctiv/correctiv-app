@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { floorFaults } from '@correctiv/prose-and-code';
 
-import { CATALOGUES, de, en, type Locale } from '../src/index';
+import { CATALOGUES, DEFAULT_LOCALE, de, en, type Locale } from '../src/index';
 
 /**
  * What is true of a catalogue, as opposed to what is true of a host.
@@ -87,15 +88,12 @@ describe('the English catalogue', () => {
    * language and reads a sentence that was reworded a month ago.
    */
   it('is what `npm run compile` produces right now', () => {
-    const before = readFileSync(GENERATED, 'utf8');
-    try {
-      execFileSync('node', [join(SCRIPTS, 'compile.mjs')], { stdio: 'pipe' });
-      expect(readFileSync(GENERATED, 'utf8')).toEqual(before);
-    } finally {
-      // The generator writes in place, so a stale file would be repaired by the
-      // test that judges it. Put back whatever was committed either way.
-      writeFileSync(GENERATED, before, 'utf8');
-    }
+    // Into a temporary file, never over the committed one. A check that writes the
+    // artefact it is judging repairs a stale file on the run that should have
+    // reported it, and a `finally` does not survive a Ctrl-C.
+    const fresh = join(mkdtempSync(join(tmpdir(), 'catalogue-')), 'en.generated.ts');
+    execFileSync('node', [join(SCRIPTS, 'compile.mjs'), fresh], { stdio: 'pipe' });
+    expect(readFileSync(GENERATED, 'utf8')).toEqual(readFileSync(fresh, 'utf8'));
   });
 
   it('holds every id the extraction found, and only those', () => {
@@ -176,6 +174,20 @@ describe('every message formats, in every language', () => {
     return [...names];
   }
 
+  /**
+   * Several values, not one, and the reason is what a plural is.
+   *
+   * With a single `1` every plural takes its `one` branch and no other, so a fault
+   * in `other` — a tag left unclosed, a `#` somebody turned into a word — formats
+   * cleanly and the check says nothing. Measured: a broken `other` branch was green
+   * and the same break in `one` was red.
+   *
+   * These four reach `zero`, `one`, `two`, `few`, `many` and `other` across the CLDR
+   * categories, so a language with more of them than German is covered by the same
+   * list: the category is chosen by the value, not by the catalogue.
+   */
+  const VALUES = [0, 1, 2, 11];
+
   it.each(Object.keys(CATALOGUES) as Locale[])('formats every message of %s', (locale) => {
     const messages = CATALOGUES[locale];
     expect(
@@ -184,19 +196,61 @@ describe('every message formats, in every language', () => {
       }),
     ).toEqual([]);
 
-    const faults = Object.entries(messages).flatMap(([id, message]) => {
-      try {
-        // A number for every argument: it stands in for a count, a date and a name
-        // alike, and the point is that the PATTERN parses and every branch a plural
-        // declares can be reached for this locale — not that the value reads well.
-        const values = Object.fromEntries(argumentsOf(message).map((name) => [name, 1]));
-        new IntlMessageFormat(message, locale).format(values);
-        return [];
-      } catch (error) {
-        return [`${locale} ${id}: ${error instanceof Error ? error.message : String(error)}`];
-      }
-    });
+    const faults = Object.entries(messages).flatMap(([id, message]) =>
+      VALUES.flatMap((value) => {
+        try {
+          // A number for every argument: it stands in for a count, a date and a name
+          // alike, and what is asked is that the pattern parses and this branch
+          // formats, not that the value reads well.
+          const values = Object.fromEntries(argumentsOf(message).map((name) => [name, value]));
+          // `ignoreTag` on both sides. `argumentsOf` parses with it, so without it
+          // here the first message to use react-intl rich text would be collected one
+          // way and formatted the other, and this would report a fault in a message
+          // that is fine.
+          new IntlMessageFormat(message, locale, undefined, { ignoreTag: true }).format(values);
+          return [];
+        } catch (error) {
+          const said = error instanceof Error ? error.message : String(error);
+          return [`${locale} ${id} at ${value}: ${said}`];
+        }
+      }),
+    );
 
     expect(faults).toEqual([]);
+  });
+
+  /**
+   * And every catalogue asks for the same arguments, which is the case that
+   * formatting each side on its own cannot see.
+   *
+   * The app formats one id with one set of values against whichever catalogue is on.
+   * `{count}` in English and `{anzahl}` in German each parse and each format; what
+   * breaks is the pairing, and it breaks at the call site with a `MissingValueError`
+   * the first time somebody switches language. An earlier docblock claimed the check
+   * above caught this. It did not, and a cold review said so.
+   */
+  it('asks for the same arguments in every language', () => {
+    const locales = Object.keys(CATALOGUES) as Locale[];
+    const ids = Object.keys(CATALOGUES[DEFAULT_LOCALE]);
+    expect(
+      floorFaults({ 'ids compared across locales': { found: ids.length, atLeast: 1 } }),
+    ).toEqual([]);
+
+    const disagreements = ids.flatMap((id) => {
+      const byLocale = locales.map((locale) => ({
+        locale,
+        args: argumentsOf(CATALOGUES[locale][id] ?? '').sort(),
+      }));
+      const first = byLocale[0]!;
+      return byLocale
+        .slice(1)
+        .filter(({ args }) => args.join() !== first.args.join())
+        .map(
+          ({ locale, args }) =>
+            `${id}: ${first.locale} takes [${first.args.join(', ')}], ${locale} takes [${args.join(', ')}]`,
+        );
+    });
+
+    expect(disagreements).toEqual([]);
   });
 });

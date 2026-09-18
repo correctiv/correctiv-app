@@ -16,7 +16,7 @@ import { goBack } from '@/lib/navigation/goBack';
 import { useDocumentTitle } from '@/lib/navigation/documentTitle';
 import { openExternal } from '@/lib/openExternal';
 import { shareArticle } from '@/lib/shareArticle';
-import { useCoreActions, useIsSaved, useTextScale } from '@/lib/store/core';
+import { useCoreActions, useIsSaved, useLocale, useTextScale } from '@/lib/store/core';
 import { sizes, useColors, useIsDark } from '@/lib/theme';
 
 /**
@@ -102,6 +102,7 @@ export default function ArtikelScreen() {
   // Both are read per render, never snapshotted: the appearance has to reach the
   // reader's colour block, and the text-size setting its root font size.
   const textScale = useTextScale();
+  const locale = useLocale();
   const isDark = useIsDark();
 
   /**
@@ -162,7 +163,7 @@ export default function ArtikelScreen() {
     <View className="flex-1 bg-canvas">
       {article ? (
         <ReaderView
-          html={readerHtml(article, intl, { textScale, isDark })}
+          html={readerHtml(article, intl, { textScale, isDark, locale })}
           onNavigate={onNavigate}
           onScroll={onReaderScroll}
         />
