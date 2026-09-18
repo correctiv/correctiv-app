@@ -77,6 +77,13 @@ cannot point at.
 Grey and faded, rather than faded alone, because §2 of this record needs the other half of
 that vocabulary.
 
+**And `inert`.** A drawn block is the app's real components, so a block that is not on
+screen at this hour otherwise keeps a live button in the tab order, with the one word that
+says it is off announced once, before it, and never again. Greying says it to an eye and
+nothing else; `inert` says it to the tab order, to the accessibility tree and to the
+pointer. `Palette.tsx` already answers the same question the same way for its specimens.
+This was a consequence nobody had decided until a cold review asked for a yes or a no.
+
 ### 2. A drag is shown by moving the block, not by marking a gap
 
 While a block is carried, **every block is drawn where a release would put it**, and the
@@ -268,6 +275,16 @@ pointer event, because `moved()` returns new arrays of sections that are equal b
 That is the mechanism §5 exists for, applied to a case it did not foresee.
 
 ## What is still open
+
+**Whether the details popover should be modal.** It is not, so focus can tab out of it
+while it stays open, to wherever the portal's position in `<body>` sends it. Escape and a
+second press of the trigger both put focus back, so nothing is trapped or lost, and the
+block underneath stays operable — which is what a non-modal popup is for. What was not
+established is how the tab-out actually reads, because the one environment available for
+looking could not dispatch a Tab that moves focus. Making it modal would settle it and
+would cost a scroll lock over the panel and an `aria-hidden` over the rest of the page,
+which is more than an unmeasured worry is worth. Somebody with a keyboard and five minutes
+can close this.
 
 **The drop has no animation of its own.** Every block is already where it will be, so there
 is nothing to settle; what is missing is the small lift and drop that says a gesture ended.

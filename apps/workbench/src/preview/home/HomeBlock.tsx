@@ -205,6 +205,18 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
    * also where the scale transform already is and one stacking context is cheaper to
    * reason about than two. Neither property affects layout, so the measurement below is
    * untouched by it.
+   *
+   * **And `inert` with it**, which is the half a cold review asked to be a decision rather
+   * than a silence. The drawing is the app's real components, so a block that is not on
+   * screen at this hour still had a live „Teilnehmen“ button in the tab order, with the one
+   * word that says it is off announced before it and never again. `inert` takes the subtree
+   * out of the tab order, out of the accessibility tree and out of the pointer's reach,
+   * which is the same answer `Palette.tsx` already gives for the same reason on its
+   * specimens. The greying says it to an eye; this says it to everything else.
+   *
+   * It does not reach the row's own controls: the bar, the gutter and the seams are the
+   * editor's and are outside this shell. Nor the outline in the frame, which `Row` drives
+   * from the `<li>`.
    */
   const off = Boolean(section.hidden);
 
@@ -212,6 +224,7 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
     <>
       <div
         ref={shell}
+        inert={off}
         className={cn('overflow-hidden', off && 'opacity-45 grayscale')}
         style={{ height }}
       >

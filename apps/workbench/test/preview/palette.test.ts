@@ -314,7 +314,16 @@ describe('one handle for the pointer, and the arrows for the keyboard', () => {
      */
     expect(PANEL).toMatch(/\{layout\.sections\.map\(/);
     expect(PANEL).toMatch(/translateY\(\$\{shift\}px\)/);
-    expect(PANEL).toMatch(/animate && 'transition-transform/);
+    expect(PANEL).toMatch(/dragging && 'transition-transform/);
+    /*
+     * And nothing that a carry hides is UNMOUNTED by it. A hairline or a button that holds
+     * the keyboard's focus when somebody else's pointer picks up a block would take that
+     * focus to `<body>` on the way out, and nothing puts it back. `opacity-0` leaves it
+     * where it is, so the two routes cannot collide.
+     */
+    expect(PANEL).toMatch(/dragging && 'pointer-events-none opacity-0'/);
+    expect(PANEL).toMatch(/carried && 'pointer-events-none opacity-0 group-hover:opacity-0'/);
+    expect(PANEL).not.toMatch(/carried && 'hidden'/);
     expect(PANEL).toMatch(/setPointerCapture/);
   });
 

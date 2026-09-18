@@ -953,7 +953,7 @@ export function HomeDocument({
                * twice. React batches `carry(null)` and `setLayout` into one update, so this
                * goes at the same moment the offsets do.
                */
-              animate={carried !== null}
+              dragging={carried !== null}
               onMove={(delta) => setLayout(moved(layout, section.id, delta))}
               onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
               onSetting={(key, value) =>
@@ -1163,7 +1163,7 @@ function Row({
   grip,
   carried,
   shift,
-  animate,
+  dragging,
   onMove,
   onHidden,
   onSetting,
@@ -1227,8 +1227,13 @@ function Row({
    * transitioned, and cannot lose the pointer it is being dragged by.
    */
   shift: number;
-  /** Whether that offset is animated, which is true exactly while something is carried. */
-  animate: boolean;
+  /**
+   * Whether a block — this one or another — is being carried right now.
+   *
+   * Two things follow from it and they are one fact, so they are one prop: the offset above
+   * is animated, and the seams stop offering to add into a list that is mid-answer.
+   */
+  dragging: boolean;
 }) {
   const intl = useWorkbenchIntl();
   /*
@@ -1314,7 +1319,7 @@ function Row({
          * Short. Long enough to be a slide rather than a jump, short enough that the
          * overlap the shadow above is for is over before it is read as one.
          */
-        animate && 'transition-transform duration-100 ease-out',
+        dragging && 'transition-transform duration-100 ease-out',
       )}
       style={{ transform: shift === 0 ? undefined : `translateY(${shift}px)` }}
       /*
@@ -1411,7 +1416,20 @@ function Row({
           thin control between every pair and at each end — and only in what it may spend
           on it.
         */}
-            <span className="absolute inset-x-0 top-0 z-20 -translate-y-1/2">{before}</span>
+            {/*
+          Hidden while anything is being carried, and **not** unmounted: a hairline that
+          currently holds the keyboard's focus would take it to `<body>` on the way out, and
+          a person who had tabbed to a seam would lose their place because somebody else's
+          pointer picked up a block. `opacity-0` leaves focus where it is.
+        */}
+            <span
+              className={cn(
+                'absolute inset-x-0 top-0 z-20 -translate-y-1/2',
+                dragging && 'pointer-events-none opacity-0',
+              )}
+            >
+              {before}
+            </span>
 
             {/*
           ADR 0053 §1. A block switched off at the playhead is drawn greyed rather than
@@ -1441,7 +1459,14 @@ function Row({
                 // Not over a block that is being carried: the block is answering a different
                 // question just then, and a row of controls riding along with it invites a
                 // press on something that is moving.
-                carried && 'hidden',
+                /*
+                  The hover reveal is what is switched off, not the element. `display: none`
+                  here would blur a button that had the keyboard's focus at the moment
+                  somebody grabbed this same row with the pointer, and nothing would put it
+                  back. What is focused stays visible; what is merely under a pointer does
+                  not.
+                */
+                carried && 'pointer-events-none opacity-0 group-hover:opacity-0',
               )}
             >
               {/*
@@ -1545,12 +1570,25 @@ function Row({
 
             {/* The last seam of the day, which has no block after it to live above. */}
             {after !== null && (
-              <span className="absolute inset-x-0 bottom-0 z-20 translate-y-1/2">{after}</span>
+              <span
+                className={cn(
+                  'absolute inset-x-0 bottom-0 z-20 translate-y-1/2',
+                  dragging && 'pointer-events-none opacity-0',
+                )}
+              >
+                {after}
+              </span>
             )}
           </div>
         </PopoverAnchor>
 
-        <PopoverContent>
+        {/*
+          Named, because Radix gives the panel `role="dialog"` and no name of its own — it
+          has no `Title` helper the way its dialog does. Without this a reader who tabs back
+          into an open popover is told only "dialog", and the block's name reached them
+          once, on the trigger, at the moment they opened it.
+        */}
+        <PopoverContent aria-label={intl.formatMessage(COPY.details, { block: spoken })}>
           <Details
             section={section}
             inherited={inherited}
