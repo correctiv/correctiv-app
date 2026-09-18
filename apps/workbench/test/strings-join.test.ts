@@ -48,7 +48,7 @@ const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..'
 const APP = join(ROOT, 'apps/mobile');
 const WORKBENCH = join(ROOT, 'apps/workbench');
 
-describe("rewriteExtractCommand, borrowing apps/mobile's own i18n:extract", () => {
+describe('rewriteExtractCommand, borrowing each package’s own i18n:extract', () => {
   it('adds --extract-source-location and redirects --out-file to the given path', () => {
     const command =
       "formatjs extract 'src/**/*.{ts,tsx}' --additional-function-names coreMessage --throws --out-file ../../packages/catalogue/src/en.json";
@@ -227,11 +227,24 @@ describe('buildRows, joining the located extractions against the catalogues', ()
   it('lets one namespace appear in both surfaces without calling it a split run', () => {
     // The contiguity check is keyed on the pair. Keyed on the namespace alone it
     // threw on this perfectly correct table the moment the second surface arrived.
+    //
+    // The app needs a SECOND namespace between its `settings` and the workbench's,
+    // and this is the reason: with the two `settings` runs adjacent, keying on the
+    // namespace alone merges them into one run and throws nothing, so the first
+    // version of this fixture stayed green under the very mutation it names. A
+    // cold review found that. `zzz` sorts last inside the app, which is what puts
+    // it between the two.
     const rows = () =>
       buildRows([
-        surface('app', APP, located({ 'settings.a': { defaultMessage: 'A' } }), {
-          en: { 'settings.a': 'A' },
-        }),
+        surface(
+          'app',
+          APP,
+          located({
+            'settings.a': { defaultMessage: 'A' },
+            'zzz.a': { defaultMessage: 'Z' },
+          }),
+          { en: { 'settings.a': 'A', 'zzz.a': 'Z' } },
+        ),
         surface('workbench', WORKBENCH, located({ 'settings.b': { defaultMessage: 'B' } }), {
           en: { 'settings.b': 'B' },
         }),
@@ -242,7 +255,25 @@ describe('buildRows, joining the located extractions against the catalogues', ()
       rows().strings.map(
         (row: { surface: string; namespace: string }) => `${row.surface} · ${row.namespace}`,
       ),
-    ).toEqual(['app \u00b7 settings', 'workbench \u00b7 settings']);
+    ).toEqual(['app · settings', 'app · zzz', 'workbench · settings']);
+  });
+
+  it('refuses a surface whose extraction matched nothing', () => {
+    // FormatJS exits 0 on a glob that matches no file, so a directory move that
+    // left one behind would otherwise write an empty board and print a green line
+    // under it. `plugin/index.ts` only checks the file is there.
+    expect(() =>
+      buildRows([
+        surface('app', APP, located({ 'a.one': { defaultMessage: 'A' } }), {
+          en: { 'a.one': 'A' },
+        }),
+        surface('workbench', WORKBENCH, located({}), { en: {} }),
+      ]),
+    ).toThrow(/extraction for "workbench" matched nothing/);
+  });
+
+  it('refuses an empty list of surfaces, rather than reading the first of none', () => {
+    expect(() => buildRows([])).toThrow(/no surfaces to join/);
   });
 
   it('throws, naming the section, when sorting leaves its entries in two separate runs', () => {
@@ -259,9 +290,7 @@ describe('buildRows, joining the located extractions against the catalogues', ()
     });
     const locales = { en: { cat: 'x', 'cat-fact': 'y', 'cat.field': 'z' } };
 
-    expect(() => buildRows([app(rows, locales)])).toThrow(
-      /"app \u00b7 cat".*"app \u00b7 cat-fact"/s,
-    );
+    expect(() => buildRows([app(rows, locales)])).toThrow(/"app · cat".*"app · cat-fact"/s);
   });
 
   it('throws, naming both sides, when one surface offers a language the other does not', () => {

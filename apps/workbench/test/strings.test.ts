@@ -1,10 +1,16 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
+
+import { ROOT } from '../plugin/collect.ts';
 
 import {
   group,
   hasGap,
   haystackOf,
   keyOf,
+  lookup,
   twinsOf,
   type StringEntry,
 } from '../src/pages/strings-model.ts';
@@ -36,7 +42,7 @@ describe('keyOf, what identifies a row', () => {
   it('is the surface and the id together, spelled the way a heading prints it', () => {
     // Pinned rather than derived, because every other assertion in this file
     // writes the key out by hand. If this spelling moves, they all have to.
-    expect(keyOf({ surface: 'app', id: 'settings.title' })).toBe('app \u00b7 settings.title');
+    expect(keyOf({ surface: 'app', id: 'settings.title' })).toBe('app · settings.title');
   });
 
   it('tells the two surfaces apart for an id they both have', () => {
@@ -45,6 +51,39 @@ describe('keyOf, what identifies a row', () => {
     expect(keyOf({ surface: 'app', id: 'settings.title' })).not.toBe(
       keyOf({ surface: 'workbench', id: 'settings.title' }),
     );
+  });
+});
+
+describe('lookup, the only way the page reaches into one of these maps', () => {
+  it('finds a row’s entry without the caller spelling the key', () => {
+    const map = new Map([['workbench · settings.title', 'found']]);
+
+    expect(lookup(map, { surface: 'workbench', id: 'settings.title' })).toBe('found');
+    expect(lookup(map, { surface: 'app', id: 'settings.title' })).toBeUndefined();
+  });
+
+  it('is the only way the page touches either map', () => {
+    // The rule `lookup` exists for, and the thing that actually holds it: a cold
+    // review put all three call sites back to `TWINS.get(entry.id)` and the whole
+    // suite stayed green, because that is valid TypeScript and there is no test
+    // that renders this page.
+    const page = readFileSync(join(ROOT, 'apps/workbench/src/pages/Strings.tsx'), 'utf8');
+
+    expect(page).toContain('lookup(TWINS, entry)');
+    expect(page).toContain('lookup(HAYSTACK, entry)');
+    expect(page.match(/\b(?:TWINS|HAYSTACK)\.(?:get|has)\(/g)).toBeNull();
+  });
+
+  it('matches nothing when the caller keys by the id, which is what makes that a trap', () => {
+    // `Map<string, T>.get(entry.id)` is valid TypeScript and returns undefined for
+    // every row of the real table, so the filter matches nothing and the "Same
+    // English" segment shows nothing. A cold review put all three call sites back
+    // to `entry.id` and the whole suite stayed green. Taking the ROW is what makes
+    // that unspellable; this is the case that says so out loud.
+    const map = new Map([['app · gate.title', 'found']]);
+
+    expect(map.get('gate.title')).toBeUndefined();
+    expect(lookup(map, { surface: 'app', id: 'gate.title' })).toBe('found');
   });
 });
 
@@ -116,10 +155,8 @@ describe('twinsOf, which ids share an English wording word for word', () => {
       entry({ surface: 'app', id: 'settings.title', english: 'System' }),
     ]);
 
-    expect(twins.get('workbench \u00b7 settings.mode.system')).toEqual([
-      'settings.language.system',
-    ]);
-    expect(twins.has('app \u00b7 settings.title')).toBe(false);
+    expect(twins.get('workbench · settings.mode.system')).toEqual(['settings.language.system']);
+    expect(twins.has('app · settings.title')).toBe(false);
   });
 
   it('does not call two blank entries twins of each other', () => {
@@ -193,7 +230,7 @@ describe('haystackOf, what the free-text filter is matched against', () => {
     // another.
     const haystack = haystackOf([entry({ surface: 'workbench', id: 'nav.strings' })]);
 
-    expect(haystack.get('workbench \u00b7 nav.strings')).toContain('workbench');
+    expect(haystack.get('workbench · nav.strings')).toContain('workbench');
   });
 
   it('keeps both rows when one id exists in both surfaces', () => {
@@ -206,8 +243,8 @@ describe('haystackOf, what the free-text filter is matched against', () => {
     ]);
 
     expect(haystack.size).toBe(2);
-    expect(haystack.get('app \u00b7 settings.title')).toContain('the app’s screen');
-    expect(haystack.get('workbench \u00b7 settings.title')).toContain('this site’s dialog');
+    expect(haystack.get('app · settings.title')).toContain('the app’s screen');
+    expect(haystack.get('workbench · settings.title')).toContain('this site’s dialog');
   });
 
   it('lower-cases everything, so a lower-case query still finds a mixed-case wording', () => {

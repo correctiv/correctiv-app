@@ -9,7 +9,7 @@ import { Filter, Source } from '../ui/Lookup';
 import { Page } from '../ui/Page';
 import { Toc } from '../ui/Toc';
 import { useSections } from '../ui/useSections';
-import { group, hasGap, haystackOf, keyOf, twinsOf } from './strings-model.ts';
+import { group, hasGap, haystackOf, keyOf, lookup, twinsOf } from './strings-model.ts';
 
 const { locales: LOCALES, strings: ENTRIES } = model;
 
@@ -96,9 +96,9 @@ export function Strings() {
     const q = query.trim().toLowerCase();
     return group(
       ENTRIES.filter((entry) => {
-        if (only === 'same' && !TWINS.has(keyOf(entry))) return false;
+        if (only === 'same' && lookup(TWINS, entry) === undefined) return false;
         if (only === 'untranslated' && !hasGap(entry, LOCALES)) return false;
-        return q === '' || (HAYSTACK.get(keyOf(entry)) ?? '').includes(q);
+        return q === '' || (lookup(HAYSTACK, entry) ?? '').includes(q);
       }),
     );
   }, [only, query]);
@@ -125,11 +125,12 @@ export function Strings() {
             the segment answers "is one of these".
 
             "Untranslated" is empty on any tree that passes its checks, and that is
-            structural rather than lucky: `localisation-seam.test.ts` asserts a
-            German wording for every extracted id, and the English catalogue is
-            compiled from the same extraction. What the segment is for is the half
-            hour before those run — a descriptor added, the catalogue not yet
-            written. The board is not what guarantees the zero; the seam test is.
+            structural rather than lucky. Both surfaces are held, by a test each:
+            `apps/mobile/__tests__/localisation-seam.test.ts` for the app's ids and
+            `apps/workbench/test/i18n.test.ts` for this site's, and each asserts a
+            German wording for every extracted id. What the segment is for is the
+            half hour before those run — a descriptor added, the catalogue not yet
+            written. The board is not what guarantees the zero; those two are.
           */}
           <Segmented
             name="strings-only"
@@ -157,11 +158,21 @@ export function Strings() {
             Every string the app or this site has a descriptor for, joined from the extraction and
             the catalogues. The two are separate catalogues with separate audiences, so a heading
             names both the surface and the namespace, and{' '}
-            <code className="font-mono">settings.title</code> below is two different strings. Two
-            strings a user reads are deliberately not descriptors, so they are not here;{' '}
-            <code className="font-mono">localisation-seam.test.ts</code> is the list. A wording with{' '}
-            <code className="font-mono">{'{braces}'}</code> is an ICU pattern, printed as the
-            pattern.
+            <code className="font-mono">settings.title</code> below is two different strings. A
+            wording with <code className="font-mono">{'{braces}'}</code> is an ICU pattern, printed
+            as the pattern.
+          </p>
+          <p className="mt-2xs max-w-content text-m leading-relaxed text-on-canvas-muted">
+            {/* Said plainly, because the first version of this page said "two strings
+                are missing" while the sentence above it had grown to cover both
+                surfaces. For the app that was true; for this site it was wrong by two
+                orders of magnitude, and this page's own heading is one of them. */}
+            The <code className="font-mono">app</code> half is complete but for two strings a user
+            reads that are deliberately not descriptors;{' '}
+            <code className="font-mono">apps/mobile/__tests__/localisation-seam.test.ts</code> names
+            both and why. The <code className="font-mono">workbench</code> half is not: much of what
+            this site says is still written into its own markup rather than extracted, and what is
+            below is what has been. This page&apos;s heading is one of the ones that has not.
           </p>
 
           {groups.length === 0 && (
@@ -188,7 +199,10 @@ export function Strings() {
               </h2>
               <ul className="mt-s divide-y divide-stroke overflow-hidden rounded-md border border-stroke">
                 {section.entries.map((entry) => (
-                  <li key={entry.id}>
+                  /* `keyOf` and not the id, which is unique inside a section today
+                     only because `group` cuts on the surface. The list key is the
+                     last place that would go wrong silently if it ever stopped. */
+                  <li key={keyOf(entry)}>
                     <Row entry={entry} />
                   </li>
                 ))}
@@ -216,7 +230,7 @@ export function Strings() {
  * address — is in the wide one.
  */
 function Row({ entry }: { entry: StringEntry }) {
-  const twins = TWINS.get(keyOf(entry));
+  const twins = lookup(TWINS, entry);
 
   return (
     <div className="grid gap-2xs px-s py-s md:grid-cols-[minmax(0,15rem)_1fr] md:gap-m">
@@ -260,9 +274,8 @@ function Row({ entry }: { entry: StringEntry }) {
 
         {/*
           The address of the descriptor BLOCK, which is what FormatJS reports:
-          every id in one `COPY` lands on the same line (`strings-model.ts` has
-          the count). That is the place to be taken to, and it is not a claim
-          about which line the id is on.
+          every id in one `COPY` lands on the same line. That is the place to be
+          taken to, and it is not a claim about which line the id is on.
 
           In the WIDE column, under the words, and not beside the id where it
           looks like it belongs. A path is one long token and `Source` breaks it

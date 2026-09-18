@@ -16,7 +16,7 @@ export const nav: Record<string, string> = {
   'nav.diagrams': 'Architekturdiagramme',
   'nav.reference': 'Referenz, der Core',
   'nav.sources': 'Statusübersicht der Quellen',
-  'nav.strings': 'Texte der App',
+  'nav.strings': 'Texte der App und dieser Site',
   'nav.preview': 'Vorschau',
 
   'nav.title.component': '{name}, eine Komponente',

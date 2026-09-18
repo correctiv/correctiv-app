@@ -45,7 +45,12 @@ export const PAGE_TITLES: Record<string, PageTitle> = {
   '/diagrams': wbMessage({ id: 'nav.diagrams', defaultMessage: 'Architecture diagrams' }),
   '/reference': wbMessage({ id: 'nav.reference', defaultMessage: 'Reference, the core' }),
   '/sources': wbMessage({ id: 'nav.sources', defaultMessage: 'Sources status board' }),
-  '/strings': wbMessage({ id: 'nav.strings', defaultMessage: 'Strings, the app’s own' }),
+  '/strings': wbMessage({
+    id: 'nav.strings',
+    defaultMessage: 'Strings, the app’s and this site’s',
+    description:
+      'The browser tab and the search palette for /strings. It said “the app’s own” until the board grew this site’s half, which made it a row ON that board asserting the board did not hold it.',
+  }),
   '/preview': wbMessage({ id: 'nav.preview', defaultMessage: 'Preview' }),
 };
 

@@ -111,7 +111,11 @@ export function rewriteExtractCommand(command, out) {
 function extractWithPositions(packageDir) {
   const { name, scripts } = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'));
   const command = scripts?.['i18n:extract'];
-  if (!command) throw new Error(`${name} has no \`i18n:extract\` script to borrow.`);
+  // The directory and not only the name: a manifest without one would otherwise
+  // say "undefined has no …".
+  if (!command) {
+    throw new Error(`${name ?? packageDir} has no \`i18n:extract\` script to borrow.`);
+  }
 
   const dir = mkdtempSync(join(tmpdir(), 'strings-'));
   try {
@@ -147,8 +151,15 @@ async function appCatalogues() {
  * English column here is what a reader would SEE, taken from the same place the
  * runtime takes it. The app's `en` column is no different in substance:
  * `packages/catalogue/src/en.generated.ts` is compiled from the app's extraction.
- * One of the two has a file and the other does not, and the board is about wordings
- * rather than about files.
+ *
+ * A first version of this said one of the two has an English file and the other
+ * does not. That is false and a cold review caught it:
+ * `src/i18n/catalogue/en.json` is tracked, and `test/i18n.test.ts` re-runs the
+ * extractor and compares it byte for byte. What is true is narrower — that file is
+ * the extractor's OUTPUT and not a catalogue anything imports — and taking `en`
+ * from the extraction this run just performed is what keeps the column from
+ * disagreeing with the ids beside it in the half hour after somebody edits a
+ * `defaultMessage`.
  */
 async function workbenchCatalogues(located) {
   const { de } = await import(join(WORKBENCH, 'src/i18n/catalogue/de/index.ts'));
@@ -189,6 +200,33 @@ function assertSectionsContiguous(strings) {
     }
     if (current !== null) closed.add(current);
     current = section;
+  }
+}
+
+/**
+ * Throws unless there is something to build a table out of.
+ *
+ * A glob left behind by a directory move makes `formatjs extract` match nothing
+ * and exit 0, and without this the board would be written empty, the run would
+ * print `0 ids (0 app + 0 workbench)` and exit 0 with it. `plugin/index.ts` only
+ * checks the file is there. This is `floorFaults`' argument applied to a
+ * generator: a stage that came back empty has to say so rather than pass.
+ *
+ * No number beyond one, deliberately. "At least one id per surface" is the thing
+ * that cannot drift; a floor of 300 would be a figure to keep in step with the app.
+ */
+function assertFloor(surfaces) {
+  if (surfaces.length === 0) {
+    throw new Error('strings.generated.json: no surfaces to join. `SURFACES` is empty.');
+  }
+  for (const { name, dir, located } of surfaces) {
+    if (Object.keys(located).length > 0) continue;
+    throw new Error(
+      `strings.generated.json: the extraction for "${name}" matched nothing in ${dir}. ` +
+        'Its `i18n:extract` glob is the first thing to look at — FormatJS exits 0 on a ' +
+        'glob that matches no file, so this would otherwise be an empty board and a ' +
+        'green run.',
+    );
   }
 }
 
@@ -235,6 +273,7 @@ function assertLocalesAgree(surfaces) {
  * would interleave into a table with no sections in it at all.
  */
 export function buildRows(surfaces) {
+  assertFloor(surfaces);
   assertLocalesAgree(surfaces);
   const locales = Object.keys(surfaces[0].byLocale).sort();
 
@@ -276,6 +315,10 @@ function main(surfaces) {
   const missing = strings.filter((s) => locales.some((l) => !s.translations[l])).length;
   const described = strings.filter((s) => s.description).length;
   const sections = new Set(strings.map((s) => `${s.surface}.${s.namespace}`)).size;
+  // Printed every run because the site builds as ONE chunk — `plugin/index.ts`
+  // inlines this file verbatim and nothing here is code-split, so every page pays
+  // for it. Reported and not gated: a bound typed here would be a figure to keep,
+  // and the number is in front of whoever changed it.
   const size = Math.round(readFileSync(OUT).length / 1024);
   const per = surfaces
     .map(({ name, located }) => `${Object.keys(located).length} ${name}`)
@@ -286,19 +329,35 @@ function main(surfaces) {
   );
 }
 
+/**
+ * Where each surface's catalogues come from, by name.
+ *
+ * A table rather than two calls in `read()`, because `read()` destructured
+ * `SURFACES` into exactly two and would have dropped a third in silence — the one
+ * place in this file that was not written for N surfaces, under a docstring
+ * presenting the array as the list. Looked up by name, so a surface without an
+ * entry here fails loudly.
+ */
+const CATALOGUES_OF = {
+  app: () => appCatalogues(),
+  workbench: (located) => workbenchCatalogues(located),
+};
+
 /** Each surface's extraction and catalogues, in the order the page prints them. */
 async function read() {
-  const [app, workbench] = SURFACES;
-  const appLocated = extractWithPositions(app.dir);
-  const workbenchLocated = extractWithPositions(workbench.dir);
-  return [
-    { ...app, located: appLocated, byLocale: await appCatalogues() },
-    {
-      ...workbench,
-      located: workbenchLocated,
-      byLocale: await workbenchCatalogues(workbenchLocated),
-    },
-  ];
+  return Promise.all(
+    SURFACES.map(async (surface) => {
+      const catalogues = CATALOGUES_OF[surface.name];
+      if (!catalogues) {
+        throw new Error(
+          `strings.generated.json: no catalogues are declared for the surface "${surface.name}". ` +
+            'Add it to `CATALOGUES_OF` beside the entry in `SURFACES`.',
+        );
+      }
+      const located = extractWithPositions(surface.dir);
+      return { ...surface, located, byLocale: await catalogues(located) };
+    }),
+  );
 }
 
 // Only when this file is the command. `npm run strings` needs a real FormatJS

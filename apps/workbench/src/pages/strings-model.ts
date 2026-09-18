@@ -59,16 +59,22 @@ export interface StringEntry {
    * The line the DESCRIPTOR BLOCK starts on, not the line the id is on.
    *
    * `@formatjs/cli --extract-source-location` reports the position of the
-   * `defineMessages(...)` call, so every id in one `COPY` block carries the same
-   * line — 60 of the 139 positions in today's table are shared by two ids or more,
-   * and `artikel.tsx:31` is shared by eight. That is the block a reader wants to
-   * be taken to, so it is a fair address; it is not the promise "your id is on
-   * this line", and a first version of this comment made that promise.
+   * `defineMessages(...)` call, so a `COPY` block of thirty ids gives thirty rows
+   * one address. That is the block a reader wants to be taken to, so it is a fair
+   * address; it is not the promise "your id is on this line", and a first version
+   * of this comment made that promise.
+   *
+   * No count here. The first version had one and a cold review found a bigger
+   * case two files away, which is what a figure measured against this repository
+   * does on its own; the mechanism is the part that cannot drift.
    */
   line: number;
   /** Every language's wording, `null` where a catalogue has no entry. */
   translations: Record<string, string | null>;
 }
+
+/** As much of a row as the lookups below need, so a fixture need be no more. */
+export type Row = Pick<StringEntry, 'surface' | 'id'>;
 
 /**
  * What identifies a row: the surface and the id together.
@@ -78,7 +84,7 @@ export interface StringEntry {
  * `app`'s `settings.title` and `workbench`'s and dropped the other, and the page
  * would have shown a description against the wrong wording rather than failing.
  */
-export function keyOf(entry: Pick<StringEntry, 'surface' | 'id'>): string {
+export function keyOf(entry: Row): string {
   // A space around the separator, because it is also what the heading prints and
   // what an error out of `scripts/strings.mjs` names a section by. One spelling.
   return `${entry.surface} \u00b7 ${entry.id}`;
@@ -105,9 +111,14 @@ export function keyOf(entry: Pick<StringEntry, 'surface' | 'id'>): string {
  * **Within a surface and never across it.** `settings.title` reads "Settings" in
  * both sets of strings, and that is not a coincidence a translator has to resolve:
  * they are two catalogues with two audiences, and whoever writes the German for one
- * of them never opens the other. Pairing them would put a line on 40-odd rows
- * pointing at strings the reader cannot act on, which is how a real signal — the
- * four ids inside the app that genuinely do coincide — gets lost in noise.
+ * of them never opens the other. A line pointing across is a line nobody can act
+ * on, and it would sit on rows whose genuine twin — the other id in their OWN
+ * catalogue — is the thing the line exists for.
+ *
+ * A first version of this paragraph put two figures on that, and a cold review
+ * measured both wrong in opposite directions. They are not here now, because the
+ * argument does not need them and the numbers move with every string anybody
+ * writes.
  */
 export function twinsOf(entries: readonly StringEntry[]): Map<string, string[]> {
   const byEnglish = new Map<string, StringEntry[]>();
@@ -131,6 +142,25 @@ export function twinsOf(entries: readonly StringEntry[]): Map<string, string[]> 
   return twins;
 }
 
+/**
+ * Whatever a map keyed by `keyOf` holds for this row.
+ *
+ * **The page reaches into these maps only through here**, and that is a rule
+ * rather than a guarantee. `TWINS.get(entry.id)` is valid TypeScript — a
+ * `Map<string, …>` takes any string — and on the real table it returns
+ * `undefined` for every row, so the filter matches nothing and the "Same English"
+ * segment shows nothing. A cold review put all three call sites back to
+ * `entry.id` and the whole suite stayed green.
+ *
+ * Taking the ROW is what makes the right call the short one and puts the reason
+ * in one place. What actually holds it is `test/strings.test.ts`, which fails if
+ * `Strings.tsx` calls `.get(` on either map at all — the mistake stays spellable,
+ * it just stops being publishable.
+ */
+export function lookup<T>(map: ReadonlyMap<string, T>, entry: Row): T | undefined {
+  return map.get(keyOf(entry));
+}
+
 /** A catalogue with nothing for this id, in any of the languages that ship. */
 export function hasGap(entry: StringEntry, locales: readonly string[]): boolean {
   return locales.some((locale) => !entry.translations[locale]);
@@ -144,9 +174,16 @@ export function hasGap(entry: StringEntry, locales: readonly string[]): boolean 
  * screenshot, and the description from the argument about what a string meant.
  *
  * And the surface, which is what lets the box answer "which of these two sets" as
- * well: typing `workbench` narrows to this site's own strings and `app` to the
- * app's. A third control in the bar would have said the same thing and taken the
- * room the filter needs at 390px, and the surface is a word a reader already has.
+ * well: typing `workbench` narrows to this site's own strings, and it does so
+ * exactly — measured, no app row contains that word. A third control in the bar
+ * would have said the same thing and taken the room the filter needs at 390px.
+ *
+ * **It does not work the other way round**, and a cold review caught the claim
+ * that it did. `app` is a substring of "App language", "Appearance", "Put the day
+ * away" and forty-odd others, so typing it brings the app's rows AND every row of
+ * this site's whose wording happens to contain those three letters. That is what a
+ * substring filter is, and it is the price of not having a third control; the
+ * honest way to reach one surface is the headings, which name it.
  */
 export function haystackOf(entries: readonly StringEntry[]): Map<string, string> {
   return new Map(
