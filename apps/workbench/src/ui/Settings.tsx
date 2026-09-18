@@ -1,6 +1,6 @@
 import { Languages, Moon, Sun, SunMoon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { defineMessages, type IntlShape, type MessageDescriptor } from 'react-intl';
+import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import docsModule from 'virtual:docs';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog';
@@ -9,6 +9,7 @@ import { MEASURED_ON } from '../../content/sources.manifest';
 import { ageInWords } from '../lib/measured';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { tagOf, type LanguageChoice } from '../i18n/language';
+import { say } from '../i18n/messages';
 import type { Appearance } from '../theme';
 
 /**
@@ -170,22 +171,6 @@ export const TONGUES: Tongue[] = [
   { value: 'en', label: 'English', hint: 'The language every string is written in' },
   { value: 'de', label: 'Deutsch', hint: 'Was diese Site selbst schreibt' },
 ];
-
-/**
- * A row's words, whichever of the two kinds it holds.
- *
- * Takes `intl` rather than calling the hook, because it is reached from a `.map`
- * inside one component and a hook in a helper would be a rule violated for no gain.
- *
- * Exported with `TONGUES` for `test/i18n.test.ts`. Nothing in this package renders
- * this dialog — it is a Radix dialog and the tests here use `renderToStaticMarkup`,
- * which mounts no portal — so a cold review rewrote this to skip `formatMessage`
- * entirely, leaving every translated row reading "[object Object]", and 484 tests
- * stayed green.
- */
-export function say(intl: IntlShape, words: string | MessageDescriptor): string {
-  return typeof words === 'string' ? words : intl.formatMessage(words);
-}
 
 const SHORTCUTS: [string, MessageDescriptor][] = [
   ['⌘K', COPY.search],

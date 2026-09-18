@@ -198,6 +198,47 @@ work is then the check first and the translation second, in that order, and
 `test/rendered-literals.test.ts`'s table says so where the three files are listed
 — as a decision, not as a backlog.
 
+### 7. The home configurator's blocks say what they are in German, and the module takes a formatter
+
+Decided on 2026-09-18, by looking at the palette on a phone frame. ADR 0050 §5
+deferred exactly this and named the design decision it needed; this is that decision.
+
+**The words are the point.** ADR 0050 §1 names one audience outside development,
+somebody from the newsroom arranging the home screen, and `MODULE_LABELS` is the
+table they arrange it with: eleven block names and the sentence under each, plus
+three settings. Nothing else on this site is addressed so directly at the person
+that record was written for, and it was the last English thing left in front of them.
+
+**The module takes an `IntlShape`, it does not return one.** §5 of ADR 0050 named two
+ways out and this takes the first. `preview/home/document.ts` declares its labels
+with `wbMessage`, the identity function `shell/views.ts` and `nav.ts` already use and
+for the same measured reason — the dev server imports this module through
+`plugin/home-layout.ts`, `react-intl` imports React, and a React import inside Vite's
+own config is an exception thrown while the site starts. `blockName()` and
+`whereAt()` then take a formatter as their first argument.
+
+The other way, returning a descriptor and values for the caller to format, was
+rejected on what `whereAt` does: it composes two `blockName`s inside one sentence, so
+a caller would be handed a tree to assemble and all four call sites would have to
+assemble it identically. A formatter passed down is one argument; a tree of
+descriptors is a second implementation of `formatMessage` in the callers.
+
+**The field that was `name` is called `label`.** That is not tidying, it is the
+repair. `test/rendered-literals.test.ts` reads a list of prop and key names that
+carry something a person reads, and `label` has always been on it while `name` never
+was — eleven of the twelve `name`s on this site are a radio group's value. The table
+used `name` and `what`, so eleven blocks and three settings of prose sat in English
+through five passes of translating this site and no check said a word. `what` is on
+that list now, `name` is not, and the two `name:` keys left unwatched are argued
+where they sit.
+
+**What this cost the check that was already there.** `test/preview/home-document.test.ts`
+asks whether a label merely repeats the module id and whether the sentence under it
+says anything; it reads the `defaultMessage` now, which is where those words are
+written. `test/preview/palette.test.ts` builds an `intl` at the source language,
+because the sentence it asserts is an English one and the German for it is
+`test/i18n.test.ts`'s to hold.
+
 ## What this retires
 
 - [ADR 0050](0050-the-workbench-gets-a-second-audience.md) §2's line, "the shell and
@@ -209,5 +250,9 @@ work is then the check first and the translation second, in that order, and
   and the sources board's own prose were this site's own words and now follow the
   setting. Everything §2 says about **why** content is English, and both accounts of
   the drafts that failed, stands and is what this record is built on.
+- [ADR 0050](0050-the-workbench-gets-a-second-audience.md) §5's "they are the one part
+  not moved here", about `document.ts`'s module labels. Decision 7 of this record moves
+  them. The two ways out that section named are both still the two ways out, and what
+  it picks between them on is an argument §5 did not have.
 - [AGENTS.md](../AGENTS.md)'s sentence naming the same line, which now states this
   one.

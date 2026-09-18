@@ -599,16 +599,22 @@ describe('the words an editor reads', () => {
     // The whole point of the labels: `faktencheck-rail` tells a newsroom nothing about
     // what it will see. A label that merely repeats the id is the failure, and it is one
     // a type cannot see.
-    for (const [module, label] of Object.entries(MODULE_LABELS)) {
-      expect(label.name).not.toBe(module);
-      expect(label.name).not.toMatch(/-/);
-      expect(label.what.length).toBeGreaterThan(20);
+    // The English, off the descriptor. Both halves are messages since 2026-09-18,
+    // so what this reads is the `defaultMessage` rather than a bare string: the
+    // question it asks is about the words a module is given, and the source is
+    // where those words are written.
+    for (const [module, { label, what }] of Object.entries(MODULE_LABELS)) {
+      const english = typeof label === 'string' ? label : label.defaultMessage;
+      expect(english).not.toBe(module);
+      expect(english).not.toMatch(/-/);
+      expect(what.defaultMessage.length).toBeGreaterThan(20);
     }
   });
 
   it('still draws a row for a module it has never heard of', () => {
     // ADR 0036 §7's rule, in the editor: a document ahead of this tool stays editable.
-    expect(moduleLabel('something-new').name).toBe('something-new');
+    // The one label that is a plain string rather than a message: an id.
+    expect(moduleLabel('something-new').label).toBe('something-new');
   });
 
   /**
@@ -623,15 +629,16 @@ describe('the words an editor reads', () => {
     );
     expect(declared.filter((key) => !Object.hasOwn(SETTING_LABELS, key))).toEqual([]);
     expect(Object.keys(SETTING_LABELS).filter((key) => !declared.includes(key))).toEqual([]);
-    for (const [key, label] of Object.entries(SETTING_LABELS)) {
-      expect(label.name).not.toBe(key.split('.')[1]);
-      expect(label.what.length).toBeGreaterThan(10);
+    for (const [key, { label, what }] of Object.entries(SETTING_LABELS)) {
+      const english = typeof label === 'string' ? label : label.defaultMessage;
+      expect(english).not.toBe(key.split('.')[1]);
+      expect(what.defaultMessage.length).toBeGreaterThan(10);
     }
   });
 
   it('falls back to the key for a setting it has no words for', () => {
     expect(
-      settingLabel('quiz', { key: 'answers', kind: 'count', min: 1, max: 4, fallback: 2 }).name,
+      settingLabel('quiz', { key: 'answers', kind: 'count', min: 1, max: 4, fallback: 2 }).label,
     ).toBe('answers');
   });
 });

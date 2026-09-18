@@ -455,7 +455,10 @@
       "3": ["The mechanism is shared, the argument is not"],
       "4": ["`content/` is a record and is printed as written"],
       "5": ["`plugin/registry.ts` is in scope by §1 and out of reach of the extraction"],
-      "6": ["Three of the six drawings keep their labels in English"]
+      "6": ["Three of the six drawings keep their labels in English"],
+      "7": [
+        "The home configurator's blocks say what they are in German, and the module takes a formatter"
+      ]
     }
   }
 }

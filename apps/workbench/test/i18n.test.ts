@@ -24,7 +24,8 @@ import {
   storedLanguage,
   tagOf,
 } from '../src/i18n/language';
-import { say, TONGUES } from '../src/ui/Settings';
+import { say } from '../src/i18n/messages';
+import { TONGUES } from '../src/ui/Settings';
 
 /**
  * This site's own localisation seam, which is the app's with one thing reversed.
@@ -477,7 +478,9 @@ describe('the language setting', () => {
     // look for "Englisch" — so those labels are literals on purpose. "System" has
     // no language of its own and is a descriptor. `say` is what tells them apart,
     // and a cold review rewrote it to skip `formatMessage` entirely, leaving every
-    // translated row reading "[object Object]", with everything green.
+    // translated row reading "[object Object]", with everything green. It lives in
+    // `i18n/messages.ts` now, because the home configurator's module labels are the
+    // same mixture and were the second place to need it.
     const intl = createIntl({ locale: 'de', defaultLocale: SOURCE_LANGUAGE, messages: de });
 
     expect(TONGUES.map((tongue) => tongue.value)).toEqual(['system', 'en', 'de']);

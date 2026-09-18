@@ -1,5 +1,62 @@
 /** German for the `home.*` ids: the home-screen configurator. */
 export const home: Record<string, string> = {
+  // --- the blocks the configurator offers, and what each one draws --------------
+  //
+  // The most important German on this site by the argument that started it: ADR 0050
+  // §1 names one audience outside development, somebody from the newsroom arranging
+  // the home screen, and this palette is what they arrange it with. It was English
+  // through five passes because the table used the keys `name` and `what`, neither of
+  // which the literal check watched.
+  //
+  // „Mediathek", „Backstage", „Impact" and „Spotlight" are the app's own section
+  // names and the same word in both catalogues. A translation of one of them would
+  // rename a section of the app rather than translate a label.
+  'home.module.header': 'Kopfzeile',
+  'home.module.header.what': 'Das Datum, die Begrüßung und der Weg in die Suche.',
+  'home.module.feedStatus': 'Lade- und Offline-Hinweis',
+  'home.module.feedStatus.what':
+    'Erscheint nur, solange die Feeds laden, oder wenn sie aus dem Bundle kamen.',
+  'home.module.articleHero': 'Aufmacher',
+  'home.module.articleHero.what': 'Die neueste Recherche, über die volle Breite.',
+  'home.module.spotlight': 'Spotlight-Briefing',
+  'home.module.spotlight.what': 'Die aktuelle Ausgabe, mit dem Weg ins Archiv.',
+  'home.module.earlyAccess': 'Früher lesen',
+  'home.module.earlyAccess.what': 'Was Mitglieder vor allen anderen sehen.',
+  'home.module.latest': 'Neueste Recherchen',
+  'home.module.latest.what': 'Die Recherchen unter dem Aufmacher, als Liste.',
+  'home.module.faktencheck': 'Faktenchecks',
+  'home.module.faktencheck.what': 'Die neuesten Faktenchecks, als Reihe, die seitlich scrollt.',
+  'home.module.callout': 'Mitmach-Aufruf',
+  'home.module.callout.what':
+    'Der offene Aufruf. Zwei Stellen im Dokument, eine davon mittags über den Aufmacher gehoben.',
+  'home.module.mediathek': 'Mediathek',
+  'home.module.mediathek.what': 'Video und Audio, als Reihe.',
+  'home.module.backstage': 'Backstage',
+  'home.module.backstage.what': 'Das Redaktionstagebuch und der Weg hinein.',
+  'home.module.impact': 'Impact',
+  'home.module.impact.what': 'Was die Recherchen verändert haben, und ein Dankeschön.',
+  'home.module.unknown.what': 'Dieses Werkzeug hat keine Beschreibung dafür.',
+
+  // --- the three settings under a block -----------------------------------------
+  'home.setting.articleHero.pin': 'Welcher Artikel führt',
+  'home.setting.articleHero.pin.what':
+    'Der angeheftete, oder die neueste Recherche, wenn keiner angeheftet ist.',
+  'home.setting.latestResearch.count': 'Wie viele Recherchen',
+  'home.setting.latestResearch.count.what': 'Die Liste unter dem Aufmacher.',
+  'home.setting.faktencheckRail.count': 'Wie viele Faktenchecks',
+  'home.setting.faktencheckRail.count.what': 'Die Reihe, die seitlich scrollt.',
+  'home.setting.unknown.what': 'Keine Beschreibung dafür.',
+
+  // --- where an insertion mark puts a block -------------------------------------
+  //
+  // Dropped into the middle of a sentence, so lower case and no full stop. The
+  // brackets in `home.block.name` stay: the id inside them is an identifier, and the
+  // two halves have to stay tellable apart when a screen reader reads them out.
+  'home.block.name': '{name} ({id})',
+  'home.where.top': 'ganz oben im Tag',
+  'home.where.end': 'ganz am Ende des Tages',
+  'home.where.between': 'zwischen {before} und {after}',
+
   // The day under the frame (`preview/home/Timeline.tsx`).
   'home.timeline.heading': 'Der Tag',
   'home.timeline.time': 'Die Uhrzeit, die der Rahmen zeigt',

@@ -1,3 +1,5 @@
+import type { IntlShape, MessageDescriptor } from 'react-intl';
+
 /**
  * The identity function a module without React uses to declare a message.
  *
@@ -36,4 +38,25 @@ export interface WorkbenchMessage {
 
 export function wbMessage(message: WorkbenchMessage): WorkbenchMessage {
   return message;
+}
+
+/**
+ * A label's words, whichever of the two kinds it holds.
+ *
+ * Two tables on this site hold a mixture: `ui/Settings.tsx`'s language picker,
+ * where „English“ and „Deutsch“ are literals because a language names itself, and
+ * `preview/home/document.ts`'s module labels, where an id the tool has no name for
+ * falls back to the id. Both need one line that formats a descriptor and passes a
+ * string through, and one line in two places is one too many.
+ *
+ * Takes `intl` rather than calling the hook, because both call sites reach it from
+ * inside a `.map` and a hook in a helper would be a rule violated for no gain.
+ *
+ * Both descriptor shapes, because the two tables declare them differently:
+ * `defineMessages` in a component gives a `MessageDescriptor` whose `id` may be a
+ * number, and `wbMessage` in a data module gives one whose `id` is a string. This
+ * is the one place that has to know they are the same thing.
+ */
+export function say(intl: IntlShape, words: string | WorkbenchMessage | MessageDescriptor): string {
+  return typeof words === 'string' ? words : intl.formatMessage(words);
 }

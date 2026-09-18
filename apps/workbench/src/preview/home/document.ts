@@ -11,11 +11,15 @@ import {
   type ModuleSettings,
   type SettingValue,
 } from '@correctiv/app-core/lib/home-layout';
+import type { IntlShape } from 'react-intl';
+
 import {
   settingsFor,
   type CountSetting,
   type SettingSpec,
 } from '@correctiv/app-core/lib/home-settings';
+
+import { say, wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 
 /**
  * The home document, as a thing that can be edited and printed.
@@ -64,42 +68,151 @@ export const SHIPPED: HomeLayout = DEFAULT_HOME_LAYOUT;
  * `apps/mobile/src/lib/home/modules.tsx` as source text — the shell may not import from
  * the app — and fails on a module with no entry here as well as on an entry no module
  * answers to, which is the direction a type cannot see.
+ *
+ * **Both halves are descriptors, and this is the table ADR 0050 §1 was written for.**
+ * The one audience that decision names outside development is somebody from the
+ * newsroom arranging the home screen, and this is what they arrange it with. It stayed
+ * English through five passes of translating the site because the fields were called
+ * `name` and `what`, and `test/rendered-literals.test.ts` watched neither; `what` is
+ * watched now and the field that was `name` is called `label`, which that check has
+ * always read.
+ *
+ * `wbMessage` rather than `defineMessages` because the dev server imports this module:
+ * `react-intl` imports React, and a React import in Vite's own config is an exception
+ * thrown while the site starts. One call per descriptor, which is what the extractor
+ * reads (`i18n/messages.ts`).
  */
-export const MODULE_LABELS: Readonly<Record<string, { name: string; what: string }>> = {
-  'home-header': { name: 'Header', what: 'The date, the greeting and the way into search.' },
-  'feed-status': {
-    name: 'Loading and offline notice',
-    what: 'Only appears while the feeds load, or when they came out of the bundle.',
+export interface ModuleWords {
+  /**
+   * The module's name. A string only where there is nothing to translate: the
+   * fallback below hands back the raw module id, which is the app's vocabulary and
+   * the same word in every language.
+   */
+  label: string | WorkbenchMessage;
+  /** The sentence under it, which is always this tool's own words. */
+  what: WorkbenchMessage;
+}
+
+export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
+  'home-header': {
+    label: wbMessage({
+      id: 'home.module.header',
+      defaultMessage: 'Header',
+      description:
+        'The name of the app’s topmost block, which is a word the app’s own header does not print. `frame.pages.home` is the tab this block sits on.',
+    }),
+    what: wbMessage({
+      id: 'home.module.header.what',
+      defaultMessage: 'The date, the greeting and the way into search.',
+    }),
   },
-  'article-hero': { name: 'Lead article', what: 'The newest investigation, full width.' },
+  'feed-status': {
+    label: wbMessage({
+      id: 'home.module.feedStatus',
+      defaultMessage: 'Loading and offline notice',
+    }),
+    what: wbMessage({
+      id: 'home.module.feedStatus.what',
+      defaultMessage: 'Only appears while the feeds load, or when they came out of the bundle.',
+    }),
+  },
+  'article-hero': {
+    label: wbMessage({ id: 'home.module.articleHero', defaultMessage: 'Lead article' }),
+    what: wbMessage({
+      id: 'home.module.articleHero.what',
+      defaultMessage: 'The newest investigation, full width.',
+    }),
+  },
   'spotlight-briefing': {
-    name: 'Spotlight briefing',
-    what: 'The current issue, with the way into the archive.',
+    label: wbMessage({
+      id: 'home.module.spotlight',
+      defaultMessage: 'Spotlight briefing',
+      description:
+        'Spotlight is the name of a CORRECTIV newsletter and stays as it is in every language; “briefing” is what this block draws of it.',
+    }),
+    what: wbMessage({
+      id: 'home.module.spotlight.what',
+      defaultMessage: 'The current issue, with the way into the archive.',
+    }),
   },
   'early-access-card': {
-    name: 'Early access',
-    what: 'What members see before everybody else.',
+    label: wbMessage({ id: 'home.module.earlyAccess', defaultMessage: 'Early access' }),
+    what: wbMessage({
+      id: 'home.module.earlyAccess.what',
+      defaultMessage: 'What members see before everybody else.',
+    }),
   },
   'latest-research': {
-    name: 'Latest investigations',
-    what: 'The investigations under the lead, as a list.',
+    label: wbMessage({ id: 'home.module.latest', defaultMessage: 'Latest investigations' }),
+    what: wbMessage({
+      id: 'home.module.latest.what',
+      defaultMessage: 'The investigations under the lead, as a list.',
+    }),
   },
   'faktencheck-rail': {
-    name: 'Fact checks',
-    what: 'The newest fact checks, as a row that scrolls sideways.',
+    label: wbMessage({ id: 'home.module.faktencheck', defaultMessage: 'Fact checks' }),
+    what: wbMessage({
+      id: 'home.module.faktencheck.what',
+      defaultMessage: 'The newest fact checks, as a row that scrolls sideways.',
+    }),
   },
   'callout-teaser': {
-    name: 'Participation callout',
-    what: 'The open callout. Two places in the document, one lifted over the lead at midday.',
+    label: wbMessage({ id: 'home.module.callout', defaultMessage: 'Participation callout' }),
+    what: wbMessage({
+      id: 'home.module.callout.what',
+      defaultMessage:
+        'The open callout. Two places in the document, one lifted over the lead at midday.',
+    }),
   },
-  'mediathek-reihe': { name: 'Mediathek', what: 'Video and audio, as a row.' },
-  'backstage-teaser': { name: 'Backstage', what: 'The newsroom diary and the way in.' },
-  'impact-footer': { name: 'Impact', what: 'What the reporting changed, and a thank-you.' },
+  'mediathek-reihe': {
+    label: wbMessage({
+      id: 'home.module.mediathek',
+      defaultMessage: 'Mediathek',
+      description:
+        'Mediathek is the app’s own name for that section, in the app’s own language, and is the same word in both catalogues.',
+    }),
+    what: wbMessage({
+      id: 'home.module.mediathek.what',
+      defaultMessage: 'Video and audio, as a row.',
+    }),
+  },
+  'backstage-teaser': {
+    label: wbMessage({
+      id: 'home.module.backstage',
+      defaultMessage: 'Backstage',
+      description:
+        'Backstage is the name of a CORRECTIV product and is the same word in every language. mediathek is the other block named after a section rather than described.',
+    }),
+    what: wbMessage({
+      id: 'home.module.backstage.what',
+      defaultMessage: 'The newsroom diary and the way in.',
+    }),
+  },
+  'impact-footer': {
+    label: wbMessage({
+      id: 'home.module.impact',
+      defaultMessage: 'Impact',
+      description:
+        'Impact is what CORRECTIV calls the effect of its reporting, and is the word the app’s own section uses.',
+    }),
+    what: wbMessage({
+      id: 'home.module.impact.what',
+      defaultMessage: 'What the reporting changed, and a thank-you.',
+    }),
+  },
 };
 
+/** What stands under a module this tool has never heard of, where the label is its id. */
+const UNKNOWN_WHAT = wbMessage({
+  id: 'home.module.unknown.what',
+  defaultMessage: 'This tool has no description for it.',
+  description:
+    'Under a module the palette is offering that MODULE_LABELS has no entry for, where the label above it is the module’s raw id. home.setting.unknown.what is the same kind of stand-in one level down, for a setting, and says something shorter because the control beside it already names itself.',
+});
+
 /** A module with no entry above still has to draw a row, and its id is what is left. */
-export function moduleLabel(module: string): { name: string; what: string } {
-  return MODULE_LABELS[module] ?? { name: module, what: 'This tool has no description for it.' };
+export function moduleLabel(module: string): ModuleWords {
+  return MODULE_LABELS[module] ?? { label: module, what: UNKNOWN_WHAT };
 }
 
 /**
@@ -111,29 +224,58 @@ export function moduleLabel(module: string): { name: string; what: string } {
  * the question a person is being asked, for the same reason `MODULE_LABELS` does: a
  * label is how a tool asks, and the app has no use for one.
  *
+ * The ids are the module in camel case rather than its id, `home.setting.articleHero.pin`
+ * and not `home.setting.article-hero.pin`, because that is how every other id on this
+ * site is spelled. The key of the record stays the document's spelling, since that is
+ * what the core hands in.
+ *
  * `test/preview/home-document.test.ts` holds the two lists together in both directions,
  * so a setting added to the core with no words here is a red test rather than a control
  * labelled `count`.
  */
-export const SETTING_LABELS: Readonly<Record<string, { name: string; what: string }>> = {
+export const SETTING_LABELS: Readonly<Record<string, ModuleWords>> = {
   'article-hero.pin': {
-    name: 'Which article leads',
-    what: 'Pinned, or the newest investigation when nothing is.',
+    label: wbMessage({
+      id: 'home.setting.articleHero.pin',
+      defaultMessage: 'Which article leads',
+    }),
+    what: wbMessage({
+      id: 'home.setting.articleHero.pin.what',
+      defaultMessage: 'Pinned, or the newest investigation when nothing is.',
+    }),
   },
   'latest-research.count': {
-    name: 'How many investigations',
-    what: 'The list under the lead article.',
+    label: wbMessage({
+      id: 'home.setting.latestResearch.count',
+      defaultMessage: 'How many investigations',
+    }),
+    what: wbMessage({
+      id: 'home.setting.latestResearch.count.what',
+      defaultMessage: 'The list under the lead article.',
+    }),
   },
   'faktencheck-rail.count': {
-    name: 'How many fact checks',
-    what: 'The row that scrolls sideways.',
+    label: wbMessage({
+      id: 'home.setting.faktencheckRail.count',
+      defaultMessage: 'How many fact checks',
+    }),
+    what: wbMessage({
+      id: 'home.setting.faktencheckRail.count.what',
+      defaultMessage: 'The row that scrolls sideways.',
+    }),
   },
 };
 
-export function settingLabel(module: string, spec: SettingSpec): { name: string; what: string } {
-  return (
-    SETTING_LABELS[`${module}.${spec.key}`] ?? { name: spec.key, what: 'No description for it.' }
-  );
+/** The same stand-in one level down, for a setting the core declares and this has no words for. */
+const UNKNOWN_SETTING_WHAT = wbMessage({
+  id: 'home.setting.unknown.what',
+  defaultMessage: 'No description for it.',
+  description:
+    'Under a setting the core declares that SETTING_LABELS has no entry for, where the label above it is the setting’s raw key. home.module.unknown.what is the same kind of stand-in one level up, for a whole module, and says more because a module’s id says less about it than a setting’s key does.',
+});
+
+export function settingLabel(module: string, spec: SettingSpec): ModuleWords {
+  return SETTING_LABELS[`${module}.${spec.key}`] ?? { label: spec.key, what: UNKNOWN_SETTING_WHAT };
 }
 
 export { formatTimeOfDay, settingsFor, type CountSetting, type SettingSpec };
@@ -369,8 +511,18 @@ export function removed(layout: HomeLayout, id: string): HomeLayout {
  * carries it matches what a person can see. Longer to hear, and correct, which is the
  * right way round for a control somebody is being asked to press.
  */
-export function blockName(section: HomeSection): string {
-  return `${moduleLabel(section.module).name} (${section.id})`;
+const BLOCK_NAME = wbMessage({
+  id: 'home.block.name',
+  defaultMessage: '{name} ({id})',
+  description:
+    'How a block is named to a screen reader, wherever a control has to say which one it means. {name} is the module’s label out of MODULE_LABELS and {id} the section’s own id, which is on screen at the end of every row. A translation keeps the brackets: the id is an identifier and the two halves must stay tellable apart.',
+});
+
+export function blockName(intl: IntlShape, section: HomeSection): string {
+  return intl.formatMessage(BLOCK_NAME, {
+    name: say(intl, moduleLabel(section.module).label),
+    id: section.id,
+  });
 }
 
 /**
@@ -382,15 +534,39 @@ export function blockName(section: HomeSection): string {
  * article" is a place and "at index 3" is an implementation detail somebody would have to
  * count to check.
  */
-export function whereAt(layout: HomeLayout, at: number): string {
+const WHERE = {
+  top: wbMessage({
+    id: 'home.where.top',
+    defaultMessage: 'at the top of the day',
+    description:
+      'Where an insertion mark puts a block, when it is above every block there is. Dropped into the middle of a sentence, so it is lower case and carries no full stop. home.where.end is the same for the other edge and home.where.between for everywhere else.',
+  }),
+  end: wbMessage({
+    id: 'home.where.end',
+    defaultMessage: 'at the end of the day',
+    description:
+      'The same as home.where.top for the other edge: below every block there is. Dropped in mid-sentence, so lower case and no full stop.',
+  }),
+  between: wbMessage({
+    id: 'home.where.between',
+    defaultMessage: 'between {before} and {after}',
+    description:
+      'Where an insertion mark puts a block, between two that are already there. {before} and {after} are each home.block.name, so each already reads “Lead article (article-hero)”. Dropped in mid-sentence, so lower case and no full stop.',
+  }),
+};
+
+export function whereAt(intl: IntlShape, layout: HomeLayout, at: number): string {
   // Clamped the way `added` clamps, and not as tidiness: the two are one index read twice,
   // and if they disagreed the label would name a place the block does not land in.
   const index = Math.max(0, Math.min(at, layout.sections.length));
   const before = layout.sections[index - 1];
   const after = layout.sections[index];
-  if (!before) return 'at the top of the day';
-  if (!after) return 'at the end of the day';
-  return `between ${blockName(before)} and ${blockName(after)}`;
+  if (!before) return intl.formatMessage(WHERE.top);
+  if (!after) return intl.formatMessage(WHERE.end);
+  return intl.formatMessage(WHERE.between, {
+    before: blockName(intl, before),
+    after: blockName(intl, after),
+  });
 }
 
 // --- editing a point --------------------------------------------------------------

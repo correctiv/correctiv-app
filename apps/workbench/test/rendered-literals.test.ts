@@ -69,6 +69,21 @@ const site = ({ file }: { file: string }): string => file;
  * `heading`, `detail`, `text`), and the DOM attributes it actually writes
  * (`aria-label`, `title`).
  *
+ * **`what` is here and `name` is not, and that pair is the hole this list had.**
+ * `preview/home/document.ts` gave every block of the home configurator a `name`
+ * and a `what`, and neither was watched: `name` because eleven of the twelve
+ * `name`s on this site are a radio group's, `what` because nothing had asked. So
+ * the eleven blocks and three settings of the one tool ADR 0050 §1 names an
+ * audience for sat in English and no check said a word, through five passes.
+ * Found by looking at the screen.
+ *
+ * `what` is watched now. `name` still is not, and the remedy for the table was to
+ * call its field `label`, which was already the name a visible string has here.
+ * What that leaves unwatched is two `name:` keys and each is argued where it sits:
+ * `preview/frame/seed.ts`'s are a fixture's content, the app's own, and
+ * `diagrams/Services.tsx`'s are host names the drawing prints as identifiers and
+ * `test/diagrams.test.ts` parses off the source.
+ *
  * `alt` is not here, and the app's list has it. This site draws no `<img>` at all,
  * so nothing here means by `alt` what the platform means. What it does mean is two
  * other things, and a cold review measured both: on the drawings it is a BOOLEAN,
@@ -105,6 +120,7 @@ const VISIBLE: ReadonlySet<string> = new Set([
   'summary',
   'text',
   'title',
+  'what',
 ]);
 
 /**

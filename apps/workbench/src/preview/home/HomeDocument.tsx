@@ -30,6 +30,7 @@ import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 
 import { SOURCES } from '../../../content/sources.manifest';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
+import { say } from '../../i18n/messages';
 import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
@@ -134,10 +135,12 @@ import { canSave, publish, save, type SaveResult } from './write';
  * the measurement.
  *
  * What is NOT here is everything out of `./document.ts` — `moduleLabel`,
- * `settingLabel`, `blockName` and `whereAt`. Those name the app's own modules and
- * settings, ADR 0050 §5 defers them, and they arrive as English values inside the
- * sentences below. The German is written to read around an English fragment, the way
- * `de/home.ts` already does for `{where}`.
+ * `settingLabel`, `blockName` and `whereAt`. They are descriptors too, declared there
+ * with `wbMessage` because the dev server imports that module and `react-intl` imports
+ * React, and they take a formatter as an argument rather than reaching for a hook. So
+ * the values arriving inside the sentences below are German as well, and `say` is what
+ * formats the one of them that may still be a bare string: a module id this tool has no
+ * name for.
  */
 const COPY = defineMessages({
   rule: {
@@ -706,7 +709,7 @@ export function HomeDocument({
               follow={follow}
               before={
                 <InsertMark
-                  where={whereAt(layout, index)}
+                  where={whereAt(intl, layout, index)}
                   deviceWidth={deviceWidth}
                   dropping={carried !== null && carried.gap === index}
                   onAdd={(module) => setLayout(added(layout, index, module))}
@@ -726,7 +729,7 @@ export function HomeDocument({
         </ol>
         {/* The last gap, which has no block after it to live in. */}
         <InsertMark
-          where={whereAt(layout, layout.sections.length)}
+          where={whereAt(intl, layout, layout.sections.length)}
           deviceWidth={deviceWidth}
           dropping={carried !== null && carried.gap === layout.sections.length}
           onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
@@ -951,13 +954,13 @@ function Row({
   carried: boolean;
 }) {
   const intl = useWorkbenchIntl();
-  const { name, what } = moduleLabel(section.module);
+  const { label, what } = moduleLabel(section.module);
   /*
    * What the row's four controls call this block when they are read out. `name` alone is
    * the module's, and two sections of one module share it — `document.ts` says what that
    * cost in the accessibility tree.
    */
-  const spoken = blockName(section);
+  const spoken = blockName(intl, section);
   /*
    * The point being edited, as a time, or `null` for the day's start. Read once here
    * because four sentences below choose between two messages on it, and a second
@@ -1063,12 +1066,12 @@ function Row({
                   off ? 'text-on-canvas-muted' : 'text-on-canvas',
                 )}
               >
-                {name}
+                {say(intl, label)}
               </span>
               {off && <Badge variant="outline">{intl.formatMessage(COPY.rowOff)}</Badge>}
               {isChanged && <Badge>{intl.formatMessage(COPY.rowChanged)}</Badge>}
             </div>
-            <div className={NOTE}>{what}</div>
+            <div className={NOTE}>{intl.formatMessage(what)}</div>
           </div>
 
           <div className="flex shrink-0 items-center gap-4xs">
@@ -1244,7 +1247,7 @@ function Setting({
   onSet: (value: string | number | null | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
-  const { name, what } = settingLabel(module, spec);
+  const { label, what } = settingLabel(module, spec);
   const setHere = point !== null && value !== inherited;
 
   return (
@@ -1255,18 +1258,24 @@ function Setting({
       )}
     >
       <div className="flex flex-wrap items-center gap-2xs">
-        <span className="text-s font-medium text-on-canvas">{name}</span>
+        <span className="text-s font-medium text-on-canvas">{say(intl, label)}</span>
         {setHere && <Here />}
-        <span className={cn(NOTE, 'ml-auto')}>{what}</span>
+        <span className={cn(NOTE, 'ml-auto')}>{intl.formatMessage(what)}</span>
       </div>
 
       {spec.kind === 'count' ? (
-        <Count spec={spec} value={value} disabled={disabled} label={name} onSet={onSet} />
+        <Count
+          spec={spec}
+          value={value}
+          disabled={disabled}
+          label={say(intl, label)}
+          onSet={onSet}
+        />
       ) : (
         <>
           <select
             disabled={disabled}
-            aria-label={name}
+            aria-label={say(intl, label)}
             value={typeof value === 'string' ? value : ''}
             onChange={(event) => onSet(event.target.value === '' ? null : event.target.value)}
             className={cn(FIELD, 'w-full')}

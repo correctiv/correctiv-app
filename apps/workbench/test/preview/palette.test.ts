@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { createIntl } from 'react-intl';
 import { describe, expect, it } from 'vitest';
 
 import { ROOT } from '../../plugin/collect.ts';
@@ -29,19 +30,28 @@ const APP_CHECK = read('apps/mobile/__tests__/home-layout.test.tsx');
 
 describe('where a block is going, in words', () => {
   /*
+   * At the source language, which is what these assertions are written in. Both
+   * functions take a formatter since 2026-09-18, because the words they build are
+   * this site's own and the home configurator is the one tool ADR 0050 §1 names an
+   * audience for. `test/i18n.test.ts` is what holds the German for them; this holds
+   * the sentence they assemble.
+   */
+  const intl = createIntl({ locale: 'en', defaultLocale: 'en' });
+
+  /*
    * The mark is a hairline between two rows and the dialog covers the list it came from,
    * so this sentence is the only thing that says where. Named by its neighbours rather
    * than by a number: "after the lead article" is a place, "at index 3" is something
    * somebody would have to count to check.
    */
   it('names the two ends of the day rather than the block beyond them', () => {
-    expect(whereAt(SHIPPED, 0)).toBe('at the top of the day');
-    expect(whereAt(SHIPPED, SHIPPED.sections.length)).toBe('at the end of the day');
+    expect(whereAt(intl, SHIPPED, 0)).toBe('at the top of the day');
+    expect(whereAt(intl, SHIPPED, SHIPPED.sections.length)).toBe('at the end of the day');
   });
 
   it('names the blocks either side, in the words the rows use', () => {
-    expect(whereAt(SHIPPED, 1)).toBe(
-      `between ${blockName(SHIPPED.sections[0]!)} and ${blockName(SHIPPED.sections[1]!)}`,
+    expect(whereAt(intl, SHIPPED, 1)).toBe(
+      `between ${blockName(intl, SHIPPED.sections[0]!)} and ${blockName(intl, SHIPPED.sections[1]!)}`,
     );
   });
 
@@ -52,14 +62,14 @@ describe('where a block is going, in words', () => {
     // review. The id is what is unique and it is already at the end of every row.
     const callouts = SHIPPED.sections.filter((section) => section.module === 'callout-teaser');
     expect(callouts.length).toBeGreaterThan(1);
-    expect(new Set(callouts.map(blockName)).size).toBe(callouts.length);
-    for (const section of callouts) expect(blockName(section)).toContain(section.id);
+    expect(new Set(callouts.map((section) => blockName(intl, section))).size).toBe(callouts.length);
+    for (const section of callouts) expect(blockName(intl, section)).toContain(section.id);
   });
 
   it('answers for an index past the end rather than throwing', () => {
     // The marks hand in `index + 1` and the ends are where an off-by-one lives.
-    expect(whereAt(SHIPPED, 99)).toBe('at the end of the day');
-    expect(whereAt(SHIPPED, -1)).toBe('at the top of the day');
+    expect(whereAt(intl, SHIPPED, 99)).toBe('at the end of the day');
+    expect(whereAt(intl, SHIPPED, -1)).toBe('at the top of the day');
   });
 });
 
@@ -99,8 +109,8 @@ describe('the marks and the verbs they carry', () => {
   it('puts a mark before every block and one after the last', () => {
     // One more mark than there are blocks, out of two call sites: the one each row draws
     // above itself, and the one after the list for the gap no block follows.
-    expect(PANEL).toMatch(/whereAt\(layout, index\)/);
-    expect(PANEL).toMatch(/whereAt\(layout, layout\.sections\.length\)/);
+    expect(PANEL).toMatch(/whereAt\(intl, layout, index\)/);
+    expect(PANEL).toMatch(/whereAt\(intl, layout, layout\.sections\.length\)/);
     expect(PANEL).toMatch(/added\(layout, index, module\)/);
     expect(PANEL).toMatch(/added\(layout, layout\.sections\.length, module\)/);
   });

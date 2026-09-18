@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
+import { say } from '../../i18n/messages';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 
@@ -48,10 +49,13 @@ const SPECIMEN = 'max-h-[13rem]';
  * Everything the palette says, in ENGLISH; the German that ships is
  * `src/i18n/catalogue/de/home.ts`.
  *
- * Two of the values these take are not this file's to translate. `where` comes from
- * `whereAt` in `./document.ts`, and `name` and `what` from `MODULE_LABELS` in the same
- * module: English prose, handed in as a value, so a German mark reads German around an
- * English fragment until those two tables are descriptors as well.
+ * Three of the values these take are not this file's to translate and are German all
+ * the same. `where` comes from `whereAt` in `./document.ts` and `name` and `what` from
+ * `MODULE_LABELS` in the same module, and both of those are descriptors formatted
+ * against this site's own catalogue before they arrive here. Until 2026-09-18 they were
+ * English prose handed in as a value, and a German mark read German around an English
+ * fragment; what hid it for five passes is that the table's fields were called `name`
+ * and `what`, and `test/rendered-literals.test.ts` watched neither.
  *
  * **All four would have been formatted under the APP's provider, which is why this
  * file calls `useWorkbenchIntl()` rather than `useIntl()`.** `HomeDocument` mounts one
@@ -66,8 +70,9 @@ const SPECIMEN = 'max-h-[13rem]';
  *
  * `useWorkbenchIntl()` reads a context of this site's own, which the app's provider
  * cannot shadow because it is a different object, and `test/i18n.test.ts` fails on a
- * `useIntl` anywhere outside `src/i18n/`. The German here is live; the fragments named
- * above are what is still English, and ADR 0050 §5 says why.
+ * `useIntl` anywhere outside `src/i18n/`. `document.ts` holds no hook at all — the dev
+ * server imports it — so it takes the formatter as an argument, and the one this file
+ * hands it is that same context.
  */
 const COPY = defineMessages({
   addHere: {
@@ -225,7 +230,7 @@ function Specimen({
   onPick: () => void;
 }) {
   const intl = useWorkbenchIntl();
-  const { name, what } = moduleLabel(module);
+  const { label, what } = moduleLabel(module);
   const section: HomeSection = { id: `palette-${module}`, module };
 
   return (
@@ -252,7 +257,12 @@ function Specimen({
         onClick={onPick}
         className="peer absolute inset-0 z-10 rounded-md focus-visible:outline-none"
       >
-        <span className="sr-only">{intl.formatMessage(COPY.addModule, { name, what })}</span>
+        <span className="sr-only">
+          {intl.formatMessage(COPY.addModule, {
+            name: say(intl, label),
+            what: intl.formatMessage(what),
+          })}
+        </span>
       </button>
       <div
         // eslint-disable-next-line react/no-unknown-property
@@ -263,8 +273,10 @@ function Specimen({
         )}
       >
         <div className="flex w-full flex-col gap-4xs border-b border-stroke p-xs">
-          <span className="text-m font-semibold text-on-canvas">{name}</span>
-          <span className="text-s leading-relaxed text-on-canvas-muted">{what}</span>
+          <span className="text-m font-semibold text-on-canvas">{say(intl, label)}</span>
+          <span className="text-s leading-relaxed text-on-canvas-muted">
+            {intl.formatMessage(what)}
+          </span>
         </div>
         <div className={cn('w-full overflow-hidden bg-canvas', SPECIMEN)}>
           <HomeBlock section={section} deviceWidth={deviceWidth} />

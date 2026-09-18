@@ -124,8 +124,9 @@ are the one pair here that must not be translated, because a German reader offer
 ### 5. `document.ts`'s module labels are a decision this record does not make
 
 The names and descriptions of the home screen's blocks — "Lead article", "The newest
-investigation, full width" — are the most editor-facing prose in the tool, and they are
-the one part not moved here. `moduleLabel()` is read by `blockName()`, which is a plain
+investigation, full width" — are the most editor-facing prose in the tool, and ~~they are
+the one part not moved here~~ they were the last part moved, on 2026-09-18 by
+[ADR 0052](0052-the-sites-own-words-follow-the-setting.md) §7. `moduleLabel()` is read by `blockName()`, which is a plain
 function in a module with no React and no formatter, and its result is interpolated
 into accessible names. Localising it means either handing `intl` down into that module
 or making `blockName` return a descriptor and values for its callers to format.
