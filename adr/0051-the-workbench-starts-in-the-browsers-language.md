@@ -1,6 +1,6 @@
 # ADR 0051 — The workbench starts in the language the browser asks for
 
-Status: accepted, 2026-09-18.
+Status: accepted, 2026-09-18. **Built in [#227](https://github.com/correctiv/correctiv-app/pull/227)**, which is also where it was written.
 
 ## Context
 
@@ -39,16 +39,17 @@ a second and a third: `['fr-FR', 'de-DE', 'en']` wants German.
 answer. There is nothing regional in this catalogue to tell them apart with, and a
 reader asking for Swiss German is better served by German than by English. That is
 the opposite of the app's rule for FORMATS, where
-`packages/app-core/src/lib/format.ts` pins a region on purpose because `en` and
-`en-GB` write a date's month differently. Wordings and formats are different
-questions and it is fair that they get different answers.
+`packages/app-core/src/lib/format.ts` pins a region on purpose: of the four formats
+that file asks for, the two that write the month out come out in a different ORDER
+under `en` than under `en-GB`. Wordings and formats are different questions and it
+is fair that they get different answers.
 
 ### 2. "System" is a third value of the setting, not a hidden default
 
-The appearance has three states and the middle one is the point of the control:
-`TROUBLESHOOTING.md` numbers four appearance combinations and says the fourth,
-system against a dark device, is the one that has already shipped broken. The
-language now has the same three, in the same shape — `'system' | 'en' | 'de'`,
+The appearance has three states and the one that follows the machine is the point
+of the control: `TROUBLESHOOTING.md` numbers four appearance combinations and says
+the fourth, system against a dark device, is the one that has already shipped
+broken. The language now has the same three, in the same shape — `'system' | 'en' | 'de'`,
 default expressed by the absence of the key, written only from the setter, which is
 issue #131's rule kept.
 
@@ -64,7 +65,7 @@ and `window`'s `languagechange` event is what makes the same word mean the same
 thing in both settings. Only while "system" is what is selected: a reader who picked
 English does not want a new keyboard layout changing the site under them.
 
-### 3. The picker's third row is the only one that is translated
+### 3. One row of the picker is translated, and it is the only one
 
 `English` and `Deutsch` name themselves and must not be translated, which is ADR
 0050 §4's last paragraph and stands. "System" has no language of its own, so it

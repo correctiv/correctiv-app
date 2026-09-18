@@ -440,7 +440,10 @@
     "decisions": {
       "1": ["The default is the language the browser asks for"],
       "2": ["\"System\" is a third value of the setting, not a hidden default"],
-      "3": ["The picker's third row is the only one that is translated"],
+      "3": [
+        "The picker's third row is the only one that is translated",
+        "One row of the picker is translated, and it is the only one"
+      ],
       "4": ["The constant that meant both things is split"]
     }
   }

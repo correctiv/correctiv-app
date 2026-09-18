@@ -5,21 +5,26 @@ import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parse, TYPE, type MessageFormatElement } from '@formatjs/icu-messageformat-parser';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { filesUnder, floorFaults, under, withoutComments } from '@correctiv/prose-and-code';
 
 import { de } from '../src/i18n/catalogue/de';
+import { createIntl } from 'react-intl';
+
 import {
   DEFAULT_CHOICE,
   LANGUAGES,
   LANGUAGE_KEY,
+  navigatorLanguages,
   preferredLanguage,
   rememberLanguage,
   resolveLanguage,
   SOURCE_LANGUAGE,
   storedLanguage,
+  tagOf,
 } from '../src/i18n/language';
+import { say, TONGUES } from '../src/ui/Settings';
 
 /**
  * This site's own localisation seam, which is the app's with one thing reversed.
@@ -291,12 +296,35 @@ const blocked = {
   },
 } as unknown as Storage;
 
-/** A browser that works and has nothing stored, which is every first visit. */
-const empty = {
-  getItem: () => null,
-  setItem: () => {},
-  removeItem: () => {},
-} as unknown as Storage;
+/**
+ * A store that really stores, copied from `theme.test.ts` for the reason a cold
+ * review gave: the double this file had first was three no-ops, so every
+ * assertion about what ends up IN the key passed against a store that never held
+ * one. `rememberLanguage('system')` writing the literal `'system'` instead of
+ * removing the key went green through the whole suite.
+ *
+ * `Object.keys()` over it lists the stored keys, as it does over the real one.
+ */
+class FakeStorage {
+  getItem(key: string): string | null {
+    return Object.hasOwn(this, key) ? (this as unknown as Record<string, string>)[key] : null;
+  }
+  setItem(key: string, value: string): void {
+    (this as unknown as Record<string, string>)[key] = String(value);
+  }
+  removeItem(key: string): void {
+    delete (this as unknown as Record<string, string>)[key];
+  }
+}
+
+const fake = () => new FakeStorage() as unknown as Storage;
+
+/** A store that already holds one value under this site's key. */
+function stored(value: string): Storage {
+  const store = fake();
+  store.setItem(LANGUAGE_KEY, value);
+  return store;
+}
 
 describe('the language setting', () => {
   it('lets the page render in a browser with site data switched off', () => {
@@ -345,13 +373,41 @@ describe('the language setting', () => {
     // being there. That is what lets a reader who has never chosen and a reader
     // who chose to follow the browser get the same answer out of `storedLanguage`.
     expect(DEFAULT_CHOICE).toBe('system');
-    expect(storedLanguage(empty)).toBe('system');
-    expect(storedLanguage({ ...empty, getItem: () => 'de' } as Storage)).toBe('de');
-    expect(storedLanguage({ ...empty, getItem: () => 'en' } as Storage)).toBe('en');
+    expect(storedLanguage(fake())).toBe('system');
+    expect(storedLanguage(stored('de'))).toBe('de');
+    expect(storedLanguage(stored('en'))).toBe('en');
     // Anything else in the key is not a language this site has. A reader who has
     // hand-edited storage, or a value left by an older build, gets the default
     // rather than a site rendering against a catalogue that is not there.
-    expect(storedLanguage({ ...empty, getItem: () => 'fr' } as Storage)).toBe('system');
+    expect(storedLanguage(stored('fr'))).toBe('system');
+  });
+
+  it('says “follow the browser” by leaving the key off, not by storing a third word', () => {
+    // The assertion this file did not have, and `theme.test.ts` has had all along
+    // for the appearance twelve lines away. "The default is the absence of the
+    // key" is what ADR 0051 §2 calls issue #131's rule kept, and a store made of
+    // three no-ops cannot tell whether it is kept.
+    const store = fake();
+
+    rememberLanguage('de', store);
+    expect(store.getItem(LANGUAGE_KEY)).toBe('de');
+
+    rememberLanguage('system', store);
+    expect(store.getItem(LANGUAGE_KEY)).toBeNull();
+    expect(Object.keys(store)).toEqual([]);
+  });
+
+  it('remembers an explicit choice that agrees with the browser', () => {
+    // The case the third value exists for: English chosen on a German machine has
+    // to survive, and it can only do that as a stored value. With two states it
+    // would be indistinguishable from having chosen nothing.
+    const store = fake();
+
+    rememberLanguage('en', store);
+
+    expect(store.getItem(LANGUAGE_KEY)).toBe('en');
+    expect(storedLanguage(store)).toBe('en');
+    expect(resolveLanguage(storedLanguage(store), ['de-DE'])).toBe('en');
   });
 
   it('takes the first of the browser’s languages this site has', () => {
@@ -384,6 +440,68 @@ describe('the language setting', () => {
     expect(resolveLanguage('de', ['en-US'])).toBe('de');
     expect(resolveLanguage('system', ['de-DE'])).toBe('de');
     expect(resolveLanguage('system', ['en-US'])).toBe('en');
+  });
+
+  it('reads the browser’s ranked list and not just its head', () => {
+    // ADR 0051 §1's own bold paragraph, and nothing held it while this function
+    // was private: a cold review reduced it to `[navigator.language]` and the
+    // whole suite stayed green.
+    vi.stubGlobal('navigator', { languages: ['fr-FR', 'de-DE', 'en'], language: 'fr-FR' });
+    expect(navigatorLanguages()).toEqual(['fr-FR', 'de-DE', 'en']);
+    expect(preferredLanguage()).toBe('de');
+
+    // The one case the singular is for: a browser that hands out no list.
+    vi.stubGlobal('navigator', { languages: [], language: 'de-AT' });
+    expect(navigatorLanguages()).toEqual(['de-AT']);
+    expect(preferredLanguage()).toBe('de');
+
+    // And one that hands out neither, which is a headless run.
+    vi.stubGlobal('navigator', { languages: [], language: '' });
+    expect(navigatorLanguages()).toEqual([]);
+    expect(preferredLanguage()).toBe(SOURCE_LANGUAGE);
+
+    vi.unstubAllGlobals();
+  });
+
+  it('gives the picker’s System row no language tag of its own', () => {
+    // `lang="system"` is a tag no parser knows and a screen reader would take its
+    // voice from it. Nothing in this package renders that dialog, so a cold review
+    // restored `lang={tongue.value}` and 484 tests stayed green.
+    expect(tagOf('system')).toBeUndefined();
+    expect(tagOf('en')).toBe('en');
+    expect(tagOf('de')).toBe('de');
+  });
+
+  it('offers System first, and it is the only row of the three that is translated', () => {
+    // The two languages name themselves — a reader looking for English does not
+    // look for "Englisch" — so those labels are literals on purpose. "System" has
+    // no language of its own and is a descriptor. `say` is what tells them apart,
+    // and a cold review rewrote it to skip `formatMessage` entirely, leaving every
+    // translated row reading "[object Object]", with everything green.
+    const intl = createIntl({ locale: 'de', defaultLocale: SOURCE_LANGUAGE, messages: de });
+
+    expect(TONGUES.map((tongue) => tongue.value)).toEqual(['system', 'en', 'de']);
+    expect(TONGUES.filter((tongue) => typeof tongue.label !== 'string')).toHaveLength(1);
+    expect(say(intl, TONGUES[1]!.label)).toBe('English');
+    expect(say(intl, TONGUES[0]!.label)).toBe(de['settings.language.system']);
+    expect(say(intl, TONGUES[0]!.hint)).toBe(de['settings.language.system.hint']);
+  });
+
+  it('follows the browser only while the browser is what is selected', () => {
+    // Source text rather than a render, which is what `theme.test.ts` does for the
+    // effect beside it: these tests mount nothing with a DOM in it. The guard is a
+    // decision (ADR 0051 §2) and deleting it is not cosmetic — with English chosen
+    // and the browser changing, the site would switch away from an explicit choice,
+    // which is the one way the two pieces of state can come to disagree. Measured
+    // in a browser on 2026-09-18: it does not.
+    const source = readFileSync(join(SRC, 'i18n', 'language.ts'), 'utf8');
+    const follow = /useEffect\(\(\) => \{([\s\S]*?)\n  \}, \[choice\]\);/.exec(source);
+
+    expect(follow?.[1]).toMatch(/if \(choice !== 'system'\) return;/);
+    expect(follow?.[1]).toMatch(/addEventListener\('languagechange'/);
+    // And lets go of the window again, or StrictMode leaves two listeners on the
+    // first mount and one more per change of the setting after that.
+    expect(follow?.[1]).toMatch(/return \(\) => window\.removeEventListener\('languagechange'/);
   });
 
   it('has a catalogue for every language but the default', () => {

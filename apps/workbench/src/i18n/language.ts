@@ -118,8 +118,14 @@ export function preferredLanguage(tags: readonly string[] = navigatorLanguages()
  * always there. Falling through to an empty list rather than to a guess, because
  * `preferredLanguage` above already names the fallback and two places naming it
  * is one too many.
+ *
+ * Exported for `test/i18n.test.ts` alone. It is the production read path, and
+ * "the ranked list and not its head" is a decision
+ * ([ADR 0051](../../../../adr/0051-the-workbench-starts-in-the-browsers-language.md) §1)
+ * that nothing held while this was private: a cold review reduced it to
+ * `[navigator.language]` and the whole suite stayed green.
  */
-function navigatorLanguages(): readonly string[] {
+export function navigatorLanguages(): readonly string[] {
   if (typeof navigator === 'undefined') return [];
   if (navigator.languages?.length) return navigator.languages;
   return navigator.language ? [navigator.language] : [];
@@ -128,6 +134,23 @@ function navigatorLanguages(): readonly string[] {
 /** The choice resolved to the language a page is actually rendered in. */
 export function resolveLanguage(choice: LanguageChoice, tags?: readonly string[]): Language {
   return choice === 'system' ? preferredLanguage(tags ?? navigatorLanguages()) : choice;
+}
+
+/**
+ * The BCP-47 tag a row of the language picker states about itself, or none.
+ *
+ * "System" has no language of its own — it is written in whichever language the
+ * site is in, which is the document's — so it states nothing and inherits.
+ * `lang="system"` would be a tag no parser knows, and a screen reader would take
+ * its voice from it.
+ *
+ * A named function rather than a ternary in the markup, because a cold review
+ * restored `lang={tongue.value}` and the whole suite stayed green: nothing in this
+ * package renders that dialog, so the only way to hold this is to make it a thing
+ * a test can call.
+ */
+export function tagOf(choice: LanguageChoice): Language | undefined {
+  return choice === 'system' ? undefined : choice;
 }
 
 /**
@@ -193,6 +216,10 @@ export function useLanguage(): [LanguageChoice, Language, (next: LanguageChoice)
      */
     if (choice !== 'system') return;
     const follow = () => setLanguage(preferredLanguage());
+    // Once before subscribing, because an effect runs after the commit: a change
+    // between the first render and this line would otherwise be lost until the
+    // next one. Idempotent — the setter has already resolved the same answer.
+    follow();
     window.addEventListener('languagechange', follow);
     return () => window.removeEventListener('languagechange', follow);
   }, [choice]);

@@ -8,7 +8,7 @@ import { cn } from '../lib/cn';
 import { MEASURED_ON } from '../../content/sources.manifest';
 import { ageInWords } from '../lib/measured';
 import { useWorkbenchIntl } from '../i18n/Localisation';
-import type { LanguageChoice } from '../i18n/language';
+import { tagOf, type LanguageChoice } from '../i18n/language';
 import type { Appearance } from '../theme';
 
 /**
@@ -161,7 +161,7 @@ type Tongue = {
   hint: string | MessageDescriptor;
 };
 
-const TONGUES: Tongue[] = [
+export const TONGUES: Tongue[] = [
   { value: 'system', label: COPY.systemLanguage, hint: COPY.systemLanguageHint },
   { value: 'en', label: 'English', hint: 'The language every string is written in' },
   { value: 'de', label: 'Deutsch', hint: 'Die Werkzeuge, nicht die Dokumente' },
@@ -172,8 +172,14 @@ const TONGUES: Tongue[] = [
  *
  * Takes `intl` rather than calling the hook, because it is reached from a `.map`
  * inside one component and a hook in a helper would be a rule violated for no gain.
+ *
+ * Exported with `TONGUES` for `test/i18n.test.ts`. Nothing in this package renders
+ * this dialog — it is a Radix dialog and the tests here use `renderToStaticMarkup`,
+ * which mounts no portal — so a cold review rewrote this to skip `formatMessage`
+ * entirely, leaving every translated row reading "[object Object]", and 484 tests
+ * stayed green.
  */
-function say(intl: IntlShape, words: string | MessageDescriptor): string {
+export function say(intl: IntlShape, words: string | MessageDescriptor): string {
   return typeof words === 'string' ? words : intl.formatMessage(words);
 }
 
@@ -297,11 +303,9 @@ export function Settings({
             {TONGUES.map((tongue) => (
               <label
                 key={tongue.value}
-                /* The row's own language, where it has one. "System" is written in
-                   whichever language the site is in, which is the document's, so it
-                   states nothing and inherits. A `lang="system"` would be a tag no
-                   parser knows and would take a screen reader's voice with it. */
-                lang={tongue.value === 'system' ? undefined : tongue.value}
+                /* The row's own language, where it has one. `i18n/language.ts`'s
+                   `tagOf` carries the rule and the reason. */
+                lang={tagOf(tongue.value)}
                 /* The default takes the whole row and the two languages share the
                    one below it. Three equal columns fit, and what they do to these
                    hints is the reason not to: they are sentences where the
