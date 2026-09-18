@@ -63,11 +63,23 @@ describe('twinsOf, which ids share an English wording word for word', () => {
     expect(twins.has('c.solo')).toBe(false);
   });
 
+  it('groups by the wording as written, so two spellings of one phrase stay apart', () => {
+    // Deliberate, and the reason is in `twinsOf`'s docstring: two spellings of the
+    // same phrase is itself the thing a translator wants to see, and folding them
+    // together would file it under "same".
+    const twins = twinsOf([
+      entry({ id: 'a.one', english: 'Take part' }),
+      entry({ id: 'b.two', english: 'Take Part' }),
+      entry({ id: 'c.three', english: 'Take part ' }),
+    ]);
+
+    expect(twins.size).toBe(0);
+  });
+
   it('does not call two blank entries twins of each other', () => {
-    // `scripts/strings.mjs` writes `english: entry.defaultMessage ?? ''` for an id
-    // with no `defaultMessage`, so two such ids would land on the same key here if
-    // nothing excluded it. An absent wording is not a shared wording, so neither
-    // should show up in the other's list.
+    // An absent wording is not a shared wording. The seam test over the app already
+    // refuses an id without a `defaultMessage`, so `strings.mjs`'s `?? ''` cannot
+    // fire today; this pins the function rather than the pipeline in front of it.
     const twins = twinsOf([
       entry({ id: 'a.blank', english: '' }),
       entry({ id: 'b.blank', english: '' }),

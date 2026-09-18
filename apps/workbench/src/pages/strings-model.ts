@@ -21,7 +21,14 @@ export interface StringEntry {
   id: string;
   /** The part before the first dot, which is the screen or the area it belongs to. */
   namespace: string;
-  /** The `defaultMessage`, which is the source and therefore English. */
+  /**
+   * The `defaultMessage`, which is the source and therefore English.
+   *
+   * The same words as `translations.en`, and not a third copy of them: the English
+   * catalogue is compiled from the extraction this field comes from. It is kept apart
+   * because it is what the descriptor SAYS, which is what `twinsOf` compares; the
+   * column beside it is what the catalogue holds.
+   */
   english: string;
   /** What a translator is told, where the string cannot speak for itself. */
   description: string | null;
@@ -40,10 +47,15 @@ export interface StringEntry {
  * three others" has to keep saying it while two of the three are filtered out —
  * otherwise the fact quietly becomes a fact about the query.
  *
- * An empty English is not a shared wording — it is the absence of one — so two
- * entries that both fell back to `''` (an id with no `defaultMessage`, which
- * `scripts/strings.mjs` writes as `entry.defaultMessage ?? ''`) do not list each
- * other here.
+ * Grouped by the wording as written, byte for byte. "Take part" and "Take Part" are
+ * therefore two wordings and not one, which is the answer a translator wants: two
+ * spellings of the same phrase is itself the thing to look at, and folding them
+ * together would hide it behind the word "same".
+ *
+ * The empty string is the one wording that groups nothing, because it is the absence
+ * of one. `apps/mobile/__tests__/localisation-seam.test.ts` already refuses an id
+ * without a `defaultMessage`, so `scripts/strings.mjs`'s `?? ''` cannot fire today;
+ * the line is here because this function is what the page trusts, not the seam test.
  */
 export function twinsOf(entries: readonly StringEntry[]): Map<string, string[]> {
   const byEnglish = new Map<string, string[]>();

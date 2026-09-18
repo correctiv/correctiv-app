@@ -13,7 +13,6 @@ import { home } from './home';
 import { nav } from './nav';
 import { settings } from './settings';
 import { shell } from './shell';
-import { strings } from './strings';
 
 export const de: Record<string, string> = {
   ...frame,
@@ -21,5 +20,4 @@ export const de: Record<string, string> = {
   ...nav,
   ...settings,
   ...shell,
-  ...strings,
 };

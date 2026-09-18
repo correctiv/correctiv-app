@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
-import { defineMessages } from 'react-intl';
 
 import model from 'virtual:strings';
 import type { StringEntry } from 'virtual:strings';
-import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Slot } from '../shell/slots';
 import { Badge } from '../ui/kit/badge';
 import { Segmented } from '../ui/kit/segmented';
@@ -16,90 +14,30 @@ import { group, hasGap, haystackOf, twinsOf } from './strings-model.ts';
 const { locales: LOCALES, strings: ENTRIES } = model;
 
 /**
- * The board's own words, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/strings.ts`.
+ * **This page's own words are English, like every other board on this site.**
  *
- * Only the furniture is here. Every id, every wording and every path in the rows
- * below is the app's own data and is printed as it is written — the `de` column
- * is German on an English page on purpose, because it is the thing being shown.
- * What follows the language setting is the frame around it, which is
- * [ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) §2's
- * line drawn through a page whose body happens to be strings.
+ * A first version translated the heading, the lede and the filter, on the grounds
+ * that a reader from the newsroom is who the board is for.
+ * [ADR 0050](../../../../adr/0050-the-workbench-gets-a-second-audience.md) draws the
+ * line elsewhere and a cold review caught it: §1 names the audience as somebody
+ * arranging the home screen and excludes a translator by name, and §2 puts the body
+ * of a publishing page on the English side, the sources board included. This is that
+ * board's twin — a generated table with a heading, a lede and a filter — so it reads
+ * the way `/sources`, `/reference` and `/components` read, and `nav.strings` and
+ * `shell.activity.strings` stay German because the rail and the tab are the shell.
  *
- * **The column heads are the locale codes and not descriptors**, and that is not
- * an omission. `de` and `en` are the keys of `translations`, the names of the
- * catalogue directories and the values the setting takes: identifiers, which this
- * site leaves in their own spelling wherever it prints one. It also means a third
- * language costs nothing here, where a `Record` of language names would have to
- * grow a member and a German translation of it before the column could be drawn.
+ * Widening that audience may well be right, now that the strings have somewhere to be
+ * looked at. It is a boundary, so it wants a record rather than a page that quietly
+ * sits on the other side of one.
+ *
+ * Every id, every wording and every path below is the app's own data and is printed as
+ * it is written, which is why the `de` column is German on an English page.
+ *
+ * **The column heads are the locale codes and not names**, and that is not an
+ * omission. `de` and `en` are the keys of `translations`, the names of the catalogue
+ * directories and the values the setting takes: identifiers, which this site leaves in
+ * their own spelling wherever it prints one.
  */
-const COPY = defineMessages({
-  title: {
-    id: 'strings.title',
-    defaultMessage: 'Strings',
-    description:
-      'The heading of the board at /strings. shell.activity.strings is the rail’s entry for the same page and reads the same in English; the page’s full name in the tab is nav.strings.',
-  },
-  lede: {
-    id: 'strings.lede',
-    defaultMessage:
-      'Every user-facing string the app ships, joined from the extraction and the catalogues.',
-  },
-  filterLabel: {
-    id: 'strings.filter.label',
-    defaultMessage: 'Filter strings by id, wording or description',
-    description:
-      'The accessible name of the board’s filter in the header’s context bar. Read aloud and never drawn; what a sighted reader sees is strings.filter.placeholder.',
-  },
-  filterPlaceholder: {
-    id: 'strings.filter.placeholder',
-    defaultMessage: 'e.g. gate. or Anmelden',
-    description:
-      'Inside the filter box, which is narrow on this page because a second control shares the bar, so this is kept short enough to fit at a laptop width in both languages. The two examples are an id prefix and a German wording, which are the two ways this board is searched; keep an example of each rather than translating these two.',
-  },
-  summary: {
-    id: 'strings.filter.summary',
-    defaultMessage:
-      '{shown, plural, one {# string} other {# strings}} in {namespaces, plural, one {# namespace} other {# namespaces}}',
-    description:
-      'What the filter has left standing, beside the box. {shown} is how many strings match and {namespaces} how many namespaces they fall into.',
-  },
-  which: {
-    id: 'strings.filter.which',
-    defaultMessage: 'Which strings',
-    description:
-      'The legend of the three-way choice beside the filter: all of them, the ones sharing an English wording, or the ones a catalogue has no entry for. Read aloud and never drawn.',
-  },
-  all: {
-    id: 'strings.filter.all',
-    defaultMessage: 'All',
-    description: 'The first of the three segments beside the filter: no restriction at all.',
-  },
-  sameEnglish: {
-    id: 'strings.filter.sameEnglish',
-    defaultMessage: 'Same English',
-    description:
-      'The second segment beside the filter: only the ids whose English is word for word another id’s, which are the ones a translator cannot tell apart.',
-  },
-  untranslated: {
-    id: 'strings.untranslated',
-    defaultMessage: 'Untranslated',
-    description:
-      'Two places, one word: the third segment beside the filter, and the mark drawn in a language’s cell where that catalogue has no entry for the id.',
-  },
-  twin: {
-    id: 'strings.twin',
-    defaultMessage: 'Same English as {ids}',
-    description:
-      'Under an id whose English wording another id carries word for word. {ids} is the comma-separated list of those other ids, which are never translated.',
-  },
-  empty: {
-    id: 'strings.empty',
-    defaultMessage: 'No string matches that.',
-    description:
-      'Stands in for the list when the filter and the segment together leave nothing. shell.search.empty is the palette’s version of the same answer.',
-  },
-});
 
 /** The three answers the segment beside the filter gives. */
 type Only = 'all' | 'same' | 'untranslated';
@@ -137,7 +75,6 @@ const HAYSTACK = haystackOf(ENTRIES);
  * worse half of both answers.
  */
 export function Strings() {
-  const intl = useWorkbenchIntl();
   const [query, setQuery] = useState('');
   const [only, setOnly] = useState<Only>('all');
   const sections = useSections('/strings', true);
@@ -161,11 +98,11 @@ export function Strings() {
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-xs">
           <Filter
             id="strings-q"
-            label={intl.formatMessage(COPY.filterLabel)}
-            placeholder={intl.formatMessage(COPY.filterPlaceholder)}
+            label="Filter strings by id, wording or description"
+            placeholder="Filter, for example gate. or Anmelden"
             value={query}
             onChange={setQuery}
-            summary={intl.formatMessage(COPY.summary, { shown, namespaces: groups.length })}
+            summary={`${shown} of ${ENTRIES.length} in ${groups.length} namespaces`}
           />
           {/*
             Two facts the free text cannot ask for, as one control rather than two
@@ -173,16 +110,23 @@ export function Strings() {
             anything, and "which language is missing a wording" is the absence of
             one. Both are properties of the set, so the box answers "contains" and
             the segment answers "is one of these".
+
+            "Untranslated" is empty on any tree that passes its checks, and that is
+            structural rather than lucky: `localisation-seam.test.ts` asserts a
+            German wording for every extracted id, and the English catalogue is
+            compiled from the same extraction. What the segment is for is the half
+            hour before those run — a descriptor added, the catalogue not yet
+            written. The board is not what guarantees the zero; the seam test is.
           */}
           <Segmented
             name="strings-only"
-            legend={intl.formatMessage(COPY.which)}
+            legend="Which strings"
             className="shrink-0"
             value={only}
             options={[
-              { value: 'all', label: intl.formatMessage(COPY.all) },
-              { value: 'same', label: intl.formatMessage(COPY.sameEnglish) },
-              { value: 'untranslated', label: intl.formatMessage(COPY.untranslated) },
+              { value: 'all', label: 'All' },
+              { value: 'same', label: 'Same English' },
+              { value: 'untranslated', label: 'Untranslated' },
             ]}
             onChange={(value) => setOnly(value as Only)}
           />
@@ -195,16 +139,18 @@ export function Strings() {
 
       <Page>
         <article className="min-w-0">
-          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">
-            {intl.formatMessage(COPY.title)}
-          </h1>
+          <h1 className="text-headline-xl font-bold leading-tight tracking-tight">Strings</h1>
           <p className="mt-xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            {intl.formatMessage(COPY.lede)}
+            Every string the app has a descriptor for, joined from the extraction and the
+            catalogues. Two strings a user reads are deliberately not descriptors, so they are not
+            here; <code className="font-mono">localisation-seam.test.ts</code> is the list. A
+            wording with <code className="font-mono">{'{braces}'}</code> is an ICU pattern, printed
+            as the pattern.
           </p>
 
           {groups.length === 0 && (
             <p className="py-2xl text-center text-m text-on-canvas-muted">
-              {intl.formatMessage(COPY.empty)}
+              No string matches that.
             </p>
           )}
 
@@ -248,7 +194,6 @@ export function Strings() {
  * address — is in the wide one.
  */
 function Row({ entry }: { entry: StringEntry }) {
-  const intl = useWorkbenchIntl();
   const twins = TWINS.get(entry.id);
 
   return (
@@ -260,7 +205,7 @@ function Row({ entry }: { entry: StringEntry }) {
              is "the same as WHICH one" — and the answer is often in another
              namespace, several screens down the page. */
           <p className="mt-3xs text-s leading-snug text-on-canvas-muted wrap-anywhere">
-            {intl.formatMessage(COPY.twin, { ids: twins.join(', ') })}
+            Same English as {twins.join(', ')}
           </p>
         )}
       </div>
@@ -269,15 +214,15 @@ function Row({ entry }: { entry: StringEntry }) {
         <dl className="grid gap-2xs lg:grid-cols-2 lg:gap-m">
           {LOCALES.map((locale) => (
             <div key={locale} className="flex min-w-0 items-baseline gap-xs">
-              {/* The locale code, which is the key of `translations` and the name
-                  of the catalogue directory. An identifier, so it is printed. */}
-              <dt className="w-[1.5rem] shrink-0 font-mono text-s text-on-canvas-muted">
+              {/* The locale code, which is the key of `translations` and the name of
+                  the catalogue directory. An identifier, so it is printed. `min-w` and
+                  not `w`: two characters is what `de` and `en` need and not what a tag
+                  with a script or a region needs. */}
+              <dt className="min-w-[1.5rem] shrink-0 font-mono text-s text-on-canvas-muted">
                 {locale}
               </dt>
               <dd className="min-w-0 flex-1 text-m leading-relaxed">
-                {entry.translations[locale] ?? (
-                  <Badge variant="outline">{intl.formatMessage(COPY.untranslated)}</Badge>
-                )}
+                {entry.translations[locale] ?? <Badge variant="outline">Untranslated</Badge>}
               </dd>
             </div>
           ))}
@@ -285,7 +230,7 @@ function Row({ entry }: { entry: StringEntry }) {
 
         {/* What a translator is told. Printed for every id that carries one rather
             than only for the ones sharing a wording: it is the sentence that says
-            where the string appears, and that is the question a board of 317 rows
+            where the string appears, and that is the question a board of this size
             raises about any of them. */}
         {entry.description && (
           <p className="mt-2xs text-s leading-relaxed text-on-canvas-muted">{entry.description}</p>
