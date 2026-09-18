@@ -26,12 +26,22 @@ import { SHIPPED_LOCALE } from '@/lib/locale';
  *
  * The other half is the artefact, and `.github/workflows/ci.yml`'s web-export job is
  * where that belongs — this suite runs in seconds and an export takes minutes.
+ *
+ * **The shell also says which document is the app's**, which is the same subject
+ * read from the other end: the runtime correction that fixes `lang` is mounted with
+ * the provider, and the provider can be mounted in a page the app did not write.
+ * `__tests__/document-language.test.tsx` renders that guard; here it is the shell's
+ * side of it, because a mark nothing writes fails silently in the safe-looking
+ * direction.
  */
 const APP = resolve(__dirname, '..');
 const SHELL = join(APP, 'src', 'app', '+html.tsx');
 
-/** The `lang=` of the first `<html>` element in a file, as source text. */
-function langAttribute(file: string): string | null {
+/** The first `<html>` element in a file, and the source it was read out of. */
+function htmlElement(file: string): {
+  source: ts.SourceFile;
+  opening: ts.JsxOpeningLikeElement | undefined;
+} {
   const source = ts.createSourceFile(
     file,
     readFileSync(file, 'utf8'),
@@ -40,28 +50,43 @@ function langAttribute(file: string): string | null {
     ts.ScriptKind.TSX,
   );
 
-  let found: string | null = null;
+  let found: ts.JsxOpeningLikeElement | undefined;
   const visit = (node: ts.Node): void => {
-    if (found !== null) return;
+    if (found !== undefined) return;
     const opening = ts.isJsxElement(node)
       ? node.openingElement
       : ts.isJsxSelfClosingElement(node)
         ? node
         : undefined;
     if (opening?.tagName.getText(source) === 'html') {
-      for (const attribute of opening.attributes.properties) {
-        if (!ts.isJsxAttribute(attribute)) continue;
-        if (attribute.name.getText(source) !== 'lang') continue;
-        found = attribute.initializer?.getText(source) ?? '';
-        return;
-      }
-      found = '';
+      found = opening;
       return;
     }
     ts.forEachChild(node, visit);
   };
   visit(source);
-  return found;
+  return { source, opening: found };
+}
+
+/** The `lang=` of the first `<html>` element in a file, as source text. */
+function langAttribute(file: string): string | null {
+  const { source, opening } = htmlElement(file);
+  if (opening === undefined) return null;
+  for (const attribute of opening.attributes.properties) {
+    if (!ts.isJsxAttribute(attribute)) continue;
+    if (attribute.name.getText(source) !== 'lang') continue;
+    return attribute.initializer?.getText(source) ?? '';
+  }
+  return '';
+}
+
+/** Whatever the first `<html>` element spreads onto itself, as source text. */
+function spreadsOnHtml(file: string): string[] {
+  const { source, opening } = htmlElement(file);
+  if (opening === undefined) return [];
+  return opening.attributes.properties
+    .filter(ts.isJsxSpreadAttribute)
+    .map((spread) => spread.expression.getText(source));
 }
 
 describe('the web export declares its language', () => {
@@ -80,6 +105,19 @@ describe('the web export declares its language', () => {
     // which is the shape the bug had before: two places, agreeing until they did
     // not. The app names its language once and three readers ask that one place.
     expect(langAttribute(SHELL)).toBe('{SHIPPED_LOCALE}');
+  });
+
+  it('marks the document as the app’s own, from the one place that names the mark', () => {
+    // The runtime correction in `i18n/Localisation.tsx` runs wherever the app's
+    // provider is mounted, and the provider can be mounted inside a page the app
+    // did not write — whose `<html>` is not the app's to stamp. This element is
+    // the only one the app owns, so this is where it says so.
+    //
+    // A spread and not `data-…=""`, so the name exists once: written here,
+    // read in `lib/ownDocument.ts`, and impossible to half-rename. Losing the
+    // mark is the quiet failure — the guard then answers no for every document,
+    // the correction runs nowhere, and nothing about that looks broken.
+    expect(spreadsOnHtml(SHELL)).toContain('OWN_DOCUMENT_MARK');
   });
 
   it('names a language the core knows', () => {
