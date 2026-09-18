@@ -144,7 +144,10 @@ const backLink = (chunks: ReactNode[]) => (
 export function App() {
   const [route] = useRoute();
   const [appearance, setAppearance] = useAppearance();
-  const [language, setLanguage] = useLanguage();
+  /* Three, because the dialog and the provider ask different things of the
+     setting: the radio group has to know that "system" is what is selected, and
+     the provider only ever wants the language that resolves to. */
+  const [languageChoice, language, setLanguage] = useLanguage();
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -479,7 +482,7 @@ export function App() {
             onOpenChange={setSettingsOpen}
             appearance={appearance}
             onAppearance={setAppearance}
-            language={language}
+            language={languageChoice}
             onLanguage={setLanguage}
           />
         </SlotProvider>

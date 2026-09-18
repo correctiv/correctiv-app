@@ -6,6 +6,14 @@
  * site is in a language they do not read, so a translation that dropped either word
  * would take away the way back.
  *
+ * `settings.language.system` is the only row of that group with a German side at
+ * all. „English“ and „Deutsch“ name themselves in the dialog and are literals in
+ * `ui/Settings.tsx`, because a German reader looking for English does not look for
+ * „Englisch“. This row has no language of its own, so it follows the setting like
+ * the rest of the dialog. Its hint says „Browser“ where the appearance's says
+ * „Gerät“, and that is the truth rather than a variation: the language list comes
+ * from the browser's own settings and the colour scheme from the operating system's.
+ *
  * The shortcut keys themselves are not here. `⌘K` is a key on a keyboard and not a
  * word, and the dialog's `<kbd>` elements hold them.
  */
@@ -23,6 +31,8 @@ export const settings: Record<string, string> = {
   'settings.mode.system.hint': 'Dem Gerät folgen',
 
   'settings.language': 'Sprache · Language',
+  'settings.language.system': 'System',
+  'settings.language.system.hint': 'Dem Browser folgen',
 
   'settings.keyboard': 'Tastatur',
   'settings.shortcut.search': 'Dokumente, Abschnitte und die API durchsuchen',

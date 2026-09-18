@@ -1,6 +1,6 @@
 # ADR 0050 — The workbench gets a second audience, and the scope of its German follows from that
 
-Status: accepted, 2026-09-18. **§1 to §4 built in [#220](https://github.com/correctiv/correctiv-app/pull/220)**, for the frame's controls and the day's track; the module labels in `preview/home/document.ts` are named in §5 and are not. §4's closing sentence, that the framed app's language belongs in the address beside `t=`, has since been built in [#226](https://github.com/correctiv/correctiv-app/pull/226): the preview carries `lg=`.
+Status: accepted, 2026-09-18. **§1 to §4 built in [#220](https://github.com/correctiv/correctiv-app/pull/220)**, for the frame's controls and the day's track; the module labels in `preview/home/document.ts` are named in §5 and are not. §4's closing sentence, that the framed app's language belongs in the address beside `t=`, has since been built in [#226](https://github.com/correctiv/correctiv-app/pull/226): the preview carries `lg=`. §4's default is struck: [ADR 0051](0051-the-workbench-starts-in-the-browsers-language.md) makes an untouched browser get the language it asks for.
 
 ## Context
 
@@ -92,10 +92,15 @@ whole of `Intl` and the bundle already carries the reference model.
 
 ### 4. The setting is the reader's, so it lives where the appearance does
 
-`workbench:language` in `localStorage`, default English expressed by the key's
-absence, written only from the setter — which is issue #131's rule kept rather than
+`workbench:language` in `localStorage`, ~~default English expressed by the key's
+absence~~, written only from the setter — which is issue #131's rule kept rather than
 rediscovered, because the default being an absence is exactly the shape that let one
-document delete another's choice.
+document delete another's choice. The absence is still how the default is expressed;
+what it means is now "follow the browser", which
+[ADR 0051](0051-the-workbench-starts-in-the-browsers-language.md) decided, on the
+grounds that this record solved the wrong half of the problem it had noticed — it
+made the way out findable rather than not sending a German reader down an English
+corridor.
 
 **Not in the address**, and that is the same split this site already makes.
 `theme.ts`'s `Appearance` is the workbench's own and lives in storage; `PreviewState.theme`

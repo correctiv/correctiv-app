@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { Localisation } from '../../src/i18n/Localisation.tsx';
-import { DEFAULT_LANGUAGE } from '../../src/i18n/language.ts';
+import { SOURCE_LANGUAGE } from '../../src/i18n/language.ts';
 import { SlotProvider, slotsOf } from '../../src/shell/slots.tsx';
 import { ToolPanel } from '../../src/ui/ToolPanel.tsx';
 import { VIEWS, type SectionId, type ViewDeclaration } from '../../src/shell/views.ts';
@@ -46,7 +46,7 @@ const HIDDEN = 'hidden=""';
 /**
  * `Localisation` around it, because the panel's names are descriptors now.
  *
- * At `DEFAULT_LANGUAGE`, which consults no catalogue: the source of every string
+ * At `SOURCE_LANGUAGE`, which consults no catalogue: the source of every string
  * on this site is its `defaultMessage`, so the English below is what the code says
  * rather than a translation this test would then be pinning. What is being asked
  * here is which tool is hidden, and the words are only how the last assertion
@@ -54,7 +54,7 @@ const HIDDEN = 'hidden=""';
  */
 function draw(view: ViewDeclaration, tool: SectionId | null): string {
   return renderToStaticMarkup(
-    <Localisation language={DEFAULT_LANGUAGE}>
+    <Localisation language={SOURCE_LANGUAGE}>
       <SlotProvider declared={slotsOf(view)}>
         <ToolPanel view={view} tool={tool} />
       </SlotProvider>

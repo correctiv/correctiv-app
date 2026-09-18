@@ -11,10 +11,13 @@ import { filesUnder, floorFaults, under, withoutComments } from '@correctiv/pros
 
 import { de } from '../src/i18n/catalogue/de';
 import {
-  DEFAULT_LANGUAGE,
+  DEFAULT_CHOICE,
   LANGUAGES,
   LANGUAGE_KEY,
+  preferredLanguage,
   rememberLanguage,
+  resolveLanguage,
+  SOURCE_LANGUAGE,
   storedLanguage,
 } from '../src/i18n/language';
 
@@ -288,6 +291,13 @@ const blocked = {
   },
 } as unknown as Storage;
 
+/** A browser that works and has nothing stored, which is every first visit. */
+const empty = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+} as unknown as Storage;
+
 describe('the language setting', () => {
   it('lets the page render in a browser with site data switched off', () => {
     /*
@@ -303,8 +313,9 @@ describe('the language setting', () => {
      */
     expect(() => rememberLanguage('de', blocked)).not.toThrow();
     expect(() => rememberLanguage('en', blocked)).not.toThrow();
-    expect(storedLanguage(blocked)).toBe(DEFAULT_LANGUAGE);
-    expect(storedLanguage(null)).toBe(DEFAULT_LANGUAGE);
+    expect(() => rememberLanguage('system', blocked)).not.toThrow();
+    expect(storedLanguage(blocked)).toBe(DEFAULT_CHOICE);
+    expect(storedLanguage(null)).toBe(DEFAULT_CHOICE);
   });
 
   it('writes the store only from a choice', () => {
@@ -315,20 +326,64 @@ describe('the language setting', () => {
     const source = readFileSync(join(SRC, 'i18n', 'language.ts'), 'utf8');
     expect(source.match(/\.setItem\(/g) ?? []).toHaveLength(1);
     expect(source.match(/\.removeItem\(/g) ?? []).toHaveLength(1);
-    const effect = /useEffect\(\(\) => \{([\s\S]*?)\}, \[language\]\);/.exec(source);
-    expect(effect?.[1]).not.toMatch(/LANGUAGE_KEY|setItem|removeItem|rememberLanguage/);
+    // Every effect in the file, not only the first: `useLanguage` grew a second
+    // one when "system" arrived, and a check that read one of them would have
+    // gone on passing while the other stamped the key.
+    const effects = [...source.matchAll(/useEffect\(\(\) => \{([\s\S]*?)\n  \}, \[/g)];
+    expect(effects).toHaveLength(2);
+    for (const [, body] of effects) {
+      expect(body).not.toMatch(/LANGUAGE_KEY|setItem|removeItem|rememberLanguage/);
+    }
   });
 
   it('is written under the prefix this site owns', () => {
     expect(LANGUAGE_KEY.startsWith('workbench:')).toBe(true);
   });
 
-  it('defaults to the language the source is written in', () => {
-    // English is the absence of the key, the way `system` is for the appearance,
-    // and it is also every `defaultMessage`. A default of German would mean the
-    // catalogue decides what an untouched browser shows.
-    expect(DEFAULT_LANGUAGE).toBe('en');
-    expect(LANGUAGES).toContain(DEFAULT_LANGUAGE);
+  it('defaults to the browser, which is the absence of the key', () => {
+    // "System" is expressed the way the appearance expresses it: by the key not
+    // being there. That is what lets a reader who has never chosen and a reader
+    // who chose to follow the browser get the same answer out of `storedLanguage`.
+    expect(DEFAULT_CHOICE).toBe('system');
+    expect(storedLanguage(empty)).toBe('system');
+    expect(storedLanguage({ ...empty, getItem: () => 'de' } as Storage)).toBe('de');
+    expect(storedLanguage({ ...empty, getItem: () => 'en' } as Storage)).toBe('en');
+    // Anything else in the key is not a language this site has. A reader who has
+    // hand-edited storage, or a value left by an older build, gets the default
+    // rather than a site rendering against a catalogue that is not there.
+    expect(storedLanguage({ ...empty, getItem: () => 'fr' } as Storage)).toBe('system');
+  });
+
+  it('takes the first of the browser’s languages this site has', () => {
+    // The ranked list and not its head: a reader whose first choice is a language
+    // this site does not have still has a second and a third.
+    expect(preferredLanguage(['de-DE', 'de', 'en-US', 'en'])).toBe('de');
+    expect(preferredLanguage(['fr-FR', 'de-DE', 'en'])).toBe('de');
+    expect(preferredLanguage(['en-GB', 'de'])).toBe('en');
+    // The primary subtag decides, so every German is German. There is nothing
+    // regional in this catalogue to tell them apart with.
+    expect(preferredLanguage(['de-CH'])).toBe('de');
+    expect(preferredLanguage(['DE-at'])).toBe('de');
+  });
+
+  it('falls back to the language the source is written in', () => {
+    // English is every `defaultMessage`, so it is what renders when the provider
+    // consults no catalogue. A browser asking for neither of ours, and a browser
+    // that says nothing at all, both land there.
+    expect(SOURCE_LANGUAGE).toBe('en');
+    expect(LANGUAGES).toContain(SOURCE_LANGUAGE);
+    expect(preferredLanguage(['fr-FR', 'it'])).toBe(SOURCE_LANGUAGE);
+    expect(preferredLanguage([])).toBe(SOURCE_LANGUAGE);
+  });
+
+  it('resolves a chosen language without asking the browser', () => {
+    // The whole point of the third state: choosing English on a German machine
+    // has to stay English. `resolveLanguage` is handed a browser asking for German
+    // and must ignore it for both explicit choices.
+    expect(resolveLanguage('en', ['de-DE'])).toBe('en');
+    expect(resolveLanguage('de', ['en-US'])).toBe('de');
+    expect(resolveLanguage('system', ['de-DE'])).toBe('de');
+    expect(resolveLanguage('system', ['en-US'])).toBe('en');
   });
 
   it('has a catalogue for every language but the default', () => {
@@ -336,11 +391,13 @@ describe('the language setting', () => {
     // English. One for German, none for English.
     //
     // A third language is NOT free, and an earlier version of this comment said it
-    // was. `Language`, `LANGUAGES`, `storedLanguage`'s `=== 'de'`, `CATALOGUES` and
-    // the picker's `TONGUES` are each a branch or a member that has to grow. What is
-    // free is that this assertion goes red until they have, so the list of edits is
-    // discovered rather than remembered.
-    const needing = LANGUAGES.filter((language) => language !== DEFAULT_LANGUAGE);
+    // was. `Language`, `LANGUAGES`, `storedLanguage`'s accepted values, `CATALOGUES`
+    // and the picker's `TONGUES` are each a branch or a member that has to grow.
+    // `preferredLanguage` is the one that grew free of charge: it walks `LANGUAGES`,
+    // so a third member is matched against the browser without an edit. What is also
+    // free is that this assertion goes red until the rest have, so the list of edits
+    // is discovered rather than remembered.
+    const needing = LANGUAGES.filter((language) => language !== SOURCE_LANGUAGE);
     const merged = readFileSync(join(GERMAN, 'index.ts'), 'utf8');
     expect(needing).toEqual(['de']);
     expect(merged).toContain('export const de');
