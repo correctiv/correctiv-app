@@ -1,15 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import ts from 'typescript';
-
 import {
   excusesWithoutReason,
   filesUnder,
   floorFaults,
   ratchet,
+  renderedLiterals,
   under,
   type Finding,
+  type LiteralReading,
+  type RenderedLiteral,
 } from '@correctiv/prose-and-code';
 
 /**
@@ -49,52 +50,31 @@ import {
  * would still be the better tool for judging LAYOUT under a longer language, which
  * is a different question and not one a check can answer.
  *
- * **What it does not do.** It reads literals where they are written, and follows a
- * ternary, a `&&`/`||` fallback, a `+` between two literals and an array of
- * literals joined with `.join(…)` — four shapes that CHOOSE a string rather than
- * computing one, exactly as cheap to write as `{'Save'}`. Past that it stops: a
- * string reached through a variable, built by concatenation with anything that is
- * not itself a literal, or returned from any other helper — `.map` before the
- * `.join`, a `sprintf`, an `Intl.NumberFormat` — is invisible to it, and so is a
- * literal on a prop outside `VISIBLE` below. It says nothing about whether a
- * descriptor's English is any good. It is the net for the mistake as somebody makes
- * it — a word typed straight into the markup, however it is chosen — and it is no
- * reason to skip reading a screen in German.
+ * **What it does not do** is `renderedLiterals`' own docblock in
+ * `@correctiv/prose-and-code`, and it is worth reading before trusting a green run
+ * of this file: it reads literals where they are written and follows four shapes
+ * that choose one, and a string reached through a variable or built by anything
+ * else is invisible to it. On top of that this file adds its own limit — a literal
+ * on a prop outside `VISIBLE` below is not read — and says nothing about whether a
+ * descriptor's English is any good. It is the net for the mistake as somebody
+ * makes it, a word typed straight into the markup, and it is no reason to skip
+ * reading a screen in German.
+ *
+ * **The walk itself is not here.** The parse, the four shapes, the whitespace
+ * collapsing and the word test are `@correctiv/prose-and-code`'s, because
+ * `apps/workbench` needs the same walk over its own `src/` for its own reasons and
+ * two copies of a compiler walk held in step by hand is the thing AGENTS.md argues
+ * against. What stays in this file is the argument: which props a person reads in
+ * THIS app, which calls are already messages, what is content rather than UI, and
+ * every excuse with the reason for it.
  */
 const SRC = resolve(__dirname, '..', 'src');
 
-/**
- * A literal that a person can read or hear, addressed the way the list below
- * spells it.
- */
-interface Literal {
-  /** Path under `src/`, with `/` on every OS. */
-  file: string;
-  /** The string as it would render, with its whitespace collapsed (see `words`). */
-  text: string;
-  /** Where it sits: `<Typo>`, `title=`, `label:`. Reported, never part of a key. */
-  slot: string;
-}
-
 /** `components/home/HomeHeader.tsx: CORRECTIV` — the key the ratchet excuses by. */
-const site = ({ file, text, slot }: Literal): Finding => ({ key: `${file}: ${text}`, as: slot });
-
-/**
- * A run of two letters, which is this check's whole definition of "a word".
- *
- * It is what takes the separators out without a list of them: `·` between two
- * halves of a meta line, the `→` that ends a call to action, the `×` on the
- * player's close button, and the `A` / `A+` / `A++` type-size samples in the
- * settings are each a mark on the glass rather than something to translate. None
- * of them carries two letters in a row, so none of them is a finding and none of
- * them needs an excuse. A number, a punctuation mark and an empty `alt` fall out
- * the same way.
- *
- * The cost is a one-letter word, and German and English have none worth
- * translating. `\p{L}` rather than `[A-Za-z]` so that the check does not become
- * blind to the alphabet it is most likely to meet.
- */
-const WORD = /\p{L}{2,}/u;
+const site = ({ file, text, slot }: RenderedLiteral): Finding => ({
+  key: `${file}: ${text}`,
+  as: slot,
+});
 
 /**
  * The names that reach a person, read off this app rather than off React Native's
@@ -142,7 +122,7 @@ const VISIBLE: ReadonlySet<string> = new Set([
 /**
  * A descriptor block is a message by construction, so nothing inside one can be a
  * literal nobody can reach — and `description` is the field a translator READS,
- * never a rendered one. Skipping the call's whole subtree is what lets
+ * never a rendered one. The walk skips the call's whole subtree, which is what lets
  * `description` stay in `VISIBLE`, where it guards `profile/SettingRow`'s rendered
  * prop of the same name.
  *
@@ -151,7 +131,7 @@ const VISIBLE: ReadonlySet<string> = new Set([
  * file this walks; it is named because this is the list of "already a message" and
  * leaving half of it out would be the kind of omission that reads as a decision.
  */
-const DESCRIPTOR = /^(?:defineMessages|coreMessage)$/;
+const DESCRIPTORS = ['defineMessages', 'coreMessage'];
 
 /**
  * Bundled CONTENT rather than UI, excluded for the reason and with the wording
@@ -233,257 +213,9 @@ const LITERALS_OUTSIDE_THE_CATALOGUE: Record<string, string> = {
     'The teaser under that sample headline, and the same decision: content arriving as data later, not a word this card chose.',
 };
 
-/**
- * What one file's parse produced, stage by stage, because each stage is somewhere
- * the walk can empty out and go green.
- */
-interface Reading {
-  literals: Literal[];
-  /** JSX elements met. Zero of these over the tree means nothing was parsed. */
-  elements: number;
-  /** Non-blank JSX text nodes met, blank or not a word. Guards the text branch. */
-  texts: number;
-  /** Visible props and keys met, whatever their value. Guards the prop branch. */
-  slots: number;
-  /**
-   * Which of `VISIBLE` were met, for the other direction of that list.
-   *
-   * **Counts the NAME, not a render.** A name is added whether or not its value
-   * turned out to be a literal, so a data key that only ever carries a reference —
-   * `description: COPY.spotlight` in the `NEWSLETTERS` table `(tabs)/profil.tsx`
-   * builds, `description={intl.formatMessage(...)}` on the two settings rows that
-   * use it — keeps `description` out of `stale` exactly as a bare string would.
-   * That is accepted rather than fixed: narrowing this to "carried a literal at
-   * least once" would flag `description` today, and wrongly — `profile/SettingRow`
-   * still renders that prop, it is fed a message on every call site there is. The
-   * cost is the one named in the docblock above the ratchet's case: a key sharing a
-   * rendered prop's spelling in a plain data structure, never itself rendered,
-   * would read as coverage here too, and nothing in this file would notice.
-   */
-  names: Set<string>;
-  /** What the parser could not read, which is this check's `eatenByStripping`. */
-  unreadable: string[];
-}
-
-/** The literal a node carries, if it is one the source spells out in full. */
-const literal = (node: ts.Node | undefined): string | undefined =>
-  node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
-    ? node.text
-    : undefined;
-
-/**
- * A template's holes read out, so `` `Page ${n}` `` reads as the words around the
- * number rather than as nothing. Shared by every branch that meets a template, so a
- * hole is read out the same way wherever it appears.
- *
- * **The cooked spans, not the source text with a hole cut out of it.** `head.text`
- * and each span's `literal.text` are what the template decodes an escape to and
- * neither one carries the surrounding backtick or the `${`/`}` around a hole — the
- * source-text-and-regex version this replaced left the backticks in, which passed
- * every case in this file only because nothing in `src/` puts a template literal in
- * a JSX expression child today. `<Text>{`Page ${n}`}</Text>` written tomorrow would
- * have been keyed by `` `Page ` `` — backticks and all — in a ratchet meant to be
- * keyed by rendered words.
- */
-const template = (node: ts.TemplateExpression): string =>
-  node.head.text + node.templateSpans.map((span) => span.literal.text).join('');
-
-/**
- * The rendered spelling: one space for any run of whitespace. A text child is
- * indented and wrapped by oxfmt, so without this the key would change whenever the
- * line was rewrapped and every excuse on the list would go stale on a reformat.
- */
-const words = (text: string) => text.replace(/\s+/g, ' ').trim();
-
-/**
- * The literals in one file, and the counts that say the reading happened.
- *
- * **Parsed rather than matched, and this is the one place this check departs from
- * `@correctiv/prose-and-code`.** Its comment strippers are regular expressions,
- * and its own README says what that costs: "a slash-star written after a space
- * inside a string literal opens a block in either of them". This check's whole
- * subject is string literals, so the stripper could eat the thing being read and
- * the file would come back clean. A parser has no such failure — a comment is
- * trivia and never a node, so commented-out markup and a rule's own explanation
- * are both invisible without anything being removed from the text. Everything else
- * the package offers is used: the walk, the floors, the two-sided lists and the
- * argument on every entry.
- *
- * `ScriptKind` follows the extension rather than being TSX throughout, because
- * `<T>(x: T) => x` in a `.ts` file parses as an unclosed element under TSX and
- * takes the rest of the file with it.
- */
-function read(file: string, code: string): Reading {
-  const source = ts.createSourceFile(
-    file,
-    code,
-    ts.ScriptTarget.Latest,
-    true,
-    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-  );
-  const reading: Reading = {
-    literals: [],
-    elements: 0,
-    texts: 0,
-    slots: 0,
-    names: new Set(),
-    unreadable: [],
-  };
-
-  /*
-   * `parseDiagnostics` is the parser saying it gave up somewhere, and a file it
-   * gave up on yields a partial tree and no findings — the silently empty walk,
-   * one file at a time. It is not in the public typings, so a version that stops
-   * carrying it is itself the fault: `undefined` is reported here rather than read
-   * as "nothing went wrong". `tsc --noEmit` over these same files runs earlier in
-   * `npm run check` and would fail first, which is why this is a guard and not the
-   * defence.
-   */
-  const faults = (source as ts.SourceFile & { parseDiagnostics?: readonly ts.Diagnostic[] })
-    .parseDiagnostics;
-  if (!Array.isArray(faults)) reading.unreadable.push(`${file}: the parser reported nothing`);
-  else if (faults[0] !== undefined) {
-    reading.unreadable.push(
-      `${file}: ${ts.flattenDiagnosticMessageText(faults[0].messageText, ' ')}`,
-    );
-  }
-
-  const keep = (slot: string, text: string) => {
-    if (WORD.test(text)) reading.literals.push({ file, text: words(text), slot });
-  };
-
-  /**
-   * Every literal reachable from an expression that CHOOSES a string rather than
-   * computing one, read without asking what the expression does.
-   *
-   * `{'Save'}` and `` {`Page ${n}`} `` are one brace around a literal; a ternary and
-   * `&&` are one operator around two of them, and an array of literals joined back
-   * into one string is a literal for each of its elements. All four are exactly as
-   * cheap to write as the brace form, so a check that reads the brace and not the
-   * ternary is not reading for the mistake, it is reading for one spelling of it.
-   *
-   * **Only the operators that CHOOSE a string, not every `BinaryExpression`.** The
-   * first version of this recursed into both sides of any binary expression, on the
-   * theory that `+` and `&&` are the same shape at the syntax level and the
-   * distinction is never the operator — and a cold measurement over the real tree
-   * put twelve findings straight through it: `{status === 'offline' && (…)}` reads
-   * as a comparison against a state code, and the old version read `'offline'` off
-   * the LEFT of the `===` as if it were a rendered fallback. A state code compared
-   * for equality is `switch`'s `case` spelled with `?:`, never a string a person
-   * reads, so `RENDERS` below is the fix: `&&`, `||`, `??` and `+`, and nothing that
-   * compares.
-   *
-   * Recursion stops at the first thing it cannot read as a literal: a variable, a
-   * comparison, a call other than `.join`. That half is `read`'s own "what it does
-   * not do", not repeated here.
-   */
-  const RENDERS = new Set<ts.SyntaxKind>([
-    ts.SyntaxKind.AmpersandAmpersandToken,
-    ts.SyntaxKind.BarBarToken,
-    ts.SyntaxKind.QuestionQuestionToken,
-    ts.SyntaxKind.PlusToken,
-  ]);
-  const literalsIn = (node: ts.Node | undefined): string[] => {
-    if (node === undefined) return [];
-    const direct = literal(node);
-    if (direct !== undefined) return [direct];
-    if (ts.isParenthesizedExpression(node)) return literalsIn(node.expression);
-    if (ts.isTemplateExpression(node)) return [template(node)];
-    if (ts.isConditionalExpression(node)) {
-      return [...literalsIn(node.whenTrue), ...literalsIn(node.whenFalse)];
-    }
-    if (ts.isBinaryExpression(node) && RENDERS.has(node.operatorToken.kind)) {
-      return [...literalsIn(node.left), ...literalsIn(node.right)];
-    }
-    if (ts.isArrayLiteralExpression(node)) {
-      return node.elements.flatMap((element) => literalsIn(element));
-    }
-    if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === 'join'
-    ) {
-      // `['One', 'Two'].join(', ')`: the separator is an argument, not a rendered
-      // choice of string, so only the receiver is read.
-      return literalsIn(node.expression.expression);
-    }
-    return [];
-  };
-
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node) && DESCRIPTOR.test(node.expression.getText(source))) return;
-
-    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) reading.elements += 1;
-
-    if (ts.isJsxText(node)) {
-      // A text child in React Native is rendered by definition: anything that is
-      // not inside a text component throws before a reader can see it, so this
-      // needs no list of which tags count.
-      if (node.text.trim() !== '') reading.texts += 1;
-      const tag = ts.isJsxElement(node.parent)
-        ? node.parent.openingElement.tagName.getText(source)
-        : '?';
-      keep(`<${tag}>`, node.text);
-    }
-
-    if (
-      ts.isJsxExpression(node) &&
-      (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))
-    ) {
-      // `<Typo>{'Save'}</Typo>`, a ternary, a `&&` fallback, an array of literals
-      // joined into one: `literalsIn` reads all of them the same way, one brace
-      // further out than the text branch above.
-      for (const found of literalsIn(node.expression)) keep('child', found);
-    }
-
-    if (ts.isJsxAttribute(node)) {
-      const name = node.name.getText(source);
-      if (VISIBLE.has(name)) {
-        reading.slots += 1;
-        // A data key answering to a rendered prop's name keeps that name COUNTED
-        // here whether or not this particular occurrence carries a literal —
-        // `description={intl.formatMessage(COPY.pushDescription)}` is exactly as
-        // much "the app still writes `description`" as a bare string would be. See
-        // the note beside `names` on `Reading` for what that costs the ratchet
-        // below.
-        reading.names.add(name);
-        const expression =
-          node.initializer !== undefined && ts.isJsxExpression(node.initializer)
-            ? node.initializer.expression
-            : undefined;
-        const value =
-          literal(node.initializer) ??
-          literal(expression) ??
-          (expression !== undefined && ts.isTemplateExpression(expression)
-            ? template(expression)
-            : undefined);
-        if (value !== undefined) keep(`${name}=`, value);
-      }
-    }
-
-    if (ts.isPropertyAssignment(node)) {
-      // The same names one layer in: `options={{ title: 'Einstellungen' }}` on a
-      // route, and the arrays of rows a screen builds before it maps them.
-      const name = node.name.getText(source).replace(/['"]/g, '');
-      if (VISIBLE.has(name)) {
-        reading.slots += 1;
-        // Same cost as the attribute branch above: `description: COPY.spotlight`
-        // in a data array counts as writing `description` even though nothing in
-        // this expression renders. `NEWSLETTERS` in `(tabs)/profil.tsx` is exactly
-        // this shape today.
-        reading.names.add(name);
-        const value =
-          literal(node.initializer) ??
-          (ts.isTemplateExpression(node.initializer) ? template(node.initializer) : undefined);
-        if (value !== undefined) keep(`${name}:`, value);
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  };
-  visit(source);
-  return reading;
-}
+/** This app's argument handed to the walk, one file at a time. */
+const read = (file: string, code: string): LiteralReading =>
+  renderedLiterals({ file, code, visible: VISIBLE, descriptors: DESCRIPTORS });
 
 const FILES = filesUnder(SRC, /\.tsx?$/)
   .map((full) => under(SRC, full))
@@ -492,7 +224,8 @@ const FILES = filesUnder(SRC, /\.tsx?$/)
 const READINGS = FILES.map((path) => read(path, readFileSync(join(SRC, path), 'utf8')));
 
 const LITERALS = READINGS.flatMap((reading) => reading.literals);
-const total = (of: (reading: Reading) => number) => READINGS.reduce((sum, r) => sum + of(r), 0);
+const total = (of: (reading: LiteralReading) => number) =>
+  READINGS.reduce((sum, r) => sum + of(r), 0);
 
 describe('the walk reads the app it is checking', () => {
   it('finds files, elements, text and visible props (guards against an empty walk)', () => {
@@ -518,6 +251,14 @@ describe('the walk reads the app it is checking', () => {
     // The other direction of `VISIBLE`. A prop that leaves the app leaves a line
     // here that reads as coverage and is not, and the next person adds a second
     // guess beside it.
+    //
+    // A name counts as written when it is MET, not when it carries a literal —
+    // `description: COPY.spotlight` in the `NEWSLETTERS` table `(tabs)/profil.tsx`
+    // builds and `description={intl.formatMessage(…)}` on the settings rows both
+    // keep `description` out of `stale`. That is the walk's shape and the note
+    // beside `names` on `LiteralReading` argues it; the cost here is that a key
+    // sharing a rendered prop's spelling in a plain data structure would read as
+    // coverage, and nothing in this file would notice.
     const written = new Set<string>();
     for (const reading of READINGS) for (const name of reading.names) written.add(name);
     expect(ratchet(written, [...VISIBLE]).stale).toEqual([]);
@@ -525,91 +266,55 @@ describe('the walk reads the app it is checking', () => {
 });
 
 /**
- * `read()`'s own self-test, on the model of
- * `no-workbench-dependency.test.ts`'s "catches every shape it claims to, and
- * nothing that is correct today": run the detector over fixture source rather than
- * over the app, and assert the exact finding list in both directions.
+ * This app's two lists, run over fixture source with a KNOWN answer.
  *
- * **Why this exists on top of the walk-guards above.** Those four floors count
- * files, elements, text nodes and visible slots — never findings — so a branch of
- * `read()` that silently stops matching (a node-kind check that no longer matches
- * the TypeScript version in use, a condition inverted by an edit) leaves every
- * floor exactly as satisfied as before and every list of findings empty. The suite
- * stays green throughout, because green is also what "the app has no bug today"
- * looks like. Fixtures with a KNOWN answer are the only way to tell the two apart:
- * each shape below is asserted to produce exactly the finding it should, so a
- * branch that stops matching turns one of these red rather than turning the real
- * suite quietly optimistic.
+ * **The shapes the walk follows are not tested here any more.** A ternary, a `&&`,
+ * a `+`, an array joined with `.join`, a template's holes read out: those are
+ * `@correctiv/prose-and-code`'s to get right, its own test asserts each of them
+ * against a fixture, and a second copy of those cases here would be the duplication
+ * the extraction removed, one layer up.
  *
- * One file name throughout, `fixture.tsx`, because `read()`'s first argument only
- * ever affects the `file` field of a `Literal` and the choice of `ScriptKind`.
+ * What is left is the half that is this app's and that nothing else can assert:
+ * `VISIBLE` and `DESCRIPTORS` are two lists of strings handed to a walk, and a
+ * typo in either is invisible to every floor above — the walk goes on parsing, the
+ * counts stay satisfied, and the findings quietly stop arriving. These cases are
+ * the only thing between that and a green run.
+ *
+ * One file name throughout, `fixture.tsx`, because `read`'s first argument only
+ * ever affects the `file` field of a literal and the choice of `ScriptKind`.
  */
-describe('read() catches the shapes it claims to, and stays quiet on what is not one', () => {
+describe('this app’s lists reach the walk', () => {
   const at = (code: string): { slot: string; text: string }[] =>
     read('fixture.tsx', code).literals.map(({ slot, text }) => ({ slot, text }));
 
-  it('finds a literal in every shape this check exists to catch', () => {
-    // The text child and the brace form beside it, which is where the docblock's
-    // whole argument starts: the same rendered word, one brace apart.
-    expect(at('const X = () => <Text>Save</Text>;')).toEqual([{ slot: '<Text>', text: 'Save' }]);
-    expect(at("const X = () => <Text>{'Save'}</Text>;")).toEqual([{ slot: 'child', text: 'Save' }]);
-    expect(at('const X = () => <Text>{`Page ${n}`}</Text>;')).toEqual([
-      { slot: 'child', text: 'Page' },
-    ]);
-
-    // The four shapes a cold review measured going straight past the old parse.
-    expect(at("const X = () => <Text>{ok ? 'Ternary yes' : 'Ternary no'}</Text>;")).toEqual([
-      { slot: 'child', text: 'Ternary yes' },
-      { slot: 'child', text: 'Ternary no' },
-    ]);
-    expect(at("const X = () => <Text>{ok && 'Logical and string'}</Text>;")).toEqual([
-      { slot: 'child', text: 'Logical and string' },
-    ]);
-    expect(at('const X = () => <Button title={`Template prop ${n}`} />;')).toEqual([
-      { slot: 'title=', text: 'Template prop' },
-    ]);
-    expect(at("const X = () => <Text>{['Array one', 'Array two'].join(', ')}</Text>;")).toEqual([
-      { slot: 'child', text: 'Array one' },
-      { slot: 'child', text: 'Array two' },
-    ]);
-
-    // The ordinary prop forms, both slots `read` recognises a name in.
+  it('reads a literal on a prop this app renders, in both spellings', () => {
     expect(at("const X = () => <Button title='Plain prop' />;")).toEqual([
       { slot: 'title=', text: 'Plain prop' },
     ]);
     expect(at("const ROWS = [{ title: 'Row title' }];")).toEqual([
       { slot: 'title:', text: 'Row title' },
     ]);
-    expect(at('const ROWS = [{ title: `Row ${n}` }];')).toEqual([{ slot: 'title:', text: 'Row' }]);
-
-    // A `+` beside a `&&`, because both are a `BinaryExpression` and the walk does
-    // not single one operator out from the other.
-    expect(at("const X = () => <Text>{'Plain ' + 'concatenation'}</Text>;")).toEqual([
-      { slot: 'child', text: 'Plain' },
-      { slot: 'child', text: 'concatenation' },
-    ]);
   });
 
-  it('stays quiet on the shapes this check is not for', () => {
-    // A variable, and a value returned from a helper that is not `.join` on an
-    // array literal: both are the stated edge of `literalsIn`, not a gap in it.
-    expect(at('const X = () => <Text>{label}</Text>;')).toEqual([]);
-    expect(at('const X = () => <Text>{helper()}</Text>;')).toEqual([]);
-    expect(at("const X = () => <Text>{rows.map((r) => r.label).join(', ')}</Text>;")).toEqual([]);
+  it('reads a text child, which needs no name at all', () => {
+    expect(at('const X = () => <Text>Save</Text>;')).toEqual([{ slot: '<Text>', text: 'Save' }]);
+  });
 
-    // A descriptor's whole subtree is a message by construction, `description`
-    // included — the field a translator reads and nobody renders.
+  it('stays quiet on a prop this app never renders', () => {
+    expect(at('const X = () => <Text testID="save-button">{count}</Text>;')).toEqual([]);
+  });
+
+  it('stays quiet inside a descriptor, `description` included', () => {
+    // The field a translator reads and nobody renders, inside a call named in
+    // `DESCRIPTORS` — which is what lets `description` stay in `VISIBLE`.
     expect(
       at(
         "const COPY = defineMessages({ save: { id: 'x.save', defaultMessage: 'Save', description: 'A button' } });",
       ),
     ).toEqual([]);
-
-    // A prop outside `VISIBLE`, whatever it carries.
-    expect(at('const X = () => <Text testID="save-button">{count}</Text>;')).toEqual([]);
-
-    // A blank or punctuation-only text child carries no word.
-    expect(at('const X = () => <Text> · </Text>;')).toEqual([]);
+    expect(
+      at("const M = coreMessage({ id: 'x.fail', defaultMessage: 'Playback failed' });"),
+    ).toEqual([]);
   });
 });
 
