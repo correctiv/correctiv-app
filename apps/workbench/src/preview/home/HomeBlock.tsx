@@ -11,6 +11,7 @@ import { sameSection } from './section';
 import { HOME_MODULES } from '@/lib/home/modules';
 
 import { DrawnBoundary } from '../../components/AppHost';
+import { fit } from './fit';
 
 /**
  * One block of the home document, drawn as the app's real component.
@@ -124,16 +125,10 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
   }
 
   /*
-   * Never above 1, which is `fitScale`'s rule and the reason it is spelled out
-   * here rather than borrowed. `fitScale` fits a box on BOTH axes and answers 1
-   * the moment either height is zero; this block has no height to fit — it is as
-   * tall as its content and the row grows to hold it — so the only arguments
-   * that call would take are a height invented to be ignored, or the truthful
-   * zero, which returns 1 in exactly the pass where the answer matters. What is
-   * inherited is the rule and not the function: a block scaled up would be a lie
-   * about how many pixels the app thinks it has (ADR 0045 §3).
+   * How wide the drawing is and where it stands in the row, which is `./fit.ts`
+   * and is there rather than here so that a test can run it.
    */
-  const scale = room === null ? 1 : Math.min(1, room / deviceWidth);
+  const { scale, aside } = fit(room, deviceWidth);
 
   /*
    * Before the first measurement the shell reserves nothing and claims nothing:
@@ -157,6 +152,7 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
         <div
           ref={drawn}
           style={{
+            marginLeft: aside,
             display: 'flex',
             flexDirection: 'column',
             width: deviceWidth,

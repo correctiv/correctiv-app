@@ -389,10 +389,14 @@ describe('a block draws itself and reads nothing else', () => {
     expect(BLOCK).toMatch(/function same\(/);
   });
 
-  it('scales down and never up', () => {
-    // ADR 0045 §3, and `fitScale`'s rule. A block scaled up would be a lie about how
-    // many pixels the app thinks it has.
-    expect(BLOCK).toMatch(/Math\.min\(1,/);
+  it('scales down and never up, through the one function that decides it', () => {
+    // ADR 0045 §3: a block scaled up would be a lie about how many pixels the app thinks
+    // it has. The rule moved out of this file into `home/fit.ts`, where
+    // `test/preview/fit.test.ts` runs it rather than looking for `Math.min` in a source
+    // — which is what this assertion used to do, and the shape of check this repository
+    // has been bitten by three times.
+    expect(BLOCK).toMatch(/fit\(room, deviceWidth\)/);
+    expect(BLOCK).not.toMatch(/Math\.min/);
   });
 
   it('measures the drawing with an observer the node owns', () => {
