@@ -91,11 +91,19 @@ rewrites. A ledger is quoted, not narrated.
 **The open editorial questions on that board are the case against**, and they are
 named here rather than tidied away: they are questions for the newsroom, which is
 exactly the audience ADR 0050 §1 names, and they are the one thing in that file a
-German reader would act on. They stay English in this record because each is raised
-by a row and answered by editing the manifest beside it, so translating the question
-alone would put German above the English row it belongs to. Translating the rows is
-a bigger decision than this record makes, and it wants the measurement of who
-actually reads that board.
+German reader would act on.
+
+Two things keep them English for now, and only the second is strong.
+`sources.manifest.ts` says in its own header that `SOURCES.md` "stays the document
+of record: it carries the argument, the editorial questions and the figures", so
+the questions are a repository document's before they are this site's, and the new
+line leaves the repository's text alone. That is the strong one. The weaker one is
+practical: each question is raised by a row and answered by editing the manifest
+beside it, so translating the question alone would put German above the English row
+it belongs to.
+
+Translating the rows is a bigger decision than this record makes, and it wants the
+measurement of who actually reads that board.
 
 ## What this retires
 
