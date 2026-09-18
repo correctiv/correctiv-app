@@ -228,6 +228,16 @@ that screen is rendered BY the error boundary, so the provider is inside the sub
 being caught. A third exemption arriving without a reason is the thing to argue about.
 ([ADR 0026](adr/0026-react-native-review-and-hardening.md) §6)
 
+**That check reads the LANGUAGE, and an English literal walks straight past it.**
+`<Text>Save</Text>` carries no umlaut, is no descriptor, and ships.
+`apps/mobile/__tests__/rendered-literals.test.ts` is the half that never asks what
+language a string is in: it parses the app and fails on a text child, or on a literal
+handed to a prop a person reads. What it excuses is a **mark**, the wordmark and the
+names of the products and the newsletters, because a name is the same word in every
+language and so gets no id; the list of them lives in that check and each one carries
+its reason. The pseudo-locale that would find the same strings was considered and
+rejected, and that file says why.
+
 **A descriptor carries a `description` where the string cannot speak for itself.**
 It is never rendered; the extractor carries it into `en.json` and a translation tool
 prints it above the entry field. Two cases are required rather than encouraged,
