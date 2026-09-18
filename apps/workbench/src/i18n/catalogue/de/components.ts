@@ -41,7 +41,7 @@ export const components: Record<string, string> = {
   'components.card.clipped': 'Beschnitten · {height} px hoch',
   'components.card.specimens': 'Alle Exemplare von {name}',
   'components.card.specimens.clipped':
-    'Alle Exemplare von {name}, die diese Karte bei {height} px beschneidet',
+    'Alle Exemplare von {name}; diese Karte beschneidet die Komponente bei {height} px',
   'components.card.noDoc': 'Kein Doc-Kommentar.',
   'components.card.props': '{count, plural, one {# Prop} other {# Props}}',
 
@@ -49,7 +49,7 @@ export const components: Record<string, string> = {
   'components.detail.crumb': 'Komponenten',
 
   'components.detail.tooNarrow':
-    'Das Bundle der App zeichnet das in einem Geräterahmen, und der braucht mehr Breite als hier ist.',
+    'Das Bundle der App zeichnet das in einem Geräterahmen, und der braucht mehr Breite, als hier zur Verfügung steht.',
   'components.detail.full': 'Im Vollbild öffnen',
   'components.detail.frameTitle': '{name}, in der App gezeichnet',
   'components.detail.gallery': 'Die Galerie in der Vorschau',
