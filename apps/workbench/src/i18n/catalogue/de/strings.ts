@@ -22,7 +22,7 @@ export const strings: Record<string, string> = {
   'strings.lede':
     "Jeder Text, für den die App oder diese Site einen Deskriptor hat, zusammengeführt aus der Extraktion und den Katalogen. Beide sind eigene Kataloge mit eigenem Publikum; eine Überschrift nennt deshalb die Oberfläche und den Namensraum zugleich, und <code>settings.title</code> steht unten für zwei verschiedene Texte. Ein Wortlaut mit <code>'{braces}'</code> ist ein ICU-Muster und wird als Muster ausgegeben.",
   'strings.lede.progress':
-    'Die Hälfte <code>app</code> ist vollständig bis auf zwei Texte, die in der App zu lesen und mit Absicht keine Deskriptoren sind; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> nennt beide und den Grund dafür. Die Hälfte <code>workbench</code> ist es nicht: Was diese Seite selbst sagt, steht unten, mehrere andere Seiten dieser Site schreiben ihre Worte aber weiterhin in ihr eigenes Markup, statt sie zu deklarieren. Genau die fehlen hier.',
+    'Die <code>app</code>-Hälfte ist vollständig bis auf zwei Texte, die eine Leserin in der App sieht und die mit Absicht keine Deskriptoren sind; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> nennt beide und den Grund dafür. Die <code>workbench</code>-Hälfte ist es fast: Jede Seite dieser Site steht hier, und was fehlt, sind die sechs Architekturzeichnungen, deren Beschriftungen in einem SVG stehen und einen eigenen Durchgang brauchen. <code>apps/workbench/test/rendered-literals.test.ts</code> zählt, was noch offen ist.',
 
   'strings.filter': 'Texte nach ID, Wortlaut oder Beschreibung filtern',
   'strings.filter.placeholder': 'Filtern, zum Beispiel gate., Anmelden oder workbench',

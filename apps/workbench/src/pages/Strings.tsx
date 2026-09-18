@@ -56,9 +56,9 @@ const COPY = defineMessages({
   ledeProgress: {
     id: 'strings.lede.progress',
     defaultMessage:
-      'The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is not: what this page itself says is below, and several of this site’s other pages still write their words into their own markup instead of declaring them. Those are the ones missing here.',
+      'The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is nearly so: every page of this site is here, and what is not is the six architecture drawings, which are labels in an SVG and want a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.',
     description:
-      'The second paragraph under the heading, which says how much of each half of the board is really on it. The runs in <code> are the two surface names as the headings below spell them, and a path in this repository.',
+      'The second paragraph under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository.',
   },
 
   filter: {
