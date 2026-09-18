@@ -4,6 +4,7 @@ import {
   Component,
   GitBranch,
   House,
+  Languages,
   ListTree,
   PenTool,
   Smartphone,
@@ -60,6 +61,12 @@ const COPY = defineMessages({
     defaultMessage: 'Components',
     description:
       'The rail’s entry for the app’s own components. shell.search.group.components is the palette’s group of them and reads the same in English.',
+  },
+  strings: {
+    id: 'shell.activity.strings',
+    defaultMessage: 'Strings',
+    description:
+      'The rail’s entry for the board of every string the app ships, in both languages. strings.title is that page’s own heading and reads the same in English.',
   },
 });
 
@@ -148,6 +155,17 @@ export const ITEMS = [
     Icon: Component,
     // And again for `/components/<group>/<name>`, one page per component.
     match: (r: string) => r.startsWith('/components'),
+  },
+  /*
+   * Last, and on the rail rather than only in the palette: it is the one page of
+   * this site the second audience ADR 0050 §1 names would arrive for, and the
+   * rail is the only chrome a narrow window keeps.
+   */
+  {
+    route: '/strings',
+    label: COPY.strings,
+    Icon: Languages,
+    match: (r: string) => r === '/strings',
   },
 ];
 

@@ -47,6 +47,7 @@ export const shell: Record<string, string> = {
   'shell.activity.design': 'Design',
   'shell.activity.reference': 'Referenz',
   'shell.activity.components': 'Komponenten',
+  'shell.activity.strings': 'Texte',
 
   // The bar across the top (`ui/Header.tsx`).
   'shell.header.search': 'Die Workbench durchsuchen',

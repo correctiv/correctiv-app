@@ -384,6 +384,9 @@
   "nav.sources": {
     "defaultMessage": "Sources status board"
   },
+  "nav.strings": {
+    "defaultMessage": "Strings, the app’s own"
+  },
   "nav.title.component": {
     "defaultMessage": "{name}, a component",
     "description": "The browser tab on a component’s own page. {name} is the component’s own name, which is an identifier and is never translated."
@@ -476,6 +479,10 @@
   },
   "shell.activity.sources": {
     "defaultMessage": "Sources"
+  },
+  "shell.activity.strings": {
+    "defaultMessage": "Strings",
+    "description": "The rail’s entry for the board of every string the app ships, in both languages. strings.title is that page’s own heading and reads the same in English."
   },
   "shell.boundary.heading": {
     "defaultMessage": "This view did not render"
@@ -648,5 +655,48 @@
   "shell.toc.none": {
     "defaultMessage": "No headings on this page.",
     "description": "Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title."
+  },
+  "strings.empty": {
+    "defaultMessage": "No string matches that.",
+    "description": "Stands in for the list when the filter and the segment together leave nothing. shell.search.empty is the palette’s version of the same answer."
+  },
+  "strings.filter.all": {
+    "defaultMessage": "All",
+    "description": "The first of the three segments beside the filter: no restriction at all."
+  },
+  "strings.filter.label": {
+    "defaultMessage": "Filter strings by id, wording or description",
+    "description": "The accessible name of the board’s filter in the header’s context bar. Read aloud and never drawn; what a sighted reader sees is strings.filter.placeholder."
+  },
+  "strings.filter.placeholder": {
+    "defaultMessage": "e.g. gate. or Anmelden",
+    "description": "Inside the filter box, which is narrow on this page because a second control shares the bar, so this is kept short enough to fit at a laptop width in both languages. The two examples are an id prefix and a German wording, which are the two ways this board is searched; keep an example of each rather than translating these two."
+  },
+  "strings.filter.sameEnglish": {
+    "defaultMessage": "Same English",
+    "description": "The second segment beside the filter: only the ids whose English is word for word another id’s, which are the ones a translator cannot tell apart."
+  },
+  "strings.filter.summary": {
+    "defaultMessage": "{shown, plural, one {# string} other {# strings}} in {namespaces, plural, one {# namespace} other {# namespaces}}",
+    "description": "What the filter has left standing, beside the box. {shown} is how many strings match and {namespaces} how many namespaces they fall into."
+  },
+  "strings.filter.which": {
+    "defaultMessage": "Which strings",
+    "description": "The legend of the three-way choice beside the filter: all of them, the ones sharing an English wording, or the ones a catalogue has no entry for. Read aloud and never drawn."
+  },
+  "strings.lede": {
+    "defaultMessage": "Every user-facing string the app ships, joined from the extraction and the catalogues."
+  },
+  "strings.title": {
+    "defaultMessage": "Strings",
+    "description": "The heading of the board at /strings. shell.activity.strings is the rail’s entry for the same page and reads the same in English; the page’s full name in the tab is nav.strings."
+  },
+  "strings.twin": {
+    "defaultMessage": "Same English as {ids}",
+    "description": "Under an id whose English wording another id carries word for word. {ids} is the comma-separated list of those other ids, which are never translated."
+  },
+  "strings.untranslated": {
+    "defaultMessage": "Untranslated",
+    "description": "Two places, one word: the third segment beside the filter, and the mark drawn in a language’s cell where that catalogue has no entry for the id."
   }
 }
