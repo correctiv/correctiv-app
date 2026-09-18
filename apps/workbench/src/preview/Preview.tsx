@@ -181,14 +181,32 @@ export function usePreview() {
    * The language the frame was last BOOTED in, which is not what the address says
    * until a load has happened.
    *
-   * `undefined` until this effect has run once, so a cold arrival writes the key and
-   * boots, rather than booting and then reloading itself. After that a difference is
-   * a language somebody changed, and the only way to apply one is another boot.
+   * `undefined` until the frame has been booted once. The gate below is what makes
+   * that the same thing as "until the link has been read", so a cold arrival writes
+   * the key and boots, rather than booting and then reloading itself. After that a
+   * difference is a language somebody changed, and the only way to apply one is
+   * another boot.
    */
   const built = useRef<Locale | null | undefined>(undefined);
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
+    /*
+     * And not before the store has read the address, which is the gate
+     * `pages/Preview.tsx` already puts on writing one back and `started` argues in
+     * full: the first render holds `INITIAL`, because `start()` runs in an effect and
+     * effects run after a render.
+     *
+     * Without it this effect boots twice on a cold link and the docblock above is
+     * false. Measured on 2026-09-18 against `#/?d=iphone-15-pro&lg=en`: the first pass
+     * saw `lang: null`, removed the key and pointed the frame at the app; the pass
+     * after `start()` saw `en`, read that as a language somebody had changed and
+     * pointed it there again. Only the second navigation landing while the first had
+     * not committed yet kept that from being two loads, which is the browser being
+     * kind rather than this file being right — and the load it would have thrown away
+     * is the app in the wrong language.
+     */
+    if (!started) return;
 
     /*
      * The language, written before the frame is pointed anywhere, for the reason the
@@ -243,7 +261,7 @@ export function usePreview() {
 
     document.body.dataset.state = 'loading';
     navigate(frame, state.route);
-  }, [shape, state.route, state.seed, state.lang, loaded]);
+  }, [started, shape, state.route, state.seed, state.lang, loaded]);
 
   /** The appearance setting, re-applied after every load because a reload resets it. */
   useEffect(() => {

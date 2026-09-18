@@ -140,10 +140,16 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
      * anybody measures is still `SHIPPED_LOCALE`, and what this line holds is the
      * shape: an override in front, the named constant behind it, and no literal
      * anywhere. A `?? 'de'` there would be the same hole spelled differently.
+     *
+     * Both negatives are anchored on `locale:` and stop at the end of that line.
+     * The fallback one was not, and read the whole file: a `?? ''` written next to
+     * anything else in the store binding failed a test about tab labels with a
+     * message about a language, which is the kind of red that teaches people to
+     * edit the check.
      */
     expect(read(STORE)).toMatch(/locale:\s*previewLocale\(\)\s*\?\?\s*SHIPPED_LOCALE/);
     expect(read(STORE)).not.toMatch(/locale:\s*['"]/);
-    expect(read(STORE)).not.toMatch(/\?\?\s*['"]/);
+    expect(read(STORE)).not.toMatch(/locale:[^\n]*\?\?\s*['"]/);
   });
 });
 

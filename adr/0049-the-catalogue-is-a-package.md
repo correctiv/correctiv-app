@@ -1,6 +1,6 @@
 # ADR 0049 — The catalogue is a package, and the locale comes from the host
 
-Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219); §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221).** §4 has the second user it named since the preview gained `lg=`: the phone passes `SHIPPED_LOCALE`, the workbench passes what its address says (`apps/workbench/src/preview/frame/locale.ts`). §4's "neither does yet" describes what #221 built and is what has moved; the desktop host is still the one that has not arrived.
+Status: accepted, 2026-09-18. **§1, §2, §5 and §6 built in [#219](https://github.com/correctiv/correctiv-app/pull/219); §3 and §4 in [#221](https://github.com/correctiv/correctiv-app/pull/221).** §4 has the second user it named since the preview gained `lg=` in [#226](https://github.com/correctiv/correctiv-app/pull/226): the phone passes `SHIPPED_LOCALE`, the workbench passes what its address says (`apps/workbench/src/preview/frame/locale.ts`). §4's "neither does yet" describes what #221 built and is what has moved, and is struck there now; the desktop host is still the one that has not arrived.
 
 The split is deliberate and the line is behaviour: [#219](https://github.com/correctiv/correctiv-app/pull/219)
 moves files and changes nothing a reader sees, so it can be reviewed as a move. §3 and §4
@@ -95,9 +95,12 @@ switch for English belongs in the workbench where ADR 0026 §6 put it.
 
 `createAppStore()` gains one option. The phone passes `'de'`; the workbench **would**
 pass what its address says and a desktop host what `GLib.get_language_names()` answers,
-and neither does yet. What this section builds is the seam, not its second user — a
-cold review caught the first wording claiming all three in the present tense, which
-would have sent somebody looking for plumbing that is not there.
+~~and neither does yet~~ — the workbench does, since
+[#226](https://github.com/correctiv/correctiv-app/pull/226) made the preview's `lg=` what
+it passes; the desktop host is still the one that has not arrived. What this section
+builds is the seam, not its second user — a cold review caught the first wording claiming
+all three in the present tense, which would have sent somebody looking for plumbing that
+is not there.
 
 **Why the store and not a port.** `CorePlatform` is what the core cannot do for itself —
 storage, blobs, audio, error reporting. A locale is not a capability, it is state, and it has

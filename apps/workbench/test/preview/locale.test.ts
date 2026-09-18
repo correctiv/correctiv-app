@@ -42,6 +42,15 @@ describe('the two ends of the language seam', () => {
    * has no `setLocale` and deliberately wants none. The assertion is that the language
    * is in the effect that owns booting, beside the storage fixture, rather than in an
    * effect of its own that would race it.
+   *
+   * **And that the effect waits for the address.** `built.current` is `undefined`
+   * until the first boot, and that only means "until the link has been read" while
+   * this effect cannot run before `start()` has: a pass on the first render sees
+   * `INITIAL`, so it takes `lg=en` for no language, clears the key, points the frame
+   * at the app, and the pass after it reads the same `en` as a language somebody has
+   * just changed and boots a second time. Measured that way on 2026-09-18 before the
+   * gate went in. The gate is the one `pages/Preview.tsx` already puts on the write
+   * in the other direction, which is why it is spelled the same.
    */
   it('applies the language in the effect that boots the frame, and reloads on a change', () => {
     const preview = source('apps/workbench/src/preview/Preview.tsx');
@@ -52,7 +61,21 @@ describe('the two ends of the language seam', () => {
     expect(preview).toContain(
       'if (!reseed && !relanguage && driveRoute(frame.contentWindow, state.route)) return;',
     );
-    expect(preview).toContain('}, [shape, state.route, state.seed, state.lang, loaded]);');
+    expect(preview).toContain('}, [started, shape, state.route, state.seed, state.lang, loaded]);');
+  });
+
+  it('does not boot the frame before the store has read the address', () => {
+    // Both ends of the gate: the guard and the dependency that re-runs the effect
+    // once it opens. Without the second, the frame waits for the next change of
+    // route or shape and the link shows nothing.
+    const preview = source('apps/workbench/src/preview/Preview.tsx');
+    expect(preview).toContain('if (!started) return;');
+    expect(preview).toContain('}, [started, shape, state.route, state.seed, state.lang, loaded]);');
+
+    // And the page's own write, which is where this spelling comes from.
+    expect(source('apps/workbench/src/pages/Preview.tsx')).toContain(
+      'if (!preview.started) return;',
+    );
   });
 
   /**
