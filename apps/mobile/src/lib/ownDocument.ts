@@ -1,7 +1,11 @@
 /**
  * The mark the app leaves on a document it wrote, and the question it answers.
  *
- * **The app must not stamp a document it did not write.** Its web target is a
+ * **The app must not stamp a document it did not write.** This file answers that
+ * for `lang` and for nothing else. The appearance still reaches a borrowed root —
+ * `lib/theme/appearance.ts` calls `Uniwind.setTheme`, which stamps a class — and
+ * the host that borrows the tree copes with it by watching for the change. That is
+ * a second case with a second answer and not this one. Its web target is a
  * whole document — `app/+html.tsx` is the shell and everything inside it is the
  * app — but the app's React tree is mountable on its own, provider and all, and a
  * page that mounts it that way keeps its own `<html>`: its language, its title,

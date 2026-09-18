@@ -180,7 +180,25 @@ jobs:
           for route in projekt/abriss-atlas aufruf/wem-gehoert-die-stadt serie/klima tagebuch/diary-bern-2 behauptung/claim-001; do
             test -f "dist/$route.html" || { echo "::error::missing dist/$route.html — a dynamic route did not pre-render its ids"; exit 1; }
           done
-          echo "web export OK — $(find dist -name '*.html' | wc -l) routes, no unsupported-platform stubs"
+          # The shell's two attributes, asserted on the ARTEFACT and not only on the
+          # source. `__tests__/export-language.test.ts` reads `app/+html.tsx` through
+          # the AST, which cannot see a change in how Expo serialises the element it
+          # returns. Losing the mark is the quiet one: `lib/ownDocument.ts` then
+          # answers no for every document, the runtime correction of `lang` stops
+          # running, and nothing about that looks broken.
+          missing_lang=$(grep -rL 'lang="de"' --include='*.html' dist/ | head)
+          if [ -n "$missing_lang" ]; then
+            echo "::error::an exported page has no lang=\"de\" — app/+html.tsx did not reach it"
+            echo "$missing_lang"
+            exit 1
+          fi
+          missing_mark=$(grep -rL 'data-correctiv-app' --include='*.html' dist/ | head)
+          if [ -n "$missing_mark" ]; then
+            echo "::error::an exported page lost the own-document mark, so the app will not correct its lang at runtime"
+            echo "$missing_mark"
+            exit 1
+          fi
+          echo "web export OK — $(find dist -name '*.html' | wc -l) routes, no unsupported-platform stubs, lang and mark on every page"
 
       # The workbench is the other half of what Pages publishes, and it can break on
       # its own: it reads the repository's Markdown at build time, so a document
