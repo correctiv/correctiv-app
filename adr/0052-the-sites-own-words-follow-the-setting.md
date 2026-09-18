@@ -10,9 +10,12 @@ drafts failed, and the argument for it is good: an area line left the settings
 dialog in English, and a chrome line could not be finished.
 
 It has the same shape of failure one step further out, and a single screenshot shows
-it: [`screens/evidence/230-komponenten-vorher.webp`](../screens/evidence/230-komponenten-vorher.webp),
-taken from the published build on 2026-09-18, before this record. With the site set
-to German, `/components` reads:
+it. `screens/evidence/230-komponenten-vorher.webp` is that shot, taken on
+2026-09-18 from a build of `main` before this record, in a browser asking for
+German. Named as a path and not linked, which is what every other record here does:
+this file is also rendered on the website, where a relative link out of `adr/`
+resolves against the page's own address and reaches nothing. With the site set to
+German, `/components` reads:
 
 - the header, the rails, the status line and the settings dialog: German
 - the filter above the page, its placeholder and its summary: **English**
