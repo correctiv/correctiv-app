@@ -47,6 +47,14 @@ const COPY = defineMessages({
       'The paragraph under the heading. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. <reference> is the link to /reference and the word inside it is that page’s own name.',
   },
 
+  prose: {
+    id: 'components.prose',
+    defaultMessage:
+      'The sentence under each name is the component’s own doc comment, out of the app’s source, and stays English: a comment is written for whoever reads the code.',
+    description:
+      'A second short paragraph under the lede. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written.',
+  },
+
   filter: {
     id: 'components.filter',
     defaultMessage: 'Filter folders, components and props',
@@ -315,6 +323,12 @@ export function Components() {
                 provider inside every card through `AppHost`. `test/i18n.test.ts`
                 fails on one, and `i18n/Localisation.tsx` carries the measurement. */}
             {intl.formatMessage(COPY.lede, { root, code, reference })}
+          </p>
+          {/* Its own paragraph rather than a clause in the lede, because it is about
+              the page's language rather than about what the page holds, and a reader
+              who is not wondering should be able to skip it in one line. */}
+          <p className="mt-2xs max-w-content text-s leading-relaxed text-on-canvas-muted">
+            {intl.formatMessage(COPY.prose)}
           </p>
 
           {filtered.length === 0 && (
