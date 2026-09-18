@@ -5,7 +5,9 @@ import { createIntl } from 'react-intl';
 import { describe, expect, it } from 'vitest';
 
 import { ROOT } from '../../plugin/collect.ts';
-import { blockName, SHIPPED, whereAt } from '../../src/preview/home/document';
+import { de } from '../../src/i18n/catalogue/de';
+import { say } from '../../src/i18n/messages';
+import { blockName, MODULE_LABELS, SHIPPED, whereAt } from '../../src/preview/home/document';
 import { code } from '../source.ts';
 
 /**
@@ -70,6 +72,26 @@ describe('where a block is going, in words', () => {
     // The marks hand in `index + 1` and the ends are where an off-by-one lives.
     expect(whereAt(intl, SHIPPED, 99)).toBe('at the end of the day');
     expect(whereAt(intl, SHIPPED, -1)).toBe('at the top of the day');
+  });
+
+  /*
+   * The one assertion in this file that formats a descriptor rather than reading a
+   * source, and it is here because of what it caught elsewhere: a cold review once
+   * rewrote `say` to skip `formatMessage`, which leaves every translated label reading
+   * "[object Object]", and the whole suite stayed green. The mutation goes red today
+   * only in `test/i18n.test.ts`, over the LANGUAGE PICKER's rows — so the configurator's
+   * own words are covered by somebody else's test, and the day that test moves they are
+   * covered by nothing. This is the configurator holding its own.
+   */
+  it('formats a module label through `say`, and gets the German', () => {
+    const german = createIntl({ locale: 'de', defaultLocale: 'en', messages: de });
+    expect(say(german, MODULE_LABELS['article-hero']!.label)).toBe('Aufmacher');
+    expect(german.formatMessage(MODULE_LABELS['article-hero']!.what)).toBe(
+      'Die neueste Recherche, über die volle Breite.',
+    );
+    // And the fallback half of `say`: a module this tool has no name for is its id,
+    // which is the app's vocabulary and the same word in every language.
+    expect(say(german, 'something-new')).toBe('something-new');
   });
 });
 

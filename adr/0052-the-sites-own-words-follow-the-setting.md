@@ -1,6 +1,6 @@
 # ADR 0052 — The site's own words follow the setting, the repository's are printed as they are written
 
-Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty. **§5 was added on 2026-09-18**, after the first four had landed: migrating `/handbook` found a hand-written file that §1 takes and the extraction cannot reach. **§6 was added the same day**, when the drawings were the last area left and three of the six were decided to keep their labels in English.
+Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty. **§5 was added on 2026-09-18**, after the first four had landed: migrating `/handbook` found a hand-written file that §1 takes and the extraction cannot reach. **§6 was added the same day**, when the drawings were the last area left and three of the six were decided to keep their labels in English. **§7 was added on 2026-09-18** as well, taking the home configurator's block labels, which [ADR 0050](0050-the-workbench-gets-a-second-audience.md) §5 had deferred.
 
 ## Context
 
@@ -210,27 +210,47 @@ three settings. Nothing else on this site is addressed so directly at the person
 that record was written for, and it was the last English thing left in front of them.
 
 **The module takes an `IntlShape`, it does not return one.** §5 of ADR 0050 named two
-ways out and this takes the first. `preview/home/document.ts` declares its labels
-with `wbMessage`, the identity function `shell/views.ts` and `nav.ts` already use and
-for the same measured reason — the dev server imports this module through
-`plugin/home-layout.ts`, `react-intl` imports React, and a React import inside Vite's
-own config is an exception thrown while the site starts. `blockName()` and
-`whereAt()` then take a formatter as their first argument.
+ways out and this takes the first: `blockName()` and `whereAt()` take a formatter as
+their first argument.
 
 The other way, returning a descriptor and values for the caller to format, was
 rejected on what `whereAt` does: it composes two `blockName`s inside one sentence, so
-a caller would be handed a tree to assemble and all four call sites would have to
-assemble it identically. A formatter passed down is one argument; a tree of
-descriptors is a second implementation of `formatMessage` in the callers.
+a caller would be handed a tree to assemble rather than a string. There are two call
+sites today and that is not the argument — one would be enough. A formatter passed
+down is one argument; a tree of descriptors is a second implementation of
+`formatMessage` in whoever renders it.
+
+**The labels are declared with `wbMessage`, and that half is a preference.** It is
+the identity function `shell/views.ts` and `nav.ts` already use, and the reason is
+`nav.ts`'s rather than a stronger one: this is a table, and two things load it
+outside a browser — the dev server's save endpoint, through `ssrLoadModule`, and the
+tests. Neither has a use for React.
+
+A draft of this section claimed more: that the dev server imports `document.ts` into
+Vite's own config, so `react-intl` would throw while the site starts. That is false
+and was measured false on 2026-09-18 — a `defineMessages` import in `document.ts`
+left the save endpoint answering 200 unchanged. `plugin/home-layout.ts` reaches the
+module through `ssrLoadModule` at request time and statically imports only
+`preview/home/names.ts`, which exists to be a leaf the config can hold; the thing
+Vite's config genuinely cannot take is the JSON import under the core's layout
+module, which is that plugin's own measurement and not this one. The decision stands
+on the weaker reason, which is the true one.
 
 **The field that was `name` is called `label`.** That is not tidying, it is the
 repair. `test/rendered-literals.test.ts` reads a list of prop and key names that
 carry something a person reads, and `label` has always been on it while `name` never
-was — eleven of the twelve `name`s on this site are a radio group's value. The table
-used `name` and `what`, so eleven blocks and three settings of prose sat in English
-through five passes of translating this site and no check said a word. `what` is on
-that list now, `name` is not, and the two `name:` keys left unwatched are argued
-where they sit.
+was, because every `name=` on this site is a radio group's. The table used `name` and
+`what`, so eleven blocks and three settings of prose sat in English and no check said
+a word. `what` is on that list now, `name` is not, and the `name:` keys in the two
+files that still hold them are argued where they sit.
+
+**Nobody had missed these strings, and that is the part worth writing down.** ADR
+0050 §5 is a numbered decision about exactly them, quoting two of them; `Palette.tsx`
+and `de/home.ts` each carried a comment naming `{name}` and `{what}` as the English
+fragments a German sentence was reading around. The deferral was on the record and
+the record was read. What was missing was a check under it, and six passes of
+translating this site went past because a deferral nothing can fail is a deferral
+that survives on somebody remembering. It was found by looking at the screen.
 
 **What this cost the check that was already there.** `test/preview/home-document.test.ts`
 asks whether a label merely repeats the module id and whether the sentence under it

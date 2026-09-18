@@ -27,11 +27,17 @@ import { say, wbMessage, type WorkbenchMessage } from '../../i18n/messages';
  * Every export here is a pure function of a layout, or a name both ends of the tool have
  * to spell the same way. The three ways a change leaves the page — into the running
  * app's document, into the running app's clock, and into the repository — are `write.ts`
- * and `clock.ts`, and they are separate for a reason that is not tidiness: **this file is
- * imported by the dev server**. `plugin/home-layout.ts` prints what it writes with
+ * and `clock.ts`, and they are separate for a reason that is not tidiness: **the dev
+ * server loads this file in Node**. `plugin/home-layout.ts` prints what it writes with
  * `formatLayoutDocument` below, so a browser-only line here (`window`,
- * `import.meta.env`) would be an exception thrown while Vite loads its own config, and
- * the whole site would fail to start.
+ * `import.meta.env`) is an exception the moment somebody presses Save.
+ *
+ * Not while Vite reads its config, which an earlier version of this paragraph said and
+ * which was wrong when it was written. The plugin reaches this module through
+ * `ssrLoadModule` at request time and imports only `names.ts` statically, and that file
+ * exists to be the leaf the config can hold. What Vite's config genuinely cannot take is
+ * the JSON import underneath the core's layout module, which is the measurement
+ * `plugin/home-layout.ts` carries.
  *
  * The tool's component (`HomeDocument.tsx`) reads the layout from `./store.ts` and calls
  * these; nothing in this file holds state of its own, so a second caller — the endpoint,
@@ -71,16 +77,20 @@ export const SHIPPED: HomeLayout = DEFAULT_HOME_LAYOUT;
  *
  * **Both halves are descriptors, and this is the table ADR 0050 §1 was written for.**
  * The one audience that decision names outside development is somebody from the
- * newsroom arranging the home screen, and this is what they arrange it with. It stayed
- * English through five passes of translating the site because the fields were called
- * `name` and `what`, and `test/rendered-literals.test.ts` watched neither; `what` is
- * watched now and the field that was `name` is called `label`, which that check has
- * always read.
+ * newsroom arranging the home screen, and this is what they arrange it with. ADR 0050
+ * §5 named the gap and deferred it; [ADR 0052](../../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §7
+ * closes it. What made the deferral survive six passes of translating the site is that
+ * no check could see it either: the fields were called `name` and `what`, and
+ * `test/rendered-literals.test.ts` watched neither. `what` is watched now and the field
+ * that was `name` is called `label`, which that check has always read.
  *
- * `wbMessage` rather than `defineMessages` because the dev server imports this module:
- * `react-intl` imports React, and a React import in Vite's own config is an exception
- * thrown while the site starts. One call per descriptor, which is what the extractor
- * reads (`i18n/messages.ts`).
+ * `wbMessage` rather than `defineMessages` is a preference with a reason and not a
+ * constraint, and the difference is measured: on 2026-09-18 a `defineMessages` import
+ * here left the save endpoint answering 200 exactly as before. The reason is `nav.ts`'s,
+ * which is weaker and still good — this is a table. Two things load it outside a
+ * browser, the dev server's endpoint through `ssrLoadModule` and the tests, and neither
+ * has any use for React. One call per descriptor, which is what the extractor reads
+ * (`i18n/messages.ts`).
  */
 export interface ModuleWords {
   /**
@@ -181,7 +191,7 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       id: 'home.module.backstage',
       defaultMessage: 'Backstage',
       description:
-        'Backstage is the name of a CORRECTIV product and is the same word in every language. mediathek is the other block named after a section rather than described.',
+        'Backstage is the name of a CORRECTIV product and is the same word in every language. home.module.mediathek, home.module.impact and home.module.spotlight are the other three left as they are, each for the reason on its own descriptor.',
     }),
     what: wbMessage({
       id: 'home.module.backstage.what',
@@ -551,7 +561,7 @@ const WHERE = {
     id: 'home.where.between',
     defaultMessage: 'between {before} and {after}',
     description:
-      'Where an insertion mark puts a block, between two that are already there. {before} and {after} are each home.block.name, so each already reads “Lead article (article-hero)”. Dropped in mid-sentence, so lower case and no full stop.',
+      'Where an insertion mark puts a block, between two that are already there. {before} and {after} are each home.block.name, so each already reads “Lead article (hero)”, where the word in brackets is the section’s id and not the module’s. Dropped in mid-sentence, so lower case and no full stop.',
   }),
 };
 

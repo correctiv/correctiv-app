@@ -136,8 +136,8 @@ import { canSave, publish, save, type SaveResult } from './write';
  *
  * What is NOT here is everything out of `./document.ts` — `moduleLabel`,
  * `settingLabel`, `blockName` and `whereAt`. They are descriptors too, declared there
- * with `wbMessage` because the dev server imports that module and `react-intl` imports
- * React, and they take a formatter as an argument rather than reaching for a hook. So
+ * with `wbMessage` because that module is a table the dev server and the tests load in
+ * Node, and they take a formatter as an argument rather than reaching for a hook. So
  * the values arriving inside the sentences below are German as well, and `say` is what
  * formats the one of them that may still be a bare string: a module id this tool has no
  * name for.
@@ -956,9 +956,9 @@ function Row({
   const intl = useWorkbenchIntl();
   const { label, what } = moduleLabel(section.module);
   /*
-   * What the row's four controls call this block when they are read out. `name` alone is
-   * the module's, and two sections of one module share it — `document.ts` says what that
-   * cost in the accessibility tree.
+   * What the row's four controls call this block when they are read out. `label` alone
+   * is the module's, and two sections of one module share it — `document.ts` says what
+   * that cost in the accessibility tree.
    */
   const spoken = blockName(intl, section);
   /*

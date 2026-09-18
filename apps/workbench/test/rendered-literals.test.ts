@@ -71,18 +71,19 @@ const site = ({ file }: { file: string }): string => file;
  *
  * **`what` is here and `name` is not, and that pair is the hole this list had.**
  * `preview/home/document.ts` gave every block of the home configurator a `name`
- * and a `what`, and neither was watched: `name` because eleven of the twelve
- * `name`s on this site are a radio group's, `what` because nothing had asked. So
- * the eleven blocks and three settings of the one tool ADR 0050 §1 names an
- * audience for sat in English and no check said a word, through five passes.
- * Found by looking at the screen.
+ * and a `what`, and neither was watched: `name` because every `name=` on this
+ * site is a radio group's, `what` because nothing had asked. So the eleven blocks
+ * and three settings of the one tool ADR 0050 §1 names an audience for sat in
+ * English and no check said a word. Nobody had missed them — ADR 0050 §5 is a
+ * numbered decision about exactly those strings — but a deferral with no check
+ * under it is a deferral that can be forgotten, and this one nearly was.
  *
  * `what` is watched now. `name` still is not, and the remedy for the table was to
  * call its field `label`, which was already the name a visible string has here.
- * What that leaves unwatched is two `name:` keys and each is argued where it sits:
- * `preview/frame/seed.ts`'s are a fixture's content, the app's own, and
- * `diagrams/Services.tsx`'s are host names the drawing prints as identifiers and
- * `test/diagrams.test.ts` parses off the source.
+ * What that leaves unwatched is the `name:` keys in two files, and each file is
+ * argued where it sits: `preview/frame/seed.ts`'s are a fixture's content, the
+ * app's own, and `diagrams/Services.tsx`'s are host names the drawing prints as
+ * identifiers and `test/diagrams.test.ts` parses off the source.
  *
  * `alt` is not here, and the app's list has it. This site draws no `<img>` at all,
  * so nothing here means by `alt` what the platform means. What it does mean is two
@@ -103,10 +104,19 @@ const site = ({ file }: { file: string }): string => file;
  * the name would never be met and would read as coverage. The app keeps it because
  * `profile/SettingRow` renders a prop of that name.
  *
- * What is NOT here matters as much. `className`, `variant`, `id`, `name`, `href`,
- * `value` and `route` all take a string a person never reads, and a check that read
- * every string prop would be mostly wrong and would need an exception list longer
- * than the rule.
+ * What is NOT here matters as much. `className`, `variant`, `id`, `href`, `value`
+ * and `route` all take a string a person never reads, and a check that read every
+ * string prop would be mostly wrong and would need an exception list longer than
+ * the rule.
+ *
+ * `name` is the one that is not that simple, and it is out for a different reason.
+ * Every `name=` in the tree is a radio or `<Segmented>` group's, which nobody hears,
+ * but `Tile` in `pages/Decisions.tsx` and `pages/Sources.tsx` takes a `name` prop and
+ * renders it as `aria-label`, and that one IS heard. Its call sites all hand in a
+ * formatted message today, so watching the name would find nothing and cost the
+ * ratchet the group names. Measured on 2026-09-18: everything adding it finds is a
+ * group name, a host name on a drawing or a fixture's content, and not one of them
+ * is a string somebody reads.
  */
 const VISIBLE: ReadonlySet<string> = new Set([
   'aria-label',
@@ -128,8 +138,9 @@ const VISIBLE: ReadonlySet<string> = new Set([
  * literal nobody can reach.
  *
  * `wbMessage` is this site's own spelling, for the modules that hold strings and
- * may not import React — `shell/views.ts`, `preview/routes.ts`, `nav.ts` and
- * `preview/home/write.ts` today; `src/i18n/messages.ts` argues why. `wbMessage` is
+ * have no React — `shell/views.ts` and `nav.ts` are the two `src/i18n/messages.ts`
+ * argues from, and there are more now; that file says why rather than listing them,
+ * because a list of files is a fact that goes stale on the next one. `wbMessage` is
  * typed a second time in `package.json` under `i18n:extract`, as
  * `--additional-function-names`, so renaming it is two edits there and a third
  * here. `defineMessages` is not: FormatJS knows it, and this list has to name it
@@ -299,6 +310,12 @@ describe('the site says its own words through a descriptor', () => {
 
     expect(found('<p>Some words</p>')).toEqual(['<p>']);
     expect(found('<Filter label="Some words" />')).toEqual(['label=']);
+    // `what` in both spellings, because removing it from VISIBLE again was free:
+    // no file holds a `what` literal today, so the per-file table does not move by
+    // one entry and the floors are nowhere near. A name argued into that list over
+    // four paragraphs should not be removable without a red test.
+    expect(found('<Filter what="Some words" />')).toEqual(['what=']);
+    expect(found("notAMessage({ what: 'Some words' })")).toEqual(['what:']);
     expect(found('<Filter className="grid gap-xs" />')).toEqual([]);
     // A descriptor call is a message by construction, subtree and all.
     //

@@ -127,8 +127,9 @@ The names and descriptions of the home screen's blocks — "Lead article", "The 
 investigation, full width" — are the most editor-facing prose in the tool, and ~~they are
 the one part not moved here~~ they were the last part moved, on 2026-09-18 by
 [ADR 0052](0052-the-sites-own-words-follow-the-setting.md) §7. `moduleLabel()` is read by `blockName()`, which is a plain
-function in a module with no React and no formatter, and its result is interpolated
-into accessible names. Localising it means either handing `intl` down into that module
+function in a module with no React and ~~no formatter~~ a formatter handed in as its
+first argument since that record, and its result is interpolated into accessible
+names. Localising it means either handing `intl` down into that module
 or making `blockName` return a descriptor and values for its callers to format.
 
 That is a design decision about the module, not a substitution, and doing it in the

@@ -49,8 +49,10 @@ export function wbMessage(message: WorkbenchMessage): WorkbenchMessage {
  * falls back to the id. Both need one line that formats a descriptor and passes a
  * string through, and one line in two places is one too many.
  *
- * Takes `intl` rather than calling the hook, because both call sites reach it from
- * inside a `.map` and a hook in a helper would be a rule violated for no gain.
+ * Takes `intl` rather than calling the hook, and `preview/home/document.ts` is why:
+ * `blockName()` is a plain function in a module with no React, so there is no hook
+ * to call there at all. In a component a hook would work and an argument is one
+ * word more, which is the price of the two kinds of caller sharing one line.
  *
  * Both descriptor shapes, because the two tables declare them differently:
  * `defineMessages` in a component gives a `MessageDescriptor` whose `id` may be a

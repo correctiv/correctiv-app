@@ -70,9 +70,9 @@ const SPECIMEN = 'max-h-[13rem]';
  *
  * `useWorkbenchIntl()` reads a context of this site's own, which the app's provider
  * cannot shadow because it is a different object, and `test/i18n.test.ts` fails on a
- * `useIntl` anywhere outside `src/i18n/`. `document.ts` holds no hook at all — the dev
- * server imports it — so it takes the formatter as an argument, and the one this file
- * hands it is that same context.
+ * `useIntl` anywhere outside `src/i18n/`. `document.ts` holds no hook at all, because
+ * it is a table the dev server and the tests load in Node, so it takes the formatter as
+ * an argument, and the one this file hands it is that same context.
  */
 const COPY = defineMessages({
   addHere: {

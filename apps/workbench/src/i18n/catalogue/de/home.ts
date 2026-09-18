@@ -8,9 +8,10 @@ export const home: Record<string, string> = {
   // through five passes because the table used the keys `name` and `what`, neither of
   // which the literal check watched.
   //
-  // „Mediathek", „Backstage", „Impact" and „Spotlight" are the app's own section
-  // names and the same word in both catalogues. A translation of one of them would
-  // rename a section of the app rather than translate a label.
+  // "Mediathek", "Backstage", "Impact" and "Spotlight" stay as they are, each for
+  // the reason on its own descriptor: two are what the app calls those sections and
+  // two are the names of a CORRECTIV product and a CORRECTIV newsletter. A
+  // translation of one of them would rename the thing rather than translate a label.
   'home.module.header': 'Kopfzeile',
   'home.module.header.what': 'Das Datum, die Begrüßung und der Weg in die Suche.',
   'home.module.feedStatus': 'Lade- und Offline-Hinweis',
@@ -67,9 +68,8 @@ export const home: Record<string, string> = {
   'home.timeline.momentGo': 'Zum Moment um {time} springen',
 
   // The palette, and the hairline that opens it (`preview/home/Palette.tsx`).
-  // `{where}`, `{name}` and `{what}` arrive as English prose out of
-  // `preview/home/document.ts`, so these read German around an English fragment
-  // until those tables are descriptors too.
+  // `{where}`, `{name}` and `{what}` come out of `preview/home/document.ts` and are
+  // German too since that table became descriptors, so these read German through.
   'home.palette.addHere': 'Einen Block hinzufügen: {where}',
   'home.palette.title': 'Einen Block hinzufügen',
   'home.palette.lead':
@@ -80,10 +80,10 @@ export const home: Record<string, string> = {
   'home.block.unknown': 'Nicht gezeichnet: Diese App hat kein Modul namens <name>{module}</name>.',
   'home.block.empty': 'Zeichnet hier nichts.',
 
-  // The editing surface (`preview/home/HomeDocument.tsx`). `{block}` and
-  // `{standsIn}` arrive as English prose, out of `preview/home/document.ts` and
-  // out of `content/sources.manifest.ts`, so these read German around an English
-  // fragment until those tables are descriptors too.
+  // The editing surface (`preview/home/HomeDocument.tsx`). `{block}` comes out of
+  // `preview/home/document.ts` and is German. `{standsIn}` comes out of
+  // `content/sources.manifest.ts`, which ADR 0052 §4 leaves quoted as written, so
+  // that one sentence still reads German around an English fragment.
   'home.document.rule': 'Ein Moment trägt nur das, was sich an ihm ändert.',
   'home.document.follow': 'Den Rahmen zu dem Block scrollen, über dem der Zeiger steht',
   'home.document.revert': 'Zurück zur Datei',

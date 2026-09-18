@@ -1147,7 +1147,7 @@
   },
   "home.module.backstage": {
     "defaultMessage": "Backstage",
-    "description": "Backstage is the name of a CORRECTIV product and is the same word in every language. mediathek is the other block named after a section rather than described."
+    "description": "Backstage is the name of a CORRECTIV product and is the same word in every language. home.module.mediathek, home.module.impact and home.module.spotlight are the other three left as they are, each for the reason on its own descriptor."
   },
   "home.module.backstage.what": {
     "defaultMessage": "The newsroom diary and the way in."
@@ -1385,7 +1385,7 @@
   },
   "home.where.between": {
     "defaultMessage": "between {before} and {after}",
-    "description": "Where an insertion mark puts a block, between two that are already there. {before} and {after} are each home.block.name, so each already reads “Lead article (article-hero)”. Dropped in mid-sentence, so lower case and no full stop."
+    "description": "Where an insertion mark puts a block, between two that are already there. {before} and {after} are each home.block.name, so each already reads “Lead article (hero)”, where the word in brackets is the section’s id and not the module’s. Dropped in mid-sentence, so lower case and no full stop."
   },
   "home.where.end": {
     "defaultMessage": "at the end of the day",
