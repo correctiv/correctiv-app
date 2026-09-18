@@ -54,6 +54,7 @@ export type ViewKind =
   | 'diagrams'
   | 'diagram'
   | 'reference'
+  | 'strings'
   | 'sources'
   | 'decisions'
   | 'design'
@@ -206,6 +207,9 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
   // inside a scroller that is already sticky.
   reference: reading('reference', true),
   components: reading('components', true),
+  // The third lookup surface, and the same shape for the same reason: a long
+  // list cut into sections, with the thing that narrows it in the header.
+  strings: reading('strings', true),
 
   design: {
     kind: 'design',
@@ -266,6 +270,7 @@ const EXACT: Record<string, ViewKind> = {
   '/handbook': 'handbook',
   '/diagrams': 'diagrams',
   '/reference': 'reference',
+  '/strings': 'strings',
   '/sources': 'sources',
   '/decisions': 'decisions',
   '/design': 'design',

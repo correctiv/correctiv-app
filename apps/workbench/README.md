@@ -127,6 +127,13 @@ site meets it this way.
 | Command | Produces |
 | --- | --- |
 | `npm run api -w @correctiv/workbench` | `content/api.generated.json`, extracted with `typedoc --json` |
+| `npm run strings -w @correctiv/workbench` | `content/strings.generated.json`, the extraction joined with the catalogues |
+
+Both are gitignored and `npm run build` runs both first. `dev` is bare `vite`, so on a
+fresh clone `npm run workbench` throws until they exist, naming the command to run. That
+is deliberate — a clear failure beats a page that looks like the app has no strings —
+but the throw happens at module load, so a missing file blanks every route and not only
+the page that wanted it.
 
 TypeDoc runs as a data extractor and never as a site generator. No HTML, no theme.
 This site's own components render the model. A generated documentation site would

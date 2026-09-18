@@ -43,7 +43,18 @@ export function Filter({
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
-      <div className="relative min-w-[9rem] flex-1">
+      {/*
+        A floor of 18rem and not 9rem, which is what the box needs before a
+        placeholder is a sentence rather than a stub. The summary beside it is
+        `shrink-0` and carries three numbers, so with the smaller floor it took
+        whatever it wanted and the box got the remainder: 215px at a 390px width and
+        250px at 1440, which clipped every one of the three placeholders on this site
+        on a font stack slightly wider than the author's. The row already wraps, so
+        the floor costs no header line at either width — measured at 390 and 1440,
+        both unchanged at 104px and 44px — and the summary drops below the box
+        instead when there is genuinely no room.
+      */}
+      <div className="relative min-w-[18rem] flex-1">
         <SearchIcon
           aria-hidden="true"
           className="pointer-events-none absolute left-xs top-1/2 size-[0.875rem] -translate-y-1/2 text-on-canvas-muted"

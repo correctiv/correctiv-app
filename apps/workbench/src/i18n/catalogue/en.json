@@ -384,6 +384,9 @@
   "nav.sources": {
     "defaultMessage": "Sources status board"
   },
+  "nav.strings": {
+    "defaultMessage": "Strings, the app’s own"
+  },
   "nav.title.component": {
     "defaultMessage": "{name}, a component",
     "description": "The browser tab on a component’s own page. {name} is the component’s own name, which is an identifier and is never translated."
@@ -476,6 +479,10 @@
   },
   "shell.activity.sources": {
     "defaultMessage": "Sources"
+  },
+  "shell.activity.strings": {
+    "defaultMessage": "Strings",
+    "description": "The rail’s entry for the board of every string the app ships, in both languages. strings.title is that page’s own heading and reads the same in English."
   },
   "shell.boundary.heading": {
     "defaultMessage": "This view did not render"
