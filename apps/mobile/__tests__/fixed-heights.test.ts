@@ -190,7 +190,7 @@ const app = read();
  * has a map.
  */
 const MEASURED_AND_LEFT: Record<string, string> = {
-  'app/atlas.tsx:53':
+  'app/atlas.tsx:55':
     "The stand-in for a map the app does not have: a 130 dp box holding a pin glyph and one short label. Photographed at 200 % in both appearance settings on 2026-09-16 — the label still sets on one line and clears the box's bottom edge, so this is the construction and not the defect. Its height is the drawn size of a picture that is missing, not a guess at how tall a line of type is, which is the difference from the search field.",
 };
 

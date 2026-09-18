@@ -25,13 +25,24 @@ import { useColors } from '@/lib/theme';
 const COPY = defineMessages({
   screenTitle: { id: 'project.screenTitle', defaultMessage: 'Project' },
   notFound: { id: 'project.notFound', defaultMessage: 'This project does not exist' },
-  unknownId: { id: 'project.unknownId', defaultMessage: 'Unknown identifier "{id}".' },
-  noId: { id: 'project.noId', defaultMessage: 'No identifier was passed.' },
+  unknownId: {
+    id: 'project.unknownId',
+    defaultMessage: 'Unknown identifier "{id}".',
+    description:
+      'Shown when the project screen is opened with an identifier no project has. {id} is that identifier, unchanged, in quotation marks.',
+  },
+  noId: {
+    id: 'project.noId',
+    defaultMessage: 'No identifier was passed.',
+    description:
+      'Shown when the project screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, diary.noId and series.noId.',
+  },
   comingSoon: { id: 'project.comingSoon', defaultMessage: 'Coming soon' },
   comingSoonBody: {
     id: 'project.comingSoonBody',
     defaultMessage:
       '{name} is just starting. The first pieces appear here as soon as they are published.',
+    description: "Shown on a project that has published nothing yet. {name} is the project's name.",
   },
   latestPosts: { id: 'project.latestPosts', defaultMessage: 'Latest pieces' },
   feedFailed: { id: 'project.feedFailed', defaultMessage: 'The pieces could not be loaded.' },

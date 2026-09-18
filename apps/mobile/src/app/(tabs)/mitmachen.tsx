@@ -21,7 +21,12 @@ const WHATSAPP_TIP = 'https://wa.me/4915142647500';
  * city or a single claim in review would otherwise read "1 Behauptungen".
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'participate.title', defaultMessage: 'Take part' },
+  screenTitle: {
+    id: 'participate.title',
+    defaultMessage: 'Take part',
+    description:
+      'The heading of the participation screen. ui.tabParticipate is the same word on the tab bar, where it has far less room, and three callout buttons say it too.',
+  },
   lead: {
     id: 'participate.lead',
     defaultMessage:
@@ -33,6 +38,8 @@ const COPY = defineMessages({
     id: 'participate.forumLead',
     defaultMessage:
       'The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on.',
+    description:
+      'The paragraph about the Faktenforum on the participation tab. {count} is how many claims are being worked on right now.',
   },
   forumAction: { id: 'participate.forumAction', defaultMessage: 'See the claims' },
   atlasHeading: { id: 'participate.atlasHeading', defaultMessage: 'Document demolitions' },
@@ -40,6 +47,8 @@ const COPY = defineMessages({
     id: 'participate.atlasLead',
     defaultMessage:
       'Which buildings are disappearing? {reports, plural, one {One report} other {# reports}} from {cities, plural, one {one city} other {# cities}} in Germany and Switzerland.',
+    description:
+      'The paragraph about the demolition atlas on the participation tab. {reports} counts reports and {cities} the cities they come from.',
   },
   atlasAction: { id: 'participate.atlasAction', defaultMessage: 'See the atlas' },
   tipLabel: { id: 'participate.tipLabel', defaultMessage: 'Send a tip' },

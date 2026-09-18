@@ -19,19 +19,40 @@ import { colors } from '@/lib/theme';
  * still the German one and the count now picks its own noun.
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'video.screenTitle', defaultMessage: 'Video' },
+  screenTitle: {
+    id: 'video.screenTitle',
+    defaultMessage: 'Video',
+    description:
+      'The heading of the video screen. video.kicker is the same word above the title and video.frameTitle the name of the embed.',
+  },
   none: { id: 'video.none', defaultMessage: 'No video selected.' },
   unavailable: { id: 'video.unavailable', defaultMessage: 'Video unavailable' },
-  loading: { id: 'video.loading', defaultMessage: 'Loading …' },
+  loading: {
+    id: 'video.loading',
+    defaultMessage: 'Loading …',
+    description:
+      "The video screen's state line while the embed loads. player.loading is the same word in the mini player.",
+  },
   today: { id: 'video.today', defaultMessage: 'Today' },
   yesterday: { id: 'video.yesterday', defaultMessage: 'Yesterday' },
   views: {
     id: 'video.views',
     defaultMessage: '{count, plural, one {# view} other {# views}}',
+    description: "Under a video's title. {count} is how often it has been watched.",
   },
   newEpisode: { id: 'video.newEpisode', defaultMessage: 'New episode' },
-  kicker: { id: 'video.kicker', defaultMessage: 'Video' },
-  watchOn: { id: 'video.watchOn', defaultMessage: 'Watch on {host}' },
+  kicker: {
+    id: 'video.kicker',
+    defaultMessage: 'Video',
+    description:
+      "The kicker above a video's title. video.screenTitle is the same word as the screen's heading, and the two are separate so that one can change without the other.",
+  },
+  watchOn: {
+    id: 'video.watchOn',
+    defaultMessage: 'Watch on {host}',
+    description:
+      "The button that leaves the app for the platform the video is hosted on. {host} is that platform's host name, such as youtube.com.",
+  },
   watchOriginal: { id: 'video.watchOriginal', defaultMessage: 'Watch the original' },
 });
 

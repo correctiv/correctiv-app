@@ -31,11 +31,23 @@ const COPY = defineMessages({
     id: 'callout.detail.unknownHeadline',
     defaultMessage: 'This callout does not exist',
   },
-  unknownSlug: { id: 'callout.detail.unknownSlug', defaultMessage: 'Unknown identifier "{slug}".' },
-  noSlug: { id: 'callout.detail.noSlug', defaultMessage: 'No identifier was passed.' },
+  unknownSlug: {
+    id: 'callout.detail.unknownSlug',
+    defaultMessage: 'Unknown identifier "{slug}".',
+    description:
+      'Shown when the callout screen is opened with an identifier no callout has. {slug} is that identifier, unchanged, in quotation marks.',
+  },
+  noSlug: {
+    id: 'callout.detail.noSlug',
+    defaultMessage: 'No identifier was passed.',
+    description:
+      'Shown when the callout screen is opened with no identifier at all, which is a broken link rather than a wrong one. Four other screens say the same thing under claim.noId, diary.noId, project.noId and series.noId.',
+  },
   responses: {
     id: 'callout.detail.responses',
     defaultMessage: '{count, plural, one {One contribution} other {# contributions}} so far',
+    description:
+      "The contribution count on a callout's own screen, printed for every kind of callout. Reads identically to callout.crowdnewsroom.countSoFar, which is the CARD's line and is worded per kind. {count} is how many people have contributed.",
   },
   whoAsks: { id: 'callout.detail.whoAsks', defaultMessage: 'Who is asking?' },
   dataUse: { id: 'callout.detail.dataUse', defaultMessage: 'What happens to your data?' },
@@ -43,7 +55,12 @@ const COPY = defineMessages({
     id: 'callout.detail.contributed',
     defaultMessage: '✓ You have contributed already, thank you! More tips are welcome.',
   },
-  cta: { id: 'callout.detail.cta', defaultMessage: 'Take part' },
+  cta: {
+    id: 'callout.detail.cta',
+    defaultMessage: 'Take part',
+    description:
+      "The button on a callout's own screen, whatever kind of callout it is. The cards have their own, callout.crowdnewsroom.cta and callout.survey.cta.",
+  },
   contributeAgain: { id: 'callout.contributeAgain', defaultMessage: 'Send another tip' },
   screenTitle: { id: 'callout.screenTitle', defaultMessage: 'Callout' },
 });

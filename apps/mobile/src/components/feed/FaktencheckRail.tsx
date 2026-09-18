@@ -10,7 +10,12 @@ import { sizes } from '@/lib/theme';
  * `src/i18n/catalogue/de/home.ts` (ADR 0026 §6). The headlines are the articles'.
  */
 const COPY = defineMessages({
-  badge: { id: 'home.factCheckBadge', defaultMessage: 'Fact check' },
+  badge: {
+    id: 'home.factCheckBadge',
+    defaultMessage: 'Fact check',
+    description:
+      "The badge on a card in the home screen's fact-check rail. core.reader.factcheckBadge is the same word inside the article document, where it is uppercased.",
+  },
 });
 
 /** The horizontally scrolling fact-check cards on Home. */

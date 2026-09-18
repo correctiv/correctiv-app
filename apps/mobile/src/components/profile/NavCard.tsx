@@ -21,7 +21,12 @@ const COPY = defineMessages({
    * is a question about the language, and a join in TypeScript answers it once for
    * every language there will ever be.
    */
-  clubRow: { id: 'profile.nav.clubAccessibility', defaultMessage: '{title}, Club' },
+  clubRow: {
+    id: 'profile.nav.clubAccessibility',
+    defaultMessage: '{title}, Club',
+    description:
+      "The accessible name of a club row in the profile, read aloud and never seen. {title} is the row's own title; the mark is appended as one message so the language decides where it goes.",
+  },
 });
 
 /**

@@ -22,8 +22,18 @@ const COPY = defineMessages({
     defaultMessage:
       'The community checks claims together with the CORRECTIV newsroom. Have a look at what is being worked on.',
   },
-  quote: { id: 'faktenforum.quote', defaultMessage: '"{quote}"' },
-  submitted: { id: 'faktenforum.submitted', defaultMessage: '{shortId} · submitted {date}' },
+  quote: {
+    id: 'faktenforum.quote',
+    defaultMessage: '"{quote}"',
+    description:
+      "A claim in the Faktenforum list, in quotation marks. {quote} is the claim's wording and is not translated. claim.quote is the same construction on a claim's own screen.",
+  },
+  submitted: {
+    id: 'faktenforum.submitted',
+    defaultMessage: '{shortId} · submitted {date}',
+    description:
+      "The line under a claim in the Faktenforum list. {shortId} is the claim's short identifier and {date} the day it was submitted, already formatted.",
+  },
 });
 
 /**

@@ -208,6 +208,21 @@ that screen is rendered BY the error boundary, so the provider is inside the sub
 being caught. A third exemption arriving without a reason is the thing to argue about.
 ([ADR 0026](adr/0026-react-native-review-and-hardening.md) §6)
 
+**A descriptor carries a `description` where the string cannot speak for itself.**
+It is never rendered; the extractor carries it into `en.json` and a translation tool
+prints it above the entry field. Two cases are required rather than encouraged,
+because in both of them the string alone is not answerable: an id whose English is
+word for word another id's, where a translator cannot tell one decision from two
+that happen to coincide in English, and an id carrying a placeholder, where nothing
+says what goes in the hole. The description names each placeholder in its braced
+spelling, `{count}` and not "the count", so that a field is answered rather than
+filled in. `apps/mobile/__tests__/localisation-seam.test.ts` reads all three off
+`en.json`, which is generated, so none of them can be satisfied by editing the file
+the test reads. Where a reason for an id is written as a comment in the German
+catalogue, ask which half of it a translator needs: that half belongs on the
+descriptor, because `catalogue/de/` is a file the person writing the French will
+never open.
+
 **The core has vocabulary of its own and cannot use `defineMessages`.** What a
 playback failure says, how a fact-check verdict reads, the words the reader document
 prints: those belong to `packages/app-core`, which imports no React and so no

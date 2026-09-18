@@ -25,7 +25,12 @@ const CLUB = 'CORRECTIV Club';
  */
 const COPY = defineMessages({
   fallbackName: { id: 'profile.club.fallbackName', defaultMessage: 'Member' },
-  tierSince: { id: 'profile.club.tierSince', defaultMessage: '{tier} · since {date}' },
+  tierSince: {
+    id: 'profile.club.tierSince',
+    defaultMessage: '{tier} · since {date}',
+    description:
+      "Under the name on the membership card. {tier} is the tier's name, already translated, and {date} the day the membership began, already formatted.",
+  },
 });
 
 /**

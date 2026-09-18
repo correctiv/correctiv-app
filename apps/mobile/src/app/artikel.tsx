@@ -29,7 +29,12 @@ import { sizes, useColors, useIsDark } from '@/lib/theme';
  * draws its own chevron because the chrome floats over the hero image.
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'article.documentTitle', defaultMessage: 'Article' },
+  screenTitle: {
+    id: 'article.documentTitle',
+    defaultMessage: 'Article',
+    description:
+      "The browser tab's title while an article is open on the web target. Never seen inside the app.",
+  },
   loadFailed: { id: 'article.loadFailed', defaultMessage: 'The article could not be loaded' },
   retryHint: { id: 'article.retryHint', defaultMessage: 'A second attempt may help.' },
   retry: { id: 'article.retry', defaultMessage: 'Try again' },

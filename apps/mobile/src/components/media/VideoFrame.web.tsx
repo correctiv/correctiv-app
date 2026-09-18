@@ -9,7 +9,12 @@ import type { VideoFrameProps } from './videoFrameTypes';
  * though the word was already English.
  */
 const COPY = defineMessages({
-  frameTitle: { id: 'video.frameTitle', defaultMessage: 'Video' },
+  frameTitle: {
+    id: 'video.frameTitle',
+    defaultMessage: 'Video',
+    description:
+      "The accessible name of the frame the video is embedded in, read aloud and never seen. video.screenTitle is the same word as the screen's heading and video.kicker the one above the title.",
+  },
 });
 
 /**

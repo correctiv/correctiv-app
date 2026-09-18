@@ -44,10 +44,25 @@ import { useColors } from '@/lib/theme';
  */
 const COPY = defineMessages({
   home: { id: 'ui.tabHome', defaultMessage: 'Home' },
-  discover: { id: 'ui.tabDiscover', defaultMessage: 'Discover' },
+  discover: {
+    id: 'ui.tabDiscover',
+    defaultMessage: 'Discover',
+    description:
+      'A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens.',
+  },
   mediathek: { id: 'ui.tabMediathek', defaultMessage: 'Mediathek' },
-  participate: { id: 'ui.tabParticipate', defaultMessage: 'Take part' },
-  profile: { id: 'ui.tabProfile', defaultMessage: 'Profile' },
+  participate: {
+    id: 'ui.tabParticipate',
+    defaultMessage: 'Take part',
+    description:
+      'A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens.',
+  },
+  profile: {
+    id: 'ui.tabProfile',
+    defaultMessage: 'Profile',
+    description:
+      'A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens.',
+  },
 });
 
 const IS_IOS = Platform.OS === 'ios';

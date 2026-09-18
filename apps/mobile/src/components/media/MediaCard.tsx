@@ -13,7 +13,12 @@ import { colors, sizes } from '@/lib/theme';
  * this is one message and not a word glued to a headline.
  */
 const COPY = defineMessages({
-  label: { id: 'video.cardLabel', defaultMessage: 'Video: {title}' },
+  label: {
+    id: 'video.cardLabel',
+    defaultMessage: 'Video: {title}',
+    description:
+      "The accessible name of a video card, read aloud and never seen. {title} is the video's title.",
+  },
 });
 
 /**

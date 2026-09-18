@@ -44,6 +44,7 @@
   "devDependencies": {
     "@correctiv/prose-and-code": "*",
     "@formatjs/cli": "^6.16.28",
+    "@formatjs/icu-messageformat-parser": "^3.5.18",
     "@rozenite/metro": "2.4.0",
     "@rozenite/mmkv-plugin": "2.1.0",
     "@rozenite/react-navigation-plugin": "2.4.0",

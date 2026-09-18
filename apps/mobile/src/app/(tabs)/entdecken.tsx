@@ -16,7 +16,12 @@ import { openExternal } from '@/lib/openExternal';
  * catalogue from `@correctiv/app-core/data/projects`, which is content.
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'discover.title', defaultMessage: 'Discover' },
+  screenTitle: {
+    id: 'discover.title',
+    defaultMessage: 'Discover',
+    description:
+      'The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room.',
+  },
 });
 
 /**

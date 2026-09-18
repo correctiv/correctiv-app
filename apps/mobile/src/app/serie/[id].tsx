@@ -40,8 +40,18 @@ const keyExtractor = (episode: PodcastEpisode) => episode.id;
 const COPY = defineMessages({
   screenTitle: { id: 'series.screenTitle', defaultMessage: 'Podcast series' },
   notFound: { id: 'series.notFound', defaultMessage: 'This series does not exist' },
-  unknownId: { id: 'series.unknownId', defaultMessage: 'Unknown identifier "{id}".' },
-  noId: { id: 'series.noId', defaultMessage: 'No identifier was passed.' },
+  unknownId: {
+    id: 'series.unknownId',
+    defaultMessage: 'Unknown identifier "{id}".',
+    description:
+      'Shown when the series screen is opened with an identifier no series has. {id} is that identifier, unchanged, in quotation marks.',
+  },
+  noId: {
+    id: 'series.noId',
+    defaultMessage: 'No identifier was passed.',
+    description:
+      'Shown when the series screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, diary.noId and project.noId.',
+  },
   offlineEpisodes: {
     id: 'mediathek.offlineEpisodes',
     defaultMessage: 'No connection. You are seeing sample episodes.',

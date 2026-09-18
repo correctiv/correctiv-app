@@ -43,13 +43,23 @@ const COPY = defineMessages({
     defaultMessage:
       'In the CrowdNewsroom thousands of people contribute to investigations. In the Faktenforum the community checks claims. You find both in the "Mitmachen" tab.',
   },
-  pushLabel: { id: 'onboarding.push.label', defaultMessage: 'Notifications' },
+  pushLabel: {
+    id: 'onboarding.push.label',
+    defaultMessage: 'Notifications',
+    description:
+      'The label of the notification switch in the onboarding. settings.notifications.section is the same word as a section heading in the settings.',
+  },
   pushDescription: {
     id: 'onboarding.push.description',
     defaultMessage: 'For new investigations and callouts (simulated)',
   },
   start: { id: 'onboarding.start', defaultMessage: "Let's go" },
-  next: { id: 'onboarding.next', defaultMessage: 'Next' },
+  next: {
+    id: 'onboarding.next',
+    defaultMessage: 'Next',
+    description:
+      'The button that steps forward one page in the onboarding. form.next is the same word in the participation form.',
+  },
   done: { id: 'onboarding.done', defaultMessage: 'Done' },
 });
 

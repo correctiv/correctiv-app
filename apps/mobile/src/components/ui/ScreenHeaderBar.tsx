@@ -21,7 +21,12 @@ import { sizes, useColors } from '@/lib/theme';
  * drawn bar and the native header cannot come to say different words.
  */
 export const HEADER_COPY = defineMessages({
-  back: { id: 'ui.back', defaultMessage: 'Back' },
+  back: {
+    id: 'ui.back',
+    defaultMessage: 'Back',
+    description:
+      'The way back out of a screen, in the header. form.back is the same word inside the participation form, where it steps back one page rather than leaving.',
+  },
 });
 
 export type ScreenHeaderBarProps = {

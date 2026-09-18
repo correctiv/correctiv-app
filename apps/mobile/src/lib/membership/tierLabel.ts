@@ -18,6 +18,11 @@ import type { MembershipTier } from '@correctiv/app-core/types/models';
  */
 export const TIER_LABELS: Record<MembershipTier, MessageDescriptor> = defineMessages({
   free: { id: 'profile.tier.free', defaultMessage: 'Free membership' },
-  paid: { id: 'profile.tier.paid', defaultMessage: 'Membership with a contribution' },
+  paid: {
+    id: 'profile.tier.paid',
+    defaultMessage: 'Membership with a contribution',
+    description:
+      'The name of the paid tier, wherever a tier is named. settings.access.paid is the same words in the settings, where it answers how app access was granted rather than which tier the account is on.',
+  },
   soli: { id: 'profile.tier.soli', defaultMessage: 'Solidarity membership' },
 });

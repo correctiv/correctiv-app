@@ -15,9 +15,17 @@
  * CrowdNewsroom gets "Beiträge"; the second is the detail screen's own and is
  * printed for every callout whatever its kind. They read alike today only because
  * that screen says CrowdNewsroom to everybody. Merging them would make the day
- * somebody fixes that a translation problem instead of a screen decision, and in
- * the meantime it hands a translator one string that is right on the card and
- * wrong on the screen, with nothing to tell them which they are looking at.
+ * somebody fixes that a translation problem instead of a screen decision.
+ *
+ * **The half of that a translator needs is no longer only here.** This file is the
+ * German, so a person writing the French would never open it, and "with nothing to
+ * tell them which they are looking at" was what this paragraph used to say about
+ * exactly that. Both ids now carry a `description` on the descriptor itself, which
+ * travels with the id into every language, and
+ * `__tests__/localisation-seam.test.ts` requires one of every id that shares its
+ * English with another. What stays here is the part that is about this repository:
+ * which module answers which id, and why the day the detail screen stops saying
+ * CrowdNewsroom is a screen decision rather than a translation.
  */
 export const callout: Record<string, string> = {
   'callout.survey.kicker': 'Umfrage',

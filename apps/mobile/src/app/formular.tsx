@@ -22,12 +22,32 @@ import { sizes, useColors } from '@/lib/theme';
 const COPY = defineMessages({
   screenTitle: { id: 'form.screenTitle', defaultMessage: 'Participation form' },
   unknownHeadline: { id: 'form.unknownHeadline', defaultMessage: 'This form does not exist' },
-  unknownSlug: { id: 'form.unknownSlug', defaultMessage: 'Unknown callout "{slug}".' },
+  unknownSlug: {
+    id: 'form.unknownSlug',
+    defaultMessage: 'Unknown callout "{slug}".',
+    description:
+      'Shown when the form is opened for a callout that does not exist. {slug} is the identifier that was passed, unchanged, in quotation marks.',
+  },
   noSlug: { id: 'form.noSlug', defaultMessage: 'No callout was given.' },
   cancel: { id: 'form.cancel', defaultMessage: 'Cancel' },
-  step: { id: 'form.step', defaultMessage: 'Step {current} of {total}' },
-  back: { id: 'form.back', defaultMessage: 'Back' },
-  next: { id: 'form.next', defaultMessage: 'Next' },
+  step: {
+    id: 'form.step',
+    defaultMessage: 'Step {current} of {total}',
+    description:
+      'The progress line above the participation form. {current} is the page being filled in and {total} how many there are.',
+  },
+  back: {
+    id: 'form.back',
+    defaultMessage: 'Back',
+    description:
+      'The button that steps back one page in the participation form. ui.back is the same word in the screen header, where it is the way out of the whole screen.',
+  },
+  next: {
+    id: 'form.next',
+    defaultMessage: 'Next',
+    description:
+      'The button that steps forward one page in the participation form. onboarding.next is the same word in the onboarding, which is a different sequence.',
+  },
   submit: { id: 'form.submit', defaultMessage: 'Send' },
   thanksHeadline: { id: 'form.thanksHeadline', defaultMessage: 'Thank you for your contribution!' },
   thanksLead: {
@@ -39,6 +59,8 @@ const COPY = defineMessages({
     id: 'form.contributors',
     defaultMessage:
       '{count, plural, one {One person has} other {# people have}} contributed so far.',
+    description:
+      'On the thank-you page of the participation form. {count} is how many people have contributed to this callout.',
   },
   moreCallouts: { id: 'form.moreCallouts', defaultMessage: 'See more ways to take part' },
 });

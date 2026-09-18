@@ -21,8 +21,18 @@ import { colors } from '@/lib/theme';
  * `MediaCard` and `EpisodeRow` already put in a message for the same reason.
  */
 const COPY = defineMessages({
-  kicker: { id: 'callout.teaser.kicker', defaultMessage: 'Take part · {kicker}' },
-  ctaAccessibility: { id: 'callout.teaser.ctaAccessibility', defaultMessage: '{cta}: {title}' },
+  kicker: {
+    id: 'callout.teaser.kicker',
+    defaultMessage: 'Take part · {kicker}',
+    description:
+      "The kicker above a callout teaser on the home screen. {kicker} is the callout's own kicker; the word before the separator is the app's.",
+  },
+  ctaAccessibility: {
+    id: 'callout.teaser.ctaAccessibility',
+    defaultMessage: '{cta}: {title}',
+    description:
+      "The accessible name of a callout teaser on the home screen, read aloud and never seen. {cta} is the button's own label and {title} the callout's headline.",
+  },
 });
 
 /**

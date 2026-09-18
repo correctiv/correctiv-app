@@ -35,7 +35,12 @@ const COPY = defineMessages({
   },
   articlesHeading: { id: 'search.articlesHeading', defaultMessage: 'Articles' },
   projectsHeading: { id: 'search.projectsHeading', defaultMessage: 'From the projects' },
-  noResults: { id: 'search.noResults', defaultMessage: 'No hits for "{query}".' },
+  noResults: {
+    id: 'search.noResults',
+    defaultMessage: 'No hits for "{query}".',
+    description:
+      'Shown when a search finds nothing. {query} is what was typed, unchanged, in quotation marks.',
+  },
 });
 
 /**

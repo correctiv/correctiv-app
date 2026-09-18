@@ -24,7 +24,12 @@ import { sizes, useColors } from '@/lib/theme';
  * and is the reason that id survived the lift.
  */
 const COPY = defineMessages({
-  loading: { id: 'player.loading', defaultMessage: 'Loading …' },
+  loading: {
+    id: 'player.loading',
+    defaultMessage: 'Loading …',
+    description:
+      "The mini player's state line while a track is loading. video.loading is the same word on the video screen.",
+  },
   error: { id: 'player.error', defaultMessage: 'Error' },
   live: { id: 'player.live', defaultMessage: '● LIVE' },
   pause: { id: 'player.pause', defaultMessage: 'Pause' },

@@ -1,9 +1,11 @@
 {
   "article.documentTitle": {
-    "defaultMessage": "Article"
+    "defaultMessage": "Article",
+    "description": "The browser tab's title while an article is open on the web target. Never seen inside the app."
   },
   "article.frameTitle": {
-    "defaultMessage": "Article"
+    "defaultMessage": "Article",
+    "description": "The accessible name of the frame the article document is rendered in, read aloud and never seen. Same word as article.documentTitle, which is the browser TAB."
   },
   "article.kickerFallback": {
     "defaultMessage": "Investigation"
@@ -15,7 +17,8 @@
     "defaultMessage": "Open in the browser"
   },
   "article.readingTime": {
-    "defaultMessage": "{count, plural, one {# min read} other {# min read}}"
+    "defaultMessage": "{count, plural, one {# min read} other {# min read}}",
+    "description": "Under a headline in the feed. {count} is a number of minutes, and both branches read the same in English because English has no separate singular here; a language that does needs both."
   },
   "article.removeSaved": {
     "defaultMessage": "Saved, remove"
@@ -42,13 +45,15 @@
     "defaultMessage": "Report a demolition on abriss-atlas.de"
   },
   "atlas.stats": {
-    "defaultMessage": "{reports, plural, one {One reported demolition} other {# reported demolitions}} in {cities, plural, one {one city} other {# cities}} (DE/CH)"
+    "defaultMessage": "{reports, plural, one {One reported demolition} other {# reported demolitions}} in {cities, plural, one {one city} other {# cities}} (DE/CH)",
+    "description": "The figure line above the demolition map. {reports} counts reported demolitions, {cities} the cities they come from. DE/CH is Germany and Switzerland and stays as it is."
   },
   "backstage.allFromBackstage": {
     "defaultMessage": "Everything from Backstage"
   },
   "backstage.diaryLabel": {
-    "defaultMessage": "Research diary"
+    "defaultMessage": "Research diary",
+    "description": "The kind-of-thing label on a Backstage card. Same word as diary.screenTitle, which is the heading of the diary SCREEN; this one sits on a card among other kinds."
   },
   "backstage.earlyAccessBadge": {
     "defaultMessage": "Backstage · read it earlier"
@@ -63,7 +68,8 @@
     "defaultMessage": "Backstage letter"
   },
   "backstage.publicFrom": {
-    "defaultMessage": "Public from {date}"
+    "defaultMessage": "Public from {date}",
+    "description": "On a Backstage card for a piece members read before everybody else. {date} is the day it opens to everyone, already formatted."
   },
   "backstage.publisherLabel": {
     "defaultMessage": "Publishing house"
@@ -87,34 +93,41 @@
     "defaultMessage": "Send another tip"
   },
   "callout.crowdnewsroom.count": {
-    "defaultMessage": "{count, plural, one {One contribution} other {# contributions}}"
+    "defaultMessage": "{count, plural, one {One contribution} other {# contributions}}",
+    "description": "The contribution count on a CrowdNewsroom callout's card. {count} is how many people have contributed. The survey's own wording is callout.survey.count."
   },
   "callout.crowdnewsroom.countSoFar": {
-    "defaultMessage": "{count, plural, one {One contribution} other {# contributions}} so far"
+    "defaultMessage": "{count, plural, one {One contribution} other {# contributions}} so far",
+    "description": "The same count with ‘so far’ on a CrowdNewsroom card, where {count} is how many people have contributed. Reads identically to callout.detail.responses, which is the detail SCREEN's line: that one is printed for every kind of callout, this one only for a CrowdNewsroom, so the two may diverge and must not be merged."
   },
   "callout.crowdnewsroom.cta": {
-    "defaultMessage": "Take part"
+    "defaultMessage": "Take part",
+    "description": "The button on a CrowdNewsroom callout's card. One of five ids reading 'Take part': the survey's button is callout.survey.cta, the detail screen's is callout.detail.cta, the tab is ui.tabParticipate and the screen heading is participate.title."
   },
   "callout.detail.contributed": {
     "defaultMessage": "✓ You have contributed already, thank you! More tips are welcome."
   },
   "callout.detail.cta": {
-    "defaultMessage": "Take part"
+    "defaultMessage": "Take part",
+    "description": "The button on a callout's own screen, whatever kind of callout it is. The cards have their own, callout.crowdnewsroom.cta and callout.survey.cta."
   },
   "callout.detail.dataUse": {
     "defaultMessage": "What happens to your data?"
   },
   "callout.detail.noSlug": {
-    "defaultMessage": "No identifier was passed."
+    "defaultMessage": "No identifier was passed.",
+    "description": "Shown when the callout screen is opened with no identifier at all, which is a broken link rather than a wrong one. Four other screens say the same thing under claim.noId, diary.noId, project.noId and series.noId."
   },
   "callout.detail.responses": {
-    "defaultMessage": "{count, plural, one {One contribution} other {# contributions}} so far"
+    "defaultMessage": "{count, plural, one {One contribution} other {# contributions}} so far",
+    "description": "The contribution count on a callout's own screen, printed for every kind of callout. Reads identically to callout.crowdnewsroom.countSoFar, which is the CARD's line and is worded per kind. {count} is how many people have contributed."
   },
   "callout.detail.unknownHeadline": {
     "defaultMessage": "This callout does not exist"
   },
   "callout.detail.unknownSlug": {
-    "defaultMessage": "Unknown identifier \"{slug}\"."
+    "defaultMessage": "Unknown identifier \"{slug}\".",
+    "description": "Shown when the callout screen is opened with an identifier no callout has. {slug} is that identifier, unchanged, in quotation marks."
   },
   "callout.detail.whoAsks": {
     "defaultMessage": "Who is asking?"
@@ -123,34 +136,42 @@
     "defaultMessage": "Callout"
   },
   "callout.survey.count": {
-    "defaultMessage": "{count, plural, one {One response} other {# responses}}"
+    "defaultMessage": "{count, plural, one {One response} other {# responses}}",
+    "description": "The response count on a survey callout's card. {count} is how many people have answered. A survey gets responses where a CrowdNewsroom gets contributions, which is callout.crowdnewsroom.count."
   },
   "callout.survey.countSoFar": {
-    "defaultMessage": "{count, plural, one {One response} other {# responses}} so far"
+    "defaultMessage": "{count, plural, one {One response} other {# responses}} so far",
+    "description": "The same response count with 'so far'. {count} is how many people have answered."
   },
   "callout.survey.cta": {
-    "defaultMessage": "Take part"
+    "defaultMessage": "Take part",
+    "description": "The button on a survey callout's card. German says 'Teilnehmen' here and 'Mitmachen' on a CrowdNewsroom card, callout.crowdnewsroom.cta, although English says 'Take part' for both."
   },
   "callout.survey.kicker": {
     "defaultMessage": "Survey"
   },
   "callout.teaser.ctaAccessibility": {
-    "defaultMessage": "{cta}: {title}"
+    "defaultMessage": "{cta}: {title}",
+    "description": "The accessible name of a callout teaser on the home screen, read aloud and never seen. {cta} is the button's own label and {title} the callout's headline."
   },
   "callout.teaser.kicker": {
-    "defaultMessage": "Take part · {kicker}"
+    "defaultMessage": "Take part · {kicker}",
+    "description": "The kicker above a callout teaser on the home screen. {kicker} is the callout's own kicker; the word before the separator is the app's."
   },
   "claim.credibility": {
-    "defaultMessage": "Reliability: {level}"
+    "defaultMessage": "Reliability: {level}",
+    "description": "A line on a claim's screen. {level} is a source's reliability, already translated."
   },
   "claim.noId": {
-    "defaultMessage": "No identifier was passed."
+    "defaultMessage": "No identifier was passed.",
+    "description": "Shown when the claim screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, diary.noId, project.noId and series.noId."
   },
   "claim.noSources": {
     "defaultMessage": "No sources yet. The community is gathering them."
   },
   "claim.quote": {
-    "defaultMessage": "\"{quote}\""
+    "defaultMessage": "\"{quote}\"",
+    "description": "The claim itself, on its own screen, in quotation marks. {quote} is the claim's wording and is not translated. The quotation marks belong to the language: German uses low and high ones."
   },
   "claim.screenTitle": {
     "defaultMessage": "Claim"
@@ -162,10 +183,12 @@
     "defaultMessage": "Checked"
   },
   "claim.stage.checking": {
-    "defaultMessage": "Being checked"
+    "defaultMessage": "Being checked",
+    "description": "The stage of a claim, on the claim's own screen. participate.claimChecking is the same word on the participation tab's status tag; the two screens may word it differently."
   },
   "claim.stage.submitted": {
-    "defaultMessage": "Submitted"
+    "defaultMessage": "Submitted",
+    "description": "The stage of a claim, on the claim's own screen. participate.claimSubmitted is the same word on the participation tab's status tag."
   },
   "claim.submitOwn": {
     "defaultMessage": "Submit a tip of your own (in the Faktenforum)"
@@ -174,7 +197,8 @@
     "defaultMessage": "This claim does not exist"
   },
   "claim.unknownId": {
-    "defaultMessage": "Unknown identifier \"{id}\"."
+    "defaultMessage": "Unknown identifier \"{id}\".",
+    "description": "Shown when the claim screen is opened with an identifier no claim has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under diary.unknownId, project.unknownId and series.unknownId."
   },
   "core.audio.interrupted": {
     "defaultMessage": "Playback was interrupted. Check your connection and try again."
@@ -216,28 +240,34 @@
     "defaultMessage": "Unproven"
   },
   "core.reader.byline": {
-    "defaultMessage": "by {authors}"
+    "defaultMessage": "by {authors}",
+    "description": "The byline in the article document the reader renders. {authors} is the list of authors, already joined."
   },
   "core.reader.factcheckBadge": {
-    "defaultMessage": "Fact check"
+    "defaultMessage": "Fact check",
+    "description": "The badge on a fact check inside the article document. Uppercased by the code that builds the document, so write it in normal case. home.factCheckBadge is the same word on the home screen's rail."
   },
   "core.reader.readingTime": {
-    "defaultMessage": "{minutes} min read"
+    "defaultMessage": "{minutes} min read",
+    "description": "Under the byline in the article document. {minutes} is a whole number of minutes."
   },
   "core.reader.support": {
     "defaultMessage": "Made possible by supporters like you. Thank you for being here."
   },
   "diary.noId": {
-    "defaultMessage": "No identifier was passed."
+    "defaultMessage": "No identifier was passed.",
+    "description": "Shown when the diary screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, project.noId and series.noId."
   },
   "diary.notFound": {
     "defaultMessage": "This entry does not exist"
   },
   "diary.screenTitle": {
-    "defaultMessage": "Research diary"
+    "defaultMessage": "Research diary",
+    "description": "The heading of the research diary screen. backstage.diaryLabel is the same word as a kind-of-thing label on a Backstage card."
   },
   "diary.unknownId": {
-    "defaultMessage": "Unknown identifier \"{id}\"."
+    "defaultMessage": "Unknown identifier \"{id}\".",
+    "description": "Shown when the diary screen is opened with an identifier no entry has. {id} is that identifier, unchanged, in quotation marks."
   },
   "discover.openSearch": {
     "defaultMessage": "Open search"
@@ -246,31 +276,37 @@
     "defaultMessage": "Investigations, fact checks, projects …"
   },
   "discover.title": {
-    "defaultMessage": "Discover"
+    "defaultMessage": "Discover",
+    "description": "The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room."
   },
   "faktenforum.lead": {
     "defaultMessage": "The community checks claims together with the CORRECTIV newsroom. Have a look at what is being worked on."
   },
   "faktenforum.quote": {
-    "defaultMessage": "\"{quote}\""
+    "defaultMessage": "\"{quote}\"",
+    "description": "A claim in the Faktenforum list, in quotation marks. {quote} is the claim's wording and is not translated. claim.quote is the same construction on a claim's own screen."
   },
   "faktenforum.submitted": {
-    "defaultMessage": "{shortId} · submitted {date}"
+    "defaultMessage": "{shortId} · submitted {date}",
+    "description": "The line under a claim in the Faktenforum list. {shortId} is the claim's short identifier and {date} the day it was submitted, already formatted."
   },
   "form.answerPlaceholder": {
     "defaultMessage": "Your answer …"
   },
   "form.back": {
-    "defaultMessage": "Back"
+    "defaultMessage": "Back",
+    "description": "The button that steps back one page in the participation form. ui.back is the same word in the screen header, where it is the way out of the whole screen."
   },
   "form.cancel": {
     "defaultMessage": "Cancel"
   },
   "form.contributors": {
-    "defaultMessage": "{count, plural, one {One person has} other {# people have}} contributed so far."
+    "defaultMessage": "{count, plural, one {One person has} other {# people have}} contributed so far.",
+    "description": "On the thank-you page of the participation form. {count} is how many people have contributed to this callout."
   },
   "form.fileAttached": {
-    "defaultMessage": "{file} attached ✓"
+    "defaultMessage": "{file} attached ✓",
+    "description": "Confirmation under a file field in the participation form. {file} is the file's name. The tick is part of the message."
   },
   "form.filePick": {
     "defaultMessage": "Choose a photo or document (simulated)"
@@ -279,7 +315,8 @@
     "defaultMessage": "See more ways to take part"
   },
   "form.next": {
-    "defaultMessage": "Next"
+    "defaultMessage": "Next",
+    "description": "The button that steps forward one page in the participation form. onboarding.next is the same word in the onboarding, which is a different sequence."
   },
   "form.noSlug": {
     "defaultMessage": "No callout was given."
@@ -288,7 +325,8 @@
     "defaultMessage": "Participation form"
   },
   "form.step": {
-    "defaultMessage": "Step {current} of {total}"
+    "defaultMessage": "Step {current} of {total}",
+    "description": "The progress line above the participation form. {current} is the page being filled in and {total} how many there are."
   },
   "form.submit": {
     "defaultMessage": "Send"
@@ -303,7 +341,8 @@
     "defaultMessage": "This form does not exist"
   },
   "form.unknownSlug": {
-    "defaultMessage": "Unknown callout \"{slug}\"."
+    "defaultMessage": "Unknown callout \"{slug}\".",
+    "description": "Shown when the form is opened for a callout that does not exist. {slug} is the identifier that was passed, unchanged, in quotation marks."
   },
   "gate.checking": {
     "defaultMessage": "Checking your membership …"
@@ -336,7 +375,8 @@
     "defaultMessage": "This app is the place for members who contribute. Your account is the same one you use on correctiv.org."
   },
   "gate.noAccess.accessLapsed": {
-    "defaultMessage": "Trial, ended on {date}"
+    "defaultMessage": "Trial, ended on {date}",
+    "description": "The value of the 'App access' row at the door, for somebody whose trial has run out. {date} is the day it ended, already formatted."
   },
   "gate.noAccess.accessNone": {
     "defaultMessage": "Not included"
@@ -348,7 +388,8 @@
     "defaultMessage": "Good to have you with us."
   },
   "gate.noAccess.lapsed": {
-    "defaultMessage": "Your trial ended on {date}. Thank you for trying the app. With a contribution it carries on here, with everything you already know."
+    "defaultMessage": "Your trial ended on {date}. Thank you for trying the app. With a contribution it carries on here, with everything you already know.",
+    "description": "The paragraph at the door for somebody whose trial has run out. {date} is the day it ended, already formatted."
   },
   "gate.noAccess.lead": {
     "defaultMessage": "The app is part of membership with a contribution."
@@ -360,10 +401,12 @@
     "defaultMessage": "Set a contribution"
   },
   "gate.noAccess.signedInAs": {
-    "defaultMessage": "Signed in as {email}"
+    "defaultMessage": "Signed in as {email}",
+    "description": "Above the headline at the door, for somebody who is signed in but has no app access. {email} is their address."
   },
   "gate.noAccess.simulated": {
-    "defaultMessage": "Nothing is transmitted. After \"{button}\", \"{recheck}\" finds a membership with a contribution."
+    "defaultMessage": "Nothing is transmitted. After \"{button}\", \"{recheck}\" finds a membership with a contribution.",
+    "description": "The note at the door that says this demonstration transmits nothing. {button} and {recheck} are two of the buttons on the same screen, interpolated so that renaming one cannot leave this sentence naming a control that no longer exists."
   },
   "gate.noAccess.switchAccount": {
     "defaultMessage": "Sign in with a different account"
@@ -375,7 +418,8 @@
     "defaultMessage": "Your tier"
   },
   "gate.noAccess.tierTrial": {
-    "defaultMessage": "Trial"
+    "defaultMessage": "Trial",
+    "description": "The value of the 'Your tier' row at the door. settings.access.trial is the same word in the settings, where it describes how access was granted rather than which tier the account is on."
   },
   "gate.noAccess.upgrade": {
     "defaultMessage": "Extend membership"
@@ -405,7 +449,8 @@
     "defaultMessage": "All Spotlight issues"
   },
   "home.factCheckBadge": {
-    "defaultMessage": "Fact check"
+    "defaultMessage": "Fact check",
+    "description": "The badge on a card in the home screen's fact-check rail. core.reader.factcheckBadge is the same word inside the article document, where it is uppercased."
   },
   "home.factChecks": {
     "defaultMessage": "Fact checks"
@@ -441,7 +486,8 @@
     "defaultMessage": "From Backstage"
   },
   "mediathek.listeners": {
-    "defaultMessage": "{count, plural, one {# listener} other {# listeners}}"
+    "defaultMessage": "{count, plural, one {# listener} other {# listeners}}",
+    "description": "Beside the live radio banner. {count} is how many people are listening right now."
   },
   "mediathek.live": {
     "defaultMessage": "Live"
@@ -453,13 +499,15 @@
     "defaultMessage": "No connection. You are seeing sample episodes."
   },
   "mediathek.pauseEpisode": {
-    "defaultMessage": "Pause {title}"
+    "defaultMessage": "Pause {title}",
+    "description": "The accessible name of the pause button on an episode row, read aloud and never seen. {title} is the episode's title."
   },
   "mediathek.pauseRadio": {
     "defaultMessage": "Pause the radio"
   },
   "mediathek.playEpisode": {
-    "defaultMessage": "Play {title}"
+    "defaultMessage": "Play {title}",
+    "description": "The accessible name of the play button on an episode row, read aloud and never seen. {title} is the episode's title."
   },
   "mediathek.playRadio": {
     "defaultMessage": "Play the radio"
@@ -516,7 +564,8 @@
     "defaultMessage": "Non-profit: nobody owns us"
   },
   "onboarding.next": {
-    "defaultMessage": "Next"
+    "defaultMessage": "Next",
+    "description": "The button that steps forward one page in the onboarding. form.next is the same word in the participation form."
   },
   "onboarding.participate.headline": {
     "defaultMessage": "Investigations you take part in"
@@ -528,7 +577,8 @@
     "defaultMessage": "For new investigations and callouts (simulated)"
   },
   "onboarding.push.label": {
-    "defaultMessage": "Notifications"
+    "defaultMessage": "Notifications",
+    "description": "The label of the notification switch in the onboarding. settings.notifications.section is the same word as a section heading in the settings."
   },
   "onboarding.screenTitle": {
     "defaultMessage": "Welcome"
@@ -549,19 +599,23 @@
     "defaultMessage": "Document demolitions"
   },
   "participate.atlasLead": {
-    "defaultMessage": "Which buildings are disappearing? {reports, plural, one {One report} other {# reports}} from {cities, plural, one {one city} other {# cities}} in Germany and Switzerland."
+    "defaultMessage": "Which buildings are disappearing? {reports, plural, one {One report} other {# reports}} from {cities, plural, one {one city} other {# cities}} in Germany and Switzerland.",
+    "description": "The paragraph about the demolition atlas on the participation tab. {reports} counts reports and {cities} the cities they come from."
   },
   "participate.claimChecked": {
-    "defaultMessage": "Checked: {verdict}"
+    "defaultMessage": "Checked: {verdict}",
+    "description": "The status tag of a claim on the participation tab. {verdict} is the verdict, already translated, or the word under participate.claimNoVerdict when the check closed without one."
   },
   "participate.claimChecking": {
-    "defaultMessage": "Being checked"
+    "defaultMessage": "Being checked",
+    "description": "The status tag of a claim on the participation tab. claim.stage.checking is the same word on the claim's own screen."
   },
   "participate.claimNoVerdict": {
     "defaultMessage": "closed"
   },
   "participate.claimSubmitted": {
-    "defaultMessage": "Submitted"
+    "defaultMessage": "Submitted",
+    "description": "The status tag of a claim on the participation tab. claim.stage.submitted is the same word on the claim's own screen."
   },
   "participate.communityNote": {
     "defaultMessage": "In the community area you discuss investigations with other members, and soon in the app as well."
@@ -573,7 +627,8 @@
     "defaultMessage": "Checking claims together"
   },
   "participate.forumLead": {
-    "defaultMessage": "The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on."
+    "defaultMessage": "The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on.",
+    "description": "The paragraph about the Faktenforum on the participation tab. {count} is how many claims are being worked on right now."
   },
   "participate.lead": {
     "defaultMessage": "Investigations are made with you. Your tips, your observations and your checks are what make them possible."
@@ -591,7 +646,8 @@
     "defaultMessage": "Seen a suspicious claim? Send it straight to the fact-checking desk."
   },
   "participate.title": {
-    "defaultMessage": "Take part"
+    "defaultMessage": "Take part",
+    "description": "The heading of the participation screen. ui.tabParticipate is the same word on the tab bar, where it has far less room, and three callout buttons say it too."
   },
   "player.changeSpeed": {
     "defaultMessage": "Change the speed"
@@ -615,7 +671,8 @@
     "defaultMessage": "● LIVE · 24/7 from Bottrop"
   },
   "player.loading": {
-    "defaultMessage": "Loading …"
+    "defaultMessage": "Loading …",
+    "description": "The mini player's state line while a track is loading. video.loading is the same word on the video screen."
   },
   "player.nothingPlaying": {
     "defaultMessage": "Nothing is playing."
@@ -648,16 +705,19 @@
     "defaultMessage": "Member"
   },
   "profile.club.tierSince": {
-    "defaultMessage": "{tier} · since {date}"
+    "defaultMessage": "{tier} · since {date}",
+    "description": "Under the name on the membership card. {tier} is the tier's name, already translated, and {date} the day the membership began, already formatted."
   },
   "profile.impact.anonymous": {
-    "defaultMessage": "Your contribution makes these investigations possible.{articles, select, some { Among others, these:} other {}}"
+    "defaultMessage": "Your contribution makes these investigations possible.{articles, select, some { Among others, these:} other {}}",
+    "description": "The impact card's sentence when the membership carries no start date. {articles} is a choice and not a value: `some` when investigations are listed under the card, `other` when there are none. Where that clause goes, and whether the language wants a colon there at all, is the translator's decision."
   },
   "profile.impact.section": {
     "defaultMessage": "Your impact"
   },
   "profile.impact.since": {
-    "defaultMessage": "You have been supporting CORRECTIV {months, plural, one {for a short while} other {for # months}}.{articles, select, some { Among others, these investigations were made possible:} other {}}"
+    "defaultMessage": "You have been supporting CORRECTIV {months, plural, one {for a short while} other {for # months}}.{articles, select, some { Among others, these investigations were made possible:} other {}}",
+    "description": "The impact card's sentence when the membership's months can be counted. {months} is never below one, so the singular branch is the phrase for ‘not long’ and the plural branch counts. {articles} is a choice and not a value: `some` when investigations are listed under the card, `other` when there are none."
   },
   "profile.membership.localAreas": {
     "defaultMessage": "Local newsletters"
@@ -687,16 +747,19 @@
     "defaultMessage": "Diaries, bonus episodes, events"
   },
   "profile.nav.clubAccessibility": {
-    "defaultMessage": "{title}, Club"
+    "defaultMessage": "{title}, Club",
+    "description": "The accessible name of a club row in the profile, read aloud and never seen. {title} is the row's own title; the mark is appended as one message so the language decides where it goes."
   },
   "profile.nav.reportSubtitle": {
     "defaultMessage": "Where your contribution goes, broken down transparently."
   },
   "profile.nav.saved": {
-    "defaultMessage": "Saved articles"
+    "defaultMessage": "Saved articles",
+    "description": "The row in the profile that leads to the saved articles. profile.saved.title is the same words as the heading of the screen it opens."
   },
   "profile.nav.savedCount": {
-    "defaultMessage": "{count, plural, =0 {Nothing saved yet} one {# article} other {# articles}}"
+    "defaultMessage": "{count, plural, =0 {Nothing saved yet} one {# article} other {# articles}}",
+    "description": "The subtitle of that row. {count} is how many articles are saved, and the zero case is a sentence rather than a number."
   },
   "profile.nav.settings": {
     "defaultMessage": "App settings"
@@ -720,13 +783,16 @@
     "defaultMessage": "Nothing saved yet. Tap the bookmark in an article to keep it here."
   },
   "profile.saved.remove": {
-    "defaultMessage": "Remove {title}"
+    "defaultMessage": "Remove {title}",
+    "description": "The accessible name of the remove button on a saved article, read aloud and never seen. {title} is the article's headline."
   },
   "profile.saved.savedOn": {
-    "defaultMessage": "saved {date}"
+    "defaultMessage": "saved {date}",
+    "description": "Under a saved article. {date} is the day it was saved, already formatted, and the line reads as a fragment rather than a sentence."
   },
   "profile.saved.title": {
-    "defaultMessage": "Saved articles"
+    "defaultMessage": "Saved articles",
+    "description": "The heading of the saved articles screen. profile.nav.saved is the same words on the row in the profile that opens it."
   },
   "profile.source.localBundle": {
     "defaultMessage": "your local subscription"
@@ -741,19 +807,22 @@
     "defaultMessage": "Free membership"
   },
   "profile.tier.paid": {
-    "defaultMessage": "Membership with a contribution"
+    "defaultMessage": "Membership with a contribution",
+    "description": "The name of the paid tier, wherever a tier is named. settings.access.paid is the same words in the settings, where it answers how app access was granted rather than which tier the account is on."
   },
   "profile.tier.soli": {
     "defaultMessage": "Solidarity membership"
   },
   "profile.title": {
-    "defaultMessage": "Profile"
+    "defaultMessage": "Profile",
+    "description": "The heading of the profile screen. ui.tabProfile is the same word on the tab bar, where it has far less room."
   },
   "project.comingSoon": {
     "defaultMessage": "Coming soon"
   },
   "project.comingSoonBody": {
-    "defaultMessage": "{name} is just starting. The first pieces appear here as soon as they are published."
+    "defaultMessage": "{name} is just starting. The first pieces appear here as soon as they are published.",
+    "description": "Shown on a project that has published nothing yet. {name} is the project's name."
   },
   "project.feedFailed": {
     "defaultMessage": "The pieces could not be loaded."
@@ -768,7 +837,8 @@
     "defaultMessage": "Listen to Salon5 Radio"
   },
   "project.noId": {
-    "defaultMessage": "No identifier was passed."
+    "defaultMessage": "No identifier was passed.",
+    "description": "Shown when the project screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, diary.noId and series.noId."
   },
   "project.notFound": {
     "defaultMessage": "This project does not exist"
@@ -780,7 +850,8 @@
     "defaultMessage": "Send a tip on WhatsApp"
   },
   "project.unknownId": {
-    "defaultMessage": "Unknown identifier \"{id}\"."
+    "defaultMessage": "Unknown identifier \"{id}\".",
+    "description": "Shown when the project screen is opened with an identifier no project has. {id} is that identifier, unchanged, in quotation marks."
   },
   "search.articlesHeading": {
     "defaultMessage": "Articles"
@@ -792,7 +863,8 @@
     "defaultMessage": "Search across investigations, fact checks, projects, podcasts and ways to take part."
   },
   "search.noResults": {
-    "defaultMessage": "No hits for \"{query}\"."
+    "defaultMessage": "No hits for \"{query}\".",
+    "description": "Shown when a search finds nothing. {query} is what was typed, unchanged, in quotation marks."
   },
   "search.placeholder": {
     "defaultMessage": "Search …"
@@ -804,7 +876,8 @@
     "defaultMessage": "Search"
   },
   "series.noId": {
-    "defaultMessage": "No identifier was passed."
+    "defaultMessage": "No identifier was passed.",
+    "description": "Shown when the series screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, diary.noId and project.noId."
   },
   "series.notFound": {
     "defaultMessage": "This series does not exist"
@@ -813,7 +886,8 @@
     "defaultMessage": "Podcast series"
   },
   "series.unknownId": {
-    "defaultMessage": "Unknown identifier \"{id}\"."
+    "defaultMessage": "Unknown identifier \"{id}\".",
+    "description": "Shown when the series screen is opened with an identifier no series has. {id} is that identifier, unchanged, in quotation marks."
   },
   "settings.about.body": {
     "defaultMessage": "CORRECTIV is a non-profit, independent centre for investigative journalism. Investigations for society, funded by people like you."
@@ -837,10 +911,12 @@
     "defaultMessage": "No app access"
   },
   "settings.access.paid": {
-    "defaultMessage": "Membership with a contribution"
+    "defaultMessage": "Membership with a contribution",
+    "description": "In the settings, answering how this account has app access. profile.tier.paid is the same words where a membership TIER is named."
   },
   "settings.access.trial": {
-    "defaultMessage": "Trial"
+    "defaultMessage": "Trial",
+    "description": "In the settings, answering how this account has app access. gate.noAccess.tierTrial is the same word at the door, where it names the account's tier."
   },
   "settings.account.section": {
     "defaultMessage": "Account"
@@ -879,13 +955,15 @@
     "defaultMessage": "New investigations and calls to take part (simulated)"
   },
   "settings.notifications.section": {
-    "defaultMessage": "Notifications"
+    "defaultMessage": "Notifications",
+    "description": "A section heading in the settings. onboarding.push.label is the same word as the label of a switch in the onboarding."
   },
   "settings.textScale.note": {
     "defaultMessage": "Affects the article view."
   },
   "settings.textScale.option": {
-    "defaultMessage": "Text size {scale}"
+    "defaultMessage": "Text size {scale}",
+    "description": "The accessible name of one text-size button, read aloud and never seen. {scale} is the sample letters the button shows; it is one message so the language decides where the sample goes."
   },
   "settings.textScale.section": {
     "defaultMessage": "Text size in an article"
@@ -894,10 +972,12 @@
     "defaultMessage": "Settings"
   },
   "ui.back": {
-    "defaultMessage": "Back"
+    "defaultMessage": "Back",
+    "description": "The way back out of a screen, in the header. form.back is the same word inside the participation form, where it steps back one page rather than leaving."
   },
   "ui.tabDiscover": {
-    "defaultMessage": "Discover"
+    "defaultMessage": "Discover",
+    "description": "A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens."
   },
   "ui.tabHome": {
     "defaultMessage": "Home"
@@ -906,22 +986,28 @@
     "defaultMessage": "Mediathek"
   },
   "ui.tabParticipate": {
-    "defaultMessage": "Take part"
+    "defaultMessage": "Take part",
+    "description": "A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens."
   },
   "ui.tabProfile": {
-    "defaultMessage": "Profile"
+    "defaultMessage": "Profile",
+    "description": "A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens."
   },
   "video.cardLabel": {
-    "defaultMessage": "Video: {title}"
+    "defaultMessage": "Video: {title}",
+    "description": "The accessible name of a video card, read aloud and never seen. {title} is the video's title."
   },
   "video.frameTitle": {
-    "defaultMessage": "Video"
+    "defaultMessage": "Video",
+    "description": "The accessible name of the frame the video is embedded in, read aloud and never seen. video.screenTitle is the same word as the screen's heading and video.kicker the one above the title."
   },
   "video.kicker": {
-    "defaultMessage": "Video"
+    "defaultMessage": "Video",
+    "description": "The kicker above a video's title. video.screenTitle is the same word as the screen's heading, and the two are separate so that one can change without the other."
   },
   "video.loading": {
-    "defaultMessage": "Loading …"
+    "defaultMessage": "Loading …",
+    "description": "The video screen's state line while the embed loads. player.loading is the same word in the mini player."
   },
   "video.newEpisode": {
     "defaultMessage": "New episode"
@@ -930,7 +1016,8 @@
     "defaultMessage": "No video selected."
   },
   "video.screenTitle": {
-    "defaultMessage": "Video"
+    "defaultMessage": "Video",
+    "description": "The heading of the video screen. video.kicker is the same word above the title and video.frameTitle the name of the embed."
   },
   "video.today": {
     "defaultMessage": "Today"
@@ -939,10 +1026,12 @@
     "defaultMessage": "Video unavailable"
   },
   "video.views": {
-    "defaultMessage": "{count, plural, one {# view} other {# views}}"
+    "defaultMessage": "{count, plural, one {# view} other {# views}}",
+    "description": "Under a video's title. {count} is how often it has been watched."
   },
   "video.watchOn": {
-    "defaultMessage": "Watch on {host}"
+    "defaultMessage": "Watch on {host}",
+    "description": "The button that leaves the app for the platform the video is hosted on. {host} is that platform's host name, such as youtube.com."
   },
   "video.watchOriginal": {
     "defaultMessage": "Watch the original"

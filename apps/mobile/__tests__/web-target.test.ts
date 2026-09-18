@@ -76,9 +76,26 @@ function tabLabels(rel: string): string[] {
   const source = readFileSync(resolve(SRC, rel), 'utf8');
   const block = /const COPY = defineMessages\(\{([\s\S]*?)\n\}\);/.exec(source);
   if (!block) return [];
-  return [
-    ...block[1].matchAll(/(\w+):\s*\{\s*id:\s*'([^']+)',\s*defaultMessage:\s*'([^']+)'\s*\}/g),
-  ].map((m) => `${m[1]}: ${m[2]} = ${m[3]}`);
+  /*
+   * One chunk per descriptor, cut at the next key on the block's own indent, and
+   * the id and the default read out of the chunk rather than out of one pattern
+   * spanning the whole object.
+   *
+   * It used to be that one pattern, `id: '…', defaultMessage: '…' }`, which
+   * required the descriptor to be exactly two properties long. Three of these five
+   * carry a `description` now, so the brace no longer follows the default and
+   * three rows fell out — caught by the count below rather than passing quietly,
+   * which is what that assertion is for.
+   */
+  return block[1]
+    .split(/\n(?=\s{2}\w+: \{)/)
+    .map((chunk) => {
+      const key = /^\s*(\w+):\s*\{/.exec(chunk);
+      const id = /\bid:\s*'([^']+)'/.exec(chunk);
+      const message = /\bdefaultMessage:\s*'((?:[^'\\]|\\.)*)'/.exec(chunk);
+      return key && id && message ? `${key[1]}: ${id[1]} = ${message[1]}` : null;
+    })
+    .filter((row): row is string => row !== null);
 }
 
 describe('web target', () => {

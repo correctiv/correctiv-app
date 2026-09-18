@@ -10,7 +10,12 @@ import { READER_BASE_URL, type ReaderViewProps } from './types';
  * the catalogue like any other word a person receives.
  */
 const COPY = defineMessages({
-  frameTitle: { id: 'article.frameTitle', defaultMessage: 'Article' },
+  frameTitle: {
+    id: 'article.frameTitle',
+    defaultMessage: 'Article',
+    description:
+      'The accessible name of the frame the article document is rendered in, read aloud and never seen. Same word as article.documentTitle, which is the browser TAB.',
+  },
 });
 
 /**

@@ -30,15 +30,35 @@ export function generateStaticParams(): { id: string }[] {
 const COPY = defineMessages({
   screenTitle: { id: 'claim.screenTitle', defaultMessage: 'Claim' },
   unknownHeadline: { id: 'claim.unknownHeadline', defaultMessage: 'This claim does not exist' },
-  unknownId: { id: 'claim.unknownId', defaultMessage: 'Unknown identifier "{id}".' },
-  noId: { id: 'claim.noId', defaultMessage: 'No identifier was passed.' },
-  quote: { id: 'claim.quote', defaultMessage: '"{quote}"' },
+  unknownId: {
+    id: 'claim.unknownId',
+    defaultMessage: 'Unknown identifier "{id}".',
+    description:
+      'Shown when the claim screen is opened with an identifier no claim has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under diary.unknownId, project.unknownId and series.unknownId.',
+  },
+  noId: {
+    id: 'claim.noId',
+    defaultMessage: 'No identifier was passed.',
+    description:
+      'Shown when the claim screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, diary.noId, project.noId and series.noId.',
+  },
+  quote: {
+    id: 'claim.quote',
+    defaultMessage: '"{quote}"',
+    description:
+      "The claim itself, on its own screen, in quotation marks. {quote} is the claim's wording and is not translated. The quotation marks belong to the language: German uses low and high ones.",
+  },
   sourcesHeading: { id: 'claim.sourcesHeading', defaultMessage: 'Source assessment' },
   noSources: {
     id: 'claim.noSources',
     defaultMessage: 'No sources yet. The community is gathering them.',
   },
-  credibility: { id: 'claim.credibility', defaultMessage: 'Reliability: {level}' },
+  credibility: {
+    id: 'claim.credibility',
+    defaultMessage: 'Reliability: {level}',
+    description:
+      "A line on a claim's screen. {level} is a source's reliability, already translated.",
+  },
   submitOwn: {
     id: 'claim.submitOwn',
     defaultMessage: 'Submit a tip of your own (in the Faktenforum)',
@@ -52,8 +72,18 @@ const COPY = defineMessages({
  * fails to compile here instead of leaving a dot on the progress row unlabelled.
  */
 const STAGE_LABELS: Record<ClaimStatus, MessageDescriptor> = defineMessages({
-  submitted: { id: 'claim.stage.submitted', defaultMessage: 'Submitted' },
-  checking: { id: 'claim.stage.checking', defaultMessage: 'Being checked' },
+  submitted: {
+    id: 'claim.stage.submitted',
+    defaultMessage: 'Submitted',
+    description:
+      "The stage of a claim, on the claim's own screen. participate.claimSubmitted is the same word on the participation tab's status tag.",
+  },
+  checking: {
+    id: 'claim.stage.checking',
+    defaultMessage: 'Being checked',
+    description:
+      "The stage of a claim, on the claim's own screen. participate.claimChecking is the same word on the participation tab's status tag; the two screens may word it differently.",
+  },
   checked: { id: 'claim.stage.checked', defaultMessage: 'Checked' },
 });
 

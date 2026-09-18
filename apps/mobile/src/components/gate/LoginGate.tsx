@@ -57,7 +57,12 @@ const COPY = defineMessages({
    * place ([AGENTS.md](../../../../../AGENTS.md#language)), and the prefix on the
    * key is the id's own spelling, so the two cannot drift.
    */
-  noAccessSignedInAs: { id: 'gate.noAccess.signedInAs', defaultMessage: 'Signed in as {email}' },
+  noAccessSignedInAs: {
+    id: 'gate.noAccess.signedInAs',
+    defaultMessage: 'Signed in as {email}',
+    description:
+      'Above the headline at the door, for somebody who is signed in but has no app access. {email} is their address.',
+  },
   noAccessHeadline: { id: 'gate.noAccess.headline', defaultMessage: 'Good to have you with us.' },
   noAccessLead: {
     id: 'gate.noAccess.lead',
@@ -72,14 +77,23 @@ const COPY = defineMessages({
     id: 'gate.noAccess.lapsed',
     defaultMessage:
       'Your trial ended on {date}. Thank you for trying the app. With a contribution it carries on here, with everything you already know.',
+    description:
+      'The paragraph at the door for somebody whose trial has run out. {date} is the day it ended, already formatted.',
   },
   noAccessTierRow: { id: 'gate.noAccess.tierRow', defaultMessage: 'Your tier' },
-  noAccessTierTrial: { id: 'gate.noAccess.tierTrial', defaultMessage: 'Trial' },
+  noAccessTierTrial: {
+    id: 'gate.noAccess.tierTrial',
+    defaultMessage: 'Trial',
+    description:
+      "The value of the 'Your tier' row at the door. settings.access.trial is the same word in the settings, where it describes how access was granted rather than which tier the account is on.",
+  },
   noAccessAccessRow: { id: 'gate.noAccess.accessRow', defaultMessage: 'App access' },
   noAccessAccessNone: { id: 'gate.noAccess.accessNone', defaultMessage: 'Not included' },
   noAccessAccessLapsed: {
     id: 'gate.noAccess.accessLapsed',
     defaultMessage: 'Trial, ended on {date}',
+    description:
+      "The value of the 'App access' row at the door, for somebody whose trial has run out. {date} is the day it ended, already formatted.",
   },
   noAccessUpgrade: { id: 'gate.noAccess.upgrade', defaultMessage: 'Extend membership' },
   noAccessResume: { id: 'gate.noAccess.resume', defaultMessage: 'Set a contribution' },
@@ -98,6 +112,8 @@ const COPY = defineMessages({
     id: 'gate.noAccess.simulated',
     defaultMessage:
       'Nothing is transmitted. After "{button}", "{recheck}" finds a membership with a contribution.',
+    description:
+      'The note at the door that says this demonstration transmits nothing. {button} and {recheck} are two of the buttons on the same screen, interpolated so that renaming one cannot leave this sentence naming a control that no longer exists.',
   },
 });
 

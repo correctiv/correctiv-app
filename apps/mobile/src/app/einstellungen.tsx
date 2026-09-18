@@ -21,7 +21,12 @@ const COPY = defineMessages({
   signedOut: { id: 'settings.account.signedOut', defaultMessage: 'Not signed in' },
   signOut: { id: 'settings.account.signOut', defaultMessage: 'Sign out' },
   accessNone: { id: 'settings.access.none', defaultMessage: 'No app access' },
-  notificationsSection: { id: 'settings.notifications.section', defaultMessage: 'Notifications' },
+  notificationsSection: {
+    id: 'settings.notifications.section',
+    defaultMessage: 'Notifications',
+    description:
+      'A section heading in the settings. onboarding.push.label is the same word as the label of a switch in the onboarding.',
+  },
   push: { id: 'settings.notifications.push', defaultMessage: 'Push notifications' },
   pushDescription: {
     id: 'settings.notifications.pushDescription',
@@ -39,7 +44,12 @@ const COPY = defineMessages({
    * reader reads this whole, and where the size goes in that sentence is a question
    * about the language rather than about the control.
    */
-  textScaleOption: { id: 'settings.textScale.option', defaultMessage: 'Text size {scale}' },
+  textScaleOption: {
+    id: 'settings.textScale.option',
+    defaultMessage: 'Text size {scale}',
+    description:
+      'The accessible name of one text-size button, read aloud and never seen. {scale} is the sample letters the button shows; it is one message so the language decides where the sample goes.',
+  },
   textScaleNote: { id: 'settings.textScale.note', defaultMessage: 'Affects the article view.' },
   aboutSection: { id: 'settings.about.section', defaultMessage: 'About CORRECTIV' },
   website: { id: 'settings.about.website', defaultMessage: 'Open correctiv.org' },
@@ -90,9 +100,19 @@ const LINKS: Array<{ title: MessageDescriptor; url: string }> = [
  * `EntitlementSource` fails to compile here instead of leaving this line blank.
  */
 const SOURCE_LABELS: Record<EntitlementSource, MessageDescriptor> = defineMessages({
-  paid: { id: 'settings.access.paid', defaultMessage: 'Membership with a contribution' },
+  paid: {
+    id: 'settings.access.paid',
+    defaultMessage: 'Membership with a contribution',
+    description:
+      'In the settings, answering how this account has app access. profile.tier.paid is the same words where a membership TIER is named.',
+  },
   'local-bundle': { id: 'settings.access.localBundle', defaultMessage: 'Local bundle' },
-  trial: { id: 'settings.access.trial', defaultMessage: 'Trial' },
+  trial: {
+    id: 'settings.access.trial',
+    defaultMessage: 'Trial',
+    description:
+      "In the settings, answering how this account has app access. gate.noAccess.tierTrial is the same word at the door, where it names the account's tier.",
+  },
 });
 
 export default function EinstellungenScreen() {

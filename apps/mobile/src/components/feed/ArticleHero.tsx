@@ -23,6 +23,8 @@ const COPY = defineMessages({
   readingTime: {
     id: 'article.readingTime',
     defaultMessage: '{count, plural, one {# min read} other {# min read}}',
+    description:
+      'Under a headline in the feed. {count} is a number of minutes, and both branches read the same in English because English has no separate singular here; a language that does needs both.',
   },
 });
 

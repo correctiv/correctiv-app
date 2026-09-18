@@ -23,9 +23,24 @@ const COPY = defineMessages({
 });
 
 const STATUS_LABELS: Record<ClaimStatus, MessageDescriptor> = defineMessages({
-  submitted: { id: 'participate.claimSubmitted', defaultMessage: 'Submitted' },
-  checking: { id: 'participate.claimChecking', defaultMessage: 'Being checked' },
-  checked: { id: 'participate.claimChecked', defaultMessage: 'Checked: {verdict}' },
+  submitted: {
+    id: 'participate.claimSubmitted',
+    defaultMessage: 'Submitted',
+    description:
+      "The status tag of a claim on the participation tab. claim.stage.submitted is the same word on the claim's own screen.",
+  },
+  checking: {
+    id: 'participate.claimChecking',
+    defaultMessage: 'Being checked',
+    description:
+      "The status tag of a claim on the participation tab. claim.stage.checking is the same word on the claim's own screen.",
+  },
+  checked: {
+    id: 'participate.claimChecked',
+    defaultMessage: 'Checked: {verdict}',
+    description:
+      'The status tag of a claim on the participation tab. {verdict} is the verdict, already translated, or the word under participate.claimNoVerdict when the check closed without one.',
+  },
 });
 
 /**

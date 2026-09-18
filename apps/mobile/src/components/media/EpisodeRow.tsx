@@ -12,8 +12,18 @@ import { sizes, useColors } from '@/lib/theme';
  * its own — these two are what a screen reader says instead of "button".
  */
 const COPY = defineMessages({
-  pause: { id: 'mediathek.pauseEpisode', defaultMessage: 'Pause {title}' },
-  play: { id: 'mediathek.playEpisode', defaultMessage: 'Play {title}' },
+  pause: {
+    id: 'mediathek.pauseEpisode',
+    defaultMessage: 'Pause {title}',
+    description:
+      "The accessible name of the pause button on an episode row, read aloud and never seen. {title} is the episode's title.",
+  },
+  play: {
+    id: 'mediathek.playEpisode',
+    defaultMessage: 'Play {title}',
+    description:
+      "The accessible name of the play button on an episode row, read aloud and never seen. {title} is the episode's title.",
+  },
 });
 
 /** A mark, not a sentence: the club keeps its name in every language. */

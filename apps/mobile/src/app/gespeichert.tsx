@@ -18,13 +18,28 @@ import { sizes, useColors } from '@/lib/theme';
  * the German pattern on purpose.
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'profile.saved.title', defaultMessage: 'Saved articles' },
+  screenTitle: {
+    id: 'profile.saved.title',
+    defaultMessage: 'Saved articles',
+    description:
+      'The heading of the saved articles screen. profile.nav.saved is the same words on the row in the profile that opens it.',
+  },
   empty: {
     id: 'profile.saved.empty',
     defaultMessage: 'Nothing saved yet. Tap the bookmark in an article to keep it here.',
   },
-  savedOn: { id: 'profile.saved.savedOn', defaultMessage: 'saved {date}' },
-  remove: { id: 'profile.saved.remove', defaultMessage: 'Remove {title}' },
+  savedOn: {
+    id: 'profile.saved.savedOn',
+    defaultMessage: 'saved {date}',
+    description:
+      'Under a saved article. {date} is the day it was saved, already formatted, and the line reads as a fragment rather than a sentence.',
+  },
+  remove: {
+    id: 'profile.saved.remove',
+    defaultMessage: 'Remove {title}',
+    description:
+      "The accessible name of the remove button on a saved article, read aloud and never seen. {title} is the article's headline.",
+  },
 });
 
 const keyExtractor = (article: SavedArticle) => article.url;

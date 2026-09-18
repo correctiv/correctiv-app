@@ -34,9 +34,19 @@ import { useColors } from '@/lib/theme';
  */
 const COPY = defineMessages({
   earlyAccess: { id: 'backstage.earlyAccessLabel', defaultMessage: 'Read it earlier' },
-  publicFrom: { id: 'backstage.publicFrom', defaultMessage: 'Public from {date}' },
+  publicFrom: {
+    id: 'backstage.publicFrom',
+    defaultMessage: 'Public from {date}',
+    description:
+      'On a Backstage card for a piece members read before everybody else. {date} is the day it opens to everyone, already formatted.',
+  },
   readNow: { id: 'backstage.readNow', defaultMessage: 'Read it now' },
-  diary: { id: 'backstage.diaryLabel', defaultMessage: 'Research diary' },
+  diary: {
+    id: 'backstage.diaryLabel',
+    defaultMessage: 'Research diary',
+    description:
+      'The kind-of-thing label on a Backstage card. Same word as diary.screenTitle, which is the heading of the diary SCREEN; this one sits on a card among other kinds.',
+  },
   letter: { id: 'backstage.letterLabel', defaultMessage: 'Backstage letter' },
   qa: { id: 'backstage.qaLabel', defaultMessage: 'Questions and answers' },
   events: { id: 'backstage.eventsLabel', defaultMessage: 'Dates' },

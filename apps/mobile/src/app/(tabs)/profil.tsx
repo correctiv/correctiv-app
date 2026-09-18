@@ -28,7 +28,12 @@ import { sizes } from '@/lib/theme';
  * Two of these are the app's first ICU selections, and both were ternaries.
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'profile.title', defaultMessage: 'Profile' },
+  screenTitle: {
+    id: 'profile.title',
+    defaultMessage: 'Profile',
+    description:
+      'The heading of the profile screen. ui.tabProfile is the same word on the tab bar, where it has far less room.',
+  },
 
   membershipSection: { id: 'profile.membership.section', defaultMessage: 'Your membership' },
   tierRow: { id: 'profile.membership.tier', defaultMessage: 'Tier' },
@@ -54,6 +59,8 @@ const COPY = defineMessages({
     id: 'profile.impact.anonymous',
     defaultMessage:
       'Your contribution makes these investigations possible.{articles, select, some { Among others, these:} other {}}',
+    description:
+      "The impact card's sentence when the membership carries no start date. {articles} is a choice and not a value: `some` when investigations are listed under the card, `other` when there are none. Where that clause goes, and whether the language wants a colon there at all, is the translator's decision.",
   },
   /**
    * The same sentence for somebody the app can count months for.
@@ -68,6 +75,8 @@ const COPY = defineMessages({
     id: 'profile.impact.since',
     defaultMessage:
       'You have been supporting CORRECTIV {months, plural, one {for a short while} other {for # months}}.{articles, select, some { Among others, these investigations were made possible:} other {}}',
+    description:
+      "The impact card's sentence when the membership's months can be counted. {months} is never below one, so the singular branch is the phrase for ‘not long’ and the plural branch counts. {articles} is a choice and not a value: `some` when investigations are listed under the card, `other` when there are none.",
   },
 
   areaSection: { id: 'profile.area.section', defaultMessage: 'Your area' },
@@ -80,7 +89,12 @@ const COPY = defineMessages({
     id: 'profile.nav.backstageSubtitle',
     defaultMessage: 'Diaries, bonus episodes, events',
   },
-  saved: { id: 'profile.nav.saved', defaultMessage: 'Saved articles' },
+  saved: {
+    id: 'profile.nav.saved',
+    defaultMessage: 'Saved articles',
+    description:
+      'The row in the profile that leads to the saved articles. profile.saved.title is the same words as the heading of the screen it opens.',
+  },
   /**
    * How full the saved list is, as one message with three cases.
    *
@@ -91,6 +105,8 @@ const COPY = defineMessages({
   savedCount: {
     id: 'profile.nav.savedCount',
     defaultMessage: '{count, plural, =0 {Nothing saved yet} one {# article} other {# articles}}',
+    description:
+      'The subtitle of that row. {count} is how many articles are saved, and the zero case is a sentence rather than a number.',
   },
   settings: { id: 'profile.nav.settings', defaultMessage: 'App settings' },
   settingsSubtitle: {

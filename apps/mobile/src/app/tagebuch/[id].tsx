@@ -16,10 +16,25 @@ import { formatDateShortDe } from '@correctiv/app-core/lib/format';
  * quotes differently should get its own pair.
  */
 const COPY = defineMessages({
-  screenTitle: { id: 'diary.screenTitle', defaultMessage: 'Research diary' },
+  screenTitle: {
+    id: 'diary.screenTitle',
+    defaultMessage: 'Research diary',
+    description:
+      'The heading of the research diary screen. backstage.diaryLabel is the same word as a kind-of-thing label on a Backstage card.',
+  },
   notFound: { id: 'diary.notFound', defaultMessage: 'This entry does not exist' },
-  unknownId: { id: 'diary.unknownId', defaultMessage: 'Unknown identifier "{id}".' },
-  noId: { id: 'diary.noId', defaultMessage: 'No identifier was passed.' },
+  unknownId: {
+    id: 'diary.unknownId',
+    defaultMessage: 'Unknown identifier "{id}".',
+    description:
+      'Shown when the diary screen is opened with an identifier no entry has. {id} is that identifier, unchanged, in quotation marks.',
+  },
+  noId: {
+    id: 'diary.noId',
+    defaultMessage: 'No identifier was passed.',
+    description:
+      'Shown when the diary screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, project.noId and series.noId.',
+  },
 });
 
 /** The diary entries are fixed — one file per entry in the static export. */

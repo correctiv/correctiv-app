@@ -31,6 +31,17 @@
 export interface CoreMessage {
   id: string;
   defaultMessage: string;
+  /**
+   * What a translator needs to know that the string itself does not say: where it
+   * appears, what each placeholder holds, and which other id reads the same. It is
+   * never rendered — `@formatjs/cli` carries it into `en.json` and a translation
+   * tool shows it above the entry field.
+   *
+   * Optional here and required by `apps/mobile/__tests__/localisation-seam.test.ts`
+   * for the two cases that cannot be resolved by reading the string: an id whose
+   * English is word for word another id's, and an id carrying a placeholder.
+   */
+  description?: string;
 }
 
 export function coreMessage(message: CoreMessage): CoreMessage {
