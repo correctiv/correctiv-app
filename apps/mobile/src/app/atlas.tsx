@@ -26,7 +26,7 @@ const COPY = defineMessages({
     defaultMessage:
       '{reports, plural, one {One reported demolition} other {# reported demolitions}} in {cities, plural, one {one city} other {# cities}} (DE/CH)',
     description:
-      'The figure line above the demolition map. {reports} counts reported demolitions, {cities} the cities they come from. DE/CH is Germany and Switzerland and stays as it is.',
+      'The figure line UNDER the map on the Abriss-Atlas screen. {reports} counts reported demolitions, {cities} the cities they come from. DE/CH is Germany and Switzerland and stays as it is.',
   },
   recentHeading: { id: 'atlas.recentHeading', defaultMessage: 'Most recently reported' },
   report: { id: 'atlas.report', defaultMessage: 'Report a demolition on abriss-atlas.de' },

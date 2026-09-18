@@ -26,7 +26,7 @@ const COPY = defineMessages({
     id: 'faktenforum.quote',
     defaultMessage: '"{quote}"',
     description:
-      "A claim in the Faktenforum list, in quotation marks. {quote} is the claim's wording and is not translated. claim.quote is the same construction on a claim's own screen.",
+      "A claim in the Faktenforum list, in quotation marks. {quote} is the claim's wording and is not translated. The quotation marks belong to the language: German uses low and high ones. `claim.quote` is the same construction on a claim's own screen.",
   },
   submitted: {
     id: 'faktenforum.submitted',

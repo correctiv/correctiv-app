@@ -40,7 +40,7 @@ const COPY = defineMessages({
     id: 'form.back',
     defaultMessage: 'Back',
     description:
-      'The button that steps back one page in the participation form. ui.back is the same word in the screen header, where it is the way out of the whole screen.',
+      'The button that steps back one page in the participation form. `ui.back` is the same word in a screen header elsewhere, but not on this screen: its header says `form.cancel` so that two controls do not both say ‘Back’.',
   },
   next: {
     id: 'form.next',

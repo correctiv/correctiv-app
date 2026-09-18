@@ -23,7 +23,7 @@ const COPY = defineMessages({
     id: 'callout.survey.cta',
     defaultMessage: 'Take part',
     description:
-      "The button on a survey callout's card. German says 'Teilnehmen' here and 'Mitmachen' on a CrowdNewsroom card, callout.crowdnewsroom.cta, although English says 'Take part' for both.",
+      'The button on a survey callout, on the card on the participation tab and on the teaser on the home screen. German says ‘Teilnehmen’ here and ‘Mitmachen’ on a CrowdNewsroom, `callout.crowdnewsroom.cta`, although English says ‘Take part’ for both.',
   },
   surveyCount: {
     id: 'callout.survey.count',
@@ -34,13 +34,14 @@ const COPY = defineMessages({
   surveyCountSoFar: {
     id: 'callout.survey.countSoFar',
     defaultMessage: '{count, plural, one {One response} other {# responses}} so far',
-    description: "The same response count with 'so far'. {count} is how many people have answered.",
+    description:
+      'The response count with ‘so far’, on the callout teaser on the home screen, for a survey callout. {count} is how many people have answered.',
   },
   crowdnewsroomCta: {
     id: 'callout.crowdnewsroom.cta',
     defaultMessage: 'Take part',
     description:
-      "The button on a CrowdNewsroom callout's card. One of five ids reading 'Take part': the survey's button is callout.survey.cta, the detail screen's is callout.detail.cta, the tab is ui.tabParticipate and the screen heading is participate.title.",
+      "The button on a CrowdNewsroom callout, on the card on the participation tab and on the teaser on the home screen. On the card it is replaced by `callout.contributeAgain` once this person has contributed. One of five ids reading ‘Take part’: the survey's button is `callout.survey.cta`, the detail screen's is `callout.detail.cta`, the tab is `ui.tabParticipate` and the screen heading is `participate.title`.",
   },
   crowdnewsroomCount: {
     id: 'callout.crowdnewsroom.count',
@@ -52,7 +53,7 @@ const COPY = defineMessages({
     id: 'callout.crowdnewsroom.countSoFar',
     defaultMessage: '{count, plural, one {One contribution} other {# contributions}} so far',
     description:
-      "The same count with ‘so far’ on a CrowdNewsroom card, where {count} is how many people have contributed. Reads identically to callout.detail.responses, which is the detail SCREEN's line: that one is printed for every kind of callout, this one only for a CrowdNewsroom, so the two may diverge and must not be merged.",
+      "The contribution count with ‘so far’, on the callout teaser on the HOME screen, and only for a CrowdNewsroom callout: the card on the participation tab says `callout.crowdnewsroom.count` without ‘so far’, and a survey says `callout.survey.countSoFar`. {count} is how many people have contributed. Word for word identical to `callout.detail.responses`, which is the detail screen's line and is printed for every kind of callout; the two are separate on purpose and must not be merged.",
   },
 });
 

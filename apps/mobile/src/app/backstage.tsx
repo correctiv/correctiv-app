@@ -38,14 +38,14 @@ const COPY = defineMessages({
     id: 'backstage.publicFrom',
     defaultMessage: 'Public from {date}',
     description:
-      'On a Backstage card for a piece members read before everybody else. {date} is the day it opens to everyone, already formatted.',
+      'On a Backstage card for a piece members read before everybody else. {date} is a weekday out of the content, already written as a word and in German, not a formatted date.',
   },
   readNow: { id: 'backstage.readNow', defaultMessage: 'Read it now' },
   diary: {
     id: 'backstage.diaryLabel',
     defaultMessage: 'Research diary',
     description:
-      'The kind-of-thing label on a Backstage card. Same word as diary.screenTitle, which is the heading of the diary SCREEN; this one sits on a card among other kinds.',
+      "The group heading over the research-diary entries on the Backstage screen. `diary.screenTitle` is the same words as the name of a single entry's route, which on the web target is the browser tab.",
   },
   letter: { id: 'backstage.letterLabel', defaultMessage: 'Backstage letter' },
   qa: { id: 'backstage.qaLabel', defaultMessage: 'Questions and answers' },

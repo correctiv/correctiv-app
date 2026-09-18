@@ -27,19 +27,19 @@ const STATUS_LABELS: Record<ClaimStatus, MessageDescriptor> = defineMessages({
     id: 'participate.claimSubmitted',
     defaultMessage: 'Submitted',
     description:
-      "The status tag of a claim on the participation tab. claim.stage.submitted is the same word on the claim's own screen.",
+      "The status tag on a claim, in the Faktenforum list and at the top of a claim's own screen. `claim.stage.submitted` is the same word a few lines below it on that same screen, in the progress row. The two are separate ids and are read together, so word them alike unless the progress row needs a form of its own.",
   },
   checking: {
     id: 'participate.claimChecking',
     defaultMessage: 'Being checked',
     description:
-      "The status tag of a claim on the participation tab. claim.stage.checking is the same word on the claim's own screen.",
+      "The status tag on a claim, in the Faktenforum list and at the top of a claim's own screen. `claim.stage.checking` is the same word a few lines below it on that same screen, in the progress row. The two are separate ids and are read together, so word them alike unless the progress row needs a form of its own.",
   },
   checked: {
     id: 'participate.claimChecked',
     defaultMessage: 'Checked: {verdict}',
     description:
-      'The status tag of a claim on the participation tab. {verdict} is the verdict, already translated, or the word under participate.claimNoVerdict when the check closed without one.',
+      "The status tag on a claim, in the Faktenforum list and at the top of a claim's own screen. {verdict} is the verdict, already translated, or the word under participate.claimNoVerdict when the check closed without one.",
   },
 });
 

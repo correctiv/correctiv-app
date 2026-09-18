@@ -44,7 +44,7 @@ const COPY = defineMessages({
     id: 'series.unknownId',
     defaultMessage: 'Unknown identifier "{id}".',
     description:
-      'Shown when the series screen is opened with an identifier no series has. {id} is that identifier, unchanged, in quotation marks.',
+      'Shown when the series screen is opened with an identifier no series has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under `claim.unknownId`, `diary.unknownId` and `project.unknownId`.',
   },
   noId: {
     id: 'series.noId',

@@ -20,14 +20,14 @@ const COPY = defineMessages({
     id: 'diary.screenTitle',
     defaultMessage: 'Research diary',
     description:
-      'The heading of the research diary screen. backstage.diaryLabel is the same word as a kind-of-thing label on a Backstage card.',
+      "The diary route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it. `backstage.diaryLabel` is the same words as the group heading over the diary entries on the Backstage screen.",
   },
   notFound: { id: 'diary.notFound', defaultMessage: 'This entry does not exist' },
   unknownId: {
     id: 'diary.unknownId',
     defaultMessage: 'Unknown identifier "{id}".',
     description:
-      'Shown when the diary screen is opened with an identifier no entry has. {id} is that identifier, unchanged, in quotation marks.',
+      'Shown when the diary screen is opened with an identifier no entry has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under `claim.unknownId`, `project.unknownId` and `series.unknownId`.',
   },
   noId: {
     id: 'diary.noId',

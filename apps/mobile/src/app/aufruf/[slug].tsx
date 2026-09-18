@@ -47,7 +47,7 @@ const COPY = defineMessages({
     id: 'callout.detail.responses',
     defaultMessage: '{count, plural, one {One contribution} other {# contributions}} so far',
     description:
-      "The contribution count on a callout's own screen, printed for every kind of callout. Reads identically to callout.crowdnewsroom.countSoFar, which is the CARD's line and is worded per kind. {count} is how many people have contributed.",
+      "The contribution count on a callout's own screen, printed for every kind of callout. Reads identically to `callout.crowdnewsroom.countSoFar`, which is the home teaser's line and is worded per kind. {count} is how many people have contributed.",
   },
   whoAsks: { id: 'callout.detail.whoAsks', defaultMessage: 'Who is asking?' },
   dataUse: { id: 'callout.detail.dataUse', defaultMessage: 'What happens to your data?' },
@@ -59,7 +59,7 @@ const COPY = defineMessages({
     id: 'callout.detail.cta',
     defaultMessage: 'Take part',
     description:
-      "The button on a callout's own screen, whatever kind of callout it is. The cards have their own, callout.crowdnewsroom.cta and callout.survey.cta.",
+      "The button on a callout's own screen, whatever kind of callout it is. The card and the home teaser have their own, `callout.crowdnewsroom.cta` and `callout.survey.cta`.",
   },
   contributeAgain: { id: 'callout.contributeAgain', defaultMessage: 'Send another tip' },
   screenTitle: { id: 'callout.screenTitle', defaultMessage: 'Callout' },

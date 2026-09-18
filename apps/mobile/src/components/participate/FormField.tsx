@@ -17,7 +17,7 @@ const COPY = defineMessages({
     id: 'form.fileAttached',
     defaultMessage: '{file} attached ✓',
     description:
-      "Confirmation under a file field in the participation form. {file} is the file's name. The tick is part of the message.",
+      "The file picker's own label in the participation form once something is attached, replacing `form.filePick` in the same control. {file} is the file's name. The tick is part of the message.",
   },
   filePick: { id: 'form.filePick', defaultMessage: 'Choose a photo or document (simulated)' },
 });

@@ -87,7 +87,7 @@ export const READER_COPY = {
     id: 'core.reader.readingTime',
     defaultMessage: '{minutes} min read',
     description:
-      'Under the byline in the article document. {minutes} is a whole number of minutes.',
+      'Part of the meta line in the article document, after the byline and the date and joined to them with ‘ · ’. {minutes} is a whole number of minutes. There is no plural here, unlike `article.readingTime` in the feed; say so if your language needs one.',
   }),
   support: coreMessage({
     id: 'core.reader.support',

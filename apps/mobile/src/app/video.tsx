@@ -23,7 +23,7 @@ const COPY = defineMessages({
     id: 'video.screenTitle',
     defaultMessage: 'Video',
     description:
-      'The heading of the video screen. video.kicker is the same word above the title and video.frameTitle the name of the embed.',
+      "The video route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it, so nobody sees it there. `video.kicker` is the word above the video's own title and `video.frameTitle` names the embed.",
   },
   none: { id: 'video.none', defaultMessage: 'No video selected.' },
   unavailable: { id: 'video.unavailable', defaultMessage: 'Video unavailable' },
@@ -31,7 +31,7 @@ const COPY = defineMessages({
     id: 'video.loading',
     defaultMessage: 'Loading …',
     description:
-      "The video screen's state line while the embed loads. player.loading is the same word in the mini player.",
+      'On the video screen, in place of the native player while there is no stream address yet. Not the loading state itself, which is a spinner. `player.loading` is the same word in the mini player.',
   },
   today: { id: 'video.today', defaultMessage: 'Today' },
   yesterday: { id: 'video.yesterday', defaultMessage: 'Yesterday' },
@@ -45,7 +45,7 @@ const COPY = defineMessages({
     id: 'video.kicker',
     defaultMessage: 'Video',
     description:
-      "The kicker above a video's title. video.screenTitle is the same word as the screen's heading, and the two are separate so that one can change without the other.",
+      "The kicker above a video's title, and only on a video older than seven days: anything newer gets `video.newEpisode` instead. `video.screenTitle` is the same word as the route's name, which on the web target is the browser tab.",
   },
   watchOn: {
     id: 'video.watchOn',

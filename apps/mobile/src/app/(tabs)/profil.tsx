@@ -106,7 +106,7 @@ const COPY = defineMessages({
     id: 'profile.nav.savedCount',
     defaultMessage: '{count, plural, =0 {Nothing saved yet} one {# article} other {# articles}}',
     description:
-      'The subtitle of that row. {count} is how many articles are saved, and the zero case is a sentence rather than a number.',
+      'The subtitle of the Saved articles row in the profile. {count} is how many articles are saved, and the zero case is a sentence rather than a number.',
   },
   settings: { id: 'profile.nav.settings', defaultMessage: 'App settings' },
   settingsSubtitle: {

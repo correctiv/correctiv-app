@@ -39,7 +39,7 @@ const COPY = defineMessages({
     defaultMessage:
       'The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on.',
     description:
-      'The paragraph about the Faktenforum on the participation tab. {count} is how many claims are being worked on right now.',
+      'The paragraph about the Faktenforum on the participation tab. {count} is how many claims the Faktenforum holds altogether, the finished ones included, not only the ones still open.',
   },
   forumAction: { id: 'participate.forumAction', defaultMessage: 'See the claims' },
   atlasHeading: { id: 'participate.atlasHeading', defaultMessage: 'Document demolitions' },

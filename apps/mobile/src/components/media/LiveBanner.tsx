@@ -30,7 +30,7 @@ const COPY = defineMessages({
     id: 'mediathek.listeners',
     defaultMessage: '{count, plural, one {# listener} other {# listeners}}',
     description:
-      'Beside the live radio banner. {count} is how many people are listening right now.',
+      'Inside the live radio banner, in the row beside the Live badge. {count} is how many people are listening right now.',
   },
   streamUnavailable: {
     id: 'mediathek.streamUnavailable',

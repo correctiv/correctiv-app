@@ -57,7 +57,7 @@ const COPY = defineMessages({
     id: 'claim.credibility',
     defaultMessage: 'Reliability: {level}',
     description:
-      "A line on a claim's screen. {level} is a source's reliability, already translated.",
+      "Under a source on a claim's screen. {level} is the source's reliability exactly as the data holds it, the literal German words `hoch`, `mittel` or `niedrig`, and it is NOT translated anywhere. Leave it in the sentence as it arrives; getting it translated is a change to the code, not to this string.",
   },
   submitOwn: {
     id: 'claim.submitOwn',
@@ -76,13 +76,13 @@ const STAGE_LABELS: Record<ClaimStatus, MessageDescriptor> = defineMessages({
     id: 'claim.stage.submitted',
     defaultMessage: 'Submitted',
     description:
-      "The stage of a claim, on the claim's own screen. participate.claimSubmitted is the same word on the participation tab's status tag.",
+      "One step of the progress row on a claim's screen. `participate.claimSubmitted` is the same word in the status tag a few lines above it on the same screen, so the two are read together.",
   },
   checking: {
     id: 'claim.stage.checking',
     defaultMessage: 'Being checked',
     description:
-      "The stage of a claim, on the claim's own screen. participate.claimChecking is the same word on the participation tab's status tag; the two screens may word it differently.",
+      "One step of the progress row on a claim's screen. `participate.claimChecking` is the same word in the status tag a few lines above it on the same screen, so the two are read together.",
   },
   checked: { id: 'claim.stage.checked', defaultMessage: 'Checked' },
 });

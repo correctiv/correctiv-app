@@ -46,14 +46,14 @@
   },
   "atlas.stats": {
     "defaultMessage": "{reports, plural, one {One reported demolition} other {# reported demolitions}} in {cities, plural, one {one city} other {# cities}} (DE/CH)",
-    "description": "The figure line above the demolition map. {reports} counts reported demolitions, {cities} the cities they come from. DE/CH is Germany and Switzerland and stays as it is."
+    "description": "The figure line UNDER the map on the Abriss-Atlas screen. {reports} counts reported demolitions, {cities} the cities they come from. DE/CH is Germany and Switzerland and stays as it is."
   },
   "backstage.allFromBackstage": {
     "defaultMessage": "Everything from Backstage"
   },
   "backstage.diaryLabel": {
     "defaultMessage": "Research diary",
-    "description": "The kind-of-thing label on a Backstage card. Same word as diary.screenTitle, which is the heading of the diary SCREEN; this one sits on a card among other kinds."
+    "description": "The group heading over the research-diary entries on the Backstage screen. `diary.screenTitle` is the same words as the name of a single entry's route, which on the web target is the browser tab."
   },
   "backstage.earlyAccessBadge": {
     "defaultMessage": "Backstage · read it earlier"
@@ -69,7 +69,7 @@
   },
   "backstage.publicFrom": {
     "defaultMessage": "Public from {date}",
-    "description": "On a Backstage card for a piece members read before everybody else. {date} is the day it opens to everyone, already formatted."
+    "description": "On a Backstage card for a piece members read before everybody else. {date} is a weekday out of the content, already written as a word and in German, not a formatted date."
   },
   "backstage.publisherLabel": {
     "defaultMessage": "Publishing house"
@@ -98,18 +98,18 @@
   },
   "callout.crowdnewsroom.countSoFar": {
     "defaultMessage": "{count, plural, one {One contribution} other {# contributions}} so far",
-    "description": "The same count with ‘so far’ on a CrowdNewsroom card, where {count} is how many people have contributed. Reads identically to callout.detail.responses, which is the detail SCREEN's line: that one is printed for every kind of callout, this one only for a CrowdNewsroom, so the two may diverge and must not be merged."
+    "description": "The contribution count with ‘so far’, on the callout teaser on the HOME screen, and only for a CrowdNewsroom callout: the card on the participation tab says `callout.crowdnewsroom.count` without ‘so far’, and a survey says `callout.survey.countSoFar`. {count} is how many people have contributed. Word for word identical to `callout.detail.responses`, which is the detail screen's line and is printed for every kind of callout; the two are separate on purpose and must not be merged."
   },
   "callout.crowdnewsroom.cta": {
     "defaultMessage": "Take part",
-    "description": "The button on a CrowdNewsroom callout's card. One of five ids reading 'Take part': the survey's button is callout.survey.cta, the detail screen's is callout.detail.cta, the tab is ui.tabParticipate and the screen heading is participate.title."
+    "description": "The button on a CrowdNewsroom callout, on the card on the participation tab and on the teaser on the home screen. On the card it is replaced by `callout.contributeAgain` once this person has contributed. One of five ids reading ‘Take part’: the survey's button is `callout.survey.cta`, the detail screen's is `callout.detail.cta`, the tab is `ui.tabParticipate` and the screen heading is `participate.title`."
   },
   "callout.detail.contributed": {
     "defaultMessage": "✓ You have contributed already, thank you! More tips are welcome."
   },
   "callout.detail.cta": {
     "defaultMessage": "Take part",
-    "description": "The button on a callout's own screen, whatever kind of callout it is. The cards have their own, callout.crowdnewsroom.cta and callout.survey.cta."
+    "description": "The button on a callout's own screen, whatever kind of callout it is. The card and the home teaser have their own, `callout.crowdnewsroom.cta` and `callout.survey.cta`."
   },
   "callout.detail.dataUse": {
     "defaultMessage": "What happens to your data?"
@@ -120,7 +120,7 @@
   },
   "callout.detail.responses": {
     "defaultMessage": "{count, plural, one {One contribution} other {# contributions}} so far",
-    "description": "The contribution count on a callout's own screen, printed for every kind of callout. Reads identically to callout.crowdnewsroom.countSoFar, which is the CARD's line and is worded per kind. {count} is how many people have contributed."
+    "description": "The contribution count on a callout's own screen, printed for every kind of callout. Reads identically to `callout.crowdnewsroom.countSoFar`, which is the home teaser's line and is worded per kind. {count} is how many people have contributed."
   },
   "callout.detail.unknownHeadline": {
     "defaultMessage": "This callout does not exist"
@@ -141,11 +141,11 @@
   },
   "callout.survey.countSoFar": {
     "defaultMessage": "{count, plural, one {One response} other {# responses}} so far",
-    "description": "The same response count with 'so far'. {count} is how many people have answered."
+    "description": "The response count with ‘so far’, on the callout teaser on the home screen, for a survey callout. {count} is how many people have answered."
   },
   "callout.survey.cta": {
     "defaultMessage": "Take part",
-    "description": "The button on a survey callout's card. German says 'Teilnehmen' here and 'Mitmachen' on a CrowdNewsroom card, callout.crowdnewsroom.cta, although English says 'Take part' for both."
+    "description": "The button on a survey callout, on the card on the participation tab and on the teaser on the home screen. German says ‘Teilnehmen’ here and ‘Mitmachen’ on a CrowdNewsroom, `callout.crowdnewsroom.cta`, although English says ‘Take part’ for both."
   },
   "callout.survey.kicker": {
     "defaultMessage": "Survey"
@@ -160,7 +160,7 @@
   },
   "claim.credibility": {
     "defaultMessage": "Reliability: {level}",
-    "description": "A line on a claim's screen. {level} is a source's reliability, already translated."
+    "description": "Under a source on a claim's screen. {level} is the source's reliability exactly as the data holds it, the literal German words `hoch`, `mittel` or `niedrig`, and it is NOT translated anywhere. Leave it in the sentence as it arrives; getting it translated is a change to the code, not to this string."
   },
   "claim.noId": {
     "defaultMessage": "No identifier was passed.",
@@ -184,11 +184,11 @@
   },
   "claim.stage.checking": {
     "defaultMessage": "Being checked",
-    "description": "The stage of a claim, on the claim's own screen. participate.claimChecking is the same word on the participation tab's status tag; the two screens may word it differently."
+    "description": "One step of the progress row on a claim's screen. `participate.claimChecking` is the same word in the status tag a few lines above it on the same screen, so the two are read together."
   },
   "claim.stage.submitted": {
     "defaultMessage": "Submitted",
-    "description": "The stage of a claim, on the claim's own screen. participate.claimSubmitted is the same word on the participation tab's status tag."
+    "description": "One step of the progress row on a claim's screen. `participate.claimSubmitted` is the same word in the status tag a few lines above it on the same screen, so the two are read together."
   },
   "claim.submitOwn": {
     "defaultMessage": "Submit a tip of your own (in the Faktenforum)"
@@ -249,7 +249,7 @@
   },
   "core.reader.readingTime": {
     "defaultMessage": "{minutes} min read",
-    "description": "Under the byline in the article document. {minutes} is a whole number of minutes."
+    "description": "Part of the meta line in the article document, after the byline and the date and joined to them with ‘ · ’. {minutes} is a whole number of minutes. There is no plural here, unlike `article.readingTime` in the feed; say so if your language needs one."
   },
   "core.reader.support": {
     "defaultMessage": "Made possible by supporters like you. Thank you for being here."
@@ -263,11 +263,11 @@
   },
   "diary.screenTitle": {
     "defaultMessage": "Research diary",
-    "description": "The heading of the research diary screen. backstage.diaryLabel is the same word as a kind-of-thing label on a Backstage card."
+    "description": "The diary route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it. `backstage.diaryLabel` is the same words as the group heading over the diary entries on the Backstage screen."
   },
   "diary.unknownId": {
     "defaultMessage": "Unknown identifier \"{id}\".",
-    "description": "Shown when the diary screen is opened with an identifier no entry has. {id} is that identifier, unchanged, in quotation marks."
+    "description": "Shown when the diary screen is opened with an identifier no entry has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under `claim.unknownId`, `project.unknownId` and `series.unknownId`."
   },
   "discover.openSearch": {
     "defaultMessage": "Open search"
@@ -284,7 +284,7 @@
   },
   "faktenforum.quote": {
     "defaultMessage": "\"{quote}\"",
-    "description": "A claim in the Faktenforum list, in quotation marks. {quote} is the claim's wording and is not translated. claim.quote is the same construction on a claim's own screen."
+    "description": "A claim in the Faktenforum list, in quotation marks. {quote} is the claim's wording and is not translated. The quotation marks belong to the language: German uses low and high ones. `claim.quote` is the same construction on a claim's own screen."
   },
   "faktenforum.submitted": {
     "defaultMessage": "{shortId} · submitted {date}",
@@ -295,7 +295,7 @@
   },
   "form.back": {
     "defaultMessage": "Back",
-    "description": "The button that steps back one page in the participation form. ui.back is the same word in the screen header, where it is the way out of the whole screen."
+    "description": "The button that steps back one page in the participation form. `ui.back` is the same word in a screen header elsewhere, but not on this screen: its header says `form.cancel` so that two controls do not both say ‘Back’."
   },
   "form.cancel": {
     "defaultMessage": "Cancel"
@@ -306,7 +306,7 @@
   },
   "form.fileAttached": {
     "defaultMessage": "{file} attached ✓",
-    "description": "Confirmation under a file field in the participation form. {file} is the file's name. The tick is part of the message."
+    "description": "The file picker's own label in the participation form once something is attached, replacing `form.filePick` in the same control. {file} is the file's name. The tick is part of the message."
   },
   "form.filePick": {
     "defaultMessage": "Choose a photo or document (simulated)"
@@ -487,7 +487,7 @@
   },
   "mediathek.listeners": {
     "defaultMessage": "{count, plural, one {# listener} other {# listeners}}",
-    "description": "Beside the live radio banner. {count} is how many people are listening right now."
+    "description": "Inside the live radio banner, in the row beside the Live badge. {count} is how many people are listening right now."
   },
   "mediathek.live": {
     "defaultMessage": "Live"
@@ -500,14 +500,14 @@
   },
   "mediathek.pauseEpisode": {
     "defaultMessage": "Pause {title}",
-    "description": "The accessible name of the pause button on an episode row, read aloud and never seen. {title} is the episode's title."
+    "description": "The accessible name of a whole episode row, which is itself the pause control; the row shows no words of its own. Read aloud and never seen. {title} is the episode's title."
   },
   "mediathek.pauseRadio": {
     "defaultMessage": "Pause the radio"
   },
   "mediathek.playEpisode": {
     "defaultMessage": "Play {title}",
-    "description": "The accessible name of the play button on an episode row, read aloud and never seen. {title} is the episode's title."
+    "description": "The accessible name of a whole episode row, which is itself the play control; the row shows no words of its own. Read aloud and never seen. {title} is the episode's title."
   },
   "mediathek.playRadio": {
     "defaultMessage": "Play the radio"
@@ -604,18 +604,18 @@
   },
   "participate.claimChecked": {
     "defaultMessage": "Checked: {verdict}",
-    "description": "The status tag of a claim on the participation tab. {verdict} is the verdict, already translated, or the word under participate.claimNoVerdict when the check closed without one."
+    "description": "The status tag on a claim, in the Faktenforum list and at the top of a claim's own screen. {verdict} is the verdict, already translated, or the word under participate.claimNoVerdict when the check closed without one."
   },
   "participate.claimChecking": {
     "defaultMessage": "Being checked",
-    "description": "The status tag of a claim on the participation tab. claim.stage.checking is the same word on the claim's own screen."
+    "description": "The status tag on a claim, in the Faktenforum list and at the top of a claim's own screen. `claim.stage.checking` is the same word a few lines below it on that same screen, in the progress row. The two are separate ids and are read together, so word them alike unless the progress row needs a form of its own."
   },
   "participate.claimNoVerdict": {
     "defaultMessage": "closed"
   },
   "participate.claimSubmitted": {
     "defaultMessage": "Submitted",
-    "description": "The status tag of a claim on the participation tab. claim.stage.submitted is the same word on the claim's own screen."
+    "description": "The status tag on a claim, in the Faktenforum list and at the top of a claim's own screen. `claim.stage.submitted` is the same word a few lines below it on that same screen, in the progress row. The two are separate ids and are read together, so word them alike unless the progress row needs a form of its own."
   },
   "participate.communityNote": {
     "defaultMessage": "In the community area you discuss investigations with other members, and soon in the app as well."
@@ -628,7 +628,7 @@
   },
   "participate.forumLead": {
     "defaultMessage": "The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on.",
-    "description": "The paragraph about the Faktenforum on the participation tab. {count} is how many claims are being worked on right now."
+    "description": "The paragraph about the Faktenforum on the participation tab. {count} is how many claims the Faktenforum holds altogether, the finished ones included, not only the ones still open."
   },
   "participate.lead": {
     "defaultMessage": "Investigations are made with you. Your tips, your observations and your checks are what make them possible."
@@ -759,7 +759,7 @@
   },
   "profile.nav.savedCount": {
     "defaultMessage": "{count, plural, =0 {Nothing saved yet} one {# article} other {# articles}}",
-    "description": "The subtitle of that row. {count} is how many articles are saved, and the zero case is a sentence rather than a number."
+    "description": "The subtitle of the Saved articles row in the profile. {count} is how many articles are saved, and the zero case is a sentence rather than a number."
   },
   "profile.nav.settings": {
     "defaultMessage": "App settings"
@@ -851,7 +851,7 @@
   },
   "project.unknownId": {
     "defaultMessage": "Unknown identifier \"{id}\".",
-    "description": "Shown when the project screen is opened with an identifier no project has. {id} is that identifier, unchanged, in quotation marks."
+    "description": "Shown when the project screen is opened with an identifier no project has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under `claim.unknownId`, `diary.unknownId` and `series.unknownId`."
   },
   "search.articlesHeading": {
     "defaultMessage": "Articles"
@@ -887,7 +887,7 @@
   },
   "series.unknownId": {
     "defaultMessage": "Unknown identifier \"{id}\".",
-    "description": "Shown when the series screen is opened with an identifier no series has. {id} is that identifier, unchanged, in quotation marks."
+    "description": "Shown when the series screen is opened with an identifier no series has. {id} is that identifier, unchanged, in quotation marks. Three other screens say the same under `claim.unknownId`, `diary.unknownId` and `project.unknownId`."
   },
   "settings.about.body": {
     "defaultMessage": "CORRECTIV is a non-profit, independent centre for investigative journalism. Investigations for society, funded by people like you."
@@ -999,15 +999,15 @@
   },
   "video.frameTitle": {
     "defaultMessage": "Video",
-    "description": "The accessible name of the frame the video is embedded in, read aloud and never seen. video.screenTitle is the same word as the screen's heading and video.kicker the one above the title."
+    "description": "The accessible name of the frame the video is embedded in, read aloud and never seen. `video.screenTitle` is the same word as the route's name and `video.kicker` the one above the title."
   },
   "video.kicker": {
     "defaultMessage": "Video",
-    "description": "The kicker above a video's title. video.screenTitle is the same word as the screen's heading, and the two are separate so that one can change without the other."
+    "description": "The kicker above a video's title, and only on a video older than seven days: anything newer gets `video.newEpisode` instead. `video.screenTitle` is the same word as the route's name, which on the web target is the browser tab."
   },
   "video.loading": {
     "defaultMessage": "Loading …",
-    "description": "The video screen's state line while the embed loads. player.loading is the same word in the mini player."
+    "description": "On the video screen, in place of the native player while there is no stream address yet. Not the loading state itself, which is a spinner. `player.loading` is the same word in the mini player."
   },
   "video.newEpisode": {
     "defaultMessage": "New episode"
@@ -1017,7 +1017,7 @@
   },
   "video.screenTitle": {
     "defaultMessage": "Video",
-    "description": "The heading of the video screen. video.kicker is the same word above the title and video.frameTitle the name of the embed."
+    "description": "The video route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it, so nobody sees it there. `video.kicker` is the word above the video's own title and `video.frameTitle` names the embed."
   },
   "video.today": {
     "defaultMessage": "Today"
