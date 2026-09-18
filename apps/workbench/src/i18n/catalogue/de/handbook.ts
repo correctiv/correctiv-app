@@ -24,7 +24,6 @@ export const handbook: Record<string, string> = {
   'handbook.records':
     'Die Entscheidungen hinter alledem sind ein eigener Abschnitt, denn ein Protokoll ist eine andere Art von Dokument: Es wird nie umgeschrieben, und eine Aussage, die eine spätere Entscheidung falsch gemacht hat, wird an Ort und Stelle durchgestrichen statt korrigiert.',
 
-  'handbook.card.architecture': 'Architektur',
   'handbook.card.architecture.kind': 'Erklärung',
 
   'handbook.card.diagrams': 'Diagramme',
@@ -32,18 +31,13 @@ export const handbook: Record<string, string> = {
   'handbook.card.diagrams.blurb':
     'Dieselbe Architektur, gezeichnet: der Core und sein Host, welche Entscheidungen noch gelten, womit die App spricht, wie der Core innen geschichtet ist, wie sich jemand anmeldet und woher ein Artikel kommt.',
 
-  'handbook.card.conventions': 'Konventionen',
   'handbook.card.conventions.kind': 'Regeln',
 
-  'handbook.card.traps': 'Fallstricke',
   'handbook.card.traps.kind': 'Teuer bezahlt',
 
-  'handbook.card.provenance': 'Herkunft',
   'handbook.card.provenance.kind': 'Generiert',
 
-  'handbook.card.readme': 'Readme',
   'handbook.card.readme.kind': 'Anfang',
 
-  'handbook.card.release': 'Release',
   'handbook.card.release.kind': 'Ablauf',
 };

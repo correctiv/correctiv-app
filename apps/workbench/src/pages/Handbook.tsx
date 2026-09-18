@@ -5,29 +5,45 @@ import { useWorkbenchIntl } from '../i18n/Localisation';
 import { CardGrid, type Card } from '../ui/CardGrid';
 import { Page } from '../ui/Page';
 
-const blurb = (route: string) => docsModule.docs.find((d) => d.route === route)?.blurb;
+const entry = (route: string) => docsModule.docs.find((d) => d.route === route);
+
+/** The document's own name, out of the registry, which is the one copy of it. */
+const named = (route: string) => entry(route)?.nav ?? '';
+
+const blurb = (route: string) => entry(route)?.blurb;
 
 /**
  * Everything this page says, in ENGLISH; the German that ships is
  * `src/i18n/catalogue/de/handbook.ts`.
  *
- * **A card has two halves and they come from opposite sides of the line.** The
- * title and the kicker above it are this site's own shorthand for a document and
- * are here. The sentence under them is not: `blurb()` reads it out of
- * `virtual:docs`, where it is written beside the document's path in
- * `plugin/registry.ts` and is the repository describing its own files
- * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
- * So a German reader gets German cards over English one-liners, with the English
- * documents themselves one click behind them, which is the mixed page that record
- * says is the answer.
+ * **A card has three parts and only one of them is here.** The kicker above the
+ * title is this site's shorthand for what kind of document it is, and it is a
+ * message. The title is the document's OWN name, `nav` out of
+ * `plugin/registry.ts`, and the sentence under it is that entry's `blurb`. Both
+ * of those stay in the one language they are written in, so a German reader gets
+ * German kickers over English names and English one-liners, with the English
+ * documents themselves one click behind them. That is the mixed page ADR 0052 §1
+ * says is the answer, and `/handbook` is the example the record gives for it.
  *
- * The one exception is the drawings' card, whose document does not exist: there is
- * no `/diagrams` Markdown file, so nothing wrote a blurb for it and the sentence
- * is this page's own. It is the only `blurb` in here.
+ * **The title was a message for one commit and that was the mistake.** It gave
+ * every document two names, and on the German page the card said „Architektur“
+ * while the breadcrumb of the page it opened said "Architecture", two centimetres
+ * and one click apart. `ui/ActivityBar.tsx`'s `sectionOf()` argues exactly that
+ * failure for the rail against the breadcrumb and calls it a thing that reads as
+ * a bug; a check holding the two English strings equal was holding a duplication
+ * that should not exist instead of removing it. Reading `nav` is the removal.
  *
- * `Readme` and `Release` keep their spelling in every language. They are the names
- * of two files in the root of this repository, and a reader following the card is
- * going to `README.md`.
+ * **What that leaves open is named rather than hidden.** `nav` and `blurb` are
+ * hand-written in `plugin/registry.ts`, which is this site's own package, so by
+ * ADR 0052 §1's own test they are this site's words and would follow the setting.
+ * They do not, for one mechanical reason: `i18n:extract` walks `src/` and
+ * `plugin/` is not in it, so a descriptor written there extracts to nothing. That
+ * is a gap in the record's reach and not a decision it took, and ADR 0052 §5 now
+ * says so.
+ *
+ * The one exception below is the drawings' card, whose document does not exist:
+ * there is no `/diagrams` Markdown file, so nothing wrote it a name or a blurb
+ * and both are this page's own.
  */
 const COPY = defineMessages({
   title: {
@@ -47,7 +63,6 @@ const COPY = defineMessages({
       'The decisions behind all of it are their own section, because a record is a different kind of document: it is never rewritten, and a claim a later decision made false is struck through where it stands rather than corrected.',
   },
 
-  architecture: { id: 'handbook.card.architecture', defaultMessage: 'Architecture' },
   architectureKind: {
     id: 'handbook.card.architecture.kind',
     defaultMessage: 'Explanation',
@@ -74,14 +89,12 @@ const COPY = defineMessages({
       'The sentence under the Diagrams card, and the only card sentence on this page that is not read out of the repository: there is no Markdown document at that route to have written one.',
   },
 
-  conventions: { id: 'handbook.card.conventions', defaultMessage: 'Conventions' },
   conventionsKind: {
     id: 'handbook.card.conventions.kind',
     defaultMessage: 'Rules',
     description: 'The kicker over the Conventions card: what kind of document it is.',
   },
 
-  traps: { id: 'handbook.card.traps', defaultMessage: 'Traps' },
   trapsKind: {
     id: 'handbook.card.traps.kind',
     defaultMessage: 'Hard-won',
@@ -89,7 +102,6 @@ const COPY = defineMessages({
       'The kicker over the Traps card. It says how the document was come by rather than what it is: every line in it was paid for by a failure that passed every check.',
   },
 
-  provenance: { id: 'handbook.card.provenance', defaultMessage: 'Provenance' },
   provenanceKind: {
     id: 'handbook.card.provenance.kind',
     defaultMessage: 'Generated',
@@ -97,24 +109,12 @@ const COPY = defineMessages({
       'The kicker over the Provenance card. It is the one document on this grid that is written by a program out of the repository rather than read out of it.',
   },
 
-  readme: {
-    id: 'handbook.card.readme',
-    defaultMessage: 'Readme',
-    description:
-      'The card that opens README.md. It is the file’s own name and keeps its spelling in every language.',
-  },
   readmeKind: {
     id: 'handbook.card.readme.kind',
     defaultMessage: 'Start',
     description: 'The kicker over the Readme card: this is the document to arrive at first.',
   },
 
-  release: {
-    id: 'handbook.card.release',
-    defaultMessage: 'Release',
-    description:
-      'The card that opens RELEASE.md. It is the file’s own name and keeps its spelling in every language.',
-  },
   releaseKind: {
     id: 'handbook.card.release.kind',
     defaultMessage: 'Process',
@@ -139,7 +139,7 @@ export function Handbook() {
   const documents: Card[] = [
     {
       route: '/architecture',
-      title: intl.formatMessage(COPY.architecture),
+      title: named('/architecture'),
       kind: intl.formatMessage(COPY.architectureKind),
       blurb: blurb('/architecture'),
     },
@@ -151,13 +151,13 @@ export function Handbook() {
     },
     {
       route: '/conventions',
-      title: intl.formatMessage(COPY.conventions),
+      title: named('/conventions'),
       kind: intl.formatMessage(COPY.conventionsKind),
       blurb: blurb('/conventions'),
     },
     {
       route: '/traps',
-      title: intl.formatMessage(COPY.traps),
+      title: named('/traps'),
       kind: intl.formatMessage(COPY.trapsKind),
       blurb: blurb('/traps'),
     },
@@ -165,19 +165,19 @@ export function Handbook() {
     // because what it describes is how everything else on this grid stays true.
     {
       route: '/provenance',
-      title: intl.formatMessage(COPY.provenance),
+      title: named('/provenance'),
       kind: intl.formatMessage(COPY.provenanceKind),
       blurb: blurb('/provenance'),
     },
     {
       route: '/readme',
-      title: intl.formatMessage(COPY.readme),
+      title: named('/readme'),
       kind: intl.formatMessage(COPY.readmeKind),
       blurb: blurb('/readme'),
     },
     {
       route: '/release',
-      title: intl.formatMessage(COPY.release),
+      title: named('/release'),
       kind: intl.formatMessage(COPY.releaseKind),
       blurb: blurb('/release'),
     },

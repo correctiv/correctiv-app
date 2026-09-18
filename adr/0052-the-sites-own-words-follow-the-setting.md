@@ -1,6 +1,6 @@
 # ADR 0052 — The site's own words follow the setting, the repository's are printed as they are written
 
-Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty.
+Status: accepted, 2026-09-18. **§3 built in [#229](https://github.com/correctiv/correctiv-app/pull/229)**, §1, §2 and §4 in [#230](https://github.com/correctiv/correctiv-app/pull/230) — which migrates the FIRST area, `/components` and a component's own page, and lands the check with the rest of the site still in its ratchet. §1 is finished when that table is empty. **§5 was added on 2026-09-18**, after the first four had landed: migrating `/handbook` found a hand-written file that §1 takes and the extraction cannot reach.
 
 ## Context
 
@@ -116,6 +116,33 @@ it belongs to.
 
 Translating the rows is a bigger decision than this record makes, and it wants the
 measurement of who actually reads that board.
+
+### 5. `plugin/registry.ts` is in scope by §1 and out of reach of the extraction
+
+Added on 2026-09-18, after the first four sections had landed, because migrating
+`/handbook` found it.
+
+`nav` and `blurb` in `apps/workbench/plugin/registry.ts` are hand-written in this
+package: a document's name for the navigation and a one-line description of it.
+By §1's own test those are this site's words and follow the setting. They do not,
+and the reason is mechanical rather than argued: `apps/workbench/package.json`'s
+`i18n:extract` walks `src/**`, `plugin/` is not in it, and a descriptor written
+there extracts to nothing. Widening the glob would pull the whole build-time
+plugin into the extraction, and moving the strings into `src/` is a refactor of
+where a document is declared.
+
+**So this is a gap in the record's reach and is named as one.** Until it closes,
+a document has ONE name — the registry's — and `/handbook`'s cards print it
+rather than carrying a second. A card that translated the name gave every
+document two, and on the German page the card read „Architektur“ where the
+breadcrumb of the page it opened read "Architecture", one click apart;
+`ui/ActivityBar.tsx`'s `sectionOf()` argues exactly that failure and calls it a
+thing that reads as a bug.
+
+`test/rendered-literals.test.ts` cannot see this either, for the same reason it
+cannot see a reason written in `components/direct-ids.ts`: it walks `src/` and
+reads JSX children and visible props, and `nav: 'Architecture'` is a property in
+a data table outside it. Stated here and in both files, rather than enforced.
 
 ## What this retires
 

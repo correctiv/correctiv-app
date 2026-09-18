@@ -455,15 +455,9 @@
     "defaultMessage": "Fit",
     "description": "The one option of the zoom select that is a word rather than a percentage: scale the frame to whatever room the stage has."
   },
-  "handbook.card.architecture": {
-    "defaultMessage": "Architecture"
-  },
   "handbook.card.architecture.kind": {
     "defaultMessage": "Explanation",
     "description": "The kicker over the Architecture card: what kind of document it is."
-  },
-  "handbook.card.conventions": {
-    "defaultMessage": "Conventions"
   },
   "handbook.card.conventions.kind": {
     "defaultMessage": "Rules",
@@ -481,31 +475,17 @@
     "defaultMessage": "Drawn",
     "description": "The kicker over the Diagrams card. The other kickers on this page name a kind of prose; this one says the section is pictures."
   },
-  "handbook.card.provenance": {
-    "defaultMessage": "Provenance"
-  },
   "handbook.card.provenance.kind": {
     "defaultMessage": "Generated",
     "description": "The kicker over the Provenance card. It is the one document on this grid that is written by a program out of the repository rather than read out of it."
-  },
-  "handbook.card.readme": {
-    "defaultMessage": "Readme",
-    "description": "The card that opens README.md. It is the file’s own name and keeps its spelling in every language."
   },
   "handbook.card.readme.kind": {
     "defaultMessage": "Start",
     "description": "The kicker over the Readme card: this is the document to arrive at first."
   },
-  "handbook.card.release": {
-    "defaultMessage": "Release",
-    "description": "The card that opens RELEASE.md. It is the file’s own name and keeps its spelling in every language."
-  },
   "handbook.card.release.kind": {
     "defaultMessage": "Process",
     "description": "The kicker over the Release card: the document is a sequence of steps."
-  },
-  "handbook.card.traps": {
-    "defaultMessage": "Traps"
   },
   "handbook.card.traps.kind": {
     "defaultMessage": "Hard-won",
