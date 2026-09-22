@@ -509,5 +509,22 @@
       "3": ["A press becomes a drag at six pixels, and that click is swallowed"],
       "4": ["The vertical wheel keeps scrolling the page"]
     }
+  },
+  "0056": {
+    "slugs": ["a-string-is-picked-where-it-renders"],
+    "decisions": {
+      "1": [
+        "The picker resolves a rendering to an id by its text, and the owner chain breaks the tie"
+      ],
+      "2": ["The match is on the text node, not on the element's text"],
+      "3": ["A pattern too loose to match on does not take part, and says so"],
+      "4": ["The list is the other half of the tool, not a convenience beside it"],
+      "5": ["\"No id\" is an answer, and one existing check is what makes it a true one"],
+      "6": ["What is edited is the German, and the `defaultMessage` is left alone"],
+      "7": [
+        "The preview writes `workbench:strings`, and it may only replace a wording the catalogue already carries"
+      ],
+      "8": ["Saving edits the file through its syntax tree, and the validator is the placeholders"]
+    }
   }
 }
