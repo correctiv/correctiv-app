@@ -3,9 +3,12 @@
 Status: accepted, 2026-09-16, decided by the product side after an interview that closed
 every question but one. ~~**Not built.**~~ Partly built, in
 [#177](https://github.com/faktenforum/correctiv-app/pull/177): the document, its parser and
-its default layout carry §2, §6, §7, §10 and §14. Fetching one (§4, §5), the configurator
-(§1, §15) and scenarios in the workbench (§11–§13) are not. The open question is named at
-the end and hangs on the source decision `SOURCES.md` still carries.
+its default layout carry §2, §6, §7, §10 and §14. ~~Fetching one (§4, §5), the configurator
+(§1, §15) and scenarios in the workbench (§11–§13) are not.~~ Fetching one (§4, §5) is built
+in [#245](https://github.com/correctiv/correctiv-app/pull/245). Scenarios in the workbench (§11–§13) are not. §15 is built in
+[#246](https://github.com/correctiv/correctiv-app/pull/246), in the shape [ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md) §2 gave it. The configurator of
+this record's §1 is the carrying-out of ADR 0045 to ADR 0053. The open question is named at the end ~~and hangs on the source decision
+`SOURCES.md` still carries~~, and is answered by [ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md).
 
 ## Context
 

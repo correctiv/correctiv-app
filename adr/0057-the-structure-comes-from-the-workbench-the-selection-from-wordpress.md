@@ -1,6 +1,7 @@
 # ADR 0057 — The structure comes from the workbench, the selection comes from WordPress
 
-Status: accepted, 2026-09-23, decided by the product side. **Not built.** It answers the
+Status: accepted, 2026-09-23, decided by the product side. ~~**Not built.**~~ §4 is built in [#245](https://github.com/correctiv/correctiv-app/pull/245); the mark
+WordPress uses (§3) is not chosen yet. It answers the
 one question [ADR 0036](0036-the-home-screen-becomes-data.md) left open and the one
 [ADR 0040](0040-the-app-does-not-depend-on-the-workbench.md) §4 reserved, and it is
 written before any of it is built because the two halves it separates are already being

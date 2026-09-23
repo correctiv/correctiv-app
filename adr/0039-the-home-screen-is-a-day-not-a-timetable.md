@@ -125,7 +125,8 @@ Keeping both would be two ways to say when a block appears, and the one that goe
 is whichever one the next person does not reach for.
 
 `daypart.ts` had one part left that was never configuration — the clock — and that part
-is now `minuteOfDay` and `nextMomentAfter` in `lib/home-layout.ts`, beside the document
+is now `minuteOfDay` and ~~`nextMomentAfter`~~ `nextChangeAfter`, voided by
+[ADR 0059](0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §4, in `lib/home-layout.ts`, beside the document
 they are about. `nextDaypartChange`'s job survives unchanged and is the same job: a
 mounted tab screen does not re-render on the hour, so the host sets one timer to the next
 moment the document names.
