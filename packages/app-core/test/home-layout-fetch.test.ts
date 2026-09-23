@@ -12,6 +12,7 @@ import {
   homeLayoutActions,
   refreshHomeLayout,
 } from '../src/stores/homeLayout';
+import { HOME_LAYOUT_VERSION } from '../src/lib/home-layout';
 import { persist, persisted } from '../src/stores/persist';
 import { createAppStore, type AppStore } from '../src/stores/store';
 
@@ -38,7 +39,7 @@ let reports: ErrorReport[];
 
 /** A document that is a layout, different from the bundled one so a test can tell. */
 const GOOD = JSON.stringify({
-  version: 2,
+  version: HOME_LAYOUT_VERSION,
   sections: [
     { id: 'header', module: 'home-header' },
     { id: 'impact', module: 'impact-footer' },
@@ -99,7 +100,7 @@ describe('a document that is a layout', () => {
    */
   it('is kept with a part the app cannot draw, and the part is left for the host to report', async () => {
     const ahead = JSON.stringify({
-      version: 2,
+      version: HOME_LAYOUT_VERSION,
       sections: [
         { id: 'header', module: 'home-header' },
         { id: 'quiz', module: 'quiz-of-the-day' },
@@ -191,20 +192,24 @@ describe('a document that is worse than the copy it would replace', () => {
   const worse: [string, unknown, ErrorReport[]][] = [
     [
       'no sections at all',
-      { version: 2, sections: [] },
+      { version: HOME_LAYOUT_VERSION, sections: [] },
       [{ domain: 'layout', code: 'document-draws-nothing', context: { problems: 0 } }],
     ],
     [
       'a version from the future and no sections',
       { version: 99, sections: [] },
       [
-        { domain: 'layout', code: 'version-unknown', context: { version: 99, expected: 2 } },
+        {
+          domain: 'layout',
+          code: 'version-unknown',
+          context: { version: 99, expected: HOME_LAYOUT_VERSION },
+        },
         { domain: 'layout', code: 'document-draws-nothing', context: { problems: 1 } },
       ],
     ],
     [
       'sections that are not sections',
-      { version: 2, sections: [1, 2, { id: 'x' }] },
+      { version: HOME_LAYOUT_VERSION, sections: [1, 2, { id: 'x' }] },
       [
         { domain: 'layout', code: 'section-not-an-object', context: { index: 0, type: 'number' } },
         { domain: 'layout', code: 'section-not-an-object', context: { index: 1, type: 'number' } },
@@ -218,7 +223,11 @@ describe('a document that is worse than the copy it would replace', () => {
     ],
     [
       'only modules this app cannot draw',
-      { version: 2, sections: [{ id: 'quiz', module: 'quiz-of-the-day' }], moments: [] },
+      {
+        version: HOME_LAYOUT_VERSION,
+        sections: [{ id: 'quiz', module: 'quiz-of-the-day' }],
+        moments: [],
+      },
       [
         {
           domain: 'layout',
@@ -280,7 +289,7 @@ describe('a document that is worse than the copy it would replace', () => {
 
     later();
     const huge = JSON.stringify({
-      version: 2,
+      version: HOME_LAYOUT_VERSION,
       sections: [{ id: 'header', module: 'home-header', settings: {} }],
       moments: [],
       padding: 'x'.repeat(HOME_LAYOUT_MAX_CHARS),
