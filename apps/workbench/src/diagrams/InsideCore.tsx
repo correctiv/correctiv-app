@@ -46,7 +46,7 @@ import {
  *
  * **Two figures in here are held to the code and so are load-bearing English.**
  * `test/diagrams.test.ts` counts `.ts` and `.tsx` under `packages/app-core/src`
- * and reads "58 TypeScript files" out of this file's text; it counts the members
+ * and reads "59 TypeScript files" out of this file's text; it counts the members
  * of `CorePlatform` and reads "five ports" out of it. Both figures therefore have
  * to stay, spelled that way, inside the `defaultMessage`. **The German carries a
  * second copy of each and nothing checks that one**, because the check reads the
@@ -67,7 +67,7 @@ export const INSIDE_CORE_COPY = defineMessages({
   lede: {
     id: 'insideCore.lede',
     defaultMessage:
-      '58 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.',
+      '59 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.',
     description:
       'The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English.',
   },
@@ -88,14 +88,14 @@ export const INSIDE_CORE_COPY = defineMessages({
   },
   files: {
     id: 'insideCore.files',
-    defaultMessage: '58 TypeScript files',
+    defaultMessage: '59 TypeScript files',
     description:
       'The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English.',
   },
 
   stores: {
     id: 'insideCore.stores',
-    defaultMessage: 'one Redux Toolkit store, 12 slices',
+    defaultMessage: 'one Redux Toolkit store, 13 slices',
     description:
       'What the stores layer holds. Redux Toolkit is the library’s name and a slice is its own word for one part of a store; both stay.',
   },
@@ -258,14 +258,14 @@ export const INSIDE_CORE_COPY = defineMessages({
   altLede: {
     id: 'insideCore.alt.lede',
     defaultMessage:
-      '<code>packages/app-core</code>, 58 TypeScript files. Imports point down the stack. Layers from the top:',
+      '<code>packages/app-core</code>, 59 TypeScript files. Imports point down the stack. Layers from the top:',
     description:
       'The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English.',
   },
   altStores: {
     id: 'insideCore.alt.stores',
     defaultMessage:
-      '<term>stores</term>: one Redux Toolkit store with 12 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.',
+      '<term>stores</term>: one Redux Toolkit store with 13 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.',
     description:
       'One layer in that list. <term> marks the directory’s name, which stays as it is written, and <code> a function name.',
   },

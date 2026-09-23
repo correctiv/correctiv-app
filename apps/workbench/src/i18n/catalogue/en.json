@@ -1416,7 +1416,7 @@
     "description": "The last paragraph under the drawing. <code> marks an import path, which stays as it is written."
   },
   "insideCore.alt.lede": {
-    "defaultMessage": "<code>packages/app-core</code>, 58 TypeScript files. Imports point down the stack. Layers from the top:",
+    "defaultMessage": "<code>packages/app-core</code>, 59 TypeScript files. Imports point down the stack. Layers from the top:",
     "description": "The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.alt.lib": {
@@ -1432,7 +1432,7 @@
     "description": "One layer in that list. <term> marks a directory’s name; the ten names after the colon are the files in it and stay as they are written."
   },
   "insideCore.alt.stores": {
-    "defaultMessage": "<term>stores</term>: one Redux Toolkit store with 12 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.",
+    "defaultMessage": "<term>stores</term>: one Redux Toolkit store with 13 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.",
     "description": "One layer in that list. <term> marks the directory’s name, which stays as it is written, and <code> a function name."
   },
   "insideCore.articles": {
@@ -1476,7 +1476,7 @@
     "description": "The line beside the two small chips reading string and DOM. <file> marks a type name in monospace, which stays as it is written."
   },
   "insideCore.files": {
-    "defaultMessage": "58 TypeScript files",
+    "defaultMessage": "59 TypeScript files",
     "description": "The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English."
   },
   "insideCore.imports": {
@@ -1484,7 +1484,7 @@
     "description": "The label on the long arrow down the left edge, set on its side. It is as long as the stack is tall, about 500 units, so length is not the constraint here."
   },
   "insideCore.lede": {
-    "defaultMessage": "58 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
+    "defaultMessage": "59 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
     "description": "The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.lib": {
@@ -1532,7 +1532,7 @@
     "description": "How many files the services layer holds, beside its name. insideCore.data.files and insideCore.types.files are the same label on the two layers beside it; insideCore.ports.file is the one on the ports layer."
   },
   "insideCore.stores": {
-    "defaultMessage": "one Redux Toolkit store, 12 slices",
+    "defaultMessage": "one Redux Toolkit store, 13 slices",
     "description": "What the stores layer holds. Redux Toolkit is the library’s name and a slice is its own word for one part of a store; both stay."
   },
   "insideCore.stores.host": {

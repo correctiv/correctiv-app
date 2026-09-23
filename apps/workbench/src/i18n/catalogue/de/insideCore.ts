@@ -19,7 +19,7 @@
  * **Two figures here are second copies of a figure a check holds.**
  * `test/diagrams.test.ts` counts `.ts` and `.tsx` under `packages/app-core/src`
  * and counts the members of `CorePlatform`, and it reads both out of the
- * drawing's own source rather than out of this file. So "58 TypeScript-Dateien"
+ * drawing's own source rather than out of this file. So "59 TypeScript-Dateien"
  * and "alle fünf Ports" have to be moved by hand when the English moves.
  *
  * "Slice" and "Store" are Redux Toolkit's own words and stay, as they do in the
@@ -28,15 +28,15 @@
 export const insideCore: Record<string, string> = {
   'insideCore.title': 'Innen im Core',
   'insideCore.lede':
-    '58 TypeScript-Dateien in sieben Schichten. Importe zeigen den Stapel hinunter, die Verträge liegen unten, und darunter liegt eine Linie, die nichts im Paket überquert.',
+    '59 TypeScript-Dateien in sieben Schichten. Importe zeigen den Stapel hinunter, die Verträge liegen unten, und darunter liegt eine Linie, die nichts im Paket überquert.',
 
   'insideCore.svg.title':
     'Innen in packages/app-core: stores über articles und media, über services und data, über lib, über ports und types, mit einer harten Grenze darunter und den Plattform-SDKs auf deren anderer Seite',
 
   'insideCore.imports': 'Importe zeigen den Stapel hinunter',
-  'insideCore.files': '58 TypeScript-Dateien',
+  'insideCore.files': '59 TypeScript-Dateien',
 
-  'insideCore.stores': 'ein Redux-Toolkit-Store, 12 Slices',
+  'insideCore.stores': 'ein Redux-Toolkit-Store, 13 Slices',
   'insideCore.stores.owns':
     'Der Core besitzt die Slices und exportiert <file>createAppStore()</file>.',
   'insideCore.stores.host': 'Der Host konstruiert die Instanz.',
@@ -78,9 +78,9 @@ export const insideCore: Record<string, string> = {
     'Die Ports werden hier deklariert und außerhalb implementiert; die SDKs unter der roten Linie sind Sache des Hosts, und ein Test hält sie draußen. Der Root-Entry exportiert nur die Ports, alles andere erreicht ein Host über seinen Pfad.',
 
   'insideCore.alt.lede':
-    '<code>packages/app-core</code>, 58 TypeScript-Dateien. Importe zeigen den Stapel hinunter. Die Schichten von oben:',
+    '<code>packages/app-core</code>, 59 TypeScript-Dateien. Importe zeigen den Stapel hinunter. Die Schichten von oben:',
   'insideCore.alt.stores':
-    '<term>stores</term>: ein Redux-Toolkit-Store mit 12 Slices. Der Core besitzt die Slices und exportiert <code>createAppStore()</code>; der Host konstruiert die Instanz.',
+    '<term>stores</term>: ein Redux-Toolkit-Store mit 13 Slices. Der Core besitzt die Slices und exportiert <code>createAppStore()</code>; der Host konstruiert die Instanz.',
   'insideCore.alt.articles':
     '<term>articles</term>: das Article-Modell und seine Ladekaskade. <code>articles/extract</code> hält zwei Backends, eines über Strings und eines über das DOM, hinter einem Typ <code>ArticleExtractor</code>. Daneben <term>media</term>, mit einer Regel: Es spielt nur ein Medium zur selben Zeit.',
   'insideCore.alt.services':
