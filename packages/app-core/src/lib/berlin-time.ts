@@ -72,6 +72,25 @@ function offset(instant: Instant): number {
 
 const pad = (value: number, width = 2): string => String(value).padStart(width, '0');
 
+/**
+ * The minute of the Berlin day as the day's own fold reads it: the wall clock, except that
+ * it never runs backwards.
+ *
+ * On the autumn day the wall clock shows 02:00 to 02:59 twice. Read naively, a moment of
+ * the day at 02:30 would be applied at the first 02:30, taken back at the second 02:00 and
+ * applied again at the second 02:30, and the screen would flicker for half an hour. ADR
+ * 0059 §6 promises the opposite: a minute that occurs twice applies an idempotent change
+ * twice, and nothing is undone in between. So for the repeated hour this answers the
+ * latest minute the day has already shown, 02:59, until the wall clock passes 03:00 again.
+ * An edition does not need this, because it is read on the instant axis.
+ */
+export function berlinDayMinute(instant: Instant): number {
+  const back = lastSundayAtOne(new Date(instant).getUTCFullYear(), 9);
+  if (instant >= back && instant < back + HOUR) return 2 * 60 + 59;
+  const shifted = new Date(instant + offset(instant));
+  return shifted.getUTCHours() * 60 + shifted.getUTCMinutes();
+}
+
 /** A `Date` read through its UTC fields, as a Berlin date. */
 function dateOf(shifted: Date): BerlinDate {
   return `${pad(shifted.getUTCFullYear(), 4)}-${pad(shifted.getUTCMonth() + 1)}-${pad(shifted.getUTCDate())}`;

@@ -325,10 +325,49 @@ describe('nextChangeAfter, which is what a host sets a timer to', () => {
       ],
     });
     const after = (instant: number) => nextChangeAfter(planned, instant);
-    expect(after(BERLIN('2026-09-20', 9))).toBe(BERLIN('2026-09-27', 18));
+    // A week out, the next wake-up is tonight's midnight, and the start is reached by
+    // waking once a day; see the test below for why.
+    expect(after(BERLIN('2026-09-20', 9))).toBe(BERLIN('2026-09-21', 0));
+    expect(after(BERLIN('2026-09-27', 9))).toBe(BERLIN('2026-09-27', 18));
     expect(after(BERLIN('2026-09-27', 18))).toBe(BERLIN('2026-09-27', 23));
-    expect(after(BERLIN('2026-09-27', 23))).toBe(BERLIN('2026-09-28', 2));
-    expect(after(BERLIN('2026-09-28', 2))).toBeNull();
+    expect(after(BERLIN('2026-09-27', 23))).toBe(BERLIN('2026-09-28', 0));
+    expect(after(BERLIN('2026-09-28', 0))).toBe(BERLIN('2026-09-28', 2));
+    expect(after(BERLIN('2026-09-28', 2))).toBe(BERLIN('2026-09-29', 0));
+  });
+
+  /**
+   * Found by a cold review of #247 and measured: a document with no day moments and an
+   * edition on Christmas Eve, asked on 2026-09-23, answered with the edition's start, which
+   * is 7,974,000,000 ms away. `setTimeout` holds at most 2^31 − 1 ms and fires at once past
+   * that, so the web export re-rendered in a loop. Berlin midnight is always a candidate now,
+   * which keeps every answer within a day and a bit of the question.
+   */
+  it('never answers further out than the next Berlin midnight', () => {
+    const planned = read({
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'a', module: 'x' }],
+      editions: [{ id: 'weihnachten', from: '2026-12-24T00:00', until: '2026-12-27T00:00' }],
+    });
+    const asked = BERLIN('2026-09-23', 12);
+    const next = nextChangeAfter(planned, asked)!;
+    expect(next).toBe(BERLIN('2026-09-24', 0));
+    expect(next - asked).toBeLessThan(2 ** 31 - 1);
+  });
+
+  /**
+   * The autumn's repeated hour, also from that review: a day moment at 02:30 on 2026-10-25
+   * happens at the first 02:30, and the second 02:00 to 02:59 must neither undo it nor wait
+   * for it again (ADR 0059 §6, "applies an idempotent change twice").
+   */
+  it('does not wait again for a day moment the repeated autumn hour has already passed', () => {
+    const night = read({
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'a', module: 'x' }],
+      moments: [{ at: '02:30', changes: [{ id: 'a', hidden: true }] }],
+    });
+    expect(nextChangeAfter(night, Date.UTC(2026, 9, 25, 0, 20))).toBe(Date.UTC(2026, 9, 25, 0, 30));
+    // 01:10Z is the second 02:10: the moment is behind, so the next change is midnight.
+    expect(nextChangeAfter(night, Date.UTC(2026, 9, 25, 1, 10))).toBe(BERLIN('2026-10-26', 0));
   });
 
   /** A moment of an edition that would next happen after the edition ends is no wake-up. */
@@ -933,6 +972,30 @@ describe('an edition, as the fold reads it', () => {
    * 02:30 names a minute that does not exist and happens at the next one there is; on the
    * autumn day the edition is on the instant axis, so the repeated hour does not undo it.
    */
+  /**
+   * The day's own fold in the repeated hour, from the cold review of #247: it used to show a
+   * 02:30 moment at the first 02:40, take it back at the second 02:10 and show it again at
+   * the second 02:30.
+   */
+  it('keeps a day moment applied through the repeated autumn hour', () => {
+    const night = read({
+      ...day,
+      moments: [{ at: '02:30', changes: [{ id: 'briefing', hidden: true }] }],
+    });
+    expect(shown(night, Date.UTC(2026, 9, 25, 0, 20))).toContain('briefing');
+    for (const instant of [
+      Date.UTC(2026, 9, 25, 0, 40),
+      Date.UTC(2026, 9, 25, 1, 10),
+      Date.UTC(2026, 9, 25, 1, 30),
+      Date.UTC(2026, 9, 25, 2, 10),
+    ]) {
+      expect({ instant, shown: shown(night, instant).includes('briefing') }).toEqual({
+        instant,
+        shown: false,
+      });
+    }
+  });
+
   it('passes the spring gap and applies what fell in it at the next minute there is', () => {
     const layout = planned({
       id: 'nacht',
@@ -1038,6 +1101,16 @@ describe('parseHomeLayout, on the editions', () => {
       'an end that is its start, which `until` being exclusive makes empty',
       { id: 'w', from: span.from, until: span.from },
       { code: 'edition-span-empty', context: { id: 'w', from: span.from, until: span.from } },
+    ],
+    [
+      'a start the spring change skips, which Berlin’s clock never shows',
+      { id: 'w', from: '2026-03-29T02:30', until: '2026-03-29T06:00' },
+      { code: 'edition-span-in-gap', context: { id: 'w', from: '2026-03-29T02:30' } },
+    ],
+    [
+      'an end in the same gap',
+      { id: 'w', from: '2026-03-28T20:00', until: '2026-03-29T02:00' },
+      { code: 'edition-span-in-gap', context: { id: 'w', until: '2026-03-29T02:00' } },
     ],
     [
       'changes that are not a list',

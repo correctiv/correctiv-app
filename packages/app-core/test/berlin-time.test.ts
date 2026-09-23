@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addDays,
+  berlinDayMinute,
   berlinInstant,
   berlinWallClock,
   formatBerlinDateTime,
@@ -141,6 +142,30 @@ describe('the two days a year the wall clock is not a function of the instant', 
     expect(berlinInstant('2026-10-25', 2 * 60 + 30)).toBe(first);
     // 03:00 exists once, after the repeat.
     expect(berlinInstant('2026-10-25', 3 * 60)).toBe(back + HOUR);
+  });
+
+  /**
+   * The day's fold reads this rather than the wall clock, so that the repeated hour undoes
+   * nothing. It is the wall clock everywhere else, and never runs backwards within a day.
+   */
+  it('reads the day’s minute as the wall clock, except that it never runs backwards', () => {
+    const departures: number[] = [];
+    for (let instant = FROM; instant < UNTIL; instant += HOUR / 4) {
+      const wall = berlinWallClock(instant).minute;
+      const read = berlinDayMinute(instant);
+      if (read !== wall) departures.push(read);
+    }
+    // Six autumn days, four quarter hours of the repeated hour each, all reading 02:59.
+    expect(departures).toEqual(Array.from({ length: 6 * 4 }, () => 2 * 60 + 59));
+    const back = Date.UTC(2026, 9, 25, 1);
+    let last = -1;
+    for (let instant = Date.UTC(2026, 9, 24, 22); instant < back + 3 * HOUR; instant += 60_000) {
+      const read = berlinDayMinute(instant);
+      expect(read).toBeGreaterThanOrEqual(last);
+      last = read;
+    }
+    expect(berlinDayMinute(back + 30 * 60_000)).toBe(2 * 60 + 59);
+    expect(berlinDayMinute(back + HOUR)).toBe(3 * 60);
   });
 
   it('gives the two days their true lengths, 23 and 25 hours', () => {

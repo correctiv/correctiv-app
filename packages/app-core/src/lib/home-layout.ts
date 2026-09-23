@@ -74,6 +74,7 @@ import homeLayoutDocument from '../data/home.layout.json';
 import { platform } from '../ports';
 import {
   addDays,
+  berlinDayMinute,
   berlinInstant,
   berlinWallClock,
   parseBerlinDateTime,
@@ -302,6 +303,7 @@ export type LayoutProblemCode =
   | 'edition-until-missing'
   | 'edition-from-invalid'
   | 'edition-until-invalid'
+  | 'edition-span-in-gap'
   | 'edition-span-empty'
   | 'edition-changes-invalid';
 
@@ -359,9 +361,12 @@ export function formatTimeOfDay(minute: MinuteOfDay): string {
  * It read the device's local day until ADR 0059 §6, and no record said so; the code did.
  * Berlin now, for the day's moments and an edition's alike, so that one document has one
  * clock and `at` means the same thing in both places it is written.
+ *
+ * It never runs backwards within a day, which only matters in the autumn's repeated hour
+ * and is `berlinDayMinute`'s to explain.
  */
 export function minuteOfDay(now: number | Date): MinuteOfDay {
-  return berlinWallClock(new Date(now).getTime()).minute;
+  return berlinDayMinute(new Date(now).getTime());
 }
 
 /**
@@ -836,6 +841,22 @@ function parseEdition(
   }
   const start = berlinInstant(opens.date, opens.minute)!;
   const end = berlinInstant(closes.date, closes.minute)!;
+  /*
+   * A wall time the spring change skips. `berlinInstant` reads it as the minute the clock
+   * jumps to, which is right for a moment (it is passed and applied at the next minute) and
+   * wrong for a span somebody typed: both ends in the gap read as one instant and the span
+   * was reported empty, which said nothing about why. So it is refused with its own code.
+   */
+  for (const [key, value, clock, instant] of [
+    ['from', from, opens, start],
+    ['until', until, closes, end],
+  ] as const) {
+    const read = berlinWallClock(instant);
+    if (read.date !== clock.date || read.minute !== clock.minute) {
+      problems.push({ code: 'edition-span-in-gap', context: { id, [key]: value as string } });
+      return null;
+    }
+  }
   if (end <= start) {
     // `until` is exclusive, so an edition ending where it starts is never in the fold, and
     // one ending before it is a typo nobody would find by looking at the phone.
@@ -1137,24 +1158,28 @@ export function applyAll(
  * and Berlin's clock changes are answered once, in `berlin-time.ts`, rather than in the
  * host as well.
  *
- * What counts: the day's next moment today, and the next Berlin midnight, where the day
- * starts again from its sections; every edition's start and end; and the next time each
- * active edition's moments happen before it ends. A wake-up that turns out to change
- * nothing costs one render. A missed one costs a screen that disagrees with the document
- * until somebody touches it, so this errs towards the first.
+ * What counts: the day's next moment today; every edition's start and end; the next time
+ * each active edition's moments happen before it ends; and the next Berlin midnight,
+ * whenever the document has anything that changes at all. Midnight is where the day starts
+ * again from its sections, and it is also what keeps the answer within a day of the
+ * question: an edition three months out would otherwise be a wait longer than a host's
+ * timer can hold. A wake-up that turns out to change nothing costs one render. A missed one
+ * costs a screen that disagrees with the document until somebody touches it, so this errs
+ * towards the first.
+ *
+ * The day's moments are compared against `minuteOfDay`, the reading the fold uses, so in
+ * the autumn's repeated hour a moment that has already happened is not waited for again.
  */
 export function nextChangeAfter(layout: HomeLayout, instant: Instant): Instant | null {
-  const { date, minute } = berlinWallClock(instant);
+  const { date } = berlinWallClock(instant);
+  const minute = minuteOfDay(instant);
   const candidates: Instant[] = [];
 
-  if (layout.moments.length > 0) {
-    for (const moment of layout.moments) {
-      if (moment.minute <= minute) continue;
-      const at = berlinInstant(date, moment.minute)!;
-      // In the hour the autumn change repeats, a moment later in the wall clock can have
-      // happened already as an instant; it happens again an hour after its first time.
-      candidates.push(at > instant ? at : at + 3_600_000);
-    }
+  for (const moment of layout.moments) {
+    if (moment.minute <= minute) continue;
+    candidates.push(berlinInstant(date, moment.minute)!);
+  }
+  if (layout.moments.length > 0 || layout.editions.length > 0) {
     candidates.push(berlinInstant(addDays(date, 1), 0)!);
   }
 
