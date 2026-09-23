@@ -349,7 +349,11 @@ describe('one handle for the pointer, and the arrows for the keyboard', () => {
      * they sit inside a row, absolutely positioned and translated, so mounting and
      * unmounting them mid-carry changes no height at all.
      */
-    const list = PANEL.slice(PANEL.indexOf('<ol'), PANEL.indexOf('>', PANEL.indexOf('<ol')));
+    // The block list's own `<ol>`, found by its ref: the submit steps are an `<ol>` too,
+    // and they are spaced on purpose.
+    const start = PANEL.search(/<ol\s+ref=\{list\}/);
+    expect(start).toBeGreaterThan(-1);
+    const list = PANEL.slice(start, PANEL.indexOf('>', start));
     expect(list).toMatch(/ref=\{list\}/);
     expect(list).not.toMatch(/\bgap-|\bspace-y-/);
   });

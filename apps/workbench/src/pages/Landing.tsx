@@ -7,6 +7,7 @@ import { ageInWords } from '../lib/measured';
 import docsModule from 'virtual:docs';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Badge } from '../ui/kit/badge';
+import { InfoTip } from '../ui/kit/info-tip';
 import { cn } from '../lib/cn';
 import { href } from '../router';
 import { Page } from '../ui/Page';
@@ -51,14 +52,20 @@ const COPY = defineMessages({
     id: 'landing.status.heading',
     defaultMessage: 'What the app reads',
     description:
-      'The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the paragraph beside it explains.',
+      'The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the ⓘ beside it explains.',
   },
-  statusNote: {
-    id: 'landing.status.note',
-    defaultMessage:
-      'One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {age}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.',
+  statusWhen: {
+    id: 'landing.status.when',
+    defaultMessage: 'From a run against the live sources on {measured}, {age}.',
     description:
-      'The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over. “The board” is /sources.',
+      'The line under the heading over the four figures, always drawn: how fresh they are. {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over.',
+  },
+  statusWhy: {
+    id: 'landing.status.why',
+    defaultMessage:
+      'One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. A weekly job re-takes the figures. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.',
+    description:
+      'Behind the ⓘ beside the heading over the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here. “The board” is /sources.',
   },
 
   figureLive: {
@@ -339,19 +346,24 @@ export function Landing() {
               two words a line. */}
           <div className="grid gap-m lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-xl">
             <div>
-              <h2
-                id="status-heading"
-                className="text-s font-semibold uppercase tracking-wider text-on-canvas-muted"
-              >
-                {intl.formatMessage(COPY.statusHeading)}
-              </h2>
+              <div className="flex items-center gap-xs">
+                <h2
+                  id="status-heading"
+                  className="text-s font-semibold uppercase tracking-wider text-on-canvas-muted"
+                >
+                  {intl.formatMessage(COPY.statusHeading)}
+                </h2>
+                <InfoTip about={intl.formatMessage(COPY.statusHeading)}>
+                  <p>{intl.formatMessage(COPY.statusWhy, { feeds: FEEDS.length })}</p>
+                </InfoTip>
+              </div>
+              {/* The day stays on the page: it is how fresh the four figures are.
+                  The age goes in as a value out of `lib/measured.ts`, which is the
+                  one place this site says it, rather than as a second copy of the
+                  same plural. It is still a hole in this sentence, so German can
+                  put it where German wants it. */}
               <p className="mt-xs text-m leading-relaxed text-on-canvas-muted">
-                {/* The age goes in as a value out of `lib/measured.ts`, which is
-                    the one place this site says it, rather than as a second copy
-                    of the same plural. It is still a hole in this sentence, so
-                    German can put it where German wants it. */}
-                {intl.formatMessage(COPY.statusNote, {
-                  feeds: FEEDS.length,
+                {intl.formatMessage(COPY.statusWhen, {
                   measured: MEASURED_ON,
                   age: ageInWords(intl, MEASURED_ON),
                 })}

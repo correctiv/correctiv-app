@@ -6,6 +6,7 @@ import type { StringEntry } from 'virtual:strings';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Slot } from '../shell/slots';
 import { Badge } from '../ui/kit/badge';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Segmented } from '../ui/kit/segmented';
 import { Filter, Source } from '../ui/Lookup';
 import { Page } from '../ui/Page';
@@ -49,16 +50,23 @@ const COPY = defineMessages({
   lede: {
     id: 'strings.lede',
     defaultMessage:
-      "Every string the app or this site has a descriptor for, joined from the extraction and the catalogues. The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+      'Every string the app or this site has a descriptor for, joined from the extraction and the catalogues.',
     description:
-      'The first paragraph under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder.',
+      'The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is strings.lede.more, behind the ⓘ at its end.',
+  },
+  ledeMore: {
+    id: 'strings.lede.more',
+    defaultMessage:
+      "The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+    description:
+      'The first paragraph behind the ⓘ at the end of the sentence under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder.',
   },
   ledeProgress: {
     id: 'strings.lede.progress',
     defaultMessage:
       'The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is nearly so: every page of this site is here, and what is not is the six architecture drawings, which are labels in an SVG and want a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.',
     description:
-      'The second paragraph under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository.',
+      'The second paragraph behind the ⓘ under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository.',
   },
 
   filter: {
@@ -262,10 +270,11 @@ export function Strings() {
                 reads react-intl's own context, which the app's provider shadows
                 inside an `AppHost`. `test/i18n.test.ts` fails on one, and
                 `i18n/Localisation.tsx` carries the measurement. */}
-            {intl.formatMessage(COPY.lede, { code })}
-          </p>
-          <p className="mt-2xs max-w-content text-m leading-relaxed text-on-canvas-muted">
-            {/* Said plainly, because the first version of this paragraph said "two
+            {intl.formatMessage(COPY.lede)}{' '}
+            <InfoTip about={intl.formatMessage(COPY.title)}>
+              <p>{intl.formatMessage(COPY.ledeMore, { code })}</p>
+              <p>
+                {/* Said plainly, because the first version of this paragraph said "two
                 strings are missing" while the sentence above it had grown to cover
                 both surfaces. For the app that was true; for this site it was wrong
                 by two orders of magnitude. It has been wrong in the other direction
@@ -273,7 +282,9 @@ export function Strings() {
                 not extracted, which stopped being true the moment the heading
                 became `strings.title` above. Both mistakes are the same one, a
                 sentence that counts, so this one names no number. */}
-            {intl.formatMessage(COPY.ledeProgress, { code })}
+                {intl.formatMessage(COPY.ledeProgress, { code })}
+              </p>
+            </InfoTip>
           </p>
 
           {groups.length === 0 && (

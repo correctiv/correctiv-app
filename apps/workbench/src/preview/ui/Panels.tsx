@@ -24,6 +24,7 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
+import { InfoTip } from '../../ui/kit/info-tip';
 import { Segmented } from '../../ui/kit/segmented';
 
 /**
@@ -228,7 +229,7 @@ const COPY = defineMessages({
   textNote: {
     id: 'tools.tokens.textNote',
     defaultMessage: 'Text is chased by value, so it is a best effort rather than a rule.',
-    description: 'The caveat under that checkbox.',
+    description: 'The caveat behind the ⓘ beside that checkbox.',
   },
 
   checkOverflow: {
@@ -977,19 +978,25 @@ export function Tokens({ tools }: Props) {
         </span>
       </div>
 
-      <label className="flex items-center gap-xs text-m text-on-canvas">
-        <input
-          type="checkbox"
-          checked={tokens.textPass}
-          onChange={(e) => tokens.setTextPass(e.target.checked)}
-          className="size-[0.875rem] shrink-0 accent-accent"
-        />
-        {intl.formatMessage(COPY.textToo)}
-      </label>
-      {/* The caveat, and it is one clause because it is one fact: text and icons
-          are resolved in JavaScript and land in inline styles, so nothing can
-          follow the variable for them and this chases the old value instead. */}
-      <p className={NOTE}>{intl.formatMessage(COPY.textNote)}</p>
+      <div className="flex items-center gap-xs">
+        <label className="flex items-center gap-xs text-m text-on-canvas">
+          <input
+            type="checkbox"
+            checked={tokens.textPass}
+            onChange={(e) => tokens.setTextPass(e.target.checked)}
+            className="size-[0.875rem] shrink-0 accent-accent"
+          />
+          {intl.formatMessage(COPY.textToo)}
+        </label>
+        {/* The caveat, and it is one clause because it is one fact: text and icons
+            are resolved in JavaScript and land in inline styles, so nothing can
+            follow the variable for them and this chases the old value instead.
+            Beside the checkbox and behind the ⓘ, because it qualifies the result
+            rather than warning of a harm. */}
+        <InfoTip about={intl.formatMessage(COPY.textToo)}>
+          <p>{intl.formatMessage(COPY.textNote)}</p>
+        </InfoTip>
+      </div>
     </>
   );
 }

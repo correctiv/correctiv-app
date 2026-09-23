@@ -28,7 +28,9 @@
 export const components: Record<string, string> = {
   'components.title': 'Komponenten',
   'components.lede':
-    'Jede Komponente, aus der die App ihre Ansichten baut, aus <code>{root}</code> gelesen, mit ihren Props, deren Typen und dem Prosatext, den die Quelle mitbringt. Jede Karte zeichnet ihre Komponente, aus dem Quelltext der App, im React-Baum dieser Site; eine Karte, die nicht die ganze Komponente fasst, sagt das an ihrer Unterkante. Die eigene Seite einer Komponente hat jedes Exemplar vollständig, daneben das Bundle der App und eine Gerätegröße. Die Exporte des Cores sind ein eigener Abschnitt: <reference>Referenz</reference>, eine Bibliothek, die auch als solche importiert wird.',
+    'Jede Komponente, aus der die App ihre Ansichten baut, aus <code>{root}</code> gelesen, mit ihren Props, deren Typen und dem Prosatext, den die Quelle mitbringt.',
+  'components.lede.more':
+    'Jede Karte zeichnet ihre Komponente, aus dem Quelltext der App, im React-Baum dieser Site; eine Karte, die nicht die ganze Komponente fasst, sagt das an ihrer Unterkante. Die eigene Seite einer Komponente hat jedes Exemplar vollständig, daneben das Bundle der App und eine Gerätegröße. Die Exporte des Cores sind ein eigener Abschnitt: <reference>Referenz</reference>, eine Bibliothek, die auch als solche importiert wird.',
 
   'components.prose':
     'Der Satz unter jedem Namen ist der Doc-Kommentar der Komponente selbst, aus dem Quelltext der App, und bleibt englisch: ein Kommentar ist für die geschrieben, die den Code lesen.',

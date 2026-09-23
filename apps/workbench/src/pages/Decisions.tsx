@@ -14,6 +14,7 @@ import { href } from '../router';
 import { Slot } from '../shell/slots';
 import { Badge } from '../ui/kit/badge';
 import { Button } from '../ui/kit/button';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Page } from '../ui/Page';
 import { Toc } from '../ui/Toc';
 import { useSections } from '../ui/useSections';
@@ -34,7 +35,8 @@ const CHIP_LINK =
   'font-mono tabular-nums hover:border-accent hover:text-on-canvas-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 const SECTION_HEAD = 'text-headline-l font-semibold tracking-tight text-on-canvas';
-const SECTION_LEDE = 'mt-2xs max-w-content text-m text-on-canvas-muted';
+/** A section's heading and the ⓘ beside it, which holds what used to be its lede. */
+const HEAD_ROW = 'flex items-center gap-xs';
 
 /**
  * Everything this board says, in ENGLISH; the German that ships is
@@ -81,14 +83,14 @@ const COPY = defineMessages({
     id: 'decisions.rule.label',
     defaultMessage: 'How an expired claim is marked',
     description:
-      'The accessible name of the note under the lede, which is a block a screen reader announces as a group. It is never drawn.',
+      'The visible label of the ⓘ under the lede, which opens the four paragraphs of the rule and its counts.',
   },
   ruleNever: {
     id: 'decisions.rule.never',
     defaultMessage:
       '<strong>A record is never rewritten to look right in hindsight.</strong> A claim a later decision made <em>false</em> is struck through where it stands, with one clause saying what voided it and a link to the record that did. The argument around it is left intact, because the reasoning is the part worth keeping.',
     description:
-      'The first paragraph of that note, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on.',
+      'The first paragraph behind that ⓘ, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on.',
   },
   ruleStruck: {
     id: 'decisions.rule.struck',
@@ -365,6 +367,12 @@ const COPY = defineMessages({
       'The link out of the row’s detail to the record itself, rendered on this site. {number} is the record’s four-digit number. “ADR” is what this repository calls these documents and is left in its own spelling.',
   },
 
+  footerLabel: {
+    id: 'decisions.footer.label',
+    defaultMessage: 'Where this board comes from',
+    description:
+      'The footer’s one visible line, beside an ⓘ that opens the two paragraphs below. sources.footer.label reads the same in English on the sources board, which is a different board built out of different files.',
+  },
   footerBuild: {
     id: 'decisions.footer.build',
     defaultMessage:
@@ -816,23 +824,25 @@ export function Decisions() {
               {intl.formatMessage(COPY.lede, { em, architecture })}
             </p>
 
-            <div
-              role="note"
-              aria-label={intl.formatMessage(COPY.ruleLabel)}
-              className="mt-m max-w-content space-y-xs rounded-md border border-stroke border-l-2 border-l-accent bg-surface p-sm text-m text-on-canvas-muted"
-            >
-              <p>{intl.formatMessage(COPY.ruleNever, { strong, em })}</p>
-              <p>
-                {intl.formatMessage(COPY.ruleStruck, {
-                  struck: STRUCK,
-                  records: RECORDS.length,
-                  f,
-                })}
-              </p>
-              <p>{intl.formatMessage(COPY.ruleUnattributed, { count: UNATTRIBUTED, f })}</p>
-              {CLAUSELESS > 0 && (
-                <p>{intl.formatMessage(COPY.ruleClauseless, { count: CLAUSELESS, f })}</p>
-              )}
+            {/*
+              The rule and its counts, behind one ⓘ under the lede. They are how to read
+              a strike, and a strike on the board already says what voided it.
+            */}
+            <div className="mt-s">
+              <InfoTip about={intl.formatMessage(COPY.ruleLabel)} showLabel>
+                <p>{intl.formatMessage(COPY.ruleNever, { strong, em })}</p>
+                <p>
+                  {intl.formatMessage(COPY.ruleStruck, {
+                    struck: STRUCK,
+                    records: RECORDS.length,
+                    f,
+                  })}
+                </p>
+                <p>{intl.formatMessage(COPY.ruleUnattributed, { count: UNATTRIBUTED, f })}</p>
+                {CLAUSELESS > 0 && (
+                  <p>{intl.formatMessage(COPY.ruleClauseless, { count: CLAUSELESS, f })}</p>
+                )}
+              </InfoTip>
             </div>
           </header>
 
@@ -878,21 +888,25 @@ export function Decisions() {
           </fieldset>
 
           <section className="min-w-0" aria-labelledby="h-careful">
-            <h2 id="h-careful" className={SECTION_HEAD}>
-              {intl.formatMessage(COPY.carefulTitle)}
-            </h2>
-            <p className={SECTION_LEDE}>
-              {/* Three counts and not one sentence with "one" typed into it. The
-                  withdrawn record has been the only one for as long as this page
-                  has existed, and a second would have left the sentence saying
-                  otherwise with nothing going red. */}
-              {intl.formatMessage(COPY.carefulLede, {
-                careful: CAREFUL.length,
-                withdrawn: COUNT.withdrawn,
-                rest: CAREFUL.length - COUNT.withdrawn,
-                f,
-              })}
-            </p>
+            <div className={HEAD_ROW}>
+              <h2 id="h-careful" className={SECTION_HEAD}>
+                {intl.formatMessage(COPY.carefulTitle)}
+              </h2>
+              <InfoTip about={intl.formatMessage(COPY.carefulTitle)}>
+                <p>
+                  {/* Three counts and not one sentence with "one" typed into it. The
+                      withdrawn record has been the only one for as long as this page
+                      has existed, and a second would have left the sentence saying
+                      otherwise with nothing going red. */}
+                  {intl.formatMessage(COPY.carefulLede, {
+                    careful: CAREFUL.length,
+                    withdrawn: COUNT.withdrawn,
+                    rest: CAREFUL.length - COUNT.withdrawn,
+                    f,
+                  })}
+                </p>
+              </InfoTip>
+            </div>
 
             <ul className="mt-s grid gap-xs lg:grid-cols-3">
               {CAREFUL.map((record) => (
@@ -937,10 +951,14 @@ export function Decisions() {
           </section>
 
           <section className="min-w-0" aria-labelledby="h-board">
-            <h2 id="h-board" className={SECTION_HEAD}>
-              {intl.formatMessage(COPY.boardTitle)}
-            </h2>
-            <p className={SECTION_LEDE}>{intl.formatMessage(COPY.boardLede)}</p>
+            <div className={HEAD_ROW}>
+              <h2 id="h-board" className={SECTION_HEAD}>
+                {intl.formatMessage(COPY.boardTitle)}
+              </h2>
+              <InfoTip about={intl.formatMessage(COPY.boardTitle)}>
+                <p>{intl.formatMessage(COPY.boardLede)}</p>
+              </InfoTip>
+            </div>
 
             <div className="mt-s flex flex-wrap items-end gap-sm rounded-md border border-stroke bg-surface p-s">
               <div className="min-w-0 flex-1 basis-[16rem]">
@@ -1273,9 +1291,11 @@ export function Decisions() {
             </div>
           </section>
 
-          <footer className="min-w-0 space-y-xs border-t border-stroke pt-sm text-m text-on-canvas-muted">
-            <p className="max-w-content">{intl.formatMessage(COPY.footerBuild, { code })}</p>
-            <p className="max-w-content">{intl.formatMessage(COPY.footerNotes, { notes })}</p>
+          <footer className="min-w-0 border-t border-stroke pt-sm">
+            <InfoTip about={intl.formatMessage(COPY.footerLabel)} showLabel side="top">
+              <p>{intl.formatMessage(COPY.footerBuild, { code })}</p>
+              <p>{intl.formatMessage(COPY.footerNotes, { notes })}</p>
+            </InfoTip>
           </footer>
         </div>
       </Page>

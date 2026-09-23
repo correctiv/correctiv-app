@@ -32,8 +32,9 @@ export const landing: Record<string, string> = {
     'Diese Workbench veröffentlicht die Dokumente des Repositories selbst, unverändert und an Ort und Stelle, und stellt die laufende App daneben.',
 
   'landing.status.heading': 'Was die App liest',
-  'landing.status.note':
-    'Eine Zahl je Eintrag im Manifest, weshalb die Statusübersicht auf mehr kommt: Sie zeichnet die Artikelfamilie als ihre {feeds} Feeds, denn veraltet ist immer ein Feed. Die Zahlen stammen aus einem Lauf gegen die Livequellen vom {measured}, {age}, den ein wöchentlicher Job neu nimmt. Während Sie das hier lesen, aktualisiert sich nichts, denn die Feeds senden keinen CORS-Header, über den ein Browser sie neu nehmen könnte.',
+  'landing.status.when': 'Aus einem Lauf gegen die Livequellen vom {measured}, {age}.',
+  'landing.status.why':
+    'Eine Zahl je Eintrag im Manifest, weshalb die Statusübersicht auf mehr kommt: Sie zeichnet die Artikelfamilie als ihre {feeds} Feeds, denn veraltet ist immer ein Feed. Ein wöchentlicher Job nimmt die Zahlen neu. Während Sie das hier lesen, aktualisiert sich nichts, denn die Feeds senden keinen CORS-Header, über den ein Browser sie neu nehmen könnte.',
 
   'landing.figure.live': 'Livequellen',
   'landing.figure.sample': 'Beispieldatensätze',

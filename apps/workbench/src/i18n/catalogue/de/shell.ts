@@ -80,6 +80,7 @@ export const shell: Record<string, string> = {
   'shell.chrome.showTip': 'Die Leisten einblenden · Esc',
 
   'shell.dialog.close': 'Schließen',
+  'shell.info.about': 'Mehr zu „{topic}“',
 
   // The shell's own few words on the page (`App.tsx`).
   'shell.skip': 'Zum Inhalt springen',

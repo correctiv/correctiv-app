@@ -12,7 +12,7 @@
  * it before translating a row.
  *
  * **Two English fragments land inside German sentences here.** `{age}` in
- * `sources.measured.note` is worked out in the reader's browser by
+ * `sources.measured.when` is worked out in the reader's browser by
  * `src/lib/measured.ts` and comes back in English words, which is why that sentence
  * puts it in brackets, exactly as `settings.build.note` does. `{posts}` and
  * `{newest}` come from `feedFigures()` in the manifest, which answers `every post`,
@@ -97,8 +97,10 @@ export const sources: Record<string, string> = {
     'Für jede Art von Inhalt, die die App zeigt: Sind es Livedaten, sind es Beispieldaten, die für eine noch nicht existierende API einspringen, oder ist es eine gewünschte Funktion, für die es nichts zu lesen gibt.',
 
   'sources.measured.label': 'Wie diese Zahlen erhoben wurden',
-  'sources.measured.note':
-    '<strong>Jede Zahl auf dieser Seite wurde am <f>{measured}</f> gegen die Livequellen gemessen ({age})</strong>, und zwar von <code>apps/workbench/scripts/measure-sources.mjs</code> auf {where}. {answered, plural, one {Geantwortet hat # von} other {Geantwortet haben # von}} {probes, plural, one {# Quelle} other {# Quellen}}, bei {seconds} Sekunden Zeitlimit und {attempts, plural, one {# Versuch} other {# Versuchen}} je Quelle. Der Browser, der diese Seite zeichnet, hat nichts geprüft und kann es auch nicht: Die RSS-Feeds senden keinen CORS-Header, deshalb ist das hier ein Skript und kein Aktualisieren-Knopf.',
+  'sources.measured.when':
+    '<strong>Jede Zahl auf dieser Seite wurde am <f>{measured}</f> gegen die Livequellen gemessen ({age}).</strong>',
+  'sources.measured.how':
+    'Gemessen hat <code>apps/workbench/scripts/measure-sources.mjs</code> auf {where}. {answered, plural, one {Geantwortet hat # von} other {Geantwortet haben # von}} {probes, plural, one {# Quelle} other {# Quellen}}, bei {seconds} Sekunden Zeitlimit und {attempts, plural, one {# Versuch} other {# Versuchen}} je Quelle. Der Browser, der diese Seite zeichnet, hat nichts geprüft und kann es auch nicht: Die RSS-Feeds senden keinen CORS-Header, deshalb ist das hier ein Skript und kein Aktualisieren-Knopf.',
   'sources.measured.stale':
     'Das ist mehr als {days, plural, one {# Tag} other {# Tage}} her, der wöchentliche Lauf, der diese Seite aktuell hält, ist also seit einem Quartal nicht mehr durchgelaufen. Die Beitragszahlen und die Daten der neuesten Beiträge unten haben sich mit hoher Wahrscheinlichkeit verschoben.',
   'sources.measured.silentSome':
@@ -129,7 +131,8 @@ export const sources: Record<string, string> = {
 
   'sources.gaps.title': 'Angebunden, aber ungenutzt',
   'sources.gaps.lede':
-    '{count, plural, one {# Quelle ist} other {# Quellen sind}} live und erreichbar, und die App liest von jeder nur einen Bruchteil. Das ist weder eine kaputte noch eine fehlende Quelle. Es ist eine Entscheidung, die niemand getroffen hat. Die gefüllten Punkte sind das, was die App zeigt.',
+    '{count, plural, one {# Quelle ist} other {# Quellen sind}} live und erreichbar, und die App liest von jeder nur einen Bruchteil. Das ist weder eine kaputte noch eine fehlende Quelle. Es ist eine Entscheidung, die niemand getroffen hat.',
+  'sources.gaps.legend': 'Die gefüllten Punkte sind das, was die App zeigt.',
   'sources.gap.used': '<big>{used}</big> von <f>{available}</f> genutzt',
   'sources.gap.unknown': 'unbekannt',
 
@@ -161,6 +164,7 @@ export const sources: Record<string, string> = {
   'sources.questions.lede':
     'Diese Seite ist dafür da, dass diese Fragen beantwortet werden. Jede wird von einer Zeile oben aufgeworfen, und jede Zeile trägt ihre Frage als F-Chip.',
 
+  'sources.footer.label': 'Woher diese Übersicht kommt',
   'sources.footer.files':
     'Zwei Dateien, und genau darin liegt der Sinn. Jede Zeile, jeder Zustand und jeder Satz oben wird aus <code>apps/workbench/content/sources.manifest.ts</code> gelesen, die ein Test gegen das Datenverzeichnis des Core prüft: Das ist die Argumentation, und sie ist von Hand geschrieben. Jede Zahl, jedes Datum und jede Hörerzahl wird aus <code>apps/workbench/content/sources.measured.ts</code> gelesen, die generiert ist und nicht bearbeitet werden darf.',
   'sources.footer.remeasure':
