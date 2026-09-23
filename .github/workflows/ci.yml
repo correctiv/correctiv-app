@@ -219,6 +219,18 @@ jobs:
             echo "::error::the workbench bundle carries none of the repository's documents."
             exit 1
           }
+          # The Content-Security-Policy is written into the page by a Vite plugin
+          # (apps/workbench/plugin/policy.ts), and a plugin dropped from
+          # vite.config.ts fails no test: the site builds and renders the same,
+          # without the one thing that stops a document's markup from running
+          # script. 404.html is a copy made after the build, and it is the page
+          # Pages serves for every deep route, so both are read.
+          for page in index 404; do
+            grep -q 'http-equiv="Content-Security-Policy"' "apps/workbench/dist/$page.html" || {
+              echo "::error::apps/workbench/dist/$page.html carries no Content-Security-Policy — is contentSecurityPolicy() still in vite.config.ts?"
+              exit 1
+            }
+          done
           echo "workbench OK"
 
       # And the step above is not enough, which is what issue #160 cost. Grepping

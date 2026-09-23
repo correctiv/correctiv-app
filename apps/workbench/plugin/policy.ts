@@ -32,11 +32,18 @@ import type { Plugin } from 'vite';
  *    its CDNs, PeerTube, the podcast and radio hosts. The list of content hosts
  *    is the content's, not this file's, and a host missing from it would be a
  *    blank card nobody traces back here. None of the three can execute anything.
- *  - `frame-src 'self' https:`. `'self'` is the device frame at `/app/`, which
- *    has to be this origin for the inspector to reach into it (AGENTS.md). The
- *    rest is the video embed the app's `VideoFrame` draws, which lives on
- *    whichever host the content names. A cross-origin frame cannot touch this
- *    page, and the one frame that would share it, `srcdoc`, inherits this policy.
+ *
+ * **`frame-src` is narrow on purpose**, because a frame is the one thing a
+ * document could smuggle in that the directive above would not stop: an
+ * `<iframe>` from any https host, laid over the whole page on a CORRECTIV
+ * address, needs no script of this page's. So it names two sources. `'self'` is
+ * the device frame at `/app/`, which has to be this origin for the inspector to
+ * reach into it (AGENTS.md). `https://www.youtube-nocookie.com` is the only host
+ * the app's `VideoFrame` is ever handed: `app/video.tsx` builds the address from
+ * a YouTube id, and PeerTube plays through `PeertubeStage` rather than in a frame.
+ * The reader's `srcdoc` document needs no entry and inherits this policy. A
+ * second embed host in the app is a line here, and the component pages are where
+ * its absence would show as an empty box.
  *
  * **What a `<meta>` cannot do.** GitHub Pages sends no header this repository
  * controls, so the policy is in the document, and three directives are ignored
@@ -44,6 +51,14 @@ import type { Plugin } from 'vite';
  * site can still be framed by another page, and a violation is reported only to
  * the console of whoever sees it. Neither is written below, because a directive
  * the browser ignores reads as protection it is not.
+ *
+ * **What no policy covers.** A `<meta http-equiv="refresh">` navigates the page
+ * and no directive governs it, which is why the check refuses `meta` outright.
+ * And this is the workbench's policy, in the workbench's `index.html`: the app's
+ * export at `/app/` is a document of its own on the same origin and carries none.
+ * It renders no Markdown and no doc comment, so what this file is about does not
+ * reach it, but "the site runs no injected script" is a claim about these pages
+ * and not about that one.
  */
 export const CONTENT_SECURITY_POLICY: readonly string[] = [
   "default-src 'self'",
@@ -53,7 +68,7 @@ export const CONTENT_SECURITY_POLICY: readonly string[] = [
   "font-src 'self' data:",
   "media-src 'self' blob: https:",
   "connect-src 'self' https:",
-  "frame-src 'self' https:",
+  "frame-src 'self' https://www.youtube-nocookie.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

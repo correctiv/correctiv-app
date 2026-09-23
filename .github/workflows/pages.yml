@@ -177,6 +177,15 @@ jobs:
           # link like /decisions/0022 resolve on a host that cannot rewrite.
           test -f site/404.html || { echo "::error::site/404.html is missing — every workbench deep link would 404."; exit 1; }
 
+          # Both workbench pages carry the Content-Security-Policy, which a Vite
+          # plugin writes and nothing else would notice missing (ci.yml says why).
+          for page in index 404; do
+            grep -q 'http-equiv="Content-Security-Policy"' "site/$page.html" || {
+              echo "::error::site/$page.html carries no Content-Security-Policy."
+              exit 1
+            }
+          done
+
           # And NO stub named after a live route, which is the other half of the
           # same promise. `/preview.html` and `/workbench` are the two addresses this
           # site has moved, and both are answered by `MOVED` in src/router.tsx after

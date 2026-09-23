@@ -7,79 +7,117 @@
  * `scripts/api.mjs`. Both come from `marked`, which passes raw HTML through
  * untouched, and neither is sanitised, because the input is this repository's own
  * text. This is what holds that argument to something: the policy in `policy.ts`
- * stops script from running in the browser, and this stops script-bearing HTML
- * from reaching the build at all, where a reviewer of prose would not see it.
+ * stops inline script from running in the browser, and this stops script-bearing
+ * HTML from being merged, where a reviewer of prose would not see it.
  *
- * **What it reads.** Every tag in the string, with quoted attribute values kept
- * whole, because `<img title=">" onerror=…>` ends at the second `>` for a browser
- * and at the first for a pattern that ignores quotes. Text between tags is never
- * read: `marked` escapes a `<` in prose and in code, so `` `<iframe>` `` in a
- * document arrives as `&lt;iframe&gt;` and is words about an iframe, not one.
+ * **It parses, with parse5, and does not match.** The first version matched tags
+ * with regular expressions, and a cold review broke it four ways in an afternoon:
+ * a stray quote that ended the scan while the browser read on, a quote the
+ * pattern thought was open that hid the elements after it, a no-break space the
+ * pattern counted as whitespace and the browser does not, and a `</style>` inside
+ * an attribute that the browser honours. Each one is a place where the pattern
+ * and the HTML tokenizer disagree, and the tokenizer is what the page gets. parse5
+ * IS that tokenizer, written to the specification, so what this reads is the tree
+ * `innerHTML` builds: element names and decoded attribute values, with nothing to
+ * disagree about. The fragment is parsed in a `<div>`, which is what every caller
+ * assigns `innerHTML` to.
+ *
+ * **Parse what the page is given, piece by piece.** `Document.tsx` cuts a document
+ * into several pieces and assigns each separately, so a caller parses each piece
+ * (`src/pages/document-parts.ts` has the cut) rather than the whole string: a
+ * quote left open at the end of one piece would swallow the next into an
+ * attribute value in the whole string, and in the page it is parsed fresh.
  *
  * **What it refuses**, each for what it can do:
  *
- *  - an element that runs or loads a document, or rewrites how the page is read:
- *    `script`, `iframe`, `object`, `embed`, `form`, `meta`, `base`;
- *  - any attribute named `on…`, which is an event handler whatever the element;
+ *  - an element that runs script, loads a document or a plugin, submits, or
+ *    rewrites how the page is read: `script`, `iframe`, `frame`, `frameset`,
+ *    `object`, `embed`, `form`, `meta`, `base`, `link`. `meta` is the one the
+ *    policy cannot back up: `http-equiv="refresh"` navigates the page and no
+ *    directive governs it;
+ *  - `svg` and `math`, whole. Foreign content brings attributes that become URLs
+ *    indirectly, `<animate attributeName="href" values="…">` among them, which no
+ *    reading of one attribute at a time can follow. No document uses either; a
+ *    drawing is an `<img>`, or one of the site's own components;
+ *  - every attribute whose name begins `on`, which in the parsed tree is exactly
+ *    the set of event handlers and a few harmless names nobody writes;
  *  - `srcdoc`, which is a whole document in an attribute;
- *  - a `javascript:`, `vbscript:` or `data:text/html` URL in ANY attribute, read
- *    after character references are decoded and whitespace is taken out, because
- *    `jav&#x61;script:` and `java script:` are both the same URL to a browser.
+ *  - `javascript:`, `vbscript:` or `data:text/html` ANYWHERE in any attribute
+ *    value, not only at its start, with whitespace and control characters taken
+ *    out first, because a browser ignores them inside a scheme. Anywhere, because
+ *    a value can be a list, and over-refusing a `title` that names the scheme is
+ *    the cheap direction.
  *
- * **What it does not do.** It is a scanner, not a parser, so it is written to
- * over-refuse: an attribute called `one` is an event handler to it. It says
- * nothing about CSS, which cannot run script, and nothing about a link to a
- * hostile page, which is an ordinary link.
+ * **What it does not do.** It says nothing about CSS, which cannot run script,
+ * and nothing about a link to a hostile page, which is an ordinary link.
  */
+import { parseFragment } from 'parse5';
+import type { DefaultTreeAdapterMap } from 'parse5';
 
-const ELEMENTS = new Set(['script', 'iframe', 'object', 'embed', 'form', 'meta', 'base']);
+type Node = DefaultTreeAdapterMap['node'];
+type Element = DefaultTreeAdapterMap['element'];
 
-/** A tag, from `<name` to its `>`, with quoted values kept whole. */
-const TAG = /<([a-zA-Z][^\s/>]*)((?:"[^"]*"|'[^']*'|[^'">])*)>?/g;
+const ELEMENTS = new Set([
+  'script',
+  'iframe',
+  'frame',
+  'frameset',
+  'object',
+  'embed',
+  'form',
+  'meta',
+  'base',
+  'link',
+  'svg',
+  'math',
+]);
 
-/** One attribute inside a tag: a name, and a value in any of the three spellings. */
-const ATTRIBUTE = /([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'=<>`]+))?/g;
+const SCRIPT_URL = /(?:javascript|vbscript):|data:text\/html/;
 
-const SCRIPT_URL = /^(?:javascript|vbscript):|^data:text\/html/;
+/** The element `innerHTML` is assigned to on every page that uses this HTML. */
+const CONTEXT = parseFragment('<div></div>').childNodes[0] as Element;
 
-const NAMED: Record<string, string> = {
-  colon: ':',
-  tab: '\t',
-  newline: '\n',
-  amp: '&',
-  quot: '"',
-  apos: "'",
-  lt: '<',
-  gt: '>',
-};
+function isElement(node: Node): node is Element {
+  return 'tagName' in node;
+}
 
-/** An attribute value as the browser reads it, for the URL test only. */
-function asUrl(raw: string): string {
-  const decoded = raw
-    .replace(/^["']|["']$/g, '')
-    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);?/g, (_, dec) => String.fromCodePoint(Number(dec)))
-    .replace(/&([a-z]+);/gi, (whole, name) => NAMED[name.toLowerCase()] ?? whole);
-  // Space and every control character out, which a browser ignores inside a scheme.
-  return [...decoded]
+/** Every element in a parsed fragment, a `<template>`'s content included. */
+function elements(html: string): Element[] {
+  const out: Element[] = [];
+  const visit = (nodes: Node[]): void => {
+    for (const node of nodes) {
+      if (!isElement(node)) continue;
+      out.push(node);
+      visit(node.childNodes);
+      if ('content' in node && node.content) visit(node.content.childNodes as Node[]);
+    }
+  };
+  // `scriptingEnabled` is parse5's default and a browser's: `<noscript>` is raw
+  // text, as it is in the page. Stated because a parser run the other way would
+  // read noscript content as elements and disagree with the browser.
+  visit(parseFragment(CONTEXT, html, { scriptingEnabled: true }).childNodes as Node[]);
+  return out;
+}
+
+/** A value as a browser compares a scheme: no whitespace, no control characters. */
+function asUrl(value: string): string {
+  return [...value]
     .filter((char) => (char.codePointAt(0) ?? 0) > 0x20)
     .join('')
     .toLowerCase();
 }
 
-/** Every script-bearing construct in `html`, one line each, in the order met. */
+/** Every script-bearing construct in `html`, one line each, in document order. */
 export function scriptBearing(html: string): string[] {
   const found: string[] = [];
-  for (const [, rawName, rest] of html.matchAll(TAG)) {
-    const name = rawName.toLowerCase();
+  for (const element of elements(html)) {
+    const name = element.tagName;
     if (ELEMENTS.has(name)) found.push(`<${name}> element`);
-    for (const [, rawAttribute, value] of rest.matchAll(ATTRIBUTE)) {
-      const attribute = rawAttribute.toLowerCase();
+    for (const { name: attribute, value } of element.attrs) {
       if (attribute.startsWith('on')) found.push(`<${name} ${attribute}=…> event handler`);
       if (attribute === 'srcdoc') found.push(`<${name} srcdoc=…> inline document`);
-      if (value !== undefined && SCRIPT_URL.test(asUrl(value))) {
-        found.push(`<${name} ${attribute}="${asUrl(value).split(':')[0]}:…"> script URL`);
-      }
+      const scheme = SCRIPT_URL.exec(asUrl(value));
+      if (scheme) found.push(`<${name} ${attribute}="…${scheme[0]}…"> script URL`);
     }
   }
   return found;
@@ -114,13 +152,8 @@ export function referenceHtml(value: unknown, where = ''): { where: string; html
   return found;
 }
 
-/** How many tags and attributes `html` has, so a check can say it read something. */
+/** How many elements and attributes the parse found, so a check can say it read something. */
 export function tagsAndAttributes(html: string): { tags: number; attributes: number } {
-  let tags = 0;
-  let attributes = 0;
-  for (const [, , rest] of html.matchAll(TAG)) {
-    tags += 1;
-    attributes += [...rest.matchAll(ATTRIBUTE)].length;
-  }
-  return { tags, attributes };
+  const all = elements(html);
+  return { tags: all.length, attributes: all.reduce((n, e) => n + e.attrs.length, 0) };
 }
