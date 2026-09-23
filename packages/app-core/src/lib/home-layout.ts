@@ -1030,6 +1030,25 @@ function lastOccurrence(minute: MinuteOfDay, instant: Instant, start: Instant): 
 }
 
 /**
+ * The moment of an edition in effect at an instant, or null while it is at its start.
+ *
+ * The edition's own version of the day's "which point is the playhead in": the moment that
+ * happened most recently, since the edition opened. For an editor, which writes into the
+ * point in effect (ADR 0039 §10, one level up by ADR 0059 §2).
+ */
+export function editionPointAt(edition: HomeEdition, instant: Instant): MinuteOfDay | null {
+  let latest: { minute: MinuteOfDay; at: Instant } | null = null;
+  for (const moment of edition.moments) {
+    const at = lastOccurrence(moment.minute, instant, edition.start);
+    if (at === null) continue;
+    if (latest === null || at > latest.at || (at === latest.at && moment.minute > latest.minute)) {
+      latest = { minute: moment.minute, at };
+    }
+  }
+  return latest?.minute ?? null;
+}
+
+/**
  * Every change the fold applies at an instant, in the order it applies them.
  *
  * The day's moments at or before the instant's Berlin minute, as `stateAt` has always

@@ -4,6 +4,7 @@ import { berlinInstant } from '../src/lib/berlin-time';
 import {
   changesAt,
   DEFAULT_HOME_LAYOUT,
+  editionPointAt,
   editionsAt,
   formatTimeOfDay,
   HOME_LAYOUT_VERSION,
@@ -907,6 +908,13 @@ describe('an edition, as the fold reads it', () => {
       'b',
       'c',
     ]);
+  });
+
+  it('names the moment of an edition in effect, which is where an editor writes', () => {
+    const [edition] = planned(WAHLABEND).editions;
+    expect(editionPointAt(edition!, BERLIN('2026-09-27', 19))).toBeNull();
+    expect(editionPointAt(edition!, BERLIN('2026-09-27', 23, 5))).toBe(AT(23));
+    expect(editionPointAt(edition!, BERLIN('2026-09-28', 1))).toBe(AT(23));
   });
 
   it('says which edition every change it applies came from', () => {
