@@ -38,6 +38,7 @@ jest.mock('@/lib/store/core', () => ({
 
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
+import { sessionActions } from '@correctiv/app-core/stores/session';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { findAllPressable, render } from './support/rendering';
@@ -59,6 +60,21 @@ beforeEach(() => {
   jest.clearAllMocks();
   act(() => {
     coreStore.dispatch(resetStore());
+    // A paying member, because the early-access card these tests anchor on is for paying
+    // members by its module's default (ADR 0060 §2) and nobody is signed in after a reset.
+    coreStore.dispatch(
+      sessionActions.succeeded({
+        account: { email: 'a@example.org', name: 'A' },
+        entitlement: {
+          tier: 'paid',
+          appAccess: true,
+          source: 'paid',
+          validUntil: null,
+          localAreas: [],
+          memberSince: null,
+        },
+      }),
+    );
   });
 });
 

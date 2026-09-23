@@ -14,6 +14,7 @@ import {
 import {
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -23,8 +24,15 @@ import {
 import { defineMessages } from 'react-intl';
 
 import {
+  audienceOf,
+  readerOf,
+  reaches,
+  type Audience,
+} from '@correctiv/app-core/lib/home-audience';
+import {
   MINUTES_IN_DAY,
   stateAtInstant,
+  type HomeChange,
   type HomeEdition,
   type HomeLayout,
   type HomeSection,
@@ -43,6 +51,8 @@ import { Button } from '../../ui/kit/button';
 import { InfoTip } from '../../ui/kit/info-tip';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { DEFAULT_DEVICE, preset } from '../devices';
+import { entitlementIn, sessionSnapshot, subscribeSession } from '../frame/seed';
+import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
@@ -51,7 +61,9 @@ import { EDITION_COPY, EditionHead, inkOf, nameOf, Warning } from './Edition';
 import { openedAt, parseMinute, playheadFrom, STEP, timeAt } from './minutes';
 import {
   changedAt,
+  changeHeldAt,
   decidedAt,
+  editableAt,
   differs,
   formatTimeOfDay,
   HOME_LAYOUT_FILE,
@@ -67,11 +79,15 @@ import {
   settingsFor,
   SHIPPED,
   spanOf,
+  strandingAudiences,
+  takenAudiences,
   inheritedFor,
   targetAt,
   withoutMoment,
   blockName,
   whereAt,
+  withAudience,
+  writeChangeAudience,
   writeHidden,
   writeSetting,
   type CountSetting,
@@ -490,6 +506,15 @@ export function HomeDocument({
 }) {
   const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
+  /**
+   * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the session the framed app holds,
+   * read out of the storage the two share and followed as it changes, whether a fixture
+   * wrote it, the held-open door did, or somebody signed in inside the frame
+   * (`frame/seed.ts` says why it is not read off the address). Not a second mechanism for
+   * previewing an audience: `s=onboarded` is a paying member, `s=free-member` a free one.
+   */
+  const session = useSyncExternalStore(subscribeSession, sessionSnapshot, () => null);
+  const reader = useMemo(() => readerOf(entitlementIn(session)), [session]);
   const [result, setResult] = useState<SaveResult | null>(null);
   /**
    * Only for a change too long for the address: whether the click put it on the clipboard,
@@ -870,13 +895,13 @@ export function HomeDocument({
    * an edition running they are the fold at the instant, which is the only honest reading
    * once what lies under an edition goes on changing through its span.
    */
-  const effective = stateAtInstant(layout, playhead.instant);
+  const effective = stateAtInstant(layout, playhead.instant, reader);
   const inherited =
     target.edition === null
-      ? inheritedAt(layout, target.point)
-      : inheritedFor(layout, playhead.instant, target);
-  const edited = changedAt(layout, playhead.instant);
-  const decided = decidedAt(layout, playhead.instant);
+      ? inheritedAt(layout, target.point, reader)
+      : inheritedFor(layout, playhead.instant, target, reader);
+  const edited = changedAt(layout, playhead.instant, reader);
+  const decided = decidedAt(layout, playhead.instant, reader);
   const dirty = differs(layout);
   /** Where Submit changes goes, or nothing while there is nothing to submit. */
   const offer = dirty
@@ -1125,10 +1150,21 @@ export function HomeDocument({
               dragging={carried !== null}
               onMove={(delta) => setLayout(moved(layout, section.id, delta))}
               onHidden={(hidden) =>
-                setLayout(writeHidden(layout, playhead.instant, section.id, hidden))
+                setLayout(writeHidden(layout, playhead.instant, section.id, hidden, reader))
               }
               onSetting={(key, value) =>
-                setLayout(writeSetting(layout, playhead.instant, section.id, key, value))
+                setLayout(writeSetting(layout, playhead.instant, section.id, key, value, reader))
+              }
+              reaches={reaches(reader, audienceOf(section))}
+              locked={!editableAt(layout, playhead.instant, section.id, reader)}
+              change={changeHeldAt(layout, playhead.instant, section.id, reader)}
+              taken={takenAudiences(layout, playhead.instant, section.id, reader)}
+              stranding={strandingAudiences(layout, playhead.instant, section.id, reader)}
+              onAudience={(audience) => setLayout(withAudience(layout, section.id, audience))}
+              onChangeAudience={(audience) =>
+                setLayout(
+                  writeChangeAudience(layout, playhead.instant, section.id, audience, reader),
+                )
               }
               onRemove={() => setLayout(removed(layout, section.id))}
               outline={outline}
@@ -1335,6 +1371,13 @@ function Row({
   onMove,
   onHidden,
   onSetting,
+  reaches: forReader,
+  locked,
+  change,
+  taken,
+  stranding,
+  onAudience,
+  onChangeAudience,
   onRemove,
   outline,
 }: {
@@ -1365,6 +1408,23 @@ function Row({
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: string | number | null | undefined) => void;
+  /** Whether the reader in the frame is in this block's audience (ADR 0060 §4). */
+  reaches: boolean;
+  /**
+   * Whether this point holds changes about the block and none for the reader in the frame,
+   * so an edit here would land on nobody's screen being looked at (ADR 0060 §5).
+   */
+  locked: boolean;
+  /** The change an edit at the playhead lands on for this block, if there is one. */
+  change: HomeChange | undefined;
+  /** The audiences other changes about the block at this point already carry. */
+  taken: ReadonlySet<Audience>;
+  /** The audiences a retarget here would strand one half of a swap with. */
+  stranding: ReadonlySet<Audience>;
+  /** Who the block is for, all day. */
+  onAudience: (audience: Audience) => void;
+  /** Who the change at the playhead is for. */
+  onChangeAudience: (audience: Audience) => void;
   /** Takes the block out of the day, and every change that named it with it. */
   onRemove: () => void;
   outline: (held: { id: string; follow: boolean } | null) => void;
@@ -1636,7 +1696,9 @@ function Row({
           `deviceWidth` being null is the case a reader never sees: the panel is mounted
           behind the rail whether or not it is open, and nothing is drawn while it is shut.
         */}
-            {deviceWidth !== null && <HomeBlock section={section} deviceWidth={deviceWidth} />}
+            {deviceWidth !== null && (
+              <HomeBlock section={section} deviceWidth={deviceWidth} absent={!forReader} />
+            )}
 
             {/*
           The bar. `pointer-events-none` while it is invisible, or an unseen row of buttons
@@ -1699,6 +1761,7 @@ function Row({
                           block: spoken,
                         })
                 }
+                disabled={locked}
                 onClick={() => onHidden(!off)}
               >
                 {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
@@ -1802,7 +1865,18 @@ function Row({
             off={off}
             hiddenHere={hiddenHere}
             specs={specs}
+            locked={locked}
             onSetting={onSetting}
+          />
+          <Conditions
+            section={section}
+            change={change}
+            taken={taken}
+            stranding={stranding}
+            locked={locked}
+            reaches={forReader}
+            onPlace={onAudience}
+            onChange={onChangeAudience}
           />
         </PopoverContent>
       </Popover>
@@ -1831,6 +1905,7 @@ function Details({
   off,
   hiddenHere,
   specs,
+  locked,
   onSetting,
 }: {
   section: HomeSection;
@@ -1844,6 +1919,8 @@ function Details({
   off: boolean;
   hiddenHere: boolean;
   specs: readonly SettingSpec[];
+  /** No change here is for the framed reader, so the settings are switched off. */
+  locked: boolean;
   onSetting: (key: string, value: string | number | null | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -1877,7 +1954,7 @@ function Details({
           inherited={inherited.settings?.[spec.key]}
           layered={layered}
           inEdition={layer !== null}
-          disabled={off}
+          disabled={off || locked}
           onSet={(value) => onSetting(spec.key, value)}
         />
       ))}

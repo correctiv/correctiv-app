@@ -67,6 +67,10 @@ import {
   sectionsAt,
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
+import { readerOf } from '@correctiv/app-core/lib/home-audience';
+import { sessionActions } from '@correctiv/app-core/stores/session';
+import type { Entitlement } from '@correctiv/app-core/types/models';
+import { HOME_MODULE_AUDIENCES, MODULE_CONDITIONS } from '@/lib/home/conditions';
 import { MODULE_SCREENS } from '@/lib/home/screens';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
@@ -159,7 +163,7 @@ describe('the shipped home document', () => {
    */
   it('shows the callout exactly once at every minute of the day', () => {
     for (let minute = 0; minute < MINUTES_IN_DAY; minute += 7) {
-      const shown = sectionsAt(layout, minute).filter(
+      const shown = sectionsAt(layout, minute, readerOf(null)).filter(
         (section) => section.module === 'callout-teaser',
       );
       expect({ minute, count: shown.length }).toEqual({ minute, count: 1 });
@@ -200,6 +204,32 @@ describe('the shipped home document', () => {
   it('declares screens only for modules it can draw', () => {
     const undrawable = Object.keys(MODULE_SCREENS).filter((module) => !(module in HOME_MODULES));
     expect(undrawable).toEqual([]);
+  });
+
+  /**
+   * ADR 0060 §1, held the way ADR 0054 §2 holds the screens. Every block says when it
+   * appears, and `null` is an answer rather than an absence: a block nobody asked would
+   * otherwise read the same as one that always draws, and the configurator would say
+   * nothing about why it is empty.
+   *
+   * What this cannot hold is that the name is TRUE. It is a name for a rule written in the
+   * module's code, and nothing reads the one against the other; see `conditions.ts`.
+   */
+  it('has every module declare its own condition, or say it has none', () => {
+    const undeclared = Object.keys(HOME_MODULES).filter(
+      (module) => !Object.hasOwn(MODULE_CONDITIONS, module),
+    );
+    expect(undeclared).toEqual([]);
+  });
+
+  it('declares conditions and default audiences only for modules it can draw', () => {
+    const conditioned = Object.keys(MODULE_CONDITIONS).filter(
+      (module) => !(module in HOME_MODULES),
+    );
+    const audienced = Object.keys(HOME_MODULE_AUDIENCES).filter(
+      (module) => !(module in HOME_MODULES),
+    );
+    expect([...conditioned, ...audienced]).toEqual([]);
   });
 });
 
@@ -254,7 +284,9 @@ describe('what Home draws', () => {
   it.each(HOURS.map((hour) => [hour]))(
     'draws the sections of %i:00 in the document order',
     (hour) => {
-      const wanted = sectionsAt(layout, hour * 60).map((section) => section.id);
+      // Nobody is signed in after `resetStore`, so this is the day for a reader in no
+      // audience but everyone's, and the early-access card is not in it (ADR 0060 §2).
+      const wanted = sectionsAt(layout, hour * 60, readerOf(null)).map((section) => section.id);
       const drawn = renderedPlaces(renderAt(hour));
 
       expect(drawn).toEqual(wanted.filter((id) => drawn.includes(id)));
@@ -275,6 +307,40 @@ describe('what Home draws', () => {
     const evening = renderedPlaces(renderAt(19));
     expect(evening).not.toContain(LIFTED_CALLOUT);
     expect(evening.indexOf('callout')).toBeGreaterThan(evening.indexOf('hero'));
+  });
+
+  /**
+   * The reader is the session's, and the same document draws two screens (ADR 0060 §4).
+   * The early-access card is for paying members by its module's default; a reader in by a
+   * local newsletter at the 0 € tier does not get it, and nothing else on Home moves.
+   */
+  it('draws the early-access card for a paying member and not for a free one', () => {
+    const signIn = (entitlement: Entitlement) =>
+      act(() => {
+        coreStore.dispatch(
+          sessionActions.succeeded({
+            account: { email: 'a@example.org', name: 'A' },
+            entitlement,
+          }),
+        );
+      });
+    const base: Entitlement = {
+      tier: 'paid',
+      appAccess: true,
+      source: 'paid',
+      validUntil: null,
+      localAreas: [],
+      memberSince: null,
+    };
+
+    signIn(base);
+    const paying = renderedPlaces(renderAt(9));
+    signIn({ ...base, tier: 'free', source: 'local-bundle' });
+    const free = renderedPlaces(renderAt(9));
+
+    expect(paying).toContain('early-access');
+    expect(free).not.toContain('early-access');
+    expect(paying.filter((id) => id !== 'early-access')).toEqual(free);
   });
 
   it('draws every place exactly once', () => {

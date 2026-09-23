@@ -301,7 +301,7 @@ describe('the list is the day, and the blocks are drawn', () => {
      * second half is the load-bearing one: a conditional left here would be the collapse
      * coming back one branch at a time.
      */
-    expect(PANEL).toMatch(/deviceWidth !== null && <HomeBlock section=\{section\}/);
+    expect(PANEL).toMatch(/deviceWidth !== null && \(?\s*<HomeBlock section=\{section\}/);
     expect(PANEL).not.toMatch(/off \? \(/);
     expect(BLOCK).toMatch(/off && 'opacity-45 grayscale'/);
   });

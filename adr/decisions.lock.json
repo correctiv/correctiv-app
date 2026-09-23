@@ -569,6 +569,22 @@
       "9": ["What is not built, and why"]
     }
   },
+  "0060": {
+    "slugs": ["a-block-says-when-it-appears-and-an-editor-says-for-whom"],
+    "decisions": {
+      "1": ["Two kinds of condition, one vocabulary in the editor"],
+      "2": ["A module may declare the audience it is for, and the document may override it"],
+      "3": ["Three audiences, in the club's words, and one file that says what each means"],
+      "4": [
+        "The reader is the fold's third parameter, beside the instant, and the preview is the fixtures"
+      ],
+      "5": [
+        "The editor writes one change per block and point, and checks a repetition against every reader"
+      ],
+      "6": ["What an older app does with it"],
+      "7": ["A filter, and nothing inside the door becomes locked"]
+    }
+  },
   "0061": {
     "slugs": ["a-submission-is-an-issue-and-ci-makes-the-pull-request"],
     "decisions": {
@@ -587,7 +603,6 @@
       "5": ["The pull request gets CI with a token held by CI, and says so when it does not"],
       "6": ["The address has a limit, and past it the change goes by the clipboard"],
       "7": [
-        "Nothing the issue says reaches a shell or a script as code",
         "Nothing the issue says reaches a shell or a script as code, or GitHub as an instruction"
       ]
     }

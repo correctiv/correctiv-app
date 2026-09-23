@@ -36,6 +36,10 @@ export const fixtures: Record<string, string> = {
   'fixtures.onboarded': 'Onboarding abgeschlossen',
   'fixtures.onboarded.hint': 'Der Normalfall: die App startet auf dem Tab Start.',
 
+  'fixtures.freeMember': 'Kostenlos, mit Lokal-Newsletter',
+  'fixtures.freeMember.hint':
+    'Die App startet auf dem Tab Start, für ein kostenloses Mitglied statt eines mit Beitrag.',
+
   'fixtures.saved': 'Gespeicherte Artikel',
   'fixtures.saved.hint': '/gespeichert ist sonst leer und zeigt nur seinen Leerzustand.',
 

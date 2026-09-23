@@ -13,7 +13,7 @@
 
 /** Two places this app holds a renderer for, and one it has never heard of. */
 jest.mock('@correctiv/app-core/data/home.layout.json', () => ({
-  version: 3,
+  version: 4,
   sections: [
     { id: 'header', module: 'home-header' },
     { id: 'quiz', module: 'quiz-of-the-day' },

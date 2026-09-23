@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "sections": [
     { "id": "header", "module": "home-header" },
     { "id": "feed-status", "module": "feed-status" },

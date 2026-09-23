@@ -25,7 +25,7 @@ import {
  *
  * ## Where the seam is, and why it is this one
  *
- * `sectionsAtInstant(layout, instant)` — the instant is a **parameter of the selector**, so
+ * `sectionsAtInstant(layout, instant, reader)` — the instant is a **parameter of the selector**, so
  * the core has no clock in it at all and nothing has to be injected, stubbed or reset. What
  * is left is one question in the host: where does this screen get its instant. This file
  * is the answer, and it has exactly one door in it.

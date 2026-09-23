@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { HOME_LAYOUT_VERSION } from '@correctiv/app-core/lib/home-layout';
 import { HOME_LAYOUT_MAX_CHARS } from '@correctiv/app-core/stores/homeLayout';
 
 import { ROOT } from '../plugin/collect.ts';
@@ -76,7 +77,9 @@ describe('reading an issue', () => {
   it('forgives prose around the block and a pasted body with Windows line ends', () => {
     const { title } = issueOf('');
     const body = `Hallo,\r\n\r\n\`\`\`json\r\n${formatLayoutDocument(EDITED).replace(/\n/g, '\r\n')}\`\`\`\r\n\r\nDanke`;
-    expect(JSON.parse(readSubmission(title, body).payload)).toMatchObject({ version: 3 });
+    expect(JSON.parse(readSubmission(title, body).payload)).toMatchObject({
+      version: HOME_LAYOUT_VERSION,
+    });
   });
 
   it('refuses a body without the block', () => {

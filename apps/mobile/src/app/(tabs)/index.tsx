@@ -1,9 +1,13 @@
+import { useMemo } from 'react';
+
+import { readerOf } from '@correctiv/app-core/lib/home-audience';
 import { sectionsAtInstant } from '@correctiv/app-core/lib/home-layout';
 
 import { Screen } from '@/components/ui';
 import { useHomeInstant } from '@/lib/home/clock';
 import { useHomeLayout } from '@/lib/home/layout';
 import { HOME_MODULES } from '@/lib/home/modules';
+import { useSession } from '@/lib/store/core';
 
 /**
  * Home — a curated cross-section of the ecosystem, in the draft's order: lead research,
@@ -34,13 +38,21 @@ import { HOME_MODULES } from '@/lib/home/modules';
  * cannot draw was dropped when the document was read, with a report; the `?? null` below
  * is the second net and not the mechanism.
  *
+ * **And whose screen it is.** The fold takes the reader as its third parameter
+ * ([ADR 0060](../../../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md)
+ * §4): the audiences the signed-in entitlement is in, answered by the core's one file that
+ * knows what an audience means. A filter on what Home leads with and never a lock; every
+ * route stays as open as the door made it.
+ *
  * LIVE from the feeds: hero, "Neueste Recherchen", the fact-check rail and the FunFacts
  * tile. Sample data: briefing, early access, callout, backstage — each one exists to
  * show a flow the feeds cannot supply.
  */
 export default function HomeScreen() {
   const layout = useHomeLayout();
-  const sections = sectionsAtInstant(layout, useHomeInstant(layout));
+  const { entitlement } = useSession();
+  const reader = useMemo(() => readerOf(entitlement), [entitlement]);
+  const sections = sectionsAtInstant(layout, useHomeInstant(layout), reader);
 
   return (
     <Screen>

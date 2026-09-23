@@ -6,11 +6,13 @@ import { describe, expect, it } from 'vitest';
 
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import {
+  HOME_LAYOUT_VERSION,
   parseHomeLayout,
   stateAt,
   stateAtInstant,
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
+import { readerOf } from '@correctiv/app-core/lib/home-audience';
 import { MODULE_SETTINGS } from '@correctiv/app-core/lib/home-settings';
 
 import { ROOT } from '../../plugin/collect.ts';
@@ -122,6 +124,9 @@ function oxfmt(text: string): string {
 }
 
 const AT = (hours: number, minutes = 0) => hours * 60 + minutes;
+
+/** A reader in everyone's audience and no other, which every document before ADR 0060 folds for. */
+const ANYONE = readerOf(null);
 
 /** A Berlin wall-clock instant, which is how the playhead names a time since ADR 0059. */
 const BERLIN = (date: string, hours: number, minutes = 0) =>
@@ -582,9 +587,9 @@ describe('the vocabulary the editor offers', () => {
     const lifted = (sections: readonly { id: string; hidden?: boolean }[]) =>
       Boolean(sections.find((s) => s.id === 'callout-lifted')?.hidden);
 
-    expect(lifted(inheritedAt(SHIPPED, AT(11)))).toBe(true);
-    expect(lifted(effectiveAt(SHIPPED, AT(11)))).toBe(false);
-    expect(inheritedAt(SHIPPED, null)).toEqual(SHIPPED.sections);
+    expect(lifted(inheritedAt(SHIPPED, AT(11), ANYONE))).toBe(true);
+    expect(lifted(effectiveAt(SHIPPED, AT(11), ANYONE))).toBe(false);
+    expect(inheritedAt(SHIPPED, null, ANYONE)).toEqual(SHIPPED.sections);
   });
 
   it('is unchanged until something changes, and says so as the file would', () => {
@@ -602,17 +607,17 @@ describe('the vocabulary the editor offers', () => {
   it('counts a change at the minute it happens and not at the others', () => {
     const edited = withHidden(SHIPPED, AT(11), 'mediathek', true);
     const on = (hours: number) => BERLIN('2026-09-03', hours);
-    expect(changedAt(edited, on(9))).toEqual([]);
-    expect(changedAt(edited, on(12))).toEqual(['mediathek']);
-    expect(changedAt(edited, on(15))).toEqual(['mediathek']);
+    expect(changedAt(edited, on(9), ANYONE)).toEqual([]);
+    expect(changedAt(edited, on(12), ANYONE)).toEqual(['mediathek']);
+    expect(changedAt(edited, on(15), ANYONE)).toEqual(['mediathek']);
   });
 
   it('counts a move as one change and not as two', () => {
     // A section that moved makes its neighbour move too, and an editor who lifted one
     // block should not be told they changed four.
     const nine = BERLIN('2026-09-03', 9);
-    expect(changedAt(SHIPPED, nine)).toEqual([]);
-    expect(changedAt(moved(SHIPPED, 'hero', -1), nine)).toEqual(['hero', 'callout-lifted']);
+    expect(changedAt(SHIPPED, nine, ANYONE)).toEqual([]);
+    expect(changedAt(moved(SHIPPED, 'hero', -1), nine, ANYONE)).toEqual(['hero', 'callout-lifted']);
   });
 });
 
@@ -813,7 +818,7 @@ describe('the three ends of the seam', () => {
 describe('the panel and the frame', () => {
   it('draws the state the app would draw, at every point of the shipped day', () => {
     for (const point of [null, AT(11), AT(14)]) {
-      expect(effectiveAt(SHIPPED, point)).toEqual(stateAt(SHIPPED, point ?? 0));
+      expect(effectiveAt(SHIPPED, point, ANYONE)).toEqual(stateAt(SHIPPED, point ?? 0, ANYONE));
     }
   });
 });
@@ -841,7 +846,9 @@ describe('an edition, as the editor makes and edits one', () => {
     expect(back.problems).toEqual([]);
     expect(back.layout).toEqual(layout);
     // And, carrying nothing, it changes nothing the frame shows.
-    expect(stateAtInstant(layout, SATURDAY)).toEqual(stateAtInstant(SHIPPED, SATURDAY));
+    expect(stateAtInstant(layout, SATURDAY, ANYONE)).toEqual(
+      stateAtInstant(SHIPPED, SATURDAY, ANYONE),
+    );
   });
 
   it('mints the next free id for a second edition on the same day', () => {
@@ -905,7 +912,7 @@ describe('an edition, as the editor makes and edits one', () => {
     expect(later.editions[0]?.moments[0]?.changes).toEqual([{ id: 'briefing', hidden: false }]);
 
     // What the 23:00 moment inherits is the edition's start over the day, at that instant.
-    const inherits = inheritedFor(later, late, targetAt(later, late));
+    const inherits = inheritedFor(later, late, targetAt(later, late), ANYONE);
     expect(inherits.find((section) => section.id === 'briefing')?.hidden).toBe(true);
   });
 
@@ -934,8 +941,8 @@ describe('an edition, as the editor makes and edits one', () => {
 
   it('says which edition decides a block, and nothing about the ones it does not touch', () => {
     const edited = writeHidden(planned(), SATURDAY, 'briefing', true);
-    expect([...decidedAt(edited, SATURDAY)]).toEqual([['briefing', 'edition-2026-09-27']]);
-    expect([...decidedAt(edited, BERLIN('2026-09-27', 12))]).toEqual([]);
+    expect([...decidedAt(edited, SATURDAY, ANYONE)]).toEqual([['briefing', 'edition-2026-09-27']]);
+    expect([...decidedAt(edited, BERLIN('2026-09-27', 12), ANYONE)]).toEqual([]);
   });
 
   it('puts an edition on the track of each day it touches, clamped to that day', () => {
@@ -1018,11 +1025,11 @@ describe('an edition, where the first version of the editor went wrong', () => {
   it('opens a document an older editor saved, renumbered, and refuses a later one', () => {
     const older = { ...JSON.parse(formatLayoutDocument(moved(SHIPPED, 'hero', -1))), version: 2 };
     const opened = restorable(older);
-    expect(opened?.version).toBe(3);
+    expect(opened?.version).toBe(HOME_LAYOUT_VERSION);
     expect(opened?.sections.map((section) => section.id)).toEqual(
       moved(SHIPPED, 'hero', -1).sections.map((section) => section.id),
     );
-    expect(restorable({ ...older, version: 4 })).toBeNull();
+    expect(restorable({ ...older, version: HOME_LAYOUT_VERSION + 1 })).toBeNull();
     expect(restorable({ ...older, sections: [{ id: 'x' }] })).toBeNull();
   });
 });

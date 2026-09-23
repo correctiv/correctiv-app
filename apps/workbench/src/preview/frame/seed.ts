@@ -35,6 +35,8 @@
  * automation reads a stable id and the English rather than whatever language the
  * person at the keyboard has chosen.
  */
+import type { Entitlement } from '@correctiv/app-core/types/models';
+
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 
 /**
@@ -113,6 +115,29 @@ const NO_ACCESS = {
     source: null,
     validUntil: null,
     localAreas: [],
+    memberSince: '2026-03-04T09:12:00.000Z',
+  },
+};
+
+/**
+ * A 0 € member whose local newsletter includes the app: inside the door, and in the
+ * `free-members` audience rather than `paying-members` (ADR 0060 §4).
+ *
+ * The one reader the audiences can tell apart from the ordinary sign-in, which is why it
+ * is a fixture: previewing the home screen for an audience is this tool and the timeline
+ * together, not a mechanism of its own. `models.ts` describes the entitlement — a local
+ * bundle includes the app "without being an app membership", so the tier stays the
+ * membership's own. The simulated sign-in gives `lokal` addresses a paid tier, and this is
+ * the other case the type allows.
+ */
+const FREE_LOCAL = {
+  account: { email: 'lokal.frei@example.org', name: 'Lokal Frei' },
+  entitlement: {
+    tier: 'free',
+    appAccess: true,
+    source: 'local-bundle',
+    validUntil: null,
+    localAreas: ['Gelsenkirchen'],
     memberSince: '2026-03-04T09:12:00.000Z',
   },
 };
@@ -211,6 +236,25 @@ export const FIXTURES: Fixture[] = [
     }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
+      kv(s, 'settings', ONBOARDED);
+    },
+  },
+  {
+    id: 'free-member',
+    label: wbMessage({
+      id: 'fixtures.freeMember',
+      defaultMessage: 'Free member, local newsletter',
+      description:
+        'A fixture in the state tool: a member of the 0 € tier whose local newsletter subscription includes the app.',
+    }),
+    hint: wbMessage({
+      id: 'fixtures.freeMember.hint',
+      defaultMessage: 'The app starts on Home, for a free member rather than a paying one.',
+      description:
+        'The line under the “Free member, local newsletter” fixture. “Home” is the app’s first tab, which the app itself calls “Start”.',
+    }),
+    write: (s) => {
+      kv(s, 'session', FREE_LOCAL);
       kv(s, 'settings', ONBOARDED);
     },
   },
@@ -329,6 +373,55 @@ export const FIXTURES: Fixture[] = [
 ];
 
 /**
+ * The session as the app holds it in storage, as text, for a `useSyncExternalStore`.
+ *
+ * ADR 0060 §4: the home tool says whose screen it shows, and the answer has to be the one
+ * the frame is showing. Read at render time off the fixture in the address it was wrong on
+ * a first visit, where `Preview.tsx` holds the door open for a paid member in an effect that
+ * runs AFTER the tool rendered, and it never followed a sign-in or sign-out inside the frame
+ * (review of #250, item 2). So the tool reads the storage, and listens: the frame is another
+ * document on this origin, so its own writes arrive as `storage` events, and this page's
+ * writes, which fire none here, announce themselves with the event below.
+ */
+export const SESSION_EVENT = 'workbench:session';
+
+function announceSession(): void {
+  try {
+    window.dispatchEvent(new Event(SESSION_EVENT));
+  } catch {
+    // Not in a browser (a test, the dev server's endpoint): there is nobody to tell.
+  }
+}
+
+export function subscribeSession(onChange: () => void): () => void {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(SESSION_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(SESSION_EVENT, onChange);
+  };
+}
+
+/** The stored session's text, or null for none or a store that cannot be read. */
+export function sessionSnapshot(store?: Storage): string | null {
+  try {
+    return (store ?? window.localStorage).getItem(`${STATE_PREFIX}store.session`);
+  } catch {
+    return null;
+  }
+}
+
+/** The entitlement in a stored session's text, or null. */
+export function entitlementIn(text: string | null): Entitlement | null {
+  try {
+    const held = text ? (JSON.parse(text) as { entitlement?: Entitlement | null }) : null;
+    return held?.entitlement ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Wipes the app's storage and writes one fixture.
  *
  * Always a full wipe first, so a fixture describes a whole state rather than a
@@ -345,6 +438,7 @@ export function applyFixture(store: Storage, id: string): void {
   if (!chosen) return;
   clearApp(store);
   chosen.write(store);
+  announceSession();
 }
 
 /**
@@ -403,6 +497,7 @@ export function holdTheDoorOpen(store: Storage): void {
   try {
     kv(store, 'session', HELD_OPEN);
     store.setItem(SEEDED_KEY, new Date().toISOString());
+    announceSession();
   } catch {
     // Site data switched off. Nothing can be seeded, and nothing may throw.
   }

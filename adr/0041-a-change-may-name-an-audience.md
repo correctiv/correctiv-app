@@ -2,7 +2,9 @@
 
 Status: accepted, 2026-09-17, from the architecture meeting held in
 [#200](https://github.com/correctiv/correctiv-app/issues/200) and the design interview
-after it. **Not built.**
+after it. ~~**Not built.**~~ Built by
+[ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md), which adds a module's own conditions
+and a module's default audience beside it.
 
 ## Context
 
@@ -49,8 +51,10 @@ two changes at one time, two lines, side by side in the file and side by side in
 editor's diff for that moment. Neither line has to know what the other does, which is the
 property that makes the fold composable at all.
 
-**Not on the place.** A place that carried a set of audiences could be present or absent
-per audience and nothing else; the moment the same place should show a *different thing*
+~~**Not on the place.**~~ A place says who it is for since
+[ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §2, for presence only; what it shows
+for whom is still a change's, for the reason that follows. A place that carried a set of
+audiences could be present or absent per audience and nothing else; the moment the same place should show a *different thing*
 to two audiences, it has to become two places. Places are fixed and are the screen's, by
 [ADR 0036](0036-the-home-screen-becomes-data.md) §2 — a new place is an app release — so
 audiences on places multiply the screen by the audience list and make the app's structure
@@ -137,8 +141,9 @@ view" switch. It is a different product — a preview feature for readers — an
 question nobody asked. The workbench needs it; the app does not.
 
 **Audiences everywhere: on places, on moments and on changes.** Three places to say one
-thing, and an editor then has to work out which of the three is in force. One level, the
-one that already means "what differs".
+thing, and an editor then has to work out which of the three is in force. ~~One level, the
+one that already means "what differs".~~ Two since [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §2, the place and the change,
+which answer two questions and are applied one after the other; moments still carry none.
 
 ## What it costs
 
@@ -160,10 +165,11 @@ nobody.
 
 ## What is still open
 
-**The real list of audiences.** Nobody has written the newsroom's own vocabulary down.
+**The real list of audiences.** ~~Nobody has written the newsroom's own vocabulary
+down.~~ The product owner named three on 2026-09-23, and [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §3 is the list.
 What the shape has to be is decided — a closed, small set of names, each answerable from
-the sign-in response the app already holds, with no second request — and what the names are
-is not.
+the sign-in response the app already holds, with no second request — ~~and what the names are
+is not~~, and the names are decided too, by [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §3.
 
 **What an audience means for a reader who is signed out, and for one whose membership has
 lapsed.** The app can already tell those two apart: `AccessShortfall` in

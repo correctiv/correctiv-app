@@ -186,6 +186,65 @@
     "defaultMessage": "Components",
     "description": "The page’s heading. components.detail.crumb is the same word as the first step of the breadcrumb on a single component’s page, which links back here; nav.components is the longer name the rail and the browser tab carry."
   },
+  "conditions.audience.everyone": {
+    "defaultMessage": "Everyone"
+  },
+  "conditions.audience.freeMembers": {
+    "defaultMessage": "Free members",
+    "description": "Members of the 0 € tier. Inside the app that is somebody whose local newsletter includes it."
+  },
+  "conditions.audience.payingMembers": {
+    "defaultMessage": "Members with a contribution",
+    "description": "Members who pay a contribution, including a trial month and Soli. The door into the app uses the same words."
+  },
+  "conditions.byDefault": {
+    "defaultMessage": "{audience} (default)",
+    "description": "An option in the “Show to” list: the audience the block’s own module chooses when the document says nothing. {audience} is that audience’s name, already translated."
+  },
+  "conditions.changeFor": {
+    "defaultMessage": "This change applies to",
+    "description": "The label of the control that says who the change made to a block at this point of the day applies to."
+  },
+  "conditions.intrinsic.hasFactChecks": {
+    "defaultMessage": "Appears only when fact checks have loaded."
+  },
+  "conditions.intrinsic.hasLeadArticle": {
+    "defaultMessage": "Appears only when there is a lead article: a pinned one or the newest."
+  },
+  "conditions.intrinsic.hasMoreResearch": {
+    "defaultMessage": "Appears only when the investigations feed holds more than the lead."
+  },
+  "conditions.intrinsic.hasOpenCallout": {
+    "defaultMessage": "Appears only while a callout is open.",
+    "description": "A callout is an open call to readers to send something in; the app calls that screen “Mitmachen”."
+  },
+  "conditions.intrinsic.hasSpotlightIssue": {
+    "defaultMessage": "Appears only once a Spotlight issue has loaded.",
+    "description": "Spotlight is the name of a CORRECTIV newsletter and stays as it is written."
+  },
+  "conditions.intrinsic.loadingOrOffline": {
+    "defaultMessage": "Appears only while the app is loading or offline."
+  },
+  "conditions.locked": {
+    "defaultMessage": "The change here is for another audience. Frame a reader in it to edit it.",
+    "description": "In a block’s popover, where the only change about the block at this point of the day is for an audience the reader signed in in the framed app is not in, so the controls are switched off."
+  },
+  "conditions.notFor": {
+    "defaultMessage": "Not in the frame: the reader signed in there is not in it.",
+    "description": "Under a block that the reader the framed app is signed in as is not in the audience of, which is why the frame does not draw it."
+  },
+  "conditions.notYet": {
+    "defaultMessage": "Not yet members (nobody in the app can be one)",
+    "description": "A switched-off option in the “Show to” list. The app admits members only, so no reader of it is not yet a member; whether that changes is an open product question."
+  },
+  "conditions.placeFor": {
+    "defaultMessage": "Show to",
+    "description": "The label of the control that says who a block is for, all day."
+  },
+  "conditions.stranding": {
+    "defaultMessage": "Some audiences are off: a change here hides the other place, and without this one some readers would see neither.",
+    "description": "Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place."
+  },
   "coreAndHost.adapter": {
     "defaultMessage": "<muted>adapter </muted><file>lib/platform/expo.ts</file><muted> and </muted><file>lib/audio/backend.ts</file><muted>, the whole cost of adding a host</muted>",
     "description": "The band across the top of the host’s box, centred. <file> marks a repository path in monospace, which stays as it is written; <muted> is the quieter type around the two paths."
@@ -933,6 +992,14 @@
     "defaultMessage": "Forces the bundle fallback, the feeds' 'offline' status.",
     "description": "The line under the “Bundled content only” fixture. “offline” is the literal value of the feed status in the core’s own state and stays as it is written."
   },
+  "fixtures.freeMember": {
+    "defaultMessage": "Free member, local newsletter",
+    "description": "A fixture in the state tool: a member of the 0 € tier whose local newsletter subscription includes the app."
+  },
+  "fixtures.freeMember.hint": {
+    "defaultMessage": "The app starts on Home, for a free member rather than a paying one.",
+    "description": "The line under the “Free member, local newsletter” fixture. “Home” is the app’s first tab, which the app itself calls “Start”."
+  },
   "fixtures.fresh": {
     "defaultMessage": "Fresh install"
   },
@@ -1568,7 +1635,7 @@
     "description": "The last paragraph under the drawing. <code> marks an import path, which stays as it is written."
   },
   "insideCore.alt.lede": {
-    "defaultMessage": "<code>packages/app-core</code>, 60 TypeScript files. Imports point down the stack. Layers from the top:",
+    "defaultMessage": "<code>packages/app-core</code>, 62 TypeScript files. Imports point down the stack. Layers from the top:",
     "description": "The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.alt.lib": {
@@ -1584,7 +1651,7 @@
     "description": "One layer in that list. <term> marks a directory’s name; the ten names after the colon are the files in it and stay as they are written."
   },
   "insideCore.alt.stores": {
-    "defaultMessage": "<term>stores</term>: one Redux Toolkit store with 13 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.",
+    "defaultMessage": "<term>stores</term>: one Redux Toolkit store with 12 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.",
     "description": "One layer in that list. <term> marks the directory’s name, which stays as it is written, and <code> a function name."
   },
   "insideCore.articles": {
@@ -1628,7 +1695,7 @@
     "description": "The line beside the two small chips reading string and DOM. <file> marks a type name in monospace, which stays as it is written."
   },
   "insideCore.files": {
-    "defaultMessage": "60 TypeScript files",
+    "defaultMessage": "62 TypeScript files",
     "description": "The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English."
   },
   "insideCore.imports": {
@@ -1636,7 +1703,7 @@
     "description": "The label on the long arrow down the left edge, set on its side. It is as long as the stack is tall, about 500 units, so length is not the constraint here."
   },
   "insideCore.lede": {
-    "defaultMessage": "60 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
+    "defaultMessage": "62 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
     "description": "The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.lib": {
@@ -1684,7 +1751,7 @@
     "description": "How many files the services layer holds, beside its name. insideCore.data.files and insideCore.types.files are the same label on the two layers beside it; insideCore.ports.file is the one on the ports layer."
   },
   "insideCore.stores": {
-    "defaultMessage": "one Redux Toolkit store, 13 slices",
+    "defaultMessage": "one Redux Toolkit store, 12 slices",
     "description": "What the stores layer holds. Redux Toolkit is the library’s name and a slice is its own word for one part of a store; both stay."
   },
   "insideCore.stores.host": {

@@ -38,6 +38,7 @@ import {
   type HomeSection,
   type SettingValue,
 } from '@correctiv/app-core/lib/home-layout';
+import { READERS } from '@correctiv/app-core/lib/home-audience';
 import { settingsFor, type SettingSpec } from '@correctiv/app-core/lib/home-settings';
 import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 import { HOME_LAYOUT_MAX_CHARS } from '@correctiv/app-core/stores/homeLayout';
@@ -346,7 +347,9 @@ export function warnings(before: HomeLayout, after: HomeLayout): string[] {
   const empty = [
     ...(shows(after.sections) ? [] : ['zu Tagesbeginn']),
     ...after.moments
-      .filter((moment) => !shows(stateAt(after, moment.minute)))
+      // Empty for any reader is empty: an audience can hide a block from one of them only
+      // (ADR 0060), and that reader's screen is the one a reviewer would otherwise miss.
+      .filter((moment) => READERS.some((reader) => !shows(stateAt(after, moment.minute, reader))))
       .map((moment) => `ab ${moment.at}`),
   ];
   if (empty.length > 0)
