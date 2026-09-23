@@ -36,7 +36,7 @@ export const insideCore: Record<string, string> = {
   'insideCore.imports': 'Importe zeigen den Stapel hinunter',
   'insideCore.files': '59 TypeScript-Dateien',
 
-  'insideCore.stores': 'ein Redux-Toolkit-Store, 12 Slices',
+  'insideCore.stores': 'ein Redux-Toolkit-Store, 13 Slices',
   'insideCore.stores.owns':
     'Der Core besitzt die Slices und exportiert <file>createAppStore()</file>.',
   'insideCore.stores.host': 'Der Host konstruiert die Instanz.',
@@ -80,7 +80,7 @@ export const insideCore: Record<string, string> = {
   'insideCore.alt.lede':
     '<code>packages/app-core</code>, 59 TypeScript-Dateien. Importe zeigen den Stapel hinunter. Die Schichten von oben:',
   'insideCore.alt.stores':
-    '<term>stores</term>: ein Redux-Toolkit-Store mit 12 Slices. Der Core besitzt die Slices und exportiert <code>createAppStore()</code>; der Host konstruiert die Instanz.',
+    '<term>stores</term>: ein Redux-Toolkit-Store mit 13 Slices. Der Core besitzt die Slices und exportiert <code>createAppStore()</code>; der Host konstruiert die Instanz.',
   'insideCore.alt.articles':
     '<term>articles</term>: das Article-Modell und seine Ladekaskade. <code>articles/extract</code> hält zwei Backends, eines über Strings und eines über das DOM, hinter einem Typ <code>ArticleExtractor</code>. Daneben <term>media</term>, mit einer Regel: Es spielt nur ein Medium zur selben Zeit.',
   'insideCore.alt.services':

@@ -100,9 +100,9 @@ import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
  * It was 2 from ADR 0039. A version 1 document is still read — it is reported and then
  * parsed — and what it loses is every section that carried a `dayparts` key, because
  * that key is a rule this app can no longer apply. There is no migration here and
- * nothing to migrate: the document is compiled in, nothing fetches one yet, and a
- * migration written against a document that has never been served is a guess with
- * upkeep.
+ * nothing to migrate: the fetch (`stores/homeLayout.ts`) arrived after version 2, so no
+ * version 1 document was ever served, and a migration written against a document that
+ * has never been served is a guess with upkeep.
  */
 export const HOME_LAYOUT_VERSION = 3;
 
@@ -904,9 +904,12 @@ function parseEdition(
  *
  * **Once per document, not once per render.** This is a plain function with no memory of
  * its own; what makes the promise true is that the host calls it where it reads the
- * document (`apps/mobile/src/lib/home/layout.ts` parses once and keeps the answer), and
- * that is asserted there rather than assumed here. A reporter that fires on every frame
- * is not a louder report, it is a log nobody reads.
+ * document (`apps/mobile/src/lib/home/layout.ts` parses once and keeps the answer in
+ * memory, so it is once per document per process), and that is asserted there rather
+ * than assumed here. The one other caller is `stores/homeLayout.ts`, for a fetched
+ * document it refuses: that one never reaches the host, so nobody else could report it,
+ * and it is refused once per try. A reporter that fires on every frame is not a louder
+ * report, it is a log nobody reads.
  */
 export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
   for (const problem of problems) {

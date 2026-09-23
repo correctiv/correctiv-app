@@ -105,6 +105,12 @@ export async function persist(store: AppStore, slices: PersistedSlice[]): Promis
    *   costs one pointer per slice. Without it, an audio position tick — twice a
    *   second — would re-serialise the saved articles and the session.
    *
+   *   And a slice that changed only in a key it does not persist is unchanged
+   *   here too, compared key by key once the pointer has moved. The home layout's
+   *   slice is why: it stamps every fetch attempt beside a document of up to a
+   *   quarter of a megabyte, and rewriting the document into `localStorage` on
+   *   each stamp would spend the quota's write budget on a field nobody reads back.
+   *
    * - **An armed timer is never postponed.** This is a trailing-edge throttle,
    *   not a debounce, and the difference is the whole point: a debounce resets on
    *   every dispatch, so a burst of unrelated traffic (a pull-to-refresh patches
@@ -117,8 +123,22 @@ export async function persist(store: AppStore, slices: PersistedSlice[]): Promis
   for (const slice of slices) written.set(slice.id, state()[slice.id]);
   let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const dirty = (current: RootState) =>
-    slices.some((slice) => current[slice.id] !== written.get(slice.id));
+  /** Whether a declared key of `slice` differs from what was last written. */
+  const changed = (slice: PersistedSlice, current: RootState) => {
+    const now = current[slice.id];
+    const before = written.get(slice.id);
+    if (now === before) return false;
+    if (before === undefined) return true;
+    const a = pick(now, slice.keys);
+    const b = pick(before, slice.keys);
+    if (slice.keys.some((key) => a[key] !== b[key])) return true;
+    // The same persisted keys under a new pointer: remember the pointer, so the next
+    // dispatch is back to one comparison instead of two shallow copies.
+    written.set(slice.id, now);
+    return false;
+  };
+
+  const dirty = (current: RootState) => slices.some((slice) => changed(slice, current));
 
   store.subscribe(() => {
     if (timer || !dirty(state())) return;
@@ -126,7 +146,7 @@ export async function persist(store: AppStore, slices: PersistedSlice[]): Promis
       timer = null;
       const current = state();
       const pending = slices
-        .filter((slice) => current[slice.id] !== written.get(slice.id))
+        .filter((slice) => changed(slice, current))
         .map(async (slice) => {
           const value = current[slice.id];
           await kv.setString(`store.${slice.id}`, JSON.stringify(pick(value, slice.keys)));

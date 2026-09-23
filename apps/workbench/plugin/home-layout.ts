@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 
 import { ROOT } from './collect.ts';
-import { HOME_LAYOUT_ENDPOINT } from '../src/preview/home/names.ts';
+import { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_FILE } from '../src/preview/home/names.ts';
 
 /**
  * The one thing the workbench writes back into the repository, and only in development.
@@ -54,7 +54,7 @@ import { HOME_LAYOUT_ENDPOINT } from '../src/preview/home/names.ts';
  * reviewer sees it in the diff.
  */
 
-const FILE = 'packages/app-core/src/data/home.layout.json';
+const FILE = HOME_LAYOUT_FILE;
 
 /** 64 KiB. Sixty times the shipped document, and a bound on a socket that never ends. */
 const LIMIT = 64 * 1024;

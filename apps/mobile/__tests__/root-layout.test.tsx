@@ -116,6 +116,22 @@ function mockAudioBackend(): AudioBackend {
 
 jest.mock('@/lib/audio/backend', () => ({ expoAudio: mockAudioBackend() }));
 
+/**
+ * The build time `app.config.js` stamps into every build. Without one the app fetches
+ * no home document at all, and the two tests about that fetch below would pass by
+ * nothing happening.
+ */
+jest.mock('expo-constants', () => {
+  const actual = jest.requireActual<{ default: { expoConfig?: Record<string, unknown> } }>(
+    'expo-constants',
+  );
+  const expoConfig = {
+    ...actual.default.expoConfig,
+    extra: { builtAt: '2026-09-23T06:00:00.000Z' },
+  };
+  return { __esModule: true, default: { ...actual.default, expoConfig } };
+});
+
 import { router, usePathname } from 'expo-router';
 
 import type { AudioBackend } from '@correctiv/app-core';
@@ -125,6 +141,7 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import type { Entitlement } from '@correctiv/app-core/types/models';
 
 import RootLayout from '@/app/_layout';
+import { HOME_LAYOUT_URL } from '@/lib/home/layout';
 import { expoPlatform } from '@/lib/platform/expo';
 import { coreActions, coreStore } from '@/lib/store/core';
 
@@ -315,5 +332,45 @@ describe('the door', () => {
     // And the onboarding decision saw the hydrated session, not the empty default.
     expect(replace).toHaveBeenCalledWith('/onboarding');
     await expoPlatform.keyValue.remove('store.session');
+  });
+});
+
+/**
+ * The home document (ADR 0036 §4, §5): the root layout is where the fetched copy is
+ * registered for persistence and where the fetch is started, and a line missing from
+ * either leaves every other test in the app green. So both are asserted through the
+ * layout itself.
+ */
+describe('the home document', () => {
+  const dev = __DEV__;
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    (globalThis as unknown as { __DEV__: boolean }).__DEV__ = dev;
+    global.fetch = originalFetch;
+  });
+
+  it('is kept across a restart, because the layout persists its slice', async () => {
+    const text = JSON.stringify({ version: 2, sections: [], moments: [] });
+    await expoPlatform.keyValue.setString(
+      'store.homeLayout',
+      JSON.stringify({ text, publishedAt: 1_790_000_000_000 }),
+    );
+
+    await mount();
+
+    expect(coreStore.getState().homeLayout.text).toBe(text);
+    await expoPlatform.keyValue.remove('store.homeLayout');
+  });
+
+  it('is fetched once the store is ready, outside development', async () => {
+    (globalThis as unknown as { __DEV__: boolean }).__DEV__ = false;
+    const fetchSpy = jest.fn((_url: string) => Promise.reject(new Error('no network in a test')));
+    global.fetch = fetchSpy as unknown as typeof fetch;
+
+    await mount();
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(HOME_LAYOUT_URL);
   });
 });

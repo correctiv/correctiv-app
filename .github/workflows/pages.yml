@@ -126,8 +126,20 @@ jobs:
           cp -r apps/mobile/dist site/app
           echo "assembled $(find site -name '*.html' | wc -l) pages"
 
-      # Five ways this deploy can be broken while both builds succeed, so all five
-      # are read off the assembled files rather than assumed:
+      # The home document the app fetches (ADR 0036 §4, ADR 0057 §4): the core's own
+      # file, the same one the app bundles, published at <base>/home.layout.json. The
+      # app holds that address as HOME_LAYOUT_URL in apps/mobile/src/lib/home/layout.ts.
+      #
+      # A step of its own, and it names the core's path and nothing else. That is what
+      # keeps it on the right side of ADR 0040 §1: the document is the core's file, not
+      # the workbench's output, and this step reads neither the app nor the workbench,
+      # so the `independence` job in ci.yml, which deletes apps/workbench and rebuilds
+      # the app, removes nothing this path touches.
+      - name: Publish the home document
+        run: cp packages/app-core/src/data/home.layout.json site/home.layout.json
+
+      # Ways this deploy can be broken while both builds succeed, so each one
+      # is read off the assembled files rather than assumed:
       #   1. a component with no web implementation (react-native-webview renders a
       #      sentence instead of the reader, and exports happily)
       #   2. either base path not applied — the failure mode this workflow exists for
@@ -137,6 +149,8 @@ jobs:
       #      and nothing behind it
       #   5. the preview bundled without the app it frames, which is a device
       #      frame around a 404
+      #   6. the home document missing or not a clean layout, which every installed
+      #      app fetches: the app survives it on its last copy, and says nothing
       - name: Assert the deployable is not silently broken
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
@@ -250,6 +264,18 @@ jobs:
             grep -ril 'rozenite' site/app/ | head
             exit 1
           fi
+
+          # The home document every installed app fetches. A phone that cannot use it
+          # keeps its last good copy, which is correct and invisible, so a broken one
+          # would stand unnoticed for as long as nobody compared a phone with the
+          # repository. So it is judged by the core's own parser, not by JSON.parse:
+          # `{"version":2,"sections":[]}` and `null` are both JSON, and both are an
+          # empty home screen. The script is stricter than the app and says why.
+          test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
+          npx tsx packages/app-core/scripts/check-home-layout.ts site/home.layout.json || {
+            echo "::error::site/home.layout.json is not a home layout the app would draw as written; the lines above name each problem."
+            exit 1
+          }
 
           echo "deployable OK — workbench at $BASE_PATH/, app at $BASE_PATH/app/, $(find site -name '*.html' | wc -l) pages"
 

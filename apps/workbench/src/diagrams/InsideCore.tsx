@@ -95,7 +95,7 @@ export const INSIDE_CORE_COPY = defineMessages({
 
   stores: {
     id: 'insideCore.stores',
-    defaultMessage: 'one Redux Toolkit store, 12 slices',
+    defaultMessage: 'one Redux Toolkit store, 13 slices',
     description:
       'What the stores layer holds. Redux Toolkit is the library’s name and a slice is its own word for one part of a store; both stay.',
   },
@@ -265,7 +265,7 @@ export const INSIDE_CORE_COPY = defineMessages({
   altStores: {
     id: 'insideCore.alt.stores',
     defaultMessage:
-      '<term>stores</term>: one Redux Toolkit store with 12 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.',
+      '<term>stores</term>: one Redux Toolkit store with 13 slices. The core owns the slices and exports <code>createAppStore()</code>; the host constructs the instance.',
     description:
       'One layer in that list. <term> marks the directory’s name, which stays as it is written, and <code> a function name.',
   },
