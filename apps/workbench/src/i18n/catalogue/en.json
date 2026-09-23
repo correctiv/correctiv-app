@@ -1220,20 +1220,12 @@
     "defaultMessage": "changed",
     "description": "The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
   },
-  "home.document.closeSubmit": {
-    "defaultMessage": "Close",
-    "description": "Closes the submit steps without going to GitHub. shell.dialog.close reads the same in English and closes a dialog; this one closes a panel inside the editor."
-  },
   "home.document.field": {
-    "defaultMessage": "The document",
-    "description": "The name read out for the field that holds the document when the clipboard was refused."
+    "defaultMessage": "The change",
+    "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
   },
   "home.document.follow": {
     "defaultMessage": "Scroll the frame to the block under the pointer"
-  },
-  "home.document.openGithub": {
-    "defaultMessage": "Open GitHub’s editor",
-    "description": "A link that opens github.com in a new tab, on the document’s file."
   },
   "home.document.refused": {
     "defaultMessage": "refused",
@@ -1256,32 +1248,40 @@
   },
   "home.document.submit": {
     "defaultMessage": "Submit changes",
-    "description": "The editor’s primary action, on the published site and on a dev server alike. It copies the document and offers GitHub’s editor, where the change becomes a pull request (ADR 0058 §2). Disabled while nothing has changed."
+    "description": "The editor’s primary action, on the published site and on a dev server alike. It opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed."
   },
   "home.document.submitCopied": {
-    "defaultMessage": "The document is on the clipboard."
+    "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."
+  },
+  "home.document.submitHint": {
+    "defaultMessage": "GitHub opens with your change filled in. One click on “Create” submits it. You need a GitHub account.",
+    "description": "The one line under Submit changes. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
+  },
+  "home.document.submitHintLong": {
+    "defaultMessage": "This change is too long for a link. The click puts it on your clipboard, and you paste it in on GitHub. You need a GitHub account.",
+    "description": "Stands in for home.document.submitHint when the change is too long to travel in the address, so it has to go by the clipboard."
   },
   "home.document.submitNoClipboard": {
-    "defaultMessage": "This browser did not let the page use the clipboard. Copy the document from this field."
+    "defaultMessage": "This browser did not let the page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
   },
   "home.document.submitNote": {
-    "defaultMessage": "Submit changes copies the document and opens GitHub’s editor on <code>{file}</code>. The change becomes a pull request and reaches the app once somebody has reviewed and merged it, so you need a GitHub account. This page holds no password and no token (ADR 0058).",
-    "description": "Says what Submit changes does before anybody presses it. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
-  },
-  "home.document.submitStep.branch": {
-    "defaultMessage": "Commit to a new branch and open a pull request.",
-    "description": "The second of the three steps. GitHub offers a new branch and a pull request in one dialog when the file is committed."
-  },
-  "home.document.submitStep.merge": {
-    "defaultMessage": "It appears in the app once it is reviewed and merged.",
-    "description": "The third of the three steps, which is what happens after the pull request."
-  },
-  "home.document.submitStep.paste": {
-    "defaultMessage": "In GitHub’s editor, paste it over the whole file.",
-    "description": "The first of three numbered steps on github.com, after Submit changes; “it” is the document on the clipboard. GitHub’s own buttons are in English there, so each step says what to do rather than quoting their labels."
+    "defaultMessage": "Submit changes opens a new issue on GitHub with your change in it. A workflow then makes a pull request from the issue. The change reaches the app once somebody has checked and merged it. This page holds no password and no token (ADR 0058, ADR 0061).",
+    "description": "Behind the ⓘ beside Submit changes: what happens after the click."
   },
   "home.document.unchanged": {
     "defaultMessage": "unchanged"
+  },
+  "home.issue.heading": {
+    "defaultMessage": "Changes to the home screen",
+    "description": "The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+  },
+  "home.issue.help": {
+    "defaultMessage": "The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",
+    "description": "Stands in the body of the GitHub issue instead of the change, when the change is too long to go in the address. “Create” is GitHub’s own button and stays in English."
+  },
+  "home.issue.lead": {
+    "defaultMessage": "This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made from it by itself, and this issue says where. Please leave the block below as it is.",
+    "description": "The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
   },
   "home.module.articleHero": {
     "defaultMessage": "Lead article"

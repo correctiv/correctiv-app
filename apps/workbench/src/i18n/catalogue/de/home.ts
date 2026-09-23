@@ -92,21 +92,20 @@ export const home: Record<string, string> = {
   'home.document.follow': 'Den Rahmen zu dem Block scrollen, über dem der Zeiger steht',
   'home.document.revert': 'Zurück zur Datei',
   'home.document.submit': 'Änderungen einreichen',
-  'home.document.submitCopied': 'Das Dokument liegt in der Zwischenablage.',
+  'home.document.submitHint':
+    'GitHub öffnet sich mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
+  'home.document.submitHintLong':
+    'Diese Änderung ist zu lang für einen Link. Der Klick legt sie in die Zwischenablage, auf GitHub fügen Sie sie ein. Dafür brauchen Sie ein GitHub-Konto.',
+  'home.document.submitCopied':
+    'Die Änderung liegt in der Zwischenablage. Fügen Sie sie auf GitHub in das Issue ein.',
   'home.document.submitNoClipboard':
-    'Der Browser hat die Zwischenablage nicht freigegeben. Kopieren Sie das Dokument aus diesem Feld.',
-  'home.document.submitStep.paste': 'Fügen Sie es im GitHub-Editor über die ganze Datei ein.',
-  'home.document.submitStep.branch':
-    'Übernehmen Sie es in einen neuen Branch, und eröffnen Sie einen Pull Request.',
-  'home.document.submitStep.merge': 'In der App erscheint es, sobald es geprüft und gemergt ist.',
-  'home.document.openGithub': 'GitHub-Editor öffnen',
-  'home.document.closeSubmit': 'Schließen',
-  'home.document.field': 'Das Dokument',
+    'Der Browser hat die Zwischenablage nicht freigegeben. Kopieren Sie die Änderung aus diesem Feld und fügen Sie sie auf GitHub in das Issue ein.',
+  'home.document.field': 'Die Änderung',
   'home.document.save': 'Ins Repository speichern',
   'home.document.changed': 'geändert',
   'home.document.unchanged': 'unverändert',
   'home.document.submitNote':
-    '„Änderungen einreichen“ kopiert das Dokument und öffnet den GitHub-Editor für <code>{file}</code>. Die Änderung wird zu einem Pull Request und erreicht die App, sobald jemand sie geprüft und gemergt hat. Dafür brauchen Sie ein GitHub-Konto. Diese Seite hält weder ein Passwort noch einen Token (ADR 0058).',
+    '„Änderungen einreichen“ öffnet auf GitHub ein neues Issue mit Ihrer Änderung. Daraus macht ein Workflow einen Pull Request. In der App erscheint die Änderung, sobald jemand sie geprüft und gemergt hat. Diese Seite speichert kein Passwort und keinen Token (ADR 0058, ADR 0061).',
   'home.document.saveNote':
     'Auf einem Entwicklungsserver schreibt Speichern <code>{file}</code> in Ihren eigenen Checkout und weist alles zurück, was der Core nicht lesen kann. Das ist eine Abkürzung für Entwickler; der Weg, der in einem Pull Request endet, ist „Änderungen einreichen“.',
   'home.document.refused': 'abgelehnt',
@@ -151,4 +150,12 @@ export const home: Record<string, string> = {
   'home.save.repository': 'das Repository',
   'home.save.refusedWith': '{said} ({codes})',
   'home.save.http': 'HTTP {status}',
+
+  // The issue Submit changes opens (`preview/home/write.ts`). „Create“ is GitHub's own
+  // button, which GitHub labels in English, so it is quoted as it reads there.
+  'home.issue.heading': 'Änderungen an der Startseite',
+  'home.issue.lead':
+    'Diese Änderung an der Startseite kommt aus der Workbench. Klicken Sie unten auf „Create“. Daraus entsteht dann von selbst ein Pull Request, und dieses Issue sagt, wo. Bitte lassen Sie den Block darunter, wie er ist.',
+  'home.issue.help':
+    'Die Änderung war zu lang für den Link. Sie liegt deshalb in Ihrer Zwischenablage. Löschen Sie diesen Text, fügen Sie die Änderung hier ein (Strg+V, auf dem Mac Cmd+V) und klicken Sie auf „Create“.',
 };

@@ -32,6 +32,10 @@
     "uniwind-types.d.ts",
     "vite.app.mjs",
     "vite.config.ts",
-    "plugin"
+    "plugin",
+    // The two TypeScript scripts, by name: `scripts/` is otherwise JavaScript that
+    // `allowJs` would pull in unasked. What .github/workflows/submission.yml runs.
+    "scripts/submission.ts",
+    "scripts/submission-from-issue.ts"
   ]
 }

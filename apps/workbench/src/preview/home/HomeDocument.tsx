@@ -4,14 +4,12 @@ import {
   Check,
   Eye,
   EyeOff,
-  ExternalLink,
   GitPullRequest,
   GripVertical,
   RotateCcw,
   Save,
   SlidersHorizontal,
   Trash2,
-  X,
 } from 'lucide-react';
 import {
   useEffect,
@@ -55,7 +53,6 @@ import {
   changedAt,
   decidedAt,
   differs,
-  formatLayoutDocument,
   formatTimeOfDay,
   HOME_LAYOUT_FILE,
   inheritedAt,
@@ -82,7 +79,7 @@ import {
   type SettingSpec,
 } from './document';
 import { getLayout, setLayout, subscribeLayout } from './store';
-import { canSave, copyForSubmit, publish, save, SUBMIT_URL, type SaveResult } from './write';
+import { canSave, copyNow, publish, save, submission, type SaveResult } from './write';
 
 /**
  * The home screen's document, as a day somebody can arrange.
@@ -177,50 +174,36 @@ const COPY = defineMessages({
     id: 'home.document.submit',
     defaultMessage: 'Submit changes',
     description:
-      'The editor’s primary action, on the published site and on a dev server alike. It copies the document and offers GitHub’s editor, where the change becomes a pull request (ADR 0058 §2). Disabled while nothing has changed.',
+      'The editor’s primary action, on the published site and on a dev server alike. It opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed.',
+  },
+  submitHint: {
+    id: 'home.document.submitHint',
+    defaultMessage:
+      'GitHub opens with your change filled in. One click on “Create” submits it. You need a GitHub account.',
+    description:
+      'The one line under Submit changes. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English.',
+  },
+  submitHintLong: {
+    id: 'home.document.submitHintLong',
+    defaultMessage:
+      'This change is too long for a link. The click puts it on your clipboard, and you paste it in on GitHub. You need a GitHub account.',
+    description:
+      'Stands in for home.document.submitHint when the change is too long to travel in the address, so it has to go by the clipboard.',
   },
   submitCopied: {
     id: 'home.document.submitCopied',
-    defaultMessage: 'The document is on the clipboard.',
+    defaultMessage: 'The change is on your clipboard. Paste it into the issue on GitHub.',
   },
   submitNoClipboard: {
     id: 'home.document.submitNoClipboard',
     defaultMessage:
-      'This browser did not let the page use the clipboard. Copy the document from this field.',
-  },
-  submitPaste: {
-    id: 'home.document.submitStep.paste',
-    defaultMessage: 'In GitHub’s editor, paste it over the whole file.',
-    description:
-      'The first of three numbered steps on github.com, after Submit changes; “it” is the document on the clipboard. GitHub’s own buttons are in English there, so each step says what to do rather than quoting their labels.',
-  },
-  submitBranch: {
-    id: 'home.document.submitStep.branch',
-    defaultMessage: 'Commit to a new branch and open a pull request.',
-    description:
-      'The second of the three steps. GitHub offers a new branch and a pull request in one dialog when the file is committed.',
-  },
-  submitMerge: {
-    id: 'home.document.submitStep.merge',
-    defaultMessage: 'It appears in the app once it is reviewed and merged.',
-    description: 'The third of the three steps, which is what happens after the pull request.',
-  },
-  openGithub: {
-    id: 'home.document.openGithub',
-    defaultMessage: 'Open GitHub’s editor',
-    description: 'A link that opens github.com in a new tab, on the document’s file.',
-  },
-  closeSubmit: {
-    id: 'home.document.closeSubmit',
-    defaultMessage: 'Close',
-    description:
-      'Closes the submit steps without going to GitHub. shell.dialog.close reads the same in English and closes a dialog; this one closes a panel inside the editor.',
+      'This browser did not let the page use the clipboard. Copy the change from this field and paste it into the issue on GitHub.',
   },
   documentField: {
     id: 'home.document.field',
-    defaultMessage: 'The document',
+    defaultMessage: 'The change',
     description:
-      'The name read out for the field that holds the document when the clipboard was refused.',
+      'The name read out for the field that holds the issue’s text when the clipboard was refused.',
   },
   save: { id: 'home.document.save', defaultMessage: 'Save to the repository' },
   changed: {
@@ -233,9 +216,8 @@ const COPY = defineMessages({
   submitNote: {
     id: 'home.document.submitNote',
     defaultMessage:
-      'Submit changes copies the document and opens GitHub’s editor on <code>{file}</code>. The change becomes a pull request and reaches the app once somebody has reviewed and merged it, so you need a GitHub account. This page holds no password and no token (ADR 0058).',
-    description:
-      'Says what Submit changes does before anybody presses it. The tag wraps {file}, the repository path of the document, drawn in a monospace face.',
+      'Submit changes opens a new issue on GitHub with your change in it. A workflow then makes a pull request from the issue. The change reaches the app once somebody has checked and merged it. This page holds no password and no token (ADR 0058, ADR 0061).',
+    description: 'Behind the ⓘ beside Submit changes: what happens after the click.',
   },
   saveNote: {
     id: 'home.document.saveNote',
@@ -509,13 +491,14 @@ export function HomeDocument({
   const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   const [result, setResult] = useState<SaveResult | null>(null);
-  /** Where the submit steps stand: shut, copied, or copied by hand because the clipboard was refused. */
-  const [submitted, setSubmitted] = useState<'copied' | 'no-clipboard' | null>(null);
-  const submitLink = useRef<HTMLAnchorElement>(null);
-  const submitField = useRef<HTMLTextAreaElement>(null);
+  /**
+   * Only for a change too long for the address: whether the click put it on the clipboard,
+   * or the clipboard was refused and the field below holds it instead.
+   */
+  const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
+  const copyField = useRef<HTMLTextAreaElement>(null);
   const dirtyStatusId = useId();
-  const submitStatusId = useId();
-  const submitStepsId = useId();
+  const submitHintId = useId();
   /**
    * Whether the frame scrolls to the block under the pointer.
    *
@@ -685,21 +668,16 @@ export function HomeDocument({
    */
   useEffect(() => {
     setResult(null);
-    setSubmitted(null);
+    setCopied(null);
   }, [layout]);
 
   /*
-   * The steps open under the bar and the link to GitHub is where a keyboard goes next, so
-   * focus goes there. The link carries the two sentences above it as its description, which
-   * is what a screen reader hears on arrival instead of a live region that may or may not be
-   * announced when it is mounted with its text already in it. When the clipboard was
-   * refused, the field holding the document is where a keyboard goes instead.
+   * Refused, the field holding the change is the next thing to do, so a keyboard goes
+   * there. GitHub is already open in its own tab, waiting for the paste.
    */
   useEffect(() => {
-    // Refused, the field is the next thing to do, not the link: there is nothing to paste yet.
-    if (submitted === 'no-clipboard') submitField.current?.focus();
-    else if (submitted === 'copied') submitLink.current?.focus();
-  }, [submitted]);
+    if (copied === 'no-clipboard') copyField.current?.focus();
+  }, [copied]);
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
@@ -900,6 +878,10 @@ export function HomeDocument({
   const edited = changedAt(layout, playhead.instant);
   const decided = decidedAt(layout, playhead.instant);
   const dirty = differs(layout);
+  /** Where Submit changes goes, or nothing while there is nothing to submit. */
+  const offer = dirty
+    ? submission(layout, (message, values) => intl.formatMessage(message, values))
+    : null;
 
   /**
    * How far each row is drawn from where the document lays it out, while a block is carried.
@@ -927,7 +909,7 @@ export function HomeDocument({
       {/*
         The document's own bar: first in the panel, and held at the top of it while the list
         scrolls. It says whether the document differs from the file, offers the way back to
-        the file, and offers the way out (ADR 0058 §2). It used to sit under the whole list,
+        the file, and offers the way out (ADR 0061 §1). It used to sit under the whole list,
         which put the one action that matters a scroll away from every block it was about.
 
         `sticky` against the panel's own scroller, and the only sticky thing in it, so the
@@ -939,7 +921,7 @@ export function HomeDocument({
         Submit changes: one throws work away, the other sends it, and an outline button
         beside a filled one at the same size reads as "pick either". So the status and the
         way back share the first row, and Submit changes has the second to itself, at the
-        panel's full width, directly above the steps it opens.
+        panel's full width, with the one line that says what it does under it.
       */}
       <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
         <div className="flex flex-wrap items-center gap-xs">
@@ -952,89 +934,76 @@ export function HomeDocument({
           </Button>
         </div>
         {/*
-          A button and not a link, although it ends on github.com. The click puts the
-          document on the clipboard and opens the steps; the link inside them is what
-          leaves. A tab that opened on the first click would take the focus before anybody
-          had read what to do there.
+          A link and not a button, although it looks like one: the click leaves for GitHub in a
+          new tab, and a link is what a browser lets open a tab without a popup blocker in the
+          way. There is no step between the click and GitHub any more (ADR 0061 §1), so what the
+          person needs to know is the one line under it, said before they press.
+
+          Unchanged, it is a disabled button instead, because a link cannot be disabled and a
+          link to an issue that would change nothing is the one thing this must not offer.
         */}
         <div className="flex items-center gap-xs">
-          <Button
-            size="sm"
-            className="min-w-0 flex-1"
-            disabled={!dirty}
-            aria-expanded={submitted !== null}
-            // "unchanged" beside it is why it is off; a disabled button says nothing of itself.
-            aria-describedby={dirtyStatusId}
-            onClick={() => {
-              const sent = layout;
-              void copyForSubmit(sent).then((ok) => {
-                // Answered after the document moved on: what is on the clipboard is the old
-                // one, and the steps would claim otherwise. The layout effect already shut them.
-                if (getLayout() !== sent) return;
-                setSubmitted(ok ? 'copied' : 'no-clipboard');
-              });
-            }}
-          >
-            <GitPullRequest aria-hidden="true" />
-            {intl.formatMessage(COPY.submit)}
-          </Button>
-          {/* What Submit changes does, said before anybody presses it, behind the ⓘ. */}
+          {offer ? (
+            <Button asChild size="sm" className="min-w-0 flex-1">
+              <a
+                href={offer.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-describedby={submitHintId}
+                onClick={() => {
+                  // Too long for the address: the link carries a request to paste, and this
+                  // puts the change where the paste will find it, inside the same click.
+                  if (!offer.fits) setCopied(copyNow(offer.body) ? 'copied' : 'no-clipboard');
+                }}
+              >
+                <GitPullRequest aria-hidden="true" />
+                {intl.formatMessage(COPY.submit)}
+              </a>
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="min-w-0 flex-1"
+              disabled
+              // "unchanged" above it is why it is off; a disabled button says nothing of itself.
+              aria-describedby={dirtyStatusId}
+            >
+              <GitPullRequest aria-hidden="true" />
+              {intl.formatMessage(COPY.submit)}
+            </Button>
+          )}
+          {/* What happens after the click, for whoever wants to know, behind the ⓘ. */}
           <InfoTip about={intl.formatMessage(COPY.submit)} side="bottom" align="end">
-            <p>{intl.formatMessage(COPY.submitNote, { code, file: HOME_LAYOUT_FILE })}</p>
+            <p>{intl.formatMessage(COPY.submitNote)}</p>
           </InfoTip>
         </div>
+        <p id={submitHintId} className={NOTE}>
+          {intl.formatMessage(offer && !offer.fits ? COPY.submitHintLong : COPY.submitHint)}
+        </p>
 
-        {submitted !== null && (
+        {offer && copied !== null && (
           <div className="flex flex-col gap-xs">
-            <p id={submitStatusId} className="flex items-start gap-xs text-s text-on-canvas">
-              {submitted === 'copied' && (
+            <output className="flex items-start gap-xs text-s text-on-canvas">
+              {copied === 'copied' && (
                 <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
               )}
               <span className="min-w-0">
                 {intl.formatMessage(
-                  submitted === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+                  copied === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
                 )}
               </span>
-            </p>
-            {submitted === 'no-clipboard' && (
+            </output>
+            {copied === 'no-clipboard' && (
               <textarea
-                ref={submitField}
+                ref={copyField}
                 readOnly
                 aria-label={intl.formatMessage(COPY.documentField)}
-                value={formatLayoutDocument(layout)}
+                value={offer.body}
                 rows={8}
                 onFocus={(event) => event.currentTarget.select()}
                 className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
               />
             )}
-            <ol id={submitStepsId} className={`${NOTE} list-decimal space-y-4xs pl-m`}>
-              <li>{intl.formatMessage(COPY.submitPaste)}</li>
-              <li>{intl.formatMessage(COPY.submitBranch)}</li>
-              <li>{intl.formatMessage(COPY.submitMerge)}</li>
-            </ol>
-            <div className="flex flex-wrap items-center gap-xs">
-              <Button
-                variant="outline"
-                size="sm"
-                className="mr-auto"
-                onClick={() => setSubmitted(null)}
-              >
-                <X aria-hidden="true" />
-                {intl.formatMessage(COPY.closeSubmit)}
-              </Button>
-              <Button asChild size="sm">
-                <a
-                  ref={submitLink}
-                  href={SUBMIT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-describedby={`${submitStatusId} ${submitStepsId}`}
-                >
-                  <ExternalLink aria-hidden="true" />
-                  {intl.formatMessage(COPY.openGithub)}
-                </a>
-              </Button>
-            </div>
           </div>
         )}
       </div>

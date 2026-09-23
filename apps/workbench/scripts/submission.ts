@@ -1,0 +1,458 @@
+/**
+ * Reads a submission issue back, checks it and turns it into the one file it changes.
+ *
+ * The workflow half of [ADR 0061](../../../adr/0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md).
+ * `src/preview/submission.ts` is the format both ends share; this is what
+ * `.github/workflows/submission.yml` runs over an issue, through
+ * `scripts/submission-from-issue.ts`, and what `test/submission.test.ts` runs over made-up
+ * ones.
+ *
+ * **Everything in the issue is untrusted.** The repository is public, so anybody can open
+ * an issue with the right prefix, and the workflow only filters on who opened it after
+ * the fact. So the body is read as data and nothing else: one fenced block is cut out,
+ * parsed as JSON and handed to the kind's own validator, and what is written is what that
+ * validator printed rather than what arrived. No part of the issue becomes a path, a
+ * branch name or a command. The kind decides the one file, and the kind comes from a
+ * fixed table.
+ *
+ * **Why it lives in the workbench.** The home kind prints its file with
+ * `formatLayoutDocument`, which is the workbench's printer and the one the dev server's
+ * Save already writes with, and it names blocks with the workbench's German. Both are
+ * here; a copy of either under `.github/` would be the copy that drifts.
+ *
+ * **Why its sentences are German literals.** They are what the workflow says on GitHub:
+ * a comment on the issue and the pull request's body. A pull request is argued in German
+ * (AGENTS.md), and nothing on the site ever prints these, so they are not the site's
+ * words and do not go through its catalogue. The block names inside them do, because
+ * those are the site's words and a person will have seen them in the editor.
+ */
+import { createIntl, type IntlShape } from 'react-intl';
+
+import {
+  parseHomeLayout,
+  type HomeChange,
+  type HomeEdition,
+  type HomeLayout,
+  type HomeMoment,
+  type HomeSection,
+  type SettingValue,
+} from '@correctiv/app-core/lib/home-layout';
+import { settingsFor, type SettingSpec } from '@correctiv/app-core/lib/home-settings';
+import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
+import { HOME_LAYOUT_MAX_CHARS } from '@correctiv/app-core/stores/homeLayout';
+
+import { de } from '../src/i18n/catalogue/de/index.ts';
+import { say } from '../src/i18n/messages.ts';
+import { blockName, formatLayoutDocument, settingLabel } from '../src/preview/home/document.ts';
+import {
+  kindOfTitle,
+  SUBMISSION_FENCE,
+  SUBMISSION_KINDS,
+  type SubmissionKind,
+} from '../src/preview/submission.ts';
+
+// --- refusals ---------------------------------------------------------------------
+
+/** Why a submission did not become a pull request. Each code has one German sentence. */
+export type RefusalCode =
+  | 'no-kind'
+  | 'kind-not-built'
+  | 'too-large'
+  | 'no-block'
+  | 'several-blocks'
+  | 'not-json'
+  | 'refused'
+  | 'unchanged';
+
+export class Refusal extends Error {
+  constructor(
+    readonly code: RefusalCode,
+    readonly detail = '',
+  ) {
+    super(detail ? `${code}: ${detail}` : code);
+  }
+}
+
+/**
+ * What the issue is told, in plain German, and what to do about it.
+ *
+ * Written for the person who pressed the button, who has never seen the JSON: say what
+ * went wrong in one sentence and what helps in the next. The parser's codes go after
+ * that, for whoever has to look deeper.
+ */
+export function refusalText(refusal: Refusal): string {
+  const detail = refusal.detail ? `\n\nGenauer: ${refusal.detail}` : '';
+  switch (refusal.code) {
+    case 'no-kind':
+      return `Der Titel beginnt mit keiner bekannten Kennung wie ${SUBMISSION_KINDS.home.prefix}. Bitte stellen Sie sie wieder an den Anfang des Titels.`;
+    case 'kind-not-built':
+      return 'Diese Art Einreichung gibt es noch nicht. Ein Maintainer schaut sich das Issue an.';
+    case 'too-large':
+      return `Die Einreichung ist zu groß. Mehr als ${HOME_LAYOUT_MAX_CHARS / 1024} KiB liest auch die App nicht.${detail}`;
+    case 'no-block':
+      return 'Im Issue steht keine Änderung. Wenn die Workbench sie in die Zwischenablage gelegt hat: Bearbeiten Sie das Issue, fügen Sie sie über dem Hinweistext ein und speichern Sie.';
+    case 'several-blocks':
+      return `Im Issue stehen mehrere \`${SUBMISSION_FENCE}\`-Blöcke. Es darf nur einer sein. Bitte lassen Sie nur den aus der Workbench stehen.`;
+    case 'not-json':
+      return `Der Block im Issue ist kein gültiges JSON. Vermutlich wurde er beim Einfügen beschädigt. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'refused':
+      return `Die App würde dieses Dokument nicht so zeichnen, wie es geschrieben ist. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'unchanged':
+      return 'Die eingereichte Startseite ist dieselbe, die schon im Repository steht. Es gibt nichts zu ändern.';
+  }
+}
+
+// --- reading the issue ------------------------------------------------------------
+
+export interface Submission {
+  kind: SubmissionKind;
+  /** The text inside the one fenced block, as it stood. */
+  payload: string;
+}
+
+/**
+ * The largest body read at all. Twice the payload bound, so a body the payload check
+ * would refuse still gets that refusal, and a body past it is not searched by a regular
+ * expression. GitHub caps an issue body at 65,536 characters, so neither bound can bite
+ * today; they are here because the app's own bound is the honest one to refuse with.
+ */
+const MAX_BODY = HOME_LAYOUT_MAX_CHARS * 2;
+
+/** An opening fence for the payload: its own line, the info string, nothing after it. */
+const OPENING = new RegExp(`^\`\`\`${SUBMISSION_FENCE}[ \\t]*\\r?$`, 'gm');
+
+/**
+ * The kind and the payload of an issue, or a `Refusal`.
+ *
+ * Exactly one fenced `json` block, because two is somebody having pasted the document a
+ * second time beside the first, and choosing one of them would be choosing for them.
+ */
+export function readSubmission(title: string, body: string): Submission {
+  const kind = kindOfTitle(title);
+  if (kind === null) throw new Refusal('no-kind');
+  if (!SUBMISSION_KINDS[kind].built) throw new Refusal('kind-not-built');
+  if (body.length > MAX_BODY) throw new Refusal('too-large', `${body.length} Zeichen`);
+
+  const openings = [...body.matchAll(OPENING)];
+  if (openings.length === 0) throw new Refusal('no-block');
+  if (openings.length > 1) throw new Refusal('several-blocks');
+
+  const start = openings[0].index + openings[0][0].length;
+  const rest = body.slice(start).replace(/^\n/, '');
+  const close = /^```[ \t]*\r?$/m.exec(rest);
+  if (!close) throw new Refusal('no-block');
+
+  const payload = rest.slice(0, close.index);
+  if (payload.length > HOME_LAYOUT_MAX_CHARS)
+    throw new Refusal('too-large', `${payload.length} Zeichen`);
+  return { kind, payload };
+}
+
+// --- the kinds --------------------------------------------------------------------
+
+export interface Applied {
+  /** The repository path written, which is the kind's own and never the issue's. */
+  file: string;
+  /** The file's new content, already formatted as the repository's formatter prints it. */
+  content: string;
+  /** What changed, as Markdown in German, for the pull request's body. */
+  summary: string;
+}
+
+/** Turns a payload into the file it becomes, given what the file holds now. */
+export type Apply = (payload: string, current: string) => Applied;
+
+/**
+ * Kind to what applies it. `null` is a kind that is named and not built, and the type
+ * makes a kind without an entry here a compile error rather than a silent skip.
+ */
+export const APPLY: Readonly<Record<SubmissionKind, Apply | null>> = {
+  home: applyHome,
+  strings: null,
+};
+
+/** The whole path from issue to file, for the workflow's one call. */
+export function applyIssue(title: string, body: string, current: (file: string) => string) {
+  const { kind, payload } = readSubmission(title, body);
+  const apply = APPLY[kind];
+  if (!apply) throw new Refusal('kind-not-built');
+  return { kind, ...apply(payload, current(SUBMISSION_KINDS[kind].file)) };
+}
+
+/**
+ * The home document: the core's parser judges, the workbench's printer writes.
+ *
+ * As strict as `packages/app-core/scripts/check-home-layout.ts`, which the deploy runs
+ * over the same file, and for its reason: the app draws past a problem, but a document
+ * with one is a document nobody meant to write. What is written is the parser's reading
+ * printed again, so an unknown key in the issue does not reach the repository.
+ */
+export function applyHome(payload: string, current: string): Applied {
+  let document: unknown;
+  try {
+    document = JSON.parse(payload);
+  } catch (error) {
+    throw new Refusal('not-json', error instanceof Error ? error.message : String(error));
+  }
+
+  const { layout, problems } = parseHomeLayout(document);
+  if (!layout || layout.sections.length === 0 || problems.length > 0) {
+    const codes = problems.map((problem) => `\`${problem.code}\``).join(', ');
+    throw new Refusal('refused', codes || 'kein Dokument mit Blöcken');
+  }
+
+  const content = formatLayoutDocument(layout);
+  if (content === current) throw new Refusal('unchanged');
+
+  const before = readLayout(current);
+  return {
+    file: SUBMISSION_KINDS.home.file,
+    content,
+    summary: summariseHome(before, layout),
+  };
+}
+
+/** What the repository holds now, or an empty day if it holds nothing readable. */
+function readLayout(text: string): HomeLayout {
+  try {
+    const { layout } = parseHomeLayout(JSON.parse(text));
+    if (layout) return layout;
+  } catch {
+    // Fall through: the summary then reads as a document written from nothing.
+  }
+  return { version: 0, sections: [], moments: [], editions: [] };
+}
+
+// --- the summary ------------------------------------------------------------------
+
+/** The site's German, for the block names. The sentence frames below are not the site's. */
+const INTL: IntlShape = createIntl({ locale: 'de', defaultLocale: 'en', messages: de });
+
+/**
+ * What changed between two home documents, as a list a person can read.
+ *
+ * Derived from the two parsed documents, never from the issue's prose: the issue is
+ * whatever somebody left in it, and the diff is what will be merged. Blocks are named as
+ * the editor names them, "Aufmacher (hero)", so a reviewer can find each one in the
+ * workbench. Returns Markdown, a heading and one bullet per change.
+ */
+export function summariseHome(before: HomeLayout, after: HomeLayout): string {
+  const lines = [
+    ...orderLines(before, after),
+    ...dayStartLines(before, after),
+    ...momentLines(before.moments, after.moments, after),
+    ...editionLines(before, after),
+  ];
+  if (after.version !== before.version && before.version !== 0)
+    lines.push(`Das Dokument hat jetzt die Version ${after.version} statt ${before.version}.`);
+  if (lines.length === 0)
+    lines.push('Nur die Schreibweise der Datei ändert sich, nicht die Startseite.');
+  return ['### Was sich an der Startseite ändert', '', ...lines.map((line) => `- ${line}`)].join(
+    '\n',
+  );
+}
+
+function quoted(section: HomeSection): string {
+  return `„${blockName(INTL, section)}“`;
+}
+
+function byId(layout: HomeLayout): Map<string, HomeSection> {
+  return new Map(layout.sections.map((section) => [section.id, section]));
+}
+
+/**
+ * Added, removed, and moved blocks.
+ *
+ * "Moved" is the blocks outside the longest run both orders share. Moving one block
+ * shifts every block between its old and new place by one, and a list naming all of
+ * those would name the wrong thing; the blocks that are not part of the common order are
+ * the ones somebody actually picked up.
+ */
+function orderLines(before: HomeLayout, after: HomeLayout): string[] {
+  const lines: string[] = [];
+  const old = byId(before);
+  const now = byId(after);
+  const total = after.sections.length;
+
+  after.sections.forEach((section, index) => {
+    const was = old.get(section.id);
+    if (!was) lines.push(`${quoted(section)} ist neu, an Stelle ${index + 1} von ${total}.`);
+    else if (was.module !== section.module)
+      lines.push(`${quoted(was)} ist jetzt ${quoted(section)}.`);
+  });
+  for (const section of before.sections)
+    if (!now.has(section.id)) lines.push(`${quoted(section)} ist entfernt.`);
+
+  const kept = new Set(longestCommonRun(sharedIds(before, now), sharedIds(after, old)));
+  after.sections.forEach((section, index) => {
+    if (old.has(section.id) && !kept.has(section.id))
+      lines.push(`${quoted(section)} ist verschoben, jetzt an Stelle ${index + 1} von ${total}.`);
+  });
+  return lines;
+}
+
+/** A layout's ids in its order, keeping only those the other layout also has. */
+function sharedIds(layout: HomeLayout, other: Map<string, HomeSection>): string[] {
+  return layout.sections.map((section) => section.id).filter((id) => other.has(id));
+}
+
+/** The longest common subsequence of two id lists. Both are a dozen long, so the table is tiny. */
+export function longestCommonRun(a: readonly string[], b: readonly string[]): string[] {
+  const table = Array.from({ length: a.length + 1 }, () =>
+    Array.from({ length: b.length + 1 }, () => 0),
+  );
+  for (let i = a.length - 1; i >= 0; i--)
+    for (let j = b.length - 1; j >= 0; j--)
+      table[i][j] =
+        a[i] === b[j] ? table[i + 1][j + 1] + 1 : Math.max(table[i + 1][j], table[i][j + 1]);
+  const run: string[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      run.push(a[i]);
+      i++;
+      j++;
+    } else if (table[i + 1][j] >= table[i][j + 1]) i++;
+    else j++;
+  }
+  return run;
+}
+
+/** Switched on or off, and settings changed, where the day starts. */
+function dayStartLines(before: HomeLayout, after: HomeLayout): string[] {
+  const lines: string[] = [];
+  const old = byId(before);
+  for (const section of after.sections) {
+    const was = old.get(section.id);
+    if (!was || was.module !== section.module) {
+      if (section.hidden) lines.push(`${quoted(section)} ist zu Tagesbeginn ausgeblendet.`);
+      continue;
+    }
+    if (Boolean(was.hidden) !== Boolean(section.hidden))
+      lines.push(
+        `${quoted(section)} ist zu Tagesbeginn ${section.hidden ? 'ausgeblendet' : 'wieder sichtbar'}.`,
+      );
+    for (const spec of settingsFor(section.module)) {
+      const from = valueOf(was.settings, spec);
+      const to = valueOf(section.settings, spec);
+      if (from !== to)
+        lines.push(
+          `${quoted(section)}: ${settingName(section, spec)} ist jetzt ${printed(to)}, vorher ${printed(from)}.`,
+        );
+    }
+  }
+  return lines;
+}
+
+function valueOf(
+  settings: Readonly<Record<string, SettingValue>> | undefined,
+  spec: SettingSpec,
+): SettingValue {
+  return settings?.[spec.key] ?? spec.fallback;
+}
+
+function settingName(section: HomeSection, spec: SettingSpec): string {
+  return `„${say(INTL, settingLabel(section.module, spec).label)}“`;
+}
+
+/** A setting's value in words: a pinned article by its title, `null` as "none". */
+function printed(value: SettingValue | undefined): string {
+  if (value === null || value === undefined) return 'nichts angepinnt';
+  if (typeof value === 'string') {
+    const pin = HOME_PINS.find((item) => item.url === value);
+    return pin ? `„${pin.title}“` : `\`${value}\``;
+  }
+  return String(value);
+}
+
+/** What one change does, in a few words, such as that a block is switched off. */
+function changeWords(change: HomeChange, sections: Map<string, HomeSection>): string {
+  const section = sections.get(change.id);
+  const name = section ? quoted(section) : `\`${change.id}\``;
+  const parts: string[] = [];
+  if (change.hidden !== undefined)
+    parts.push(`${name} ${change.hidden ? 'ausgeblendet' : 'eingeblendet'}`);
+  for (const [key, value] of Object.entries(change.settings ?? {})) {
+    const spec = section ? settingsFor(section.module).find((each) => each.key === key) : undefined;
+    const label = section && spec ? settingName(section, spec) : `\`${key}\``;
+    parts.push(`${name}: ${label} ${printed(value)}`);
+  }
+  return parts.join(', ');
+}
+
+function changesWords(changes: readonly HomeChange[], sections: Map<string, HomeSection>): string {
+  return changes.length === 0
+    ? 'keine Änderung'
+    : changes.map((change) => changeWords(change, sections)).join('; ');
+}
+
+/** Moments added, dropped and rewritten. "Moment" is the editor's own word for one. */
+function momentLines(
+  before: readonly HomeMoment[],
+  after: readonly HomeMoment[],
+  layout: HomeLayout,
+): string[] {
+  const lines: string[] = [];
+  const sections = byId(layout);
+  const old = new Map(before.map((moment) => [moment.at, moment]));
+  const now = new Set(after.map((moment) => moment.at));
+  for (const moment of after) {
+    const was = old.get(moment.at);
+    const words = changesWords(moment.changes, sections);
+    if (!was) lines.push(`Neuer Moment um ${moment.at}: ${words}.`);
+    else if (JSON.stringify(was.changes) !== JSON.stringify(moment.changes))
+      lines.push(`Der Moment um ${moment.at} ist geändert, jetzt: ${words}.`);
+  }
+  for (const moment of before)
+    if (!now.has(moment.at)) lines.push(`Der Moment um ${moment.at} entfällt.`);
+  return lines;
+}
+
+/** `2026-09-24T06:00` as a German reader writes it. */
+function when(stamp: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})$/.exec(stamp);
+  return match ? `${match[3]}.${match[2]}.${match[1]}, ${match[4]}` : stamp;
+}
+
+function editionName(edition: HomeEdition): string {
+  return edition.title ? `„${edition.title}“ (${edition.id})` : `\`${edition.id}\``;
+}
+
+/** Editions added, dropped and changed, and what changed inside one. */
+function editionLines(before: HomeLayout, after: HomeLayout): string[] {
+  const lines: string[] = [];
+  const sections = byId(after);
+  const old = new Map(before.editions.map((edition) => [edition.id, edition]));
+  const now = new Set(after.editions.map((edition) => edition.id));
+  for (const edition of after.editions) {
+    const was = old.get(edition.id);
+    const span = `vom ${when(edition.from)} bis ${when(edition.until)} Uhr`;
+    if (!was) {
+      lines.push(
+        `Neue Ausgabe ${editionName(edition)}, ${span}: ${changesWords(edition.changes, sections)}.`,
+      );
+      for (const moment of edition.moments)
+        lines.push(
+          `In der Ausgabe ${editionName(edition)} um ${moment.at}: ${changesWords(moment.changes, sections)}.`,
+        );
+      continue;
+    }
+    if (was.from !== edition.from || was.until !== edition.until)
+      lines.push(`Die Ausgabe ${editionName(edition)} gilt jetzt ${span}.`);
+    if ((was.title ?? '') !== (edition.title ?? ''))
+      lines.push(`Die Ausgabe \`${edition.id}\` heißt jetzt ${editionName(edition)}.`);
+    if (JSON.stringify(was.changes) !== JSON.stringify(edition.changes))
+      lines.push(
+        `Die Ausgabe ${editionName(edition)} beginnt jetzt mit: ${changesWords(edition.changes, sections)}.`,
+      );
+    lines.push(
+      ...momentLines(was.moments, edition.moments, after).map(
+        (line) => `In der Ausgabe ${editionName(edition)}: ${line}`,
+      ),
+    );
+  }
+  for (const edition of before.editions)
+    if (!now.has(edition.id)) lines.push(`Die Ausgabe ${editionName(edition)} entfällt.`);
+  return lines;
+}

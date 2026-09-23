@@ -52,10 +52,11 @@ export const HOME_LAYOUT_ENDPOINT = '/__workbench/home-layout';
 /**
  * Where the document lives in the repository, spelled once for both of its writers.
  *
- * The dev server's Save writes it (`plugin/home-layout.ts`), and Submit changes opens
- * GitHub's editor on it (`write.ts`). Two spellings of one path would be two places for a
- * move of the file to be half done, and the half that went unnoticed would be the one that
- * opens an editor on a file that is no longer there.
+ * The dev server's Save writes it (`plugin/home-layout.ts`), and so does the workflow that
+ * turns a submitted issue into a pull request (`scripts/submission.ts`, which finds it
+ * through `../submission.ts`). Two spellings of one path would be two places for a move
+ * of the file to be half done, and the half that went unnoticed would be the one that
+ * writes a file nothing reads any more.
  */
 export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/home.layout.json';
 

@@ -7,18 +7,18 @@ import {
 import docsModule from 'virtual:docs';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
+import { issueAddress, issueFor } from '../submission';
 import {
   differs,
   formatLayoutDocument,
   HOME_LAYOUT_ENDPOINT,
-  HOME_LAYOUT_FILE,
   HOME_LAYOUT_KEY,
   SHIPPED,
 } from './document';
 
 /**
- * The three ways a change leaves the page: into the running app, into GitHub's editor, and
- * on a dev server into the developer's own checkout.
+ * The three ways a change leaves the page: into the running app, into a GitHub issue that
+ * CI turns into a pull request, and on a dev server into the developer's own checkout.
  *
  * Split from `document.ts` because that file is imported by the dev server and this one
  * cannot be: `import.meta.env` is Vite's, `window` is the browser's, and either of them
@@ -127,6 +127,26 @@ const COPY = {
     description:
       'Stands in for a refusal the server sent no sentence with. {status} is the numeric response status.',
   }),
+  issueHeading: wbMessage({
+    id: 'home.issue.heading',
+    defaultMessage: 'Changes to the home screen',
+    description:
+      'The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list.',
+  }),
+  issueLead: wbMessage({
+    id: 'home.issue.lead',
+    defaultMessage:
+      'This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made from it by itself, and this issue says where. Please leave the block below as it is.',
+    description:
+      'The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English.',
+  }),
+  issueHelp: wbMessage({
+    id: 'home.issue.help',
+    defaultMessage:
+      'The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.',
+    description:
+      'Stands in the body of the GitHub issue instead of the change, when the change is too long to go in the address. “Create” is GitHub’s own button and stays in English.',
+  }),
 };
 
 /** Formats one of the descriptors above. The caller has an `intl`; this module may not. */
@@ -190,38 +210,70 @@ export async function save(layout: HomeLayout, format: Format): Promise<SaveResu
 }
 
 /**
- * GitHub's editor, open on the document, on the branch the published site is built from.
+ * What Submit changes opens: GitHub's new-issue page with the change already in it.
  *
- * ADR 0058 §2. **Submit changes** is the one way a change leaves the published site, and
- * it holds nothing to do it with: the person arrives on github.com signed in as
- * themselves, pastes, and commits to a new branch with a pull request, or is offered a
- * fork by GitHub if they may not write here. The workbench never sees a credential, so
- * there is none for anything else on `correctiv.github.io` to read.
+ * [ADR 0061](../../../../../adr/0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md)
+ * §1. The person clicks GitHub's own "Create", and `.github/workflows/submission.yml`
+ * turns the issue into a pull request. The workbench holds nothing to do it with, which
+ * is ADR 0058 §1: the person arrives on github.com signed in as themselves, and there is
+ * no credential on `correctiv.github.io` for anything else there to read.
  *
- * `main` because that is what `.github/workflows/pages.yml` publishes from, and so what
- * the document the editor opened on was. A change that reached `main` after this page was
- * built shows in the pull request's diff, which is where a reviewer catches it.
+ * The issue's words follow the page's language, because they are for the person on
+ * GitHub. The payload is the document exactly as Save would write it, and the prefix in
+ * the title is `src/preview/submission.ts`'s and never translated, because the workflow
+ * matches on it.
  *
- * The document goes by the clipboard and not by `?value=` in the address: the file
- * exists, so this is `/edit/` and not `/new/`, whether `/edit/` honours a prefill is not
- * measured, and an address has a ceiling the document would one day grow into (measured
- * on 2026-09-23: accepted to 6000 characters, `414` from 10000).
+ * `fits` is false when the whole issue would make the address too long. The link then
+ * carries a sentence asking the person to paste, and `body` is what the click puts on the
+ * clipboard (`copyNow`).
  */
-export const SUBMIT_URL = `${docsModule.repo}/edit/main/${HOME_LAYOUT_FILE}`;
+export interface Submit {
+  href: string;
+  fits: boolean;
+  body: string;
+}
+
+export function submission(layout: HomeLayout, format: Format): Submit {
+  const issue = issueFor('home', formatLayoutDocument(layout), {
+    heading: format(COPY.issueHeading),
+    lead: format(COPY.issueLead),
+  });
+  const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));
+  return { href, fits, body: issue.body };
+}
 
 /**
- * Put the document on the clipboard, and say whether that worked.
+ * Put text on the clipboard inside the click that opens the new tab, and say whether that
+ * worked.
  *
- * Never throws and never rejects: a browser that refuses the clipboard — no secure
- * context, a permission denied, an old engine without `navigator.clipboard` — is answered
- * with `false`, and the panel then offers the document in a field to copy by hand. The
- * person still gets to GitHub either way.
+ * Synchronous on purpose, and that is why it is the old `copy` command and not
+ * `navigator.clipboard`: the link opens GitHub in a new tab as part of the same click,
+ * the new tab takes the focus, and the asynchronous clipboard refuses a document that is
+ * not focused by the time it gets round to writing. A `copy` event answered with the text
+ * is written before the click's default action runs. `navigator.clipboard` stays as the
+ * second attempt for a browser without the command.
+ *
+ * Never throws: a refusal is `false`, and the panel then offers the text in a field to
+ * copy by hand.
  */
-export async function copyForSubmit(layout: HomeLayout): Promise<boolean> {
+export function copyNow(text: string): boolean {
   try {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
-    await navigator.clipboard.writeText(formatLayoutDocument(layout));
-    return true;
+    if (typeof document === 'undefined') return false;
+    const put = (event: ClipboardEvent) => {
+      event.clipboardData?.setData('text/plain', text);
+      event.preventDefault();
+    };
+    document.addEventListener('copy', put);
+    let done = false;
+    try {
+      done = document.execCommand('copy');
+    } finally {
+      document.removeEventListener('copy', put);
+    }
+    if (!done && typeof navigator !== 'undefined' && navigator.clipboard) {
+      void navigator.clipboard.writeText(text).catch(() => undefined);
+    }
+    return done;
   } catch {
     return false;
   }

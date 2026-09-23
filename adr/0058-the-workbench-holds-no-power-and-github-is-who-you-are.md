@@ -1,6 +1,8 @@
 # ADR 0058 — The workbench holds no power, and GitHub is who you are
 
-Status: accepted, 2026-09-23, decided by the product side. **Not built.** It answers how a
+Status: accepted, 2026-09-23, decided by the product side. **§1 holds; the first version of
+§2 was built in #246 and [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) revises it, built in the same pull request; §4 to §6 are not
+built.** It answers how a
 person's change reaches the repository, which
 [ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md) left to
 [ADR 0036](0036-the-home-screen-becomes-data.md) §15, and it names a private companion
@@ -63,23 +65,25 @@ This is a stronger statement than [ADR 0040](0040-the-app-does-not-depend-on-the
 and does not contradict it. ADR 0040 says the app may not read the workbench. This says the
 workbench may not act.
 
-### 2. "Submit changes" copies the document and opens GitHub's editor for the file
+### 2. "Submit changes" ~~copies the document and opens GitHub's editor for the file~~, voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §1
 
 The primary action of the home configurator is **Submit changes**, in German *Änderungen
 einreichen*. It is offered on the published site and on a dev server alike, is disabled
 while the document equals the file, and sits where the panel is read rather than under the
-list. It puts the formatted document on the clipboard and opens GitHub's editor for
+list. ~~It puts the formatted document on the clipboard and opens GitHub's editor for
 `packages/app-core/src/data/home.layout.json` on `main`. There the person, signed in to
 GitHub, pastes, commits to a new branch and opens a pull request. Somebody without write
 access is offered a fork and "propose changes" by GitHub itself, which is exactly the review
-this repository wants and costs nothing to build.
+this repository wants and costs nothing to build.~~ Voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §1: it opens a prefilled
+GitHub issue, and a workflow turns the issue into the pull request.
 
 **The clipboard and not `?value=`.** A prefilled address works for a new file, and the
 measurement above says how far: the document fits today with room for about three times
 itself. But the file exists, so the editor needed is `/edit/`, whether `/edit/` honours a
 prefill is not measured (it sits behind a sign-in), and a ceiling that moves with the
-document is one more number that goes wrong quietly. The clipboard has no ceiling and
-depends on nothing undocumented. It costs one keystroke.
+document is one more number that goes wrong quietly. ~~The clipboard has no ceiling and
+depends on nothing undocumented. It costs one keystroke.~~ Voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §6, which prefills
+an issue address up to a measured limit and keeps the clipboard only past it.
 
 **What the paste replaces is the whole file.** A change that reached `main` after the page
 was built shows in the pull request's diff, which is where it is caught. That is the review
@@ -185,9 +189,9 @@ one. §1 makes it unnecessary.
 Cloud, and making the repository private would not hide the site. §1 makes it pointless
 anyway: there is nothing behind the door.
 
-**Prefilling the editor with `?value=`.** Kept out of §2 for the reasons given there. If
+**Prefilling the editor with `?value=`.** Kept out of §2 for the reasons given there. ~~If
 somebody signed in finds that `/edit/` honours it, it can be added beside the clipboard
-without taking the clipboard away.
+without taking the clipboard away.~~ Voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §1, which no longer opens the editor.
 
 ## What this retires
 
@@ -219,6 +223,7 @@ question, and it is ADR 0057 §5's.
    available. None of it changes a decision here; each changes what §3 is worth.
 2. **Whether members may keep creating private repositories.** The companion was created by a
    member. That this was possible is a setting of the organisation, not a decision of it.
-3. **`?value=` on `/edit/`**, one click for somebody signed in. If it works, the paste goes.
+3. ~~**`?value=` on `/edit/`**, one click for somebody signed in. If it works, the paste goes.~~
+   Voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §1: the paste went another way, and the editor is no longer opened.
 4. **The companion's first consumer**, and with it the check from §4. The planning of future
    moments is the obvious one.

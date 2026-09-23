@@ -543,7 +543,10 @@
     "slugs": ["the-workbench-holds-no-power-and-github-is-who-you-are"],
     "decisions": {
       "1": ["The workbench holds no credential and performs no authorised write"],
-      "2": ["\"Submit changes\" copies the document and opens GitHub's editor for the file"],
+      "2": [
+        "\"Submit changes\" copies the document and opens GitHub's editor for the file",
+        "\"Submit changes\" ~~copies the document and opens GitHub's editor for the file~~, voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §1"
+      ],
       "3": [
         "GitHub is the identity and permission system, and an account per person is the price of running none"
       ],
@@ -564,6 +567,26 @@
       "7": ["The plan is private, and what is public is a projection with a horizon"],
       "8": ["The first slice: the day gets a date"],
       "9": ["What is not built, and why"]
+    }
+  },
+  "0061": {
+    "slugs": ["a-submission-is-an-issue-and-ci-makes-the-pull-request"],
+    "decisions": {
+      "1": [
+        "\"Submit changes\" opens a prefilled GitHub issue, and a workflow turns the issue into a pull request"
+      ],
+      "2": [
+        "The first kind is the home layout, judged by the core and written by the workbench's printer"
+      ],
+      "3": [
+        "A submission's kind is its title prefix, and the kinds are a registry; strings are the second kind, named and not built"
+      ],
+      "4": [
+        "It runs by itself for the organisation and its collaborators, and a maintainer starts it for anybody else"
+      ],
+      "5": ["The pull request gets CI with a token held by CI, and says so when it does not"],
+      "6": ["The address has a limit, and past it the change goes by the clipboard"],
+      "7": ["Nothing the issue says reaches a shell or a script as code"]
     }
   }
 }
