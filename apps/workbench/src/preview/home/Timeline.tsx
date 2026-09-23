@@ -118,6 +118,12 @@ const COPY = defineMessages({
     description:
       'The accessible name of the button whose visible word is edition.here. The new edition starts at the playhead and ends at the same minute the next day; its popover in the panel changes both.',
   },
+  editionTaken: {
+    id: 'edition.taken',
+    defaultMessage: 'An edition already runs from exactly this minute. Edit that one.',
+    description:
+      'The tooltip on edition.here when it is switched off: a new edition here could not be narrower than the one already running, so it would never be the one an edit lands on.',
+  },
   editionBand: {
     id: 'edition.band',
     defaultMessage: '{edition}, on this day from {from} to {to}',
@@ -269,6 +275,11 @@ export function Timeline({
     setLayout(withEdition(getLayout(), playhead.date, snap(minute)).layout);
     onChange({ time: timeOn(playhead.date, snap(minute)) });
   };
+  /*
+   * Whether "Edition here" would make nothing: only where an edition already runs from
+   * exactly this minute to exactly where a new one could end (`withEdition` says why).
+   */
+  const editionTaken = withEdition(layout, playhead.date, snap(minute)).id === null;
 
   /* Whether "Point here" would make nothing, on whichever layer it would write. */
   const pointTaken =
@@ -415,8 +426,9 @@ export function Timeline({
       {/*
         The same kind of write, one level up, and on screen on the same terms: only while
         the tool is open, because an edition is the document (ADR 0042 §3). It is never
-        disabled: two editions may start at one minute, and the fold has a rule for which
-        of them wins, which a refusal here would be pretending it had not.
+        disabled but in one case: a new edition is made to end where the one running here
+        ends, so that it is the narrower and edits land on it, and where that one runs from
+        exactly this minute there is nothing narrower to make.
       */}
       {editing && (
         <Button
@@ -424,6 +436,8 @@ export function Timeline({
           size="sm"
           className="shrink-0"
           aria-label={intl.formatMessage(COPY.editionHereLong)}
+          title={editionTaken ? intl.formatMessage(COPY.editionTaken) : undefined}
+          disabled={editionTaken}
           onClick={addEdition}
         >
           <Layers aria-hidden="true" />

@@ -893,6 +893,10 @@
     "defaultMessage": "Switch {block} on in {edition}",
     "description": "The accessible name of the eye button on a block that is off, while an edition’s starting state is what an edit writes to. {block} is the block’s own name; {edition} is the edition’s title, or its id."
   },
+  "edition.taken": {
+    "defaultMessage": "An edition already runs from exactly this minute. Edit that one.",
+    "description": "The tooltip on edition.here when it is switched off: a new edition here could not be narrower than the one already running, so it would never be the one an edit lands on."
+  },
   "edition.title": {
     "defaultMessage": "Title",
     "description": "The label of the field for the newsroom’s own name for the edition, which is data in the document and never translated. Empty means none, and the id stands in for it."

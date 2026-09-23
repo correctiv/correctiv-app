@@ -12,6 +12,7 @@ import {
   editionHue,
   formatTimeOfDay,
   movedEditionMoment,
+  withEditionFrom,
   withEditionSpan,
   withEditionTitle,
   withoutEdition,
@@ -364,9 +365,7 @@ function EditionDetails({
             type="datetime-local"
             step={STEP * 60}
             value={edition.from}
-            onChange={(event) =>
-              onLayout(withEditionSpan(layout, edition.id, event.target.value, edition.until))
-            }
+            onChange={(event) => onLayout(withEditionFrom(layout, edition.id, event.target.value))}
             className={cn(FIELD, 'min-w-0 font-mono')}
           />
         </label>

@@ -1,4 +1,8 @@
-import { parseHomeLayout, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
+import {
+  HOME_LAYOUT_VERSION,
+  parseHomeLayout,
+  type HomeLayout,
+} from '@correctiv/app-core/lib/home-layout';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 import {
@@ -52,11 +56,30 @@ export function restore(): HomeLayout {
   try {
     const raw = window.localStorage.getItem(HOME_LAYOUT_KEY);
     if (raw === null) return SHIPPED;
-    const { layout, problems } = parseHomeLayout(JSON.parse(raw));
-    return layout && problems.length === 0 ? layout : SHIPPED;
+    return restorable(JSON.parse(raw)) ?? SHIPPED;
   } catch {
     return SHIPPED;
   }
+}
+
+/**
+ * A stored document the editor can open, or null.
+ *
+ * **An older version is opened, and renumbered.** A version 2 document is a version 3
+ * document with no editions, so the only thing wrong with it is its number, which the
+ * parser reports as `version-unknown`. Refusing it for that opened the editor on the shipped
+ * file while the frame went on drawing the stored one, and the first edit then overwrote a
+ * person's work with the shipped file plus that edit: found by a cold review of #247. Any
+ * other problem still refuses, and so does a version from a later editor, whose document
+ * this one may not be able to write back whole.
+ */
+export function restorable(document: unknown): HomeLayout | null {
+  const { layout, problems } = parseHomeLayout(document);
+  if (!layout) return null;
+  const older = layout.version < HOME_LAYOUT_VERSION;
+  const only = problems.every((problem) => older && problem.code === 'version-unknown');
+  if (!only) return null;
+  return older ? { ...layout, version: HOME_LAYOUT_VERSION } : layout;
 }
 
 /**

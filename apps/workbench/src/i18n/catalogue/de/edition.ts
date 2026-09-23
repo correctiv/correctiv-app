@@ -9,6 +9,7 @@ export const edition: Record<string, string> = {
   // Beside the track (`preview/home/Timeline.tsx`).
   'edition.here': 'Ausgabe hier',
   'edition.hereLong': 'Ab dieser Minute eine Ausgabe für einen Tag anlegen',
+  'edition.taken': 'Ab genau dieser Minute läuft schon eine Ausgabe. Bearbeiten Sie diese.',
   'edition.band': '{edition}, an diesem Tag von {from} bis {to}',
   'edition.momentGo': 'Zu {time} in {edition} springen',
 

@@ -59,9 +59,30 @@
  * out of the token with relative colour syntax, so it follows the appearance setting the way
  * the muted text does, and is legible on the canvas in both schemes for the same reason that
  * text is. The chroma is the one number chosen here, and it is not a colour.
+ *
+ * A little darker than the muted text itself, because the band's label is small white text
+ * on this colour in the light scheme (and small dark text in the dark one): at the token's
+ * own lightness some hues measured under 4.5:1 against it. The same step in the dark scheme
+ * keeps the dark label at well over that.
  */
 .edition-ink {
-  --edition: oklch(from var(--color-on-canvas-muted) l 0.16 var(--edition-hue));
+  --edition: oklch(from var(--color-on-canvas-muted) calc(l - 0.07) 0.16 var(--edition-hue));
+}
+
+/*
+ * A browser without relative colour syntax drops the declaration above, and the bands, the
+ * label and the hairline would all vanish without a word: found by a cold review of #247.
+ * So it gets the same hue at a fixed lightness per scheme, which is a colour this site
+ * decides for want of any other, and the one line here marked for it.
+ */
+@supports not (color: oklch(from red l c h)) {
+  .edition-ink {
+    --edition: hsl(var(--edition-hue) 60% 27%); /* palette-exempt: no token has a hue to turn */
+
+    @variant dark {
+      --edition: hsl(var(--edition-hue) 60% 70%); /* palette-exempt: the dark half of the same */
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

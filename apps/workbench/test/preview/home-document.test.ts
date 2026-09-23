@@ -44,6 +44,7 @@ import {
   spanOf,
   targetAt,
   withEdition,
+  withEditionFrom,
   withEditionMoment,
   withEditionSpan,
   withEditionTitle,
@@ -55,6 +56,7 @@ import {
   writeHidden,
   writeSetting,
 } from '../../src/preview/home/document';
+import { restorable } from '../../src/preview/home/write';
 
 /**
  * The home-layout editor, held to what it cannot check itself.
@@ -128,7 +130,7 @@ const BERLIN = (date: string, hours: number, minutes = 0) =>
 /** The shipped day with one edition on Saturday evening, as "Edition here" makes one. */
 const planned = (): HomeLayout => {
   const made = withEdition(SHIPPED, '2026-09-27', AT(18));
-  return withEditionTitle(made.layout, made.id, 'Wahlabend');
+  return withEditionTitle(made.layout, made.id!, 'Wahlabend');
 };
 const SATURDAY = BERLIN('2026-09-27', 19);
 
@@ -953,5 +955,74 @@ describe('an edition, as the editor makes and edits one', () => {
       const hue = editionHue(id);
       expect(Number.isInteger(hue) && hue >= 0 && hue < 360).toBe(true);
     }
+  });
+});
+
+/** The defects a cold review of #247 reproduced in the editor, each held where it was found. */
+describe('an edition, where the first version of the editor went wrong', () => {
+  /**
+   * "Edition here" inside a shorter edition: a day-long one lost to the four-hour election
+   * night on precedence, so the panel stayed on the old one and edits landed there.
+   */
+  it('makes an edition inside a shorter one end with it, so edits land on the new one', () => {
+    const night = withEditionSpan(
+      planned(),
+      'edition-2026-09-27',
+      '2026-09-27T18:00',
+      '2026-09-27T22:00',
+    );
+    const made = withEdition(night, '2026-09-27', AT(19));
+    expect(made.id).toBe('edition-2026-09-27-2');
+    expect(made.layout.editions[1]?.until).toBe('2026-09-27T22:00');
+    expect(targetAt(made.layout, BERLIN('2026-09-27', 19)).edition?.id).toBe(made.id);
+    const edited = writeHidden(made.layout, BERLIN('2026-09-27', 19), 'briefing', true);
+    expect(edited.editions.map((edition) => edition.changes)).toEqual([
+      [],
+      [{ id: 'briefing', hidden: true }],
+    ]);
+  });
+
+  it('makes nothing where an edition runs from exactly this minute, and says so by its id', () => {
+    // Same start, same end: the fold breaks the tie by id, and `wahlabend` sorts after any
+    // id the editor mints, so a new one could never be the edition an edit lands on.
+    const running = parseHomeLayout({
+      ...JSON.parse(formatLayoutDocument(SHIPPED)),
+      editions: [{ id: 'wahlabend', from: '2026-09-27T18:00', until: '2026-09-28T18:00' }],
+    }).layout!;
+    const made = withEdition(running, '2026-09-27', AT(18));
+    expect(made.id).toBeNull();
+    expect(made.layout).toBe(running);
+  });
+
+  /** Moving the start moves the whole edition, rather than springing the field back. */
+  it('moves the end with the start, keeping the edition’s length', () => {
+    const moved = withEditionFrom(planned(), 'edition-2026-09-27', '2026-09-30T18:00');
+    expect(moved.editions[0]).toMatchObject({
+      from: '2026-09-30T18:00',
+      until: '2026-10-01T18:00',
+    });
+  });
+
+  it('refuses a span in the spring gap, which the core would refuse', () => {
+    const layout = planned();
+    expect(
+      withEditionSpan(layout, 'edition-2026-09-27', '2026-03-29T02:30', '2026-03-29T06:00'),
+    ).toBe(layout);
+  });
+
+  /**
+   * An override saved by the version 2 editor was thrown away on load: the new parser
+   * reports `version-unknown` and `restore()` took only a clean parse, so the editor opened
+   * on the shipped file while the frame drew the override, and the first edit overwrote it.
+   */
+  it('opens a document an older editor saved, renumbered, and refuses a later one', () => {
+    const older = { ...JSON.parse(formatLayoutDocument(moved(SHIPPED, 'hero', -1))), version: 2 };
+    const opened = restorable(older);
+    expect(opened?.version).toBe(3);
+    expect(opened?.sections.map((section) => section.id)).toEqual(
+      moved(SHIPPED, 'hero', -1).sections.map((section) => section.id),
+    );
+    expect(restorable({ ...older, version: 4 })).toBeNull();
+    expect(restorable({ ...older, sections: [{ id: 'x' }] })).toBeNull();
   });
 });

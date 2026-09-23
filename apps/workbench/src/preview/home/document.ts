@@ -1091,30 +1091,71 @@ export function mintEditionId(layout: HomeLayout, date: BerlinDate): string {
  *
  * The minute is the playhead's, snapped by the caller. Answers with the new id as well,
  * because the caller wants to open what it just made.
+ *
+ * **Never wider than the edition already running there.** Made inside a four-hour election
+ * night, a day-long edition would lose to it on precedence (the narrower window wins, ADR
+ * 0059 §4), so the panel would stay on the old one and every edit would land there: found
+ * by a cold review of #247. So the new one ends where the running narrowest one ends, when
+ * that is sooner, which makes it the narrower of the two. The one case that cannot be
+ * made narrower is an edition running from exactly this minute to exactly that end; the id
+ * is then null and nothing is added, because a second edition identical in span would be
+ * a copy the fold has to break a tie between.
  */
 export function withEdition(
   layout: HomeLayout,
   date: BerlinDate,
   minute: MinuteOfDay,
-): { layout: HomeLayout; id: string } {
-  const from = formatBerlinDateTime({ date, minute });
-  const until = formatBerlinDateTime({ date: addDays(date, 1), minute });
+): { layout: HomeLayout; id: string | null } {
+  const start = berlinInstant(date, minute)!;
+  const running = targetAt(layout, start).edition;
+  const dayLong = formatBerlinDateTime({ date: addDays(date, 1), minute });
+  const until =
+    running && running.end < berlinInstant(addDays(date, 1), minute)! ? running.until : dayLong;
   const id = mintEditionId(layout, date);
+  const from = formatBerlinDateTime({ date, minute });
   const edition = spanned({ id, from, until, start: 0, end: 0, changes: [], moments: [] });
-  return edition
-    ? { layout: { ...layout, editions: [...layout.editions, edition] }, id }
-    : { layout, id };
+  if (!edition) return { layout, id: null };
+  const next = { ...layout, editions: [...layout.editions, edition] };
+  return targetAt(next, start).edition?.id === id ? { layout: next, id } : { layout, id: null };
 }
 
-/** An edition with its instants worked out from what it says, or null when it says nonsense. */
+/**
+ * An edition with its instants worked out from what it says, or null when it says something
+ * the core would refuse: not a date and time, a minute the spring change skips
+ * (`edition-span-in-gap`), or an end at or before the start.
+ */
 function spanned(edition: HomeEdition): HomeEdition | null {
   const opens = parseBerlinDateTime(edition.from);
   const closes = parseBerlinDateTime(edition.until);
   if (!opens || !closes) return null;
   const start = berlinInstant(opens.date, opens.minute)!;
   const end = berlinInstant(closes.date, closes.minute)!;
+  if (!shows(start, opens) || !shows(end, closes)) return null;
   if (end <= start) return null;
   return { ...edition, start, end };
+}
+
+/** Whether Berlin's clock shows this wall time at this instant, which the spring gap fails. */
+function shows(instant: Instant, clock: { date: BerlinDate; minute: MinuteOfDay }): boolean {
+  const read = berlinWallClock(instant);
+  return read.date === clock.date && read.minute === clock.minute;
+}
+
+/**
+ * An edition moved to start elsewhere, keeping its length.
+ *
+ * The popover's first field. Moving the start past the end used to spring the field back,
+ * because the span would have been empty; a person moving a campaign by a day means the
+ * whole campaign, so the end moves by the same amount. A start the core would refuse still
+ * answers with the layout unchanged.
+ */
+export function withEditionFrom(layout: HomeLayout, id: string, from: string): HomeLayout {
+  const held = layout.editions.find((edition) => edition.id === id);
+  const opens = parseBerlinDateTime(from);
+  if (!held || !opens) return layout;
+  const start = berlinInstant(opens.date, opens.minute)!;
+  const until = formatBerlinDateTime(berlinWallClock(held.end + (start - held.start)));
+  return withEditionSpan(layout, id, from, until);
 }
 
 /**
