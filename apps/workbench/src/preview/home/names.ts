@@ -50,6 +50,16 @@ export const HOME_TIME_KEY = 'workbench:home-time';
 export const HOME_LAYOUT_ENDPOINT = '/__workbench/home-layout';
 
 /**
+ * Where the document lives in the repository, spelled once for both of its writers.
+ *
+ * The dev server's Save writes it (`plugin/home-layout.ts`), and Submit changes opens
+ * GitHub's editor on it (`write.ts`). Two spellings of one path would be two places for a
+ * move of the file to be half done, and the half that went unnoticed would be the one that
+ * opens an editor on a file that is no longer there.
+ */
+export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/home.layout.json';
+
+/**
  * The address a section gets in the rendered tree, spelled a second time.
  *
  * The same string `placeTestID` in `apps/mobile/src/lib/home/modules.tsx` writes onto

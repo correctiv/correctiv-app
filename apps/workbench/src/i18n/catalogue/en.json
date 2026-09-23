@@ -1104,22 +1104,22 @@
   },
   "home.document.changed": {
     "defaultMessage": "changed",
-    "description": "The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
+    "description": "The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
   },
-  "home.document.copied": {
-    "defaultMessage": "Copied.",
-    "description": "Confirms that the whole document is on the clipboard. frame.copied is the shorter word the address bar uses for a link."
+  "home.document.closeSubmit": {
+    "defaultMessage": "Close",
+    "description": "Closes the submit steps without going to GitHub. shell.dialog.close reads the same in English and closes a dialog; this one closes a panel inside the editor."
   },
-  "home.document.copy": {
-    "defaultMessage": "Copy the document",
-    "description": "What the published site offers instead of Save, because there is no dev server to write the file with."
-  },
-  "home.document.copyNote": {
-    "defaultMessage": "This is the published site, so there is no server to write with and nothing here reaches the repository. Copy the document and put it in <code>packages/app-core/src/data/home.layout.json</code>, or open <code>/preview</code> on a dev server, where Save is offered.",
-    "description": "The same, on the published site, where there is no Save. The tag wraps a repository path and an address, both drawn in a monospace face."
+  "home.document.field": {
+    "defaultMessage": "The document",
+    "description": "The name read out for the field that holds the document when the clipboard was refused."
   },
   "home.document.follow": {
     "defaultMessage": "Scroll the frame to the block under the pointer"
+  },
+  "home.document.openGithub": {
+    "defaultMessage": "Open GitHub’s editor",
+    "description": "A link that opens github.com in a new tab, on the document’s file."
   },
   "home.document.refused": {
     "defaultMessage": "refused",
@@ -1137,8 +1137,26 @@
     "defaultMessage": "Save to the repository"
   },
   "home.document.saveNote": {
-    "defaultMessage": "Save writes <code>packages/app-core/src/data/home.layout.json</code> through the dev server, which refuses anything the core will not parse. The next step is a pull request rather than a write, the way the sources job already does it (ADR 0036 §15).",
-    "description": "Says what Save does before anybody presses it, on a dev server. The tag wraps a repository path, drawn in a monospace face."
+    "defaultMessage": "On a dev server, Save writes <code>{file}</code> in your own checkout, and refuses anything the core will not parse. It is a shortcut for developers; Submit changes is the way that ends in a pull request.",
+    "description": "Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
+  },
+  "home.document.submit": {
+    "defaultMessage": "Submit changes",
+    "description": "The editor’s primary action, on the published site and on a dev server alike. It copies the document and offers GitHub’s editor, where the change becomes a pull request (ADR 0058 §2). Disabled while nothing has changed."
+  },
+  "home.document.submitCopied": {
+    "defaultMessage": "The document is on the clipboard."
+  },
+  "home.document.submitNoClipboard": {
+    "defaultMessage": "This browser did not let the page use the clipboard. Copy the document from this field."
+  },
+  "home.document.submitNote": {
+    "defaultMessage": "Submit changes copies the document and opens GitHub’s editor on <code>{file}</code>. The change becomes a pull request and reaches the app once somebody has reviewed and merged it, so you need a GitHub account. This page holds no password and no token (ADR 0058).",
+    "description": "Says what Submit changes does before anybody presses it. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
+  },
+  "home.document.submitSteps": {
+    "defaultMessage": "In GitHub’s editor, select all of the file’s text and paste over it. Then commit the change to a new branch and start a pull request. It reaches the app once somebody has reviewed and merged it.",
+    "description": "The steps on github.com, after Submit changes. GitHub’s own buttons are in English there, so the sentence describes what to do rather than quoting their labels."
   },
   "home.document.unchanged": {
     "defaultMessage": "unchanged"

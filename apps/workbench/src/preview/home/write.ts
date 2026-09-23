@@ -1,16 +1,20 @@
 import { parseHomeLayout, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
 
+import docsModule from 'virtual:docs';
+
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 import {
   differs,
   formatLayoutDocument,
   HOME_LAYOUT_ENDPOINT,
+  HOME_LAYOUT_FILE,
   HOME_LAYOUT_KEY,
   SHIPPED,
 } from './document';
 
 /**
- * The two ways a change leaves the page: into the running app, and into the repository.
+ * The three ways a change leaves the page: into the running app, into GitHub's editor, and
+ * on a dev server into the developer's own checkout.
  *
  * Split from `document.ts` because that file is imported by the dev server and this one
  * cannot be: `import.meta.env` is Vite's, `window` is the browser's, and either of them
@@ -159,5 +163,43 @@ export async function save(layout: HomeLayout, format: Format): Promise<SaveResu
     };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
+ * GitHub's editor, open on the document, on the branch the published site is built from.
+ *
+ * ADR 0058 §2. **Submit changes** is the one way a change leaves the published site, and
+ * it holds nothing to do it with: the person arrives on github.com signed in as
+ * themselves, pastes, and commits to a new branch with a pull request, or is offered a
+ * fork by GitHub if they may not write here. The workbench never sees a credential, so
+ * there is none for anything else on `correctiv.github.io` to read.
+ *
+ * `main` because that is what `.github/workflows/pages.yml` publishes from, and so what
+ * the document the editor opened on was. A change that reached `main` after this page was
+ * built shows in the pull request's diff, which is where a reviewer catches it.
+ *
+ * The document goes by the clipboard and not by `?value=` in the address: the file
+ * exists, so this is `/edit/` and not `/new/`, whether `/edit/` honours a prefill is not
+ * measured, and an address has a ceiling the document would one day grow into (measured
+ * on 2026-09-23: accepted to 6000 characters, `414` from 10000).
+ */
+export const SUBMIT_URL = `${docsModule.repo}/edit/main/${HOME_LAYOUT_FILE}`;
+
+/**
+ * Put the document on the clipboard, and say whether that worked.
+ *
+ * Never throws and never rejects: a browser that refuses the clipboard — no secure
+ * context, a permission denied, an old engine without `navigator.clipboard` — is answered
+ * with `false`, and the panel then offers the document in a field to copy by hand. The
+ * person still gets to GitHub either way.
+ */
+export async function copyForSubmit(layout: HomeLayout): Promise<boolean> {
+  try {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
+    await navigator.clipboard.writeText(formatLayoutDocument(layout));
+    return true;
+  } catch {
+    return false;
   }
 }

@@ -1142,7 +1142,13 @@ export function formatLayoutDocument(layout: HomeLayout): string {
  * import this file at all, because Node will not follow the core's JSON import without
  * an attribute.
  */
-export { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_KEY, HOME_TIME_KEY, sectionTestId } from './names';
+export {
+  HOME_LAYOUT_ENDPOINT,
+  HOME_LAYOUT_FILE,
+  HOME_LAYOUT_KEY,
+  HOME_TIME_KEY,
+  sectionTestId,
+} from './names';
 
 /**
  * Whether the home document governs what the frame is showing.
