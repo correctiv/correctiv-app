@@ -131,7 +131,9 @@ the evidence that the rule half works before any of the rest is built.
 ### 4. A small document the app fetches and stores
 
 The configuration is one document. The app fetches it, keeps the last good copy, and draws
-from that copy. Its shape is decided here; where it is served from is the open question.
+from that copy. Its shape is decided here; ~~where it is served from is the open question~~.
+It is served as a copy of the core's own file inside the published artifact:
+[ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md) §4.
 
 ### 5. Fetched at launch and on every return to the foreground, with a floor between tries
 
@@ -266,8 +268,10 @@ decides the layout's home without that decision, by splitting the question in tw
 does depend on the content source is which article a place shows, and that half is
 WordPress's by ADR 0057 §2.
 
-§15 is the answer for as long as we are the ones editing. §1 is what keeps that from
-becoming permanent by accident.
+~~§15 is the answer for as long as we are the ones editing. §1 is what keeps that from
+becoming permanent by accident.~~ §15 is the newsroom's answer as well, with each editor
+opening the pull request from an account of their own:
+[ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md) §2 and §3.
 
 ## What it retires
 

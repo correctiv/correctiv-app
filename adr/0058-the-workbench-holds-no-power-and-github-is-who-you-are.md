@@ -195,6 +195,15 @@ without taking the clipboard away.
 struck. With an account per person (§3), the pull request is the newsroom's answer as well,
 opened by the editor rather than by us (§2).
 
+**ADR 0036, "What is still open".** Its closing "§15 is the answer for as long as we are
+the ones editing. §1 is what keeps that from becoming permanent by accident" is struck, for
+the same reason as the sentence in ADR 0036 §15.
+
+**ADR 0050, Context.** "The two questions that would settle ownership — who signs in, where
+the configuration lives — are open and not cheap" is struck. §3 answers the first and
+ADR 0057 §4 the second. The quotation of ADR 0036 §15 in the same paragraph stays as it is:
+it is what 0036 said when 0050 was written.
+
 **ADR 0039, "What is still open".** Its first item's "unchanged, and still ADR 0036's open
 question" is struck together with ADR 0057, which carries the note.
 

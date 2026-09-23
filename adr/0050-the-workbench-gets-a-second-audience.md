@@ -18,8 +18,10 @@ and that is the open question." [ADR 0041](0041-a-change-may-name-an-audience.md
 has the newsroom writing audiences into the day.
 
 So a tool designed for the newsroom to own is in English, and the two questions that
-would settle ownership — who signs in, where the configuration lives — are open and
-not cheap. A German interface is the step that can be taken without answering either.
+would settle ownership — who signs in, where the configuration lives — ~~are open and
+not cheap~~. Both are answered since: who signs in by
+[ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md) §3, where the configuration lives by
+[ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md) §4. A German interface is the step that can be taken without answering either.
 
 ## Decision
 

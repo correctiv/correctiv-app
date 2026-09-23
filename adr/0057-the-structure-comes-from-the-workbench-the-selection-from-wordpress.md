@@ -184,6 +184,8 @@ waiting for the source decision before deciding the layout's home. The layout's 
 decided here without it; what does depend on the content source is the selection half, and
 that dependency is real and stated in §2 and §3.
 
+**ADR 0036 §4.** "Where it is served from is the open question" is struck; §4 above answers it.
+
 **ADR 0039, "What is still open".** Its first item called the same question "unchanged, and
 still ADR 0036's open question". That clause is struck and points here and at
 [ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md) §2, which together
