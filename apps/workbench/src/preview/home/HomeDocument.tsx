@@ -897,41 +897,40 @@ export function HomeDocument({
         does not apply. The negative margins take back the panel's padding, so the bar spans
         the panel and its border meets both edges.
 
-        `mr-auto` keeps Back to the file apart from Submit changes: one throws work away, the
-        other sends it, and an outline button beside a filled one at the same size still
-        reads as "pick either" unless something keeps them apart.
+        Two rows at the panel's width, and that is what keeps Back to the file apart from
+        Submit changes: one throws work away, the other sends it, and an outline button
+        beside a filled one at the same size reads as "pick either". So the status and the
+        way back share the first row, and Submit changes has the second to itself, at the
+        panel's full width, directly above the steps it opens.
       */}
       <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
         <div className="flex flex-wrap items-center gap-xs">
-          <Button
-            variant="outline"
-            size="sm"
-            className="mr-auto"
-            disabled={!dirty}
-            onClick={() => setLayout(SHIPPED)}
-          >
+          <span className={cn(NOTE, 'mr-auto')}>
+            {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
+          </span>
+          <Button variant="outline" size="sm" disabled={!dirty} onClick={() => setLayout(SHIPPED)}>
             <RotateCcw aria-hidden="true" />
             {intl.formatMessage(COPY.revert)}
           </Button>
-          <span className={NOTE}>{intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}</span>
-          {/*
-            A button and not a link, although it ends on github.com. The click puts the
-            document on the clipboard and opens the steps; the link inside them is what
-            leaves. A tab that opened on the first click would take the focus before anybody
-            had read what to do there.
-          */}
-          <Button
-            size="sm"
-            disabled={!dirty}
-            aria-expanded={submitted !== null}
-            onClick={() =>
-              void copyForSubmit(layout).then((ok) => setSubmitted(ok ? 'copied' : 'no-clipboard'))
-            }
-          >
-            <GitPullRequest aria-hidden="true" />
-            {intl.formatMessage(COPY.submit)}
-          </Button>
         </div>
+        {/*
+          A button and not a link, although it ends on github.com. The click puts the
+          document on the clipboard and opens the steps; the link inside them is what
+          leaves. A tab that opened on the first click would take the focus before anybody
+          had read what to do there.
+        */}
+        <Button
+          size="sm"
+          className="w-full"
+          disabled={!dirty}
+          aria-expanded={submitted !== null}
+          onClick={() =>
+            void copyForSubmit(layout).then((ok) => setSubmitted(ok ? 'copied' : 'no-clipboard'))
+          }
+        >
+          <GitPullRequest aria-hidden="true" />
+          {intl.formatMessage(COPY.submit)}
+        </Button>
 
         {submitted !== null && (
           <div className="flex flex-col gap-xs">
