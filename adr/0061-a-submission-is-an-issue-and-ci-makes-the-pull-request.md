@@ -302,6 +302,21 @@ changes works as it does" describes that record's first slice and is not false.
    would mint with `actions/create-github-app-token`. Issues permission is not needed, because
    the comments are written with the workflow's own token. With a personal token the pull
    request is opened by that account; with an App, by the App.
+
+   **Measured on 2026-09-23, and it cuts against the premise above.** In Learn6502, whose
+   workflow this one was ported from and which holds no such secret, the two pull requests the
+   workflow opened with `GITHUB_TOKEN` (JumpLink/Learn6502 #174 and #175) did get their
+   `pull_request` CI, attributed to the person who had started the creating run by hand. In
+   this repository the pull request the scheduled sources job opened (#240) got a CI run as
+   well, which failed. No run started by an issue has been observed yet, so whether this
+   repository needs the secret is unmeasured; the first real submission answers it, and the
+   secret is created only if its pull request gets no CI.
+
+   **Reading the private companion is a different credential.** `GITHUB_TOKEN` reaches only
+   this repository, so the projection of [ADR 0059](0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md)
+   §7 needs read access to `correctiv-app-private`. That is a read-only deploy key on the
+   companion, arriving with that pipeline and with ADR 0058 §4's check, and it is kept apart
+   from this secret so that a misused submission credential exposes no unpublished plan.
 2. **Whether GitHub reports `MEMBER` for somebody whose organisation membership is private.**
    Not measured. If it does not, their issues wait for a maintainer, which fails the safe way;
    making the membership public, or adding them as collaborators, would be the answer.

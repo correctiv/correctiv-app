@@ -271,7 +271,9 @@ Read and deliberately left standing:
 
 ## What is still open
 
-1. **"Not yet a member"**, which waits on #242 §4.
+1. ~~**"Not yet a member"**, which waits on #242 §4.~~ Answered by the product side on
+   2026-09-23: there is no view for people who are not members, and that stays so for now. The
+   audience stays out of the table and the editor keeps showing it switched off.
 2. **Whether the Backstage teaser is for paying members**, which §2 decides against and the
    product side may decide otherwise, in one line.
 3. **An editor for two changes about one place at one time**, which §5 leaves to the file.
