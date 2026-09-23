@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import {
+  HOME_LAYOUT_VERSION,
   parseHomeLayout,
   stateAt,
   stateAtInstant,
@@ -1024,11 +1025,11 @@ describe('an edition, where the first version of the editor went wrong', () => {
   it('opens a document an older editor saved, renumbered, and refuses a later one', () => {
     const older = { ...JSON.parse(formatLayoutDocument(moved(SHIPPED, 'hero', -1))), version: 2 };
     const opened = restorable(older);
-    expect(opened?.version).toBe(3);
+    expect(opened?.version).toBe(HOME_LAYOUT_VERSION);
     expect(opened?.sections.map((section) => section.id)).toEqual(
       moved(SHIPPED, 'hero', -1).sections.map((section) => section.id),
     );
-    expect(restorable({ ...older, version: 4 })).toBeNull();
+    expect(restorable({ ...older, version: HOME_LAYOUT_VERSION + 1 })).toBeNull();
     expect(restorable({ ...older, sections: [{ id: 'x' }] })).toBeNull();
   });
 });
