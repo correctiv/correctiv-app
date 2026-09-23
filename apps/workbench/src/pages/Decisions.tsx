@@ -74,7 +74,7 @@ const COPY = defineMessages({
   lede: {
     id: 'decisions.lede',
     defaultMessage:
-      'The choices this repository argued rather than assumed, and which of them still hold. A record says <em>why</em>; <architecture>the architecture</architecture> says what the thing is.',
+      'The choices this repository argued rather than assumed, and which of them still hold. A record says <em>why</em>. <architecture>The architecture</architecture> says what the thing is.',
     description:
       'The paragraph under the heading. <em> emphasises one word and <architecture> is the link to /architecture, which is the repository’s ARCHITECTURE.md rendered on this site.',
   },
@@ -88,28 +88,28 @@ const COPY = defineMessages({
   ruleNever: {
     id: 'decisions.rule.never',
     defaultMessage:
-      '<strong>A record is never rewritten to look right in hindsight.</strong> A claim a later decision made <em>false</em> is struck through where it stands, with one clause saying what voided it and a link to the record that did. The argument around it is left intact, because the reasoning is the part worth keeping.',
+      '<strong>A record is never rewritten to look right later.</strong> When a later decision makes a claim <em>false</em>, the claim is struck through where it stands. One short reason says what voided it, with a link to the record that did. The argument around it stays as it was, because the reasoning is what is worth keeping.',
     description:
       'The first paragraph behind that ⓘ, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on.',
   },
   ruleStruck: {
     id: 'decisions.rule.struck',
     defaultMessage:
-      'So <f>{struck}</f> {struck, plural, one {claim is} other {claims are}} struck across these <f>{records}</f> records, and a record carrying one still stands. That is the discipline working, not a fault, and it is the thing this board exists to make visible: it is invisible in the documents themselves unless you open all {records}.',
+      'So <f>{struck}</f> {struck, plural, one {claim is} other {claims are}} struck across these <f>{records}</f> records, and a record with a struck claim still stands. That is the rule working, not a fault. This board makes it visible. In the documents themselves, you would have to open all {records}.',
     description:
       'The second paragraph of that note. {struck} is how many claims are struck through across every record, {records} how many records there are; both are counted out of adr/ at build time. <f> draws a figure in monospace so it is never mistaken for prose.',
   },
   ruleUnattributed: {
     id: 'decisions.rule.unattributed',
     defaultMessage:
-      '{count, plural, one {<f>#</f> of those strikes names no later record in its clause. It was struck by a re-measurement, or by a later section of the same record, so it has no arrow to draw and its clause is the only thing there is to say about it.} other {<f>#</f> of those strikes name no later record in their clause. They were struck by a re-measurement, or by a later section of the same record, so they have no arrow to draw and their clause is the only thing there is to say about them.}} That is what a row says under its title: one clause, cut to one sentence. The detail below has all of them, in full.',
+      '{count, plural, one {<f>#</f> of those strikes names no later record. A new measurement or a later section of the same record struck it. So there is no arrow to draw, and its reason is all there is to say.} other {<f>#</f> of those strikes name no later record. A new measurement or a later section of the same record struck them. So there is no arrow to draw, and their reason is all there is to say.}} A row shows that reason under its title, cut to one sentence. The detail below has all of them in full.',
     description:
       'The third paragraph of that note. {count} is how many struck claims name no record with a higher number, so the board has no edge to draw for them. <f> draws the figure in monospace. Both branches carry the whole first half of the paragraph, because the pronouns after the count change with it.',
   },
   ruleClauseless: {
     id: 'decisions.rule.clauseless',
     defaultMessage:
-      '{count, plural, one {<f>#</f> of them carries no clause at all. The reason was written in the paragraph after the strike, or was taken by a second strike standing beside it, and neither is something reading the record recovers. That row says so where it stands, and the record itself has the answer.} other {<f>#</f> of them carry no clause at all. The reason was written in the paragraph after the strike, or was taken by a second strike standing beside it, and neither is something reading the record recovers. Those rows say so where they stand, and the record itself has the answer.}}',
+      '{count, plural, one {<f>#</f> of them has no reason attached. The reason was in the paragraph after the strike, or a second strike beside it took it, and the board cannot match either automatically. That row says so, and the record itself has the answer.} other {<f>#</f> of them have no reason attached. The reason was in the paragraph after the strike, or a second strike beside it took it, and the board cannot match either automatically. Those rows say so, and the record itself has the answer.}}',
     description:
       'The fourth paragraph of that note, drawn only while {count} is above zero. {count} is how many struck claims have no clause after them at all, which is a smaller set than the strikes naming no record. <f> draws the figure in monospace.',
   },
@@ -228,7 +228,7 @@ const COPY = defineMessages({
   boardLede: {
     id: 'decisions.board.lede',
     defaultMessage:
-      'One row per record, oldest first. A row carrying a strike says why under its title: the clause of the newest one, cut to one sentence, and shown behind the text it struck where it only reads attached to it. A row expands to the index’s sentence about it, every claim struck inside it with the clause that voided it in full, and both directions of the retirement graph. Nothing in the detail is truncated. The tiles above filter the board as well.',
+      'One row per record, oldest first. If a record has struck claims, the reason appears under its title, cut to one sentence. Open a row to see the index’s summary, every struck claim with its full reason, and which records struck it or were struck by it. Nothing in the detail is cut short. The tiles above filter this list too.',
     description: 'The paragraph under that heading, which says what a row holds.',
   },
   filter: {
@@ -350,7 +350,7 @@ const COPY = defineMessages({
   },
   detailNoClause: {
     id: 'decisions.detail.noClause',
-    defaultMessage: 'No clause follows this strike. The record says why around it.',
+    defaultMessage: 'No reason follows this strike. The record explains it in the text around it.',
     description:
       'Stands under a struck claim that has no clause after it, so that the gap reads as a fact about the record rather than as a parser that failed. The reason is in the paragraph after the strike, or was taken by a second strike beside it.',
   },
@@ -376,14 +376,14 @@ const COPY = defineMessages({
   footerBuild: {
     id: 'decisions.footer.build',
     defaultMessage:
-      'Every row, count and edge above is read out of the records themselves at build time. The workbench holds no copy of any of them, so this board cannot disagree with <code>adr/</code> — and when it cannot read one, the site does not build.',
+      'Every row, count and link above is read from the records themselves when the site is built. The workbench keeps no copy, so this board cannot disagree with <code>adr/</code>. If it cannot read a record, the site does not build.',
     description:
       'The first line of the footer, which says where the board comes from. <code> holds the directory in this repository, which stays in its own spelling.',
   },
   footerNotes: {
     id: 'decisions.footer.notes',
     defaultMessage:
-      'The index those sentences come from is published whole at <notes>Decisions, the notes</notes>, which carries the part a table of rows cannot: the notes for readers of the older records, and the rule above in full.',
+      'The index these sentences come from is published in full at <notes>Decisions, the notes</notes>. It also has what a table cannot hold: notes for readers of the older records, and the rule above in full.',
     description:
       'The second line of the footer. <notes> is the link to /decisions-notes, and the words inside it are this site’s name for that page. The document behind it is adr/README.md and stays English.',
   },

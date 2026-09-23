@@ -69,7 +69,7 @@ export const CORE_AND_HOST_COPY = defineMessages({
   lede: {
     id: 'coreAndHost.lede',
     defaultMessage:
-      'All behaviour on one side, all platform on the other. The only crossing is five named ports, and the two small files that answer them are the whole cost of adding a host.',
+      'All behaviour on one side, all platform code on the other. They meet only at five named ports. The two small files that answer those ports are all it takes to add a host.',
     description: 'The paragraph under that heading.',
   },
 

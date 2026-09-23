@@ -20,7 +20,7 @@
 export const settings: Record<string, string> = {
   'settings.title': 'Einstellungen',
   'settings.lede':
-    'Für diesen Browser. Nichts davon wird irgendwohin gesendet oder mit der App im Rahmen geteilt, die ihre eigene Einstellung behält.',
+    'Diese Einstellungen gelten nur für diesen Browser. Nichts davon wird gesendet. Die App im Rahmen behält ihre eigenen Einstellungen.',
 
   'settings.appearance': 'Erscheinungsbild',
   'settings.mode.light': 'Hell',
@@ -36,10 +36,10 @@ export const settings: Record<string, string> = {
 
   'settings.keyboard': 'Tastatur',
   'settings.shortcut.search': 'Dokumente, Abschnitte und die API durchsuchen',
-  'settings.shortcut.panel': 'Die Werkzeugleiste, mit dem, was die offene Ansicht hineinlegt',
+  'settings.shortcut.panel': 'Die Werkzeugleiste öffnen oder schließen',
   'settings.shortcut.leaveFull': 'Den Vollbildmodus der App-Ansicht verlassen',
 
   'settings.build': 'Dieser Build',
   'settings.build.note':
-    'Gerendert aus Commit <commitLink>{commit}</commitLink>; jeder Link in den Quelltext zeigt auf diesen Commit und nicht auf <code>main</code>. Die Zahlen zu den Quellen wurden von Hand am <day>{measured}</day> erhoben ({age}).',
+    'Gebaut aus Commit <commitLink>{commit}</commitLink>. Jeder Link in den Quelltext zeigt auf diesen Commit, nicht auf <code>main</code>. Die Zahlen zu den Quellen stammen vom <day>{measured}</day> ({age}). Ein Job misst sie jede Woche neu.',
 };

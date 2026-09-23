@@ -30,15 +30,15 @@ export const components: Record<string, string> = {
   'components.lede':
     'Jede Komponente, aus der die App ihre Ansichten baut, aus <code>{root}</code> gelesen, mit ihren Props, deren Typen und dem Prosatext, den die Quelle mitbringt.',
   'components.lede.more':
-    'Jede Karte zeichnet ihre Komponente, aus dem Quelltext der App, im React-Baum dieser Site; eine Karte, die nicht die ganze Komponente fasst, sagt das an ihrer Unterkante. Die eigene Seite einer Komponente hat jedes Exemplar vollständig, daneben das Bundle der App und eine Gerätegröße. Die Exporte des Cores sind ein eigener Abschnitt: <reference>Referenz</reference>, eine Bibliothek, die auch als solche importiert wird.',
+    'Jede Karte zeichnet ihre Komponente aus dem Quelltext der App, innerhalb dieser Site. Ist eine Karte zu klein für die ganze Komponente, steht das an ihrer Unterkante. Die eigene Seite einer Komponente zeigt jedes Exemplar vollständig, daneben die Darstellung der App und eine Gerätegröße. Die Exporte des Core haben einen eigenen Bereich: <reference>Referenz</reference>.',
 
   'components.prose':
-    'Der Satz unter jedem Namen ist der Doc-Kommentar der Komponente selbst, aus dem Quelltext der App, und bleibt englisch: ein Kommentar ist für die geschrieben, die den Code lesen.',
+    'Der Satz unter jedem Namen ist der Doc-Kommentar der Komponente aus dem Quelltext der App. Er bleibt englisch, denn Kommentare sind für die geschrieben, die den Code lesen.',
 
   // The link carries the tool's own name, `shell.section.home`. A second name for
   // one surface would read, to somebody following the link, as a second surface.
   'components.modules':
-    'Die Blöcke der Startseite stehen nicht hier. Sie sind Kompositionen eines Bildschirms und keine Komponenten der App, und jeder von ihnen wird mit den Einstellungen, die er versteht, im <editor>Startseiten-Layout</editor> gezeichnet, neben der laufenden App.',
+    'Die Blöcke der Startseite stehen nicht hier. Sie gehören zu einem Bildschirm und sind keine Komponenten der App. Sie finden jeden davon mit seinen Einstellungen im <editor>Startseiten-Layout</editor> neben der laufenden App.',
 
   'components.filter': 'Ordner, Komponenten und Props filtern',
   'components.filter.placeholder': 'Filtern, zum Beispiel Typo, onPress oder reader',
@@ -67,7 +67,7 @@ export const components: Record<string, string> = {
   'components.detail.crumb': 'Komponenten',
 
   'components.detail.tooNarrow':
-    'Das Bundle der App zeichnet das in einem Geräterahmen, und der braucht mehr Breite, als hier zur Verfügung steht.',
+    'Die App zeichnet das in einem Geräterahmen, und der braucht mehr Breite, als hier Platz ist.',
   'components.detail.full': 'Im Vollbild öffnen',
   'components.detail.frameTitle': '{name}, in der App gezeichnet',
   'components.detail.gallery': 'Die Galerie in der Vorschau',
@@ -79,7 +79,7 @@ export const components: Record<string, string> = {
   'components.detail.notDrawn': 'Hier nicht gezeichnet: {reason} Das Bundle zeichnet sie.',
   'components.detail.notDrawn.reason': 'der Katalog der App hat kein Exemplar dafür.',
   'components.detail.twoRenderings':
-    'Zwei Darstellungen einer Komponente. Ein Unterschied dazwischen ist ein Befund und kein Schönheitsfehler; nichts prüft sie gegeneinander, mit Absicht.',
+    'Zwei Darstellungen derselben Komponente. Weichen sie voneinander ab, ist das ein Befund und kein Makel. Mit Absicht vergleicht nichts sie automatisch.',
   'components.detail.frameHolds': 'Im Rahmen läuft <strong>{build}</strong>.',
   'components.detail.frameHolds.dev': 'der Dev-Server über den Proxy',
   'components.detail.frameHolds.dist': 'der veröffentlichte Export',
@@ -94,5 +94,5 @@ export const components: Record<string, string> = {
   'components.detail.prop.optional': 'optional',
   'components.detail.prop.noProse': 'Kein Prosatext.',
   'components.detail.inherits':
-    'Dazu alles aus {types}, was diesem Repository nicht gehört und hier benannt statt ausgeschrieben wird.',
+    'Dazu alles aus {types}. Das gehört nicht zu diesem Repository und wird hier nur genannt, nicht aufgelistet.',
 };

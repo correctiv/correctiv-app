@@ -63,7 +63,7 @@ const COPY = defineMessages({
   tooNarrow: {
     id: 'components.detail.tooNarrow',
     defaultMessage:
-      'The app’s bundle draws this in a device frame, which needs more width than there is here.',
+      'The app draws this in a device frame, and the frame needs more width than there is here.',
     description:
       'Shown in place of the drawing whenever the app’s bundle is what would draw it and the window is too narrow for a device frame: for a component this site cannot draw at all, and for one where the reader has asked for the bundle. The button under it is components.detail.full.',
   },
@@ -124,7 +124,7 @@ const COPY = defineMessages({
   twoRenderings: {
     id: 'components.detail.twoRenderings',
     defaultMessage:
-      'Two renderings of one component. A difference between them is a finding, not a blemish; nothing checks them against each other, on purpose.',
+      'Two renderings of one component. If they differ, that is a finding, not a flaw. On purpose, nothing compares them automatically.',
   },
   frameHolds: {
     id: 'components.detail.frameHolds',
@@ -190,7 +190,7 @@ const COPY = defineMessages({
   inherits: {
     id: 'components.detail.inherits',
     defaultMessage:
-      'Plus everything in {types}, which this repository does not own and which is named here rather than expanded.',
+      'Plus everything in {types}. This repository does not own those, so they are named here and not listed.',
     description:
       'Printed under the props of a component whose props type extends one from a library. {types} is the list of those type names, drawn in monospace and separated by commas, and is not translated.',
   },

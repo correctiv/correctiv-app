@@ -12,9 +12,11 @@
  * so they are in whatever spelling the app expects and no reader of this panel
  * ever sees them.
  *
- * „Die Tür“ is this tool's word throughout for the sign-in gate the app's root
- * layout renders in place of every route, and `/gespeichert`, `A++` and `offline`
- * stay in their own spelling because each is what the app itself calls the thing.
+ * „Die Anmeldung“ is this tool's word for the sign-in gate the app's root layout
+ * renders in place of every route. It said „die Tür“ until the plain-words pass,
+ * which is the team's word for it and not the newsroom's. `A++` stays in its own
+ * spelling because it is what the app itself calls the setting, and the saved
+ * articles are named by their tab, „Gespeichert“, rather than by its route.
  */
 /*
  * "Start" and not "Startseite", which is what this said first. The app's own
@@ -24,35 +26,35 @@
  */
 export const fixtures: Record<string, string> = {
   'fixtures.fresh': 'Frische Installation',
-  'fixtures.fresh.hint': 'Nichts gespeichert. Die App startet an der Tür, abgemeldet.',
+  'fixtures.fresh.hint': 'Nichts gespeichert. Die App startet abgemeldet bei der Anmeldung.',
 
   'fixtures.signedIn': 'Angemeldet',
-  'fixtures.signedIn.hint': 'Der erste Start eines Mitglieds: durch die Tür, ins Onboarding.',
+  'fixtures.signedIn.hint': 'Der erste Start eines Mitglieds: nach der Anmeldung ins Onboarding.',
 
   'fixtures.noAccess': 'Angemeldet, kein Zugang zur App',
   'fixtures.noAccess.hint':
-    'Der vierte Zustand der Tür: ein 0-€-Mitglied, weitergeleitet zum Upgrade.',
+    'Ein Mitglied mit 0 € Beitrag. Die Anmeldung leitet es zum Upgrade weiter.',
 
   'fixtures.onboarded': 'Onboarding abgeschlossen',
-  'fixtures.onboarded.hint': 'Der Normalfall: die App startet auf dem Tab Start.',
+  'fixtures.onboarded.hint': 'Der Normalfall: Die App startet auf dem Tab Start.',
 
   'fixtures.freeMember': 'Kostenlos, mit Lokal-Newsletter',
   'fixtures.freeMember.hint':
-    'Die App startet auf dem Tab Start, für ein kostenloses Mitglied statt eines mit Beitrag.',
+    'Ein kostenloses Mitglied statt eines mit Beitrag. Die App startet auf dem Tab Start.',
 
   'fixtures.saved': 'Gespeicherte Artikel',
-  'fixtures.saved.hint': '/gespeichert ist sonst leer und zeigt nur seinen Leerzustand.',
+  'fixtures.saved.hint': 'Ohne diesen Zustand ist der Tab „Gespeichert“ leer.',
 
   'fixtures.interests': 'Interessen gewählt',
   'fixtures.interests.hint':
-    'Start, personalisiert: zusätzliche Feeds, Module in anderer Reihenfolge.',
+    'Eine persönliche Startseite: mehr Feeds, Blöcke in anderer Reihenfolge.',
 
-  'fixtures.submitted': 'Callout beantwortet',
-  'fixtures.submitted.hint': 'Das Formular zeigt dann seinen Dank statt seiner Fragen.',
+  'fixtures.submitted': 'Aufruf beantwortet',
+  'fixtures.submitted.hint': 'Das Formular zeigt den Dank statt der Fragen.',
 
   'fixtures.bundle': 'Nur mitgelieferte Inhalte',
-  'fixtures.bundle.hint': 'Erzwingt den Rückfall auf das Bundle, den Status „offline“ der Feeds.',
+  'fixtures.bundle.hint': 'Die App zeigt nur die mitgelieferten Inhalte, als wäre sie offline.',
 
   'fixtures.bigType': 'Größte Textgröße',
-  'fixtures.bigType.hint': 'A++ (1,15), die Einstellung, an der der Reader zuerst bricht.',
+  'fixtures.bigType.hint': 'A++ (1,15). Bei dieser Größe bricht die Artikelansicht als Erstes.',
 };

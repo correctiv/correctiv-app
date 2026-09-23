@@ -81,7 +81,7 @@ const COPY = defineMessages({
     id: 'home.palette.addHere',
     defaultMessage: 'Add a block {where}',
     description:
-      'The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as "at the top of the day" or "after the lead article".',
+      'The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as "at the very top" or "after the lead article".',
   },
   title: {
     id: 'home.palette.title',
@@ -92,9 +92,9 @@ const COPY = defineMessages({
   lead: {
     id: 'home.palette.lead',
     defaultMessage:
-      'It goes {where}. Every block that says it belongs on this screen is offered; the frame beside this is where an arrangement is judged, not this list.',
+      'The new block goes {where}. The list offers every block that fits this screen. Judge the result in the frame beside it.',
     description:
-      'The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as "at the top of the day".',
+      'The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as "at the very top".',
   },
   addModule: {
     id: 'home.palette.addModule',

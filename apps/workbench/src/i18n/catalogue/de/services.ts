@@ -26,7 +26,7 @@
 export const services: Record<string, string> = {
   'services.title': 'Die App und womit sie spricht',
   'services.lede':
-    'Eines davon ist anders als die anderen. beabee beantwortet, wer jemand ist und ob die App in der Mitgliedschaft enthalten ist; alles andere beantwortet, was dieser Person gezeigt wird. Die meisten Inhalte sind heute live, die Identitätshälfte ist weiterhin simuliert.',
+    'Eines davon ist anders. beabee beantwortet, wer jemand ist und ob die Mitgliedschaft die App einschließt. Alles andere beantwortet, was diese Person sieht. Die meisten Inhalte sind heute live, der Teil zur Identität ist noch simuliert.',
 
   'services.svg.title':
     'Die App, das Identitätssystem, das sie nach der Mitgliedschaft fragt, und die Inhaltsquellen, die sie liest',
@@ -56,7 +56,7 @@ export const services: Record<string, string> = {
 
   'services.caption.lead': 'beabee ist die Tür; der Rest ist das, was dahinter liegt.',
   'services.caption':
-    'Diese Antwort entscheidet, ob die App ihre Routen überhaupt rendert, was keine Inhaltsquelle tut, deshalb hängt sie an einer eigenen Leitung. Die Antwort ist heute simuliert, in <code>services/auth.service.ts</code>, und ihre Form ist der Vertrag. Fünf Inhaltsquellen sind live, drei sind Dateien in der Form der API, die sie einmal ersetzen soll. Welche welche ist, und die Zahlen dahinter, steht in der <board>Statusübersicht der Quellen</board>.',
+    'Diese Antwort entscheidet, ob die App ihre Routen überhaupt zeigt. Das tut keine Inhaltsquelle, deshalb hat sie eine eigene Leitung. Heute ist die Antwort simuliert, in <code>services/auth.service.ts</code>, und ihre Form ist der Vertrag. Fünf Inhaltsquellen sind live, drei sind Dateien in der Form der API, die sie ersetzen soll. Welche welche ist und die Zahlen dazu zeigt die <board>Statusübersicht der Quellen</board>.',
 
   'services.alt.beabee.lead': 'beabee, Identität und Mitgliedschaft.',
   'services.alt.beabee':

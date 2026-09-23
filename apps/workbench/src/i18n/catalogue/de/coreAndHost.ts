@@ -27,7 +27,7 @@
 export const coreAndHost: Record<string, string> = {
   'coreAndHost.title': 'Der Core und sein Host',
   'coreAndHost.lede':
-    'Alles Verhalten auf der einen Seite, alle Plattform auf der anderen. Der einzige Übergang sind fünf benannte Ports, und die zwei kleinen Dateien, die sie beantworten, sind die gesamten Kosten eines weiteren Hosts.',
+    'Alles Verhalten auf der einen Seite, aller Plattformcode auf der anderen. Beide treffen sich nur an fünf benannten Ports. Die zwei kleinen Dateien, die diese Ports beantworten, sind alles, was ein weiterer Host kostet.',
 
   'coreAndHost.svg.title':
     'Der Core und sein Host: packages/app-core oben, apps/mobile unten, verbunden nur durch fünf Ports',

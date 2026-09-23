@@ -40,12 +40,12 @@ const COPY = defineMessages({
   lede: {
     id: 'landing.lede',
     defaultMessage:
-      'A community app for CORRECTIV members, built as one platform-free core with the Expo app as its host. The core holds every piece of behaviour and imports no UI framework and no platform SDK, which is why replacing the whole view layer once cost no behaviour at all.',
+      'A community app for CORRECTIV members. All of its behaviour lives in one core that depends on no platform. The Expo app is the host that brings it to iOS, Android and the web. That is why the whole view layer could once be replaced without losing any behaviour.',
   },
   note: {
     id: 'landing.note',
     defaultMessage:
-      'This workbench publishes the repository’s own documents, unchanged and in place, and puts the running app next to them.',
+      'This workbench shows the repository’s own documents, unchanged, and puts the running app beside them.',
   },
 
   statusHeading: {
@@ -56,14 +56,14 @@ const COPY = defineMessages({
   },
   statusWhen: {
     id: 'landing.status.when',
-    defaultMessage: 'From a run against the live sources on {measured}, {age}.',
+    defaultMessage: 'Measured against the live sources on {measured}, {age}.',
     description:
       'The line under the heading over the four figures, always drawn: how fresh they are. {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over.',
   },
   statusWhy: {
     id: 'landing.status.why',
     defaultMessage:
-      'One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. A weekly job re-takes the figures. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.',
+      'One figure per manifest entry. The sources page counts more rows, because it lists the articles as their {feeds} feeds: a feed is what goes stale. A weekly job measures the figures again. They do not refresh while you read, because the feeds do not let a browser fetch them.',
     description:
       'Behind the ⓘ beside the heading over the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here. “The board” is /sources.',
   },
@@ -114,7 +114,7 @@ const COPY = defineMessages({
   previewBlurb: {
     id: 'landing.door.preview.blurb',
     defaultMessage:
-      'The app itself at device size, with an inspector for its state, its console, its palette and its layout. No install and no emulator, and the address reproduces exactly what you see.',
+      'The app itself, at device size, with tools for its state, its console, its colours and its layout. Nothing to install. The address in the browser brings back exactly what you see.',
   },
 
   sourcesKind: {
@@ -131,7 +131,7 @@ const COPY = defineMessages({
   sourcesBlurb: {
     id: 'landing.door.sources.blurb',
     defaultMessage:
-      'For everything the app shows: whether it is a live source, a file standing in for an API that does not exist yet, or a wanted feature with nothing to read at all.',
+      'For everything the app shows: is it live, a stand-in file for an API that does not exist yet, or a wanted feature with no source?',
   },
 
   handbookKind: {
@@ -148,7 +148,7 @@ const COPY = defineMessages({
   handbookBlurb: {
     id: 'landing.door.handbook.blurb',
     defaultMessage:
-      'What the system is and how to work in it: the architecture, the drawings of it, the conventions, and the traps that pass every check.',
+      'What the system is and how to work in it: the architecture, drawings of it, the conventions, and the traps that pass every check.',
   },
 
   decisionsKind: {
@@ -165,8 +165,7 @@ const COPY = defineMessages({
   },
   decisionsBlurb: {
     id: 'landing.door.decisions.blurb',
-    defaultMessage:
-      'Why the repository is the way it is, and which of its claims have since expired.',
+    defaultMessage: 'Why the repository is the way it is, and which of its claims no longer hold.',
   },
 
   designKind: {
@@ -183,8 +182,7 @@ const COPY = defineMessages({
   },
   designBlurb: {
     id: 'landing.door.design.blurb',
-    defaultMessage:
-      'The Figma file the screens come from, and the three places it reaches the code.',
+    defaultMessage: 'The Figma file behind the screens, and where it connects to the code.',
   },
 
   layoutHeading: {
@@ -196,22 +194,22 @@ const COPY = defineMessages({
   layoutCore: {
     id: 'landing.layout.core',
     defaultMessage:
-      'The model, the parsers, the services, the caches and all of the state. It imports no UI framework and no platform SDK, and a test fails the build if that ever changes.',
+      'The model, the parsers, the services, the caches and all of the state. It uses no UI framework and no platform SDK. A test stops the build if that changes.',
   },
   layoutMobile: {
     id: 'landing.layout.mobile',
     defaultMessage:
-      'The Expo app: iOS, Android and a web target. It holds the screens and one file implementing the ports.',
+      'The Expo app for iOS, Android and the web. It holds the screens and one file that implements the ports.',
   },
   layoutTokens: {
     id: 'landing.layout.tokens',
     defaultMessage:
-      'The shared palette. CORRECTIV’s WordPress CMS consumes the same values, and so does this workbench, which is why no page here can fork the colours.',
+      'The shared colour palette. CORRECTIV’s WordPress CMS uses the same values, and so does this workbench. So no page here can use colours of its own.',
   },
   layoutRecords: {
     id: 'landing.layout.records',
     defaultMessage:
-      '{records, plural, one {# record} other {# records}}. A record is never rewritten to look right in hindsight: a claim a later decision made false is struck through where it stands, and {retired, plural, one {# of them is} other {# of them are}}.',
+      '{records, plural, one {# record} other {# records}}. A record is never rewritten later. When a later decision makes a claim false, the claim is struck through where it stands. So far {retired, plural, one {# claim is} other {# claims are}} struck.',
     description:
       'The row about adr/. {records} is how many records the site publishes; {retired} is how many claims are struck through, counted over every document this site renders rather than over the records alone.',
   },

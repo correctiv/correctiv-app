@@ -50,7 +50,7 @@ export const ARTICLE_PATH_COPY = defineMessages({
   lede: {
     id: 'articlePath.lede',
     defaultMessage:
-      'Five rungs, tried in order, and the first that answers is the answer. The snapshot compiled into the app comes first, because the promise is that the reader opens with no Wi-Fi; the cache behind the second and the fifth is bounded three ways; and what reaches the screen is one string a WebView is handed.',
+      'Five rungs, tried in order; the first that answers wins. The snapshot built into the app comes first, because the promise is that an article opens without Wi-Fi. The cache behind the second and the fifth rung has three limits. What reaches the screen is one string, handed to a WebView.',
     description:
       'The paragraph under that heading. A rung is this drawing’s own word for one step of the cascade in packages/app-core/src/articles/load.ts.',
   },

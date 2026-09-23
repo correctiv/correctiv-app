@@ -51,7 +51,8 @@ export const frame: Record<string, string> = {
   // the groups, the labels, the notes — comes from `preview/routes.ts` and is
   // still English.
   'frame.pages.open': 'Zu einer Seite springen',
-  'frame.pages.empty': 'Keine Seite dieses Namens. Das Feld daneben nimmt jede beliebige Adresse.',
+  'frame.pages.empty':
+    'Keine Seite mit diesem Namen. In das Feld daneben können Sie jede Adresse eingeben.',
 
   // The stage the frame stands on (`preview/ui/Stage.tsx`). Neither is drawn.
   'frame.stage.heading': 'App-Rahmen',
@@ -62,8 +63,8 @@ export const frame: Record<string, string> = {
   // screen names, are already German, and are not ids at all.
   'frame.pages.group.tabs': 'Tabs',
   'frame.pages.group.screens': 'Screens',
-  'frame.pages.group.withAnId': 'Mit einer Id',
-  'frame.pages.group.worthReaching': 'Erreichbar sein sollte',
+  'frame.pages.group.withAnId': 'Mit einer ID',
+  'frame.pages.group.worthReaching': 'Weitere Seiten',
 
   'frame.pages.home': 'Start',
   'frame.pages.artikel': 'der Reader, eine WebView',

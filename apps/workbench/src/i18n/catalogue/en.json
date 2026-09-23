@@ -1,6 +1,6 @@
 {
   "articlePath.lede": {
-    "defaultMessage": "Five rungs, tried in order, and the first that answers is the answer. The snapshot compiled into the app comes first, because the promise is that the reader opens with no Wi-Fi; the cache behind the second and the fifth is bounded three ways; and what reaches the screen is one string a WebView is handed.",
+    "defaultMessage": "Five rungs, tried in order; the first that answers wins. The snapshot built into the app comes first, because the promise is that an article opens without Wi-Fi. The cache behind the second and the fifth rung has three limits. What reaches the screen is one string, handed to a WebView.",
     "description": "The paragraph under that heading. A rung is this drawing’s own word for one step of the cascade in packages/app-core/src/articles/load.ts."
   },
   "articlePath.title": {
@@ -92,7 +92,7 @@
     "description": "A link into /preview. It says the gallery and not this component on purpose: the preview cannot carry a query on the app’s route, so the frame opens the whole gallery, and the label is what the link does."
   },
   "components.detail.inherits": {
-    "defaultMessage": "Plus everything in {types}, which this repository does not own and which is named here rather than expanded.",
+    "defaultMessage": "Plus everything in {types}. This repository does not own those, so they are named here and not listed.",
     "description": "Printed under the props of a component whose props type extends one from a library. {types} is the list of those type names, drawn in monospace and separated by commas, and is not translated."
   },
   "components.detail.notDrawn": {
@@ -132,11 +132,11 @@
     "description": "Under the device select while the app’s bundle is drawing. {width} and {height} are the device’s size in CSS pixels and {percent} is how much the frame had to be scaled down to fit."
   },
   "components.detail.tooNarrow": {
-    "defaultMessage": "The app’s bundle draws this in a device frame, which needs more width than there is here.",
+    "defaultMessage": "The app draws this in a device frame, and the frame needs more width than there is here.",
     "description": "Shown in place of the drawing whenever the app’s bundle is what would draw it and the window is too narrow for a device frame: for a component this site cannot draw at all, and for one where the reader has asked for the bundle. The button under it is components.detail.full."
   },
   "components.detail.twoRenderings": {
-    "defaultMessage": "Two renderings of one component. A difference between them is a finding, not a blemish; nothing checks them against each other, on purpose."
+    "defaultMessage": "Two renderings of one component. If they differ, that is a finding, not a flaw. On purpose, nothing compares them automatically."
   },
   "components.drawn.all": {
     "defaultMessage": "All",
@@ -171,15 +171,15 @@
     "description": "The sentence under the heading, which says what the page is. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. The rest of what used to be this paragraph is components.lede.more, behind the ⓘ at its end."
   },
   "components.lede.more": {
-    "defaultMessage": "Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.",
+    "defaultMessage": "Each card draws its component from the app’s source, inside this site. If a card is too small for the whole component, it says so at its lower edge. The component’s own page shows every specimen in full, the app’s own rendering beside it, and a device size. The core’s exports have their own section: <reference>Reference</reference>.",
     "description": "Behind the ⓘ at the end of the sentence under the heading. <reference> is the link to /reference and the word inside it is that page’s own name."
   },
   "components.modules": {
-    "defaultMessage": "The home screen’s blocks are not here. They are compositions of one screen rather than components of the app, and each of them is drawn, with the settings it understands, in <editor>the home editor</editor>, beside the running app.",
+    "defaultMessage": "The home screen’s blocks are not here. They belong to one screen and are not components of the app. You find each of them, with its settings, in <editor>the home editor</editor> beside the running app.",
     "description": "A third paragraph under the lede, saying where the home screen’s blocks are, because they are deliberately not in the grid below. <editor> is the link to the home editor in /preview and the words inside it name that tool."
   },
   "components.prose": {
-    "defaultMessage": "The sentence under each name is the component’s own doc comment, out of the app’s source, and stays English: a comment is written for whoever reads the code.",
+    "defaultMessage": "The sentence under each name is the component’s doc comment from the app’s source. It stays in English, because comments are written for the people who read the code.",
     "description": "Behind the ⓘ at the end of the sentence under the heading, after components.lede.more. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written."
   },
   "components.title": {
@@ -212,7 +212,7 @@
     "defaultMessage": "Appears only when there is a lead article: a pinned one or the newest."
   },
   "conditions.intrinsic.hasMoreResearch": {
-    "defaultMessage": "Appears only when the investigations feed holds more than the lead."
+    "defaultMessage": "Appears only when there are more investigations than the lead article."
   },
   "conditions.intrinsic.hasOpenCallout": {
     "defaultMessage": "Appears only while a callout is open.",
@@ -226,15 +226,15 @@
     "defaultMessage": "Appears only while the app is loading or offline."
   },
   "conditions.locked": {
-    "defaultMessage": "The change here is for another audience. Frame a reader in it to edit it.",
+    "defaultMessage": "This change is for another audience. To edit it, sign in a reader from that audience in the frame.",
     "description": "In a block’s popover, where the only change about the block at this point of the day is for an audience the reader signed in in the framed app is not in, so the controls are switched off."
   },
   "conditions.notFor": {
-    "defaultMessage": "Not in the frame: the reader signed in there is not in it.",
+    "defaultMessage": "Hidden in the frame. The reader signed in there is not in this audience.",
     "description": "Under a block that the reader the framed app is signed in as is not in the audience of, which is why the frame does not draw it."
   },
   "conditions.notYet": {
-    "defaultMessage": "Not yet members (nobody in the app can be one)",
+    "defaultMessage": "Not yet members (the app is for members only)",
     "description": "A switched-off option in the “Show to” list. The app admits members only, so no reader of it is not yet a member; whether that changes is an open product question."
   },
   "conditions.placeFor": {
@@ -242,7 +242,7 @@
     "description": "The label of the control that says who a block is for, all day."
   },
   "conditions.stranding": {
-    "defaultMessage": "Some audiences are off: a change here hides the other place, and without this one some readers would see neither.",
+    "defaultMessage": "Some audiences cannot be chosen here. This change moves the block away from its other place. If it applied to only some readers, the others would see the block in neither place.",
     "description": "Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place."
   },
   "coreAndHost.adapter": {
@@ -414,7 +414,7 @@
     "description": "First line of what the core needs of KeyValueStore; coreAndHost.asynchronously is the second. Each line fits a card 172 units wide at 12px, so about 27 characters."
   },
   "coreAndHost.lede": {
-    "defaultMessage": "All behaviour on one side, all platform on the other. The only crossing is five named ports, and the two small files that answer them are the whole cost of adding a host.",
+    "defaultMessage": "All behaviour on one side, all platform code on the other. They meet only at five named ports. The two small files that answer those ports are all it takes to add a host.",
     "description": "The paragraph under that heading."
   },
   "coreAndHost.needs": {
@@ -454,7 +454,7 @@
     "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
   },
   "decisions.board.lede": {
-    "defaultMessage": "One row per record, oldest first. A row carrying a strike says why under its title: the clause of the newest one, cut to one sentence, and shown behind the text it struck where it only reads attached to it. A row expands to the index’s sentence about it, every claim struck inside it with the clause that voided it in full, and both directions of the retirement graph. Nothing in the detail is truncated. The tiles above filter the board as well.",
+    "defaultMessage": "One row per record, oldest first. If a record has struck claims, the reason appears under its title, cut to one sentence. Open a row to see the index’s summary, every struck claim with its full reason, and which records struck it or were struck by it. Nothing in the detail is cut short. The tiles above filter this list too.",
     "description": "The paragraph under that heading, which says what a row holds."
   },
   "decisions.board.title": {
@@ -506,7 +506,7 @@
     "description": "Introduces the sentence adr/README.md writes about this record, inside the row’s detail. The sentence itself is the repository’s and is printed as it is written."
   },
   "decisions.detail.noClause": {
-    "defaultMessage": "No clause follows this strike. The record says why around it.",
+    "defaultMessage": "No reason follows this strike. The record explains it in the text around it.",
     "description": "Stands under a struck claim that has no clause after it, so that the gap reads as a fact about the record rather than as a parser that failed. The reason is in the paragraph after the strike, or was taken by a second strike beside it."
   },
   "decisions.detail.read": {
@@ -542,7 +542,7 @@
     "description": "The placeholder in that field, naming the three things the filter reads. It matches a record’s number, its title, its status, the index’s sentence and the text of every struck claim and clause."
   },
   "decisions.footer.build": {
-    "defaultMessage": "Every row, count and edge above is read out of the records themselves at build time. The workbench holds no copy of any of them, so this board cannot disagree with <code>adr/</code> — and when it cannot read one, the site does not build.",
+    "defaultMessage": "Every row, count and link above is read from the records themselves when the site is built. The workbench keeps no copy, so this board cannot disagree with <code>adr/</code>. If it cannot read a record, the site does not build.",
     "description": "The first line of the footer, which says where the board comes from. <code> holds the directory in this repository, which stays in its own spelling."
   },
   "decisions.footer.label": {
@@ -550,7 +550,7 @@
     "description": "The footer’s one visible line, beside an ⓘ that opens the two paragraphs below. sources.footer.label reads the same in English on the sources board, which is a different board built out of different files."
   },
   "decisions.footer.notes": {
-    "defaultMessage": "The index those sentences come from is published whole at <notes>Decisions, the notes</notes>, which carries the part a table of rows cannot: the notes for readers of the older records, and the rule above in full.",
+    "defaultMessage": "The index these sentences come from is published in full at <notes>Decisions, the notes</notes>. It also has what a table cannot hold: notes for readers of the older records, and the rule above in full.",
     "description": "The second line of the footer. <notes> is the link to /decisions-notes, and the words inside it are this site’s name for that page. The document behind it is adr/README.md and stays English."
   },
   "decisions.hide": {
@@ -558,7 +558,7 @@
     "description": "What the Details button says while that row’s detail is open. sources.hide is the same word on the sources board."
   },
   "decisions.lede": {
-    "defaultMessage": "The choices this repository argued rather than assumed, and which of them still hold. A record says <em>why</em>; <architecture>the architecture</architecture> says what the thing is.",
+    "defaultMessage": "The choices this repository argued rather than assumed, and which of them still hold. A record says <em>why</em>. <architecture>The architecture</architecture> says what the thing is.",
     "description": "The paragraph under the heading. <em> emphasises one word and <architecture> is the link to /architecture, which is the repository’s ARCHITECTURE.md rendered on this site."
   },
   "decisions.only": {
@@ -578,7 +578,7 @@
     "description": "Read aloud after a control that would otherwise announce as a bare number or as the word Details, and never drawn. {number} is the record’s four-digit number and {title} its own English title out of adr/, which is not translated. The leading comma is a pause: the visible text comes first."
   },
   "decisions.rule.clauseless": {
-    "defaultMessage": "{count, plural, one {<f>#</f> of them carries no clause at all. The reason was written in the paragraph after the strike, or was taken by a second strike standing beside it, and neither is something reading the record recovers. That row says so where it stands, and the record itself has the answer.} other {<f>#</f> of them carry no clause at all. The reason was written in the paragraph after the strike, or was taken by a second strike standing beside it, and neither is something reading the record recovers. Those rows say so where they stand, and the record itself has the answer.}}",
+    "defaultMessage": "{count, plural, one {<f>#</f> of them has no reason attached. The reason was in the paragraph after the strike, or a second strike beside it took it, and the board cannot match either automatically. That row says so, and the record itself has the answer.} other {<f>#</f> of them have no reason attached. The reason was in the paragraph after the strike, or a second strike beside it took it, and the board cannot match either automatically. Those rows say so, and the record itself has the answer.}}",
     "description": "The fourth paragraph of that note, drawn only while {count} is above zero. {count} is how many struck claims have no clause after them at all, which is a smaller set than the strikes naming no record. <f> draws the figure in monospace."
   },
   "decisions.rule.label": {
@@ -586,15 +586,15 @@
     "description": "The visible label of the ⓘ under the lede, which opens the four paragraphs of the rule and its counts."
   },
   "decisions.rule.never": {
-    "defaultMessage": "<strong>A record is never rewritten to look right in hindsight.</strong> A claim a later decision made <em>false</em> is struck through where it stands, with one clause saying what voided it and a link to the record that did. The argument around it is left intact, because the reasoning is the part worth keeping.",
+    "defaultMessage": "<strong>A record is never rewritten to look right later.</strong> When a later decision makes a claim <em>false</em>, the claim is struck through where it stands. One short reason says what voided it, with a link to the record that did. The argument around it stays as it was, because the reasoning is what is worth keeping.",
     "description": "The first paragraph behind that ⓘ, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on."
   },
   "decisions.rule.struck": {
-    "defaultMessage": "So <f>{struck}</f> {struck, plural, one {claim is} other {claims are}} struck across these <f>{records}</f> records, and a record carrying one still stands. That is the discipline working, not a fault, and it is the thing this board exists to make visible: it is invisible in the documents themselves unless you open all {records}.",
+    "defaultMessage": "So <f>{struck}</f> {struck, plural, one {claim is} other {claims are}} struck across these <f>{records}</f> records, and a record with a struck claim still stands. That is the rule working, not a fault. This board makes it visible. In the documents themselves, you would have to open all {records}.",
     "description": "The second paragraph of that note. {struck} is how many claims are struck through across every record, {records} how many records there are; both are counted out of adr/ at build time. <f> draws a figure in monospace so it is never mistaken for prose."
   },
   "decisions.rule.unattributed": {
-    "defaultMessage": "{count, plural, one {<f>#</f> of those strikes names no later record in its clause. It was struck by a re-measurement, or by a later section of the same record, so it has no arrow to draw and its clause is the only thing there is to say about it.} other {<f>#</f> of those strikes name no later record in their clause. They were struck by a re-measurement, or by a later section of the same record, so they have no arrow to draw and their clause is the only thing there is to say about them.}} That is what a row says under its title: one clause, cut to one sentence. The detail below has all of them, in full.",
+    "defaultMessage": "{count, plural, one {<f>#</f> of those strikes names no later record. A new measurement or a later section of the same record struck it. So there is no arrow to draw, and its reason is all there is to say.} other {<f>#</f> of those strikes name no later record. A new measurement or a later section of the same record struck them. So there is no arrow to draw, and their reason is all there is to say.}} A row shows that reason under its title, cut to one sentence. The detail below has all of them in full.",
     "description": "The third paragraph of that note. {count} is how many struck claims name no record with a higher number, so the board has no edge to draw for them. <f> draws the figure in monospace. Both branches carry the whole first half of the paragraph, because the pronouns after the count change with it."
   },
   "decisions.show.legend": {
@@ -662,7 +662,7 @@
     "description": "The page’s heading. nav.decisions is the same two words as the browser tab and the search palette carry for this page; shell.activity.decisions is the shorter word the rail has room for."
   },
   "decisionsChain.lede": {
-    "defaultMessage": "{records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through where it stands and the later record names what it retired. Read a row to see whether a record still holds; follow the arcs to see who amended it.",
+    "defaultMessage": "{records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through, and the later record names what it retired. Read a row to see whether a record still holds. Follow the arcs to see which record changed it.",
     "description": "The paragraph under that heading. {records} is how many records adr/ holds, counted by the drawing’s own layout rather than typed. test/diagrams.test.ts holds it to that count, so the placeholder has to stay at the front of the sentence."
   },
   "decisionsChain.title": {
@@ -674,7 +674,7 @@
     "description": "The second of the three cards. The board is the inventory of screens the plugin draws into the Figma file."
   },
   "design.board.note": {
-    "defaultMessage": "<code>{path}</code> draws the screen inventory into the file from data in this repository, rather than anybody keeping a board in step by hand.",
+    "defaultMessage": "<code>{path}</code> draws the overview of all screens into the file, from data in this repository. Nobody has to keep a board up to date by hand.",
     "description": "The line in the board card. {path} is the plugin’s directory in this repository and is not translated; <code> draws it in monospace."
   },
   "design.clients.fork": {
@@ -682,7 +682,7 @@
     "description": "Under the Linux download. figma-linux-next is the project’s own name and is not translated; the rest says what it is, because Figma builds no client for Linux."
   },
   "design.clients.note": {
-    "defaultMessage": "The plugin is loaded through Plugins, Development, Import plugin from manifest, and that menu exists only in the desktop app. Figma builds one for macOS and Windows; on Linux this project uses a fork.",
+    "defaultMessage": "You load the plugin through Plugins, Development, Import plugin from manifest. That menu exists only in the desktop app. Figma makes one for macOS and Windows; on Linux this project uses a fork.",
     "description": "The line above the four downloads. “Plugins, Development, Import plugin from manifest” is Figma’s own menu and stays in English in every catalogue: it is not a description of a menu, it is the words a reader has to find in one. macOS, Windows and Linux are the platforms’ own names."
   },
   "design.clients.official": {
@@ -694,7 +694,7 @@
     "description": "The first of the three cards saying where the design reaches the code. This one is about the shared palette."
   },
   "design.colours.note": {
-    "defaultMessage": "Not redrawn from the file. <code>{pkg}</code> is generated and both the app and this site import the same stylesheet, so <code>{token}</code> means one thing in three places.",
+    "defaultMessage": "Not copied from the file. <code>{pkg}</code> is generated, and the app and this site import the same stylesheet. So <code>{token}</code> means the same thing in three places.",
     "description": "The line in the colours card. {pkg} is the design-tokens package and {token} one of its classes; both are identifiers and are not translated. <code> draws each in monospace."
   },
   "design.frameTitle": {
@@ -706,7 +706,7 @@
     "description": "The button on the narrow layout, where the frame does not fit beside the page. It opens the view full screen and loads nothing; design.load is the button that fetches the file. components.detail.full is the same words on a component’s page, where what opens full screen is the app."
   },
   "design.full.note": {
-    "defaultMessage": "The frame needs the width of the screen, so it opens on its own. The file itself still loads on a press.",
+    "defaultMessage": "The frame needs the full width of the screen, so it opens on its own. The file still loads only when you press the button.",
     "description": "The line under the full-screen button. design.load.note is the line under the other button, which does fetch the file."
   },
   "design.lede": {
@@ -722,7 +722,7 @@
     "description": "The first card in the Open tool, which leaves for the design file itself. design.open is the same door as a button in the bar above the page."
   },
   "design.links.note": {
-    "defaultMessage": "The preview frames the running app at the size the file draws it, which is the comparison the file is for."
+    "defaultMessage": "The preview shows the running app at the size the file draws it, so you can compare the two."
   },
   "design.load": {
     "defaultMessage": "Load the Figma file",
@@ -752,7 +752,7 @@
     "description": "The link to the plugin’s own documentation, which is that README rendered as a page of this site. It reads the same as the document’s name in the repository’s registry, which is not a message."
   },
   "design.plugin.note": {
-    "defaultMessage": "An interpreter rather than a builder: <code>{codeFile}</code> knows nothing about the app and draws whatever <code>{specFile}</code> describes. Its own documentation is a page of this site, with the three traps of the Linux client in it.",
+    "defaultMessage": "<code>{codeFile}</code> knows nothing about the app. It draws whatever <code>{specFile}</code> describes. Its documentation is a page on this site and covers the traps of the Linux client.",
     "description": "The line in the plugin card. {codeFile} and {specFile} are two file names in the plugin’s directory and are not translated; <code> draws each in monospace."
   },
   "design.plugin.repo": {
@@ -764,11 +764,11 @@
     "description": "Both the reload button’s accessible name and its tooltip, on this page, where the frame holds the Figma file. frame.reload is the same words on the preview’s bar, where the frame holds a whole route of the app, and components.detail.reload on a component’s page, where it holds the gallery."
   },
   "design.rest.below": {
-    "defaultMessage": "Everything else about the design, the clients, the plugin and where the colours reach the code, is below.",
+    "defaultMessage": "More about the design is below: the desktop apps, the plugin, and where the colours reach the code.",
     "description": "Where the three tools are, on a layout too narrow for the right-hand panel. design.rest.side is the same sentence for the wide layout."
   },
   "design.rest.side": {
-    "defaultMessage": "Everything else about the design, the clients, the plugin and where the colours reach the code, is on the right.",
+    "defaultMessage": "More about the design is on the right: the desktop apps, the plugin, and where the colours reach the code.",
     "description": "Where the three tools are, on a layout wide enough to put them in the right-hand panel. design.rest.below is the same sentence for the layout that stacks them under the page."
   },
   "design.see": {
@@ -776,7 +776,7 @@
     "description": "The second heading in that box, over what the frame will show once it loads."
   },
   "design.see.note": {
-    "defaultMessage": "The file, if you are signed in to Figma with access to it. Figma’s own sign-in screen if not. That screen is a permission and not a fault: this file is not shared publicly."
+    "defaultMessage": "The file, if you are signed in to Figma and have access. Otherwise Figma’s sign-in page. That is a question of access, not an error: the file is not shared publicly."
   },
   "design.title": {
     "defaultMessage": "Design",
@@ -819,15 +819,15 @@
     "description": "The name of the box a drawing scrolls sideways inside, read aloud and never drawn. {number} is the drawing’s place in the set, counted from one, and is the same number the page shows in its breadcrumb."
   },
   "diagrams.lede": {
-    "defaultMessage": "The same architecture the workbench explains in prose, drawn.",
+    "defaultMessage": "The architecture the handbook describes, as drawings.",
     "description": "The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is diagrams.lede.more, behind the ⓘ at its end."
   },
   "diagrams.lede.more": {
-    "defaultMessage": "Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step.",
+    "defaultMessage": "Each drawing is hand-written SVG and takes all of its colours from classes. So it follows the light and dark scheme by itself, and there is no second file to keep in step.",
     "description": "Behind the ⓘ at the end of the sentence under the heading, followed there by diagrams.list."
   },
   "diagrams.list": {
-    "defaultMessage": "Every drawing carries the same thing as a list underneath it. That list is not a caption: it is the page for anyone who cannot use the picture."
+    "defaultMessage": "Under every drawing, the same content appears as a list. The list is not a caption. It is the page for anyone who cannot use the picture."
   },
   "diagrams.others": {
     "defaultMessage": "The other diagrams",
@@ -862,7 +862,7 @@
     "description": "The badge at the head of a document that has struck claims in it. {count} is how many, and is never zero because the badge is not drawn then. English does not inflect the word; the plural is here so that a language which does has somewhere to say so."
   },
   "document.retired.note": {
-    "defaultMessage": "{count, plural, one {One claim on this page is} other {Claims on this page are}} struck through where they stand, with what voided them beside them.",
+    "defaultMessage": "{count, plural, one {One claim on this page is struck through.} other {Some claims on this page are struck through.}} The reason stands beside each.",
     "description": "The sentence beside that badge, saying what the strikes on the page mean. {count} is how many claims are struck, and decides only whether the sentence is singular."
   },
   "document.retired.tag": {
@@ -870,11 +870,11 @@
     "description": "The chip drawn on each struck claim, against the clause that says what voided it. One word, in small type, inside the annotation rather than in the document: it is this site’s label and not the record’s text."
   },
   "document.source": {
-    "defaultMessage": "This page is <fileLink>{file}</fileLink> in the repository, rendered here. It is not a copy, so there is one place to edit it.",
+    "defaultMessage": "This page is <fileLink>{file}</fileLink> in the repository, shown here. It is not a copy, so there is only one place to edit it.",
     "description": "The line at the foot of a document read out of the repository. {file} is its path and is not translated; <fileLink> is the link to it on GitHub at the commit this site was built from. document.source.generated is the same line for the one document that is written by a program."
   },
   "document.source.generated": {
-    "defaultMessage": "This page is <fileLink>{file}</fileLink> in the repository, which is the program that writes this page rather than the page. It is produced from the tree at build time, so nothing on it is a copy of anything and there is nothing here to edit.",
+    "defaultMessage": "A program writes this page: <fileLink>{file}</fileLink> in the repository. It runs when the site is built, so there is nothing here to edit.",
     "description": "The line at the foot of the one document that is generated rather than read. {file} is the path of the PROGRAM and is not translated; <fileLink> is the link to it. document.source offers every other document as a file to edit, and offering this one would be an invitation to type into an output."
   },
   "drawing.failed": {
@@ -886,11 +886,11 @@
     "description": "Read out for the coloured band an edition draws along the track. {edition} is the edition’s own title as the newsroom wrote it, or its id where it has none; {from} and {to} are times of day, as 18:00, and {to} is 24:00 where the edition runs on past midnight."
   },
   "edition.decides": {
-    "defaultMessage": "{edition} decides this block here",
+    "defaultMessage": "{edition} sets this block here",
     "description": "Read out for the coloured hairline at a block’s edge, which marks a block whose state at the playhead an edition sets rather than the ordinary day. {edition} is the edition’s title, or its id where it has none."
   },
   "edition.details": {
-    "defaultMessage": "Dates, title and delete for {edition}",
+    "defaultMessage": "Time, title and delete for {edition}",
     "description": "The accessible name of the button that opens the edition’s popover, and of the popover itself. {edition} is its title, or its id where it has none."
   },
   "edition.end": {
@@ -902,7 +902,7 @@
     "description": "The label of the field for the date and time the edition starts. Every time in the home document is Berlin wall-clock time, whatever the browser’s own zone is, which is why the label says so."
   },
   "edition.here": {
-    "defaultMessage": "Edition here",
+    "defaultMessage": "New edition",
     "description": "The visible word on the button beside the track that starts an edition at the playhead. An edition is a named layer over the ordinary day, a campaign or an election night, active for a span of dates. edition.hereLong is the same button’s accessible name."
   },
   "edition.hereLong": {
@@ -914,11 +914,11 @@
     "description": "The small word before an edition’s name at the head of the panel. An edition is a named layer over the ordinary day, a campaign or an election night, active from one date and time until another."
   },
   "edition.landsOn": {
-    "defaultMessage": "Edits land on the edition “{edition}”.",
+    "defaultMessage": "Your changes go into the edition “{edition}”.",
     "description": "Says which layer an edit in the panel writes to while an edition is running at the playhead: the narrowest one, which is the one whose word the phone shows. {edition} is its title as the newsroom wrote it, or its id where it has none."
   },
   "edition.landsOnDay": {
-    "defaultMessage": "Edits land on the ordinary day.",
+    "defaultMessage": "Your changes go into the ordinary day.",
     "description": "Says which layer of the home document an edit in the panel writes to, when no edition is running at the playhead. edition.landsOn is the same line while one is."
   },
   "edition.momentGo": {
@@ -942,11 +942,11 @@
     "description": "Says when a switched-off block is off, in its details popover, while an edition’s starting state is being edited. {edition} is the edition’s title, or its id."
   },
   "edition.pinEarly": {
-    "defaultMessage": "A pin here is public as early as the edition; lead with an embargoed piece through its WordPress flag instead.",
+    "defaultMessage": "This pin is public as soon as the edition is. To lead with an embargoed piece, use its flag in WordPress instead.",
     "description": "Shown beside a pinned article inside an edition, and in the edition’s popover when it pins one. The flag is the WordPress field that makes an article lead the app, which is set at publication and so never earlier than the article itself."
   },
   "edition.publicWhenMerged": {
-    "defaultMessage": "An edition is public once merged, so submit it no earlier than it may be known.",
+    "defaultMessage": "An edition is public as soon as it is merged. Submit it only once it may be known.",
     "description": "A warning in the edition’s popover. The repository is public, and the private plan that would keep a dated edition out of it until shortly before it starts is not built yet, so this is the whole of the protection for now."
   },
   "edition.remove": {
@@ -966,7 +966,7 @@
     "description": "The accessible name of the eye button on a block that is off, while an edition’s starting state is what an edit writes to. {block} is the block’s own name; {edition} is the edition’s title, or its id."
   },
   "edition.taken": {
-    "defaultMessage": "An edition already runs from exactly this minute. Edit that one.",
+    "defaultMessage": "An edition already starts at exactly this minute. Edit that one instead.",
     "description": "The tooltip on edition.here when it is switched off: a new edition here could not be narrower than the one already running, so it would never be the one an edit lands on."
   },
   "edition.title": {
@@ -981,7 +981,7 @@
     "defaultMessage": "Largest text scale"
   },
   "fixtures.bigType.hint": {
-    "defaultMessage": "A++ (1.15), the setting the reader breaks under first.",
+    "defaultMessage": "A++ (1.15). The article view is the first thing to break at this size.",
     "description": "The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the factor it multiplies by. “The reader” here is the article view, not a person."
   },
   "fixtures.bundle": {
@@ -989,7 +989,7 @@
     "description": "A fixture in the state tool: the app falls back to the articles shipped inside the binary, because nothing fresher is in the cache."
   },
   "fixtures.bundle.hint": {
-    "defaultMessage": "Forces the bundle fallback, the feeds' 'offline' status.",
+    "defaultMessage": "The app shows only the content it shipped with, as if offline.",
     "description": "The line under the “Bundled content only” fixture. “offline” is the literal value of the feed status in the core’s own state and stays as it is written."
   },
   "fixtures.freeMember": {
@@ -997,28 +997,28 @@
     "description": "A fixture in the state tool: a member of the 0 € tier whose local newsletter subscription includes the app."
   },
   "fixtures.freeMember.hint": {
-    "defaultMessage": "The app starts on Home, for a free member rather than a paying one.",
+    "defaultMessage": "A free member instead of a paying one. The app starts on Home.",
     "description": "The line under the “Free member, local newsletter” fixture. “Home” is the app’s first tab, which the app itself calls “Start”."
   },
   "fixtures.fresh": {
     "defaultMessage": "Fresh install"
   },
   "fixtures.fresh.hint": {
-    "defaultMessage": "Nothing stored. The app starts at the door, signed out.",
+    "defaultMessage": "Nothing stored. The app starts at the sign-in, signed out.",
     "description": "The line under the “Fresh install” fixture. “The door” is the sign-in gate the app’s root layout renders in place of every route until a session carries an entitlement; every hint in this group calls it that."
   },
   "fixtures.interests": {
     "defaultMessage": "Interests picked"
   },
   "fixtures.interests.hint": {
-    "defaultMessage": "A personalised Home: extra feeds, and modules in a different order.",
+    "defaultMessage": "A personal Home: more feeds, and blocks in a different order.",
     "description": "The line under the “Interests picked” fixture. “Home” is the app’s first tab, which the app itself calls “Start”; a module is one block of that screen."
   },
   "fixtures.noAccess": {
     "defaultMessage": "Signed in, no app access"
   },
   "fixtures.noAccess.hint": {
-    "defaultMessage": "The door's fourth state: a 0 € member, sent to the upgrade.",
+    "defaultMessage": "A member paying 0 €. The sign-in sends them to the upgrade.",
     "description": "The line under the “Signed in, no app access” fixture. The 0 € tier is CORRECTIV’s free membership, which does not include the app; 0 € is a price and stays as it is written."
   },
   "fixtures.onboarded": {
@@ -1032,21 +1032,21 @@
     "defaultMessage": "Saved articles"
   },
   "fixtures.saved.hint": {
-    "defaultMessage": "/gespeichert is otherwise empty and shows only its empty state.",
+    "defaultMessage": "Without this, the Saved tab is empty.",
     "description": "The line under the “Saved articles” fixture. /gespeichert is a route in the app and stays in its own spelling."
   },
   "fixtures.signedIn": {
     "defaultMessage": "Signed in"
   },
   "fixtures.signedIn.hint": {
-    "defaultMessage": "A member's first start: through the door, into the onboarding."
+    "defaultMessage": "A member’s first start: past the sign-in, into the onboarding."
   },
   "fixtures.submitted": {
     "defaultMessage": "Callout answered",
     "description": "A fixture in the state tool. A callout is an open call to readers to send something in; the app calls that screen “Mitmachen”."
   },
   "fixtures.submitted.hint": {
-    "defaultMessage": "The form then shows its thanks instead of its questions."
+    "defaultMessage": "The form shows its thank-you instead of the questions."
   },
   "frame.copied": {
     "defaultMessage": "Copied",
@@ -1121,7 +1121,7 @@
     "defaultMessage": "the reader, a WebView"
   },
   "frame.pages.empty": {
-    "defaultMessage": "No page of that name. The field beside this one takes any address.",
+    "defaultMessage": "No page by that name. You can type any address into the field beside this.",
     "description": "Stands in for the list when the typed filter matches nothing. The field it points at is the route field to the right of this button."
   },
   "frame.pages.formular": {
@@ -1151,7 +1151,7 @@
     "description": "The group of route shapes whose last segment names one article, project or claim. The address in each row is one example of the shape."
   },
   "frame.pages.group.worthReaching": {
-    "defaultMessage": "Worth being able to reach",
+    "defaultMessage": "More pages",
     "description": "The group of two addresses that are not screens of the app in the ordinary sense: its component gallery and its 404."
   },
   "frame.pages.home": {
@@ -1257,22 +1257,22 @@
     "description": "The kicker over the Traps card. It says how the document was come by rather than what it is: every line in it was paid for by a failure that passed every check."
   },
   "handbook.lede": {
-    "defaultMessage": "The repository’s own documents, rendered where they live.",
+    "defaultMessage": "The repository’s own documents, shown straight from their files.",
     "description": "The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is handbook.lede.more, behind the ⓘ at its end."
   },
   "handbook.lede.more": {
-    "defaultMessage": "Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind.",
+    "defaultMessage": "Nothing here is a copy. The files are the source, and this site is a second way to read them. So there is one place to edit, and no version quietly falls behind.",
     "description": "Behind the ⓘ at the end of the sentence under the heading, followed there by handbook.records."
   },
   "handbook.records": {
-    "defaultMessage": "The decisions behind all of it are their own section, because a record is a different kind of document: it is never rewritten, and a claim a later decision made false is struck through where it stands rather than corrected."
+    "defaultMessage": "The decisions behind all this have their own section. A decision record is a different kind of document: it is never rewritten. When a later decision makes a claim false, the claim is struck through, not corrected."
   },
   "handbook.title": {
     "defaultMessage": "Handbook",
     "description": "The page’s heading. shell.activity.handbook is the rail entry that opens it and the word a document’s breadcrumb uses for this section; nav.handbook is the same word again as the page’s name in the browser tab and the search palette."
   },
   "home.block.empty": {
-    "defaultMessage": "{block} draws nothing here.",
+    "defaultMessage": "{block} shows nothing here.",
     "description": "Stands in for a block that measured no height at all, in place of an empty box that would read as a block that is broken. {block} is the module’s own name, which this strip carries because the list around it shows no names."
   },
   "home.block.name": {
@@ -1280,7 +1280,7 @@
     "description": "How a block is named to a screen reader, wherever a control has to say which one it means. {name} is the module’s label out of MODULE_LABELS and {id} the section’s own id, which is on screen at the end of every row. A translation keeps the brackets: the id is an identifier and the two halves must stay tellable apart."
   },
   "home.block.unknown": {
-    "defaultMessage": "Not drawn: this app has no module named <name>{module}</name>.",
+    "defaultMessage": "Not shown: the app has no block called <name>{module}</name>.",
     "description": "Stands in for a block whose module this app has no renderer for, which happens while the document is ahead of the app. {module} is the word the document used, drawn in a monospace face."
   },
   "home.document.changed": {
@@ -1292,25 +1292,25 @@
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
   },
   "home.document.follow": {
-    "defaultMessage": "Scroll the frame to the block under the pointer"
+    "defaultMessage": "Scroll the frame to the block you point at"
   },
   "home.document.refused": {
     "defaultMessage": "refused",
     "description": "The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated."
   },
   "home.document.revert": {
-    "defaultMessage": "Back to the file",
+    "defaultMessage": "Discard changes",
     "description": "Throws away every edit of this session and goes back to the document as the repository has it."
   },
   "home.document.rule": {
-    "defaultMessage": "A moment carries only what changes at it.",
+    "defaultMessage": "A moment holds only what changes at that time. Everything else carries on as before.",
     "description": "Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
   },
   "home.document.save": {
     "defaultMessage": "Save to the repository"
   },
   "home.document.saveNote": {
-    "defaultMessage": "On a dev server, Save writes <code>{file}</code> in your own checkout, and refuses anything the core will not parse. It is a shortcut for developers; Submit changes is the way that ends in a pull request.",
+    "defaultMessage": "On a dev server, Save writes <code>{file}</code> in your own checkout. It refuses anything the core cannot read. This is a shortcut for developers. The way to a pull request is Submit changes.",
     "description": "Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
   },
   "home.document.submit": {
@@ -1325,14 +1325,14 @@
     "description": "The one line under Submit changes. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
   },
   "home.document.submitHintLong": {
-    "defaultMessage": "This change is too long for a link. The click puts it on your clipboard, and you paste it in on GitHub. You need a GitHub account.",
+    "defaultMessage": "This change is too long for a link. The click copies it to your clipboard, and you paste it in on GitHub. You need a GitHub account.",
     "description": "Stands in for home.document.submitHint when the change is too long to travel in the address, so it has to go by the clipboard."
   },
   "home.document.submitNoClipboard": {
-    "defaultMessage": "This browser did not let the page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
+    "defaultMessage": "The browser did not let this page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
   },
   "home.document.submitNote": {
-    "defaultMessage": "Submit changes opens a new issue on GitHub with your change in it. A workflow then makes a pull request from the issue. The change reaches the app once somebody has checked and merged it. This page holds no password and no token (ADR 0058, ADR 0061).",
+    "defaultMessage": "Submit changes opens a new issue on GitHub with your change in it. A pull request is then made from the issue automatically. Your change reaches the app once someone has checked and merged it. This page stores no password and no token.",
     "description": "Behind the ⓘ beside Submit changes: what happens after the click."
   },
   "home.document.unchanged": {
@@ -1347,7 +1347,7 @@
     "description": "Stands in the body of the GitHub issue instead of the change, when the change is too long to go in the address. “Create” is GitHub’s own button and stays in English."
   },
   "home.issue.lead": {
-    "defaultMessage": "This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made from it by itself, and this issue says where. Please leave the block below as it is.",
+    "defaultMessage": "This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
     "description": "The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
   },
   "home.module.articleHero": {
@@ -1361,13 +1361,13 @@
     "description": "Backstage is the name of a CORRECTIV product and is the same word in every language. home.module.mediathek, home.module.impact and home.module.spotlight are the other three left as they are, each for the reason on its own descriptor."
   },
   "home.module.backstage.what": {
-    "defaultMessage": "The newsroom diary and the way in."
+    "defaultMessage": "The newsroom diary, with a link to it."
   },
   "home.module.callout": {
     "defaultMessage": "Participation callout"
   },
   "home.module.callout.what": {
-    "defaultMessage": "The open callout. Two places in the document, one lifted over the lead at midday."
+    "defaultMessage": "The open callout. It has two places: at midday it moves above the lead article."
   },
   "home.module.earlyAccess": {
     "defaultMessage": "Early access"
@@ -1385,14 +1385,14 @@
     "defaultMessage": "Loading and offline notice"
   },
   "home.module.feedStatus.what": {
-    "defaultMessage": "Only appears while the feeds load, or when they came out of the bundle."
+    "defaultMessage": "Appears only while content is loading, or when the app shows the content it shipped with."
   },
   "home.module.header": {
     "defaultMessage": "Header",
     "description": "The name of the app’s topmost block, which is a word the app’s own header does not print. `frame.pages.home` is the tab this block sits on."
   },
   "home.module.header.what": {
-    "defaultMessage": "The date, the greeting and the way into search."
+    "defaultMessage": "The date, the greeting and the search."
   },
   "home.module.impact": {
     "defaultMessage": "Impact",
@@ -1419,23 +1419,23 @@
     "description": "Spotlight is the name of a CORRECTIV newsletter and stays as it is in every language; “briefing” is what this block draws of it."
   },
   "home.module.spotlight.what": {
-    "defaultMessage": "The current issue, with the way into the archive."
+    "defaultMessage": "The current issue, with a link to the archive."
   },
   "home.module.unknown.what": {
-    "defaultMessage": "This tool has no description for it.",
+    "defaultMessage": "No description for this block yet.",
     "description": "Under a module the palette is offering that MODULE_LABELS has no entry for, where the label above it is the module’s raw id. home.setting.unknown.what is the same kind of stand-in one level down, for a setting, and says something shorter because the control beside it already names itself."
   },
   "home.palette.addHere": {
     "defaultMessage": "Add a block {where}",
-    "description": "The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as \"at the top of the day\" or \"after the lead article\"."
+    "description": "The accessible name of the hairline between two blocks of the day, which opens the palette. {where} is the place a block would land, in words, as \"at the very top\" or \"after the lead article\"."
   },
   "home.palette.addModule": {
     "defaultMessage": "Add {name}. {what}",
     "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
   },
   "home.palette.lead": {
-    "defaultMessage": "It goes {where}. Every block that says it belongs on this screen is offered; the frame beside this is where an arrangement is judged, not this list.",
-    "description": "The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the top of the day\"."
+    "defaultMessage": "The new block goes {where}. The list offers every block that fits this screen. Judge the result in the frame beside it.",
+    "description": "The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
   },
   "home.palette.title": {
     "defaultMessage": "Add a block",
@@ -1446,7 +1446,7 @@
     "description": "Stands where a time of day would, for the end of the last stretch of the day. Reads inside home.point.startLead and home.point.span."
   },
   "home.point.noMoments": {
-    "defaultMessage": "This document has no moments, so the home screen is the same at every hour."
+    "defaultMessage": "This day has no moments. The home screen looks the same all day."
   },
   "home.point.remove": {
     "defaultMessage": "Remove the moment at {time}",
@@ -1461,7 +1461,7 @@
     "description": "Names the point being edited when it is the document itself rather than one of its moments."
   },
   "home.point.startLead": {
-    "defaultMessage": "The document as it stands, in effect from midnight until {until}. Every moment inherits from it.",
+    "defaultMessage": "The layout from midnight until {until}. Every moment builds on it.",
     "description": "Under the day’s start. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none."
   },
   "home.point.time": {
@@ -1559,8 +1559,8 @@
     "description": "The first option of the article picker, which leaves the module to its own default instead of naming an article."
   },
   "home.setting.sample": {
-    "defaultMessage": "These are <code>packages/app-core/src/data/home-pins.ts</code>, standing in for {standsIn}. Real articles, a fixed list, not today’s.",
-    "description": "Beside the sample-data badge. The tag wraps a repository path, drawn in a monospace face; {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts."
+    "defaultMessage": "A fixed list of real articles, not today’s. It stands in for {standsIn}.",
+    "description": "Beside the sample-data badge, for the newsroom, so it names no file. {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts."
   },
   "home.setting.sampleBadge": {
     "defaultMessage": "sample data",
@@ -1571,11 +1571,11 @@
     "description": "Under a setting the core declares that SETTING_LABELS has no entry for, where the label above it is the setting’s raw key. home.module.unknown.what is the same kind of stand-in one level up, for a whole module, and says more because a module’s id says less about it than a setting’s key does."
   },
   "home.timeline.addPoint": {
-    "defaultMessage": "Make this minute a moment",
+    "defaultMessage": "Add a moment at this minute",
     "description": "The accessible name of the button that names the playhead’s minute as a moment of the day. home.timeline.addPointShort is the same button’s visible word, which goes below 640px."
   },
   "home.timeline.addPointShort": {
-    "defaultMessage": "Point here",
+    "defaultMessage": "Moment",
     "description": "The visible word on the button whose accessible name is home.timeline.addPoint. It has an icon beside it and a whole sentence would not fit."
   },
   "home.timeline.date": {
@@ -1615,11 +1615,11 @@
     "description": "Where an insertion mark puts a block, between two that are already there. {before} and {after} are each home.block.name, so each already reads “Lead article (hero)”, where the word in brackets is the section’s id and not the module’s. Dropped in mid-sentence, so lower case and no full stop."
   },
   "home.where.end": {
-    "defaultMessage": "at the end of the day",
+    "defaultMessage": "at the very bottom",
     "description": "The same as home.where.top for the other edge: below every block there is. Dropped in mid-sentence, so lower case and no full stop."
   },
   "home.where.top": {
-    "defaultMessage": "at the top of the day",
+    "defaultMessage": "at the very top",
     "description": "Where an insertion mark puts a block, when it is above every block there is. Dropped into the middle of a sentence, so it is lower case and carries no full stop. home.where.end is the same for the other edge and home.where.between for everywhere else."
   },
   "insideCore.alt.articles": {
@@ -1783,7 +1783,7 @@
     "description": "How many files the types layer holds, beside its name. insideCore.ports.file says the same of the layer beside it and names the file as well."
   },
   "landing.door.decisions.blurb": {
-    "defaultMessage": "Why the repository is the way it is, and which of its claims have since expired."
+    "defaultMessage": "Why the repository is the way it is, and which of its claims no longer hold."
   },
   "landing.door.decisions.kind": {
     "defaultMessage": "Records",
@@ -1794,7 +1794,7 @@
     "description": "The Decisions card’s own name, on the front page. shell.activity.decisions is the same word on the rail; nav.decisions is the longer name the browser tab carries."
   },
   "landing.door.design.blurb": {
-    "defaultMessage": "The Figma file the screens come from, and the three places it reaches the code."
+    "defaultMessage": "The Figma file behind the screens, and where it connects to the code."
   },
   "landing.door.design.kind": {
     "defaultMessage": "Drawn by hand",
@@ -1805,7 +1805,7 @@
     "description": "The Design card’s own name, on the front page. shell.activity.design is the same word on the rail, design.title is the heading of the page it opens, and nav.design is the longer name the browser tab carries."
   },
   "landing.door.handbook.blurb": {
-    "defaultMessage": "What the system is and how to work in it: the architecture, the drawings of it, the conventions, and the traps that pass every check."
+    "defaultMessage": "What the system is and how to work in it: the architecture, drawings of it, the conventions, and the traps that pass every check."
   },
   "landing.door.handbook.kind": {
     "defaultMessage": "Written down",
@@ -1816,7 +1816,7 @@
     "description": "The Handbook card’s own name, on the front page. shell.activity.handbook is the same word on the rail and in a document’s breadcrumb; nav.handbook is the page’s name in the browser tab."
   },
   "landing.door.preview.blurb": {
-    "defaultMessage": "The app itself at device size, with an inspector for its state, its console, its palette and its layout. No install and no emulator, and the address reproduces exactly what you see."
+    "defaultMessage": "The app itself, at device size, with tools for its state, its console, its colours and its layout. Nothing to install. The address in the browser brings back exactly what you see."
   },
   "landing.door.preview.kind": {
     "defaultMessage": "The app, running",
@@ -1827,7 +1827,7 @@
     "description": "The Preview card’s own name, on the front page. nav.preview is the same word as the page’s name in the browser tab and in the search palette."
   },
   "landing.door.sources.blurb": {
-    "defaultMessage": "For everything the app shows: whether it is a live source, a file standing in for an API that does not exist yet, or a wanted feature with nothing to read at all."
+    "defaultMessage": "For everything the app shows: is it live, a stand-in file for an API that does not exist yet, or a wanted feature with no source?"
   },
   "landing.door.sources.kind": {
     "defaultMessage": "Inventory",
@@ -1862,38 +1862,38 @@
     "description": "The line at the foot of the front page. {licence} is the SPDX identifier of this repository’s licence, {repo} its name on GitHub and {commit} the seven-character hash this site was built from; all three are identifiers and arrive as values so that none of them is translated. <repoLink> and <commitLink> are the two links."
   },
   "landing.layout.core": {
-    "defaultMessage": "The model, the parsers, the services, the caches and all of the state. It imports no UI framework and no platform SDK, and a test fails the build if that ever changes."
+    "defaultMessage": "The model, the parsers, the services, the caches and all of the state. It uses no UI framework and no platform SDK. A test stops the build if that changes."
   },
   "landing.layout.heading": {
     "defaultMessage": "How the repository is laid out",
     "description": "The heading over the four rows naming a directory of this repository and saying what is in it. The directory names themselves are paths and stay as they are."
   },
   "landing.layout.mobile": {
-    "defaultMessage": "The Expo app: iOS, Android and a web target. It holds the screens and one file implementing the ports."
+    "defaultMessage": "The Expo app for iOS, Android and the web. It holds the screens and one file that implements the ports."
   },
   "landing.layout.records": {
-    "defaultMessage": "{records, plural, one {# record} other {# records}}. A record is never rewritten to look right in hindsight: a claim a later decision made false is struck through where it stands, and {retired, plural, one {# of them is} other {# of them are}}.",
+    "defaultMessage": "{records, plural, one {# record} other {# records}}. A record is never rewritten later. When a later decision makes a claim false, the claim is struck through where it stands. So far {retired, plural, one {# claim is} other {# claims are}} struck.",
     "description": "The row about adr/. {records} is how many records the site publishes; {retired} is how many claims are struck through, counted over every document this site renders rather than over the records alone."
   },
   "landing.layout.tokens": {
-    "defaultMessage": "The shared palette. CORRECTIV’s WordPress CMS consumes the same values, and so does this workbench, which is why no page here can fork the colours."
+    "defaultMessage": "The shared colour palette. CORRECTIV’s WordPress CMS uses the same values, and so does this workbench. So no page here can use colours of its own."
   },
   "landing.lede": {
-    "defaultMessage": "A community app for CORRECTIV members, built as one platform-free core with the Expo app as its host. The core holds every piece of behaviour and imports no UI framework and no platform SDK, which is why replacing the whole view layer once cost no behaviour at all."
+    "defaultMessage": "A community app for CORRECTIV members. All of its behaviour lives in one core that depends on no platform. The Expo app is the host that brings it to iOS, Android and the web. That is why the whole view layer could once be replaced without losing any behaviour."
   },
   "landing.note": {
-    "defaultMessage": "This workbench publishes the repository’s own documents, unchanged and in place, and puts the running app next to them."
+    "defaultMessage": "This workbench shows the repository’s own documents, unchanged, and puts the running app beside them."
   },
   "landing.status.heading": {
     "defaultMessage": "What the app reads",
     "description": "The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the ⓘ beside it explains."
   },
   "landing.status.when": {
-    "defaultMessage": "From a run against the live sources on {measured}, {age}.",
+    "defaultMessage": "Measured against the live sources on {measured}, {age}.",
     "description": "The line under the heading over the four figures, always drawn: how fresh they are. {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over."
   },
   "landing.status.why": {
-    "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. A weekly job re-takes the figures. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
+    "defaultMessage": "One figure per manifest entry. The sources page counts more rows, because it lists the articles as their {feeds} feeds: a feed is what goes stale. A weekly job measures the figures again. They do not refresh while you read, because the feeds do not let a browser fetch them.",
     "description": "Behind the ⓘ beside the heading over the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here. “The board” is /sources."
   },
   "landing.title": {
@@ -1952,7 +1952,7 @@
     "description": "Over the frame while the app’s bundle is still starting, in a live region. preview.frame.stuck replaces it if the app never arrives."
   },
   "preview.frame.stuck": {
-    "defaultMessage": "The app did not load. The preview has its console.",
+    "defaultMessage": "The app did not load. The console in the tool panel has the details.",
     "description": "Replaces preview.frame.booting after six seconds with nothing drawn. “The preview” is this site’s /preview view, whose console tool shows what the app said on its way down."
   },
   "preview.status.app": {
@@ -2008,7 +2008,7 @@
     "description": "The sentence under the heading, which says what the page is. The run in <code> is a path in this repository and is left in its own spelling. The rest of what used to be this paragraph is reference.lede.more, behind the ⓘ at its end."
   },
   "reference.lede.more": {
-    "defaultMessage": "The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.",
+    "defaultMessage": "The core has no barrel, so each module here is the subpath you import. This page is for looking things up; start with the architecture pages. The app’s own components have their own section, <components>Components</components>, and only <code>apps/mobile</code> can import them.",
     "description": "Behind the ⓘ at the end of the sentence under the heading. The run in <code> is a path in this repository and is left in its own spelling. <components> is the link to /components and the word inside it is that page’s own name."
   },
   "reference.symbol.noDoc": {
@@ -2096,7 +2096,7 @@
     "description": "The line under the product name beabee, saying what it answers about."
   },
   "services.caption": {
-    "defaultMessage": "Its answer decides whether the app renders its routes at all, which no content source does, so it is drawn on its own wire. That answer is simulated today, in <code>services/auth.service.ts</code>, and the shape of the answer is the contract. Five content sources are live; three are files typed in the shape of the API meant to replace them. Which is which, and the figures behind each, is the <board>sources board</board>.",
+    "defaultMessage": "Its answer decides whether the app shows its routes at all. No content source does that, so it has a line of its own. Today the answer is simulated, in <code>services/auth.service.ts</code>, and its shape is the contract. Five content sources are live; three are files in the shape of the API meant to replace them. The <board>sources board</board> shows which is which, with the figures.",
     "description": "The rest of that caption. <code> marks a file path, which stays as it is written. <board> is the link to /sources and the words inside it are that page’s own name. The two counts are held to the drawing’s own rows by test/diagrams.test.ts, which reads this sentence, so the words around each number are load-bearing in English."
   },
   "services.caption.lead": {
@@ -2108,7 +2108,7 @@
     "description": "The heading over the band of content sources, drawn in capitals above a rule. German capitalises the same way."
   },
   "services.lede": {
-    "defaultMessage": "One of these is not like the others. beabee answers who somebody is and whether their membership includes the app; everything else answers what to show them. Most of the content is live today, and the identity half is still simulated.",
+    "defaultMessage": "One of these is different. beabee answers who someone is and whether their membership includes the app. Everything else answers what to show them. Most content is live today; the identity part is still simulated.",
     "description": "The paragraph under that heading. beabee is a product name and stays."
   },
   "services.legend.live": {
@@ -2171,7 +2171,7 @@
     "defaultMessage": "This build"
   },
   "settings.build.note": {
-    "defaultMessage": "Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were taken on <day>{measured}</day>, {age}, by the job that re-takes them weekly.",
+    "defaultMessage": "Built from commit <commitLink>{commit}</commitLink>. Every link into the source points at this commit, not at <code>main</code>. The source figures are from <day>{measured}</day>, {age}. A job measures them again every week.",
     "description": "The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was, formatted from measured.age in the reader’s own language. It used to arrive as English prose and this description used to say so."
   },
   "settings.keyboard": {
@@ -2190,7 +2190,7 @@
     "description": "The line under the System language choice. settings.mode.system.hint says “Follow the device” one group up and means the appearance; this one means the language list the browser sends, which is a setting of the browser rather than of the machine."
   },
   "settings.lede": {
-    "defaultMessage": "For this browser. Nothing here is sent anywhere or shared with the app in the frame, which keeps its own setting."
+    "defaultMessage": "These settings apply to this browser only. Nothing is sent anywhere. The app in the frame keeps its own settings."
   },
   "settings.mode.dark": {
     "defaultMessage": "Dark"
@@ -2215,7 +2215,7 @@
     "defaultMessage": "Leave full screen on the app view"
   },
   "settings.shortcut.panel": {
-    "defaultMessage": "The tool panel, whatever the open view puts there"
+    "defaultMessage": "Open or close the tool panel"
   },
   "settings.shortcut.search": {
     "defaultMessage": "Search documents, sections and the API"
@@ -2267,7 +2267,7 @@
     "defaultMessage": "This view did not render"
   },
   "shell.boundary.lead": {
-    "defaultMessage": "The rest of the workbench still works: pick another section on the left, or press <kbd>⌘K</kbd> to search. The error is below and in the browser console.",
+    "defaultMessage": "The rest of the workbench still works. Pick another section on the left, or press <kbd>⌘K</kbd> to search. The error is below and in the browser console.",
     "description": "Under the heading of a view that threw. The tag wraps the key combination, drawn as a keycap."
   },
   "shell.boundary.retry": {
@@ -2294,7 +2294,7 @@
     "defaultMessage": "Give the app the whole screen"
   },
   "shell.header.fullTip": {
-    "defaultMessage": "The app on its own",
+    "defaultMessage": "App only",
     "description": "The tooltip on the button whose accessible name is shell.header.full. Shorter, because a tooltip is read beside the thing it describes."
   },
   "shell.header.search": {
@@ -2318,7 +2318,7 @@
     "description": "The accessible name of a small ⓘ button that opens an explanation, and of the panel it opens. Read aloud, and shown as a native tooltip on hover. {topic} is the heading or label the explanation sits beside, already in the reader’s language."
   },
   "shell.notFound.component": {
-    "defaultMessage": "The app has no such component. <back>Every component it does have</back> is one page back.",
+    "defaultMessage": "The app has no such component. <back>See all components</back>.",
     "description": "A second paragraph, only under /components/…, which is the one family that lands on the 404 by being renamed rather than typed wrong. The tag wraps the words that link to the component index."
   },
   "shell.notFound.heading": {
@@ -2326,7 +2326,7 @@
     "description": "The heading of this site’s own 404. {route} is the address that was asked for."
   },
   "shell.notFound.lead": {
-    "defaultMessage": "The workbench publishes the repository’s own documents. This address matches none of them. Press <kbd>⌘K</kbd> to search.",
+    "defaultMessage": "Press <kbd>⌘K</kbd> to search, or pick a section on the left.",
     "description": "Under the 404 heading. The tag wraps the key combination, drawn as a keycap."
   },
   "shell.panel.component": {
@@ -2442,7 +2442,7 @@
     "description": "Stands in the contents panel for a document with fewer than two headings. The section exists because the route declared it, so it says what it has rather than leaving an empty box behind a title."
   },
   "signIn.lede": {
-    "defaultMessage": "The door is real and everything past it is not. The root layout renders it instead of the route tree, and what it asks is a function that waits a second and a half and reads a table of email addresses. Above the red line is what this repository does; below it is what the whiteboard plans, drawn as an absence because that is what it is.",
+    "defaultMessage": "The door is real; everything behind it is not yet. The root layout shows it instead of the routes. It calls a function that waits one and a half seconds and looks the email address up in a table. Above the red line is what this repository does. Below it is what the whiteboard plans, drawn as a gap because it does not exist yet.",
     "description": "The paragraph under that heading."
   },
   "signIn.title": {
@@ -2450,7 +2450,7 @@
     "description": "The drawing’s name, as the heading of its own page and on the card that opens it."
   },
   "sources.board.lede": {
-    "defaultMessage": "One row per source, per article feed, or per wanted source. A row expands to its full detail; nothing on this page is truncated. The state tiles above filter the board as well.",
+    "defaultMessage": "One row per source, article feed or wanted source. Open a row to see everything about it; nothing is cut short. The tiles above filter this list too.",
     "description": "The paragraph under that heading, which says what a row holds."
   },
   "sources.board.title": {
@@ -2458,7 +2458,7 @@
     "description": "The heading over the table of every source. decisions.board.title is the same two words over the table on the decisions board."
   },
   "sources.caption": {
-    "defaultMessage": "Every content source the app reads, stands in for, or still wants. Figures from the run of <f>{measured}</f>.",
+    "defaultMessage": "Every content source the app reads, stands in for or still wants. Figures from <f>{measured}</f>.",
     "description": "The table’s caption, drawn as a line above it. {measured} is the ISO day of the last run, and <f> draws it in monospace."
   },
   "sources.collapseAll": {
@@ -2526,7 +2526,7 @@
     "description": "The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it and is not translated. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace."
   },
   "sources.feed.unmeasured": {
-    "defaultMessage": "<strong>Neither the feed nor its category answered in that run</strong>, so the figures above are unknown rather than zero. What a failed probe found is on its row in <code>apps/workbench/content/sources.measured.ts</code>.",
+    "defaultMessage": "<strong>Neither the feed nor its category answered in that run.</strong> So the figures above are unknown, not zero. The row in <code>apps/workbench/content/sources.measured.ts</code> says what the failed check found.",
     "description": "Printed in an article feed’s detail when the last run reached neither the feed nor the category behind it. <strong> carries the finding and <code> the generated file in this repository, which stays in its own spelling."
   },
   "sources.filter": {
@@ -2542,11 +2542,11 @@
     "description": "The figures on such a card. {category} is the feed’s category as the manifest writes it and is not translated; {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*. <f> draws each figure in monospace."
   },
   "sources.findings.lede": {
-    "defaultMessage": "A sample file is honest about what it is. A live feed that has stopped, or points at nothing, is not, because the app presents it as content. {ailing} of the {feeds} article feeds {ailing, plural, one {is} other {are}} in that state.",
+    "defaultMessage": "A sample file is honest about what it is. A live feed that has stopped, or points at nothing, is not: the app shows it as current content. {ailing} of the {feeds} article feeds {ailing, plural, one {is} other {are}} in that state.",
     "description": "The line under that heading. {ailing} is how many article feeds are stale or broken and {feeds} how many there are altogether."
   },
   "sources.findings.rest": {
-    "defaultMessage": "The other {count, plural, one {# article feed was} other {# article feeds were}} reading as expected in the run of <f>{measured}</f>. A feed can be stale for a good reason, which is what the note on each card is for.",
+    "defaultMessage": "The other {count, plural, one {article feed} other {# article feeds}} worked as expected on <f>{measured}</f>. A feed can be stale for a good reason. The note on each card explains.",
     "description": "The line under those cards. {count} is how many article feeds are healthy and {measured} the ISO day of the last run. <f> draws the day in monospace."
   },
   "sources.findings.title": {
@@ -2574,7 +2574,7 @@
     "description": "A badge on a row whose source carries more than the app reads. {unused} is how many are not read and {available} how many exist altogether."
   },
   "sources.footer.files": {
-    "defaultMessage": "Two files, and the split is the point. Every row, state and sentence above is read from <code>apps/workbench/content/sources.manifest.ts</code>, which a test checks against the core’s data directory: that is the argument, and it is written by hand. Every count, date and listener figure is read from <code>apps/workbench/content/sources.measured.ts</code>, which is generated and must not be edited.",
+    "defaultMessage": "Two files, on purpose. Every row, state and sentence above comes from <code>apps/workbench/content/sources.manifest.ts</code>. It is written by hand, and a test checks it against the core’s data folder. Every count, date and listener figure comes from <code>apps/workbench/content/sources.measured.ts</code>. That file is generated; do not edit it.",
     "description": "The first line of the footer, which says where the board comes from. Both <code> runs are paths in this repository and stay in their own spelling."
   },
   "sources.footer.label": {
@@ -2582,7 +2582,7 @@
     "description": "The footer’s one visible line, beside an ⓘ that opens the two paragraphs below. decisions.footer.label reads the same in English on the decisions board, which is a different board built out of different files."
   },
   "sources.footer.remeasure": {
-    "defaultMessage": "To re-measure, run <code>node apps/workbench/scripts/measure-sources.mjs</code>. <code>.github/workflows/sources.yml</code> runs it weekly and opens a pull request when anything has moved. It reports and never gates: a source that is down, slow or has moved appears on this page and in that run’s summary, and fails nothing.",
+    "defaultMessage": "To measure again, run <code>node apps/workbench/scripts/measure-sources.mjs</code>. <code>.github/workflows/sources.yml</code> runs it every week and opens a pull request when something has changed. It only reports and never blocks. A source that is down, slow or has moved shows up on this page and in the run’s summary, and nothing fails.",
     "description": "The second line of the footer, which says how the figures are re-taken. The first <code> run is a command and the second a path in this repository; both stay in their own spelling."
   },
   "sources.gap.unknown": {
@@ -2594,7 +2594,7 @@
     "description": "The count on such a card. {used} is how many of the thing the app reads and {available} how many exist, or the word for an unknown where the last run could not say. <big> draws the first figure large, <f> the second in monospace."
   },
   "sources.gaps.lede": {
-    "defaultMessage": "{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken.",
+    "defaultMessage": "{count, plural, one {# source is} other {# sources are}} live and reachable, but the app uses only part of each. Nothing is broken or missing. Nobody has decided yet what to use.",
     "description": "Behind the ⓘ beside that heading. {count} is how many such sources there are."
   },
   "sources.gaps.legend": {
@@ -2674,15 +2674,15 @@
     "description": "One of the eight content kinds: PeerTube and YouTube."
   },
   "sources.lede": {
-    "defaultMessage": "For every kind of content the app shows: is it live data, sample data standing in for an API that does not exist yet, or a wanted feature with nothing to read.",
+    "defaultMessage": "For every kind of content in the app: is it live data, sample data standing in for an API that does not exist yet, or a wanted feature with no source?",
     "description": "The paragraph under the heading, which names the three states the board sorts by."
   },
   "sources.measured.allAnswered": {
-    "defaultMessage": "Every source answered in that run, so nothing below is an unknown.",
+    "defaultMessage": "Every source answered in that run, so no figure below is unknown.",
     "description": "Printed in that note in place of the list, when every source answered."
   },
   "sources.measured.how": {
-    "defaultMessage": "The run was <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.",
+    "defaultMessage": "Measured by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. Your browser checked nothing, and cannot: the RSS feeds do not allow it. That is why this is a script and not a refresh button.",
     "description": "Behind the ⓘ in that note, after sources.measured.when says which day. {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <code> draws the script’s path in this repository."
   },
   "sources.measured.label": {
@@ -2706,11 +2706,11 @@
     "description": "The Measured cell of a source that did not answer the last run. Lower case, because it completes the column head; sources.flag.silent is the same finding as a badge in the Flags column and is capitalised."
   },
   "sources.measured.silentSome": {
-    "defaultMessage": "<strong>{count, plural, one {One source} other {# sources}} did not answer:</strong> {list}. That is a finding and not a failure — nothing in this repository turns a source being down into a red build.",
+    "defaultMessage": "<strong>{count, plural, one {One source} other {# sources}} did not answer:</strong> {list}. That is a finding, not a failure. A source that is down never stops a build here.",
     "description": "Printed in that note when at least one source did not answer. {count} is how many, and {list} names each of them with the reason the run recorded, in the script’s own words. They are named rather than merely counted, because “three sources did not answer” reads the same whether three feeds are down or the script probed nothing at all."
   },
   "sources.measured.stale": {
-    "defaultMessage": "That is more than {days, plural, one {# day} other {# days}} ago, so the weekly run that keeps this page current has not landed in a quarter. The post counts and the newest-post dates below have almost certainly moved.",
+    "defaultMessage": "The figures below are probably out of date. They are more than {days, plural, one {# day} other {# days}} old, so the weekly measurement has not run for a quarter.",
     "description": "Printed in that note only once the last run is old enough to distrust. {days} is the number of days this site treats as the limit, which is a quarter."
   },
   "sources.measured.used": {
@@ -2718,7 +2718,7 @@
     "description": "The Measured cell of a source the app reads only part of. {used} is how many of the thing the app reads and {available} how many exist."
   },
   "sources.measured.when": {
-    "defaultMessage": "<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}.</strong>",
+    "defaultMessage": "<strong>All figures on this page were measured on <f>{measured}</f>, {age}.</strong>",
     "description": "The first line of the note under the lede, always drawn: how fresh the figures are. {measured} is the ISO day of the last run; {age} is how long ago that was, worked out in the reader’s browser by src/lib/measured.ts. <strong> carries the whole line and <f> draws the day in monospace. How the run was taken is sources.measured.how, behind the ⓘ beside it."
   },
   "sources.newest.none": {
@@ -2746,7 +2746,7 @@
     "description": "The link from a row, or from a finding card, down to the question that row raises. {n} is the question’s number."
   },
   "sources.questions.lede": {
-    "defaultMessage": "This page exists to get these answered. Each one is raised by a row above, and each row carries its question as a Q chip.",
+    "defaultMessage": "This page exists to get these answered. Each question comes from a row above, where a Q chip marks it.",
     "description": "The line under that heading. “Q chip” is the small badge on a row, whose label is sources.question.chip; a translation that changes the letter there changes it here too."
   },
   "sources.questions.title": {
@@ -2806,19 +2806,19 @@
     "description": "The first filter tile, which switches the state filter off. It is also the tile’s accessible name, because the card as a whole is the control."
   },
   "sources.tile.all.note": {
-    "defaultMessage": "{rows, plural, one {# row} other {# rows}} over {entries, plural, one {# manifest entry} other {# manifest entries}}, with the article family drawn as its {feeds, plural, one {# feed} other {# feeds}}.",
+    "defaultMessage": "{rows, plural, one {# row} other {# rows}} for {entries, plural, one {# manifest entry} other {# manifest entries}}. The articles count as their {feeds, plural, one {# feed} other {# feeds}}.",
     "description": "The line under that tile, which explains why the board has more rows than the manifest has entries. {rows} is how many rows there are, {entries} how many entries the manifest has, and {feeds} how many article feeds the one article entry is drawn as."
   },
   "sources.tile.live.note": {
-    "defaultMessage": "{ok} reading as expected, {stale} stale, {broken} broken. The last two are the bad news below.",
+    "defaultMessage": "{ok} working as expected, {stale} stale, {broken} broken. The last two are under the bad news below.",
     "description": "The line under the Live tile. {ok} is how many live rows are delivering, {stale} how many have stopped, and {broken} how many point at nothing."
   },
   "sources.tile.noSource.note": {
-    "defaultMessage": "{count, plural, one {# wanted feature} other {# wanted features}} with nothing to read. {mvp} of them are MVP.",
+    "defaultMessage": "{count, plural, one {# wanted feature} other {# wanted features}} with no source. {mvp} of them are MVP.",
     "description": "The line under the No source tile. {count} is how many wanted features have no source at all, and {mvp} how many of those are wanted for the first release."
   },
   "sources.tile.sample.note": {
-    "defaultMessage": "{count, plural, one {# file} other {# files}} typed in the shape of the API that will replace them. On screen they look like live content.",
+    "defaultMessage": "{count, plural, one {# file} other {# files}} in the shape of the API that will replace them. On screen they look like live content.",
     "description": "The line under the Sample data tile. {count} is how many checked-in files stand in for an API."
   },
   "sources.title": {
@@ -2842,15 +2842,15 @@
     "description": "The count beside the filter box, which follows what is typed into it and what the segment beside it is set to. {shown} is how many rows are left, {total} how many the board holds altogether, and {sections} how many headings those rows are under."
   },
   "strings.lede": {
-    "defaultMessage": "Every string the app or this site has a descriptor for, joined from the extraction and the catalogues.",
+    "defaultMessage": "Every text in the app and on this site, with its ID, joined from the source and the catalogues.",
     "description": "The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is strings.lede.more, behind the ⓘ at its end."
   },
   "strings.lede.more": {
-    "defaultMessage": "The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+    "defaultMessage": "The app and this site keep separate catalogues for separate readers. So each heading names both the surface and the namespace, and <code>settings.title</code> below is two different texts. A wording with <code>'{braces}'</code> is an ICU pattern and is shown as the pattern.",
     "description": "The first paragraph behind the ⓘ at the end of the sentence under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder."
   },
   "strings.lede.progress": {
-    "defaultMessage": "The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is nearly so: every page of this site is here, and what is not is the six architecture drawings, which are labels in an SVG and want a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.",
+    "defaultMessage": "The <code>app</code> half is complete, except for two texts a reader sees that are deliberately not descriptors. <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and says why. The <code>workbench</code> half is nearly complete: every page of this site is here. What is missing are the labels inside the architecture drawings, which need a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.",
     "description": "The second paragraph behind the ⓘ under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository."
   },
   "strings.only.all": {
@@ -2914,11 +2914,11 @@
     "description": "The legend of the three-way control that writes that setting, drawn above it. tools.appearance.setting is the readout of the same thing two rows up and reads “App setting says”."
   },
   "tools.appearance.needsDev": {
-    "defaultMessage": "<code>expo export</code> sets <code>__DEV__</code> false, so the published build leaves no dev handle and this setting cannot be written from here. Run the workbench against <code>npm run web</code>.",
+    "defaultMessage": "The published build cannot change this setting. <code>expo export</code> sets <code>__DEV__</code> to false, so the app offers no dev handle. Run the workbench against <code>npm run web</code>.",
     "description": "Why the control above it is disabled. The three runs in <code> are a command, a build-time constant and a command, and none of them is translated."
   },
   "tools.appearance.note": {
-    "defaultMessage": "An iframe cannot be given a scheme of its own, so the two marked DevTools are reached by emulating <code>prefers-color-scheme</code> under Rendering.",
+    "defaultMessage": "An iframe cannot get a colour scheme of its own. To reach the two rows marked DevTools, emulate <code>prefers-color-scheme</code> under Rendering in DevTools.",
     "description": "Under the list of four combinations. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated."
   },
   "tools.appearance.onScreen": {
@@ -2978,7 +2978,7 @@
     "description": "Arms the picker. tools.inspect.armed is what the same button says once it is armed."
   },
   "tools.inspect.armed": {
-    "defaultMessage": "Picker armed, click in the frame",
+    "defaultMessage": "Click an element in the frame",
     "description": "What the button says while the picker is waiting for a click inside the framed app. tools.inspect.arm is what it says before that."
   },
   "tools.inspect.block": {
@@ -3010,7 +3010,7 @@
     "description": "The last field of the handover block: this page’s own address, which is what lets whoever picks the note up put the same thing back on screen."
   },
   "tools.inspect.needsDev": {
-    "defaultMessage": "The source line comes from the owner stack React keeps beside each node, and a production bundle keeps none. The picker stays disarmed here.",
+    "defaultMessage": "The picker needs a development build and is off here. It reads the source line from the owner stack React keeps, and a production bundle keeps none.",
     "description": "Why the picker below it is disabled in the published export."
   },
   "tools.inspect.noLabel": {
@@ -3018,7 +3018,7 @@
     "description": "Where the picked element’s own text would be, for a node that has none and no accessibility label either. tools.inspect.handover.noLabel says the same thing inside the plain-text block, where it is parenthesised."
   },
   "tools.inspect.noSource": {
-    "defaultMessage": "No source: either nothing in this node’s owner chain is app code, or the bundle keeps no owner stacks at all, which is every production build.",
+    "defaultMessage": "No source found. Either nothing in this node’s owner chain is app code, or this is a production build, which keeps no owner stacks.",
     "description": "Shown where the owner chain would be, for a pick that resolved to no app code."
   },
   "tools.inspect.note": {
@@ -3078,7 +3078,7 @@
     "description": "A badge on a finding, saying which of the three checks found it. tools.measure.check.tapTarget is the same check in the list above."
   },
   "tools.measure.lightNote": {
-    "defaultMessage": "Colours are ambiguous in light: several tokens share #ffffff, several share #333333, and a value match cannot say which was meant. Re-run in dark, where the palette spreads over more distinct values.",
+    "defaultMessage": "In light mode, colours are ambiguous. Several tokens share #ffffff and several share #333333, so a match cannot tell which one was meant. Run the checks again in dark mode, where the palette has more distinct values.",
     "description": "Shown after a run against the light palette, because a colour check can only match values and the light palette puts many tokens on one value. The two hex colours and the two palette names stay as they are written."
   },
   "tools.measure.mark": {
@@ -3086,7 +3086,7 @@
     "description": "The word beside the number on the measure tool’s icon in the rail, read aloud and also its tooltip. {count} is the number itself, which is drawn separately, so this is the noun alone."
   },
   "tools.measure.none": {
-    "defaultMessage": "Nothing found across {count} elements.",
+    "defaultMessage": "Nothing found in {count} elements.",
     "description": "Where the findings would be, after a run that produced none. {count} is how many elements were looked at."
   },
   "tools.measure.outline": {
@@ -3098,7 +3098,7 @@
     "description": "Runs all three checks over the framed app as it stands now."
   },
   "tools.measure.scanned": {
-    "defaultMessage": "Ran across {count} elements.",
+    "defaultMessage": "Checked {count} elements.",
     "description": "Beside the run button after a run. {count} is how many elements the checks looked at. tools.measure.none says the same number where nothing at all was found."
   },
   "tools.needsDev": {
@@ -3106,7 +3106,7 @@
     "description": "A badge over the reason a control in this panel is disabled. Two of the six tools carry one, the appearance tool and the inspector, and each writes its own reason under it: tools.appearance.needsDev and tools.inspect.needsDev."
   },
   "tools.state.legend": {
-    "defaultMessage": "Fixture · choosing one reloads the frame",
+    "defaultMessage": "App state · choosing one reloads the frame",
     "description": "The legend over the list of storage fixtures. A fixture is written into storage before the app boots, which is why choosing one costs a load. The fixtures themselves are fixtures.* and live with the data they write."
   },
   "tools.state.none": {
@@ -3114,7 +3114,7 @@
     "description": "The first row of the fixture list and the default: seed nothing, so whatever is already in storage stays. It is not a fixture, which is why it is here and not in fixtures.*."
   },
   "tools.state.none.hint": {
-    "defaultMessage": "Whatever the last visit left in storage.",
+    "defaultMessage": "Whatever the last visit stored.",
     "description": "The line under “Leave alone”."
   },
   "tools.tokens.changed": {
@@ -3142,7 +3142,7 @@
     "description": "A checkbox: also chase text and icon colours, which cannot follow a custom property because react-native-web resolves them in JavaScript and writes them inline."
   },
   "tools.tokens.textNote": {
-    "defaultMessage": "Text is chased by value, so it is a best effort rather than a rule.",
+    "defaultMessage": "Text colours are found by their value, so some text may be missed.",
     "description": "The caveat behind the ⓘ beside that checkbox."
   }
 }

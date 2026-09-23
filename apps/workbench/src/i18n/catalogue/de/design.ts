@@ -30,18 +30,18 @@ export const design: Record<string, string> = {
   'design.loads.note': 'Eine Anfrage an figma.com, und keine, bevor Sie den Knopf drücken.',
   'design.see': 'Was Sie sehen werden',
   'design.see.note':
-    'Die Datei, wenn Sie bei Figma angemeldet sind und Zugriff darauf haben. Sonst Figmas eigene Anmeldeseite. Diese Seite ist eine Frage der Berechtigung und kein Fehler: Die Datei ist nicht öffentlich geteilt.',
+    'Die Datei, wenn Sie bei Figma angemeldet sind und Zugriff haben. Sonst Figmas Anmeldeseite. Das ist eine Frage der Berechtigung, kein Fehler: Die Datei ist nicht öffentlich geteilt.',
 
   'design.full': 'Im Vollbild öffnen',
   'design.full.note':
-    'Der Rahmen braucht die Breite des Bildschirms und öffnet deshalb für sich allein. Die Datei selbst wird auch dann erst auf einen Druck geladen.',
+    'Der Rahmen braucht die ganze Breite des Bildschirms und öffnet sich deshalb allein. Die Datei lädt auch dann erst, wenn Sie auf den Knopf drücken.',
   'design.load': 'Die Figma-Datei laden',
   'design.load.note': 'von figma.com',
 
   'design.rest.side':
-    'Alles Weitere zum Design, die Desktop-Programme, das Plugin und die Stellen, an denen die Farben den Code erreichen, steht rechts.',
+    'Mehr zum Design steht rechts: die Desktop-Programme, das Plugin und wo die Farben den Code erreichen.',
   'design.rest.below':
-    'Alles Weitere zum Design, die Desktop-Programme, das Plugin und die Stellen, an denen die Farben den Code erreichen, steht darunter.',
+    'Mehr zum Design steht unten: die Desktop-Programme, das Plugin und wo die Farben den Code erreichen.',
 
   'design.open': 'In Figma öffnen',
   'design.reload': 'Den Rahmen neu laden',
@@ -49,22 +49,22 @@ export const design: Record<string, string> = {
   'design.links.file': 'Die Datei in Figma',
   'design.links.app': 'Die App, in Gerätegröße',
   'design.links.note':
-    'Die Vorschau rahmt die laufende App in der Größe, in der die Datei sie zeichnet. Genau für diesen Vergleich ist die Datei da.',
+    'Die Vorschau zeigt die laufende App in der Größe, in der die Datei sie zeichnet. So können Sie beide vergleichen.',
 
   'design.clients.note':
-    'Das Plugin wird über Plugins, Development, Import plugin from manifest geladen, und dieses Menü gibt es nur im Desktop-Programm. Figma baut eines für macOS und Windows; unter Linux nutzt dieses Projekt einen Fork.',
+    'Das Plugin laden Sie über Plugins, Development, Import plugin from manifest. Dieses Menü gibt es nur im Desktop-Programm. Figma bietet es für macOS und Windows an, unter Linux nutzt dieses Projekt einen Fork.',
   'design.clients.official': 'Offiziell',
   'design.clients.fork': 'figma-linux-next, ein Fork',
 
   'design.colours': 'Die Farben',
   'design.colours.note':
-    'Nicht aus der Datei nachgezeichnet. <code>{pkg}</code> wird generiert, und die App und diese Site importieren dasselbe Stylesheet, sodass <code>{token}</code> an drei Stellen dasselbe bedeutet.',
+    'Nicht aus der Datei abgemalt. <code>{pkg}</code> wird generiert, und die App und diese Site importieren dasselbe Stylesheet. So bedeutet <code>{token}</code> an drei Stellen dasselbe.',
   'design.board': 'Das Board',
   'design.board.note':
-    '<code>{path}</code> zeichnet die Screen-Übersicht aus Daten dieses Repositories in die Datei, statt dass jemand ein Board von Hand nachführt.',
+    '<code>{path}</code> zeichnet die Übersicht aller Screens aus Daten dieses Repositorys in die Datei. Niemand muss ein Board von Hand pflegen.',
   'design.plugin': 'Das Plugin',
   'design.plugin.note':
-    'Ein Interpreter und kein Baukasten: <code>{codeFile}</code> weiß nichts über die App und zeichnet, was immer <code>{specFile}</code> beschreibt. Seine eigene Dokumentation ist eine Seite dieser Site, mit den drei Fallstricken des Linux-Programms darin.',
+    '<code>{codeFile}</code> weiß nichts über die App. Es zeichnet, was <code>{specFile}</code> beschreibt. Seine Dokumentation ist eine Seite dieser Site und nennt die Fallstricke des Linux-Programms.',
   'design.plugin.doc': 'Das Figma-Plugin',
   'design.plugin.repo': 'Im Repository',
 };

@@ -28,21 +28,21 @@ const COPY = defineMessages({
   },
   lede: {
     id: 'diagrams.lede',
-    defaultMessage: 'The same architecture the workbench explains in prose, drawn.',
+    defaultMessage: 'The architecture the handbook describes, as drawings.',
     description:
       'The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is diagrams.lede.more, behind the ⓘ at its end.',
   },
   ledeMore: {
     id: 'diagrams.lede.more',
     defaultMessage:
-      'Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step.',
+      'Each drawing is hand-written SVG and takes all of its colours from classes. So it follows the light and dark scheme by itself, and there is no second file to keep in step.',
     description:
       'Behind the ⓘ at the end of the sentence under the heading, followed there by diagrams.list.',
   },
   list: {
     id: 'diagrams.list',
     defaultMessage:
-      'Every drawing carries the same thing as a list underneath it. That list is not a caption: it is the page for anyone who cannot use the picture.',
+      'Under every drawing, the same content appears as a list. The list is not a caption. It is the page for anyone who cannot use the picture.',
   },
 });
 

@@ -31,7 +31,7 @@ const COPY = defineMessages({
   lede: {
     id: 'settings.lede',
     defaultMessage:
-      'For this browser. Nothing here is sent anywhere or shared with the app in the frame, which keeps its own setting.',
+      'These settings apply to this browser only. Nothing is sent anywhere. The app in the frame keeps its own settings.',
   },
 
   appearance: {
@@ -78,7 +78,7 @@ const COPY = defineMessages({
   },
   panel: {
     id: 'settings.shortcut.panel',
-    defaultMessage: 'The tool panel, whatever the open view puts there',
+    defaultMessage: 'Open or close the tool panel',
   },
   leaveFull: {
     id: 'settings.shortcut.leaveFull',
@@ -89,7 +89,7 @@ const COPY = defineMessages({
   buildNote: {
     id: 'settings.build.note',
     defaultMessage:
-      'Rendered from commit <commitLink>{commit}</commitLink>, and every link into the source points at that commit rather than at <code>main</code>. The source figures were taken on <day>{measured}</day>, {age}, by the job that re-takes them weekly.',
+      'Built from commit <commitLink>{commit}</commitLink>. Every link into the source points at this commit, not at <code>main</code>. The source figures are from <day>{measured}</day>, {age}. A job measures them again every week.',
     description:
       'The paragraph under the build heading. {commit} is the seven-character hash and is drawn as the link into the repository; {measured} is the ISO day the source figures were taken; {age} is how long ago that was, formatted from measured.age in the reader’s own language. It used to arrive as English prose and this description used to say so.',
   },

@@ -199,7 +199,7 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.fresh', defaultMessage: 'Fresh install' }),
     hint: wbMessage({
       id: 'fixtures.fresh.hint',
-      defaultMessage: 'Nothing stored. The app starts at the door, signed out.',
+      defaultMessage: 'Nothing stored. The app starts at the sign-in, signed out.',
       description:
         'The line under the “Fresh install” fixture. “The door” is the sign-in gate the app’s root layout renders in place of every route until a session carries an entitlement; every hint in this group calls it that.',
     }),
@@ -210,7 +210,7 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.signedIn', defaultMessage: 'Signed in' }),
     hint: wbMessage({
       id: 'fixtures.signedIn.hint',
-      defaultMessage: "A member's first start: through the door, into the onboarding.",
+      defaultMessage: 'A member’s first start: past the sign-in, into the onboarding.',
     }),
     write: (s) => kv(s, 'session', SIGNED_IN),
   },
@@ -219,7 +219,7 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.noAccess', defaultMessage: 'Signed in, no app access' }),
     hint: wbMessage({
       id: 'fixtures.noAccess.hint',
-      defaultMessage: "The door's fourth state: a 0 € member, sent to the upgrade.",
+      defaultMessage: 'A member paying 0 €. The sign-in sends them to the upgrade.',
       description:
         'The line under the “Signed in, no app access” fixture. The 0 € tier is CORRECTIV’s free membership, which does not include the app; 0 € is a price and stays as it is written.',
     }),
@@ -249,7 +249,7 @@ export const FIXTURES: Fixture[] = [
     }),
     hint: wbMessage({
       id: 'fixtures.freeMember.hint',
-      defaultMessage: 'The app starts on Home, for a free member rather than a paying one.',
+      defaultMessage: 'A free member instead of a paying one. The app starts on Home.',
       description:
         'The line under the “Free member, local newsletter” fixture. “Home” is the app’s first tab, which the app itself calls “Start”.',
     }),
@@ -263,7 +263,7 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.saved', defaultMessage: 'Saved articles' }),
     hint: wbMessage({
       id: 'fixtures.saved.hint',
-      defaultMessage: '/gespeichert is otherwise empty and shows only its empty state.',
+      defaultMessage: 'Without this, the Saved tab is empty.',
       description:
         'The line under the “Saved articles” fixture. /gespeichert is a route in the app and stays in its own spelling.',
     }),
@@ -295,7 +295,7 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.interests', defaultMessage: 'Interests picked' }),
     hint: wbMessage({
       id: 'fixtures.interests.hint',
-      defaultMessage: 'A personalised Home: extra feeds, and modules in a different order.',
+      defaultMessage: 'A personal Home: more feeds, and blocks in a different order.',
       description:
         'The line under the “Interests picked” fixture. “Home” is the app’s first tab, which the app itself calls “Start”; a module is one block of that screen.',
     }),
@@ -315,7 +315,7 @@ export const FIXTURES: Fixture[] = [
     }),
     hint: wbMessage({
       id: 'fixtures.submitted.hint',
-      defaultMessage: 'The form then shows its thanks instead of its questions.',
+      defaultMessage: 'The form shows its thank-you instead of the questions.',
     }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
@@ -341,7 +341,7 @@ export const FIXTURES: Fixture[] = [
     }),
     hint: wbMessage({
       id: 'fixtures.bundle.hint',
-      defaultMessage: "Forces the bundle fallback, the feeds' 'offline' status.",
+      defaultMessage: 'The app shows only the content it shipped with, as if offline.',
       description:
         'The line under the “Bundled content only” fixture. “offline” is the literal value of the feed status in the core’s own state and stays as it is written.',
     }),
@@ -361,7 +361,7 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.bigType', defaultMessage: 'Largest text scale' }),
     hint: wbMessage({
       id: 'fixtures.bigType.hint',
-      defaultMessage: 'A++ (1.15), the setting the reader breaks under first.',
+      defaultMessage: 'A++ (1.15). The article view is the first thing to break at this size.',
       description:
         'The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the factor it multiplies by. “The reader” here is the article view, not a person.',
     }),

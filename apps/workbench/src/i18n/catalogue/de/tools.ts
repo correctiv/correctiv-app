@@ -29,12 +29,12 @@ export const tools: Record<string, string> = {
   'tools.appearance.device': 'Gerät meldet',
   'tools.appearance.unknown': 'unbekannt',
   'tools.appearance.needsDev':
-    '<code>expo export</code> setzt <code>__DEV__</code> auf false, deshalb hinterlässt der veröffentlichte Build kein Dev-Handle und diese Einstellung lässt sich von hier aus nicht schreiben. Betreiben Sie die Workbench gegen <code>npm run web</code>.',
+    'Im veröffentlichten Build lässt sich diese Einstellung nicht ändern. <code>expo export</code> setzt <code>__DEV__</code> auf false, deshalb bietet die App kein Dev-Handle. Starten Sie die Workbench gegen <code>npm run web</code>.',
   'tools.appearance.default': 'Voreinstellung',
   'tools.appearance.onScreen': 'gerade zu sehen',
   'tools.appearance.here': 'hier',
   'tools.appearance.note':
-    'Ein iframe kann kein eigenes Schema bekommen, deshalb erreicht man die beiden mit DevTools markierten Zeilen über das Emulieren von <code>prefers-color-scheme</code> unter Rendering.',
+    'Ein iframe kann kein eigenes Farbschema bekommen. Die beiden mit DevTools markierten Zeilen erreichen Sie, wenn Sie in den DevTools unter Rendering <code>prefers-color-scheme</code> emulieren.',
 
   // The four combinations TROUBLESHOOTING.md numbers. Each names the setting and,
   // for the last two, what the device reports; both are values of the app's own
@@ -45,9 +45,9 @@ export const tools: Record<string, string> = {
   'tools.appearance.combination.3': 'System · Gerät light',
   'tools.appearance.combination.4': 'System · Gerät dark',
 
-  'tools.state.legend': 'Fixture · eine Auswahl lädt den Rahmen neu',
+  'tools.state.legend': 'App-Zustand · eine Auswahl lädt den Rahmen neu',
   'tools.state.none': 'Unberührt lassen',
-  'tools.state.none.hint': 'Was der letzte Besuch im Speicher hinterlassen hat.',
+  'tools.state.none.hint': 'Was vom letzten Besuch gespeichert ist.',
 
   'tools.console.levels': 'Angezeigte Level',
   'tools.console.filter': 'Konsolenzeilen filtern',
@@ -64,14 +64,13 @@ export const tools: Record<string, string> = {
   'tools.console.mark.errors': '{count, plural, one {Fehler} other {Fehler}}',
   'tools.console.mark.warnings': '{count, plural, one {Warnung} other {Warnungen}}',
 
-  'tools.tokens.lede':
-    'Überschrieben wird das Schema <b>{scheme}</b>, mit dem die App gerade zeichnet.',
+  'tools.tokens.lede': 'Überschrieben wird das Schema <b>{scheme}</b>, das die App gerade zeigt.',
   'tools.tokens.changed': 'geändert',
   'tools.tokens.reset': 'Überschreibungen zurücksetzen',
   'tools.tokens.copy': 'CSS kopieren',
   'tools.tokens.changedCount': '{count} geändert',
   'tools.tokens.text': 'Text auch',
-  'tools.tokens.textNote': 'Text wird über den Wert verfolgt, das ist ein Versuch und keine Regel.',
+  'tools.tokens.textNote': 'Textfarben werden über ihren Wert gefunden, dabei kann manches fehlen.',
 
   'tools.measure.check.overflow': 'Horizontaler Überlauf',
   'tools.measure.check.tapTarget': 'Tap-Ziele unter {minimum} px',
@@ -81,10 +80,10 @@ export const tools: Record<string, string> = {
   'tools.measure.kind.offPalette': 'Farbe',
   'tools.measure.run': 'Prüfungen ausführen',
   'tools.measure.outline': 'Boxen umranden',
-  'tools.measure.scanned': 'Über {count} Elemente gelaufen.',
-  'tools.measure.none': 'Nichts gefunden, bei {count} Elementen.',
+  'tools.measure.scanned': '{count} Elemente geprüft.',
+  'tools.measure.none': 'Nichts gefunden in {count} Elementen.',
   'tools.measure.lightNote':
-    'Farben sind in light mehrdeutig: mehrere Tokens teilen sich #ffffff, mehrere teilen sich #333333, und ein Wertvergleich kann nicht sagen, welches gemeint war. Führen Sie die Prüfung in dark erneut aus, dort verteilt sich die Palette auf mehr verschiedene Werte.',
+    'Im hellen Modus sind Farben mehrdeutig. Mehrere Tokens haben den Wert #ffffff, mehrere #333333, und ein Vergleich kann nicht sagen, welches gemeint war. Führen Sie die Prüfungen im dunklen Modus erneut aus, dort hat die Palette mehr verschiedene Werte.',
   'tools.measure.mark': '{count, plural, one {Befund} other {Befunde}}',
 
   // The pixel counts take a space before the unit, which the English does not.
@@ -96,13 +95,13 @@ export const tools: Record<string, string> = {
   'tools.measure.finding.offPalette': '{property}: {value} ist kein Token in {scheme}.',
 
   'tools.inspect.needsDev':
-    'Die Quellzeile kommt aus dem Owner-Stack, den React neben jedem Knoten führt, und ein Produktions-Bundle führt keinen. Der Picker bleibt hier entschärft.',
+    'Der Picker braucht einen Development-Build und ist hier aus. Er liest die Quellzeile aus dem Owner-Stack von React, und ein Produktions-Bundle hat keinen.',
   'tools.inspect.arm': 'Element auswählen',
-  'tools.inspect.armed': 'Picker scharf, klicken Sie in den Rahmen',
+  'tools.inspect.armed': 'Klicken Sie im Rahmen auf ein Element',
   'tools.inspect.noLabel': 'Element ohne Label',
   'tools.inspect.nothing': 'Nichts ausgewählt.',
   'tools.inspect.noSource':
-    'Keine Quelle: entweder ist nichts in der Owner-Kette dieses Knotens Code der App, oder das Bundle führt überhaupt keine Owner-Stacks, was auf jeden Produktions-Build zutrifft.',
+    'Keine Quelle gefunden. Entweder stammt nichts in der Owner-Kette dieses Knotens aus der App, oder dies ist ein Produktions-Build, und der hat keine Owner-Stacks.',
   'tools.inspect.stack': 'Der Quell-Stack, der innerste zuerst',
   'tools.inspect.block': 'Übergabeblock',
   'tools.inspect.copy': 'Für einen Agenten kopieren',

@@ -44,13 +44,13 @@ import { fit } from './fit';
 const COPY = defineMessages({
   unknown: {
     id: 'home.block.unknown',
-    defaultMessage: 'Not drawn: this app has no module named <name>{module}</name>.',
+    defaultMessage: 'Not shown: the app has no block called <name>{module}</name>.',
     description:
       'Stands in for a block whose module this app has no renderer for, which happens while the document is ahead of the app. {module} is the word the document used, drawn in a monospace face.',
   },
   empty: {
     id: 'home.block.empty',
-    defaultMessage: '{block} draws nothing here.',
+    defaultMessage: '{block} shows nothing here.',
     description:
       'Stands in for a block that measured no height at all, in place of an empty box that would read as a block that is broken. {block} is the module’s own name, which this strip carries because the list around it shows no names.',
   },

@@ -50,21 +50,21 @@ const COPY = defineMessages({
   lede: {
     id: 'strings.lede',
     defaultMessage:
-      'Every string the app or this site has a descriptor for, joined from the extraction and the catalogues.',
+      'Every text in the app and on this site, with its ID, joined from the source and the catalogues.',
     description:
       'The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is strings.lede.more, behind the ⓘ at its end.',
   },
   ledeMore: {
     id: 'strings.lede.more',
     defaultMessage:
-      "The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+      "The app and this site keep separate catalogues for separate readers. So each heading names both the surface and the namespace, and <code>settings.title</code> below is two different texts. A wording with <code>'{braces}'</code> is an ICU pattern and is shown as the pattern.",
     description:
       'The first paragraph behind the ⓘ at the end of the sentence under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder.',
   },
   ledeProgress: {
     id: 'strings.lede.progress',
     defaultMessage:
-      'The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is nearly so: every page of this site is here, and what is not is the six architecture drawings, which are labels in an SVG and want a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.',
+      'The <code>app</code> half is complete, except for two texts a reader sees that are deliberately not descriptors. <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and says why. The <code>workbench</code> half is nearly complete: every page of this site is here. What is missing are the labels inside the architecture drawings, which need a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.',
     description:
       'The second paragraph behind the ⓘ under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository.',
   },

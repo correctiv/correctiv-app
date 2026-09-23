@@ -11,5 +11,5 @@
 export const signIn: Record<string, string> = {
   'signIn.title': 'Wie sich jemand anmeldet und was hinter der Tür liegt',
   'signIn.lede':
-    'Die Tür ist echt, und alles dahinter ist es nicht. Das Root-Layout rendert sie statt des Routenbaums, und was sie fragt, ist eine Funktion, die anderthalb Sekunden wartet und eine Tabelle von E-Mail-Adressen liest. Über der roten Linie steht, was dieses Repository tut; darunter steht, was das Whiteboard plant, gezeichnet als Abwesenheit, weil es genau das ist.',
+    'Die Tür ist echt, alles dahinter noch nicht. Das Root-Layout zeigt sie statt der Routen. Sie ruft eine Funktion auf, die anderthalb Sekunden wartet und die E-Mail-Adresse in einer Tabelle nachschlägt. Über der roten Linie steht, was dieses Repository tut. Darunter steht, was das Whiteboard plant, als Lücke gezeichnet, weil es das noch nicht gibt.',
 };

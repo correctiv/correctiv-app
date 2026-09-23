@@ -26,7 +26,7 @@ const COPY = defineMessages({
   },
   empty: {
     id: 'frame.pages.empty',
-    defaultMessage: 'No page of that name. The field beside this one takes any address.',
+    defaultMessage: 'No page by that name. You can type any address into the field beside this.',
     description:
       'Stands in for the list when the typed filter matches nothing. The field it points at is the route field to the right of this button.',
   },

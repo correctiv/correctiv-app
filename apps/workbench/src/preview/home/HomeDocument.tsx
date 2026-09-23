@@ -172,17 +172,18 @@ import { canSave, copyNow, publish, save, submission, type SaveResult } from './
 const COPY = defineMessages({
   rule: {
     id: 'home.document.rule',
-    defaultMessage: 'A moment carries only what changes at it.',
+    defaultMessage:
+      'A moment holds only what changes at that time. Everything else carries on as before.',
     description:
       'Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
   },
   follow: {
     id: 'home.document.follow',
-    defaultMessage: 'Scroll the frame to the block under the pointer',
+    defaultMessage: 'Scroll the frame to the block you point at',
   },
   revert: {
     id: 'home.document.revert',
-    defaultMessage: 'Back to the file',
+    defaultMessage: 'Discard changes',
     description:
       'Throws away every edit of this session and goes back to the document as the repository has it.',
   },
@@ -202,7 +203,7 @@ const COPY = defineMessages({
   submitHintLong: {
     id: 'home.document.submitHintLong',
     defaultMessage:
-      'This change is too long for a link. The click puts it on your clipboard, and you paste it in on GitHub. You need a GitHub account.',
+      'This change is too long for a link. The click copies it to your clipboard, and you paste it in on GitHub. You need a GitHub account.',
     description:
       'Stands in for home.document.submitHint when the change is too long to travel in the address, so it has to go by the clipboard.',
   },
@@ -213,7 +214,7 @@ const COPY = defineMessages({
   submitNoClipboard: {
     id: 'home.document.submitNoClipboard',
     defaultMessage:
-      'This browser did not let the page use the clipboard. Copy the change from this field and paste it into the issue on GitHub.',
+      'The browser did not let this page use the clipboard. Copy the change from this field and paste it into the issue on GitHub.',
   },
   documentField: {
     id: 'home.document.field',
@@ -232,13 +233,13 @@ const COPY = defineMessages({
   submitNote: {
     id: 'home.document.submitNote',
     defaultMessage:
-      'Submit changes opens a new issue on GitHub with your change in it. A workflow then makes a pull request from the issue. The change reaches the app once somebody has checked and merged it. This page holds no password and no token (ADR 0058, ADR 0061).',
+      'Submit changes opens a new issue on GitHub with your change in it. A pull request is then made from the issue automatically. Your change reaches the app once someone has checked and merged it. This page stores no password and no token.',
     description: 'Behind the ⓘ beside Submit changes: what happens after the click.',
   },
   saveNote: {
     id: 'home.document.saveNote',
     defaultMessage:
-      'On a dev server, Save writes <code>{file}</code> in your own checkout, and refuses anything the core will not parse. It is a shortcut for developers; Submit changes is the way that ends in a pull request.',
+      'On a dev server, Save writes <code>{file}</code> in your own checkout. It refuses anything the core cannot read. This is a shortcut for developers. The way to a pull request is Submit changes.',
     description:
       'Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face.',
   },
@@ -263,8 +264,7 @@ const COPY = defineMessages({
   },
   pointStartLead: {
     id: 'home.point.startLead',
-    defaultMessage:
-      'The document as it stands, in effect from midnight until {until}. Every moment inherits from it.',
+    defaultMessage: 'The layout from midnight until {until}. Every moment builds on it.',
     description:
       'Under the day’s start. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none.',
   },
@@ -288,7 +288,7 @@ const COPY = defineMessages({
   },
   noMoments: {
     id: 'home.point.noMoments',
-    defaultMessage: 'This document has no moments, so the home screen is the same at every hour.',
+    defaultMessage: 'This day has no moments. The home screen looks the same all day.',
   },
 
   rowOff: {
@@ -384,10 +384,9 @@ const COPY = defineMessages({
   },
   sample: {
     id: 'home.setting.sample',
-    defaultMessage:
-      'These are <code>packages/app-core/src/data/home-pins.ts</code>, standing in for {standsIn}. Real articles, a fixed list, not today’s.',
+    defaultMessage: 'A fixed list of real articles, not today’s. It stands in for {standsIn}.',
     description:
-      'Beside the sample-data badge. The tag wraps a repository path, drawn in a monospace face; {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts.',
+      'Beside the sample-data badge, for the newsroom, so it names no file. {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts.',
   },
 });
 

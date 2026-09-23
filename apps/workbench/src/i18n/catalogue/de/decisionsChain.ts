@@ -15,5 +15,5 @@
 export const decisionsChain: Record<string, string> = {
   'decisionsChain.title': 'Welche Entscheidungen noch gelten und welche ihrer Aussagen nicht',
   'decisionsChain.lede':
-    '{records} Protokolle, nie umgeschrieben. Macht eine spätere Entscheidung eine frühere Aussage falsch, wird die Aussage an Ort und Stelle durchgestrichen, und das spätere Protokoll benennt, was es zurückgezogen hat. Lesen Sie eine Zeile, um zu sehen, ob ein Protokoll noch gilt; folgen Sie den Bögen, um zu sehen, wer es geändert hat.',
+    '{records} Protokolle, nie umgeschrieben. Macht eine spätere Entscheidung eine frühere Aussage falsch, wird die Aussage durchgestrichen, und das spätere Protokoll nennt, was es zurückgezogen hat. Eine Zeile zeigt, ob ein Protokoll noch gilt. Die Bögen zeigen, welches Protokoll es geändert hat.',
 };

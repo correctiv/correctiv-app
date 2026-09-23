@@ -75,7 +75,7 @@ export const sources: Record<string, string> = {
   'sources.feed.run':
     '{category}. Der Lauf vom <f>{measured}</f> fand {posts}, neuester Beitrag <f>{newest}</f>.',
   'sources.feed.unmeasured':
-    '<strong>Weder der Feed noch seine Kategorie haben in diesem Lauf geantwortet</strong>, die Zahlen oben sind also unbekannt und nicht null. Was eine fehlgeschlagene Messung gefunden hat, steht in ihrer Zeile in <code>apps/workbench/content/sources.measured.ts</code>.',
+    '<strong>Weder der Feed noch seine Kategorie haben in diesem Lauf geantwortet.</strong> Die Zahlen oben sind also unbekannt, nicht null. Was die fehlgeschlagene Messung gefunden hat, steht in ihrer Zeile in <code>apps/workbench/content/sources.measured.ts</code>.',
   'sources.feed.configured': 'Konfiguriert in <code>{module}</code>.',
 
   'sources.reads.none': 'nichts, keine Quelle benannt',
@@ -94,51 +94,51 @@ export const sources: Record<string, string> = {
   'sources.eyebrow': 'CORRECTIV Community-App · interne Dokumentation',
   'sources.title': 'Statusübersicht der Quellen',
   'sources.lede':
-    'Für jede Art von Inhalt, die die App zeigt: Sind es Livedaten, sind es Beispieldaten, die für eine noch nicht existierende API einspringen, oder ist es eine gewünschte Funktion, für die es nichts zu lesen gibt.',
+    'Für jede Art von Inhalt in der App: Sind es Livedaten, Beispieldaten als Ersatz für eine API, die es noch nicht gibt, oder eine gewünschte Funktion ohne Quelle?',
 
   'sources.measured.label': 'Wie diese Zahlen erhoben wurden',
   'sources.measured.when':
-    '<strong>Jede Zahl auf dieser Seite wurde am <f>{measured}</f> gegen die Livequellen gemessen ({age}).</strong>',
+    '<strong>Alle Zahlen auf dieser Seite wurden am <f>{measured}</f> gemessen ({age}).</strong>',
   'sources.measured.how':
-    'Gemessen hat <code>apps/workbench/scripts/measure-sources.mjs</code> auf {where}. {answered, plural, one {Geantwortet hat # von} other {Geantwortet haben # von}} {probes, plural, one {# Quelle} other {# Quellen}}, bei {seconds} Sekunden Zeitlimit und {attempts, plural, one {# Versuch} other {# Versuchen}} je Quelle. Der Browser, der diese Seite zeichnet, hat nichts geprüft und kann es auch nicht: Die RSS-Feeds senden keinen CORS-Header, deshalb ist das hier ein Skript und kein Aktualisieren-Knopf.',
+    'Gemessen hat <code>apps/workbench/scripts/measure-sources.mjs</code> auf {where}. {answered, plural, one {Geantwortet hat # von} other {Geantwortet haben # von}} {probes, plural, one {# Quelle} other {# Quellen}}, bei {seconds} Sekunden Zeitlimit und {attempts, plural, one {# Versuch} other {# Versuchen}} je Quelle. Ihr Browser hat nichts geprüft und kann es auch nicht, denn die RSS-Feeds lassen das nicht zu. Deshalb ist das ein Skript und kein Aktualisieren-Knopf.',
   'sources.measured.stale':
-    'Das ist mehr als {days, plural, one {# Tag} other {# Tage}} her, der wöchentliche Lauf, der diese Seite aktuell hält, ist also seit einem Quartal nicht mehr durchgelaufen. Die Beitragszahlen und die Daten der neuesten Beiträge unten haben sich mit hoher Wahrscheinlichkeit verschoben.',
+    'Die Zahlen unten sind wahrscheinlich veraltet. Sie sind mehr als {days, plural, one {# Tag} other {# Tage}} alt, die wöchentliche Messung ist also seit einem Quartal nicht gelaufen.',
   'sources.measured.silentSome':
-    '<strong>{count, plural, one {Eine Quelle hat} other {# Quellen haben}} nicht geantwortet:</strong> {list}. Das ist ein Befund und kein Fehlschlag, nichts in diesem Repository macht aus einer nicht erreichbaren Quelle einen roten Build.',
+    '<strong>{count, plural, one {Eine Quelle hat} other {# Quellen haben}} nicht geantwortet:</strong> {list}. Das ist ein Befund, kein Fehler. Eine ausgefallene Quelle stoppt hier nie einen Build.',
   'sources.measured.allAnswered':
-    'Jede Quelle hat in diesem Lauf geantwortet, unten ist also nichts unbekannt.',
+    'Jede Quelle hat in diesem Lauf geantwortet, keine Zahl unten ist also unbekannt.',
   'sources.measured.noReason': 'kein Grund vermerkt',
 
   'sources.show.legend': 'Welche Zeilen anzeigen',
   'sources.show.title': 'Anzeigen',
   'sources.tile.all': 'Alle Zeilen',
   'sources.tile.all.note':
-    '{rows, plural, one {# Zeile} other {# Zeilen}} zu {entries, plural, one {# Eintrag} other {# Einträgen}} im Manifest, wobei die Artikelfamilie als ihre {feeds, plural, one {# Feed} other {# Feeds}} gezeichnet ist.',
+    '{rows, plural, one {# Zeile} other {# Zeilen}} zu {entries, plural, one {# Eintrag} other {# Einträgen}} im Manifest. Die Artikel zählen als ihre {feeds, plural, one {# Feed} other {# Feeds}}.',
   'sources.tile.live.note':
-    '{ok, plural, one {# liest} other {# lesen}} wie erwartet, {stale} veraltet, {broken} defekt. Die letzten beiden sind die schlechten Nachrichten unten.',
+    '{ok} wie erwartet, {stale} veraltet, {broken} defekt. Die letzten beiden stehen unten bei den schlechten Nachrichten.',
   'sources.tile.sample.note':
-    '{count, plural, one {# Datei} other {# Dateien}} in der Form der API getippt, die sie ersetzen wird. Auf dem Bildschirm sehen sie wie Livedaten aus.',
+    '{count, plural, one {# Datei} other {# Dateien}} in der Form der künftigen API. Auf dem Bildschirm sehen sie aus wie echte Inhalte.',
   'sources.tile.noSource.note':
-    '{count, plural, one {# gewünschte Funktion} other {# gewünschte Funktionen}} ohne etwas zu lesen. {mvp} davon sind MVP.',
+    '{count, plural, one {# gewünschte Funktion} other {# gewünschte Funktionen}} ohne Quelle. {mvp} davon sind MVP.',
 
   'sources.findings.title': 'Zuerst die schlechten Nachrichten',
   'sources.findings.lede':
-    'Eine Beispieldatei ist ehrlich in dem, was sie ist. Ein Livefeed, der stehen geblieben ist oder ins Leere zeigt, ist es nicht, denn die App präsentiert ihn als Inhalt. {ailing} der {feeds} Artikelfeeds {ailing, plural, one {ist} other {sind}} in diesem Zustand.',
+    'Eine Beispieldatei gibt sich als das zu erkennen, was sie ist. Ein Livefeed, der stillsteht oder ins Leere zeigt, tut das nicht: Die App zeigt ihn als aktuellen Inhalt. {ailing} der {feeds} Artikelfeeds {ailing, plural, one {ist} other {sind}} in diesem Zustand.',
   'sources.findings.figures': '{category}: <f>{posts}</f>, neuester Beitrag <f>{newest}</f>.',
   'sources.findings.rest':
-    '{count, plural, one {Der andere Artikelfeed las} other {Die anderen # Artikelfeeds lasen}} im Lauf vom <f>{measured}</f> wie erwartet. Ein Feed kann aus gutem Grund veraltet sein, und genau dafür ist die Notiz auf jeder Karte da.',
+    '{count, plural, one {Der andere Artikelfeed lief} other {Die anderen # Artikelfeeds liefen}} am <f>{measured}</f> wie erwartet. Ein Feed kann aus gutem Grund veraltet sein. Die Notiz auf jeder Karte erklärt das.',
   'sources.row': 'Zeile',
 
   'sources.gaps.title': 'Angebunden, aber ungenutzt',
   'sources.gaps.lede':
-    '{count, plural, one {# Quelle ist} other {# Quellen sind}} live und erreichbar, und die App liest von jeder nur einen Bruchteil. Das ist weder eine kaputte noch eine fehlende Quelle. Es ist eine Entscheidung, die niemand getroffen hat.',
-  'sources.gaps.legend': 'Die gefüllten Punkte sind das, was die App zeigt.',
+    '{count, plural, one {# Quelle ist} other {# Quellen sind}} live und erreichbar, aber die App nutzt von jeder nur einen Teil. Kaputt ist nichts, und es fehlt auch nichts. Es hat nur noch niemand entschieden, was genutzt wird.',
+  'sources.gaps.legend': 'Gefüllte Punkte zeigt die App an.',
   'sources.gap.used': '<big>{used}</big> von <f>{available}</f> genutzt',
   'sources.gap.unknown': 'unbekannt',
 
   'sources.board.title': 'Die Übersicht',
   'sources.board.lede':
-    'Eine Zeile pro Quelle, pro Artikelfeed oder pro gewünschter Quelle. Eine Zeile klappt zu ihrem vollständigen Detail auf, auf dieser Seite ist nichts gekürzt. Die Zustandskacheln oben filtern auch diese Übersicht.',
+    'Eine Zeile je Quelle, Artikelfeed oder gewünschter Quelle. Klappen Sie eine Zeile auf, um alles dazu zu sehen. Gekürzt ist nichts. Die Kacheln oben filtern auch diese Liste.',
   'sources.filter': 'Zeilen filtern',
   'sources.filter.placeholder': 'Name, Endpunkt, Datei, Frage',
   'sources.groupBy': 'Gruppieren nach',
@@ -154,7 +154,7 @@ export const sources: Record<string, string> = {
   'sources.collapseAll': 'Alle zuklappen',
   'sources.showing': '{shown} von {total, plural, one {# Zeile} other {# Zeilen}} angezeigt',
   'sources.caption':
-    'Jede Inhaltsquelle, die die App liest, für die sie einspringt oder die sie sich noch wünscht. Zahlen aus dem Lauf vom <f>{measured}</f>.',
+    'Jede Inhaltsquelle, die die App liest, ersetzt oder noch braucht. Zahlen vom <f>{measured}</f>.',
   'sources.details': 'Details',
   'sources.hide': 'Ausblenden',
   'sources.rowName': ', {name}',
@@ -162,11 +162,11 @@ export const sources: Record<string, string> = {
   'sources.questions.title':
     '{count, plural, one {# offene redaktionelle Frage} other {# offene redaktionelle Fragen}}',
   'sources.questions.lede':
-    'Diese Seite ist dafür da, dass diese Fragen beantwortet werden. Jede wird von einer Zeile oben aufgeworfen, und jede Zeile trägt ihre Frage als F-Chip.',
+    'Diese Seite soll helfen, diese Fragen zu klären. Jede Frage kommt aus einer Zeile oben, dort markiert mit einem F-Chip.',
 
   'sources.footer.label': 'Woher diese Übersicht kommt',
   'sources.footer.files':
-    'Zwei Dateien, und genau darin liegt der Sinn. Jede Zeile, jeder Zustand und jeder Satz oben wird aus <code>apps/workbench/content/sources.manifest.ts</code> gelesen, die ein Test gegen das Datenverzeichnis des Core prüft: Das ist die Argumentation, und sie ist von Hand geschrieben. Jede Zahl, jedes Datum und jede Hörerzahl wird aus <code>apps/workbench/content/sources.measured.ts</code> gelesen, die generiert ist und nicht bearbeitet werden darf.',
+    'Zwei Dateien, mit Absicht. Jede Zeile, jeder Zustand und jeder Satz oben kommt aus <code>apps/workbench/content/sources.manifest.ts</code>. Sie ist von Hand geschrieben, und ein Test prüft sie gegen den Datenordner des Core. Jede Zahl, jedes Datum und jede Hörerzahl kommt aus <code>apps/workbench/content/sources.measured.ts</code>. Diese Datei wird generiert, bearbeiten Sie sie nicht.',
   'sources.footer.remeasure':
-    'Zum erneuten Messen führen Sie <code>node apps/workbench/scripts/measure-sources.mjs</code> aus. <code>.github/workflows/sources.yml</code> lässt es wöchentlich laufen und öffnet einen Pull Request, wenn sich etwas bewegt hat. Es berichtet und blockiert nie: Eine Quelle, die nicht erreichbar, langsam oder umgezogen ist, erscheint auf dieser Seite und in der Zusammenfassung dieses Laufs und lässt nichts fehlschlagen.',
+    'Für eine neue Messung führen Sie <code>node apps/workbench/scripts/measure-sources.mjs</code> aus. <code>.github/workflows/sources.yml</code> tut das jede Woche und öffnet einen Pull Request, wenn sich etwas geändert hat. Es berichtet nur und blockiert nie. Eine Quelle, die ausfällt, langsam ist oder umgezogen ist, erscheint auf dieser Seite und in der Zusammenfassung des Laufs, und nichts schlägt fehl.',
 };

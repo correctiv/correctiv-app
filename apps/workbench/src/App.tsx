@@ -93,14 +93,12 @@ const COPY = defineMessages({
   },
   notFoundLead: {
     id: 'shell.notFound.lead',
-    defaultMessage:
-      'The workbench publishes the repository’s own documents. This address matches none of them. Press <kbd>⌘K</kbd> to search.',
+    defaultMessage: 'Press <kbd>⌘K</kbd> to search, or pick a section on the left.',
     description: 'Under the 404 heading. The tag wraps the key combination, drawn as a keycap.',
   },
   notFoundComponent: {
     id: 'shell.notFound.component',
-    defaultMessage:
-      'The app has no such component. <back>Every component it does have</back> is one page back.',
+    defaultMessage: 'The app has no such component. <back>See all components</back>.',
     description:
       'A second paragraph, only under /components/…, which is the one family that lands on the 404 by being renamed rather than typed wrong. The tag wraps the words that link to the component index.',
   },

@@ -80,8 +80,8 @@ describe('where a block is going, in words', () => {
    * somebody would have to count to check.
    */
   it('names the two ends of the day rather than the block beyond them', () => {
-    expect(whereAt(intl, SHIPPED, 0)).toBe('at the top of the day');
-    expect(whereAt(intl, SHIPPED, SHIPPED.sections.length)).toBe('at the end of the day');
+    expect(whereAt(intl, SHIPPED, 0)).toBe('at the very top');
+    expect(whereAt(intl, SHIPPED, SHIPPED.sections.length)).toBe('at the very bottom');
   });
 
   it('names the blocks either side, in the words the rows use', () => {
@@ -103,8 +103,8 @@ describe('where a block is going, in words', () => {
 
   it('answers for an index past the end rather than throwing', () => {
     // The marks hand in `index + 1` and the ends are where an off-by-one lives.
-    expect(whereAt(intl, SHIPPED, 99)).toBe('at the end of the day');
-    expect(whereAt(intl, SHIPPED, -1)).toBe('at the top of the day');
+    expect(whereAt(intl, SHIPPED, 99)).toBe('at the very bottom');
+    expect(whereAt(intl, SHIPPED, -1)).toBe('at the very top');
   });
 
   /*

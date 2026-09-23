@@ -50,7 +50,7 @@ const COPY = defineMessages({
   ledeMore: {
     id: 'components.lede.more',
     defaultMessage:
-      'Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.',
+      'Each card draws its component from the app’s source, inside this site. If a card is too small for the whole component, it says so at its lower edge. The component’s own page shows every specimen in full, the app’s own rendering beside it, and a device size. The core’s exports have their own section: <reference>Reference</reference>.',
     description:
       'Behind the ⓘ at the end of the sentence under the heading. <reference> is the link to /reference and the word inside it is that page’s own name.',
   },
@@ -58,7 +58,7 @@ const COPY = defineMessages({
   prose: {
     id: 'components.prose',
     defaultMessage:
-      'The sentence under each name is the component’s own doc comment, out of the app’s source, and stays English: a comment is written for whoever reads the code.',
+      'The sentence under each name is the component’s doc comment from the app’s source. It stays in English, because comments are written for the people who read the code.',
     description:
       'Behind the ⓘ at the end of the sentence under the heading, after components.lede.more. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written.',
   },
@@ -71,7 +71,7 @@ const COPY = defineMessages({
   modules: {
     id: 'components.modules',
     defaultMessage:
-      'The home screen’s blocks are not here. They are compositions of one screen rather than components of the app, and each of them is drawn, with the settings it understands, in <editor>the home editor</editor>, beside the running app.',
+      'The home screen’s blocks are not here. They belong to one screen and are not components of the app. You find each of them, with its settings, in <editor>the home editor</editor> beside the running app.',
     description:
       'A third paragraph under the lede, saying where the home screen’s blocks are, because they are deliberately not in the grid below. <editor> is the link to the home editor in /preview and the words inside it name that tool.',
   },
