@@ -497,6 +497,8 @@ export function HomeDocument({
   /** Where the submit steps stand: shut, copied, or copied by hand because the clipboard was refused. */
   const [submitted, setSubmitted] = useState<'copied' | 'no-clipboard' | null>(null);
   const submitLink = useRef<HTMLAnchorElement>(null);
+  const submitField = useRef<HTMLTextAreaElement>(null);
+  const dirtyStatusId = useId();
   const submitStatusId = useId();
   const submitStepsId = useId();
   /**
@@ -667,10 +669,13 @@ export function HomeDocument({
    * The steps open under the bar and the link to GitHub is where a keyboard goes next, so
    * focus goes there. The link carries the two sentences above it as its description, which
    * is what a screen reader hears on arrival instead of a live region that may or may not be
-   * announced when it is mounted with its text already in it.
+   * announced when it is mounted with its text already in it. When the clipboard was
+   * refused, the field holding the document is where a keyboard goes instead.
    */
   useEffect(() => {
-    if (submitted !== null) submitLink.current?.focus();
+    // Refused, the field is the next thing to do, not the link: there is nothing to paste yet.
+    if (submitted === 'no-clipboard') submitField.current?.focus();
+    else if (submitted === 'copied') submitLink.current?.focus();
   }, [submitted]);
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
@@ -905,7 +910,7 @@ export function HomeDocument({
       */}
       <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
         <div className="flex flex-wrap items-center gap-xs">
-          <span className={cn(NOTE, 'mr-auto')}>
+          <span id={dirtyStatusId} className={cn(NOTE, 'mr-auto')}>
             {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
           </span>
           <Button variant="outline" size="sm" disabled={!dirty} onClick={() => setLayout(SHIPPED)}>
@@ -924,9 +929,17 @@ export function HomeDocument({
           className="w-full"
           disabled={!dirty}
           aria-expanded={submitted !== null}
-          onClick={() =>
-            void copyForSubmit(layout).then((ok) => setSubmitted(ok ? 'copied' : 'no-clipboard'))
-          }
+          // "unchanged" beside it is why it is off; a disabled button says nothing of itself.
+          aria-describedby={dirtyStatusId}
+          onClick={() => {
+            const sent = layout;
+            void copyForSubmit(sent).then((ok) => {
+              // Answered after the document moved on: what is on the clipboard is the old
+              // one, and the steps would claim otherwise. The layout effect already shut them.
+              if (getLayout() !== sent) return;
+              setSubmitted(ok ? 'copied' : 'no-clipboard');
+            });
+          }}
         >
           <GitPullRequest aria-hidden="true" />
           {intl.formatMessage(COPY.submit)}
@@ -946,6 +959,7 @@ export function HomeDocument({
             </p>
             {submitted === 'no-clipboard' && (
               <textarea
+                ref={submitField}
                 readOnly
                 aria-label={intl.formatMessage(COPY.documentField)}
                 value={formatLayoutDocument(layout)}
