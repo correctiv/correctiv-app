@@ -13,7 +13,7 @@
   },
   "components.barrel": {
     "defaultMessage": "This folder has a barrel, so a caller names the folder and not the file.",
-    "description": "Printed under a folder that has an index file re-exporting its components. A “barrel” is the index file; the line above it shows the import a caller writes."
+    "description": "Behind the ⓘ beside the import line of a folder that has an index file re-exporting its components. A “barrel” is the index file; the line above it shows the import a caller writes."
   },
   "components.card.bundle": {
     "defaultMessage": "Drawn in the app’s bundle",
@@ -167,8 +167,12 @@
     "description": "The count beside the filter box, which follows what is typed into it. {folders} is how many folders still match, {components} how many components, and {drawn} how many of those this site draws in its own React tree rather than in the app’s bundle."
   },
   "components.lede": {
-    "defaultMessage": "Every component the app builds its screens from, taken out of <code>{root}</code> with its props, their types and whatever prose the source carries. Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.",
-    "description": "The paragraph under the heading. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. <reference> is the link to /reference and the word inside it is that page’s own name."
+    "defaultMessage": "Every component the app builds its screens from, taken out of <code>{root}</code> with its props, their types and whatever prose the source carries.",
+    "description": "The sentence under the heading, which says what the page is. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. The rest of what used to be this paragraph is components.lede.more, behind the ⓘ at its end."
+  },
+  "components.lede.more": {
+    "defaultMessage": "Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.",
+    "description": "Behind the ⓘ at the end of the sentence under the heading. <reference> is the link to /reference and the word inside it is that page’s own name."
   },
   "components.modules": {
     "defaultMessage": "The home screen’s blocks are not here. They are compositions of one screen rather than components of the app, and each of them is drawn, with the settings it understands, in <editor>the home editor</editor>, beside the running app.",
@@ -176,7 +180,7 @@
   },
   "components.prose": {
     "defaultMessage": "The sentence under each name is the component’s own doc comment, out of the app’s source, and stays English: a comment is written for whoever reads the code.",
-    "description": "A second short paragraph under the lede. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written."
+    "description": "Behind the ⓘ at the end of the sentence under the heading, after components.lede.more. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written."
   },
   "components.title": {
     "defaultMessage": "Components",
@@ -482,6 +486,10 @@
     "defaultMessage": "Every row, count and edge above is read out of the records themselves at build time. The workbench holds no copy of any of them, so this board cannot disagree with <code>adr/</code> — and when it cannot read one, the site does not build.",
     "description": "The first line of the footer, which says where the board comes from. <code> holds the directory in this repository, which stays in its own spelling."
   },
+  "decisions.footer.label": {
+    "defaultMessage": "Where this board comes from",
+    "description": "The footer’s one visible line, beside an ⓘ that opens the two paragraphs below. sources.footer.label reads the same in English on the sources board, which is a different board built out of different files."
+  },
   "decisions.footer.notes": {
     "defaultMessage": "The index those sentences come from is published whole at <notes>Decisions, the notes</notes>, which carries the part a table of rows cannot: the notes for readers of the older records, and the rule above in full.",
     "description": "The second line of the footer. <notes> is the link to /decisions-notes, and the words inside it are this site’s name for that page. The document behind it is adr/README.md and stays English."
@@ -516,11 +524,11 @@
   },
   "decisions.rule.label": {
     "defaultMessage": "How an expired claim is marked",
-    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group. It is never drawn."
+    "description": "The visible label of the ⓘ under the lede, which opens the four paragraphs of the rule and its counts."
   },
   "decisions.rule.never": {
     "defaultMessage": "<strong>A record is never rewritten to look right in hindsight.</strong> A claim a later decision made <em>false</em> is struck through where it stands, with one clause saying what voided it and a link to the record that did. The argument around it is left intact, because the reasoning is the part worth keeping.",
-    "description": "The first paragraph of that note, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on."
+    "description": "The first paragraph behind that ⓘ, and this repository’s rule for its own records in one sentence. <strong> carries the rule itself and <em> the one word the rule turns on."
   },
   "decisions.rule.struck": {
     "defaultMessage": "So <f>{struck}</f> {struck, plural, one {claim is} other {claims are}} struck across these <f>{records}</f> records, and a record carrying one still stands. That is the discipline working, not a fault, and it is the thing this board exists to make visible: it is invisible in the documents themselves unless you open all {records}.",
@@ -752,7 +760,12 @@
     "description": "The name of the box a drawing scrolls sideways inside, read aloud and never drawn. {number} is the drawing’s place in the set, counted from one, and is the same number the page shows in its breadcrumb."
   },
   "diagrams.lede": {
-    "defaultMessage": "The same architecture the workbench explains in prose, drawn. Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step."
+    "defaultMessage": "The same architecture the workbench explains in prose, drawn.",
+    "description": "The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is diagrams.lede.more, behind the ⓘ at its end."
+  },
+  "diagrams.lede.more": {
+    "defaultMessage": "Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step.",
+    "description": "Behind the ⓘ at the end of the sentence under the heading, followed there by diagrams.list."
   },
   "diagrams.list": {
     "defaultMessage": "Every drawing carries the same thing as a list underneath it. That list is not a caption: it is the page for anyone who cannot use the picture."
@@ -1081,7 +1094,12 @@
     "description": "The kicker over the Traps card. It says how the document was come by rather than what it is: every line in it was paid for by a failure that passed every check."
   },
   "handbook.lede": {
-    "defaultMessage": "The repository’s own documents, rendered where they live. Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind."
+    "defaultMessage": "The repository’s own documents, rendered where they live.",
+    "description": "The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is handbook.lede.more, behind the ⓘ at its end."
+  },
+  "handbook.lede.more": {
+    "defaultMessage": "Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind.",
+    "description": "Behind the ⓘ at the end of the sentence under the heading, followed there by handbook.records."
   },
   "handbook.records": {
     "defaultMessage": "The decisions behind all of it are their own section, because a record is a different kind of document: it is never rewritten, and a claim a later decision made false is struck through where it stands rather than corrected."
@@ -1131,7 +1149,7 @@
   },
   "home.document.rule": {
     "defaultMessage": "A moment carries only what changes at it.",
-    "description": "The one sentence above the editor, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
+    "description": "Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
   },
   "home.document.save": {
     "defaultMessage": "Save to the repository"
@@ -1154,9 +1172,17 @@
     "defaultMessage": "Submit changes copies the document and opens GitHub’s editor on <code>{file}</code>. The change becomes a pull request and reaches the app once somebody has reviewed and merged it, so you need a GitHub account. This page holds no password and no token (ADR 0058).",
     "description": "Says what Submit changes does before anybody presses it. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
   },
-  "home.document.submitSteps": {
-    "defaultMessage": "In GitHub’s editor, select all of the file’s text and paste over it. Then commit the change to a new branch and start a pull request. It reaches the app once somebody has reviewed and merged it.",
-    "description": "The steps on github.com, after Submit changes. GitHub’s own buttons are in English there, so the sentence describes what to do rather than quoting their labels."
+  "home.document.submitStep.branch": {
+    "defaultMessage": "Commit to a new branch and open a pull request.",
+    "description": "The second of the three steps. GitHub offers a new branch and a pull request in one dialog when the file is committed."
+  },
+  "home.document.submitStep.merge": {
+    "defaultMessage": "It appears in the app once it is reviewed and merged.",
+    "description": "The third of the three steps, which is what happens after the pull request."
+  },
+  "home.document.submitStep.paste": {
+    "defaultMessage": "In GitHub’s editor, paste it over the whole file.",
+    "description": "The first of three numbered steps on github.com, after Submit changes; “it” is the document on the clipboard. GitHub’s own buttons are in English there, so each step says what to do rather than quoting their labels."
   },
   "home.document.unchanged": {
     "defaultMessage": "unchanged"
@@ -1685,11 +1711,11 @@
   },
   "landing.status.heading": {
     "defaultMessage": "What the app reads",
-    "description": "The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the paragraph beside it explains."
+    "description": "The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the ⓘ beside it explains."
   },
   "landing.status.note": {
     "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {age}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
-    "description": "The paragraph beside the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over. “The board” is /sources."
+    "description": "Behind the ⓘ beside the heading over the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over. “The board” is /sources."
   },
   "landing.title": {
     "defaultMessage": "The CORRECTIV app, and everything written down about it"
@@ -1799,8 +1825,12 @@
     "description": "The count beside the filter box, which follows what is typed into it. {modules} is how many of the core’s modules still match and {symbols} how many symbols inside them."
   },
   "reference.lede": {
-    "defaultMessage": "Every exported symbol in <code>packages/app-core</code>, extracted from the source and its doc comments. The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.",
-    "description": "The paragraph under the heading. The two runs in <code> are paths in this repository and are left in their own spelling. <components> is the link to /components and the word inside it is that page’s own name."
+    "defaultMessage": "Every exported symbol in <code>packages/app-core</code>, extracted from the source and its doc comments.",
+    "description": "The sentence under the heading, which says what the page is. The run in <code> is a path in this repository and is left in its own spelling. The rest of what used to be this paragraph is reference.lede.more, behind the ⓘ at its end."
+  },
+  "reference.lede.more": {
+    "defaultMessage": "The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.",
+    "description": "Behind the ⓘ at the end of the sentence under the heading. The run in <code> is a path in this repository and is left in its own spelling. <components> is the link to /components and the word inside it is that page’s own name."
   },
   "reference.symbol.noDoc": {
     "defaultMessage": "No doc comment.",
@@ -2104,6 +2134,10 @@
     "defaultMessage": "The source on GitHub",
     "description": "Both the accessible name and the tooltip of the link to the repository every page of this site is rendered from."
   },
+  "shell.info.about": {
+    "defaultMessage": "More about “{topic}”",
+    "description": "The accessible name of a small ⓘ button that opens an explanation, and of the panel it opens. Read aloud, and shown as a native tooltip on hover. {topic} is the heading or label the explanation sits beside, already in the reader’s language."
+  },
   "shell.notFound.component": {
     "defaultMessage": "The app has no such component. <back>Every component it does have</back> is one page back.",
     "description": "A second paragraph, only under /components/…, which is the one family that lands on the 404 by being renamed rather than typed wrong. The tag wraps the words that link to the component index."
@@ -2364,6 +2398,10 @@
     "defaultMessage": "Two files, and the split is the point. Every row, state and sentence above is read from <code>apps/workbench/content/sources.manifest.ts</code>, which a test checks against the core’s data directory: that is the argument, and it is written by hand. Every count, date and listener figure is read from <code>apps/workbench/content/sources.measured.ts</code>, which is generated and must not be edited.",
     "description": "The first line of the footer, which says where the board comes from. Both <code> runs are paths in this repository and stay in their own spelling."
   },
+  "sources.footer.label": {
+    "defaultMessage": "Where this board comes from",
+    "description": "The footer’s one visible line, beside an ⓘ that opens the two paragraphs below. decisions.footer.label reads the same in English on the decisions board, which is a different board built out of different files."
+  },
   "sources.footer.remeasure": {
     "defaultMessage": "To re-measure, run <code>node apps/workbench/scripts/measure-sources.mjs</code>. <code>.github/workflows/sources.yml</code> runs it weekly and opens a pull request when anything has moved. It reports and never gates: a source that is down, slow or has moved appears on this page and in that run’s summary, and fails nothing.",
     "description": "The second line of the footer, which says how the figures are re-taken. The first <code> run is a command and the second a path in this repository; both stay in their own spelling."
@@ -2377,8 +2415,12 @@
     "description": "The count on such a card. {used} is how many of the thing the app reads and {available} how many exist, or the word for an unknown where the last run could not say. <big> draws the first figure large, <f> the second in monospace."
   },
   "sources.gaps.lede": {
-    "defaultMessage": "{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken. Filled dots are what the app shows.",
-    "description": "The line under that heading. {count} is how many such sources there are. The dots it names are the row of small circles on each card, one per thing the source carries."
+    "defaultMessage": "{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken.",
+    "description": "Behind the ⓘ beside that heading. {count} is how many such sources there are."
+  },
+  "sources.gaps.legend": {
+    "defaultMessage": "Filled dots are what the app shows.",
+    "description": "The line under that heading, and the legend of the row of small circles on each card, one per thing the source carries."
   },
   "sources.gaps.title": {
     "defaultMessage": "Connected but unused",
@@ -2462,7 +2504,7 @@
   },
   "sources.measured.label": {
     "defaultMessage": "How these figures were measured",
-    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group. It is never drawn."
+    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group, and the visible label of the ⓘ inside it that opens sources.measured.note."
   },
   "sources.measured.noReason": {
     "defaultMessage": "no reason recorded",
@@ -2470,7 +2512,7 @@
   },
   "sources.measured.note": {
     "defaultMessage": "<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}</strong>, by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.",
-    "description": "The first paragraph of that note. {measured} is the ISO day of the last run; {age} is how long ago that was and arrives as English prose out of src/lib/measured.ts, worked out in the reader’s browser, so the sentence has to read around an English fragment; {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <strong> carries the measurement itself, <f> draws the day in monospace and <code> the script’s path in this repository."
+    "description": "Behind the ⓘ in that note. {measured} is the ISO day of the last run; {age} is how long ago that was and arrives as English prose out of src/lib/measured.ts, worked out in the reader’s browser, so the sentence has to read around an English fragment; {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <strong> carries the measurement itself, <f> draws the day in monospace and <code> the script’s path in this repository."
   },
   "sources.measured.nothing": {
     "defaultMessage": "nothing to measure",
@@ -2617,12 +2659,16 @@
     "description": "The count beside the filter box, which follows what is typed into it and what the segment beside it is set to. {shown} is how many rows are left, {total} how many the board holds altogether, and {sections} how many headings those rows are under."
   },
   "strings.lede": {
-    "defaultMessage": "Every string the app or this site has a descriptor for, joined from the extraction and the catalogues. The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
-    "description": "The first paragraph under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder."
+    "defaultMessage": "Every string the app or this site has a descriptor for, joined from the extraction and the catalogues.",
+    "description": "The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is strings.lede.more, behind the ⓘ at its end."
+  },
+  "strings.lede.more": {
+    "defaultMessage": "The two are separate catalogues with separate audiences, so a heading names both the surface and the namespace, and <code>settings.title</code> below is two different strings. A wording with <code>'{braces}'</code> is an ICU pattern, printed as the pattern.",
+    "description": "The first paragraph behind the ⓘ at the end of the sentence under the heading. The runs in <code> are an id and a piece of ICU syntax, both left in their own spelling; the braces are escaped so that they print rather than being read as a placeholder."
   },
   "strings.lede.progress": {
     "defaultMessage": "The <code>app</code> half is complete but for two strings a user reads that are deliberately not descriptors; <code>apps/mobile/__tests__/localisation-seam.test.ts</code> names both and why. The <code>workbench</code> half is nearly so: every page of this site is here, and what is not is the six architecture drawings, which are labels in an SVG and want a pass of their own. <code>apps/workbench/test/rendered-literals.test.ts</code> counts what is left.",
-    "description": "The second paragraph under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository."
+    "description": "The second paragraph behind the ⓘ under the heading, which says how much of each half of the board is really on it. It names no number: an earlier version undercounted and the one after it overclaimed, and the count moves with every string anybody writes. The runs in <code> are the two surface names as the headings below spell them, and two paths in this repository."
   },
   "strings.only.all": {
     "defaultMessage": "All",
@@ -2914,6 +2960,6 @@
   },
   "tools.tokens.textNote": {
     "defaultMessage": "Text is chased by value, so it is a best effort rather than a rule.",
-    "description": "The caveat under that checkbox."
+    "description": "The caveat behind the ⓘ beside that checkbox."
   }
 }

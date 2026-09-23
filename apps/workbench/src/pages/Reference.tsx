@@ -7,6 +7,7 @@ import { useWorkbenchIntl } from '../i18n/Localisation';
 import { symbolId } from '../nav';
 import { href } from '../router';
 import { Slot } from '../shell/slots';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Disclosure, Filter, Source } from '../ui/Lookup';
 import { Page } from '../ui/Page';
 import { Toc } from '../ui/Toc';
@@ -41,9 +42,16 @@ const COPY = defineMessages({
   lede: {
     id: 'reference.lede',
     defaultMessage:
-      'Every exported symbol in <code>packages/app-core</code>, extracted from the source and its doc comments. The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.',
+      'Every exported symbol in <code>packages/app-core</code>, extracted from the source and its doc comments.',
     description:
-      'The paragraph under the heading. The two runs in <code> are paths in this repository and are left in their own spelling. <components> is the link to /components and the word inside it is that page’s own name.',
+      'The sentence under the heading, which says what the page is. The run in <code> is a path in this repository and is left in its own spelling. The rest of what used to be this paragraph is reference.lede.more, behind the ⓘ at its end.',
+  },
+  ledeMore: {
+    id: 'reference.lede.more',
+    defaultMessage:
+      'The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.',
+    description:
+      'Behind the ⓘ at the end of the sentence under the heading. The run in <code> is a path in this repository and is left in its own spelling. <components> is the link to /components and the word inside it is that page’s own name.',
   },
 
   filter: {
@@ -180,7 +188,10 @@ export function Reference() {
                 reads react-intl's own context, which the app's provider shadows
                 inside an `AppHost`. `test/i18n.test.ts` fails on one, and
                 `i18n/Localisation.tsx` carries the measurement. */}
-            {intl.formatMessage(COPY.lede, { code, components })}
+            {intl.formatMessage(COPY.lede, { code })}{' '}
+            <InfoTip about={intl.formatMessage(COPY.title)}>
+              <p>{intl.formatMessage(COPY.ledeMore, { code, components })}</p>
+            </InfoTip>
           </p>
 
           {modules.length === 0 && (

@@ -3,6 +3,7 @@ import { defineMessages } from 'react-intl';
 import docsModule from 'virtual:docs';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { CardGrid, type Card } from '../ui/CardGrid';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Page } from '../ui/Page';
 
 const entry = (route: string) => docsModule.docs.find((d) => d.route === route);
@@ -54,8 +55,16 @@ const COPY = defineMessages({
   },
   lede: {
     id: 'handbook.lede',
+    defaultMessage: 'The repository’s own documents, rendered where they live.',
+    description:
+      'The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is handbook.lede.more, behind the ⓘ at its end.',
+  },
+  ledeMore: {
+    id: 'handbook.lede.more',
     defaultMessage:
-      'The repository’s own documents, rendered where they live. Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind.',
+      'Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind.',
+    description:
+      'Behind the ⓘ at the end of the sentence under the heading, followed there by handbook.records.',
   },
   records: {
     id: 'handbook.records',
@@ -193,14 +202,16 @@ export function Handbook() {
             react-intl's own context, which the app's provider shadows inside an
             `AppHost`. `test/i18n.test.ts` fails on one, and `i18n/Localisation.tsx`
             carries the measurement. */}
-        {intl.formatMessage(COPY.lede)}
+        {intl.formatMessage(COPY.lede)}{' '}
+        {/* Why a copy would be wrong, and why the records are elsewhere: both are
+            background to a page whose cards already say what each document is. */}
+        <InfoTip about={intl.formatMessage(COPY.title)}>
+          <p>{intl.formatMessage(COPY.ledeMore)}</p>
+          <p>{intl.formatMessage(COPY.records)}</p>
+        </InfoTip>
       </p>
 
       <CardGrid cards={documents} columns={3} />
-
-      <p className="mt-l max-w-content text-m leading-relaxed text-on-canvas-muted">
-        {intl.formatMessage(COPY.records)}
-      </p>
     </Page>
   );
 }

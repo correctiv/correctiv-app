@@ -11,6 +11,7 @@ import { DirectPreview } from '../components/DirectPreview';
 import { href, navigate } from '../router';
 import { Slot } from '../shell/slots';
 import { Badge } from '../ui/kit/badge';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Segmented } from '../ui/kit/segmented';
 import { Filter, Source } from '../ui/Lookup';
 import { Page } from '../ui/Page';
@@ -42,9 +43,16 @@ const COPY = defineMessages({
   lede: {
     id: 'components.lede',
     defaultMessage:
-      'Every component the app builds its screens from, taken out of <code>{root}</code> with its props, their types and whatever prose the source carries. Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.',
+      'Every component the app builds its screens from, taken out of <code>{root}</code> with its props, their types and whatever prose the source carries.',
     description:
-      'The paragraph under the heading. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. <reference> is the link to /reference and the word inside it is that page’s own name.',
+      'The sentence under the heading, which says what the page is. {root} is the directory the components are read out of, drawn in monospace, and is a path rather than a word. The rest of what used to be this paragraph is components.lede.more, behind the ⓘ at its end.',
+  },
+  ledeMore: {
+    id: 'components.lede.more',
+    defaultMessage:
+      'Every card draws its component, from the app’s source, in this site’s own React tree, and a card too small to hold the whole of one says so at its lower edge; the component’s own page has every specimen whole, the app’s bundle beside it, and a device size. The core’s exports are a separate section: <reference>Reference</reference>, which is a library and imported as one.',
+    description:
+      'Behind the ⓘ at the end of the sentence under the heading. <reference> is the link to /reference and the word inside it is that page’s own name.',
   },
 
   prose: {
@@ -52,7 +60,7 @@ const COPY = defineMessages({
     defaultMessage:
       'The sentence under each name is the component’s own doc comment, out of the app’s source, and stays English: a comment is written for whoever reads the code.',
     description:
-      'A second short paragraph under the lede. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written.',
+      'Behind the ⓘ at the end of the sentence under the heading, after components.lede.more. It exists because a German reader meets English prose on every card and is otherwise not told why. Nothing on this page can translate it — it is a JSDoc comment in apps/mobile, and this site prints it as it is written.',
   },
 
   /**
@@ -116,7 +124,7 @@ const COPY = defineMessages({
     id: 'components.barrel',
     defaultMessage: 'This folder has a barrel, so a caller names the folder and not the file.',
     description:
-      'Printed under a folder that has an index file re-exporting its components. A “barrel” is the index file; the line above it shows the import a caller writes.',
+      'Behind the ⓘ beside the import line of a folder that has an index file re-exporting its components. A “barrel” is the index file; the line above it shows the import a caller writes.',
   },
   alsoExported: {
     id: 'components.alsoExported',
@@ -357,13 +365,14 @@ export function Components() {
                 reads react-intl's own context, and this page mounts the app's
                 provider inside every card through `AppHost`. `test/i18n.test.ts`
                 fails on one, and `i18n/Localisation.tsx` carries the measurement. */}
-            {intl.formatMessage(COPY.lede, { root, code, reference })}
-          </p>
-          {/* Its own paragraph rather than a clause in the lede, because it is about
-              the page's language rather than about what the page holds, and a reader
-              who is not wondering should be able to skip it in one line. */}
-          <p className="mt-2xs max-w-content text-s leading-relaxed text-on-canvas-muted">
-            {intl.formatMessage(COPY.prose)}
+            {intl.formatMessage(COPY.lede, { root, code })}{' '}
+            {/* The rest of the lede, and the note on the page's language, which was its
+                own paragraph because a reader who is not wondering should be able to
+                skip it. Now they skip it by not opening this. */}
+            <InfoTip about={intl.formatMessage(COPY.title)}>
+              <p>{intl.formatMessage(COPY.ledeMore, { reference })}</p>
+              <p>{intl.formatMessage(COPY.prose)}</p>
+            </InfoTip>
           </p>
 
           {/* Where the home screen's blocks are, and why they are not below.
@@ -392,16 +401,18 @@ export function Components() {
               >
                 {group.name}
               </h2>
-              <p className="mt-3xs break-words font-mono text-s text-on-canvas-muted">
-                {group.barrel
-                  ? `import … from '${group.barrel}'`
-                  : `import … from '${alias}/${group.name}/…'`}
+              <p className="mt-3xs flex items-center gap-xs break-words font-mono text-s text-on-canvas-muted">
+                <span className="min-w-0">
+                  {group.barrel
+                    ? `import … from '${group.barrel}'`
+                    : `import … from '${alias}/${group.name}/…'`}
+                </span>
+                {group.barrel && (
+                  <InfoTip about={group.name}>
+                    <p>{intl.formatMessage(COPY.barrel)}</p>
+                  </InfoTip>
+                )}
               </p>
-              {group.barrel && (
-                <p className="mt-3xs max-w-content text-s text-on-canvas-muted">
-                  {intl.formatMessage(COPY.barrel)}
-                </p>
-              )}
 
               {/*
                 A BAND, NOT A BREAKPOINT, because the column is what sizes the

@@ -92,8 +92,10 @@ export const home: Record<string, string> = {
   'home.document.submitCopied': 'Das Dokument liegt in der Zwischenablage.',
   'home.document.submitNoClipboard':
     'Der Browser hat die Zwischenablage nicht freigegeben. Kopieren Sie das Dokument aus diesem Feld.',
-  'home.document.submitSteps':
-    'Markieren Sie im GitHub-Editor den gesamten Text der Datei und fügen Sie das Dokument darüber ein. Übernehmen Sie die Änderung dann in einen neuen Branch und eröffnen Sie einen Pull Request. In der App erscheint sie, sobald jemand sie geprüft und gemergt hat.',
+  'home.document.submitStep.paste': 'Fügen Sie es im GitHub-Editor über die ganze Datei ein.',
+  'home.document.submitStep.branch':
+    'Übernehmen Sie es in einen neuen Branch, und eröffnen Sie einen Pull Request.',
+  'home.document.submitStep.merge': 'In der App erscheint es, sobald es geprüft und gemergt ist.',
   'home.document.openGithub': 'GitHub-Editor öffnen',
   'home.document.closeSubmit': 'Schließen',
   'home.document.field': 'Das Dokument',

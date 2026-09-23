@@ -129,7 +129,8 @@ export const sources: Record<string, string> = {
 
   'sources.gaps.title': 'Angebunden, aber ungenutzt',
   'sources.gaps.lede':
-    '{count, plural, one {# Quelle ist} other {# Quellen sind}} live und erreichbar, und die App liest von jeder nur einen Bruchteil. Das ist weder eine kaputte noch eine fehlende Quelle. Es ist eine Entscheidung, die niemand getroffen hat. Die gefüllten Punkte sind das, was die App zeigt.',
+    '{count, plural, one {# Quelle ist} other {# Quellen sind}} live und erreichbar, und die App liest von jeder nur einen Bruchteil. Das ist weder eine kaputte noch eine fehlende Quelle. Es ist eine Entscheidung, die niemand getroffen hat.',
+  'sources.gaps.legend': 'Die gefüllten Punkte sind das, was die App zeigt.',
   'sources.gap.used': '<big>{used}</big> von <f>{available}</f> genutzt',
   'sources.gap.unknown': 'unbekannt',
 
@@ -161,6 +162,7 @@ export const sources: Record<string, string> = {
   'sources.questions.lede':
     'Diese Seite ist dafür da, dass diese Fragen beantwortet werden. Jede wird von einer Zeile oben aufgeworfen, und jede Zeile trägt ihre Frage als F-Chip.',
 
+  'sources.footer.label': 'Woher diese Übersicht kommt',
   'sources.footer.files':
     'Zwei Dateien, und genau darin liegt der Sinn. Jede Zeile, jeder Zustand und jeder Satz oben wird aus <code>apps/workbench/content/sources.manifest.ts</code> gelesen, die ein Test gegen das Datenverzeichnis des Core prüft: Das ist die Argumentation, und sie ist von Hand geschrieben. Jede Zahl, jedes Datum und jede Hörerzahl wird aus <code>apps/workbench/content/sources.measured.ts</code> gelesen, die generiert ist und nicht bearbeitet werden darf.',
   'sources.footer.remeasure':

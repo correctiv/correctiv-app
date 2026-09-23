@@ -40,6 +40,7 @@ import { scroller } from '../scroller';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
+import { InfoTip } from '../../ui/kit/info-tip';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { DEFAULT_DEVICE, preset } from '../devices';
 import { timeOf } from './clock';
@@ -156,7 +157,7 @@ const COPY = defineMessages({
     id: 'home.document.rule',
     defaultMessage: 'A moment carries only what changes at it.',
     description:
-      'The one sentence above the editor, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
+      'Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
   },
   follow: {
     id: 'home.document.follow',
@@ -183,12 +184,22 @@ const COPY = defineMessages({
     defaultMessage:
       'This browser did not let the page use the clipboard. Copy the document from this field.',
   },
-  submitSteps: {
-    id: 'home.document.submitSteps',
-    defaultMessage:
-      'In GitHub’s editor, select all of the file’s text and paste over it. Then commit the change to a new branch and start a pull request. It reaches the app once somebody has reviewed and merged it.',
+  submitPaste: {
+    id: 'home.document.submitStep.paste',
+    defaultMessage: 'In GitHub’s editor, paste it over the whole file.',
     description:
-      'The steps on github.com, after Submit changes. GitHub’s own buttons are in English there, so the sentence describes what to do rather than quoting their labels.',
+      'The first of three numbered steps on github.com, after Submit changes; “it” is the document on the clipboard. GitHub’s own buttons are in English there, so each step says what to do rather than quoting their labels.',
+  },
+  submitBranch: {
+    id: 'home.document.submitStep.branch',
+    defaultMessage: 'Commit to a new branch and open a pull request.',
+    description:
+      'The second of the three steps. GitHub offers a new branch and a pull request in one dialog when the file is committed.',
+  },
+  submitMerge: {
+    id: 'home.document.submitStep.merge',
+    defaultMessage: 'It appears in the app once it is reviewed and merged.',
+    description: 'The third of the three steps, which is what happens after the pull request.',
   },
   openGithub: {
     id: 'home.document.openGithub',
@@ -924,26 +935,32 @@ export function HomeDocument({
           leaves. A tab that opened on the first click would take the focus before anybody
           had read what to do there.
         */}
-        <Button
-          size="sm"
-          className="w-full"
-          disabled={!dirty}
-          aria-expanded={submitted !== null}
-          // "unchanged" beside it is why it is off; a disabled button says nothing of itself.
-          aria-describedby={dirtyStatusId}
-          onClick={() => {
-            const sent = layout;
-            void copyForSubmit(sent).then((ok) => {
-              // Answered after the document moved on: what is on the clipboard is the old
-              // one, and the steps would claim otherwise. The layout effect already shut them.
-              if (getLayout() !== sent) return;
-              setSubmitted(ok ? 'copied' : 'no-clipboard');
-            });
-          }}
-        >
-          <GitPullRequest aria-hidden="true" />
-          {intl.formatMessage(COPY.submit)}
-        </Button>
+        <div className="flex items-center gap-xs">
+          <Button
+            size="sm"
+            className="min-w-0 flex-1"
+            disabled={!dirty}
+            aria-expanded={submitted !== null}
+            // "unchanged" beside it is why it is off; a disabled button says nothing of itself.
+            aria-describedby={dirtyStatusId}
+            onClick={() => {
+              const sent = layout;
+              void copyForSubmit(sent).then((ok) => {
+                // Answered after the document moved on: what is on the clipboard is the old
+                // one, and the steps would claim otherwise. The layout effect already shut them.
+                if (getLayout() !== sent) return;
+                setSubmitted(ok ? 'copied' : 'no-clipboard');
+              });
+            }}
+          >
+            <GitPullRequest aria-hidden="true" />
+            {intl.formatMessage(COPY.submit)}
+          </Button>
+          {/* What Submit changes does, said before anybody presses it, behind the ⓘ. */}
+          <InfoTip about={intl.formatMessage(COPY.submit)} side="bottom" align="end">
+            <p>{intl.formatMessage(COPY.submitNote, { code, file: HOME_LAYOUT_FILE })}</p>
+          </InfoTip>
+        </div>
 
         {submitted !== null && (
           <div className="flex flex-col gap-xs">
@@ -968,9 +985,11 @@ export function HomeDocument({
                 className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
               />
             )}
-            <p id={submitStepsId} className={NOTE}>
-              {intl.formatMessage(COPY.submitSteps)}
-            </p>
+            <ol id={submitStepsId} className={`${NOTE} list-decimal space-y-4xs pl-m`}>
+              <li>{intl.formatMessage(COPY.submitPaste)}</li>
+              <li>{intl.formatMessage(COPY.submitBranch)}</li>
+              <li>{intl.formatMessage(COPY.submitMerge)}</li>
+            </ol>
             <div className="flex flex-wrap items-center gap-xs">
               <Button
                 variant="outline"
@@ -997,18 +1016,6 @@ export function HomeDocument({
           </div>
         )}
       </div>
-
-      {/*
-        One sentence, and it is the one the interface cannot draw.
-
-        This was four. The other three described the track above it (midnight to
-        midnight), the list below it (the day in the document's order) and the frame
-        beside it (one minute of it) — three things a reader is looking at while they
-        read that they are looking at them. What is left is the rule that makes the
-        rest legible and that nothing on screen states: a moment holds the difference
-        and not the state.
-      */}
-      <p className={NOTE}>{intl.formatMessage(COPY.rule)}</p>
 
       <label className="flex items-center gap-2xs text-s text-on-canvas">
         <input
@@ -1124,17 +1131,12 @@ export function HomeDocument({
       </AppHost>
 
       {/*
-        What Submit changes does is said here rather than discovered by pressing it, and on
-        a dev server what Save does beside it. `canSave` is `import.meta.env.DEV`, so the
-        published site offers no Save and says nothing about one, which is the shape the
-        Tokens tool already has for a thing it cannot write.
+        On a dev server, Save, and what it does behind the ⓘ beside it. `canSave` is
+        `import.meta.env.DEV`, so the published site offers no Save and says nothing about
+        one, which is the shape the Tokens tool already has for a thing it cannot write.
       */}
-      <p className={NOTE}>
-        {intl.formatMessage(COPY.submitNote, { code, file: HOME_LAYOUT_FILE })}
-      </p>
-
       {canSave && (
-        <div className="flex flex-col items-start gap-xs">
+        <div className="flex items-center gap-xs">
           <Button
             variant="outline"
             size="sm"
@@ -1148,9 +1150,9 @@ export function HomeDocument({
             <Save aria-hidden="true" />
             {intl.formatMessage(COPY.save)}
           </Button>
-          <p className={NOTE}>
-            {intl.formatMessage(COPY.saveNote, { code, file: HOME_LAYOUT_FILE })}
-          </p>
+          <InfoTip about={intl.formatMessage(COPY.save)}>
+            <p>{intl.formatMessage(COPY.saveNote, { code, file: HOME_LAYOUT_FILE })}</p>
+          </InfoTip>
         </div>
       )}
 
@@ -1208,7 +1210,10 @@ function PointHead({
           <span className="text-m font-semibold text-on-canvas">
             {intl.formatMessage(COPY.pointStart)}
           </span>
-          <span className={NOTE}>{intl.formatMessage(COPY.pointStartLead, { until })}</span>
+          <span className={NOTE}>
+            {intl.formatMessage(COPY.pointStartLead, { until })}{' '}
+            <RuleTip about={intl.formatMessage(COPY.pointStart)} />
+          </span>
         </>
       ) : (
         <>
@@ -1225,7 +1230,10 @@ function PointHead({
               className={cn(FIELD, 'font-mono text-m font-semibold')}
             />
           </label>
-          <span className={NOTE}>{intl.formatMessage(COPY.pointSpan, { until, changes })}</span>
+          <span className={NOTE}>
+            {intl.formatMessage(COPY.pointSpan, { until, changes })}{' '}
+            <RuleTip about={intl.formatMessage(COPY.pointTime)} />
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -1241,6 +1249,24 @@ function PointHead({
         <span className={cn(NOTE, 'w-full')}>{intl.formatMessage(COPY.noMoments)}</span>
       )}
     </div>
+  );
+}
+
+/**
+ * The rule that makes the rest legible and that nothing on screen states: a moment holds
+ * the difference and not the state.
+ *
+ * It was the one sentence left above the editor, out of four. The other three described
+ * the track, the list and the frame, which a reader is looking at while they read that
+ * they are looking at them. This one is background, which is wanted once, so it waits in
+ * the head of the point it is about.
+ */
+function RuleTip({ about }: { about: string }) {
+  const intl = useWorkbenchIntl();
+  return (
+    <InfoTip about={about} align="end">
+      <p>{intl.formatMessage(COPY.rule)}</p>
+    </InfoTip>
   );
 }
 
