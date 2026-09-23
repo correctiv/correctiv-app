@@ -1313,6 +1313,10 @@
     "defaultMessage": "On a dev server, Save writes <code>{file}</code> in your own checkout, and refuses anything the core will not parse. It is a shortcut for developers; Submit changes is the way that ends in a pull request.",
     "description": "Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
   },
+  "home.document.scenarioGuard": {
+    "defaultMessage": "Scenarios are examples. They are not submitted.",
+    "description": "Under the switched-off Submit changes while a scenario is open, or while the document still holds one. Submitting it would publish the example on every phone."
+  },
   "home.document.submit": {
     "defaultMessage": "Submit changes",
     "description": "The editor’s primary action, on the published site and on a dev server alike. It opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed."
@@ -2018,6 +2022,38 @@
   "reference.title": {
     "defaultMessage": "Reference",
     "description": "The page’s heading. shell.activity.reference is the rail entry that opens this page and shell.search.group.reference is the palette’s group of the symbols on it; the three read the same in English and are three entries because one is a heading, one is a rail entry and one names a group of results."
+  },
+  "scenarios.ask": {
+    "defaultMessage": "You have changes of your own. The scenario would replace them.",
+    "description": "Shown when a scenario is opened while the editor holds somebody’s unsubmitted changes. Nothing has been replaced yet; the two buttons under it decide."
+  },
+  "scenarios.keep": {
+    "defaultMessage": "Keep my changes",
+    "description": "Closes the scenario and leaves the person’s own changes as they are."
+  },
+  "scenarios.label": {
+    "defaultMessage": "Scenario",
+    "description": "The label of the select that opens a named example of the home screen, such as the election night, in the editor and the frame."
+  },
+  "scenarios.live": {
+    "defaultMessage": "All content is live.",
+    "description": "Under the scenario select while a scenario with live content is open."
+  },
+  "scenarios.none": {
+    "defaultMessage": "None",
+    "description": "The first option of the scenario select: no scenario, the editor shows the real home screen."
+  },
+  "scenarios.replace": {
+    "defaultMessage": "Open the scenario",
+    "description": "Replaces the person’s own changes with the scenario. Under scenarios.ask."
+  },
+  "scenarios.sample": {
+    "defaultMessage": "Pinned articles are fixed examples. Everything else is live.",
+    "description": "Under the scenario select while a scenario with sample data is open. Says honestly what is held still in the frame and what is not."
+  },
+  "scenarios.wahlabend": {
+    "defaultMessage": "Election night (example)",
+    "description": "The name of the election-night scenario in the scenario list. It is an example with a made-up date, and the name says so."
   },
   "services.alt.beabee": {
     "defaultMessage": "One login for the website and the app. It answers with the tier, whether the app is included, why, and for how long. The app asks it once at the door and renders its routes only on a yes. Simulated today in <code>packages/app-core/src/services/auth.service.ts</code>; nothing reaches a network, and the screen that calls it says so.",

@@ -94,6 +94,7 @@ export const home: Record<string, string> = {
   'home.document.submit': 'Änderungen einreichen',
   'home.document.submitHint':
     'GitHub öffnet sich mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
+  'home.document.scenarioGuard': 'Szenarien sind Beispiele. Sie werden nicht eingereicht.',
   'home.document.submitHintLong':
     'Diese Änderung ist zu lang für einen Link. Der Klick legt sie in die Zwischenablage, auf GitHub fügen Sie sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.submitCopied':

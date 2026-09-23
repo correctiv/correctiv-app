@@ -9,6 +9,7 @@ import { namesFrame } from '../preview/store';
 import { usePreview } from '../preview/Preview';
 import { governs } from '../preview/home/document';
 import { HomeDocument } from '../preview/home/HomeDocument';
+import { useScenario } from '../preview/home/Scenario';
 import { Timeline } from '../preview/home/Timeline';
 import {
   Appearance,
@@ -38,7 +39,7 @@ const VIEW = VIEWS.preview;
  * document of its own rather than a readout.
  *
  * **The two halves of the address meet here and nowhere else.** The shell owns
- * `tool` and `full`; the frame owns `d`, `o`, `z`, `w`, `h`, `t`, `lg`, `s`, `tm`,
+ * `tool` and `full`; the frame owns `d`, `o`, `z`, `w`, `h`, `t`, `lg`, `s`, `sc`, `tm`,
  * `tl`, `check`, `kl` and `kd`, which travel in `rest` untouched. `preview/store.ts` no longer
  * writes history at all, so a link written before any of this still resolves and
  * writes back byte for byte.
@@ -46,6 +47,12 @@ const VIEW = VIEWS.preview;
 export function Preview({ address, onAddress, wide, full }: ShellProps) {
   const preview = usePreview();
   const { state } = preview;
+  /*
+   * Here and not in the home tool, because the panel is drawn into a slot that is not
+   * always there, and a scenario in a link has to open whether or not anybody opens the
+   * tool. `preview/home/Scenario.tsx` has the rest.
+   */
+  const scenario = useScenario(state, preview.onChange);
 
   /*
    * The frame's state, back into the address.
@@ -80,6 +87,18 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
     // Arrival only. Resizing the window later is not a request to hide anything.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /*
+   * And a scenario's link opens the home tool, once, on arrival, where the address names no
+   * tool of its own. The scenario is a home document, the question it may have to ask
+   * about somebody's own changes is asked there, and so is why it cannot be submitted.
+   */
+  const arrived = useRef(false);
+  useEffect(() => {
+    if (!preview.started || arrived.current) return;
+    arrived.current = true;
+    if (state.scenario !== null && address.tool === null) onAddress({ tool: 'home' });
+  }, [preview.started, state.scenario, address.tool, onAddress]);
 
   /*
    * Whether the day is drawn under the frame, which is three questions and they are all
@@ -161,6 +180,7 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
            */
           drawing={address.tool === 'home'}
           outline={preview.outlineSection}
+          scenario={scenario}
         />
       </Slot>
 

@@ -94,6 +94,8 @@ import {
   type Point,
   type SettingSpec,
 } from './document';
+import { guarded as isGuarded } from './scenario';
+import { ScenarioBar, type ScenarioControl } from './Scenario';
 import { getLayout, setLayout, subscribeLayout } from './store';
 import { canSave, copyNow, publish, save, submission, type SaveResult } from './write';
 
@@ -241,6 +243,12 @@ const COPY = defineMessages({
       'On a dev server, Save writes <code>{file}</code> in your own checkout, and refuses anything the core will not parse. It is a shortcut for developers; Submit changes is the way that ends in a pull request.',
     description:
       'Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face.',
+  },
+  scenarioGuard: {
+    id: 'home.document.scenarioGuard',
+    defaultMessage: 'Scenarios are examples. They are not submitted.',
+    description:
+      'Under the switched-off Submit changes while a scenario is open, or while the document still holds one. Submitting it would publish the example on every phone.',
   },
   refused: {
     id: 'home.document.refused',
@@ -475,9 +483,12 @@ export function HomeDocument({
   onChange,
   drawing,
   outline,
+  scenario,
 }: {
   state: PreviewState;
   onChange: (patch: Partial<PreviewState>) => void;
+  /** The scenario list and what it has open, from `useScenario` on the page. */
+  scenario: ScenarioControl;
   /**
    * Whether the pictures are drawn, which is whether this tool is the open one.
    *
@@ -903,10 +914,23 @@ export function HomeDocument({
   const edited = changedAt(layout, playhead.instant, reader);
   const decided = decidedAt(layout, playhead.instant, reader);
   const dirty = differs(layout);
+  /**
+   * Whether this document is a scenario, open or kept after leaving it (`./scenario.ts`).
+   *
+   * **Submit changes is switched off for one, with the reason under it**, rather than
+   * asking for a confirmation. A submission is the real home document for every phone
+   * (ADR 0061), and a scenario is an example with a date made up for it; a confirmation is
+   * a button people learn to press. What is lost is little: promoting a scenario to the
+   * real thing is copying its file (ADR 0036 §12), which is a pull request somebody writes
+   * on purpose, and deleting the scenario's edition in the editor makes the document an
+   * ordinary one that can be submitted.
+   */
+  const guarded = isGuarded(state.scenario, layout);
   /** Where Submit changes goes, or nothing while there is nothing to submit. */
-  const offer = dirty
-    ? submission(layout, (message, values) => intl.formatMessage(message, values))
-    : null;
+  const offer =
+    dirty && !guarded
+      ? submission(layout, (message, values) => intl.formatMessage(message, values))
+      : null;
 
   /**
    * How far each row is drawn from where the document lays it out, while a block is carried.
@@ -949,11 +973,22 @@ export function HomeDocument({
         panel's full width, with the one line that says what it does under it.
       */}
       <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
+        <ScenarioBar control={scenario} />
         <div className="flex flex-wrap items-center gap-xs">
           <span id={dirtyStatusId} className={cn(NOTE, 'mr-auto')}>
             {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
           </span>
-          <Button variant="outline" size="sm" disabled={!dirty} onClick={() => setLayout(SHIPPED)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!dirty}
+            onClick={() => {
+              // The file, and out of the scenario with it: "Back to the file" is the way
+              // back to what readers see, and a scenario left open would be loaded again.
+              setLayout(SHIPPED);
+              if (scenario.open) scenario.close();
+            }}
+          >
             <RotateCcw aria-hidden="true" />
             {intl.formatMessage(COPY.revert)}
           </Button>
@@ -990,8 +1025,10 @@ export function HomeDocument({
               size="sm"
               className="min-w-0 flex-1"
               disabled
-              // "unchanged" above it is why it is off; a disabled button says nothing of itself.
-              aria-describedby={dirtyStatusId}
+              data-testid="submit-disabled"
+              // "unchanged" above it is why it is off, or the line under it for a scenario; a
+              // disabled button says nothing of itself.
+              aria-describedby={guarded ? submitHintId : dirtyStatusId}
             >
               <GitPullRequest aria-hidden="true" />
               {intl.formatMessage(COPY.submit)}
@@ -1003,7 +1040,13 @@ export function HomeDocument({
           </InfoTip>
         </div>
         <p id={submitHintId} className={NOTE}>
-          {intl.formatMessage(offer && !offer.fits ? COPY.submitHintLong : COPY.submitHint)}
+          {intl.formatMessage(
+            guarded
+              ? COPY.scenarioGuard
+              : offer && !offer.fits
+                ? COPY.submitHintLong
+                : COPY.submitHint,
+          )}
         </p>
 
         {offer && copied !== null && (

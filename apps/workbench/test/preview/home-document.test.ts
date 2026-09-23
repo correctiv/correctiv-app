@@ -732,7 +732,7 @@ describe('the three ends of the seam', () => {
    */
   it('takes the simulated time from the address and writes it on every render', () => {
     const state = source('apps/workbench/src/preview/state.ts');
-    expect(state).toContain("p.set('tm', state.time)");
+    expect(state).toContain("unlessDefault(p, 'tm', state.time");
 
     /*
      * The write is in `usePreview` and not in the panel, which is the difference

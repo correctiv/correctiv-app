@@ -30,6 +30,7 @@ import { measured } from './measured';
 import { nav } from './nav';
 import { preview } from './preview';
 import { reference } from './reference';
+import { scenarios } from './scenarios';
 import { services } from './services';
 import { settings } from './settings';
 import { shell } from './shell';
@@ -61,6 +62,7 @@ export const de: Record<string, string> = {
   ...nav,
   ...preview,
   ...reference,
+  ...scenarios,
   ...services,
   ...settings,
   ...shell,

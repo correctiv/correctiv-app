@@ -5,7 +5,8 @@ every question but one. ~~**Not built.**~~ Partly built, in
 [#177](https://github.com/faktenforum/correctiv-app/pull/177): the document, its parser and
 its default layout carry §2, §6, §7, §10 and §14. ~~Fetching one (§4, §5), the configurator
 (§1, §15) and scenarios in the workbench (§11–§13) are not.~~ Fetching one (§4, §5) is built
-in [#245](https://github.com/correctiv/correctiv-app/pull/245). Scenarios in the workbench (§11–§13) are not. §15 is built in
+in [#245](https://github.com/correctiv/correctiv-app/pull/245). ~~Scenarios in the workbench (§11–§13) are not.~~ Scenarios in the workbench (§11–§13) are built in
+[#NNN](https://github.com/correctiv/correctiv-app/pull/NNN), the election night first; §13's sample data holds the pinned articles still and not the feeds, and the preview says so. §15 is built in
 [#246](https://github.com/correctiv/correctiv-app/pull/246), in the shape [ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md) §2 gave it. The configurator of
 this record's §1 is the carrying-out of ADR 0045 to ADR 0053. The open question is named at the end ~~and hangs on the source decision
 `SOURCES.md` still carries~~, and is answered by [ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md).
@@ -212,7 +213,7 @@ default layout is where those two tables end up.
 
 ### 11. Scenarios are named, live in the repository, and the name goes in the address
 
-`?scenario=<name>`, beside the device, route and appearance ADR 0028 already puts there. A
+~~`?scenario=<name>`~~ `sc=<name>` (spelled so when it was built, in #NNN on 2026-09-23, two letters like the preview's other later keys; no record changed it), beside the device, route and appearance ADR 0028 already puts there. A
 scenario is shareable as a link, short enough to type, and a test case at the same time.
 
 ### 12. A scenario is the same file as a real configuration, only named

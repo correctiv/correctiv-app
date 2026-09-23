@@ -6,6 +6,7 @@ import type { ShellAddress } from '../shell/address';
 import { DEFAULT_DEVICE, DEVICES, HOST_DEVICE, preset } from './devices';
 import { isLocale } from './frame/locale';
 import { TOKENS, type Overrides, type Scheme } from './frame/tokens';
+import { scenarioNamed } from './scenarios';
 
 /** The app's own appearance setting. `null` means "leave the app alone". */
 export type ThemeSetting = 'system' | 'light' | 'dark';
@@ -41,6 +42,20 @@ export interface PreviewState {
   lang: Locale | null;
   /** A storage fixture applied before the frame boots; see `frame/seed.ts`. */
   seed: string | null;
+  /**
+   * The named scenario the home tool has open, or `null` for none: `sc=wahlabend`.
+   *
+   * ADR 0036 §11 put the name in the address, and `scenarios.ts` holds the names. A
+   * scenario also brings a time and a session, and those are **defaults under the
+   * address**, not values of their own: `tm` and `s` written beside `sc` win, and what
+   * `toAddress` leaves out is exactly what equals the scenario's default. So `sc=wahlabend`
+   * alone is the whole link until somebody moves the playhead, and taking `sc` out of the
+   * address takes its time and its session with it.
+   *
+   * Two letters like `lg` and `tm`. A name nothing answers to is no scenario, the way a
+   * junk `tm` is no time: a stale link should still open.
+   */
+  scenario: string | null;
   /**
    * What time the framed app is told it is, or `null` for its own clock: `HH:MM` for that
    * minute today, or `YYYY-MM-DDTHH:MM` for a day of its own, both Berlin wall clock.
@@ -85,6 +100,7 @@ export const INITIAL: PreviewState = {
   theme: null,
   lang: null,
   seed: null,
+  scenario: null,
   time: null,
   timeline: true,
   overrides: {},
@@ -121,6 +137,8 @@ export function fromAddress(address: ShellAddress): PreviewState {
   const size = preset(device);
   const theme = p.get('t');
   const lang = p.get('lg');
+  const scenario = scenarioNamed(p.get('sc'));
+  const askedTime = p.get('tm');
 
   return {
     route,
@@ -135,12 +153,12 @@ export function fromAddress(address: ShellAddress): PreviewState {
     // stale link should still open, and a code the app has no catalogue for would give
     // it a provider with nothing in it rather than a setting that visibly failed.
     lang: isLocale(lang) ? lang : null,
-    seed: p.get('s'),
+    // Written beside `sc`, the address wins over the scenario, an empty one included: `s=`
+    // is somebody saying "no fixture", which a scenario's default must not overrule.
+    seed: p.has('s') ? p.get('s') || null : (scenario?.session ?? null),
+    scenario: scenario?.name ?? null,
     // Junk is no time at all rather than an error: a stale link should still open.
-    time:
-      parseTimeOfDay(p.get('tm')) === null && parseBerlinDateTime(p.get('tm')) === null
-        ? null
-        : p.get('tm'),
+    time: p.has('tm') ? (isTime(askedTime) ? askedTime : null) : (scenario?.opensAt ?? null),
     // Default on, so the parameter is the exception and `tl=0` is the only thing it
     // spells. Anything else in it, including a missing one, is the default.
     timeline: p.get('tl') !== '0',
@@ -191,8 +209,10 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   }
   if (state.theme) p.set('t', state.theme);
   if (state.lang) p.set('lg', state.lang);
-  if (state.seed) p.set('s', state.seed);
-  if (state.time) p.set('tm', state.time);
+  const scenario = scenarioNamed(state.scenario);
+  if (scenario) p.set('sc', scenario.name);
+  unlessDefault(p, 's', state.seed, scenario?.session ?? null);
+  unlessDefault(p, 'tm', state.time, scenario?.opensAt ?? null);
   if (!state.timeline) p.set('tl', '0');
   if (state.check) p.set('check', '1');
   const light = writeOverrides(state.overrides, 'light');
@@ -200,6 +220,28 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   if (light) p.set('kl', light);
   if (dark) p.set('kd', dark);
   return { head: state.route || '/', rest: p };
+}
+
+function isTime(value: string | null): value is string {
+  return parseTimeOfDay(value) !== null || parseBerlinDateTime(value) !== null;
+}
+
+/**
+ * A value into the address only where it is not what the address would give anyway.
+ *
+ * Without a scenario the default is `null` and this is the plain "write it if there is
+ * one". With one, a value equal to the scenario's is left out, and `null` against a
+ * scenario's value is written empty, because it is somebody having switched the
+ * scenario's default off and the next reading has to know.
+ */
+function unlessDefault(
+  p: URLSearchParams,
+  key: string,
+  value: string | null,
+  fallback: string | null,
+): void {
+  if (value === fallback) return;
+  p.set(key, value ?? '');
 }
 
 /**
