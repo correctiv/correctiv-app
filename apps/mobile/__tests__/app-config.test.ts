@@ -66,3 +66,38 @@ describe('app.json', () => {
     expect(pluginOptions('expo-video')).not.toHaveProperty('supportsPictureInPicture');
   });
 });
+
+/**
+ * The build time the home document is judged against (`lib/home/layout.ts`,
+ * `BUILT_AT`). Without it the app fetches no home document at all, and with a stale
+ * one a local export of an edited document shows the published copy instead.
+ */
+describe('app.config.js', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dynamic = require('../app.config.js') as (input: { config: Record<string, unknown> }) => {
+    extra?: { builtAt?: string; router?: unknown };
+  };
+
+  it('stamps every build with the moment its config was read', () => {
+    const before = Date.now();
+    const builtAt = Date.parse(dynamic({ config: { extra: { router: {} } } }).extra?.builtAt ?? '');
+    expect(builtAt).toBeGreaterThanOrEqual(before);
+    expect(builtAt).toBeLessThanOrEqual(Date.now());
+  });
+
+  it('keeps what app.json put in extra', () => {
+    expect(dynamic({ config: { extra: { router: { a: 1 } } } }).extra?.router).toEqual({ a: 1 });
+  });
+
+  /*
+   * Metro's transform cache would otherwise hand a second export the first one's
+   * `expo-constants`, and with it the first one's build time; app.config.js has the
+   * measurement.
+   */
+  it('exports the web target cold, so the stamp is this build’s', () => {
+    const { scripts } = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    expect(scripts['build:web']).toContain('expo export --platform web --clear');
+  });
+});

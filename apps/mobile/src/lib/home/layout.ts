@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useEffect, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
@@ -84,9 +85,24 @@ function overrideText(): string | null {
  */
 export const HOME_LAYOUT_URL = 'https://correctiv.github.io/correctiv-app/home.layout.json';
 
-/** The fetched copy the core holds for this build, or null. */
+/**
+ * When this bundle was built, in ms since the epoch, or NaN when nobody said.
+ *
+ * `app.config.js` stamps `extra.builtAt` at every build and `expo-constants` embeds it,
+ * so every export and native build carries it. The core draws a fetched copy only when
+ * it was published at or after this moment (`fetchedHomeLayout` argues why). NaN draws
+ * none and fetches none: a build that cannot say when it was made cannot tell an older
+ * published document from a newer one, and the bundle is the safe answer.
+ *
+ * Only a cold bundle carries this build's own moment: Metro's transform cache keeps the
+ * first export's, which is why `build:web` exports with `--clear` (`app.config.js` has
+ * the measurement).
+ */
+export const BUILT_AT = Date.parse(String(Constants.expoConfig?.extra?.builtAt ?? ''));
+
+/** The fetched copy the core holds that is not older than this build, or null. */
 function fetchedText(): string | null {
-  return fetchedHomeLayout(coreStore.getState().homeLayout);
+  return fetchedHomeLayout(coreStore.getState().homeLayout, BUILT_AT);
 }
 
 /** Never throws: an unparsable override is a document that is not an object (§9). */
@@ -109,11 +125,13 @@ let read: { text: string | null; layout: HomeLayout } | null = null;
  * override is somebody in the workbench looking at a document on purpose, so it beats
  * what the phone fetched; the fetched copy is what the newsroom published, so it beats
  * what this build happened to compile in (ADR 0036 §4); and the bundle is §10's floor
- * under a first launch with no network. A copy fetched beside a different bundle is not
- * offered at all, which `fetchedHomeLayout` decides in the core.
+ * under a first launch with no network. A copy published before this build was made is
+ * not offered at all, which `fetchedHomeLayout` decides in the core.
  *
  * **Once per document, not once per render**, which is what ADR 0036 §7's report is
- * worth. A report made during render is made again on every feed that lands, every pull
+ * worth. Strictly it is once per document per process: the cache below lives in memory,
+ * so a relaunch reports the same document again, and so does a document that comes back
+ * after another one was drawn in between (an override set and cleared). A report made during render is made again on every feed that lands, every pull
  * to refresh and every theme change — a log nobody can read and, once there is a
  * provider behind the port (#95), a quota spent on one typo. The cache is keyed on the
  * document's raw text, so a render re-parses only when the document actually changed,
@@ -206,9 +224,11 @@ export function useHomeLayout(): HomeLayout {
  */
 export function useHomeLayoutRefresh(ready: boolean): void {
   useEffect(() => {
-    if (__DEV__ || !ready) return;
+    if (__DEV__ || !ready || !Number.isFinite(BUILT_AT)) return;
     const refresh = () => {
-      void coreStore.dispatch(refreshHomeLayout(HOME_LAYOUT_URL));
+      void coreStore.dispatch(
+        refreshHomeLayout(HOME_LAYOUT_URL, { builtAt: BUILT_AT, renderable: RENDERABLE }),
+      );
     };
     refresh();
     const subscription = AppState.addEventListener('change', (state) => {
