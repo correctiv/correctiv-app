@@ -1,7 +1,8 @@
 # ADR 0059 — The day gets a date, and the newsroom plans in editions
 
 Status: accepted, 2026-09-23, decided by the product side on a design memo written for this
-record. **Not built.** §8 names the first slice, which is being built beside it.
+record. ~~**Not built.** §8 names the first slice, which is being built beside it.~~ §8 is built
+in [#247](https://github.com/correctiv/correctiv-app/pull/247), and §6 with it; §7 and the strip and zooms of §2 are not.
 
 ## Context
 
@@ -152,9 +153,10 @@ screenshot taken on a CI runner in UTC stops being an hour off.
 
 "At or before" makes the change of clocks harmless: a minute that does not exist on the
 spring day is passed and applied at the next, one that occurs twice applies an idempotent
-change twice. **Measured first**, before this is relied on: whether Hermes on Android gives a
-Berlin wall clock through `Intl`. If not, the EU rule (the last Sundays of March and
-October, at 01:00 UTC) is a few lines for one zone. There is no zone field in the document
+change twice. ~~**Measured first**, before this is relied on: whether Hermes on Android gives a
+Berlin wall clock through `Intl`. If not,~~ Not measured, and not needed: #247 implemented the
+EU rule (the last Sundays of March and October, at 01:00 UTC) directly, without `Intl`, and
+a test compares it with ICU for every hour from 2025 to 2030. It is a few lines for one zone. There is no zone field in the document
 until a second zone exists.
 
 ### 7. The plan is private, and what is public is a projection with a horizon
@@ -228,6 +230,9 @@ submit an edition no earlier than it may be known.
 
 ## What this retires
 
+**ADR 0039 §5.** It names `nextMomentAfter` as the clock's second half; that is struck and
+reads `nextChangeAfter` now, because §4 above replaced one with the other.
+
 **ADR 0039, "What is still open".** In "Whether a day is enough", "and none of them has been
 asked for" and "and it is deliberately not built ahead of somebody wanting it" are struck. It
 was asked for on 2026-09-23, and this record is the addition that paragraph foresaw. "None of
@@ -238,7 +243,8 @@ comment on `minuteOfDay` changes with the code.
 
 ## What is still open
 
-1. **Hermes and `Europe/Berlin`**, measured on an Android device before §6 is relied on.
+1. ~~**Hermes and `Europe/Berlin`**, measured on an Android device before §6 is relied on.~~
+   Not needed since #247, for the reason under §6.
 2. **The horizon**, which is the newsroom's to set; 36 hours is where it starts.
 3. **The strip and its zooms**, the layer chip and the conflict badges, after §8 has been used.
 4. **The private pipeline of §7**, which is the companion's first consumer and brings ADR 0058
