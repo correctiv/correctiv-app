@@ -551,5 +551,19 @@
       "5": ["What may go into the companion, and what never"],
       "6": ["The open repository reaches the companion by a fetch in CI, not by a submodule"]
     }
+  },
+  "0059": {
+    "slugs": ["the-day-gets-a-date-and-the-newsroom-plans-in-editions"],
+    "decisions": {
+      "1": ["The newsroom's unit is the edition"],
+      "2": ["One axis, one playhead, and the playhead is an instant"],
+      "3": ["The model: editions beside the day, in the grammar the day already has"],
+      "4": ["The fold at an instant, and the narrower window wins"],
+      "5": ["The day is always a complete home screen on its own"],
+      "6": ["The document speaks Berlin time, for everything"],
+      "7": ["The plan is private, and what is public is a projection with a horizon"],
+      "8": ["The first slice: the day gets a date"],
+      "9": ["What is not built, and why"]
+    }
   }
 }
