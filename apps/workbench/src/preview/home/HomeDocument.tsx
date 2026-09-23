@@ -249,7 +249,7 @@ const COPY = defineMessages({
     id: 'home.document.scenarioGuard',
     defaultMessage: 'Scenarios are examples. They are not submitted.',
     description:
-      'Under the switched-off Submit changes while a scenario is open, or while the document still holds one. Submitting it would publish the example on every phone.',
+      'Under the switched-off Submit changes, and under the switched-off Save on a dev server, while a scenario is open or the document still holds one. Submitting or saving it would publish the example on every phone.',
   },
   refused: {
     id: 'home.document.refused',
@@ -534,6 +534,7 @@ export function HomeDocument({
   const copyField = useRef<HTMLTextAreaElement>(null);
   const dirtyStatusId = useId();
   const submitHintId = useId();
+  const saveGuardId = useId();
   /**
    * Whether the frame scrolls to the block under the pointer.
    *
@@ -982,7 +983,7 @@ export function HomeDocument({
             size="sm"
             disabled={!dirty}
             onClick={() => {
-              // The file, and out of the scenario with it: "Back to the file" is the way
+              // The file, and out of the scenario with it: "Discard changes" is the way
               // back to what readers see, and a scenario left open would be loaded again.
               setLayout(SHIPPED);
               if (scenario.open) scenario.close();
@@ -1221,23 +1222,34 @@ export function HomeDocument({
         one, which is the shape the Tokens tool already has for a thing it cannot write.
       */}
       {canSave && (
-        <div className="flex items-center gap-xs">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!dirty}
-            onClick={() =>
-              void save(layout, (message, values) => intl.formatMessage(message, values)).then(
-                setResult,
-              )
-            }
-          >
-            <Save aria-hidden="true" />
-            {intl.formatMessage(COPY.save)}
-          </Button>
-          <InfoTip about={intl.formatMessage(COPY.save)}>
-            <p>{intl.formatMessage(COPY.saveNote, { code, file: HOME_LAYOUT_FILE })}</p>
-          </InfoTip>
+        <div className="flex flex-col gap-2xs">
+          <div className="flex items-center gap-xs">
+            <Button
+              variant="outline"
+              size="sm"
+              // Guarded as Submit changes is: Save writes the file every phone gets once it is
+              // committed, so a scenario saved by accident is the election night shipped by
+              // accident. Promoting one on purpose is copying its file (ADR 0036 §12).
+              disabled={!dirty || guarded}
+              aria-describedby={guarded ? saveGuardId : undefined}
+              onClick={() =>
+                void save(layout, (message, values) => intl.formatMessage(message, values)).then(
+                  setResult,
+                )
+              }
+            >
+              <Save aria-hidden="true" />
+              {intl.formatMessage(COPY.save)}
+            </Button>
+            <InfoTip about={intl.formatMessage(COPY.save)}>
+              <p>{intl.formatMessage(COPY.saveNote, { code, file: HOME_LAYOUT_FILE })}</p>
+            </InfoTip>
+          </div>
+          {guarded && (
+            <p id={saveGuardId} className={NOTE}>
+              {intl.formatMessage(COPY.scenarioGuard)}
+            </p>
+          )}
         </div>
       )}
 

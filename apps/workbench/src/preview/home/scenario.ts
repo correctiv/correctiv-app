@@ -49,7 +49,7 @@ export function arriving(current: HomeLayout, scenario: HomeLayout): Arrival {
  * The shipped file when the document is still the scenario's untouched one, so the frame
  * goes back to what readers see. **Not when somebody has edited it**: that is work too,
  * and leaving by the address bar or a step back in history has no moment in which to ask.
- * So it stays, marked as changed, "Back to the file" throws it away when that is what was
+ * So it stays, marked as changed, "Discard changes" throws it away when that is what was
  * meant, and `scenarioIn` below still keeps it from being submitted.
  */
 export function leaving(current: HomeLayout, scenario: HomeLayout): HomeLayout | null {
@@ -76,34 +76,75 @@ export function scenarioIn(layout: HomeLayout): Scenario | null {
 }
 
 /**
- * Whether Submit changes is switched off for this document: while the address has a
- * scenario open, and while the document is still one after leaving it.
+ * Whether Submit changes and the dev server's Save are switched off for this document:
+ * while the address has a scenario open, and while the document is still one after
+ * leaving it.
  *
  * `HomeDocument.tsx` says why that is a switched-off button with a reason and not a
  * confirmation.
+ *
+ * **A known limit, accepted:** a scenario is recognised by its edition id, nothing more. A
+ * copy rebuilt by hand under another id, or the scenario's changes typed into the day,
+ * is an ordinary document to this and can be submitted. Matching on content would have to
+ * say how similar is too similar, and the review is still the lock (ADR 0058 §2): what this
+ * stops is the accident of submitting an example that is still open, not somebody who
+ * means to publish it.
  */
 export function guarded(open: string | null, layout: HomeLayout): boolean {
   return scenarioNamed(open) !== null || scenarioIn(layout) !== null;
 }
 
-/** The patch that opens a scenario: its name, and its time and session as the defaults. */
-export function entering(scenario: Scenario): Partial<PreviewState> {
-  return { scenario: scenario.name, time: scenario.opensAt, seed: scenario.session };
+/** The person's own time and session, as they were before a scenario was opened. */
+export interface Held {
+  time: string | null;
+  seed: string | null;
+}
+
+export function heldOf(state: PreviewState): Held {
+  return { time: state.time, seed: state.seed };
 }
 
 /**
- * The patch that leaves one: the playhead goes back to the real clock, and the session
- * stays as it is.
+ * The patch that opens a scenario from the list.
  *
- * The playhead always, even where somebody moved it inside the scenario: the scenario's
- * date is made up, and a frame left on it after the scenario has gone would be a home
- * screen at an hour nobody chose for the real document. The session is left as the
- * fixture wrote it, because `seed: null` means "leave the storage alone" (`Preview.tsx`),
- * not "sign out", and a fixture somebody picked themselves stays in the address.
+ * Its time and its session come with it only once the scenario is actually loaded. While
+ * it is `ask`ing, the frame still draws the person's own document, and moving their
+ * playhead or reseeding their session (which clears the app's storage) before they have
+ * answered would be taking something of theirs without asking after all. So the address
+ * names the scenario and keeps their `tm=` and `s=`, and `loading` applies the scenario's
+ * two when they choose to load it.
  */
-export function exiting(state: PreviewState): Partial<PreviewState> {
+export function entering(
+  scenario: Scenario,
+  before: PreviewState,
+  arrival: Arrival,
+): Partial<PreviewState> {
+  if (arrival === 'ask') return { scenario: scenario.name, time: before.time, seed: before.seed };
+  return { scenario: scenario.name, ...loading(scenario) };
+}
+
+/** A scenario's own time and session, for the moment it is loaded. */
+export function loading(scenario: Scenario): Partial<PreviewState> {
+  return { time: scenario.opensAt, seed: scenario.session };
+}
+
+/**
+ * The patch that leaves one: the person's own time and session back, as they were before
+ * they opened it.
+ *
+ * `held` is what `heldOf` took when the scenario was opened from the list. However far the
+ * playhead moved inside the scenario, that was the scenario's made-up date, and what comes
+ * back is the hour the person had been looking at.
+ *
+ * Without anything held, which is a scenario that arrived in a link, there is nothing of
+ * theirs to give back: the playhead returns to the real clock, the scenario's own session
+ * goes, and a fixture they chose themselves stays. `seed: null` means "leave the storage
+ * alone" (`Preview.tsx`), not "sign out".
+ */
+export function exiting(state: PreviewState, held: Held | null): Partial<PreviewState> {
   const scenario = scenarioNamed(state.scenario);
   if (!scenario) return { scenario: null };
+  if (held) return { scenario: null, ...held };
   return {
     scenario: null,
     time: null,

@@ -30,7 +30,9 @@ import {
   entering,
   exiting,
   guarded,
+  heldOf,
   leaving,
+  loading,
   scenarioIn,
 } from '../../src/preview/home/scenario';
 import { layoutOf, SCENARIOS, scenarioNamed } from '../../src/preview/scenarios';
@@ -244,7 +246,7 @@ describe('a scenario in the address', () => {
   });
 
   it('writes the name and nothing the name already implies', () => {
-    const opened = { ...INITIAL, ...entering(scenario) };
+    const opened = { ...INITIAL, ...entering(scenario, INITIAL, 'load') };
     expect(write(opened)).toBe('#/?d=iphone-15-pro&sc=wahlabend');
     expect(read(write(opened))).toEqual(opened);
 
@@ -264,10 +266,45 @@ describe('a scenario in the address', () => {
     expect(state.seed).toBeNull();
   });
 
-  it('takes its time and its own session with it when it is left', () => {
-    const opened = { ...INITIAL, ...entering(scenario), time: '2030-09-29T23:30' };
-    expect(exiting(opened)).toEqual({ scenario: null, time: null, seed: null });
-    expect(exiting({ ...opened, seed: 'free-member' }).seed).toBe('free-member');
+  it('takes its time and its own session with it when it is left from a cold link', () => {
+    const opened = { ...read('#/?sc=wahlabend'), time: '2030-09-29T23:30' };
+    expect(exiting(opened, null)).toEqual({ scenario: null, time: null, seed: null });
+    expect(exiting({ ...opened, seed: 'free-member' }, null).seed).toBe('free-member');
+  });
+});
+
+/* A reviewer of #253: opening one from the list threw away the person's own `tm=` and `s=`. */
+describe('the person’s own time and session', () => {
+  const scenario = scenarioNamed('wahlabend')!;
+  const before: PreviewState = { ...INITIAL, time: '12:00', seed: 'free-member' };
+
+  it('stay as they are while the scenario is only asking', () => {
+    expect(entering(scenario, before, 'ask')).toEqual({
+      scenario: 'wahlabend',
+      time: '12:00',
+      seed: 'free-member',
+    });
+  });
+
+  it('give way to the scenario’s once it loads', () => {
+    expect(entering(scenario, before, 'load')).toEqual({
+      scenario: 'wahlabend',
+      time: scenario.opensAt,
+      seed: scenario.session,
+    });
+    expect(loading(scenario)).toEqual({ time: scenario.opensAt, seed: scenario.session });
+  });
+
+  it('come back when the scenario is left, however far the playhead moved inside it', () => {
+    const held = heldOf(before);
+    const opened = { ...before, ...entering(scenario, before, 'load'), time: '2030-09-29T23:30' };
+    expect(exiting(opened, held)).toEqual({ scenario: null, time: '12:00', seed: 'free-member' });
+    const none = heldOf(INITIAL);
+    expect(exiting({ ...INITIAL, ...entering(scenario, INITIAL, 'load') }, none)).toEqual({
+      scenario: null,
+      time: null,
+      seed: null,
+    });
   });
 });
 
@@ -289,6 +326,35 @@ describe('opening a scenario never takes a person’s work without asking', () =
     expect(leaving(scenario, scenario)).toBe(SHIPPED);
     expect(leaving(withHidden(scenario, null, 'briefing', true), scenario)).toBeNull();
     expect(leaving(work, scenario)).toBeNull();
+  });
+});
+
+/*
+ * The wiring, which the rule above cannot see: a review of #253 asked what would fail if the
+ * button lost `!guarded`, and the answer was nothing. Read out of the source, sliced to the
+ * two expressions that decide, because a whole-file `toContain` passes on a comment.
+ */
+describe('the editor’s two ways out, as HomeDocument.tsx wires them', () => {
+  const file = readFileSync(join(ROOT, 'apps/workbench/src/preview/home/HomeDocument.tsx'), 'utf8');
+  const between = (start: string, end: string) => {
+    const from = file.indexOf(start);
+    expect(from).toBeGreaterThan(-1);
+    const to = file.indexOf(end, from + start.length);
+    expect(to).toBeGreaterThan(from);
+    return file.slice(from, to);
+  };
+
+  it('offers Submit changes only for a document that is not guarded', () => {
+    const offer = between('const offer =', ';');
+    expect(offer.replace(/\s+/g, ' ')).toContain('dirty && !guarded ?');
+  });
+
+  it('switches Save off for a guarded document, and says why under it', () => {
+    const save = between('{canSave && (', '</Button>');
+    expect(/disabled=\{!dirty \|\| guarded\}/.test(save)).toBe(true);
+    const block = between('{canSave && (', 'A refusal is a red fill');
+    expect(block).toContain('{guarded && (');
+    expect(block).toContain('COPY.scenarioGuard');
   });
 });
 

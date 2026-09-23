@@ -1315,7 +1315,7 @@
   },
   "home.document.scenarioGuard": {
     "defaultMessage": "Scenarios are examples. They are not submitted.",
-    "description": "Under the switched-off Submit changes while a scenario is open, or while the document still holds one. Submitting it would publish the example on every phone."
+    "description": "Under the switched-off Submit changes, and under the switched-off Save on a dev server, while a scenario is open or the document still holds one. Submitting or saving it would publish the example on every phone."
   },
   "home.document.submit": {
     "defaultMessage": "Submit changes",

@@ -6,7 +6,7 @@ import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
 import { layoutOf, SCENARIOS, scenarioNamed, type Scenario } from '../scenarios';
 import type { PreviewState } from '../state';
-import { arriving, entering, exiting, leaving } from './scenario';
+import { arriving, entering, exiting, heldOf, leaving, loading, type Held } from './scenario';
 import { getLayout, setLayout } from './store';
 
 /**
@@ -68,7 +68,7 @@ export interface ScenarioControl {
   replace: () => void;
   /** Close the scenario that is asking, and keep the work. */
   keep: () => void;
-  /** Close whatever is open. "Back to the file" calls it. */
+  /** Close whatever is open. "Discard changes" calls it. */
   close: () => void;
 }
 
@@ -87,6 +87,12 @@ export function useScenario(
   const [asking, setAsking] = useState<Scenario | null>(null);
   /** The scenario the last run saw, and `undefined` before the first. */
   const seen = useRef<string | null | undefined>(undefined);
+  /**
+   * The person's own time and session from before a scenario was opened from the list,
+   * given back when it is left (`exiting`). Taken once per visit to scenarios: switching
+   * from one scenario to another keeps what was there before the first.
+   */
+  const held = useRef<Held | null>(null);
 
   useEffect(() => {
     const from = seen.current;
@@ -94,6 +100,7 @@ export function useScenario(
     seen.current = to;
     if (from === to) return;
     setAsking(null);
+    if (to === null) held.current = null;
 
     const left = scenarioNamed(from);
     const leftLayout = left ? layoutOf(left) : null;
@@ -112,7 +119,9 @@ export function useScenario(
 
   const close = useCallback(() => {
     setAsking(null);
-    onChange(exiting(state));
+    const back = exiting(state, held.current);
+    held.current = null;
+    onChange(back);
   }, [onChange, state]);
 
   return {
@@ -120,12 +129,21 @@ export function useScenario(
     asking,
     choose: (name) => {
       const scenario = scenarioNamed(name);
-      if (scenario) onChange(entering(scenario));
-      else close();
+      const layout = scenario ? layoutOf(scenario) : null;
+      if (!scenario || !layout) {
+        close();
+        return;
+      }
+      held.current ??= heldOf(state);
+      onChange(entering(scenario, state, arriving(getLayout(), layout)));
     },
     replace: () => {
       const layout = asking ? layoutOf(asking) : null;
-      if (layout) setLayout(layout);
+      if (asking && layout) {
+        setLayout(layout);
+        // Its time and session only now, once the person has said to load it.
+        onChange(loading(asking));
+      }
       setAsking(null);
     },
     keep: close,
