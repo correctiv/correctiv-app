@@ -2,11 +2,11 @@
  * Which home document Home draws, when there is more than one to hand.
  *
  * Three can be: the workbench's override (a preview seam), the copy the app fetched
- * (ADR 0036 §4, ADR 0057 §4) and the document this build bundles (§10). The order is
- * the claim, and it is argued on `homeLayout()` in `lib/home/layout.ts`: the override,
- * then the fetched copy, then the bundle — and a fetched copy stored beside a different
- * bundle does not count, because an app update must not lose to what the build before
- * it fetched.
+ * (ADR 0036 §4, ADR 0057 §4) and the document this build bundles (ADR 0036 §10). The
+ * order is the claim, and it is argued on `homeLayout()` in `lib/home/layout.ts`: the
+ * override, then the fetched copy, then the bundle — and a fetched copy stored beside a
+ * different bundle does not count, because an app update must not lose to what the
+ * build before it fetched.
  *
  * A file of its own because it installs a `localStorage` on `window`, as
  * `home-simulated-clock.test.tsx` does and for its reason: the React Native test

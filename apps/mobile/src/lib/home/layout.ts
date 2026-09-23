@@ -76,8 +76,8 @@ function overrideText(): string | null {
  * **Moving the site moves this.** An installed app keeps asking here for as long as it
  * is installed, so a custom domain for the Pages site, or a rename of the repository,
  * leaves every phone already out there on its last copy (and a new install on its
- * bundle) until it updates. Nothing breaks, which is §10's floor, and nothing says so
- * either, which is why this sentence is here.
+ * bundle) until it updates. Nothing breaks, which is ADR 0036 §10's floor, and
+ * nothing says so either, which is why this sentence is here.
  *
  * GitHub Pages answers it with `access-control-allow-origin: *`, measured on
  * 2026-09-23, so the web target may fetch it from any origin, not only its own.
@@ -108,8 +108,8 @@ let read: { text: string | null; layout: HomeLayout } | null = null;
  * **That order is the precedence, and each step down is a fallback, not a merge.** The
  * override is somebody in the workbench looking at a document on purpose, so it beats
  * what the phone fetched; the fetched copy is what the newsroom published, so it beats
- * what this build happened to compile in (§4); and the bundle is §10's floor under a
- * first launch with no network. A copy fetched beside a different bundle is not
+ * what this build happened to compile in (ADR 0036 §4); and the bundle is §10's floor
+ * under a first launch with no network. A copy fetched beside a different bundle is not
  * offered at all, which `fetchedHomeLayout` decides in the core.
  *
  * **Once per document, not once per render**, which is what ADR 0036 §7's report is
@@ -181,9 +181,9 @@ function subscribeToLayout(listener: () => void): () => void {
  * `useSyncExternalStore` rather than state and an effect, because the document is not
  * this component's to own: it is read at render time from storage and from the store,
  * and the subscription exists only so that a screen already on the phone redraws
- * instead of waiting for a reload. The same function serves as the snapshot and as the server snapshot — the
- * static export prerenders each route, and there the bundled document is the only one
- * there can be.
+ * instead of waiting for a reload. The same function serves as the snapshot and as
+ * the server snapshot — the static export prerenders each route, and there the bundled
+ * document is the only one there can be.
  */
 export function useHomeLayout(): HomeLayout {
   return useSyncExternalStore(subscribeToLayout, homeLayout, homeLayout);
