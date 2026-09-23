@@ -799,7 +799,13 @@ describe('the services drawing, against the sources manifest', () => {
 const padded = (n: number): string => String(n).padStart(4, '0');
 
 describe('the decisions drawing, at a size `adr/` has not reached', () => {
-  const LONG = 60;
+  /*
+   * Past the real count by construction. It was 60, which was more than `adr/` held when
+   * it was typed, and ADR 0060 made it the count exactly: the drawing of the real set
+   * and of this one were then the same height and the growth assertion had nothing to
+   * compare. A size the directory has not reached is a size read off the directory.
+   */
+  const LONG = RECORDS.length + 30;
 
   function synthetic(): { records: DecisionRecord[]; strikes: Strike[] } {
     const number = padded;

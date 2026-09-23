@@ -35,6 +35,8 @@
  * automation reads a stable id and the English rather than whatever language the
  * person at the keyboard has chosen.
  */
+import type { Entitlement } from '@correctiv/app-core/types/models';
+
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 
 /**
@@ -113,6 +115,29 @@ const NO_ACCESS = {
     source: null,
     validUntil: null,
     localAreas: [],
+    memberSince: '2026-03-04T09:12:00.000Z',
+  },
+};
+
+/**
+ * A 0 € member whose local newsletter includes the app: inside the door, and in the
+ * `free-members` audience rather than `paying-members` (ADR 0060 §4).
+ *
+ * The one reader the audiences can tell apart from the ordinary sign-in, which is why it
+ * is a fixture: previewing the home screen for an audience is this tool and the timeline
+ * together, not a mechanism of its own. `models.ts` describes the entitlement — a local
+ * bundle includes the app "without being an app membership", so the tier stays the
+ * membership's own. The simulated sign-in gives `lokal` addresses a paid tier, and this is
+ * the other case the type allows.
+ */
+const FREE_LOCAL = {
+  account: { email: 'lokal.frei@example.org', name: 'Lokal Frei' },
+  entitlement: {
+    tier: 'free',
+    appAccess: true,
+    source: 'local-bundle',
+    validUntil: null,
+    localAreas: ['Gelsenkirchen'],
     memberSince: '2026-03-04T09:12:00.000Z',
   },
 };
@@ -211,6 +236,25 @@ export const FIXTURES: Fixture[] = [
     }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
+      kv(s, 'settings', ONBOARDED);
+    },
+  },
+  {
+    id: 'free-member',
+    label: wbMessage({
+      id: 'fixtures.freeMember',
+      defaultMessage: 'Free member, local newsletter',
+      description:
+        'A fixture in the state tool: a member of the 0 € tier whose local newsletter subscription includes the app.',
+    }),
+    hint: wbMessage({
+      id: 'fixtures.freeMember.hint',
+      defaultMessage: 'The app starts on Home, for a free member rather than a paying one.',
+      description:
+        'The line under the “Free member, local newsletter” fixture. “Home” is the app’s first tab, which the app itself calls “Start”.',
+    }),
+    write: (s) => {
+      kv(s, 'session', FREE_LOCAL);
       kv(s, 'settings', ONBOARDED);
     },
   },
@@ -327,6 +371,54 @@ export const FIXTURES: Fixture[] = [
     },
   },
 ];
+
+/** A `Storage` that lives only in memory, for asking a fixture what it would write. */
+function scratch(): Storage {
+  const held = new Map<string, string>();
+  return {
+    get length() {
+      return held.size;
+    },
+    clear: () => held.clear(),
+    getItem: (key) => held.get(key) ?? null,
+    key: (index) => [...held.keys()][index] ?? null,
+    removeItem: (key) => void held.delete(key),
+    setItem: (key, value) => void held.set(key, String(value)),
+  };
+}
+
+/**
+ * The entitlement a store holds for the app's session, or null for none or one that cannot
+ * be read. Only what the home tool needs to say whose screen it is showing (ADR 0060 §4).
+ */
+export function storedEntitlement(store: Storage): Entitlement | null {
+  try {
+    const raw = store.getItem(`${STATE_PREFIX}store.session`);
+    const held = raw ? (JSON.parse(raw) as { entitlement?: Entitlement | null }) : null;
+    return held?.entitlement ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The entitlement the app will find when it boots for this address.
+ *
+ * A named fixture answers by what it writes, asked of a scratch store rather than typed a
+ * second time, so a fixture and the home tool cannot disagree about whose screen it is.
+ * No fixture, or one nothing answers to, leaves the storage alone, and the answer is what
+ * the storage holds — which `holdTheDoorOpen` has made the held-open member's if nothing
+ * else was there.
+ */
+export function entitlementFor(seed: string | null, store: Storage | null): Entitlement | null {
+  const chosen = seed === null ? undefined : FIXTURES.find((f) => f.id === seed);
+  if (chosen) {
+    const written = scratch();
+    chosen.write(written);
+    return storedEntitlement(written);
+  }
+  return store ? storedEntitlement(store) : null;
+}
 
 /**
  * Wipes the app's storage and writes one fixture.

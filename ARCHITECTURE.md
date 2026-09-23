@@ -134,7 +134,10 @@ prints, and that file is the seam to beabee.
 
 The web demo's fixtures carry a session for the same reason: `/preview#/?s=signed-in`
 is a member's first start, `s=no-access` is the door's fourth state, and every fixture
-that shows a screen signs in first.
+that shows a screen signs in first. `s=free-member` is the one reader inside the door the
+home screen's audiences tell apart from the ordinary sign-in, a 0 € member whose local
+newsletter includes the app, which is how the configurator previews an audience
+([ADR 0060](adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §4).
 
 **Why the directory is `packages/app-core` and not `packages/core`:** the original
 reason was a build trap in the previous host's bundler, which mistook a directory

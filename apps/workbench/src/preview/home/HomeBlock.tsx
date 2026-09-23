@@ -16,6 +16,7 @@ import { HOME_MODULES } from '@/lib/home/modules';
 import { DrawnBoundary } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
 import { say } from '../../i18n/messages';
+import { conditionOf } from './Conditions';
 import { moduleLabel } from './document';
 import { fit } from './fit';
 
@@ -105,7 +106,7 @@ const mono = (chunks: ReactNode[]) => <span className="font-mono">{chunks}</span
  * ports, which `AppEnvironment` refuses for reasons of its own. What makes it
  * honest is that the empty row is visibly empty next to a frame that is not.
  */
-function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
+function Block({ section, deviceWidth, absent = false }: HomeBlockProps): ReactNode {
   const intl = useWorkbenchIntl();
   /** The room this row has, in CSS pixels, and the drawing's own unscaled height. */
   const [room, setRoom] = useState<number | null>(null);
@@ -218,7 +219,18 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
    * editor's and are outside this shell. Nor the outline in the frame, which `Row` drives
    * from the `<li>`.
    */
-  const off = Boolean(section.hidden);
+  /*
+   * Greyed the same way when the reader in the frame is not in the block's audience
+   * (ADR 0060 §4): the frame does not draw it, so the list says so rather than showing a
+   * block the phone beside it has not got. One mark for "not on the phone right now", and
+   * the popover says which of the two reasons it is.
+   */
+  const off = Boolean(section.hidden) || absent;
+  /*
+   * What the block owns, when it has a condition of its own (ADR 0060 §1). A block that
+   * measured nothing says WHY rather than only that it drew nothing.
+   */
+  const owns = conditionOf(section.module);
 
   return (
     <>
@@ -279,7 +291,11 @@ function Block({ section, deviceWidth }: HomeBlockProps): ReactNode {
             off && 'opacity-45',
           )}
         >
-          {intl.formatMessage(COPY.empty, { block: say(intl, moduleLabel(section.module).label) })}
+          {owns
+            ? intl.formatMessage(owns)
+            : intl.formatMessage(COPY.empty, {
+                block: say(intl, moduleLabel(section.module).label),
+              })}
         </p>
       )}
     </>
@@ -291,6 +307,8 @@ interface HomeBlockProps {
   section: HomeSection;
   /** The framed device's CSS width; the width the block draws at. */
   deviceWidth: number;
+  /** Whether the reader in the frame is outside the block's audience, so it is not drawn there. */
+  absent?: boolean;
 }
 
 /**
@@ -298,7 +316,11 @@ interface HomeBlockProps {
  * not here: a test in this package can run that module and cannot run this one.
  */
 function same(before: HomeBlockProps, after: HomeBlockProps): boolean {
-  return before.deviceWidth === after.deviceWidth && sameSection(before.section, after.section);
+  return (
+    before.deviceWidth === after.deviceWidth &&
+    before.absent === after.absent &&
+    sameSection(before.section, after.section)
+  );
 }
 
 export const HomeBlock = memo(Block, same);

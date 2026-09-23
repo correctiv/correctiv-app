@@ -29,6 +29,15 @@ import {
 import type { IntlShape } from 'react-intl';
 
 import {
+  defaultAudience,
+  EVERYONE,
+  READERS,
+  reaches,
+  type Audience,
+  type Reader,
+} from '@correctiv/app-core/lib/home-audience';
+
+import {
   settingsFor,
   type CountSetting,
   type SettingSpec,
@@ -354,13 +363,48 @@ export function spanOf(layout: HomeLayout, point: Point): { from: number; to: nu
  * happened in. At the day's start the answer is the sections as written, which
  * `stateAt(layout, -1)` gives for free: no moment is at or before minute −1.
  */
-export function inheritedAt(layout: HomeLayout, point: Point): readonly HomeSection[] {
-  return stateAt(layout, point === null ? -1 : point - 1);
+export function inheritedAt(
+  layout: HomeLayout,
+  point: Point,
+  reader: Reader,
+): readonly HomeSection[] {
+  return stateAt(layout, point === null ? -1 : point - 1, reader);
 }
 
 /** The state a point PRODUCES: what the frame shows while it is in effect. */
-export function effectiveAt(layout: HomeLayout, point: Point): readonly HomeSection[] {
-  return stateAt(layout, point ?? 0);
+export function effectiveAt(
+  layout: HomeLayout,
+  point: Point,
+  reader: Reader,
+): readonly HomeSection[] {
+  return stateAt(layout, point ?? 0, reader);
+}
+
+// --- who a change is for ---------------------------------------------------------
+
+/**
+ * Every reader a change with this audience reaches, out of the ones the rules can tell apart.
+ *
+ * What "equal to what the point inherits" has to be asked of once a document names an
+ * audience anywhere ([ADR 0060](../../../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md)
+ * §5). A change for everybody restates its inheritance only if it does so for EVERY reader:
+ * a paying member may have been handed something else at eleven by a change the others
+ * never saw, and pruning against one reader's day would take out an instruction another
+ * reader still needs. With no audience in the document every reader folds the same day, so
+ * this costs a document written before ADR 0060 nothing but the loop.
+ */
+function readersFor(audience: Audience | undefined): readonly Reader[] {
+  return READERS.filter((reader) => reaches(reader, audience));
+}
+
+/** Whether a change, whatever it names, changes nothing: no state and no settings. */
+function says(change: HomeChange): boolean {
+  return change.hidden !== undefined || change.settings !== undefined;
+}
+
+/** The change the editor edits for a place at a point of the day, if there is one. */
+function heldAt(layout: HomeLayout, point: Point, id: string): HomeChange | undefined {
+  return momentAt(layout, point)?.changes.find((change) => change.id === id);
 }
 
 // --- editing the order ------------------------------------------------------------
@@ -620,8 +664,11 @@ export function withHidden(
     return settled(atStart, point);
   }
 
-  const before = inheritedAt(layout, point).find((section) => section.id === id);
-  const inherits = Boolean(before?.hidden) === hidden;
+  const inherits = readersFor(heldAt(layout, point, id)?.audience).every(
+    (reader) =>
+      Boolean(inheritedAt(layout, point, reader).find((section) => section.id === id)?.hidden) ===
+      hidden,
+  );
   const edited = withChange(layout, point, id, (change) => {
     if (inherits) {
       const { hidden: _hidden, ...rest } = change;
@@ -659,8 +706,13 @@ export function withSetting(
   key: string,
   value: SettingValue | undefined,
 ): HomeLayout {
-  const inherited = inheritedSetting(layout, point, id, key);
-  const same = value !== undefined && inherited !== undefined && sameValue(inherited, value);
+  const audience = point === null ? undefined : heldAt(layout, point, id)?.audience;
+  const same =
+    value !== undefined &&
+    readersFor(audience).every((reader) => {
+      const inherited = inheritedSetting(layout, point, id, key, reader);
+      return inherited !== undefined && sameValue(inherited, value);
+    });
   const next = same || value === undefined ? undefined : value;
 
   const edited =
@@ -690,11 +742,12 @@ function inheritedSetting(
   point: Point,
   id: string,
   key: string,
+  reader: Reader,
 ): SettingValue | undefined {
   const declared = layout.sections.find((section) => section.id === id);
   if (!declared) return undefined;
   if (point === null) return fallbackOf(declared.module, key);
-  const before = inheritedAt(layout, point).find((section) => section.id === id);
+  const before = inheritedAt(layout, point, reader).find((section) => section.id === id);
   return before ? valueOf(before, key) : fallbackOf(declared.module, key);
 }
 
@@ -748,10 +801,20 @@ function settled(layout: HomeLayout, point: Point): HomeLayout {
     moments: layout.moments.map((moment) => {
       if (moment.minute <= after) return moment;
       const inherited = new Map(
-        inheritedAt(layout, moment.minute).map((section) => [section.id, section]),
+        READERS.map((reader) => [
+          reader,
+          new Map(
+            inheritedAt(layout, moment.minute, reader).map((section) => [section.id, section]),
+          ),
+        ]),
       );
       const changes = moment.changes
-        .map((change) => settledChange(change, inherited.get(change.id)))
+        .map((change) =>
+          settledChange(
+            change,
+            readersFor(change.audience).map((reader) => inherited.get(reader)?.get(change.id)),
+          ),
+        )
         .filter((change): change is HomeChange => change !== null);
       const same =
         changes.length === moment.changes.length &&
@@ -769,24 +832,32 @@ function settled(layout: HomeLayout, point: Point): HomeLayout {
  * fault the parser reports (`change-id-unknown`), and quietly tidying it away here would
  * take the evidence with it.
  */
-function settledChange(change: HomeChange, inherited: HomeSection | undefined): HomeChange | null {
-  if (!inherited) return change;
+function settledChange(
+  change: HomeChange,
+  inherited: readonly (HomeSection | undefined)[],
+): HomeChange | null {
+  const held = inherited.filter((section): section is HomeSection => section !== undefined);
+  if (held.length === 0 || held.length !== inherited.length) return change;
 
   let next = change;
-  if (next.hidden !== undefined && Boolean(inherited.hidden) === next.hidden) {
+  if (
+    next.hidden !== undefined &&
+    held.every((section) => Boolean(section.hidden) === next.hidden)
+  ) {
     const { hidden: _hidden, ...rest } = next;
     next = rest;
   }
   for (const key of Object.keys(next.settings ?? {})) {
-    const held = next.settings?.[key];
-    const was = valueOf(inherited, key);
-    if (held !== undefined && was !== undefined && sameValue(was, held)) {
-      next = withKey(next, key, undefined);
-    }
+    const value = next.settings?.[key];
+    const restated = held.every((section) => {
+      const was = valueOf(section, key);
+      return value !== undefined && was !== undefined && sameValue(was, value);
+    });
+    if (restated) next = withKey(next, key, undefined);
   }
 
-  // One key left is the id alone: a change naming a section and changing nothing about it.
-  return Object.keys(next).length <= 1 ? null : next;
+  // A change naming a section, and perhaps an audience, and changing nothing about it.
+  return says(next) ? next : null;
 }
 
 /** One key onto a section or a change's `settings`, dropping the object when it empties. */
@@ -846,12 +917,16 @@ function withChange(
     ...layout,
     moments: layout.moments.map((moment) => {
       if (moment.minute !== minute) return moment;
-      const held = moment.changes.find((change) => change.id === id) ?? { id };
-      const edited = next(held);
-      const rest = moment.changes.filter((change) => change.id !== id);
-      // One key left is the id alone: a change entry naming a section and changing
-      // nothing about it.
-      const changes = Object.keys(edited).length <= 1 ? rest : [...rest, edited];
+      /*
+       * The FIRST change about this place and nothing else about it. A document may carry
+       * two at one time for two audiences (ADR 0041's own example, ADR 0060 §5); the editor
+       * edits one of them and leaves the other exactly as it is, rather than folding the
+       * pair into one it would then be writing on its own authority.
+       */
+      const found = moment.changes.find((change) => change.id === id);
+      const edited = next(found ?? { id });
+      const rest = moment.changes.filter((change) => change !== found);
+      const changes = says(edited) ? [...rest, edited] : rest;
       return {
         ...moment,
         changes: [...changes].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)),
@@ -955,12 +1030,13 @@ export function inheritedFor(
   layout: HomeLayout,
   instant: Instant,
   target: Target,
+  reader: Reader,
 ): readonly HomeSection[] {
-  if (target.edition === null) return inheritedAt(layout, target.point);
+  if (target.edition === null) return inheritedAt(layout, target.point, reader);
   const id = target.edition.id;
   return applyAll(
     layout.sections,
-    changesAt(layout, instant).filter(
+    changesAt(layout, instant, reader).filter(
       (applied) => !(applied.edition === id && applied.point === target.point),
     ),
   );
@@ -988,8 +1064,12 @@ export function writeHidden(
   const target = targetAt(layout, instant);
   if (target.edition === null) return withHidden(layout, target.point, id, hidden);
 
-  const before = inheritedFor(layout, instant, target).find((section) => section.id === id);
-  const inherits = Boolean(before?.hidden) === hidden;
+  const inherits = readersFor(heldIn(target, id)?.audience).every(
+    (reader) =>
+      Boolean(
+        inheritedFor(layout, instant, target, reader).find((section) => section.id === id)?.hidden,
+      ) === hidden,
+  );
   return withEditionChange(layout, target.edition.id, target.point, id, (change) => {
     if (inherits) {
       const { hidden: _hidden, ...rest } = change;
@@ -1010,13 +1090,82 @@ export function writeSetting(
   const target = targetAt(layout, instant);
   if (target.edition === null) return withSetting(layout, target.point, id, key, value);
 
-  const before = inheritedFor(layout, instant, target).find((section) => section.id === id);
-  const inherited = before ? valueOf(before, key) : undefined;
-  const same = value !== undefined && inherited !== undefined && sameValue(inherited, value);
+  const same =
+    value !== undefined &&
+    readersFor(heldIn(target, id)?.audience).every((reader) => {
+      const before = inheritedFor(layout, instant, target, reader).find(
+        (section) => section.id === id,
+      );
+      const inherited = before ? valueOf(before, key) : undefined;
+      return inherited !== undefined && sameValue(inherited, value);
+    });
   const next = same || value === undefined ? undefined : value;
   return withEditionChange(layout, target.edition.id, target.point, id, (change) =>
     withKey(change, key, next),
   );
+}
+
+/** The change the editor edits for a place on an edition's target point, if there is one. */
+function heldIn(target: Target, id: string): HomeChange | undefined {
+  const edition = target.edition;
+  if (edition === null) return undefined;
+  const changes =
+    target.point === null
+      ? edition.changes
+      : (edition.moments.find((moment) => moment.minute === target.point)?.changes ?? []);
+  return changes.find((change) => change.id === id);
+}
+
+/**
+ * The change an edit at this instant lands on for a place, if there is one: what the
+ * audience control beside it retargets.
+ */
+export function changeHeldAt(
+  layout: HomeLayout,
+  instant: Instant,
+  id: string,
+): HomeChange | undefined {
+  const target = targetAt(layout, instant);
+  if (target.edition !== null) return heldIn(target, id);
+  return target.point === null ? undefined : heldAt(layout, target.point, id);
+}
+
+/**
+ * Who a place is for, all day (ADR 0060 §2).
+ *
+ * Written only when it differs from the module's own default, which is the rule every
+ * optional field of a section already follows: absent means the module decides, so a
+ * document keeps saying only what somebody chose. Choosing the default back takes the key
+ * out rather than writing it.
+ */
+export function withAudience(layout: HomeLayout, id: string, audience: Audience): HomeLayout {
+  return withSection(layout, id, (section) => {
+    const { audience: _audience, ...rest } = section;
+    return audience === defaultAudience(section.module) ? rest : { ...rest, audience };
+  });
+}
+
+/**
+ * Who the change at this instant's target is for, which retargets the change rather than
+ * choosing a second one (ADR 0060 §5). `everyone` is the absence of the key, as it is in the
+ * document. A place with no change here has nothing to retarget and is answered unchanged.
+ */
+export function writeChangeAudience(
+  layout: HomeLayout,
+  instant: Instant,
+  id: string,
+  audience: Audience,
+): HomeLayout {
+  const retarget = (change: HomeChange): HomeChange => {
+    const { audience: _audience, ...rest } = change;
+    return audience === EVERYONE ? rest : { ...rest, audience };
+  };
+  if (changeHeldAt(layout, instant, id) === undefined) return layout;
+  const target = targetAt(layout, instant);
+  if (target.edition !== null) {
+    return withEditionChange(layout, target.edition.id, target.point, id, retarget);
+  }
+  return withChange(layout, target.point!, id, retarget);
 }
 
 /** One edition replaced, in place, in the document's order. */
@@ -1041,10 +1190,11 @@ function withEditionChange(
 ): HomeLayout {
   const rank = new Map(layout.sections.map((section, index) => [section.id, index]));
   const edit = (changes: readonly HomeChange[]): readonly HomeChange[] => {
-    const held = changes.find((change) => change.id === id) ?? { id };
-    const edited = next(held);
-    const rest = changes.filter((change) => change.id !== id);
-    const kept = Object.keys(edited).length <= 1 ? rest : [...rest, edited];
+    // The first change about the place, and the others left alone, as `withChange` does.
+    const found = changes.find((change) => change.id === id);
+    const edited = next(found ?? { id });
+    const rest = changes.filter((change) => change !== found);
+    const kept = says(edited) ? [...rest, edited] : rest;
     return [...kept].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
   };
 
@@ -1241,9 +1391,13 @@ export function movedEditionMoment(
  * the campaign changed and where the ordinary day shows through. A place no edition touches
  * is not in the map, and neither is one only the day's own moments changed.
  */
-export function decidedAt(layout: HomeLayout, instant: Instant): ReadonlyMap<string, string> {
+export function decidedAt(
+  layout: HomeLayout,
+  instant: Instant,
+  reader: Reader,
+): ReadonlyMap<string, string> {
   const decided = new Map<string, string>();
-  for (const applied of changesAt(layout, instant)) {
+  for (const applied of changesAt(layout, instant, reader)) {
     if (applied.edition === null) decided.delete(applied.change.id);
     else decided.set(applied.change.id, applied.edition);
   }
@@ -1319,16 +1473,20 @@ export function differs(layout: HomeLayout): boolean {
  * cannot be a per-section comparison: a section that moved makes its neighbour move too,
  * and an editor who lifted one block should not be told they changed four.
  */
-export function changedAt(layout: HomeLayout, instant: Instant): readonly string[] {
+export function changedAt(layout: HomeLayout, instant: Instant, reader: Reader): readonly string[] {
   const before = new Map(
-    stateAtInstant(SHIPPED, instant).map((section, index) => [section.id, { section, index }]),
+    stateAtInstant(SHIPPED, instant, reader).map((section, index) => [
+      section.id,
+      { section, index },
+    ]),
   );
-  return stateAtInstant(layout, instant)
+  return stateAtInstant(layout, instant, reader)
     .filter((section, index) => {
       const was = before.get(section.id);
       if (!was) return true;
       return (
         was.index !== index ||
+        was.section.audience !== section.audience ||
         Boolean(was.section.hidden) !== Boolean(section.hidden) ||
         printSettings(was.section.settings) !== printSettings(section.settings)
       );
@@ -1479,6 +1637,7 @@ function sectionEntries(section: HomeSection): Obj {
     ['id', section.id],
     ['module', section.module],
   ];
+  if (section.audience !== undefined) entries.push(['audience', section.audience]);
   if (section.hidden !== undefined) entries.push(['hidden', section.hidden]);
   if (section.settings)
     entries.push(['settings', settingsEntries(section.module, section.settings)]);
@@ -1488,6 +1647,7 @@ function sectionEntries(section: HomeSection): Obj {
 /** The same for a change, whose module is the section it names. */
 function changeEntries(change: HomeChange, module: string): Obj {
   const entries: (readonly [string, unknown])[] = [['id', change.id]];
+  if (change.audience !== undefined) entries.push(['audience', change.audience]);
   if (change.hidden !== undefined) entries.push(['hidden', change.hidden]);
   if (change.settings) entries.push(['settings', settingsEntries(module, change.settings)]);
   return obj(entries);

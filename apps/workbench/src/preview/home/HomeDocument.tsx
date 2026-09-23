@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -22,8 +23,16 @@ import {
 import { defineMessages } from 'react-intl';
 
 import {
+  audienceOf,
+  readerOf,
+  reaches,
+  type Audience,
+  type Reader,
+} from '@correctiv/app-core/lib/home-audience';
+import {
   MINUTES_IN_DAY,
   stateAtInstant,
+  type HomeChange,
   type HomeEdition,
   type HomeLayout,
   type HomeSection,
@@ -41,6 +50,8 @@ import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { DEFAULT_DEVICE, preset } from '../devices';
+import { entitlementFor } from '../frame/seed';
+import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
@@ -49,6 +60,7 @@ import { EDITION_COPY, EditionHead, inkOf, nameOf, Warning } from './Edition';
 import { openedAt, parseMinute, playheadFrom, STEP, timeAt } from './minutes';
 import {
   changedAt,
+  changeHeldAt,
   decidedAt,
   differs,
   formatLayoutDocument,
@@ -70,6 +82,8 @@ import {
   withoutMoment,
   blockName,
   whereAt,
+  withAudience,
+  writeChangeAudience,
   writeHidden,
   writeSetting,
   type CountSetting,
@@ -466,6 +480,13 @@ export function HomeDocument({
 }) {
   const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
+  /**
+   * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the reader the framed app boots
+   * as, read off the state tool's fixture in the address or, with none, off the session
+   * the app will find in storage. Not a second mechanism for previewing an audience, and
+   * not a switch of its own: `s=onboarded` is a paying member, `s=free-member` a free one.
+   */
+  const reader = useMemo(() => previewReader(state.seed), [state.seed]);
   const [result, setResult] = useState<SaveResult | null>(null);
   const [copied, setCopied] = useState(false);
   /**
@@ -831,13 +852,13 @@ export function HomeDocument({
    * an edition running they are the fold at the instant, which is the only honest reading
    * once what lies under an edition goes on changing through its span.
    */
-  const effective = stateAtInstant(layout, playhead.instant);
+  const effective = stateAtInstant(layout, playhead.instant, reader);
   const inherited =
     target.edition === null
-      ? inheritedAt(layout, target.point)
-      : inheritedFor(layout, playhead.instant, target);
-  const edited = changedAt(layout, playhead.instant);
-  const decided = decidedAt(layout, playhead.instant);
+      ? inheritedAt(layout, target.point, reader)
+      : inheritedFor(layout, playhead.instant, target, reader);
+  const edited = changedAt(layout, playhead.instant, reader);
+  const decided = decidedAt(layout, playhead.instant, reader);
   const dirty = differs(layout);
 
   /**
@@ -996,6 +1017,12 @@ export function HomeDocument({
               }
               onSetting={(key, value) =>
                 setLayout(writeSetting(layout, playhead.instant, section.id, key, value))
+              }
+              reaches={reaches(reader, audienceOf(section))}
+              change={changeHeldAt(layout, playhead.instant, section.id)}
+              onAudience={(audience) => setLayout(withAudience(layout, section.id, audience))}
+              onChangeAudience={(audience) =>
+                setLayout(writeChangeAudience(layout, playhead.instant, section.id, audience))
               }
               onRemove={() => setLayout(removed(layout, section.id))}
               outline={outline}
@@ -1215,6 +1242,10 @@ function Row({
   onMove,
   onHidden,
   onSetting,
+  reaches: forReader,
+  change,
+  onAudience,
+  onChangeAudience,
   onRemove,
   outline,
 }: {
@@ -1245,6 +1276,14 @@ function Row({
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: string | number | null | undefined) => void;
+  /** Whether the reader in the frame is in this block's audience (ADR 0060 §4). */
+  reaches: boolean;
+  /** The change an edit at the playhead lands on for this block, if there is one. */
+  change: HomeChange | undefined;
+  /** Who the block is for, all day. */
+  onAudience: (audience: Audience) => void;
+  /** Who the change at the playhead is for. */
+  onChangeAudience: (audience: Audience) => void;
   /** Takes the block out of the day, and every change that named it with it. */
   onRemove: () => void;
   outline: (held: { id: string; follow: boolean } | null) => void;
@@ -1516,7 +1555,9 @@ function Row({
           `deviceWidth` being null is the case a reader never sees: the panel is mounted
           behind the rail whether or not it is open, and nothing is drawn while it is shut.
         */}
-            {deviceWidth !== null && <HomeBlock section={section} deviceWidth={deviceWidth} />}
+            {deviceWidth !== null && (
+              <HomeBlock section={section} deviceWidth={deviceWidth} absent={!forReader} />
+            )}
 
             {/*
           The bar. `pointer-events-none` while it is invisible, or an unseen row of buttons
@@ -1683,6 +1724,13 @@ function Row({
             hiddenHere={hiddenHere}
             specs={specs}
             onSetting={onSetting}
+          />
+          <Conditions
+            section={section}
+            change={change}
+            reaches={forReader}
+            onPlace={onAudience}
+            onChange={onChangeAudience}
           />
         </PopoverContent>
       </Popover>
@@ -1931,4 +1979,21 @@ function Count({
       </span>
     </div>
   );
+}
+
+/**
+ * The audiences of the reader the framed app boots as.
+ *
+ * `frame/seed.ts` answers with the entitlement: a named fixture's by what it writes, or the
+ * session already in the app's storage. Storage can refuse to be read, and a reader nobody
+ * can name is the one in no audience but everyone's.
+ */
+function previewReader(seed: string | null): Reader {
+  let store: Storage | null = null;
+  try {
+    store = window.localStorage;
+  } catch {
+    // Site data switched off: nothing is stored, so nobody is signed in.
+  }
+  return readerOf(entitlementFor(seed, store));
 }

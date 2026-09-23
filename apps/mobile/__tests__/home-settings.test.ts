@@ -5,7 +5,18 @@ import { MODULE_SETTINGS } from '@correctiv/app-core/lib/home-settings';
 import { MODULE_SETTINGS as ARTEFACT } from '@correctiv/app-core/lib/home-settings.generated';
 import { floorFaults, withoutComments } from '@correctiv/prose-and-code';
 
-import { APP, OUT, REPO, render } from '../scripts/generate-home-settings.mjs';
+import { MODULE_AUDIENCES } from '@correctiv/app-core/lib/home-audience';
+import { MODULE_AUDIENCES as AUDIENCE_ARTEFACT } from '@correctiv/app-core/lib/home-audience.generated';
+
+import {
+  APP,
+  AUDIENCES_OUT,
+  OUT,
+  REPO,
+  render,
+  renderAudiences,
+} from '../scripts/generate-home-settings.mjs';
+import { HOME_MODULE_AUDIENCES } from '@/lib/home/conditions';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 
 /**
@@ -195,5 +206,46 @@ describe('the settings a module declares beside itself', () => {
     expect(named).toBeDefined();
     expect(existsSync(resolve(REPO, named!))).toBe(true);
     expect(artefact).toContain('do not edit by hand');
+  });
+});
+
+/**
+ * The same questions for the second artefact the generator writes: the audience a block is
+ * for unless the document says otherwise
+ * ([ADR 0060](../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §2).
+ *
+ * No floor here, and that is the difference from the settings: an empty table is a legal
+ * one, because no default anywhere means every block is for everyone.
+ */
+describe('the audiences a module declares beside itself', () => {
+  const CONDITIONS = resolve(APP, 'src/lib/home/conditions.ts');
+
+  it('keeps the generated table current', () => {
+    expect(readFileSync(AUDIENCES_OUT, 'utf8')).toBe(renderAudiences(HOME_MODULE_AUDIENCES));
+  });
+
+  it('is the table the core folds with, and not a copy of it', () => {
+    expect(MODULE_AUDIENCES).toBe(AUDIENCE_ARTEFACT);
+  });
+
+  it('carries the values the declarations carry', () => {
+    expect(MODULE_AUDIENCES).toEqual(HOME_MODULE_AUDIENCES);
+  });
+
+  it('keeps the declaration file loadable by the generator (types and nothing else)', () => {
+    const source = withoutComments(readFileSync(CONDITIONS, 'utf8'));
+    const statements = [...source.matchAll(/^\s*(?:import|export)\b[^;]*?\bfrom\b/gm)].map(
+      ([match]) => match.trim().replace(/\s+/g, ' '),
+    );
+    expect(statements.filter((one) => !/^(?:import|export) type\b/.test(one))).toEqual([]);
+    expect(source).not.toMatch(/^\s*import\s*['"]/m);
+    expect(source).not.toMatch(/\b(?:require|import)\s*\(/);
+    expect(statements.length).toBeGreaterThan(0);
+  });
+
+  it('refuses a name it cannot write into a source file as it stands', () => {
+    expect(() => renderAudiences({ "x': 'everyone', 'evil": 'everyone' })).toThrow(/plain one/);
+    expect(() => renderAudiences({ quiz: "every'one" })).toThrow(/plain one/);
+    expect(renderAudiences({})).toContain('= {};');
   });
 });

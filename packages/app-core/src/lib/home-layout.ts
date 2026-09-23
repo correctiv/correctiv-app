@@ -68,6 +68,16 @@
  *
  * Every time the document writes is Berlin wall-clock time (§6), `at` included, and
  * `berlin-time.ts` is the one place an instant becomes one.
+ *
+ * ## Who, beside when
+ *
+ * [ADR 0060](../../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md)
+ * builds [ADR 0041](../../../../adr/0041-a-change-may-name-an-audience.md). A place may say
+ * who it is for (`audience` on a section, or its module's default), and a change may say
+ * who it applies to (`audience` on a change, in the day or in an edition). The fold takes
+ * the reader as it takes the instant: every change at or before the instant **whose
+ * audience the reader is in**, and then every place that is not hidden **and is for this
+ * reader**. `home-audience.ts` is the one file that says what an audience means.
  */
 
 import homeLayoutDocument from '../data/home.layout.json';
@@ -80,6 +90,7 @@ import {
   parseBerlinDateTime,
   type Instant,
 } from './berlin-time';
+import { audienceOf, isAudience, reaches, type Audience, type Reader } from './home-audience';
 import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
 
 /**
@@ -92,7 +103,11 @@ import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
  * reader was looking at. It is deliberately not a gate: a document numbered for a later
  * app is reported and then read, part by part, exactly like every other one.
  *
- * It is 3 since ADR 0059, which added `editions`. A version 2 document is a version 3
+ * It is 4 since ADR 0060, which added `audience` to a section and to a change. A version 3
+ * app reads a version 4 document and refuses both, by the rule it already has for a key it
+ * does not know: the section goes, or the change does. ADR 0060 §6 weighs that.
+ *
+ * It was 3 from ADR 0059, which added `editions`. A version 2 document is a version 3
  * document with no editions and is read exactly as it was, reported for its number like
  * any other. What a version 2 APP does with a version 3 document is the property that
  * record rests on: it reads the day and never sees an edition.
@@ -104,7 +119,7 @@ import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
  * migration written against a document that has never been served is a guess with
  * upkeep.
  */
-export const HOME_LAYOUT_VERSION = 3;
+export const HOME_LAYOUT_VERSION = 4;
 
 /**
  * Minutes since midnight in Berlin. The whole of what the document means by a time of day.
@@ -144,6 +159,12 @@ export type ModuleSettings = Readonly<Record<string, SettingValue>>;
 export interface HomeSection {
   readonly id: string;
   readonly module: string;
+  /**
+   * Who this place is for, all day. Absent means its module's default, and a module with
+   * none is for everyone (`home-audience.ts`). Not a state a moment can change: on a
+   * change, `audience` says who the CHANGE is for, and one key does not mean two things.
+   */
+  readonly audience?: Audience;
   /** Off at the start of the day. Absent means shown. */
   readonly hidden?: boolean;
   /** What this place is configured to show. Absent means the module's rule runs. */
@@ -163,6 +184,8 @@ export interface HomeSection {
  */
 export interface HomeChange {
   readonly id: string;
+  /** Who this change applies to. Absent means everyone, as it did before ADR 0060. */
+  readonly audience?: Audience;
   readonly hidden?: boolean;
   readonly settings?: ModuleSettings;
 }
@@ -224,6 +247,7 @@ export interface HomeLayout {
 const SECTION_KEYS: Record<keyof HomeSection, true> = {
   id: true,
   module: true,
+  audience: true,
   hidden: true,
   settings: true,
 };
@@ -236,6 +260,7 @@ const MOMENT_KEYS: Record<Exclude<keyof HomeMoment, 'minute'>, true> = {
 
 const CHANGE_KEYS: Record<keyof HomeChange, true> = {
   id: true,
+  audience: true,
   hidden: true,
   settings: true,
 };
@@ -274,6 +299,7 @@ export type LayoutProblemCode =
   | 'section-id-duplicate'
   | 'section-unknown-key'
   | 'section-hidden-invalid'
+  | 'section-audience-unknown'
   | 'section-settings-invalid'
   | 'section-setting-unknown'
   | 'section-setting-invalid'
@@ -289,6 +315,7 @@ export type LayoutProblemCode =
   | 'change-id-unknown'
   | 'change-unknown-key'
   | 'change-hidden-invalid'
+  | 'change-audience-unknown'
   | 'change-settings-invalid'
   | 'change-setting-unknown'
   | 'change-setting-invalid'
@@ -320,6 +347,11 @@ export interface HomeLayoutParse {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** A name as written when it is one, or what it is when it is not. */
+function named(value: unknown): string {
+  return typeof value === 'string' ? value : typeOf(value);
 }
 
 /** What a value IS, for a report, without pasting the value itself into one. */
@@ -440,7 +472,7 @@ function parseSection(
     return null;
   }
 
-  const { id, module, hidden, settings } = raw;
+  const { id, module, audience, hidden, settings } = raw;
 
   // The id first, because every problem after this one names it: a section whose id
   // cannot be read is one nobody can address, and `index` is all a report can offer.
@@ -472,6 +504,13 @@ function parseSection(
     return null;
   }
 
+  // An audience this app has no rule for is a rule it cannot apply, so the place goes, as
+  // it goes for a key it does not know (ADR 0041 §3, ADR 0039 §6).
+  if (audience !== undefined && !isAudience(audience)) {
+    problems.push({ code: 'section-audience-unknown', context: { id, audience: named(audience) } });
+    return null;
+  }
+
   const parsedSettings = parseSettings(settings, module, id, 'section', problems);
   if (parsedSettings === REFUSED) return null;
 
@@ -483,6 +522,7 @@ function parseSection(
   return {
     id,
     module,
+    ...(audience === undefined ? {} : { audience }),
     ...(hidden === undefined ? {} : { hidden }),
     ...(parsedSettings ? { settings: parsedSettings } : {}),
   };
@@ -689,7 +729,7 @@ function parseChange(
     return null;
   }
 
-  const { id, hidden, settings } = raw;
+  const { id, audience, hidden, settings } = raw;
 
   if (typeof id !== 'string' || id.length === 0) {
     problems.push({ code: 'change-id-invalid', context: { ...where, index, type: typeOf(id) } });
@@ -721,6 +761,16 @@ function parseChange(
     return null;
   }
 
+  // The change goes and the place keeps what it inherited, which is a state somebody chose
+  // for everybody (ADR 0041 §3).
+  if (audience !== undefined && !isAudience(audience)) {
+    problems.push({
+      code: 'change-audience-unknown',
+      context: { ...where, id, audience: named(audience) },
+    });
+    return null;
+  }
+
   const edition: Record<string, string> =
     where.edition === undefined ? {} : { edition: where.edition };
   const parsedSettings = parseSettings(settings, module, id, 'change', problems, edition);
@@ -728,6 +778,7 @@ function parseChange(
 
   return {
     id,
+    ...(audience === undefined ? {} : { audience }),
     ...(hidden === undefined ? {} : { hidden }),
     ...(parsedSettings ? { settings: parsedSettings } : {}),
   };
@@ -920,21 +971,30 @@ export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
  * is in at that time — hidden ones included.
  *
  * This is the whole of the model. `sectionsAt` below is this with the hidden ones
- * dropped, and the editor draws this so that it can show a place that is switched off
- * rather than silently omitting it.
+ * dropped, and the ones not for this reader, and the editor draws this so that it can show
+ * a place that is switched off rather than silently omitting it.
+ *
+ * `reader` is whose day this is (ADR 0041 §4): a change that names an audience is folded
+ * in only for a reader in it. It is a parameter and never a default, because a fold that
+ * guessed would show one audience's day and call it the day, which is the cost ADR 0041
+ * names.
  *
  * A moment whose `changes` are empty contributes nothing, which is what makes it
  * indistinguishable from a moment that is not in the document at all — not by a rule
  * written somewhere, but because folding an empty list is the identity.
  */
-export function stateAt(layout: HomeLayout, minute: MinuteOfDay): readonly HomeSection[] {
+export function stateAt(
+  layout: HomeLayout,
+  minute: MinuteOfDay,
+  reader: Reader,
+): readonly HomeSection[] {
   const byId = new Map(layout.sections.map((section) => [section.id, section]));
 
   for (const moment of layout.moments) {
     if (moment.minute > minute) break;
     for (const change of moment.changes) {
       const section = byId.get(change.id);
-      if (!section) continue;
+      if (!section || !reaches(reader, change.audience)) continue;
       byId.set(change.id, applyChange(section, change));
     }
   }
@@ -975,8 +1035,24 @@ function applyChange(section: HomeSection, change: HomeChange): HomeSection {
  * because ADR 0059 §5 needs it: the day is always a whole screen on its own.
  * `sectionsAtInstant` is what a host draws.
  */
-export function sectionsAt(layout: HomeLayout, minute: MinuteOfDay): readonly HomeSection[] {
-  return stateAt(layout, minute).filter((section) => !section.hidden);
+export function sectionsAt(
+  layout: HomeLayout,
+  minute: MinuteOfDay,
+  reader: Reader,
+): readonly HomeSection[] {
+  return drawnFor(stateAt(layout, minute, reader), reader);
+}
+
+/**
+ * The places a reader is shown out of a folded state: not hidden, and for them.
+ *
+ * Two conditions and not one, because they are two questions (ADR 0060 §1). `hidden` is the
+ * state the day put the place in; the audience is who the place is for at all. A place off
+ * for everybody at nine is off for a paying member too, and a place for paying members that
+ * a moment switches on is still not drawn for anybody else.
+ */
+export function drawnFor(state: readonly HomeSection[], reader: Reader): readonly HomeSection[] {
+  return state.filter((section) => !section.hidden && reaches(reader, audienceOf(section)));
 }
 
 /**
@@ -1076,7 +1152,11 @@ export function editionPointAt(edition: HomeEdition, instant: Instant): MinuteOf
  * applied them; then every active edition in precedence order, each contributing its own
  * `changes` and then its moments in the order they last happened. Later wins.
  */
-export function changesAt(layout: HomeLayout, instant: Instant): readonly AppliedChange[] {
+export function changesAt(
+  layout: HomeLayout,
+  instant: Instant,
+  reader: Reader,
+): readonly AppliedChange[] {
   const minute = minuteOfDay(instant);
   const applied: AppliedChange[] = [];
 
@@ -1104,7 +1184,9 @@ export function changesAt(layout: HomeLayout, instant: Instant): readonly Applie
     }
   }
 
-  return applied;
+  // ADR 0041 §1's one clause, applied once for the day and every edition alike: a change
+  // that names an audience is in the fold only for a reader in it.
+  return applied.filter(({ change }) => reaches(reader, change.audience));
 }
 
 /**
@@ -1113,15 +1195,23 @@ export function changesAt(layout: HomeLayout, instant: Instant): readonly Applie
  * `stateAt` is this without editions, and it is what a version 2 app computes. This is the
  * whole model since ADR 0059, and `sectionsAtInstant` is this with the hidden places
  * dropped. The instant is a parameter for the reason the minute is one (ADR 0039 §8): the
- * core holds no clock.
+ * core holds no clock. The reader is one for the same reason: it holds no session either.
  */
-export function stateAtInstant(layout: HomeLayout, instant: Instant): readonly HomeSection[] {
-  return applyAll(layout.sections, changesAt(layout, instant));
+export function stateAtInstant(
+  layout: HomeLayout,
+  instant: Instant,
+  reader: Reader,
+): readonly HomeSection[] {
+  return applyAll(layout.sections, changesAt(layout, instant, reader));
 }
 
 /** The places to draw at an instant, in the document's order. */
-export function sectionsAtInstant(layout: HomeLayout, instant: Instant): readonly HomeSection[] {
-  return stateAtInstant(layout, instant).filter((section) => !section.hidden);
+export function sectionsAtInstant(
+  layout: HomeLayout,
+  instant: Instant,
+  reader: Reader,
+): readonly HomeSection[] {
+  return drawnFor(stateAtInstant(layout, instant, reader), reader);
 }
 
 /**

@@ -22,8 +22,25 @@ import {
   type LayoutProblemCode,
 } from '../src/lib/home-layout';
 import * as v2 from './__fixtures__/home-layout-v2';
+import { readerOf } from '../src/lib/home-audience';
 import type { ErrorReport } from '../src/ports';
 import { configurePlatform, createMemoryPlatform, resetPlatform } from '../src/ports';
+
+/**
+ * A reader in no audience but everyone's, which is every document written before ADR 0060
+ * read by anybody: a change naming no audience is for this reader and every other.
+ */
+const ANYONE = readerOf(null);
+
+/** A member with a contribution, which is who the door lets in on an ordinary sign-in. */
+const MEMBER = readerOf({
+  tier: 'paid',
+  appAccess: true,
+  source: 'paid',
+  validUntil: null,
+  localAreas: [],
+  memberSince: null,
+});
 
 /**
  * The home screen's document, and what happens to one the app cannot fully read.
@@ -98,7 +115,7 @@ describe('the bundled document', () => {
    */
   it('lifts the callout over the lead between 11:00 and 14:00, and nowhere else', () => {
     const lifted = (minute: number) =>
-      sectionsAt(DEFAULT_HOME_LAYOUT, minute)
+      sectionsAt(DEFAULT_HOME_LAYOUT, minute, ANYONE)
         .map((s) => s.id)
         .includes('callout-lifted');
 
@@ -115,7 +132,7 @@ describe('the bundled document', () => {
 
   it('shows the callout exactly once at every minute of the day', () => {
     for (let minute = 0; minute < 24 * 60; minute += 7) {
-      const callouts = sectionsAt(DEFAULT_HOME_LAYOUT, minute).filter(
+      const callouts = sectionsAt(DEFAULT_HOME_LAYOUT, minute, ANYONE).filter(
         (s) => s.module === 'callout-teaser',
       );
       expect({ minute, count: callouts.length }).toEqual({ minute, count: 1 });
@@ -182,14 +199,17 @@ describe('the fold, which is the whole model', () => {
   const layout = () => read(day);
 
   it('is the sections as written before the first moment', () => {
-    expect(stateAt(layout(), AT(9))).toEqual(layout().sections);
+    expect(stateAt(layout(), AT(9), ANYONE)).toEqual(layout().sections);
   });
 
   /** The property the editor's whole per-moment view rests on. */
   it('applies every moment at or before the minute, and no later one', () => {
     const at = (minute: number) =>
       Object.fromEntries(
-        stateAt(layout(), minute).map((s) => [s.id, { hidden: Boolean(s.hidden), ...s.settings }]),
+        stateAt(layout(), minute, ANYONE).map((s) => [
+          s.id,
+          { hidden: Boolean(s.hidden), ...s.settings },
+        ]),
       );
 
     expect(at(AT(10, 59)).lifted).toEqual({ hidden: true });
@@ -206,7 +226,7 @@ describe('the fold, which is the whole model', () => {
    * what folding a list of partial changes does.
    */
   it('carries what a change does not mention', () => {
-    const noon = stateAt(layout(), AT(12));
+    const noon = stateAt(layout(), AT(12), ANYONE);
     expect(noon.find((s) => s.id === 'hero')?.settings).toEqual({ pin: 'https://example.org/a' });
     expect(noon.find((s) => s.id === 'rail')?.settings).toEqual({ count: 8 });
   });
@@ -217,7 +237,7 @@ describe('the fold, which is the whole model', () => {
       sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
       moments: [{ at: '09:00', changes: [{ id: 'rail', settings: { count: 9 } }] }],
     });
-    expect(stateAt(merged, AT(9))[0]?.settings).toEqual({ count: 9 });
+    expect(stateAt(merged, AT(9), ANYONE)[0]?.settings).toEqual({ count: 9 });
   });
 
   /**
@@ -226,7 +246,9 @@ describe('the fold, which is the whole model', () => {
    * evening rather than for the whole day.
    */
   it('lets a later moment put a setting back to the rule', () => {
-    expect(stateAt(layout(), AT(18)).find((s) => s.id === 'hero')?.settings).toEqual({ pin: null });
+    expect(stateAt(layout(), AT(18), ANYONE).find((s) => s.id === 'hero')?.settings).toEqual({
+      pin: null,
+    });
   });
 
   /**
@@ -242,12 +264,12 @@ describe('the fold, which is the whole model', () => {
     });
 
     for (const minute of [AT(0), AT(6, 59), AT(7), AT(12), AT(19), AT(23, 59)]) {
-      expect(stateAt(withEmpty, minute)).toEqual(stateAt(without, minute));
+      expect(stateAt(withEmpty, minute, ANYONE)).toEqual(stateAt(without, minute, ANYONE));
     }
   });
 
   it('keeps the document order, whatever the moments did', () => {
-    expect(sectionsAt(layout(), AT(12)).map((s) => s.id)).toEqual([
+    expect(sectionsAt(layout(), AT(12), ANYONE).map((s) => s.id)).toEqual([
       'header',
       'hero',
       'lifted',
@@ -256,7 +278,11 @@ describe('the fold, which is the whole model', () => {
   });
 
   it('drops what is hidden at that minute and nothing else', () => {
-    expect(sectionsAt(layout(), AT(9)).map((s) => s.id)).toEqual(['header', 'hero', 'rail']);
+    expect(sectionsAt(layout(), AT(9), ANYONE).map((s) => s.id)).toEqual([
+      'header',
+      'hero',
+      'rail',
+    ]);
   });
 
   /**
@@ -270,7 +296,7 @@ describe('the fold, which is the whole model', () => {
       moments: [...day.moments].reverse(),
     });
     for (const minute of [AT(9), AT(11), AT(14), AT(18), AT(23)]) {
-      expect(stateAt(backwards, minute)).toEqual(stateAt(layout(), minute));
+      expect(stateAt(backwards, minute, ANYONE)).toEqual(stateAt(layout(), minute, ANYONE));
     }
   });
 });
@@ -418,10 +444,11 @@ describe('parseHomeLayout, on a document it cannot use at all', () => {
    * finds out that this phone is behind.
    */
   it('reads a document numbered for a later app, and says so', () => {
-    const parse = parseHomeLayout(document([section()], { version: 4 }));
+    const later = HOME_LAYOUT_VERSION + 1;
+    const parse = parseHomeLayout(document([section()], { version: later }));
     expect(parse.layout?.sections).toHaveLength(1);
     expect(parse.problems).toEqual([
-      { code: 'version-unknown', context: { version: 4, expected: HOME_LAYOUT_VERSION } },
+      { code: 'version-unknown', context: { version: later, expected: HOME_LAYOUT_VERSION } },
     ]);
   });
 
@@ -756,10 +783,12 @@ describe('parseHomeLayout, on the moments', () => {
     expect(codes(parse)).toEqual(['change-setting-unknown']);
     expect(parse.layout?.moments[0]?.changes).toEqual([]);
     // Not the evening's pin, and not no pin either: the morning's, all evening.
-    expect(stateAt(parse.layout!, AT(18))[0]?.settings).toEqual({ pin: 'https://morning/' });
+    expect(stateAt(parse.layout!, AT(18), ANYONE)[0]?.settings).toEqual({
+      pin: 'https://morning/',
+    });
     // And the place is still drawn, which is what makes dropping the change the smaller
     // cost than dropping the section would be.
-    expect(sectionsAt(parse.layout!, AT(18)).map((s) => s.id)).toEqual(['hero']);
+    expect(sectionsAt(parse.layout!, AT(18), ANYONE).map((s) => s.id)).toEqual(['hero']);
   });
 
   it('carries the time in both spellings, and only the parsed one is derived', () => {
@@ -836,14 +865,16 @@ describe('an edition, as the fold reads it', () => {
 
   const planned = (...editions: unknown[]) => read({ ...day, editions });
   const shown = (layout: HomeLayout, instant: number) =>
-    sectionsAtInstant(layout, instant).map((s) => s.id);
+    sectionsAtInstant(layout, instant, ANYONE).map((s) => s.id);
   const pin = (layout: HomeLayout, instant: number) =>
-    stateAtInstant(layout, instant).find((s) => s.id === 'hero')?.settings?.pin;
+    stateAtInstant(layout, instant, ANYONE).find((s) => s.id === 'hero')?.settings?.pin;
 
   it('is the day, before it starts and from the minute it ends', () => {
     const layout = planned(WAHLABEND);
     for (const instant of [BERLIN('2026-09-27', 17, 59), BERLIN('2026-09-28', 2)]) {
-      expect(stateAtInstant(layout, instant)).toEqual(stateAt(layout, minuteOfDay(instant)));
+      expect(stateAtInstant(layout, instant, ANYONE)).toEqual(
+        stateAt(layout, minuteOfDay(instant), ANYONE),
+      );
     }
   });
 
@@ -860,7 +891,9 @@ describe('an edition, as the fold reads it', () => {
       editions: [{ ...WAHLABEND, from: '2026-09-27T09:00', until: '2026-09-27T20:00' }],
     });
     expect(shown(layout, BERLIN('2026-09-27', 12))).toEqual(['header', 'hero', 'lifted', 'rail']);
-    expect(stateAtInstant(layout, BERLIN('2026-09-27', 12)).find((s) => s.id === 'rail')).toEqual({
+    expect(
+      stateAtInstant(layout, BERLIN('2026-09-27', 12), ANYONE).find((s) => s.id === 'rail'),
+    ).toEqual({
       id: 'rail',
       module: 'faktencheck-rail',
       settings: { count: 4 },
@@ -906,7 +939,7 @@ describe('an edition, as the fold reads it', () => {
       ],
     });
     const count = (instant: number) =>
-      stateAtInstant(layout, instant).find((s) => s.id === 'rail')?.settings?.count;
+      stateAtInstant(layout, instant, ANYONE).find((s) => s.id === 'rail')?.settings?.count;
     expect(count(BERLIN('2026-10-01', 9))).toBe(8);
     expect(count(BERLIN('2026-10-01', 12))).toBe(12);
     expect(count(BERLIN('2026-10-02', 9))).toBe(2);
@@ -958,7 +991,7 @@ describe('an edition, as the fold reads it', () => {
 
   it('says which edition every change it applies came from', () => {
     const layout = planned(WAHLABEND);
-    expect(changesAt(layout, BERLIN('2026-09-27', 23, 30))).toEqual([
+    expect(changesAt(layout, BERLIN('2026-09-27', 23, 30), ANYONE)).toEqual([
       { edition: null, point: AT(11), change: { id: 'lifted', hidden: false } },
       { edition: null, point: AT(14), change: { id: 'lifted', hidden: true } },
       { edition: 'wahlabend', point: null, change: WAHLABEND.changes[0] },
@@ -1252,21 +1285,27 @@ describe('a version 3 document, read by an app written for version 2', () => {
     ]);
   });
 
-  /** Every minute of the day, in the older app, is the day this app draws with no edition. */
+  /**
+   * Every minute of the day, in the older app, is the day this app draws with no edition.
+   *
+   * For a paying member, because a version 2 app knows no audience and so draws every
+   * block for everybody; since ADR 0060 the early-access card is for paying members by its
+   * module's default, and that is the one reader for whom the two apps agree on it.
+   */
   it('draws the ordinary day, the evening of the edition included', () => {
     const old = v2.parseHomeLayout(planned).layout!;
     const now = read(planned);
     for (let minute = 0; minute < 24 * 60; minute += 5) {
-      expect(v2.sectionsAt(old, minute)).toEqual(sectionsAt(now, minute));
+      expect(v2.sectionsAt(old, minute)).toEqual(sectionsAt(now, minute, MEMBER));
     }
     // And during the edition the two apps disagree, which is the cost §5 accepts.
     const eight = BERLIN('2026-09-27', 20);
-    expect(sectionsAtInstant(now, eight).map((s) => s.id)).not.toContain('briefing');
+    expect(sectionsAtInstant(now, eight, MEMBER).map((s) => s.id)).not.toContain('briefing');
     expect(v2.sectionsAt(old, minuteOfDay(eight)).map((s) => s.id)).toContain('briefing');
   });
 });
 
-describe('the shipped document, at version 3', () => {
+describe('the shipped document', () => {
   it('is numbered for this app and carries no edition', () => {
     expect(homeLayoutDocument.version).toBe(HOME_LAYOUT_VERSION);
     expect(DEFAULT_HOME_LAYOUT.editions).toEqual([]);
