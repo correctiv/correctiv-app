@@ -1713,9 +1713,13 @@
     "defaultMessage": "What the app reads",
     "description": "The heading over the four figures, read aloud as the name of that section. What follows it is a count per manifest entry rather than per feed, which the ⓘ beside it explains."
   },
-  "landing.status.note": {
-    "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. The figures come from a run against the live sources on {measured}, {age}, which a weekly job re-takes. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
-    "description": "Behind the ⓘ beside the heading over the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here; {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over. “The board” is /sources."
+  "landing.status.when": {
+    "defaultMessage": "From a run against the live sources on {measured}, {age}.",
+    "description": "The line under the heading over the four figures, always drawn: how fresh they are. {measured} is the ISO day of the last run and is printed as written; {age} is how long ago that was, formatted from measured.age, so the sentence says the same thing twice over."
+  },
+  "landing.status.why": {
+    "defaultMessage": "One per manifest entry, which is why the board counts more: it draws the article family as its {feeds} feeds, because a feed is the thing that goes stale. A weekly job re-takes the figures. Nothing refreshes while you read this, because the feeds send no CORS header for a browser to re-take them through.",
+    "description": "Behind the ⓘ beside the heading over the four figures. {feeds} is how many article feeds the manifest lists, which is more than the one entry they are counted as here. “The board” is /sources."
   },
   "landing.title": {
     "defaultMessage": "The CORRECTIV app, and everything written down about it"
@@ -2502,17 +2506,17 @@
     "defaultMessage": "Every source answered in that run, so nothing below is an unknown.",
     "description": "Printed in that note in place of the list, when every source answered."
   },
+  "sources.measured.how": {
+    "defaultMessage": "The run was <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.",
+    "description": "Behind the ⓘ in that note, after sources.measured.when says which day. {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <code> draws the script’s path in this repository."
+  },
   "sources.measured.label": {
     "defaultMessage": "How these figures were measured",
-    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group, and the visible label of the ⓘ inside it that opens sources.measured.note."
+    "description": "The accessible name of the note under the lede, which is a block a screen reader announces as a group, and the visible label of the ⓘ inside it that opens sources.measured.how."
   },
   "sources.measured.noReason": {
     "defaultMessage": "no reason recorded",
     "description": "Stands inside that list where a source is marked as not having answered but the run wrote down no reason for it."
-  },
-  "sources.measured.note": {
-    "defaultMessage": "<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}</strong>, by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.",
-    "description": "Behind the ⓘ in that note. {measured} is the ISO day of the last run; {age} is how long ago that was and arrives as English prose out of src/lib/measured.ts, worked out in the reader’s browser, so the sentence has to read around an English fragment; {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <strong> carries the measurement itself, <f> draws the day in monospace and <code> the script’s path in this repository."
   },
   "sources.measured.nothing": {
     "defaultMessage": "nothing to measure",
@@ -2537,6 +2541,10 @@
   "sources.measured.used": {
     "defaultMessage": "{used} of {available} used",
     "description": "The Measured cell of a source the app reads only part of. {used} is how many of the thing the app reads and {available} how many exist."
+  },
+  "sources.measured.when": {
+    "defaultMessage": "<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}.</strong>",
+    "description": "The first line of the note under the lede, always drawn: how fresh the figures are. {measured} is the ISO day of the last run; {age} is how long ago that was, worked out in the reader’s browser by src/lib/measured.ts. <strong> carries the whole line and <f> draws the day in monospace. How the run was taken is sources.measured.how, behind the ⓘ beside it."
   },
   "sources.newest.none": {
     "defaultMessage": "none",

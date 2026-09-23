@@ -12,7 +12,7 @@
  * it before translating a row.
  *
  * **Two English fragments land inside German sentences here.** `{age}` in
- * `sources.measured.note` is worked out in the reader's browser by
+ * `sources.measured.when` is worked out in the reader's browser by
  * `src/lib/measured.ts` and comes back in English words, which is why that sentence
  * puts it in brackets, exactly as `settings.build.note` does. `{posts}` and
  * `{newest}` come from `feedFigures()` in the manifest, which answers `every post`,
@@ -97,8 +97,10 @@ export const sources: Record<string, string> = {
     'Für jede Art von Inhalt, die die App zeigt: Sind es Livedaten, sind es Beispieldaten, die für eine noch nicht existierende API einspringen, oder ist es eine gewünschte Funktion, für die es nichts zu lesen gibt.',
 
   'sources.measured.label': 'Wie diese Zahlen erhoben wurden',
-  'sources.measured.note':
-    '<strong>Jede Zahl auf dieser Seite wurde am <f>{measured}</f> gegen die Livequellen gemessen ({age})</strong>, und zwar von <code>apps/workbench/scripts/measure-sources.mjs</code> auf {where}. {answered, plural, one {Geantwortet hat # von} other {Geantwortet haben # von}} {probes, plural, one {# Quelle} other {# Quellen}}, bei {seconds} Sekunden Zeitlimit und {attempts, plural, one {# Versuch} other {# Versuchen}} je Quelle. Der Browser, der diese Seite zeichnet, hat nichts geprüft und kann es auch nicht: Die RSS-Feeds senden keinen CORS-Header, deshalb ist das hier ein Skript und kein Aktualisieren-Knopf.',
+  'sources.measured.when':
+    '<strong>Jede Zahl auf dieser Seite wurde am <f>{measured}</f> gegen die Livequellen gemessen ({age}).</strong>',
+  'sources.measured.how':
+    'Gemessen hat <code>apps/workbench/scripts/measure-sources.mjs</code> auf {where}. {answered, plural, one {Geantwortet hat # von} other {Geantwortet haben # von}} {probes, plural, one {# Quelle} other {# Quellen}}, bei {seconds} Sekunden Zeitlimit und {attempts, plural, one {# Versuch} other {# Versuchen}} je Quelle. Der Browser, der diese Seite zeichnet, hat nichts geprüft und kann es auch nicht: Die RSS-Feeds senden keinen CORS-Header, deshalb ist das hier ein Skript und kein Aktualisieren-Knopf.',
   'sources.measured.stale':
     'Das ist mehr als {days, plural, one {# Tag} other {# Tage}} her, der wöchentliche Lauf, der diese Seite aktuell hält, ist also seit einem Quartal nicht mehr durchgelaufen. Die Beitragszahlen und die Daten der neuesten Beiträge unten haben sich mit hoher Wahrscheinlichkeit verschoben.',
   'sources.measured.silentSome':

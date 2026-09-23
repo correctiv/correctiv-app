@@ -388,14 +388,21 @@ const COPY = defineMessages({
     id: 'sources.measured.label',
     defaultMessage: 'How these figures were measured',
     description:
-      'The accessible name of the note under the lede, which is a block a screen reader announces as a group, and the visible label of the ⓘ inside it that opens sources.measured.note.',
+      'The accessible name of the note under the lede, which is a block a screen reader announces as a group, and the visible label of the ⓘ inside it that opens sources.measured.how.',
   },
-  measuredNote: {
-    id: 'sources.measured.note',
+  measuredWhen: {
+    id: 'sources.measured.when',
     defaultMessage:
-      '<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}</strong>, by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.',
+      '<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}.</strong>',
     description:
-      'Behind the ⓘ in that note. {measured} is the ISO day of the last run; {age} is how long ago that was and arrives as English prose out of src/lib/measured.ts, worked out in the reader’s browser, so the sentence has to read around an English fragment; {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <strong> carries the measurement itself, <f> draws the day in monospace and <code> the script’s path in this repository.',
+      'The first line of the note under the lede, always drawn: how fresh the figures are. {measured} is the ISO day of the last run; {age} is how long ago that was, worked out in the reader’s browser by src/lib/measured.ts. <strong> carries the whole line and <f> draws the day in monospace. How the run was taken is sources.measured.how, behind the ⓘ beside it.',
+  },
+  measuredHow: {
+    id: 'sources.measured.how',
+    defaultMessage:
+      'The run was <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.',
+    description:
+      'Behind the ⓘ in that note, after sources.measured.when says which day. {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <code> draws the script’s path in this repository.',
   },
   measuredStale: {
     id: 'sources.measured.stale',
@@ -1397,27 +1404,33 @@ export function Sources() {
               className="mt-m max-w-content space-y-xs rounded-md border border-stroke border-l-2 border-l-accent bg-surface p-sm text-m text-on-canvas-muted"
             >
               {/*
-              Why the figures are what they are, behind the ⓘ. What stays on the page is
-              what a reader acts on: a run too old to trust, and the sources that did not
-              answer. The day of the run is on the table's caption as well.
+              The day of the run and how long ago it was stay on the page: they are how
+              fresh everything below is, and the day comes out of `sources.measured.ts`
+              rather than being typed anywhere. How the run was taken is background and
+              waits behind the ⓘ. What else stays is what a reader acts on: a run too old
+              to trust, and the sources that did not answer.
             */}
-              <InfoTip about={intl.formatMessage(COPY.measuredLabel)} showLabel>
-                <p>
-                  {/* `intl.formatMessage` and never `<FormattedMessage>`: that
+              <p>
+                {/* `intl.formatMessage` and never `<FormattedMessage>`: that
                     component reads react-intl's own context, which the app's
                     provider shadows inside an `AppHost`. `test/i18n.test.ts`
                     fails on one, and `i18n/Localisation.tsx` carries the
                     measurement. */}
-                  {intl.formatMessage(COPY.measuredNote, {
-                    measured: MEASURED_ON,
-                    age: ageInWords(intl, MEASURED_ON),
+                {intl.formatMessage(COPY.measuredWhen, {
+                  measured: MEASURED_ON,
+                  age: ageInWords(intl, MEASURED_ON),
+                  strong,
+                  f,
+                })}
+              </p>
+              <InfoTip about={intl.formatMessage(COPY.measuredLabel)} showLabel>
+                <p>
+                  {intl.formatMessage(COPY.measuredHow, {
                     where: MEASURED.where,
                     answered: ANSWERED,
                     probes: MEASURED.probes.length,
                     seconds: MEASURED.timeoutMs / 1000,
                     attempts: MEASURED.attempts,
-                    strong,
-                    f,
                     code,
                   })}
                 </p>
