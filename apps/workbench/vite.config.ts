@@ -4,6 +4,7 @@ import tailwind from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 import { docsPlugin } from './plugin/index.ts';
+import { contentSecurityPolicy } from './plugin/policy.ts';
 import { appPlugins, appResolve } from './vite.app.mjs';
 
 /**
@@ -59,7 +60,7 @@ export default defineConfig(({ command }) => ({
    * No `@vitejs/plugin-react` of this package's own any more: `rnw()` ends with
    * one, and two React plugins transform every file twice.
    */
-  plugins: [docsPlugin(), ...appPlugins(), tailwind()],
+  plugins: [docsPlugin(), ...appPlugins(), tailwind(), contentSecurityPolicy()],
   build: {
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),
     emptyOutDir: true,

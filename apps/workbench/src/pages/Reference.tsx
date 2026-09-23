@@ -203,6 +203,10 @@ export function Reference() {
               <p className="mt-3xs break-words font-mono text-s text-on-canvas-muted">
                 {`import … from '${PACKAGE}/${module.subpath}'`}
               </p>
+              {/* A doc comment rendered by `marked` at build time, unsanitised.
+                  `scripts/api.mjs` refuses one that carries script-bearing HTML
+                  and the site's Content-Security-Policy refuses inline script;
+                  `Document.tsx` has the argument. */}
               {module.doc && (
                 <div
                   className="prose prose-sm mt-s max-w-content"

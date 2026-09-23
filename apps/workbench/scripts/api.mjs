@@ -38,6 +38,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Marked } from 'marked';
 import * as td from 'typedoc';
 
+import { referenceHtml, scriptBearing } from '../plugin/script-bearing.ts';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..', '..');
 const CORE = join(ROOT, 'packages/app-core');
@@ -492,6 +494,23 @@ async function main() {
     alias: ALIAS,
     groups: componentGroups(await convert(COMPONENTS, join(MOBILE, 'tsconfig.json'))),
   };
+
+  /*
+   * Refused here, and not only in a test, because this file is not committed: the
+   * `check` job never has one to read, and the build that does have one runs this
+   * script first. A doc comment is rendered with `marked`, which passes raw HTML
+   * through, and the site puts the result in with `dangerouslySetInnerHTML`.
+   * `plugin/script-bearing.ts` says what counts.
+   */
+  const refused = referenceHtml({ core, components }).flatMap(({ where, html }) =>
+    scriptBearing(html).map((fault) => `  ${where}: ${fault}`),
+  );
+  if (refused.length > 0) {
+    throw new Error(
+      `a doc comment renders to script-bearing HTML, which the reference would put into the page:\n${refused.join('\n')}\n` +
+        'Put the HTML in backticks if it is meant as a name, or take it out.',
+    );
+  }
 
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, `${JSON.stringify({ core, components }, null, 2)}\n`);

@@ -153,9 +153,15 @@ const DIAGRAMS: Record<string, ReactNode> = {
  * about whatever is open.
  *
  * The HTML is a string produced at build time, so it goes in through
- * `dangerouslySetInnerHTML`. That is safe in the way the name asks about: the
- * input is this repository's own Markdown at the commit being built, not
- * anything a reader can supply.
+ * `dangerouslySetInnerHTML`, unsanitised. The input is this repository's own
+ * Markdown at the commit being built, not anything a reader can supply, but that
+ * alone is not what makes it safe: a change to a document is reviewed as prose,
+ * and `marked` passes an `<img onerror=…>` in a paragraph straight through. Two
+ * things hold the claim instead. `test/rendered-html.test.ts` fails on
+ * script-bearing HTML in any rendered document, before it is merged, and the
+ * Content-Security-Policy in `plugin/policy.ts` refuses inline script on the
+ * published site whatever got past the test. `Reference.tsx` and
+ * `ComponentDetail.tsx` put doc comments in the same way and rest on the same two.
  */
 export function Document({ doc }: Props) {
   const intl = useWorkbenchIntl();
