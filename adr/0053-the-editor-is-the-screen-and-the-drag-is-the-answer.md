@@ -205,7 +205,8 @@ sight has to open its popover to learn what it is. That is the trade §1 makes o
 recognition is what §3 of ADR 0045 said the drawings were for — but it is a real loss for
 somebody new to the app, and it lands hardest on a block that draws nothing at all.
 `HomeBlock` is why that case does not become an anonymous gap: a block that measures no
-height draws a strip carrying its own name, which it did not have to do while the row
+height draws a strip ~~carrying its own name~~ that says what is missing, its own name or,
+since [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §1, the condition it waits for, which it did not have to do while the row
 above it printed one.
 
 **Two faded states in one list.** A carried block is faded and coloured; a switched-off

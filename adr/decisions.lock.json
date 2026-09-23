@@ -565,5 +565,21 @@
       "8": ["The first slice: the day gets a date"],
       "9": ["What is not built, and why"]
     }
+  },
+  "0060": {
+    "slugs": ["a-block-says-when-it-appears-and-an-editor-says-for-whom"],
+    "decisions": {
+      "1": ["Two kinds of condition, one vocabulary in the editor"],
+      "2": ["A module may declare the audience it is for, and the document may override it"],
+      "3": ["Three audiences, in the club's words, and one file that says what each means"],
+      "4": [
+        "The reader is the fold's third parameter, beside the instant, and the preview is the fixtures"
+      ],
+      "5": [
+        "The editor writes one change per block and point, and checks a repetition against every reader"
+      ],
+      "6": ["What an older app does with it"],
+      "7": ["A filter, and nothing inside the door becomes locked"]
+    }
   }
 }
