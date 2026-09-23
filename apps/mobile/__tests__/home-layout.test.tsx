@@ -69,6 +69,7 @@ import {
 } from '@correctiv/app-core/lib/home-layout';
 import { MODULE_SCREENS } from '@/lib/home/screens';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
+import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { render, walkHostNodes } from './support/rendering';
@@ -202,8 +203,13 @@ describe('the shipped home document', () => {
   });
 });
 
-/** Local time, which is the only clock `minuteOfDay` reads. */
-const at = (hour: number) => new Date(2026, 8, 3, hour, 0, 0, 0);
+/**
+ * Berlin wall clock, which is the only clock the home document reads since ADR 0059 §6.
+ * Built from the core's own conversion so the test means the same hour on a laptop in
+ * Berlin and on a CI runner in UTC, which the device-local `new Date(y, m, d, h)` it
+ * replaces did not.
+ */
+const at = (hour: number) => new Date(berlinInstant('2026-09-03', hour * 60)!);
 
 /**
  * The hours worth drawing at, and why each one.

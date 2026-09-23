@@ -36,6 +36,7 @@ jest.mock('@/lib/store/core', () => ({
 }));
 
 import { callouts } from '@correctiv/app-core/data/callouts';
+import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { findAllPressable, render } from './support/rendering';
@@ -102,8 +103,11 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-/** Nine in the morning, which is before the shipped document's first moment. */
-const NINE = new Date(2026, 8, 3, 9, 0, 0, 0);
+/**
+ * Nine in the morning in Berlin, which is before the shipped document's first moment.
+ * Berlin rather than the device's zone, because that is the document's clock (ADR 0059 §6).
+ */
+const NINE = new Date(berlinInstant('2026-09-03', 9 * 60)!);
 
 /**
  * Where the callout sits, anchored on the early-access card between the two positions.
@@ -136,6 +140,19 @@ describe('a simulated time in storage', () => {
     expect(position(renderAtNine())).toBe('top');
   });
 
+  /**
+   * ADR 0059 §8: the key takes a Berlin date and time as well, which is how the editor shows
+   * a Saturday on a Wednesday. The same document's midday on another day is the same
+   * midday, which is what this can see without a document of its own; an edition on that
+   * day is the core's fold and `packages/app-core/test/home-layout.test.ts` asserts it.
+   */
+  it('takes a date and a time as well as a bare time', () => {
+    store.set(HOME_TIME_OVERRIDE_KEY, '2026-09-27T12:00');
+    expect(position(renderAtNine())).toBe('top');
+    store.set(HOME_TIME_OVERRIDE_KEY, '2026-09-27T09:00');
+    expect(position(renderAtNine())).toBe('in-place');
+  });
+
   it('draws the callout exactly once at the simulated hour, as at any other', () => {
     store.set(HOME_TIME_OVERRIDE_KEY, '12:00');
     expect(findAllPressable(renderAtNine(), OPEN.title)).toHaveLength(1);
@@ -147,13 +164,20 @@ describe('a simulated time in storage', () => {
    * answer to all of them is the same: nobody has said what time it is, so the clock
    * stands.
    */
-  it.each([['midday'], ['9:00'], ['24:00'], ['12:60'], [''], ['1200']])(
-    'ignores %p and leaves the clock alone',
-    (junk) => {
-      store.set(HOME_TIME_OVERRIDE_KEY, junk);
-      expect(position(renderAtNine())).toBe('in-place');
-    },
-  );
+  it.each([
+    ['midday'],
+    ['9:00'],
+    ['24:00'],
+    ['12:60'],
+    [''],
+    ['1200'],
+    ['2026-02-30T12:00'],
+    ['2026-09-03 12:00'],
+    ['2026-09-03T12:00Z'],
+  ])('ignores %p and leaves the clock alone', (junk) => {
+    store.set(HOME_TIME_OVERRIDE_KEY, junk);
+    expect(position(renderAtNine())).toBe('in-place');
+  });
 
   /**
    * A screen already on the phone redraws rather than waiting for a reload.

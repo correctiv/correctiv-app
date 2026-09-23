@@ -1,20 +1,26 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { berlinInstant } from '../src/lib/berlin-time';
 import {
+  changesAt,
   DEFAULT_HOME_LAYOUT,
+  editionsAt,
   formatTimeOfDay,
   HOME_LAYOUT_VERSION,
   homeLayoutDocument,
   minuteOfDay,
-  nextMomentAfter,
+  nextChangeAfter,
   parseHomeLayout,
   parseTimeOfDay,
   reportLayoutProblems,
   sectionsAt,
+  sectionsAtInstant,
   stateAt,
+  stateAtInstant,
   type HomeLayout,
   type LayoutProblemCode,
 } from '../src/lib/home-layout';
+import * as v2 from './__fixtures__/home-layout-v2';
 import type { ErrorReport } from '../src/ports';
 import { configurePlatform, createMemoryPlatform, resetPlatform } from '../src/ports';
 
@@ -139,8 +145,14 @@ describe('a time of day, as the document writes it', () => {
     expect(parseTimeOfDay(value)).toBeNull();
   });
 
-  it('reads the clock as a minute of the LOCAL day', () => {
-    expect(minuteOfDay(new Date(2026, 8, 3, 18, 42))).toBe(AT(18, 42));
+  /**
+   * Berlin's, since ADR 0059 §6, and asserted from UTC so that the answer cannot depend on
+   * the zone of the machine running the test: 16:42 UTC in September is 18:42 in Berlin,
+   * and in January 17:42.
+   */
+  it('reads the clock as a minute of the BERLIN day, wherever the clock is', () => {
+    expect(minuteOfDay(Date.UTC(2026, 8, 3, 16, 42))).toBe(AT(18, 42));
+    expect(minuteOfDay(new Date(Date.UTC(2026, 0, 3, 16, 42)))).toBe(AT(17, 42));
   });
 });
 
@@ -262,7 +274,11 @@ describe('the fold, which is the whole model', () => {
   });
 });
 
-describe('nextMomentAfter, which is what a host sets a timer to', () => {
+/** A Berlin wall-clock instant, which is how every test below names a time. */
+const BERLIN = (date: string, hours: number, minutes = 0) =>
+  berlinInstant(date, hours * 60 + minutes)!;
+
+describe('nextChangeAfter, which is what a host sets a timer to', () => {
   const layout = () =>
     read({
       version: HOME_LAYOUT_VERSION,
@@ -273,19 +289,62 @@ describe('nextMomentAfter, which is what a host sets a timer to', () => {
       ],
     });
 
-  it('answers with the next one today', () => {
-    expect(nextMomentAfter(layout(), AT(9))).toBe(AT(11));
-    expect(nextMomentAfter(layout(), AT(11))).toBe(AT(14));
+  it('answers with the next moment today', () => {
+    expect(nextChangeAfter(layout(), BERLIN('2026-09-03', 9))).toBe(BERLIN('2026-09-03', 11));
+    expect(nextChangeAfter(layout(), BERLIN('2026-09-03', 11))).toBe(BERLIN('2026-09-03', 14));
   });
 
-  it('wraps to the first one when the day’s moments are past', () => {
-    expect(nextMomentAfter(layout(), AT(23, 30))).toBe(AT(11));
+  /**
+   * Past the last moment, the next thing that happens is midnight, where the day starts
+   * again from its sections. `nextMomentAfter` skipped it and woke at the first moment
+   * tomorrow, which was right only for a day whose last moment puts back what its first
+   * one changed.
+   */
+  it('wakes at Berlin midnight once the day’s moments are past', () => {
+    expect(nextChangeAfter(layout(), BERLIN('2026-09-03', 23, 30))).toBe(BERLIN('2026-09-04', 0));
   });
 
-  /** No moments is no wake-up: a screen that never changes needs no timer. */
-  it('answers with nothing when the document has no moments', () => {
+  /** No moments and no editions is no wake-up: a screen that never changes needs no timer. */
+  it('answers with nothing when the document never changes', () => {
     const flat = read({ version: HOME_LAYOUT_VERSION, sections: [{ id: 'a', module: 'x' }] });
-    expect(nextMomentAfter(flat, AT(9))).toBeNull();
+    expect(nextChangeAfter(flat, BERLIN('2026-09-03', 9))).toBeNull();
+  });
+
+  it('counts an edition’s start, its moments and its end', () => {
+    const planned = read({
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'a', module: 'x' }],
+      editions: [
+        {
+          id: 'wahlabend',
+          from: '2026-09-27T18:00',
+          until: '2026-09-28T02:00',
+          moments: [{ at: '23:00', changes: [] }],
+        },
+      ],
+    });
+    const after = (instant: number) => nextChangeAfter(planned, instant);
+    expect(after(BERLIN('2026-09-20', 9))).toBe(BERLIN('2026-09-27', 18));
+    expect(after(BERLIN('2026-09-27', 18))).toBe(BERLIN('2026-09-27', 23));
+    expect(after(BERLIN('2026-09-27', 23))).toBe(BERLIN('2026-09-28', 2));
+    expect(after(BERLIN('2026-09-28', 2))).toBeNull();
+  });
+
+  /** A moment of an edition that would next happen after the edition ends is no wake-up. */
+  it('does not wake for an edition’s moment after the edition is over', () => {
+    const planned = read({
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'a', module: 'x' }],
+      editions: [
+        {
+          id: 'kurz',
+          from: '2026-09-27T18:00',
+          until: '2026-09-27T20:00',
+          moments: [{ at: '09:00', changes: [] }],
+        },
+      ],
+    });
+    expect(nextChangeAfter(planned, BERLIN('2026-09-27', 19))).toBe(BERLIN('2026-09-27', 20));
   });
 });
 
@@ -319,11 +378,23 @@ describe('parseHomeLayout, on a document it cannot use at all', () => {
    * finds out that this phone is behind.
    */
   it('reads a document numbered for a later app, and says so', () => {
-    const parse = parseHomeLayout(document([section()], { version: 3 }));
+    const parse = parseHomeLayout(document([section()], { version: 4 }));
     expect(parse.layout?.sections).toHaveLength(1);
     expect(parse.problems).toEqual([
-      { code: 'version-unknown', context: { version: 3, expected: HOME_LAYOUT_VERSION } },
+      { code: 'version-unknown', context: { version: 4, expected: HOME_LAYOUT_VERSION } },
     ]);
+  });
+
+  /**
+   * A version 2 document is a version 3 document with no editions. It is reported for its
+   * number, as every other number is, and read exactly as it was.
+   */
+  it('reads a version 2 document as the day it always was', () => {
+    const parse = parseHomeLayout({ ...homeLayoutDocument, version: 2 });
+    expect(codes(parse)).toEqual(['version-unknown']);
+    expect(parse.layout?.editions).toEqual([]);
+    expect(parse.layout?.sections).toEqual(DEFAULT_HOME_LAYOUT.sections);
+    expect(parse.layout?.moments).toEqual(DEFAULT_HOME_LAYOUT.moments);
   });
 
   /**
@@ -686,5 +757,437 @@ describe('reportLayoutProblems', () => {
 
     reportLayoutProblems(parseHomeLayout(homeLayoutDocument).problems);
     expect(reports).toEqual([]);
+  });
+});
+
+/**
+ * Editions, ADR 0059 §3 and §4: a named layer over the day, active from a Berlin date and
+ * time until another, in the grammar the day already has.
+ */
+describe('an edition, as the fold reads it', () => {
+  const day = {
+    version: HOME_LAYOUT_VERSION,
+    sections: [
+      { id: 'header', module: 'home-header' },
+      { id: 'hero', module: 'article-hero', settings: { pin: 'https://example.org/day' } },
+      { id: 'lifted', module: 'callout-teaser', hidden: true },
+      { id: 'briefing', module: 'spotlight-briefing' },
+      { id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } },
+    ],
+    moments: [
+      { at: '11:00', changes: [{ id: 'lifted', hidden: false }] },
+      { at: '14:00', changes: [{ id: 'lifted', hidden: true }] },
+    ],
+  };
+
+  const WAHLABEND = {
+    id: 'wahlabend',
+    title: 'Wahlabend',
+    from: '2026-09-27T18:00',
+    until: '2026-09-28T02:00',
+    changes: [
+      { id: 'hero', settings: { pin: 'https://example.org/wahl' } },
+      { id: 'briefing', hidden: true },
+    ],
+    moments: [
+      { at: '23:00', changes: [{ id: 'hero', settings: { pin: 'https://example.org/nacht' } }] },
+    ],
+  };
+
+  const planned = (...editions: unknown[]) => read({ ...day, editions });
+  const shown = (layout: HomeLayout, instant: number) =>
+    sectionsAtInstant(layout, instant).map((s) => s.id);
+  const pin = (layout: HomeLayout, instant: number) =>
+    stateAtInstant(layout, instant).find((s) => s.id === 'hero')?.settings?.pin;
+
+  it('is the day, before it starts and from the minute it ends', () => {
+    const layout = planned(WAHLABEND);
+    for (const instant of [BERLIN('2026-09-27', 17, 59), BERLIN('2026-09-28', 2)]) {
+      expect(stateAtInstant(layout, instant)).toEqual(stateAt(layout, minuteOfDay(instant)));
+    }
+  });
+
+  it('applies its starting state from the minute it opens, over the day', () => {
+    const layout = planned(WAHLABEND);
+    expect(pin(layout, BERLIN('2026-09-27', 18))).toBe('https://example.org/wahl');
+    expect(shown(layout, BERLIN('2026-09-27', 18))).toEqual(['header', 'hero', 'rail']);
+  });
+
+  /** Where the edition says nothing, the day shows through, the day's own moments included. */
+  it('lets the day show through where it says nothing', () => {
+    const layout = read({
+      ...day,
+      editions: [{ ...WAHLABEND, from: '2026-09-27T09:00', until: '2026-09-27T20:00' }],
+    });
+    expect(shown(layout, BERLIN('2026-09-27', 12))).toEqual(['header', 'hero', 'lifted', 'rail']);
+    expect(stateAtInstant(layout, BERLIN('2026-09-27', 12)).find((s) => s.id === 'rail')).toEqual({
+      id: 'rail',
+      module: 'faktencheck-rail',
+      settings: { count: 4 },
+    });
+  });
+
+  /**
+   * An edition is one span, not a day that repeats, so its moments carry over midnight: the
+   * pin changed at 23:00 is still changed at half past midnight, and the day's own reset at
+   * midnight does not reach into it.
+   */
+  it('applies its moments inside its span, and carries them over midnight', () => {
+    const layout = planned(WAHLABEND);
+    expect(pin(layout, BERLIN('2026-09-27', 22, 59))).toBe('https://example.org/wahl');
+    expect(pin(layout, BERLIN('2026-09-27', 23))).toBe('https://example.org/nacht');
+    expect(pin(layout, BERLIN('2026-09-28', 0, 30))).toBe('https://example.org/nacht');
+    expect(pin(layout, BERLIN('2026-09-28', 2))).toBe('https://example.org/day');
+  });
+
+  /** And a moment before the edition opened on its first day has not happened in it. */
+  it('does not apply a moment whose time fell before the edition opened', () => {
+    const layout = planned({
+      ...WAHLABEND,
+      moments: [{ at: '09:00', changes: [{ id: 'briefing', hidden: false }] }],
+    });
+    expect(shown(layout, BERLIN('2026-09-27', 19))).not.toContain('briefing');
+  });
+
+  /**
+   * Several days with a lift at 11:00 and a drop at 14:00: every time is read as the last
+   * time each moment happened, so the second morning starts where the first afternoon left
+   * it, and the second lunchtime lifts again.
+   */
+  it('orders a campaign’s moments by when they last happened, day after day', () => {
+    const layout = planned({
+      id: 'spenden',
+      from: '2026-10-01T00:00',
+      until: '2026-10-15T00:00',
+      changes: [{ id: 'rail', settings: { count: 8 } }],
+      moments: [
+        { at: '11:00', changes: [{ id: 'rail', settings: { count: 12 } }] },
+        { at: '14:00', changes: [{ id: 'rail', settings: { count: 2 } }] },
+      ],
+    });
+    const count = (instant: number) =>
+      stateAtInstant(layout, instant).find((s) => s.id === 'rail')?.settings?.count;
+    expect(count(BERLIN('2026-10-01', 9))).toBe(8);
+    expect(count(BERLIN('2026-10-01', 12))).toBe(12);
+    expect(count(BERLIN('2026-10-02', 9))).toBe(2);
+    expect(count(BERLIN('2026-10-02', 12))).toBe(12);
+    expect(count(BERLIN('2026-10-15', 0))).toBe(4);
+  });
+
+  /**
+   * §4: the narrower window wins, and an overlap is resolved rather than refused. A one-off
+   * inside a fortnight's campaign beats the campaign, in either order in the document.
+   */
+  it('lets the narrower of two overlapping editions win, whichever is written first', () => {
+    const campaign = {
+      id: 'spenden',
+      from: '2026-09-20T00:00',
+      until: '2026-10-04T00:00',
+      changes: [{ id: 'hero', settings: { pin: 'https://example.org/spenden' } }],
+    };
+    for (const layout of [planned(campaign, WAHLABEND), planned(WAHLABEND, campaign)]) {
+      expect(editionsAt(layout, BERLIN('2026-09-27', 19)).map((e) => e.id)).toEqual([
+        'spenden',
+        'wahlabend',
+      ]);
+      expect(pin(layout, BERLIN('2026-09-27', 19))).toBe('https://example.org/wahl');
+      expect(pin(layout, BERLIN('2026-09-27', 12))).toBe('https://example.org/spenden');
+    }
+  });
+
+  it('breaks a tie of length by the later start, and then by the id', () => {
+    const early = { id: 'b', from: '2026-09-27T10:00', until: '2026-09-27T20:00' };
+    const late = { id: 'a', from: '2026-09-27T12:00', until: '2026-09-27T22:00' };
+    expect(editionsAt(planned(late, early), BERLIN('2026-09-27', 15)).map((e) => e.id)).toEqual([
+      'b',
+      'a',
+    ]);
+    const twin = { id: 'c', from: '2026-09-27T10:00', until: '2026-09-27T20:00' };
+    expect(editionsAt(planned(twin, early), BERLIN('2026-09-27', 15)).map((e) => e.id)).toEqual([
+      'b',
+      'c',
+    ]);
+  });
+
+  it('says which edition every change it applies came from', () => {
+    const layout = planned(WAHLABEND);
+    expect(changesAt(layout, BERLIN('2026-09-27', 23, 30))).toEqual([
+      { edition: null, point: AT(11), change: { id: 'lifted', hidden: false } },
+      { edition: null, point: AT(14), change: { id: 'lifted', hidden: true } },
+      { edition: 'wahlabend', point: null, change: WAHLABEND.changes[0] },
+      { edition: 'wahlabend', point: null, change: WAHLABEND.changes[1] },
+      { edition: 'wahlabend', point: AT(23), change: WAHLABEND.moments[0]!.changes[0] },
+    ]);
+  });
+
+  /**
+   * §6: "at or before" makes the change of clocks harmless. On the spring day a moment at
+   * 02:30 names a minute that does not exist and happens at the next one there is; on the
+   * autumn day the edition is on the instant axis, so the repeated hour does not undo it.
+   */
+  it('passes the spring gap and applies what fell in it at the next minute there is', () => {
+    const layout = planned({
+      id: 'nacht',
+      from: '2026-03-29T00:00',
+      until: '2026-03-29T06:00',
+      moments: [{ at: '02:30', changes: [{ id: 'briefing', hidden: true }] }],
+    });
+    const jump = Date.UTC(2026, 2, 29, 1);
+    expect(shown(layout, jump - 60_000)).toContain('briefing');
+    expect(shown(layout, jump)).not.toContain('briefing');
+  });
+
+  it('applies an edition’s moment in the doubled autumn hour once, and keeps it', () => {
+    const layout = planned({
+      id: 'nacht',
+      from: '2026-10-25T00:00',
+      until: '2026-10-25T06:00',
+      moments: [{ at: '02:30', changes: [{ id: 'briefing', hidden: true }] }],
+    });
+    const back = Date.UTC(2026, 9, 25, 1);
+    expect(shown(layout, back - 31 * 60_000)).toContain('briefing');
+    // 02:30 the first time, 02:00 the second, and 02:15 the second: all after the moment.
+    for (const instant of [back - 30 * 60_000, back, back + 15 * 60_000]) {
+      expect(shown(layout, instant)).not.toContain('briefing');
+    }
+  });
+});
+
+describe('parseHomeLayout, on the editions', () => {
+  const withEditions = (editions: unknown) =>
+    parseHomeLayout({
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'hero', module: 'article-hero' }],
+      editions,
+    });
+  const span = { from: '2026-09-27T18:00', until: '2026-09-28T02:00' };
+
+  it('reads no editions at all as a document that is only a day', () => {
+    const parse = withEditions(undefined);
+    expect(parse.problems).toEqual([]);
+    expect(parse.layout?.editions).toEqual([]);
+  });
+
+  it('keeps the derived instants beside what the document wrote', () => {
+    const parse = withEditions([{ id: 'w', title: 'Wahlabend', ...span }]);
+    expect(parse.problems).toEqual([]);
+    expect(parse.layout?.editions).toEqual([
+      {
+        id: 'w',
+        title: 'Wahlabend',
+        ...span,
+        start: Date.UTC(2026, 8, 27, 16),
+        end: Date.UTC(2026, 8, 28, 0),
+        changes: [],
+        moments: [],
+      },
+    ]);
+  });
+
+  it('refuses an editions field that is not a list, and keeps the day', () => {
+    const parse = withEditions({ w: span });
+    expect(codes(parse)).toEqual(['editions-not-an-array']);
+    expect(parse.layout?.sections).toHaveLength(1);
+  });
+
+  it.each([
+    [
+      'not an object',
+      'w',
+      { code: 'edition-not-an-object', context: { index: 0, type: 'string' } },
+    ],
+    [
+      'no id',
+      { ...span },
+      { code: 'edition-id-invalid', context: { index: 0, type: 'undefined' } },
+    ],
+    [
+      'neither half of a condition, which is the day',
+      { id: 'w' },
+      { code: 'edition-condition-missing', context: { id: 'w' } },
+    ],
+    [
+      'a start and no end, which is an exception that never ends',
+      { id: 'w', from: span.from },
+      { code: 'edition-until-missing', context: { id: 'w' } },
+    ],
+    [
+      'an end and no start',
+      { id: 'w', until: span.until },
+      { code: 'edition-from-missing', context: { id: 'w' } },
+    ],
+    [
+      'a start that is not a date and time',
+      { id: 'w', from: '27.09.2026 18:00', until: span.until },
+      { code: 'edition-from-invalid', context: { id: 'w', from: '27.09.2026 18:00' } },
+    ],
+    [
+      'an end that is not a date and time',
+      { id: 'w', from: span.from, until: 7 },
+      { code: 'edition-until-invalid', context: { id: 'w', until: 'number' } },
+    ],
+    [
+      'an end that is its start, which `until` being exclusive makes empty',
+      { id: 'w', from: span.from, until: span.from },
+      { code: 'edition-span-empty', context: { id: 'w', from: span.from, until: span.from } },
+    ],
+    [
+      'changes that are not a list',
+      { id: 'w', ...span, changes: {} },
+      { code: 'edition-changes-invalid', context: { id: 'w', type: 'object' } },
+    ],
+    [
+      'a key nobody here knows',
+      { id: 'w', ...span, audience: 'members' },
+      { code: 'edition-unknown-key', context: { id: 'w', key: 'audience' } },
+    ],
+  ])('drops an edition with %s', (_name, bad, problem) => {
+    const parse = withEditions([bad]);
+    expect(parse.layout?.editions).toEqual([]);
+    expect(parse.problems).toEqual([problem]);
+  });
+
+  /**
+   * `days` is ADR 0059's other condition, and this slice does not build it (§8). So to this
+   * app it is a key it cannot apply, and the edition goes the way a section carrying one
+   * goes: read as though the weekdays were not there, it would run every day of its span.
+   */
+  it('drops a weekday edition, which this app cannot apply, and says which key', () => {
+    const parse = withEditions([
+      { id: 'wochenende', days: ['sat', 'sun'], changes: [{ id: 'hero', hidden: true }] },
+      { id: 'w', ...span },
+    ]);
+    expect(parse.layout?.editions.map((e) => e.id)).toEqual(['w']);
+    expect(parse.problems).toEqual([
+      { code: 'edition-unknown-key', context: { id: 'wochenende', key: 'days' } },
+    ]);
+  });
+
+  it('keeps the first of two editions sharing an id', () => {
+    const parse = withEditions([
+      { id: 'w', ...span, title: 'first' },
+      { id: 'w', ...span, title: 'second' },
+    ]);
+    expect(parse.layout?.editions.map((e) => e.title)).toEqual(['first']);
+    expect(parse.problems).toEqual([
+      { code: 'edition-id-duplicate', context: { id: 'w', index: 1 } },
+    ]);
+  });
+
+  /** The title carries no rule, so a bad one costs the title and not the edition. */
+  it('drops a title that is not one, and keeps the edition', () => {
+    const parse = withEditions([{ id: 'w', ...span, title: 12 }]);
+    expect(parse.layout?.editions[0]).not.toHaveProperty('title');
+    expect(parse.problems).toEqual([
+      { code: 'edition-title-invalid', context: { id: 'w', type: 'number' } },
+    ]);
+  });
+
+  it('keeps the first of two moments at one time inside an edition, and says whose', () => {
+    const parse = withEditions([
+      {
+        id: 'w',
+        ...span,
+        moments: [
+          { at: '23:00', changes: [{ id: 'hero', hidden: true }] },
+          { at: '23:00', changes: [] },
+        ],
+      },
+    ]);
+    expect(parse.layout?.editions[0]?.moments).toHaveLength(1);
+    expect(parse.problems).toEqual([
+      { code: 'moment-time-duplicate', context: { edition: 'w', index: 1, at: '23:00' } },
+    ]);
+  });
+
+  it('reports a change naming a place the document has not got, in its start or a moment', () => {
+    const parse = withEditions([
+      {
+        id: 'w',
+        ...span,
+        changes: [{ id: 'quiz', hidden: false }],
+        moments: [{ at: '23:00', changes: [{ id: 'quiz', hidden: true }] }],
+      },
+    ]);
+    expect(parse.layout?.editions[0]?.changes).toEqual([]);
+    expect(parse.layout?.editions[0]?.moments[0]?.changes).toEqual([]);
+    expect(parse.problems).toEqual([
+      { code: 'change-id-unknown', context: { edition: 'w', id: 'quiz' } },
+      { code: 'change-id-unknown', context: { edition: 'w', at: '23:00', id: 'quiz' } },
+    ]);
+  });
+
+  it('costs one change of an edition, and never the edition', () => {
+    const parse = withEditions([
+      {
+        id: 'w',
+        ...span,
+        changes: [
+          { id: 'hero', settings: { tone: 'loud' } },
+          { id: 'hero', hidden: true },
+        ],
+      },
+    ]);
+    expect(parse.layout?.editions[0]?.changes).toEqual([{ id: 'hero', hidden: true }]);
+    expect(parse.problems).toEqual([
+      {
+        code: 'change-setting-unknown',
+        context: { edition: 'w', id: 'hero', module: 'article-hero', key: 'tone' },
+      },
+    ]);
+  });
+});
+
+/**
+ * ADR 0059 §5, which is the whole reason editions are a key beside the day rather than a
+ * condition inside it: an app written against version 2 reads the day and never sees an
+ * edition, so during a campaign its readers see the ordinary day and not a broken screen.
+ *
+ * `__fixtures__/home-layout-v2.ts` is that app's parser, frozen at the last commit before
+ * editions. This is the only test that runs it, and it runs it on a document with editions.
+ */
+describe('a version 3 document, read by an app written for version 2', () => {
+  const planned = {
+    ...homeLayoutDocument,
+    editions: [
+      {
+        id: 'wahlabend',
+        title: 'Wahlabend',
+        from: '2026-09-27T18:00',
+        until: '2026-09-28T02:00',
+        changes: [
+          { id: 'hero', settings: { pin: 'https://example.org/wahl' } },
+          { id: 'briefing', hidden: true },
+        ],
+        moments: [{ at: '23:00', changes: [{ id: 'hero', settings: { pin: null } }] }],
+      },
+    ],
+  };
+
+  it('is reported for its number and nothing else', () => {
+    const parse = v2.parseHomeLayout(planned);
+    expect(parse.problems).toEqual([
+      { code: 'version-unknown', context: { version: HOME_LAYOUT_VERSION, expected: 2 } },
+    ]);
+  });
+
+  /** Every minute of the day, in the older app, is the day this app draws with no edition. */
+  it('draws the ordinary day, the evening of the edition included', () => {
+    const old = v2.parseHomeLayout(planned).layout!;
+    const now = read(planned);
+    for (let minute = 0; minute < 24 * 60; minute += 5) {
+      expect(v2.sectionsAt(old, minute)).toEqual(sectionsAt(now, minute));
+    }
+    // And during the edition the two apps disagree, which is the cost §5 accepts.
+    const eight = BERLIN('2026-09-27', 20);
+    expect(sectionsAtInstant(now, eight).map((s) => s.id)).not.toContain('briefing');
+    expect(v2.sectionsAt(old, minuteOfDay(eight)).map((s) => s.id)).toContain('briefing');
+  });
+});
+
+describe('the shipped document, at version 3', () => {
+  it('is numbered for this app and carries no edition', () => {
+    expect(homeLayoutDocument.version).toBe(HOME_LAYOUT_VERSION);
+    expect(DEFAULT_HOME_LAYOUT.editions).toEqual([]);
   });
 });

@@ -37,6 +37,7 @@ jest.mock('@/lib/store/core', () => ({
 }));
 
 import { callouts } from '@correctiv/app-core/data/callouts';
+import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { findAllPressable, render } from './support/rendering';
@@ -46,8 +47,13 @@ import { coreStore } from '@/lib/store/core';
 
 const OPEN = callouts.find((entry) => entry.status === 'open')!;
 
-/** Local time, which is the only clock `minuteOfDay` reads. */
-const at = (hour: number) => new Date(2026, 8, 3, hour, 0, 0, 0);
+/**
+ * Berlin wall clock, which is the only clock the home document reads since ADR 0059 §6.
+ * Built from the core's own conversion so the test means the same hour on a laptop in
+ * Berlin and on a CI runner in UTC, which the device-local `new Date(y, m, d, h)` it
+ * replaces did not.
+ */
+const at = (hour: number, minute = 0) => new Date(berlinInstant('2026-09-03', hour * 60 + minute)!);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -101,12 +107,12 @@ describe('the callout on Home', () => {
   /**
    * Nothing else re-renders Home on the hour: a tab screen stays mounted, and a feed
    * landing or a pull to refresh is not a clock. So the screen owns one timer to the
-   * document's next moment (`useHomeMinute`), and this is the test that it fires.
+   * document's next change (`useHomeInstant`), and this is the test that it fires.
    * Rendered a minute before the 11:00 moment, then the clock moves and nothing else
    * does.
    */
   it('moves when the clock reaches a moment, with nothing else happening', () => {
-    jest.useFakeTimers().setSystemTime(new Date(2026, 8, 3, 10, 59, 0, 0));
+    jest.useFakeTimers().setSystemTime(at(10, 59));
     const tree = render(<HomeScreen />);
     expect(position(tree)).toBe('in-place');
 

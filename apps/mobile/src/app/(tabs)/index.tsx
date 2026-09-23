@@ -1,7 +1,7 @@
-import { sectionsAt } from '@correctiv/app-core/lib/home-layout';
+import { sectionsAtInstant } from '@correctiv/app-core/lib/home-layout';
 
 import { Screen } from '@/components/ui';
-import { useHomeMinute } from '@/lib/home/clock';
+import { useHomeInstant } from '@/lib/home/clock';
 import { useHomeLayout } from '@/lib/home/layout';
 import { HOME_MODULES } from '@/lib/home/modules';
 
@@ -14,8 +14,9 @@ import { HOME_MODULES } from '@/lib/home/modules';
  * `@correctiv/app-core/src/data/home.layout.json`, an ordered list of sections each
  * naming a module, and this screen is the loop that draws them
  * ([ADR 0036](../../../../../adr/0036-the-home-screen-becomes-data.md)). What each module
- * renders is `lib/home/modules.tsx`; which of them appear right now is `sectionsAt`,
- * which folds the document up to this minute of the day and drops what is hidden in it.
+ * renders is `lib/home/modules.tsx`; which of them appear right now is
+ * `sectionsAtInstant`, which folds the document up to this instant and drops what is
+ * hidden in it.
  *
  * `useHomeLayout` rather than a read, because the document may be replaced while this
  * screen is on it: §4's stored copy is a key in the app's own storage, and the
@@ -23,10 +24,12 @@ import { HOME_MODULES } from '@/lib/home/modules';
  *
  * **What the clock decides is which STATE of that document this is.** The document is a
  * day — places, plus a list of moments each carrying only what changes at it — and
- * `sectionsAt` folds it up to a minute ([ADR 0039](../../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md)).
+ * `sectionsAtInstant` folds it up to an instant, the day's minute in Berlin first and then
+ * whichever editions are running ([ADR 0039](../../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md),
+ * [ADR 0059](../../../../../adr/0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §4).
  * So the callout still has two sections and is still rendered exactly once in one of two
  * places; what says which is two moments in the document rather than a daypart named on
- * each section. `useHomeMinute` is where that minute comes from, and the reason it is a
+ * each section. `useHomeInstant` is where that instant comes from, and the reason it is a
  * hook rather than `Date.now()` on render. A module the document names and this host
  * cannot draw was dropped when the document was read, with a report; the `?? null` below
  * is the second net and not the mechanism.
@@ -37,7 +40,7 @@ import { HOME_MODULES } from '@/lib/home/modules';
  */
 export default function HomeScreen() {
   const layout = useHomeLayout();
-  const sections = sectionsAt(layout, useHomeMinute(layout));
+  const sections = sectionsAtInstant(layout, useHomeInstant(layout));
 
   return (
     <Screen>

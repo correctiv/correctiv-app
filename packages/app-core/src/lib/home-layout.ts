@@ -32,7 +32,7 @@
  * what it could not, and the caller decides what to do with either.
  *
  * No schema library, and that is a decision rather than an omission. The whole grammar
- * is two lists and six keys; a validator for it is the function below, and a dependency
+ * is a few lists and a few keys; a validator for it is the functions below, and a dependency
  * would buy error objects this file has to translate into `ErrorReport` context anyway.
  * What it would buy is worth less than the third-party code in a bundle that a phone
  * downloads.
@@ -51,10 +51,34 @@
  * newsroom believes it configured. In a moment it is the one change: the other changes
  * at that time are unrelated instructions about other places, and taking the whole
  * moment out would move sections nobody wrote anything wrong about.
+ *
+ * ## Editions, and the day that is always whole without them
+ *
+ * [ADR 0059](../../../../adr/0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md)
+ * adds `editions` beside the day: a named layer, active from a Berlin date and time until
+ * another, carrying a starting state of its own (`changes`) and moments of its own, in the
+ * grammar the day already has. Rendering at an **instant** is the fold one level up
+ * (`stateAtInstant`): the day at that instant's minute, then every edition active at it in
+ * precedence order, the narrower window last and therefore winning.
+ *
+ * The key sits beside `sections` and `moments` rather than inside either, and that is §5's
+ * whole argument: a version 2 app reads those two and nothing else, so on election night it
+ * draws the ordinary day. `test/home-layout.test.ts` holds that against a frozen copy of the
+ * version 2 parser, because it is a property of the shape and not of this file.
+ *
+ * Every time the document writes is Berlin wall-clock time (§6), `at` included, and
+ * `berlin-time.ts` is the one place an instant becomes one.
  */
 
 import homeLayoutDocument from '../data/home.layout.json';
 import { platform } from '../ports';
+import {
+  addDays,
+  berlinInstant,
+  berlinWallClock,
+  parseBerlinDateTime,
+  type Instant,
+} from './berlin-time';
 import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
 
 /**
@@ -67,16 +91,27 @@ import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
  * reader was looking at. It is deliberately not a gate: a document numbered for a later
  * app is reported and then read, part by part, exactly like every other one.
  *
- * It is 2 since ADR 0039. A version 1 document is still read — it is reported and then
+ * It is 3 since ADR 0059, which added `editions`. A version 2 document is a version 3
+ * document with no editions and is read exactly as it was, reported for its number like
+ * any other. What a version 2 APP does with a version 3 document is the property that
+ * record rests on: it reads the day and never sees an edition.
+ *
+ * It was 2 from ADR 0039. A version 1 document is still read — it is reported and then
  * parsed — and what it loses is every section that carried a `dayparts` key, because
  * that key is a rule this app can no longer apply. There is no migration here and
  * nothing to migrate: the document is compiled in, nothing fetches one yet, and a
  * migration written against a document that has never been served is a guess with
  * upkeep.
  */
-export const HOME_LAYOUT_VERSION = 2;
+export const HOME_LAYOUT_VERSION = 3;
 
-/** Minutes since local midnight. The whole of what the document means by a time. */
+/**
+ * Minutes since midnight in Berlin. The whole of what the document means by a time of day.
+ *
+ * Berlin and not the device's own zone since ADR 0059 §6: a reader in New York sees the
+ * election-night switch at Berlin 18:00, and a screenshot taken on a runner in UTC shows
+ * the hour it names.
+ */
 export type MinuteOfDay = number;
 
 export const MINUTES_IN_DAY = 24 * 60;
@@ -133,11 +168,37 @@ export interface HomeChange {
 
 /** A time of day, and everything that changes at it. */
 export interface HomeMoment {
-  /** `HH:MM`, local, as the document writes it. */
+  /** `HH:MM`, Berlin, as the document writes it. */
   readonly at: string;
   /** The same time as a number, which is what the fold compares. */
   readonly minute: MinuteOfDay;
   readonly changes: readonly HomeChange[];
+}
+
+/**
+ * A named layer over the day, active for a span: a campaign, an election night.
+ *
+ * ADR 0059 §3. The same shape the day has, one level up: `changes` is its starting state,
+ * as `sections` is the day's, and `moments` are differences by time of day. `changes` is
+ * the type that exists — hidden and settings, never order — because ADR 0039 §3 holds.
+ *
+ * `from` and `until` are Berlin wall clock, `until` exclusive, and both are required: an
+ * exception has to end. `start` and `end` are the same two as instants, derived rather
+ * than written, as `minute` is on a moment.
+ */
+export interface HomeEdition {
+  readonly id: string;
+  /** The newsroom's word for it. Data, not source, so it is never translated. */
+  readonly title?: string;
+  /** `YYYY-MM-DDTHH:MM`, Berlin, as the document writes it. */
+  readonly from: string;
+  /** The same, and exclusive: at `until` the edition is no longer in the fold. */
+  readonly until: string;
+  readonly start: Instant;
+  readonly end: Instant;
+  readonly changes: readonly HomeChange[];
+  /** In time order, whatever order the document wrote them in. */
+  readonly moments: readonly HomeMoment[];
 }
 
 export interface HomeLayout {
@@ -146,6 +207,8 @@ export interface HomeLayout {
   readonly sections: readonly HomeSection[];
   /** In time order, whatever order the document wrote them in. */
   readonly moments: readonly HomeMoment[];
+  /** In the document's order. Which of them wins is the fold's question, not this list's. */
+  readonly editions: readonly HomeEdition[];
 }
 
 /**
@@ -174,6 +237,20 @@ const CHANGE_KEYS: Record<keyof HomeChange, true> = {
   id: true,
   hidden: true,
   settings: true,
+};
+
+/**
+ * `start` and `end` are derived, like a moment's `minute`. `days` is not here, and that is
+ * a decision: this app cannot apply a weekday condition, so an edition carrying one is an
+ * edition with a key nobody here knows, and it goes the way a section with one goes.
+ */
+const EDITION_KEYS: Record<Exclude<keyof HomeEdition, 'start' | 'end'>, true> = {
+  id: true,
+  title: true,
+  from: true,
+  until: true,
+  changes: true,
+  moments: true,
 };
 
 /**
@@ -213,7 +290,20 @@ export type LayoutProblemCode =
   | 'change-hidden-invalid'
   | 'change-settings-invalid'
   | 'change-setting-unknown'
-  | 'change-setting-invalid';
+  | 'change-setting-invalid'
+  | 'editions-not-an-array'
+  | 'edition-not-an-object'
+  | 'edition-id-invalid'
+  | 'edition-id-duplicate'
+  | 'edition-unknown-key'
+  | 'edition-title-invalid'
+  | 'edition-condition-missing'
+  | 'edition-from-missing'
+  | 'edition-until-missing'
+  | 'edition-from-invalid'
+  | 'edition-until-invalid'
+  | 'edition-span-empty'
+  | 'edition-changes-invalid';
 
 export interface LayoutProblem {
   readonly code: LayoutProblemCode;
@@ -263,10 +353,15 @@ export function formatTimeOfDay(minute: MinuteOfDay): string {
   return `${String(hours).padStart(2, '0')}:${String(wrapped % 60).padStart(2, '0')}`;
 }
 
-/** What minute of the local day a moment falls in. The app's only reading of a clock. */
+/**
+ * What minute of the Berlin day an instant falls in. The day's only reading of a clock.
+ *
+ * It read the device's local day until ADR 0059 §6, and no record said so; the code did.
+ * Berlin now, for the day's moments and an edition's alike, so that one document has one
+ * clock and `at` means the same thing in both places it is written.
+ */
 export function minuteOfDay(now: number | Date): MinuteOfDay {
-  const at = new Date(now);
-  return at.getHours() * 60 + at.getMinutes();
+  return berlinWallClock(new Date(now).getTime()).minute;
 }
 
 /**
@@ -291,7 +386,7 @@ export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>
     return { layout: null, problems };
   }
 
-  const { version, sections, moments } = input;
+  const { version, sections, moments, editions } = input;
 
   if (typeof version !== 'number' || !Number.isFinite(version)) {
     problems.push({ code: 'version-invalid', context: { type: typeOf(version) } });
@@ -317,7 +412,12 @@ export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>
 
   const modules = new Map(parsed.map((section) => [section.id, section.module]));
   return {
-    layout: { version, sections: parsed, moments: parseMoments(moments, modules, problems) },
+    layout: {
+      version,
+      sections: parsed,
+      moments: parseMoments(moments, modules, {}, problems),
+      editions: parseEditions(editions, modules, problems),
+    },
     problems,
   };
 }
@@ -399,12 +499,14 @@ function parseSettings(
   id: string,
   where: 'section' | 'change',
   problems: LayoutProblem[],
+  /** Which edition the change is in, when it is in one; nothing for the day. */
+  scope: Readonly<Record<string, string>> = {},
 ): ModuleSettings | undefined | typeof REFUSED {
   if (raw === undefined) return undefined;
   if (!isRecord(raw)) {
     problems.push({
       code: where === 'section' ? 'section-settings-invalid' : 'change-settings-invalid',
-      context: { id, type: typeOf(raw) },
+      context: { ...scope, id, type: typeOf(raw) },
     });
     return REFUSED;
   }
@@ -418,7 +520,7 @@ function parseSettings(
     if (!spec) {
       problems.push({
         code: where === 'section' ? 'section-setting-unknown' : 'change-setting-unknown',
-        context: { id, module, key },
+        context: { ...scope, id, module, key },
       });
       refused = true;
       continue;
@@ -426,7 +528,7 @@ function parseSettings(
     if (!holds(spec, value)) {
       problems.push({
         code: where === 'section' ? 'section-setting-invalid' : 'change-setting-invalid',
-        context: { id, key, type: typeOf(value) },
+        context: { ...scope, id, key, type: typeOf(value) },
       });
       refused = true;
       continue;
@@ -470,11 +572,12 @@ function holds(spec: SettingSpec, value: unknown): boolean {
 function parseMoments(
   raw: unknown,
   modules: ReadonlyMap<string, string>,
+  scope: Readonly<Record<string, string>>,
   problems: LayoutProblem[],
 ): readonly HomeMoment[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    problems.push({ code: 'moments-not-an-array', context: { type: typeOf(raw) } });
+    problems.push({ code: 'moments-not-an-array', context: { ...scope, type: typeOf(raw) } });
     return [];
   }
 
@@ -483,14 +586,17 @@ function parseMoments(
 
   raw.forEach((entry, index) => {
     if (!isRecord(entry)) {
-      problems.push({ code: 'moment-not-an-object', context: { index, type: typeOf(entry) } });
+      problems.push({
+        code: 'moment-not-an-object',
+        context: { ...scope, index, type: typeOf(entry) },
+      });
       return;
     }
 
     const unknownKeys = Object.keys(entry).filter((key) => !Object.hasOwn(MOMENT_KEYS, key));
     if (unknownKeys.length > 0) {
       for (const key of unknownKeys) {
-        problems.push({ code: 'moment-unknown-key', context: { index, key } });
+        problems.push({ code: 'moment-unknown-key', context: { ...scope, index, key } });
       }
       return;
     }
@@ -499,27 +605,34 @@ function parseMoments(
     if (minute === null) {
       problems.push({
         code: 'moment-time-invalid',
-        context: { index, at: typeof entry.at === 'string' ? entry.at : typeOf(entry.at) },
+        context: {
+          ...scope,
+          index,
+          at: typeof entry.at === 'string' ? entry.at : typeOf(entry.at),
+        },
       });
       return;
     }
     if (taken.has(minute)) {
       // The first one wins, for the reason a duplicate section id does: the alternative
       // is a rule about which of them the editor meant, and there is none.
-      problems.push({ code: 'moment-time-duplicate', context: { index, at: entry.at as string } });
+      problems.push({
+        code: 'moment-time-duplicate',
+        context: { ...scope, index, at: entry.at as string },
+      });
       return;
     }
     if (entry.changes !== undefined && !Array.isArray(entry.changes)) {
       problems.push({
         code: 'moment-changes-invalid',
-        context: { at: entry.at as string, type: typeOf(entry.changes) },
+        context: { ...scope, at: entry.at as string, type: typeOf(entry.changes) },
       });
       return;
     }
 
     const at = entry.at as string;
     const changes = ((entry.changes ?? []) as unknown[])
-      .map((change, position) => parseChange(change, at, position, modules, problems))
+      .map((change, position) => parseChange(change, { ...scope, at }, position, modules, problems))
       .filter((change): change is HomeChange => change !== null);
 
     taken.add(minute);
@@ -558,20 +671,23 @@ function parseMoments(
  */
 function parseChange(
   raw: unknown,
-  at: string,
+  where: Readonly<Record<string, string>>,
   index: number,
   modules: ReadonlyMap<string, string>,
   problems: LayoutProblem[],
 ): HomeChange | null {
   if (!isRecord(raw)) {
-    problems.push({ code: 'change-not-an-object', context: { at, index, type: typeOf(raw) } });
+    problems.push({
+      code: 'change-not-an-object',
+      context: { ...where, index, type: typeOf(raw) },
+    });
     return null;
   }
 
   const { id, hidden, settings } = raw;
 
   if (typeof id !== 'string' || id.length === 0) {
-    problems.push({ code: 'change-id-invalid', context: { at, index, type: typeOf(id) } });
+    problems.push({ code: 'change-id-invalid', context: { ...where, index, type: typeOf(id) } });
     return null;
   }
 
@@ -580,30 +696,179 @@ function parseChange(
     // A change about a place the document does not have. It may be a section that was
     // dropped above, or one nobody ever declared; either way there is nothing to change
     // and a silent no-op is how a newsroom loses an edit without being told.
-    problems.push({ code: 'change-id-unknown', context: { at, id } });
+    problems.push({ code: 'change-id-unknown', context: { ...where, id } });
     return null;
   }
 
   const unknownKeys = Object.keys(raw).filter((key) => !Object.hasOwn(CHANGE_KEYS, key));
   if (unknownKeys.length > 0) {
     for (const key of unknownKeys) {
-      problems.push({ code: 'change-unknown-key', context: { at, id, key } });
+      problems.push({ code: 'change-unknown-key', context: { ...where, id, key } });
     }
     return null;
   }
 
   if (hidden !== undefined && typeof hidden !== 'boolean') {
-    problems.push({ code: 'change-hidden-invalid', context: { at, id, type: typeOf(hidden) } });
+    problems.push({
+      code: 'change-hidden-invalid',
+      context: { ...where, id, type: typeOf(hidden) },
+    });
     return null;
   }
 
-  const parsedSettings = parseSettings(settings, module, id, 'change', problems);
+  const edition: Record<string, string> =
+    where.edition === undefined ? {} : { edition: where.edition };
+  const parsedSettings = parseSettings(settings, module, id, 'change', problems, edition);
   if (parsedSettings === REFUSED) return null;
 
   return {
     id,
     ...(hidden === undefined ? {} : { hidden }),
     ...(parsedSettings ? { settings: parsedSettings } : {}),
+  };
+}
+
+/**
+ * The editions, in the document's order, each read the way the day is read.
+ *
+ * ADR 0059 §3, and ADR 0039 §6's rule one level up: **drop the smallest thing that carries
+ * the rule.** An edition's id, its span and its keys are the edition, so a fault in any of
+ * them costs the edition; a fault in one of its moments costs the moment, and one in a
+ * change costs the change, with exactly the codes the day reports, carrying `edition` in
+ * their context so a report says whose moment it was.
+ *
+ * A key this app does not know drops the edition, which is what an edition carrying `days`
+ * is to this app: §8 builds dated editions only, and a weekday edition read as though its
+ * condition were not there would run on days the newsroom never chose.
+ *
+ * A title that is not a string costs the title and not the edition. It is the one field
+ * here that carries no rule at all, only the newsroom's name for the thing, and nothing
+ * about what readers see depends on it.
+ */
+function parseEditions(
+  raw: unknown,
+  modules: ReadonlyMap<string, string>,
+  problems: LayoutProblem[],
+): readonly HomeEdition[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) {
+    problems.push({ code: 'editions-not-an-array', context: { type: typeOf(raw) } });
+    return [];
+  }
+
+  const parsed: HomeEdition[] = [];
+  const taken = new Set<string>();
+  raw.forEach((entry, index) => {
+    const edition = parseEdition(entry, index, taken, modules, problems);
+    if (!edition) return;
+    taken.add(edition.id);
+    parsed.push(edition);
+  });
+  return parsed;
+}
+
+/** One edition, or null with its fault appended to `problems`. */
+function parseEdition(
+  raw: unknown,
+  index: number,
+  taken: ReadonlySet<string>,
+  modules: ReadonlyMap<string, string>,
+  problems: LayoutProblem[],
+): HomeEdition | null {
+  if (!isRecord(raw)) {
+    problems.push({ code: 'edition-not-an-object', context: { index, type: typeOf(raw) } });
+    return null;
+  }
+
+  const { id, title, from, until, changes, moments } = raw;
+
+  if (typeof id !== 'string' || id.length === 0) {
+    problems.push({ code: 'edition-id-invalid', context: { index, type: typeOf(id) } });
+    return null;
+  }
+  if (taken.has(id)) {
+    // The first one wins, for the reason a duplicate section id does.
+    problems.push({ code: 'edition-id-duplicate', context: { id, index } });
+    return null;
+  }
+
+  const unknownKeys = Object.keys(raw).filter((key) => !Object.hasOwn(EDITION_KEYS, key));
+  if (unknownKeys.length > 0) {
+    for (const key of unknownKeys) {
+      problems.push({ code: 'edition-unknown-key', context: { id, key } });
+    }
+    return null;
+  }
+
+  /*
+   * The condition. One with neither half is the day, which already exists and is not an
+   * edition; one with a start and no end is an exception that never ends, which §3
+   * refuses; and one with an end and no start is the same fault from the other side.
+   */
+  if (from === undefined && until === undefined) {
+    problems.push({ code: 'edition-condition-missing', context: { id } });
+    return null;
+  }
+  if (until === undefined) {
+    problems.push({ code: 'edition-until-missing', context: { id } });
+    return null;
+  }
+  if (from === undefined) {
+    problems.push({ code: 'edition-from-missing', context: { id } });
+    return null;
+  }
+
+  const opens = parseBerlinDateTime(from);
+  if (opens === null) {
+    problems.push({
+      code: 'edition-from-invalid',
+      context: { id, from: typeof from === 'string' ? from : typeOf(from) },
+    });
+    return null;
+  }
+  const closes = parseBerlinDateTime(until);
+  if (closes === null) {
+    problems.push({
+      code: 'edition-until-invalid',
+      context: { id, until: typeof until === 'string' ? until : typeOf(until) },
+    });
+    return null;
+  }
+  const start = berlinInstant(opens.date, opens.minute)!;
+  const end = berlinInstant(closes.date, closes.minute)!;
+  if (end <= start) {
+    // `until` is exclusive, so an edition ending where it starts is never in the fold, and
+    // one ending before it is a typo nobody would find by looking at the phone.
+    problems.push({
+      code: 'edition-span-empty',
+      context: { id, from: from as string, until: until as string },
+    });
+    return null;
+  }
+
+  if (changes !== undefined && !Array.isArray(changes)) {
+    problems.push({ code: 'edition-changes-invalid', context: { id, type: typeOf(changes) } });
+    return null;
+  }
+
+  let named: string | undefined;
+  if (title !== undefined) {
+    if (typeof title === 'string' && title.length > 0) named = title;
+    else problems.push({ code: 'edition-title-invalid', context: { id, type: typeOf(title) } });
+  }
+
+  const scope = { edition: id };
+  return {
+    id,
+    ...(named === undefined ? {} : { title: named }),
+    from: from as string,
+    until: until as string,
+    start,
+    end,
+    changes: ((changes ?? []) as unknown[])
+      .map((change, position) => parseChange(change, scope, position, modules, problems))
+      .filter((change): change is HomeChange => change !== null),
+    moments: parseMoments(moments, modules, scope, problems),
   };
 }
 
@@ -677,37 +942,216 @@ function applyChange(section: HomeSection, change: HomeChange): HomeSection {
 }
 
 /**
- * The sections to draw at a minute of the day, in the document's order.
+ * The sections the DAY draws at a minute, in the document's order, with no edition.
  *
  * A selector over the document rather than a method on anything, per the core's own
  * rule, and the minute is a parameter rather than a clock: a host owns the timer that
- * says when the answer changes (`nextMomentAfter`), a test names a time, and the
+ * says when the answer changes (`nextChangeAfter`), a test names a time, and the
  * workbench hands it a time the machine's clock disagrees with, which is the whole of
  * how the preview shows the evening at eleven in the morning.
+ *
+ * Since ADR 0059 this is the half of the answer a version 2 app gives, and it is kept
+ * because ADR 0059 §5 needs it: the day is always a whole screen on its own.
+ * `sectionsAtInstant` is what a host draws.
  */
 export function sectionsAt(layout: HomeLayout, minute: MinuteOfDay): readonly HomeSection[] {
   return stateAt(layout, minute).filter((section) => !section.hidden);
 }
 
 /**
- * The next minute of the day at which the answer changes, or null if it never does.
+ * One change as the fold applies it, and where in the document it came from.
  *
- * For a host that reads the clock on render. Home picks its sections when it renders,
- * and nothing re-renders a mounted tab on the hour, so without this a lifted block moves
- * on the next feed load or cold start rather than at the moment the document names. One
- * timer to this minute, cancelled with the screen, is what makes the screen agree with
- * the document.
+ * `edition` is null for the day's own moments; `point` is the moment's minute, or null for
+ * an edition's own `changes`. The day's sections are not in the list, because they are
+ * not changes: they are what the list is applied to.
  *
- * It answers with a minute of the day and not a timestamp, so it stays a function of the
- * document alone and the host does the arithmetic against its own clock — which is also
- * what keeps a daylight-saving shift in one place (`nextChangeAfter` in the app) rather
- * than in two.
+ * The app needs only the result (`stateAtInstant`). The provenance is for the editor, which
+ * has to say which edition decides a block and what a block would be without the point
+ * being edited, and a second fold written there to answer that would be the one that
+ * disagreed with this one.
  */
-export function nextMomentAfter(layout: HomeLayout, minute: MinuteOfDay): MinuteOfDay | null {
-  const next = layout.moments.find((moment) => moment.minute > minute);
-  if (next) return next.minute;
-  // Past the last one: the first one tomorrow, which is the first one there is.
-  return layout.moments[0]?.minute ?? null;
+export interface AppliedChange {
+  readonly edition: string | null;
+  readonly point: MinuteOfDay | null;
+  readonly change: HomeChange;
+}
+
+/**
+ * Whether an edition is in the fold at an instant. `until` is exclusive.
+ */
+export function isActive(edition: HomeEdition, instant: Instant): boolean {
+  return edition.start <= instant && instant < edition.end;
+}
+
+/**
+ * The order editions are applied in, the widest first, so the narrowest wins.
+ *
+ * ADR 0059 §4: "the narrower window wins". For the dated editions this slice builds, that
+ * is the longest span first and the shortest last; between two of the same length the one
+ * that starts later is applied later, and between two that also start together the id
+ * decides, in plain string order, so that the answer never depends on which of them the
+ * document happens to list first. Weekday editions come before all of these when they are
+ * built.
+ */
+export function byPrecedence(a: HomeEdition, b: HomeEdition): number {
+  const span = b.end - b.start - (a.end - a.start);
+  if (span !== 0) return span;
+  if (a.start !== b.start) return a.start - b.start;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** The editions in the fold at an instant, in the order they are applied. */
+export function editionsAt(layout: HomeLayout, instant: Instant): readonly HomeEdition[] {
+  return layout.editions.filter((edition) => isActive(edition, instant)).sort(byPrecedence);
+}
+
+/**
+ * When a moment of an edition last happened, at or before an instant and not before the
+ * edition began, or null if it has not happened yet.
+ *
+ * An edition is one span and not a day that repeats, so its moments carry over midnight: a
+ * pin changed at 23:00 on election night is still changed at 00:30. That is what "its own
+ * moments that lie inside its span and at or before the instant" (§4) says, read as every
+ * time the clock has shown `at` since the edition opened, applied in the order they
+ * happened. Only the latest of each moment matters, because a change is a set of keys and
+ * the last writer of each key is what stands.
+ *
+ * Two calendar days are enough: if today's occurrence is still ahead, yesterday's is
+ * behind, because it fell before today's midnight.
+ */
+function lastOccurrence(minute: MinuteOfDay, instant: Instant, start: Instant): Instant | null {
+  const { date } = berlinWallClock(instant);
+  for (const day of [date, addDays(date, -1)]) {
+    const at = berlinInstant(day, minute)!;
+    if (at <= instant) return at >= start ? at : null;
+  }
+  /* c8 ignore next */
+  return null;
+}
+
+/**
+ * Every change the fold applies at an instant, in the order it applies them.
+ *
+ * The day's moments at or before the instant's Berlin minute, as `stateAt` has always
+ * applied them; then every active edition in precedence order, each contributing its own
+ * `changes` and then its moments in the order they last happened. Later wins.
+ */
+export function changesAt(layout: HomeLayout, instant: Instant): readonly AppliedChange[] {
+  const minute = minuteOfDay(instant);
+  const applied: AppliedChange[] = [];
+
+  for (const moment of layout.moments) {
+    if (moment.minute > minute) break;
+    for (const change of moment.changes) {
+      applied.push({ edition: null, point: moment.minute, change });
+    }
+  }
+
+  for (const edition of editionsAt(layout, instant)) {
+    for (const change of edition.changes) {
+      applied.push({ edition: edition.id, point: null, change });
+    }
+    const happened = edition.moments
+      .map((moment) => ({ moment, at: lastOccurrence(moment.minute, instant, edition.start) }))
+      .filter((held): held is { moment: HomeMoment; at: Instant } => held.at !== null)
+      // By when it happened, and by the minute where two share an instant — which only the
+      // spring gap can make, since every minute in it is the one instant the clock jumps.
+      .sort((a, b) => a.at - b.at || a.moment.minute - b.moment.minute);
+    for (const { moment } of happened) {
+      for (const change of moment.changes) {
+        applied.push({ edition: edition.id, point: moment.minute, change });
+      }
+    }
+  }
+
+  return applied;
+}
+
+/**
+ * The document folded up to an instant: every place, in order, in the state it is in then.
+ *
+ * `stateAt` is this without editions, and it is what a version 2 app computes. This is the
+ * whole model since ADR 0059, and `sectionsAtInstant` is this with the hidden places
+ * dropped. The instant is a parameter for the reason the minute is one (ADR 0039 §8): the
+ * core holds no clock.
+ */
+export function stateAtInstant(layout: HomeLayout, instant: Instant): readonly HomeSection[] {
+  return applyAll(layout.sections, changesAt(layout, instant));
+}
+
+/** The places to draw at an instant, in the document's order. */
+export function sectionsAtInstant(layout: HomeLayout, instant: Instant): readonly HomeSection[] {
+  return stateAtInstant(layout, instant).filter((section) => !section.hidden);
+}
+
+/**
+ * A list of changes onto the sections, in order.
+ *
+ * Exported for the editor, which folds the same list with one point taken out of it to say
+ * what a block would be without that point.
+ */
+export function applyAll(
+  sections: readonly HomeSection[],
+  changes: readonly AppliedChange[],
+): readonly HomeSection[] {
+  const byId = new Map(sections.map((section) => [section.id, section]));
+  for (const { change } of changes) {
+    const section = byId.get(change.id);
+    if (!section) continue;
+    byId.set(change.id, applyChange(section, change));
+  }
+  return sections.map((section) => byId.get(section.id) ?? section);
+}
+
+/**
+ * The next instant after this one at which the answer may change, or null if it never does.
+ *
+ * For a host that reads the clock on render. Home picks its sections when it renders, and
+ * nothing re-renders a mounted tab on the hour, so without this a lifted block moves on the
+ * next feed load or cold start rather than at the moment the document names. One timer to
+ * this instant, cancelled with the screen, is what makes the screen agree with the
+ * document.
+ *
+ * It answers with an instant, which it could not while the document was only a day:
+ * `nextMomentAfter` answered with a minute and left the host to find the next one on its
+ * own clock. An edition begins and ends on a date, so the question is about instants now,
+ * and Berlin's clock changes are answered once, in `berlin-time.ts`, rather than in the
+ * host as well.
+ *
+ * What counts: the day's next moment today, and the next Berlin midnight, where the day
+ * starts again from its sections; every edition's start and end; and the next time each
+ * active edition's moments happen before it ends. A wake-up that turns out to change
+ * nothing costs one render. A missed one costs a screen that disagrees with the document
+ * until somebody touches it, so this errs towards the first.
+ */
+export function nextChangeAfter(layout: HomeLayout, instant: Instant): Instant | null {
+  const { date, minute } = berlinWallClock(instant);
+  const candidates: Instant[] = [];
+
+  if (layout.moments.length > 0) {
+    for (const moment of layout.moments) {
+      if (moment.minute <= minute) continue;
+      const at = berlinInstant(date, moment.minute)!;
+      // In the hour the autumn change repeats, a moment later in the wall clock can have
+      // happened already as an instant; it happens again an hour after its first time.
+      candidates.push(at > instant ? at : at + 3_600_000);
+    }
+    candidates.push(berlinInstant(addDays(date, 1), 0)!);
+  }
+
+  for (const edition of layout.editions) {
+    if (edition.start > instant) candidates.push(edition.start);
+    if (edition.end > instant) candidates.push(edition.end);
+    if (!isActive(edition, instant)) continue;
+    for (const moment of edition.moments) {
+      const today = berlinInstant(date, moment.minute)!;
+      const next = today > instant ? today : berlinInstant(addDays(date, 1), moment.minute)!;
+      if (next < edition.end) candidates.push(next);
+    }
+  }
+
+  const later = candidates.filter((candidate) => candidate > instant);
+  return later.length === 0 ? null : Math.min(...later);
 }
 
 const bundled = parseHomeLayout(homeLayoutDocument);
@@ -726,6 +1170,7 @@ export const DEFAULT_HOME_LAYOUT: HomeLayout = bundled.layout ?? {
   version: HOME_LAYOUT_VERSION,
   sections: [],
   moments: [],
+  editions: [],
 };
 
 /** The bundled document as it was written — what a fetched one replaces. */

@@ -1,27 +1,33 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import {
-  minuteOfDay,
-  nextMomentAfter,
+  berlinInstant,
+  berlinWallClock,
+  parseBerlinDateTime,
+  type Instant,
+} from '@correctiv/app-core/lib/berlin-time';
+import {
+  nextChangeAfter,
   parseTimeOfDay,
   type HomeLayout,
-  type MinuteOfDay,
 } from '@correctiv/app-core/lib/home-layout';
 
 /**
  * What time Home thinks it is, and the one place anything may tell it otherwise.
  *
- * The home document is a day now ([ADR 0039](../../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md)):
- * a set of places and a list of moments, folded up to a minute of the local day. That
- * minute normally comes from the clock. The preview needs it to come from a control, or
- * it cannot show the evening at eleven in the morning, and an editor arranging the day
- * would be arranging it blind.
+ * The home document is a day ([ADR 0039](../../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md)):
+ * a set of places and a list of moments, and since
+ * [ADR 0059](../../../../../adr/0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md)
+ * editions over it, each active for a span of Berlin dates. Rendering is a fold up to an
+ * **instant**, which normally comes from the clock. The preview needs it to come from a
+ * control, or it cannot show the evening at eleven in the morning, or the election night
+ * on the Wednesday before it, and an editor arranging either would be arranging it blind.
  *
  * ## Where the seam is, and why it is this one
  *
- * `sectionsAt(layout, minute)` — the minute is a **parameter of the selector**, so the
- * core has no clock in it at all and nothing has to be injected, stubbed or reset. What
- * is left is one question in the host: where does this screen get its minute. This file
+ * `sectionsAtInstant(layout, instant)` — the instant is a **parameter of the selector**, so
+ * the core has no clock in it at all and nothing has to be injected, stubbed or reset. What
+ * is left is one question in the host: where does this screen get its instant. This file
  * is the answer, and it has exactly one door in it.
  *
  * That door is `localStorage`, for the reason `./layout.ts` gives at length about the
@@ -52,34 +58,51 @@ import {
  *
  * It is also not durable state that somebody can leave behind by accident, and it takes
  * two mechanisms rather than one to say so. The workbench holds the simulated time in the
- * **address** (`tm=18:30`) and writes this key from there, so a link without the
- * parameter clears it on arrival; and the page holding that address going away clears it
- * too, which is a tab closing rather than a route changing and was the half that was
+ * **address** (`tm=18:30`, or `tm=2026-09-27T18:00` for a day of its own) and writes this
+ * key from there, so a link without the parameter clears it on arrival; and the page
+ * holding that address going away clears it too, which is a tab closing rather than a route changing and was the half that was
  * missing. `apps/workbench/src/preview/home/clock.ts` is the other end and says which
  * event covers which.
  */
 export const HOME_TIME_OVERRIDE_KEY = 'workbench:home-time';
 
 /**
- * The simulated minute, or null when the app is on its own clock.
+ * The simulated instant, or null when the app is on its own clock.
+ *
+ * Two spellings, both Berlin wall clock (ADR 0059 §6). `YYYY-MM-DDTHH:MM` is a day and a
+ * minute, which is what the editor sends once somebody has stepped to Saturday. `HH:MM` is
+ * that minute **today** in Berlin, which is what the key meant before it could carry a
+ * date, so a link written then still shows the hour it names.
  *
  * Guarded rather than platform-split, like the document override beside it: React Native
  * has no `localStorage`, a browser with site data switched off throws on the accessor,
  * and both answer the same way here — nobody has said what time it is, so the clock
- * stands. A value that is not `HH:MM` is not a time either, and is the same answer: a
- * junk key must not freeze the home screen at some minute nobody can see.
+ * stands. A value that is neither spelling is not a time either, and is the same answer: a
+ * junk key must not freeze the home screen at some instant nobody can see.
+ *
+ * `now` is only for the bare time's day, and it is handed in rather than read here so the
+ * snapshot below stays a function of the key.
  */
-function simulatedMinute(): MinuteOfDay | null {
+function simulatedInstant(text: string | null, now: Instant): Instant | null {
+  const dated = parseBerlinDateTime(text);
+  if (dated) return berlinInstant(dated.date, dated.minute);
+  const minute = parseTimeOfDay(text);
+  if (minute === null) return null;
+  return berlinInstant(berlinWallClock(now).date, minute);
+}
+
+/** The key's text, or null. Text because it is what `useSyncExternalStore` compares. */
+function simulatedText(): string | null {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null;
-    return parseTimeOfDay(window.localStorage.getItem(HOME_TIME_OVERRIDE_KEY));
+    return window.localStorage.getItem(HOME_TIME_OVERRIDE_KEY);
   } catch {
     return null;
   }
 }
 
 /**
- * When the simulated minute changes, which on the web target is a `storage` event.
+ * When the simulated time changes, which on the web target is a `storage` event.
  *
  * The browser fires that event in every same-origin document **except** the one that
  * made the change, so a write from the workbench arrives here and a write from this app
@@ -100,43 +123,23 @@ function subscribeToTime(listener: () => void): () => void {
 }
 
 /**
- * How long until the document's next moment, from a real instant, in milliseconds.
+ * How long until the document's answer next changes, from a real instant, in milliseconds.
  *
- * `nextMomentAfter` answers with a minute of the DAY, so the arithmetic against a real
- * clock is here and only here. Local construction on purpose, the way the daypart timer
- * this replaces did it: `new Date(y, m, d, h, min)` absorbs a daylight-saving shift on
- * the day it happens, and a UTC offset computed by hand does not.
+ * `nextChangeAfter` answers with an instant, since editions begin and end on a date, so
+ * this is a subtraction. It used to be here that the next moment's minute was turned into
+ * a local instant, and Berlin's clock changes are the core's arithmetic now
+ * (`berlin-time.ts`), so there is one of it rather than one per host.
  *
- * Null when the document has no moments at all. A home screen that does not change
- * through the day needs no wake-up, and a timer armed for one is a timer that fires for
- * nothing once a day for ever.
+ * Null when nothing in the document ever changes. A home screen that is the same at every
+ * instant needs no wake-up, and a timer armed for one is a timer that fires for nothing.
  */
-function msUntilNextMoment(layout: HomeLayout, now: number): number | null {
-  const next = nextMomentAfter(layout, minuteOfDay(now));
-  if (next === null) return null;
-
-  const at = new Date(now);
-  const today = new Date(
-    at.getFullYear(),
-    at.getMonth(),
-    at.getDate(),
-    Math.floor(next / 60),
-    next % 60,
-  ).getTime();
-  if (today > now) return today - now;
-
-  const tomorrow = new Date(
-    at.getFullYear(),
-    at.getMonth(),
-    at.getDate() + 1,
-    Math.floor(next / 60),
-    next % 60,
-  ).getTime();
-  return tomorrow - now;
+function msUntilNextChange(layout: HomeLayout, now: Instant): number | null {
+  const next = nextChangeAfter(layout, now);
+  return next === null ? null : next - now;
 }
 
 /**
- * The minute of the day Home draws, kept in step with whatever is deciding it.
+ * The instant Home draws, kept in step with whatever is deciding it.
  *
  * Reading `Date.now()` on render was the first version of this, on the theory that Home
  * re-renders often enough. It does not: a tab screen stays mounted, and it re-renders
@@ -145,26 +148,27 @@ function msUntilNextMoment(layout: HomeLayout, now: number): number | null {
  * the document names, and the screen disagreed with the document for as long as nobody
  * touched it.
  *
- * One timer to the next moment, which React cancels with the screen. Not a slice and not
+ * One timer to the next change, which React cancels with the screen. Not a slice and not
  * an interval: the document knows exactly when its answer changes, so there is one
- * wake-up per moment and nothing to poll. A device that sleeps through one fires the
+ * wake-up per change and nothing to poll. A device that sleeps through one fires the
  * timer on resume, which is the moment the screen is next seen.
  *
  * While a simulated time is set there is no timer at all, because the clock is not what
  * is deciding: an editor dragging along the day would otherwise have the screen jump
  * back to the real hour the first time a moment passed.
  */
-export function useHomeMinute(layout: HomeLayout): MinuteOfDay {
-  const simulated = useSyncExternalStore(subscribeToTime, simulatedMinute, () => null);
+export function useHomeInstant(layout: HomeLayout): Instant {
+  const text = useSyncExternalStore(subscribeToTime, simulatedText, () => null);
   const [now, setNow] = useState(() => Date.now());
+  const simulated = simulatedInstant(text, now);
 
   useEffect(() => {
     if (simulated !== null) return;
-    const wait = msUntilNextMoment(layout, now);
+    const wait = msUntilNextChange(layout, now);
     if (wait === null) return;
     const timer = setTimeout(() => setNow(Date.now()), Math.max(0, wait));
     return () => clearTimeout(timer);
   }, [layout, simulated, now]);
 
-  return simulated ?? minuteOfDay(now);
+  return simulated ?? now;
 }
