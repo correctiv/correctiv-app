@@ -56,7 +56,7 @@ const COPY = defineMessages({
   retiredNote: {
     id: 'document.retired.note',
     defaultMessage:
-      '{count, plural, one {One claim on this page is} other {Claims on this page are}} struck through where they stand, with what voided them beside them.',
+      '{count, plural, one {One claim on this page is struck through.} other {Some claims on this page are struck through.}} The reason stands beside each.',
     description:
       'The sentence beside that badge, saying what the strikes on the page mean. {count} is how many claims are struck, and decides only whether the sentence is singular.',
   },
@@ -70,14 +70,14 @@ const COPY = defineMessages({
   source: {
     id: 'document.source',
     defaultMessage:
-      'This page is <fileLink>{file}</fileLink> in the repository, rendered here. It is not a copy, so there is one place to edit it.',
+      'This page is <fileLink>{file}</fileLink> in the repository, shown here. It is not a copy, so there is only one place to edit it.',
     description:
       'The line at the foot of a document read out of the repository. {file} is its path and is not translated; <fileLink> is the link to it on GitHub at the commit this site was built from. document.source.generated is the same line for the one document that is written by a program.',
   },
   sourceGenerated: {
     id: 'document.source.generated',
     defaultMessage:
-      'This page is <fileLink>{file}</fileLink> in the repository, which is the program that writes this page rather than the page. It is produced from the tree at build time, so nothing on it is a copy of anything and there is nothing here to edit.',
+      'A program writes this page: <fileLink>{file}</fileLink> in the repository. It runs when the site is built, so there is nothing here to edit.',
     description:
       'The line at the foot of the one document that is generated rather than read. {file} is the path of the PROGRAM and is not translated; <fileLink> is the link to it. document.source offers every other document as a file to edit, and offering this one would be an invitation to type into an output.',
   },

@@ -55,21 +55,21 @@ const COPY = defineMessages({
   },
   lede: {
     id: 'handbook.lede',
-    defaultMessage: 'The repository’s own documents, rendered where they live.',
+    defaultMessage: 'The repository’s own documents, shown straight from their files.',
     description:
       'The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is handbook.lede.more, behind the ⓘ at its end.',
   },
   ledeMore: {
     id: 'handbook.lede.more',
     defaultMessage:
-      'Nothing here is a copy: the files are the source and this site is a second way to read them, so there is one place to edit and no version that quietly falls behind.',
+      'Nothing here is a copy. The files are the source, and this site is a second way to read them. So there is one place to edit, and no version quietly falls behind.',
     description:
       'Behind the ⓘ at the end of the sentence under the heading, followed there by handbook.records.',
   },
   records: {
     id: 'handbook.records',
     defaultMessage:
-      'The decisions behind all of it are their own section, because a record is a different kind of document: it is never rewritten, and a claim a later decision made false is struck through where it stands rather than corrected.',
+      'The decisions behind all this have their own section. A decision record is a different kind of document: it is never rewritten. When a later decision makes a claim false, the claim is struck through, not corrected.',
   },
 
   architectureKind: {

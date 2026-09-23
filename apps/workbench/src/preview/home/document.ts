@@ -140,7 +140,7 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     }),
     what: wbMessage({
       id: 'home.module.header.what',
-      defaultMessage: 'The date, the greeting and the way into search.',
+      defaultMessage: 'The date, the greeting and the search.',
     }),
   },
   'feed-status': {
@@ -150,7 +150,8 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     }),
     what: wbMessage({
       id: 'home.module.feedStatus.what',
-      defaultMessage: 'Only appears while the feeds load, or when they came out of the bundle.',
+      defaultMessage:
+        'Appears only while content is loading, or when the app shows the content it shipped with.',
     }),
   },
   'article-hero': {
@@ -169,7 +170,7 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     }),
     what: wbMessage({
       id: 'home.module.spotlight.what',
-      defaultMessage: 'The current issue, with the way into the archive.',
+      defaultMessage: 'The current issue, with a link to the archive.',
     }),
   },
   'early-access-card': {
@@ -198,7 +199,7 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     what: wbMessage({
       id: 'home.module.callout.what',
       defaultMessage:
-        'The open callout. Two places in the document, one lifted over the lead at midday.',
+        'The open callout. It has two places: at midday it moves above the lead article.',
     }),
   },
   'mediathek-reihe': {
@@ -222,7 +223,7 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     }),
     what: wbMessage({
       id: 'home.module.backstage.what',
-      defaultMessage: 'The newsroom diary and the way in.',
+      defaultMessage: 'The newsroom diary, with a link to it.',
     }),
   },
   'impact-footer': {
@@ -242,7 +243,7 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
 /** What stands under a module this tool has never heard of, where the label is its id. */
 const UNKNOWN_WHAT = wbMessage({
   id: 'home.module.unknown.what',
-  defaultMessage: 'This tool has no description for it.',
+  defaultMessage: 'No description for this block yet.',
   description:
     'Under a module the palette is offering that MODULE_LABELS has no entry for, where the label above it is the module’s raw id. home.setting.unknown.what is the same kind of stand-in one level down, for a setting, and says something shorter because the control beside it already names itself.',
 });
@@ -670,13 +671,13 @@ export function blockName(intl: IntlShape, section: HomeSection): string {
 const WHERE = {
   top: wbMessage({
     id: 'home.where.top',
-    defaultMessage: 'at the top of the day',
+    defaultMessage: 'at the very top',
     description:
       'Where an insertion mark puts a block, when it is above every block there is. Dropped into the middle of a sentence, so it is lower case and carries no full stop. home.where.end is the same for the other edge and home.where.between for everywhere else.',
   }),
   end: wbMessage({
     id: 'home.where.end',
-    defaultMessage: 'at the end of the day',
+    defaultMessage: 'at the very bottom',
     description:
       'The same as home.where.top for the other edge: below every block there is. Dropped in mid-sentence, so lower case and no full stop.',
   }),

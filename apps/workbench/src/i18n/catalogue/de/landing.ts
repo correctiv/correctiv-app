@@ -27,56 +27,56 @@
 export const landing: Record<string, string> = {
   'landing.title': 'Die CORRECTIV-App und alles, was darüber aufgeschrieben ist',
   'landing.lede':
-    'Eine Community-App für die Mitglieder von CORRECTIV, gebaut als ein plattformfreier Core mit der Expo-App als Host. Der Core hält das gesamte Verhalten und importiert kein UI-Framework und kein Plattform-SDK. Deshalb hat der Austausch der kompletten Ansichtsschicht seinerzeit kein einziges Verhalten gekostet.',
+    'Eine Community-App für die Mitglieder von CORRECTIV. Ihr ganzes Verhalten steckt in einem Core, der von keiner Plattform abhängt. Die Expo-App ist der Host, der ihn auf iOS, Android und ins Web bringt. Deshalb ließ sich die ganze Ansichtsschicht schon einmal austauschen, ohne dass Verhalten verloren ging.',
   'landing.note':
-    'Diese Workbench veröffentlicht die Dokumente des Repositories selbst, unverändert und an Ort und Stelle, und stellt die laufende App daneben.',
+    'Diese Workbench zeigt die Dokumente des Repositorys unverändert und stellt die laufende App daneben.',
 
   'landing.status.heading': 'Was die App liest',
-  'landing.status.when': 'Aus einem Lauf gegen die Livequellen vom {measured}, {age}.',
+  'landing.status.when': 'Gemessen an den Livequellen am {measured}, {age}.',
   'landing.status.why':
-    'Eine Zahl je Eintrag im Manifest, weshalb die Statusübersicht auf mehr kommt: Sie zeichnet die Artikelfamilie als ihre {feeds} Feeds, denn veraltet ist immer ein Feed. Ein wöchentlicher Job nimmt die Zahlen neu. Während Sie das hier lesen, aktualisiert sich nichts, denn die Feeds senden keinen CORS-Header, über den ein Browser sie neu nehmen könnte.',
+    'Eine Zahl je Eintrag im Manifest. Die Quellen-Seite zählt mehr Zeilen, weil sie die Artikel als ihre {feeds} Feeds aufführt, denn veralten kann nur ein Feed. Ein wöchentlicher Job misst die Zahlen neu. Während Sie lesen, ändert sich nichts, denn die Feeds lassen keinen Abruf aus dem Browser zu.',
 
   'landing.figure.live': 'Livequellen',
   'landing.figure.sample': 'Beispieldatensätze',
   'landing.figure.noSource': 'Gewünscht, ohne Quelle',
   'landing.figure.questions': 'Offene redaktionelle Fragen',
 
-  'landing.doors.heading': 'Wohin von hier',
+  'landing.doors.heading': 'Wohin als Nächstes',
 
   'landing.door.preview.kind': 'Die App, laufend',
   'landing.door.preview.title': 'Vorschau',
   'landing.door.preview.blurb':
-    'Die App selbst in Gerätegröße, mit einem Inspektor für ihren State, ihre Konsole, ihre Palette und ihr Layout. Keine Installation und kein Emulator, und die Adresse stellt genau das wieder her, was Sie gerade sehen.',
+    'Die App selbst in Gerätegröße, mit Werkzeugen für ihren Zustand, ihre Konsole, ihre Farben und ihr Layout. Sie müssen nichts installieren. Die Adresse im Browser stellt genau das wieder her, was Sie sehen.',
 
   'landing.door.sources.kind': 'Bestandsaufnahme',
   'landing.door.sources.title': 'Quellen',
   'landing.door.sources.blurb':
-    'Zu allem, was die App zeigt: ob es eine Live-Quelle ist, eine Datei, die für eine noch nicht vorhandene API einspringt, oder ein gewünschtes Feature, zu dem es überhaupt nichts zu lesen gibt.',
+    'Für alles, was die App zeigt: Ist es live, eine Ersatzdatei für eine API, die es noch nicht gibt, oder ein gewünschtes Feature ohne Quelle?',
 
   'landing.door.handbook.kind': 'Aufgeschrieben',
   'landing.door.handbook.title': 'Handbuch',
   'landing.door.handbook.blurb':
-    'Was das System ist und wie man darin arbeitet: die Architektur, die Zeichnungen davon, die Konventionen und die Fallstricke, die jede Prüfung bestehen.',
+    'Was das System ist und wie man darin arbeitet: die Architektur, Zeichnungen dazu, die Konventionen und die Fallstricke, die jede Prüfung bestehen.',
 
   'landing.door.decisions.kind': 'Protokolle',
   'landing.door.decisions.title': 'Entscheidungen',
   'landing.door.decisions.blurb':
-    'Warum das Repository so ist, wie es ist, und welche seiner Aussagen inzwischen abgelaufen sind.',
+    'Warum das Repository so ist, wie es ist, und welche seiner Aussagen nicht mehr gelten.',
 
   'landing.door.design.kind': 'Von Hand gezeichnet',
   'landing.door.design.title': 'Design',
   'landing.door.design.blurb':
-    'Die Figma-Datei, aus der die Screens kommen, und die drei Stellen, an denen sie den Code erreicht.',
+    'Die Figma-Datei hinter den Screens und die Stellen, an denen sie mit dem Code verbunden ist.',
 
   'landing.layout.heading': 'Wie das Repository aufgebaut ist',
   'landing.layout.core':
-    'Das Modell, die Parser, die Services, die Caches und der gesamte State. Es importiert kein UI-Framework und kein Plattform-SDK, und ein Test lässt den Build scheitern, sobald sich daran etwas ändert.',
+    'Das Modell, die Parser, die Services, die Caches und der gesamte Zustand. Es nutzt kein UI-Framework und kein Plattform-SDK. Ein Test stoppt den Build, wenn sich das ändert.',
   'landing.layout.mobile':
-    'Die Expo-App: iOS, Android und ein Web-Target. Sie hält die Screens und eine Datei, die die Ports implementiert.',
+    'Die Expo-App für iOS, Android und das Web. Sie enthält die Screens und eine Datei, die die Ports umsetzt.',
   'landing.layout.tokens':
-    'Die gemeinsame Palette. Das WordPress-CMS von CORRECTIV nutzt dieselben Werte, und diese Workbench ebenso, weshalb keine Seite hier die Farben für sich abspalten kann.',
+    'Die gemeinsame Farbpalette. Das WordPress-CMS von CORRECTIV nutzt dieselben Werte, und diese Workbench auch. Deshalb kann keine Seite hier eigene Farben verwenden.',
   'landing.layout.records':
-    '{records, plural, one {# Protokoll} other {# Protokolle}}. Ein Protokoll wird nie umgeschrieben, damit es im Rückblick richtig aussieht: Eine Aussage, die eine spätere Entscheidung falsch gemacht hat, wird an Ort und Stelle durchgestrichen. So durchgestrichen {retired, plural, one {ist # Aussage} other {sind # Aussagen}}.',
+    '{records, plural, one {# Protokoll} other {# Protokolle}}. Ein Protokoll wird nachträglich nie umgeschrieben. Macht eine spätere Entscheidung eine Aussage falsch, wird sie an ihrer Stelle durchgestrichen. Bisher {retired, plural, one {ist # Aussage} other {sind # Aussagen}} gestrichen.',
 
   'landing.footer':
     '{licence} · <repoLink>{repo}</repoLink> · gebaut aus <commitLink>{commit}</commitLink>',

@@ -51,7 +51,7 @@ export const CONDITION_LABELS: Readonly<Record<IntrinsicCondition, WorkbenchMess
   }),
   'has-more-research': wbMessage({
     id: 'conditions.intrinsic.hasMoreResearch',
-    defaultMessage: 'Appears only when the investigations feed holds more than the lead.',
+    defaultMessage: 'Appears only when there are more investigations than the lead article.',
   }),
   'has-fact-checks': wbMessage({
     id: 'conditions.intrinsic.hasFactChecks',
@@ -105,26 +105,27 @@ const COPY = defineMessages({
   },
   notYet: {
     id: 'conditions.notYet',
-    defaultMessage: 'Not yet members (nobody in the app can be one)',
+    defaultMessage: 'Not yet members (the app is for members only)',
     description:
       'A switched-off option in the “Show to” list. The app admits members only, so no reader of it is not yet a member; whether that changes is an open product question.',
   },
   stranding: {
     id: 'conditions.stranding',
     defaultMessage:
-      'Some audiences are off: a change here hides the other place, and without this one some readers would see neither.',
+      'Some audiences cannot be chosen here. This change moves the block away from its other place. If it applied to only some readers, the others would see the block in neither place.',
     description:
       'Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place.',
   },
   locked: {
     id: 'conditions.locked',
-    defaultMessage: 'The change here is for another audience. Frame a reader in it to edit it.',
+    defaultMessage:
+      'This change is for another audience. To edit it, sign in a reader from that audience in the frame.',
     description:
       'In a block’s popover, where the only change about the block at this point of the day is for an audience the reader signed in in the framed app is not in, so the controls are switched off.',
   },
   notFor: {
     id: 'conditions.notFor',
-    defaultMessage: 'Not in the frame: the reader signed in there is not in it.',
+    defaultMessage: 'Hidden in the frame. The reader signed in there is not in this audience.',
     description:
       'Under a block that the reader the framed app is signed in as is not in the audience of, which is why the frame does not draw it.',
   },

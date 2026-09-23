@@ -72,7 +72,7 @@ export const DECISIONS_CHAIN_COPY = defineMessages({
   lede: {
     id: 'decisionsChain.lede',
     defaultMessage:
-      '{records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through where it stands and the later record names what it retired. Read a row to see whether a record still holds; follow the arcs to see who amended it.',
+      '{records} records, never rewritten. When a later decision makes an earlier claim false, the claim is struck through, and the later record names what it retired. Read a row to see whether a record still holds. Follow the arcs to see which record changed it.',
     description:
       'The paragraph under that heading. {records} is how many records adr/ holds, counted by the drawing’s own layout rather than typed. test/diagrams.test.ts holds it to that count, so the placeholder has to stay at the front of the sentence.',
   },

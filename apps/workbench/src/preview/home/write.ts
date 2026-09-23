@@ -136,7 +136,7 @@ const COPY = {
   issueLead: wbMessage({
     id: 'home.issue.lead',
     defaultMessage:
-      'This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made from it by itself, and this issue says where. Please leave the block below as it is.',
+      'This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.',
     description:
       'The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English.',
   }),

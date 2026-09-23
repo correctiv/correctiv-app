@@ -33,7 +33,7 @@ const COPY = defineMessages({
   full: { id: 'shell.header.full', defaultMessage: 'Give the app the whole screen' },
   fullTip: {
     id: 'shell.header.fullTip',
-    defaultMessage: 'The app on its own',
+    defaultMessage: 'App only',
     description:
       'The tooltip on the button whose accessible name is shell.header.full. Shorter, because a tooltip is read beside the thing it describes.',
   },

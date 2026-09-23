@@ -37,13 +37,13 @@ export const documentFrame: Record<string, string> = {
 
   'document.retired.badge': '{count, plural, one {# Streichung} other {# Streichungen}}',
   'document.retired.note':
-    '{count, plural, one {Eine Aussage auf dieser Seite ist} other {Aussagen auf dieser Seite sind}} an Ort und Stelle durchgestrichen, mit dem daneben, was sie aufgehoben hat.',
+    '{count, plural, one {Eine Aussage auf dieser Seite ist durchgestrichen.} other {Einige Aussagen auf dieser Seite sind durchgestrichen.}} Der Grund steht jeweils daneben.',
   'document.retired.tag': 'gestrichen',
 
   'document.source':
-    'Diese Seite ist <fileLink>{file}</fileLink> im Repository, hier gerendert. Sie ist keine Kopie, es gibt also genau eine Stelle zum Bearbeiten.',
+    'Diese Seite ist <fileLink>{file}</fileLink> aus dem Repository, hier angezeigt. Sie ist keine Kopie, es gibt also nur eine Stelle zum Bearbeiten.',
   'document.source.generated':
-    'Diese Seite ist <fileLink>{file}</fileLink> im Repository, und das ist das Programm, das diese Seite schreibt, nicht die Seite selbst. Sie entsteht beim Build aus dem Baum. Nichts darauf ist also eine Kopie von irgendetwas, und hier gibt es nichts zu bearbeiten.',
+    'Diese Seite schreibt ein Programm: <fileLink>{file}</fileLink> im Repository. Es läuft beim Build der Site, hier gibt es also nichts zu bearbeiten.',
 
   'document.neighbours': 'Die Protokolle vor und nach diesem',
   'document.previous': 'Vorheriges · {nav}',

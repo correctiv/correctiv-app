@@ -66,13 +66,13 @@ const COPY = defineMessages({
   },
   addPoint: {
     id: 'home.timeline.addPoint',
-    defaultMessage: 'Make this minute a moment',
+    defaultMessage: 'Add a moment at this minute',
     description:
       'The accessible name of the button that names the playhead’s minute as a moment of the day. home.timeline.addPointShort is the same button’s visible word, which goes below 640px.',
   },
   addPointShort: {
     id: 'home.timeline.addPointShort',
-    defaultMessage: 'Point here',
+    defaultMessage: 'Moment',
     description:
       'The visible word on the button whose accessible name is home.timeline.addPoint. It has an icon beside it and a whole sentence would not fit.',
   },
@@ -108,7 +108,7 @@ const COPY = defineMessages({
   },
   editionHere: {
     id: 'edition.here',
-    defaultMessage: 'Edition here',
+    defaultMessage: 'New edition',
     description:
       'The visible word on the button beside the track that starts an edition at the playhead. An edition is a named layer over the ordinary day, a campaign or an election night, active for a span of dates. edition.hereLong is the same button’s accessible name.',
   },
@@ -120,7 +120,7 @@ const COPY = defineMessages({
   },
   editionTaken: {
     id: 'edition.taken',
-    defaultMessage: 'An edition already runs from exactly this minute. Edit that one.',
+    defaultMessage: 'An edition already starts at exactly this minute. Edit that one instead.',
     description:
       'The tooltip on edition.here when it is switched off: a new edition here could not be narrower than the one already running, so it would never be the one an edit lands on.',
   },

@@ -55,7 +55,7 @@ export const SIGN_IN_COPY = defineMessages({
   lede: {
     id: 'signIn.lede',
     defaultMessage:
-      'The door is real and everything past it is not. The root layout renders it instead of the route tree, and what it asks is a function that waits a second and a half and reads a table of email addresses. Above the red line is what this repository does; below it is what the whiteboard plans, drawn as an absence because that is what it is.',
+      'The door is real; everything behind it is not yet. The root layout shows it instead of the routes. It calls a function that waits one and a half seconds and looks the email address up in a table. Above the red line is what this repository does. Below it is what the whiteboard plans, drawn as a gap because it does not exist yet.',
     description: 'The paragraph under that heading.',
   },
 });

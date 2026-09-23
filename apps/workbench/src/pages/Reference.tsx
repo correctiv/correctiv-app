@@ -49,7 +49,7 @@ const COPY = defineMessages({
   ledeMore: {
     id: 'reference.lede.more',
     defaultMessage:
-      'The core has no barrel, so a module here is the subpath you import. This is a lookup surface; the architecture pages are the way in. The app’s own components are their own section: <components>Components</components>, which nothing outside <code>apps/mobile</code> can import.',
+      'The core has no barrel, so each module here is the subpath you import. This page is for looking things up; start with the architecture pages. The app’s own components have their own section, <components>Components</components>, and only <code>apps/mobile</code> can import them.',
     description:
       'Behind the ⓘ at the end of the sentence under the heading. The run in <code> is a path in this repository and is left in its own spelling. <components> is the link to /components and the word inside it is that page’s own name.',
   },

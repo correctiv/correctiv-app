@@ -16,5 +16,5 @@
 export const articlePath: Record<string, string> = {
   'articlePath.title': 'Woher ein Artikel kommt',
   'articlePath.lede':
-    'Fünf Sprossen, der Reihe nach versucht, und die erste, die antwortet, ist die Antwort. Der in die App kompilierte Schnappschuss kommt zuerst, denn das Versprechen lautet: Lesen ohne WLAN. Der Cache hinter der zweiten und der fünften Sprosse ist dreifach begrenzt, und was auf dem Bildschirm ankommt, ist ein String, den ein WebView bekommt.',
+    'Fünf Sprossen, der Reihe nach versucht; die erste, die antwortet, gilt. Zuerst kommt der in die App eingebaute Schnappschuss, denn das Versprechen lautet: Ein Artikel öffnet sich auch ohne WLAN. Der Cache hinter der zweiten und der fünften Sprosse hat drei Grenzen. Auf dem Bildschirm kommt ein einziger String an, den eine WebView bekommt.',
 };

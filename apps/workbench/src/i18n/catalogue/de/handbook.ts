@@ -19,11 +19,11 @@
  */
 export const handbook: Record<string, string> = {
   'handbook.title': 'Handbuch',
-  'handbook.lede': 'Die Dokumente des Repositories selbst, gerendert dort, wo sie liegen.',
+  'handbook.lede': 'Die Dokumente des Repositorys, direkt aus ihren Dateien angezeigt.',
   'handbook.lede.more':
-    'Nichts hier ist eine Kopie: Die Dateien sind die Quelle, und diese Site ist ein zweiter Weg, sie zu lesen. So gibt es eine Stelle zum Bearbeiten und keine Fassung, die unbemerkt zurückfällt.',
+    'Nichts hier ist eine Kopie. Die Dateien sind die Quelle, und diese Site ist ein zweiter Weg, sie zu lesen. So gibt es nur eine Stelle zum Bearbeiten, und keine Fassung veraltet unbemerkt.',
   'handbook.records':
-    'Die Entscheidungen hinter alledem sind ein eigener Abschnitt, denn ein Protokoll ist eine andere Art von Dokument: Es wird nie umgeschrieben, und eine Aussage, die eine spätere Entscheidung falsch gemacht hat, wird an Ort und Stelle durchgestrichen statt korrigiert.',
+    'Die Entscheidungen dahinter haben einen eigenen Bereich. Ein Entscheidungsprotokoll ist eine andere Art Dokument: Es wird nie umgeschrieben. Macht eine spätere Entscheidung eine Aussage falsch, wird sie durchgestrichen statt korrigiert.',
 
   'handbook.card.architecture.kind': 'Erklärung',
 

@@ -19,7 +19,7 @@ export const reference: Record<string, string> = {
   'reference.lede':
     'Jedes exportierte Symbol aus <code>packages/app-core</code>, aus dem Quelltext und seinen Doc-Kommentaren extrahiert.',
   'reference.lede.more':
-    'Der Core hat kein Barrel, ein Modul ist hier also genau der Subpfad, den Sie importieren. Diese Seite ist zum Nachschlagen da; der Weg hinein sind die Architekturseiten. Die eigenen Komponenten der App sind ein eigener Abschnitt: <components>Komponenten</components>. Importieren kann sie nichts außerhalb von <code>apps/mobile</code>.',
+    'Der Core hat kein Barrel, jedes Modul hier ist also der Subpfad, den Sie importieren. Diese Seite ist zum Nachschlagen da, der Einstieg sind die Architekturseiten. Die Komponenten der App haben einen eigenen Bereich, <components>Komponenten</components>, und nur <code>apps/mobile</code> kann sie importieren.',
 
   'reference.filter': 'Module und Symbole filtern',
   'reference.filter.placeholder': 'Filtern, zum Beispiel loadArticle oder stores/',

@@ -155,7 +155,7 @@ export const PAGES: PageGroup[] = [
      */
     group: wbMessage({
       id: 'frame.pages.group.worthReaching',
-      defaultMessage: 'Worth being able to reach',
+      defaultMessage: 'More pages',
       description:
         'The group of two addresses that are not screens of the app in the ordinary sense: its component gallery and its 404.',
     }),

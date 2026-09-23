@@ -27,7 +27,7 @@ const COPY = defineMessages({
   lead: {
     id: 'shell.boundary.lead',
     defaultMessage:
-      'The rest of the workbench still works: pick another section on the left, or press <kbd>⌘K</kbd> to search. The error is below and in the browser console.',
+      'The rest of the workbench still works. Pick another section on the left, or press <kbd>⌘K</kbd> to search. The error is below and in the browser console.',
     description:
       'Under the heading of a view that threw. The tag wraps the key combination, drawn as a keycap.',
   },

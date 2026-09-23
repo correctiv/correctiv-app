@@ -55,7 +55,7 @@ export const SERVICES_COPY = defineMessages({
   lede: {
     id: 'services.lede',
     defaultMessage:
-      'One of these is not like the others. beabee answers who somebody is and whether their membership includes the app; everything else answers what to show them. Most of the content is live today, and the identity half is still simulated.',
+      'One of these is different. beabee answers who someone is and whether their membership includes the app. Everything else answers what to show them. Most content is live today; the identity part is still simulated.',
     description: 'The paragraph under that heading. beabee is a product name and stays.',
   },
 
@@ -183,7 +183,7 @@ export const SERVICES_COPY = defineMessages({
   caption: {
     id: 'services.caption',
     defaultMessage:
-      'Its answer decides whether the app renders its routes at all, which no content source does, so it is drawn on its own wire. That answer is simulated today, in <code>services/auth.service.ts</code>, and the shape of the answer is the contract. Five content sources are live; three are files typed in the shape of the API meant to replace them. Which is which, and the figures behind each, is the <board>sources board</board>.',
+      'Its answer decides whether the app shows its routes at all. No content source does that, so it has a line of its own. Today the answer is simulated, in <code>services/auth.service.ts</code>, and its shape is the contract. Five content sources are live; three are files in the shape of the API meant to replace them. The <board>sources board</board> shows which is which, with the figures.',
     description:
       'The rest of that caption. <code> marks a file path, which stays as it is written. <board> is the link to /sources and the words inside it are that page’s own name. The two counts are held to the drawing’s own rows by test/diagrams.test.ts, which reads this sentence, so the words around each number are load-bearing in English.',
   },

@@ -16,7 +16,8 @@
  */
 export const preview: Record<string, string> = {
   'preview.frame.booting': 'Die App startet …',
-  'preview.frame.stuck': 'Die App wurde nicht geladen. Die Vorschau hat ihre Konsole.',
+  'preview.frame.stuck':
+    'Die App wurde nicht geladen. Details stehen in der Konsole der Werkzeugleiste.',
 
   'preview.status.app': 'Die App ist <b>{scheme}</b>',
   'preview.status.setting': 'Einstellung <b>{setting}</b>, Gerät meldet <b>{scheme}</b>',

@@ -106,7 +106,7 @@ const COPY = defineMessages({
   seeNote: {
     id: 'design.see.note',
     defaultMessage:
-      'The file, if you are signed in to Figma with access to it. Figma’s own sign-in screen if not. That screen is a permission and not a fault: this file is not shared publicly.',
+      'The file, if you are signed in to Figma and have access. Otherwise Figma’s sign-in page. That is a question of access, not an error: the file is not shared publicly.',
   },
 
   full: {
@@ -118,7 +118,7 @@ const COPY = defineMessages({
   fullNote: {
     id: 'design.full.note',
     defaultMessage:
-      'The frame needs the width of the screen, so it opens on its own. The file itself still loads on a press.',
+      'The frame needs the full width of the screen, so it opens on its own. The file still loads only when you press the button.',
     description:
       'The line under the full-screen button. design.load.note is the line under the other button, which does fetch the file.',
   },
@@ -138,14 +138,14 @@ const COPY = defineMessages({
   restSide: {
     id: 'design.rest.side',
     defaultMessage:
-      'Everything else about the design, the clients, the plugin and where the colours reach the code, is on the right.',
+      'More about the design is on the right: the desktop apps, the plugin, and where the colours reach the code.',
     description:
       'Where the three tools are, on a layout wide enough to put them in the right-hand panel. design.rest.below is the same sentence for the layout that stacks them under the page.',
   },
   restBelow: {
     id: 'design.rest.below',
     defaultMessage:
-      'Everything else about the design, the clients, the plugin and where the colours reach the code, is below.',
+      'More about the design is below: the desktop apps, the plugin, and where the colours reach the code.',
     description:
       'Where the three tools are, on a layout too narrow for the right-hand panel. design.rest.side is the same sentence for the wide layout.',
   },
@@ -177,13 +177,13 @@ const COPY = defineMessages({
   linksNote: {
     id: 'design.links.note',
     defaultMessage:
-      'The preview frames the running app at the size the file draws it, which is the comparison the file is for.',
+      'The preview shows the running app at the size the file draws it, so you can compare the two.',
   },
 
   clientsNote: {
     id: 'design.clients.note',
     defaultMessage:
-      'The plugin is loaded through Plugins, Development, Import plugin from manifest, and that menu exists only in the desktop app. Figma builds one for macOS and Windows; on Linux this project uses a fork.',
+      'You load the plugin through Plugins, Development, Import plugin from manifest. That menu exists only in the desktop app. Figma makes one for macOS and Windows; on Linux this project uses a fork.',
     description:
       'The line above the four downloads. “Plugins, Development, Import plugin from manifest” is Figma’s own menu and stays in English in every catalogue: it is not a description of a menu, it is the words a reader has to find in one. macOS, Windows and Linux are the platforms’ own names.',
   },
@@ -209,7 +209,7 @@ const COPY = defineMessages({
   coloursNote: {
     id: 'design.colours.note',
     defaultMessage:
-      'Not redrawn from the file. <code>{pkg}</code> is generated and both the app and this site import the same stylesheet, so <code>{token}</code> means one thing in three places.',
+      'Not copied from the file. <code>{pkg}</code> is generated, and the app and this site import the same stylesheet. So <code>{token}</code> means the same thing in three places.',
     description:
       'The line in the colours card. {pkg} is the design-tokens package and {token} one of its classes; both are identifiers and are not translated. <code> draws each in monospace.',
   },
@@ -222,7 +222,7 @@ const COPY = defineMessages({
   boardNote: {
     id: 'design.board.note',
     defaultMessage:
-      '<code>{path}</code> draws the screen inventory into the file from data in this repository, rather than anybody keeping a board in step by hand.',
+      '<code>{path}</code> draws the overview of all screens into the file, from data in this repository. Nobody has to keep a board up to date by hand.',
     description:
       'The line in the board card. {path} is the plugin’s directory in this repository and is not translated; <code> draws it in monospace.',
   },
@@ -234,7 +234,7 @@ const COPY = defineMessages({
   pluginNote: {
     id: 'design.plugin.note',
     defaultMessage:
-      'An interpreter rather than a builder: <code>{codeFile}</code> knows nothing about the app and draws whatever <code>{specFile}</code> describes. Its own documentation is a page of this site, with the three traps of the Linux client in it.',
+      '<code>{codeFile}</code> knows nothing about the app. It draws whatever <code>{specFile}</code> describes. Its documentation is a page on this site and covers the traps of the Linux client.',
     description:
       'The line in the plugin card. {codeFile} and {specFile} are two file names in the plugin’s directory and are not translated; <code> draws each in monospace.',
   },

@@ -29,17 +29,17 @@ export const decisions: Record<string, string> = {
   'decisions.eyebrow': 'CORRECTIV Community-App · interne Dokumentation',
   'decisions.title': 'Entscheidungsprotokolle',
   'decisions.lede':
-    'Die Entscheidungen, die dieses Repository ausdiskutiert statt vorausgesetzt hat, und welche davon noch gelten. Ein Protokoll sagt das <em>Warum</em>; <architecture>die Architektur</architecture> sagt, was die Sache ist.',
+    'Die Entscheidungen, die dieses Repository begründet statt vorausgesetzt hat, und welche davon noch gelten. Ein Protokoll sagt das <em>Warum</em>. <architecture>Die Architektur</architecture> sagt, was die Sache ist.',
 
   'decisions.rule.label': 'Wie eine überholte Aussage markiert wird',
   'decisions.rule.never':
-    '<strong>Ein Protokoll wird nie umgeschrieben, damit es im Nachhinein richtig aussieht.</strong> Eine Aussage, die eine spätere Entscheidung <em>falsch</em> gemacht hat, wird an Ort und Stelle durchgestrichen, mit einem Zusatz, der sagt, was sie ungültig gemacht hat, und einem Link auf das Protokoll, das es getan hat. Die Argumentation darum herum bleibt unangetastet, denn die Begründung ist der Teil, der es wert ist, behalten zu werden.',
+    '<strong>Ein Protokoll wird nie umgeschrieben, damit es im Nachhinein richtig aussieht.</strong> Macht eine spätere Entscheidung eine Aussage <em>falsch</em>, wird sie an ihrer Stelle durchgestrichen. Ein kurzer Grund sagt, was sie ungültig gemacht hat, mit einem Link auf das Protokoll, das es getan hat. Die Argumentation darum herum bleibt, wie sie war, denn die Begründung ist das, was sich zu behalten lohnt.',
   'decisions.rule.struck':
-    'Also sind <f>{struck}</f> {struck, plural, one {Aussage} other {Aussagen}} in diesen <f>{records}</f> Protokollen gestrichen, und ein Protokoll mit einer gestrichenen Aussage gilt weiterhin. Das ist die Disziplin bei der Arbeit und kein Fehler, und genau das soll diese Übersicht sichtbar machen: In den Dokumenten selbst ist es unsichtbar, solange Sie nicht alle {records} öffnen.',
+    'In diesen <f>{records}</f> Protokollen {struck, plural, one {ist <f>#</f> Aussage} other {sind <f>#</f> Aussagen}} gestrichen, und ein Protokoll mit gestrichener Aussage gilt weiter. Das ist die Regel bei der Arbeit, kein Fehler. Diese Übersicht macht es sichtbar. In den Dokumenten selbst müssten Sie dafür alle {records} öffnen.',
   'decisions.rule.unattributed':
-    '{count, plural, one {<f>#</f> dieser Streichungen nennt in ihrem Zusatz kein späteres Protokoll. Sie entstand durch eine erneute Messung oder durch einen späteren Abschnitt desselben Protokolls, hat also keinen Pfeil zu zeichnen, und ihr Zusatz ist das Einzige, was sich über sie sagen lässt.} other {<f>#</f> dieser Streichungen nennen in ihrem Zusatz kein späteres Protokoll. Sie entstanden durch eine erneute Messung oder durch einen späteren Abschnitt desselben Protokolls, haben also keinen Pfeil zu zeichnen, und ihr Zusatz ist das Einzige, was sich über sie sagen lässt.}} Genau das sagt eine Zeile unter ihrem Titel: ein Zusatz, auf einen Satz gekürzt. Die Detailansicht unten hat sie alle, vollständig.',
+    '{count, plural, one {<f>#</f> dieser Streichungen nennt kein späteres Protokoll. Gestrichen hat sie eine neue Messung oder ein späterer Abschnitt desselben Protokolls. Es gibt also keinen Pfeil, und ihr Grund ist alles, was sich dazu sagen lässt.} other {<f>#</f> dieser Streichungen nennen kein späteres Protokoll. Gestrichen haben sie eine neue Messung oder ein späterer Abschnitt desselben Protokolls. Es gibt also keinen Pfeil, und ihr Grund ist alles, was sich dazu sagen lässt.}} Diesen Grund zeigt eine Zeile unter ihrem Titel, auf einen Satz gekürzt. Die Detailansicht unten zeigt alle vollständig.',
   'decisions.rule.clauseless':
-    '{count, plural, one {<f>#</f> davon trägt überhaupt keinen Zusatz. Die Begründung stand im Absatz nach der Streichung, oder eine zweite Streichung daneben hat sie für sich beansprucht, und beides lässt sich beim Lesen des Protokolls nicht zurückgewinnen. Diese Zeile sagt das an Ort und Stelle, und das Protokoll selbst hat die Antwort.} other {<f>#</f> davon tragen überhaupt keinen Zusatz. Die Begründung stand im Absatz nach der Streichung, oder eine zweite Streichung daneben hat sie für sich beansprucht, und beides lässt sich beim Lesen des Protokolls nicht zurückgewinnen. Diese Zeilen sagen das an Ort und Stelle, und das Protokoll selbst hat die Antwort.}}',
+    '{count, plural, one {<f>#</f> davon hat keinen Grund dabei. Der Grund stand im Absatz nach der Streichung, oder eine zweite Streichung daneben hat ihn übernommen. Beides kann die Übersicht nicht automatisch zuordnen. Diese Zeile sagt das, und das Protokoll selbst hat die Antwort.} other {<f>#</f> davon haben keinen Grund dabei. Der Grund stand im Absatz nach der Streichung, oder eine zweite Streichung daneben hat ihn übernommen. Beides kann die Übersicht nicht automatisch zuordnen. Diese Zeilen sagen das, und das Protokoll selbst hat die Antwort.}}',
 
   'decisions.show.legend': 'Welche Protokolle anzeigen',
   'decisions.show.title': 'Anzeigen',
@@ -69,7 +69,7 @@ export const decisions: Record<string, string> = {
 
   'decisions.board.title': 'Die Übersicht',
   'decisions.board.lede':
-    'Eine Zeile pro Protokoll, die ältesten zuerst. Eine Zeile mit einer Streichung sagt unter ihrem Titel, warum: den Zusatz der neuesten, auf einen Satz gekürzt, und hinter dem Text, den sie gestrichen hat, wo er sich nur daran gelesen erschließt. Eine Zeile klappt auf zum Satz des Index über sie, zu jeder darin gestrichenen Aussage samt dem vollständigen Zusatz, der sie ungültig gemacht hat, und zu beiden Richtungen des Streichungsgraphen. In der Detailansicht ist nichts gekürzt. Die Kacheln oben filtern auch diese Übersicht.',
+    'Eine Zeile je Protokoll, die ältesten zuerst. Hat ein Protokoll gestrichene Aussagen, steht der Grund unter seinem Titel, auf einen Satz gekürzt. Klappen Sie eine Zeile auf, sehen Sie den Satz aus dem Index, jede gestrichene Aussage mit ihrem vollen Grund und welche Protokolle darin gestrichen haben oder von ihm gestrichen wurden. In der Detailansicht ist nichts gekürzt. Die Kacheln oben filtern auch diese Liste.',
   'decisions.filter': 'Protokolle filtern',
   'decisions.filter.placeholder': 'Nummer, Titel oder eine Aussage',
   'decisions.only': 'Nur, was nicht gebaut oder nicht geprüft ist',
@@ -97,14 +97,14 @@ export const decisions: Record<string, string> = {
   'decisions.detail.struck':
     '{count, plural, one {Eine Aussage ist gestrichen:} other {# Aussagen sind gestrichen:}}',
   'decisions.detail.noClause':
-    'Auf diese Streichung folgt kein Zusatz. Das Protokoll sagt es im Text darum herum.',
+    'Zu dieser Streichung steht kein Grund dabei. Das Protokoll erklärt sie im Text darum herum.',
   'decisions.detail.voids':
     '{count, plural, one {Es hat eine Aussage gestrichen in} other {Es hat Aussagen gestrichen in}}',
   'decisions.detail.read': 'ADR {number} lesen',
 
   'decisions.footer.label': 'Woher diese Übersicht kommt',
   'decisions.footer.build':
-    'Jede Zeile, jede Zahl und jede Kante oben wird beim Build aus den Protokollen selbst gelesen. Die Workbench hält keine Kopie davon, diese Übersicht kann <code>adr/</code> also nicht widersprechen, und wenn sie ein Protokoll nicht lesen kann, wird die Site nicht gebaut.',
+    'Jede Zeile, jede Zahl und jede Verbindung oben wird beim Build aus den Protokollen selbst gelesen. Die Workbench hält keine Kopie, diese Übersicht kann <code>adr/</code> also nicht widersprechen. Kann sie ein Protokoll nicht lesen, wird die Site nicht gebaut.',
   'decisions.footer.notes':
-    'Der Index, aus dem diese Sätze stammen, ist vollständig unter <notes>Entscheidungen, die Notizen</notes> veröffentlicht. Er trägt den Teil, den eine Tabelle aus Zeilen nicht tragen kann: die Notizen für alle, die die älteren Protokolle lesen, und die Regel von oben in voller Länge.',
+    'Der Index, aus dem diese Sätze stammen, steht vollständig unter <notes>Entscheidungen, die Notizen</notes>. Dort steht auch, was eine Tabelle nicht fassen kann: Hinweise zum Lesen der älteren Protokolle und die Regel von oben in voller Länge.',
 };

@@ -78,19 +78,19 @@ export const EDITION_COPY = defineMessages({
   },
   landsOnDay: {
     id: 'edition.landsOnDay',
-    defaultMessage: 'Edits land on the ordinary day.',
+    defaultMessage: 'Your changes go into the ordinary day.',
     description:
       'Says which layer of the home document an edit in the panel writes to, when no edition is running at the playhead. edition.landsOn is the same line while one is.',
   },
   landsOn: {
     id: 'edition.landsOn',
-    defaultMessage: 'Edits land on the edition “{edition}”.',
+    defaultMessage: 'Your changes go into the edition “{edition}”.',
     description:
       'Says which layer an edit in the panel writes to while an edition is running at the playhead: the narrowest one, which is the one whose word the phone shows. {edition} is its title as the newsroom wrote it, or its id where it has none.',
   },
   details: {
     id: 'edition.details',
-    defaultMessage: 'Dates, title and delete for {edition}',
+    defaultMessage: 'Time, title and delete for {edition}',
     description:
       'The accessible name of the button that opens the edition’s popover, and of the popover itself. {edition} is its title, or its id where it has none.',
   },
@@ -121,20 +121,20 @@ export const EDITION_COPY = defineMessages({
   publicWhenMerged: {
     id: 'edition.publicWhenMerged',
     defaultMessage:
-      'An edition is public once merged, so submit it no earlier than it may be known.',
+      'An edition is public as soon as it is merged. Submit it only once it may be known.',
     description:
       'A warning in the edition’s popover. The repository is public, and the private plan that would keep a dated edition out of it until shortly before it starts is not built yet, so this is the whole of the protection for now.',
   },
   pinEarly: {
     id: 'edition.pinEarly',
     defaultMessage:
-      'A pin here is public as early as the edition; lead with an embargoed piece through its WordPress flag instead.',
+      'This pin is public as soon as the edition is. To lead with an embargoed piece, use its flag in WordPress instead.',
     description:
       'Shown beside a pinned article inside an edition, and in the edition’s popover when it pins one. The flag is the WordPress field that makes an article lead the app, which is set at publication and so never earlier than the article itself.',
   },
   decides: {
     id: 'edition.decides',
-    defaultMessage: '{edition} decides this block here',
+    defaultMessage: '{edition} sets this block here',
     description:
       'Read out for the coloured hairline at a block’s edge, which marks a block whose state at the playhead an edition sets rather than the ordinary day. {edition} is the edition’s title, or its id where it has none.',
   },

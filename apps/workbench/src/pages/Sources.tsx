@@ -286,7 +286,7 @@ const COPY = defineMessages({
   feedUnmeasured: {
     id: 'sources.feed.unmeasured',
     defaultMessage:
-      '<strong>Neither the feed nor its category answered in that run</strong>, so the figures above are unknown rather than zero. What a failed probe found is on its row in <code>apps/workbench/content/sources.measured.ts</code>.',
+      '<strong>Neither the feed nor its category answered in that run.</strong> So the figures above are unknown, not zero. The row in <code>apps/workbench/content/sources.measured.ts</code> says what the failed check found.',
     description:
       'Printed in an article feed’s detail when the last run reached neither the feed nor the category behind it. <strong> carries the finding and <code> the generated file in this repository, which stays in its own spelling.',
   },
@@ -379,7 +379,7 @@ const COPY = defineMessages({
   lede: {
     id: 'sources.lede',
     defaultMessage:
-      'For every kind of content the app shows: is it live data, sample data standing in for an API that does not exist yet, or a wanted feature with nothing to read.',
+      'For every kind of content in the app: is it live data, sample data standing in for an API that does not exist yet, or a wanted feature with no source?',
     description:
       'The paragraph under the heading, which names the three states the board sorts by.',
   },
@@ -393,34 +393,34 @@ const COPY = defineMessages({
   measuredWhen: {
     id: 'sources.measured.when',
     defaultMessage:
-      '<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}.</strong>',
+      '<strong>All figures on this page were measured on <f>{measured}</f>, {age}.</strong>',
     description:
       'The first line of the note under the lede, always drawn: how fresh the figures are. {measured} is the ISO day of the last run; {age} is how long ago that was, worked out in the reader’s browser by src/lib/measured.ts. <strong> carries the whole line and <f> draws the day in monospace. How the run was taken is sources.measured.how, behind the ⓘ beside it.',
   },
   measuredHow: {
     id: 'sources.measured.how',
     defaultMessage:
-      'The run was <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.',
+      'Measured by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. Your browser checked nothing, and cannot: the RSS feeds do not allow it. That is why this is a script and not a refresh button.',
     description:
       'Behind the ⓘ in that note, after sources.measured.when says which day. {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <code> draws the script’s path in this repository.',
   },
   measuredStale: {
     id: 'sources.measured.stale',
     defaultMessage:
-      'That is more than {days, plural, one {# day} other {# days}} ago, so the weekly run that keeps this page current has not landed in a quarter. The post counts and the newest-post dates below have almost certainly moved.',
+      'The figures below are probably out of date. They are more than {days, plural, one {# day} other {# days}} old, so the weekly measurement has not run for a quarter.',
     description:
       'Printed in that note only once the last run is old enough to distrust. {days} is the number of days this site treats as the limit, which is a quarter.',
   },
   measuredSilentSome: {
     id: 'sources.measured.silentSome',
     defaultMessage:
-      '<strong>{count, plural, one {One source} other {# sources}} did not answer:</strong> {list}. That is a finding and not a failure — nothing in this repository turns a source being down into a red build.',
+      '<strong>{count, plural, one {One source} other {# sources}} did not answer:</strong> {list}. That is a finding, not a failure. A source that is down never stops a build here.',
     description:
       'Printed in that note when at least one source did not answer. {count} is how many, and {list} names each of them with the reason the run recorded, in the script’s own words. They are named rather than merely counted, because “three sources did not answer” reads the same whether three feeds are down or the script probed nothing at all.',
   },
   measuredAllAnswered: {
     id: 'sources.measured.allAnswered',
-    defaultMessage: 'Every source answered in that run, so nothing below is an unknown.',
+    defaultMessage: 'Every source answered in that run, so no figure below is unknown.',
     description: 'Printed in that note in place of the list, when every source answered.',
   },
   measuredNoReason: {
@@ -451,28 +451,28 @@ const COPY = defineMessages({
   tileAllNote: {
     id: 'sources.tile.all.note',
     defaultMessage:
-      '{rows, plural, one {# row} other {# rows}} over {entries, plural, one {# manifest entry} other {# manifest entries}}, with the article family drawn as its {feeds, plural, one {# feed} other {# feeds}}.',
+      '{rows, plural, one {# row} other {# rows}} for {entries, plural, one {# manifest entry} other {# manifest entries}}. The articles count as their {feeds, plural, one {# feed} other {# feeds}}.',
     description:
       'The line under that tile, which explains why the board has more rows than the manifest has entries. {rows} is how many rows there are, {entries} how many entries the manifest has, and {feeds} how many article feeds the one article entry is drawn as.',
   },
   tileLiveNote: {
     id: 'sources.tile.live.note',
     defaultMessage:
-      '{ok} reading as expected, {stale} stale, {broken} broken. The last two are the bad news below.',
+      '{ok} working as expected, {stale} stale, {broken} broken. The last two are under the bad news below.',
     description:
       'The line under the Live tile. {ok} is how many live rows are delivering, {stale} how many have stopped, and {broken} how many point at nothing.',
   },
   tileSampleNote: {
     id: 'sources.tile.sample.note',
     defaultMessage:
-      '{count, plural, one {# file} other {# files}} typed in the shape of the API that will replace them. On screen they look like live content.',
+      '{count, plural, one {# file} other {# files}} in the shape of the API that will replace them. On screen they look like live content.',
     description:
       'The line under the Sample data tile. {count} is how many checked-in files stand in for an API.',
   },
   tileNoSourceNote: {
     id: 'sources.tile.noSource.note',
     defaultMessage:
-      '{count, plural, one {# wanted feature} other {# wanted features}} with nothing to read. {mvp} of them are MVP.',
+      '{count, plural, one {# wanted feature} other {# wanted features}} with no source. {mvp} of them are MVP.',
     description:
       'The line under the No source tile. {count} is how many wanted features have no source at all, and {mvp} how many of those are wanted for the first release.',
   },
@@ -485,7 +485,7 @@ const COPY = defineMessages({
   findingsLede: {
     id: 'sources.findings.lede',
     defaultMessage:
-      'A sample file is honest about what it is. A live feed that has stopped, or points at nothing, is not, because the app presents it as content. {ailing} of the {feeds} article feeds {ailing, plural, one {is} other {are}} in that state.',
+      'A sample file is honest about what it is. A live feed that has stopped, or points at nothing, is not: the app shows it as current content. {ailing} of the {feeds} article feeds {ailing, plural, one {is} other {are}} in that state.',
     description:
       'The line under that heading. {ailing} is how many article feeds are stale or broken and {feeds} how many there are altogether.',
   },
@@ -498,7 +498,7 @@ const COPY = defineMessages({
   findingsRest: {
     id: 'sources.findings.rest',
     defaultMessage:
-      'The other {count, plural, one {# article feed was} other {# article feeds were}} reading as expected in the run of <f>{measured}</f>. A feed can be stale for a good reason, which is what the note on each card is for.',
+      'The other {count, plural, one {article feed} other {# article feeds}} worked as expected on <f>{measured}</f>. A feed can be stale for a good reason. The note on each card explains.',
     description:
       'The line under those cards. {count} is how many article feeds are healthy and {measured} the ISO day of the last run. <f> draws the day in monospace.',
   },
@@ -517,7 +517,7 @@ const COPY = defineMessages({
   gapsLede: {
     id: 'sources.gaps.lede',
     defaultMessage:
-      '{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken.',
+      '{count, plural, one {# source is} other {# sources are}} live and reachable, but the app uses only part of each. Nothing is broken or missing. Nobody has decided yet what to use.',
     description: 'Behind the ⓘ beside that heading. {count} is how many such sources there are.',
   },
   gapsLegend: {
@@ -548,7 +548,7 @@ const COPY = defineMessages({
   boardLede: {
     id: 'sources.board.lede',
     defaultMessage:
-      'One row per source, per article feed, or per wanted source. A row expands to its full detail; nothing on this page is truncated. The state tiles above filter the board as well.',
+      'One row per source, article feed or wanted source. Open a row to see everything about it; nothing is cut short. The tiles above filter this list too.',
     description: 'The paragraph under that heading, which says what a row holds.',
   },
   filter: {
@@ -638,7 +638,7 @@ const COPY = defineMessages({
   caption: {
     id: 'sources.caption',
     defaultMessage:
-      'Every content source the app reads, stands in for, or still wants. Figures from the run of <f>{measured}</f>.',
+      'Every content source the app reads, stands in for or still wants. Figures from <f>{measured}</f>.',
     description:
       'The table’s caption, drawn as a line above it. {measured} is the ISO day of the last run, and <f> draws it in monospace.',
   },
@@ -671,7 +671,7 @@ const COPY = defineMessages({
   questionsLede: {
     id: 'sources.questions.lede',
     defaultMessage:
-      'This page exists to get these answered. Each one is raised by a row above, and each row carries its question as a Q chip.',
+      'This page exists to get these answered. Each question comes from a row above, where a Q chip marks it.',
     description:
       'The line under that heading. “Q chip” is the small badge on a row, whose label is sources.question.chip; a translation that changes the letter there changes it here too.',
   },
@@ -685,14 +685,14 @@ const COPY = defineMessages({
   footerFiles: {
     id: 'sources.footer.files',
     defaultMessage:
-      'Two files, and the split is the point. Every row, state and sentence above is read from <code>apps/workbench/content/sources.manifest.ts</code>, which a test checks against the core’s data directory: that is the argument, and it is written by hand. Every count, date and listener figure is read from <code>apps/workbench/content/sources.measured.ts</code>, which is generated and must not be edited.',
+      'Two files, on purpose. Every row, state and sentence above comes from <code>apps/workbench/content/sources.manifest.ts</code>. It is written by hand, and a test checks it against the core’s data folder. Every count, date and listener figure comes from <code>apps/workbench/content/sources.measured.ts</code>. That file is generated; do not edit it.',
     description:
       'The first line of the footer, which says where the board comes from. Both <code> runs are paths in this repository and stay in their own spelling.',
   },
   footerRemeasure: {
     id: 'sources.footer.remeasure',
     defaultMessage:
-      'To re-measure, run <code>node apps/workbench/scripts/measure-sources.mjs</code>. <code>.github/workflows/sources.yml</code> runs it weekly and opens a pull request when anything has moved. It reports and never gates: a source that is down, slow or has moved appears on this page and in that run’s summary, and fails nothing.',
+      'To measure again, run <code>node apps/workbench/scripts/measure-sources.mjs</code>. <code>.github/workflows/sources.yml</code> runs it every week and opens a pull request when something has changed. It only reports and never blocks. A source that is down, slow or has moved shows up on this page and in the run’s summary, and nothing fails.',
     description:
       'The second line of the footer, which says how the figures are re-taken. The first <code> run is a command and the second a path in this repository; both stay in their own spelling.',
   },

@@ -23,7 +23,7 @@ const COPY = defineMessages({
   },
   stuck: {
     id: 'preview.frame.stuck',
-    defaultMessage: 'The app did not load. The preview has its console.',
+    defaultMessage: 'The app did not load. The console in the tool panel has the details.',
     description:
       'Replaces preview.frame.booting after six seconds with nothing drawn. “The preview” is this site’s /preview view, whose console tool shows what the app said on its way down.',
   },

@@ -53,7 +53,7 @@ export const shell: Record<string, string> = {
   'shell.header.search': 'Die Workbench durchsuchen',
   'shell.header.searchShort': 'Suchen',
   'shell.header.full': 'Der App den ganzen Bildschirm geben',
-  'shell.header.fullTip': 'Die App für sich',
+  'shell.header.fullTip': 'Nur die App',
   'shell.header.source': 'Der Quelltext auf GitHub',
   'shell.header.settings': 'Einstellungen',
 
@@ -72,9 +72,9 @@ export const shell: Record<string, string> = {
 
   // A view that threw (`ui/Boundary.tsx`), and the way back into the chrome
   // (`ui/ShowChrome.tsx`). `Esc` and `⌘K` are the keys' own names.
-  'shell.boundary.heading': 'Diese Ansicht wurde nicht gezeichnet',
+  'shell.boundary.heading': 'Diese Ansicht ließ sich nicht anzeigen',
   'shell.boundary.lead':
-    'Der Rest der Workbench funktioniert weiter: Wählen Sie links einen anderen Bereich, oder drücken Sie <kbd>⌘K</kbd>, um zu suchen. Der Fehler steht unten und in der Konsole des Browsers.',
+    'Der Rest der Workbench funktioniert weiter. Wählen Sie links einen anderen Bereich, oder drücken Sie <kbd>⌘K</kbd>, um zu suchen. Der Fehler steht unten und in der Konsole des Browsers.',
   'shell.boundary.retry': 'Diese Ansicht noch einmal versuchen',
   'shell.chrome.show': 'Die Leisten wieder einblenden',
   'shell.chrome.showTip': 'Die Leisten einblenden · Esc',
@@ -87,7 +87,7 @@ export const shell: Record<string, string> = {
   'shell.build': ' · gebaut aus {commit}',
   'shell.notFound.heading': 'Keine Seite unter {route}',
   'shell.notFound.lead':
-    'Die Workbench veröffentlicht die Dokumente dieses Repositorys. Zu dieser Adresse gehört keines davon. Drücken Sie <kbd>⌘K</kbd>, um zu suchen.',
+    'Drücken Sie <kbd>⌘K</kbd>, um zu suchen, oder wählen Sie links einen Bereich.',
   'shell.notFound.component':
-    'Die App hat keine solche Komponente. <back>Alle Komponenten, die sie hat</back>, stehen eine Seite zurück.',
+    'Die App hat keine solche Komponente. <back>Alle Komponenten ansehen</back>.',
 };

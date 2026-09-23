@@ -83,7 +83,7 @@ const COPY = defineMessages({
   appearanceNeedsDev: {
     id: 'tools.appearance.needsDev',
     defaultMessage:
-      '<code>expo export</code> sets <code>__DEV__</code> false, so the published build leaves no dev handle and this setting cannot be written from here. Run the workbench against <code>npm run web</code>.',
+      'The published build cannot change this setting. <code>expo export</code> sets <code>__DEV__</code> to false, so the app offers no dev handle. Run the workbench against <code>npm run web</code>.',
     description:
       'Why the control above it is disabled. The three runs in <code> are a command, a build-time constant and a command, and none of them is translated.',
   },
@@ -107,14 +107,14 @@ const COPY = defineMessages({
   appearanceNote: {
     id: 'tools.appearance.note',
     defaultMessage:
-      'An iframe cannot be given a scheme of its own, so the two marked DevTools are reached by emulating <code>prefers-color-scheme</code> under Rendering.',
+      'An iframe cannot get a colour scheme of its own. To reach the two rows marked DevTools, emulate <code>prefers-color-scheme</code> under Rendering in DevTools.',
     description:
       'Under the list of four combinations. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated.',
   },
 
   fixtures: {
     id: 'tools.state.legend',
-    defaultMessage: 'Fixture · choosing one reloads the frame',
+    defaultMessage: 'App state · choosing one reloads the frame',
     description:
       'The legend over the list of storage fixtures. A fixture is written into storage before the app boots, which is why choosing one costs a load. The fixtures themselves are fixtures.* and live with the data they write.',
   },
@@ -126,7 +126,7 @@ const COPY = defineMessages({
   },
   leaveAloneHint: {
     id: 'tools.state.none.hint',
-    defaultMessage: 'Whatever the last visit left in storage.',
+    defaultMessage: 'Whatever the last visit stored.',
     description: 'The line under “Leave alone”.',
   },
 
@@ -228,7 +228,7 @@ const COPY = defineMessages({
   },
   textNote: {
     id: 'tools.tokens.textNote',
-    defaultMessage: 'Text is chased by value, so it is a best effort rather than a rule.',
+    defaultMessage: 'Text colours are found by their value, so some text may be missed.',
     description: 'The caveat behind the ⓘ beside that checkbox.',
   },
 
@@ -281,20 +281,20 @@ const COPY = defineMessages({
   },
   scanned: {
     id: 'tools.measure.scanned',
-    defaultMessage: 'Ran across {count} elements.',
+    defaultMessage: 'Checked {count} elements.',
     description:
       'Beside the run button after a run. {count} is how many elements the checks looked at. tools.measure.none says the same number where nothing at all was found.',
   },
   nothingFound: {
     id: 'tools.measure.none',
-    defaultMessage: 'Nothing found across {count} elements.',
+    defaultMessage: 'Nothing found in {count} elements.',
     description:
       'Where the findings would be, after a run that produced none. {count} is how many elements were looked at.',
   },
   lightNote: {
     id: 'tools.measure.lightNote',
     defaultMessage:
-      'Colours are ambiguous in light: several tokens share #ffffff, several share #333333, and a value match cannot say which was meant. Re-run in dark, where the palette spreads over more distinct values.',
+      'In light mode, colours are ambiguous. Several tokens share #ffffff and several share #333333, so a match cannot tell which one was meant. Run the checks again in dark mode, where the palette has more distinct values.',
     description:
       'Shown after a run against the light palette, because a colour check can only match values and the light palette puts many tokens on one value. The two hex colours and the two palette names stay as they are written.',
   },
@@ -308,7 +308,7 @@ const COPY = defineMessages({
   inspectNeedsDev: {
     id: 'tools.inspect.needsDev',
     defaultMessage:
-      'The source line comes from the owner stack React keeps beside each node, and a production bundle keeps none. The picker stays disarmed here.',
+      'The picker needs a development build and is off here. It reads the source line from the owner stack React keeps, and a production bundle keeps none.',
     description: 'Why the picker below it is disabled in the published export.',
   },
   pick: {
@@ -319,7 +319,7 @@ const COPY = defineMessages({
   },
   picking: {
     id: 'tools.inspect.armed',
-    defaultMessage: 'Picker armed, click in the frame',
+    defaultMessage: 'Click an element in the frame',
     description:
       'What the button says while the picker is waiting for a click inside the framed app. tools.inspect.arm is what it says before that.',
   },
@@ -337,7 +337,7 @@ const COPY = defineMessages({
   noSource: {
     id: 'tools.inspect.noSource',
     defaultMessage:
-      'No source: either nothing in this node’s owner chain is app code, or the bundle keeps no owner stacks at all, which is every production build.',
+      'No source found. Either nothing in this node’s owner chain is app code, or this is a production build, which keeps no owner stacks.',
     description: 'Shown where the owner chain would be, for a pick that resolved to no app code.',
   },
   stack: {
