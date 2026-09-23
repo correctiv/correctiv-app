@@ -618,11 +618,12 @@ function parseChange(
  *
  * **Once per document, not once per render.** This is a plain function with no memory of
  * its own; what makes the promise true is that the host calls it where it reads the
- * document (`apps/mobile/src/lib/home/layout.ts` parses once and keeps the answer), and
- * that is asserted there rather than assumed here. The one other caller is
- * `stores/homeLayout.ts`, for a fetched document it refuses: that one never reaches the
- * host, so nobody else could report it, and it is refused once per try. A reporter that fires on every frame
- * is not a louder report, it is a log nobody reads.
+ * document (`apps/mobile/src/lib/home/layout.ts` parses once and keeps the answer in
+ * memory, so it is once per document per process), and that is asserted there rather
+ * than assumed here. The one other caller is `stores/homeLayout.ts`, for a fetched
+ * document it refuses: that one never reaches the host, so nobody else could report it,
+ * and it is refused once per try. A reporter that fires on every frame is not a louder
+ * report, it is a log nobody reads.
  */
 export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
   for (const problem of problems) {
