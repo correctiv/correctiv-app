@@ -28,10 +28,16 @@ import {
   type ParticipationState,
 } from '@correctiv/app-core/stores/participation';
 import { close as closeVideo } from '@correctiv/app-core/stores/video';
+import {
+  PERSISTED_KEYS as HOME_LAYOUT_KEYS,
+  homeLayoutActions,
+  type HomeLayoutState,
+} from '@correctiv/app-core/stores/homeLayout';
 
 import { LoginGate } from '@/components/gate/LoginGate';
 import { RecoveryScreen } from '@/components/recovery/RecoveryScreen';
 import { expoAudio } from '@/lib/audio/backend';
+import { useHomeLayoutRefresh } from '@/lib/home/layout';
 import { stop as stopAudio } from '@/lib/audio/player';
 // Everything a component of this app needs around it before it draws: the
 // stylesheet, the fonts, the store, the safe area, the gesture root and the
@@ -88,6 +94,10 @@ function registerPersistence(): Promise<void> {
     persisted<SavedArticlesState>('savedArticles', ['items'], savedArticlesActions.hydrate),
     persisted<InterestsState>('interests', ['selected'], interestsActions.hydrate),
     persisted<ParticipationState>('participation', ['submissions'], participationActions.hydrate),
+    // The home document the app last fetched (ADR 0036 §4), here rather than in the blob
+    // cache because that one evicts, and an evicted copy would put a phone back on the
+    // bundled layout for a reason nobody could see.
+    persisted<HomeLayoutState>('homeLayout', HOME_LAYOUT_KEYS, homeLayoutActions.hydrate),
   ]);
 }
 
@@ -230,6 +240,10 @@ function AppShell() {
   useEffect(() => {
     if (fontsLoaded && storeReady) SplashScreen.hideAsync();
   }, [fontsLoaded, storeReady]);
+
+  // At launch once the kept copy is back in the store, and on every return to the
+  // foreground; `lib/home/layout.ts` says why not in development.
+  useHomeLayoutRefresh(storeReady);
 
   /**
    * The door. The whole route tree hangs on this one value: while the session is

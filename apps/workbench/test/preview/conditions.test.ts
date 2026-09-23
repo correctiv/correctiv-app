@@ -5,7 +5,13 @@ import { describe, expect, it } from 'vitest';
 
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { AUDIENCES, readerOf } from '@correctiv/app-core/lib/home-audience';
-import { parseHomeLayout, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
+import {
+  HOME_LAYOUT_VERSION,
+  parseHomeLayout,
+  sectionsAtInstant,
+  stateAtInstant,
+  type HomeLayout,
+} from '@correctiv/app-core/lib/home-layout';
 import type { Entitlement } from '@correctiv/app-core/types/models';
 
 import { MODULE_CONDITIONS } from '@/lib/home/conditions';
@@ -14,6 +20,7 @@ import { ROOT } from '../../plugin/collect.ts';
 import { AUDIENCE_LABELS, CONDITION_LABELS, conditionOf } from '../../src/preview/home/Conditions';
 import {
   changeHeldAt,
+  editableAt,
   formatLayoutDocument,
   SHIPPED,
   withAudience,
@@ -23,8 +30,11 @@ import {
   withSetting,
   writeChangeAudience,
   writeHidden,
+  writeSetting,
 } from '../../src/preview/home/document';
 import { entitlementFor, FIXTURES } from '../../src/preview/frame/seed';
+// The frozen version 2 parser, which reads unknown keys the way a version 3 app does.
+import * as older from '../../../../packages/app-core/test/__fixtures__/home-layout-v2';
 
 /**
  * When a block appears and for whom, as the configurator shows and writes it (ADR 0060).
@@ -99,9 +109,9 @@ describe('who a block is for, as the editor writes it', () => {
     expect(changeHeldAt(edited, noon, 'mediathek')).toEqual({ id: 'mediathek', hidden: true });
 
     const club = writeChangeAudience(edited, noon, 'mediathek', 'paying-members');
-    expect(changeHeldAt(club, noon, 'mediathek')?.audience).toBe('paying-members');
+    expect(changeHeldAt(club, noon, 'mediathek', PAYING)?.audience).toBe('paying-members');
     // Everyone is the absence of the key, as the document writes it.
-    expect(writeChangeAudience(club, noon, 'mediathek', 'everyone')).toEqual(edited);
+    expect(writeChangeAudience(club, noon, 'mediathek', 'everyone', PAYING)).toEqual(edited);
     // No change about the briefing at eleven: nothing to retarget.
     expect(writeChangeAudience(edited, noon, 'briefing', 'paying-members')).toBe(edited);
   });
@@ -124,7 +134,7 @@ describe('who a block is for, as the editor writes it', () => {
       'paying-members',
     );
     const again = withSetting(edited, AT(11), 'fact-checks', 'count', 3);
-    expect(changeHeldAt(again, DAY(12), 'mediathek')?.audience).toBe('paying-members');
+    expect(changeHeldAt(again, DAY(12), 'mediathek', PAYING)?.audience).toBe('paying-members');
   });
 
   /**
@@ -209,5 +219,97 @@ describe('whose screen the preview shows', () => {
     } as unknown as Storage);
     expect(entitlementFor(null, storage)?.tier).toBe('free');
     expect(entitlementFor('no-such-fixture', storage)?.tier).toBe('free');
+  });
+});
+
+/**
+ * ADR 0041's own pair, which the review of #250 found the editor mishandled: two changes
+ * about one place at one time, for two audiences.
+ */
+const pair = (): HomeLayout => {
+  const parse = parseHomeLayout({
+    version: HOME_LAYOUT_VERSION,
+    sections: [{ id: 'hero', module: 'article-hero' }],
+    moments: [
+      {
+        at: '18:00',
+        changes: [
+          { id: 'hero', audience: 'paying-members', settings: { pin: 'https://club/' } },
+          { id: 'hero', audience: 'free-members', settings: { pin: 'https://join/' } },
+        ],
+      },
+    ],
+  });
+  expect(parse.problems).toEqual([]);
+  return parse.layout!;
+};
+const EVENING = DAY(19);
+const PAYING = readerOf(member('paid'));
+const FREE = readerOf(member('free'));
+const pinFor = (layout: HomeLayout, reader: ReturnType<typeof readerOf>) =>
+  stateAtInstant(layout, EVENING, reader).find((section) => section.id === 'hero')?.settings?.pin;
+
+describe('two changes for one place, and the reader in the frame', () => {
+  it('shows each reader their own change, which the fold has to be told about', () => {
+    // Held at the workbench's level because dropping the reader clause from the core's
+    // fold left this suite green (review of #250, item 7).
+    expect(pinFor(pair(), PAYING)).toBe('https://club/');
+    expect(pinFor(pair(), FREE)).toBe('https://join/');
+  });
+
+  it('edits the change the framed reader is in, not the first one about the place', () => {
+    const edited = writeSetting(pair(), EVENING, 'hero', 'pin', 'https://new/', FREE);
+    expect(pinFor(edited, FREE)).toBe('https://new/');
+    expect(pinFor(edited, PAYING)).toBe('https://club/');
+    expect(changeHeldAt(edited, EVENING, 'hero', FREE)?.audience).toBe('free-members');
+  });
+
+  it('locks the controls where the only change here is for somebody else', () => {
+    const paying = writeChangeAudience(
+      withHidden(SHIPPED, AT(11), 'mediathek', true),
+      DAY(12),
+      'mediathek',
+      'paying-members',
+    );
+    expect(editableAt(paying, DAY(12), 'mediathek', PAYING)).toBe(true);
+    expect(editableAt(paying, DAY(12), 'mediathek', FREE)).toBe(false);
+    // Nothing here at all is editable: the first edit makes a change for everybody.
+    expect(editableAt(SHIPPED, DAY(12), 'mediathek', FREE)).toBe(true);
+    expect(writeHidden(paying, DAY(12), 'mediathek', false, FREE)).toBe(paying);
+  });
+
+  it('refuses to retarget a change onto an audience another change here already has', () => {
+    const edited = writeChangeAudience(pair(), EVENING, 'hero', 'free-members', PAYING);
+    expect(edited.moments[0]?.changes.map((change) => change.audience)).toEqual([
+      'paying-members',
+      'free-members',
+    ]);
+  });
+});
+
+describe('what an older app does with what the editor writes', () => {
+  /**
+   * The review of #250, item 4: a version 3 app drops a section carrying a key it does not
+   * know, so taking early access's default off with one word removed the card for every
+   * reader of an older app. The audiences of places sit beside the sections now.
+   */
+  it('keeps a place an editor chose an audience for, in an app that knows none', () => {
+    for (const audience of ['everyone', 'free-members'] as const) {
+      const printed = formatLayoutDocument(withAudience(SHIPPED, 'early-access', audience));
+      const read = older.parseHomeLayout(JSON.parse(printed));
+      expect(read.problems.map((problem) => problem.code)).toEqual(['version-unknown']);
+      expect(read.layout?.sections.map((section) => section.id)).toContain('early-access');
+    }
+    const callout = formatLayoutDocument(withAudience(SHIPPED, 'callout', 'paying-members'));
+    const drawn = older.sectionsAt(older.parseHomeLayout(JSON.parse(callout)).layout!, AT(9));
+    expect(drawn.map((section) => section.id)).toContain('callout');
+  });
+
+  it('draws the place for the audience in this app, as the document says', () => {
+    const layout = withAudience(SHIPPED, 'early-access', 'everyone');
+    const back = parseHomeLayout(JSON.parse(formatLayoutDocument(layout)));
+    expect(back.problems).toEqual([]);
+    const ids = sectionsAtInstant(back.layout!, DAY(9), FREE).map((section) => section.id);
+    expect(ids).toContain('early-access');
   });
 });

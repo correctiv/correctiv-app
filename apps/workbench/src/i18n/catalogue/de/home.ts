@@ -91,15 +91,24 @@ export const home: Record<string, string> = {
   'home.document.rule': 'Ein Moment trägt nur das, was sich an ihm ändert.',
   'home.document.follow': 'Den Rahmen zu dem Block scrollen, über dem der Zeiger steht',
   'home.document.revert': 'Zurück zur Datei',
+  'home.document.submit': 'Änderungen einreichen',
+  'home.document.submitCopied': 'Das Dokument liegt in der Zwischenablage.',
+  'home.document.submitNoClipboard':
+    'Der Browser hat die Zwischenablage nicht freigegeben. Kopieren Sie das Dokument aus diesem Feld.',
+  'home.document.submitStep.paste': 'Fügen Sie es im GitHub-Editor über die ganze Datei ein.',
+  'home.document.submitStep.branch':
+    'Übernehmen Sie es in einen neuen Branch, und eröffnen Sie einen Pull Request.',
+  'home.document.submitStep.merge': 'In der App erscheint es, sobald es geprüft und gemergt ist.',
+  'home.document.openGithub': 'GitHub-Editor öffnen',
+  'home.document.closeSubmit': 'Schließen',
+  'home.document.field': 'Das Dokument',
   'home.document.save': 'Ins Repository speichern',
-  'home.document.copy': 'Das Dokument kopieren',
   'home.document.changed': 'geändert',
   'home.document.unchanged': 'unverändert',
+  'home.document.submitNote':
+    '„Änderungen einreichen“ kopiert das Dokument und öffnet den GitHub-Editor für <code>{file}</code>. Die Änderung wird zu einem Pull Request und erreicht die App, sobald jemand sie geprüft und gemergt hat. Dafür brauchen Sie ein GitHub-Konto. Diese Seite hält weder ein Passwort noch einen Token (ADR 0058).',
   'home.document.saveNote':
-    'Speichern schreibt <code>packages/app-core/src/data/home.layout.json</code> über den Entwicklungsserver, der alles zurückweist, was der Core nicht lesen kann. Der nächste Schritt ist ein Pull Request statt eines Schreibvorgangs, so wie es der Quellen-Job bereits tut (ADR 0036 §15).',
-  'home.document.copyNote':
-    'Dies ist die veröffentlichte Website, es gibt also keinen Server zum Schreiben und nichts von hier erreicht das Repository. Kopieren Sie das Dokument und legen Sie es in <code>packages/app-core/src/data/home.layout.json</code>, oder öffnen Sie <code>/preview</code> auf einem Entwicklungsserver, wo Speichern angeboten wird.',
-  'home.document.copied': 'Kopiert.',
+    'Auf einem Entwicklungsserver schreibt Speichern <code>{file}</code> in Ihren eigenen Checkout und weist alles zurück, was der Core nicht lesen kann. Das ist eine Abkürzung für Entwickler; der Weg, der in einem Pull Request endet, ist „Änderungen einreichen“.',
   'home.document.refused': 'abgelehnt',
 
   // The head of the editor: which point is in effect, and what can be done to it.

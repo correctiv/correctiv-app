@@ -45,7 +45,15 @@ import { MODULE_AUDIENCES } from './home-audience.generated';
  *   contribution, and a trial month is a `paid` tier at 0 €, which `models.ts` explains:
  *   a tier read off an amount would lock out exactly the people being courted.
  * - `free-members` is the 0 € membership. Inside the door that is somebody whose local
- *   newsletter includes the app (`source: 'local-bundle'`) without an app membership.
+ *   newsletter includes the app (`source: 'local-bundle'`) without an app membership. A
+ *   local bundle on a PAID tier, which is what the simulated sign-in answers for a `lokal`
+ *   address, is a paying member: the source says why the app is included, not who pays.
+ *
+ * What the rules do not have to get right is a reader Home never draws for. An expired
+ * trial, a membership without `appAccess` and nobody signed in are all refused at the door
+ * (`isAdmitted` in `stores/session.ts`), so the home screen is never folded for them; that
+ * `readerOf` still answers for them, `everyone` and a tier, is harmless for that reason and
+ * is what the workbench relies on to preview a frame whose door is shut.
  */
 const RULES: Readonly<Record<Audience, (entitlement: Entitlement | null) => boolean>> = {
   everyone: () => true,

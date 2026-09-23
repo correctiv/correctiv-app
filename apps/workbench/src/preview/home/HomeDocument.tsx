@@ -2,17 +2,20 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
-  Copy,
   Eye,
   EyeOff,
+  ExternalLink,
+  GitPullRequest,
   GripVertical,
   RotateCcw,
   Save,
   SlidersHorizontal,
   Trash2,
+  X,
 } from 'lucide-react';
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -27,7 +30,6 @@ import {
   readerOf,
   reaches,
   type Audience,
-  type Reader,
 } from '@correctiv/app-core/lib/home-audience';
 import {
   MINUTES_IN_DAY,
@@ -48,9 +50,10 @@ import { scroller } from '../scroller';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
+import { InfoTip } from '../../ui/kit/info-tip';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { DEFAULT_DEVICE, preset } from '../devices';
-import { entitlementFor } from '../frame/seed';
+import { entitlementIn, sessionSnapshot, subscribeSession } from '../frame/seed';
 import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
@@ -62,9 +65,11 @@ import {
   changedAt,
   changeHeldAt,
   decidedAt,
+  editableAt,
   differs,
   formatLayoutDocument,
   formatTimeOfDay,
+  HOME_LAYOUT_FILE,
   inheritedAt,
   added,
   moduleLabel,
@@ -77,6 +82,7 @@ import {
   settingsFor,
   SHIPPED,
   spanOf,
+  takenAudiences,
   inheritedFor,
   targetAt,
   withoutMoment,
@@ -91,7 +97,7 @@ import {
   type SettingSpec,
 } from './document';
 import { getLayout, setLayout, subscribeLayout } from './store';
-import { canSave, publish, save, type SaveResult } from './write';
+import { canSave, copyForSubmit, publish, save, SUBMIT_URL, type SaveResult } from './write';
 
 /**
  * The home screen's document, as a day somebody can arrange.
@@ -170,7 +176,7 @@ const COPY = defineMessages({
     id: 'home.document.rule',
     defaultMessage: 'A moment carries only what changes at it.',
     description:
-      'The one sentence above the editor, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
+      'Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
   },
   follow: {
     id: 'home.document.follow',
@@ -182,39 +188,76 @@ const COPY = defineMessages({
     description:
       'Throws away every edit of this session and goes back to the document as the repository has it.',
   },
-  save: { id: 'home.document.save', defaultMessage: 'Save to the repository' },
-  copy: {
-    id: 'home.document.copy',
-    defaultMessage: 'Copy the document',
+  submit: {
+    id: 'home.document.submit',
+    defaultMessage: 'Submit changes',
     description:
-      'What the published site offers instead of Save, because there is no dev server to write the file with.',
+      'The editor’s primary action, on the published site and on a dev server alike. It copies the document and offers GitHub’s editor, where the change becomes a pull request (ADR 0058 §2). Disabled while nothing has changed.',
   },
+  submitCopied: {
+    id: 'home.document.submitCopied',
+    defaultMessage: 'The document is on the clipboard.',
+  },
+  submitNoClipboard: {
+    id: 'home.document.submitNoClipboard',
+    defaultMessage:
+      'This browser did not let the page use the clipboard. Copy the document from this field.',
+  },
+  submitPaste: {
+    id: 'home.document.submitStep.paste',
+    defaultMessage: 'In GitHub’s editor, paste it over the whole file.',
+    description:
+      'The first of three numbered steps on github.com, after Submit changes; “it” is the document on the clipboard. GitHub’s own buttons are in English there, so each step says what to do rather than quoting their labels.',
+  },
+  submitBranch: {
+    id: 'home.document.submitStep.branch',
+    defaultMessage: 'Commit to a new branch and open a pull request.',
+    description:
+      'The second of the three steps. GitHub offers a new branch and a pull request in one dialog when the file is committed.',
+  },
+  submitMerge: {
+    id: 'home.document.submitStep.merge',
+    defaultMessage: 'It appears in the app once it is reviewed and merged.',
+    description: 'The third of the three steps, which is what happens after the pull request.',
+  },
+  openGithub: {
+    id: 'home.document.openGithub',
+    defaultMessage: 'Open GitHub’s editor',
+    description: 'A link that opens github.com in a new tab, on the document’s file.',
+  },
+  closeSubmit: {
+    id: 'home.document.closeSubmit',
+    defaultMessage: 'Close',
+    description:
+      'Closes the submit steps without going to GitHub. shell.dialog.close reads the same in English and closes a dialog; this one closes a panel inside the editor.',
+  },
+  documentField: {
+    id: 'home.document.field',
+    defaultMessage: 'The document',
+    description:
+      'The name read out for the field that holds the document when the clipboard was refused.',
+  },
+  save: { id: 'home.document.save', defaultMessage: 'Save to the repository' },
   changed: {
     id: 'home.document.changed',
     defaultMessage: 'changed',
     description:
-      'The word beside the Save button while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
+      'The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
   },
   unchanged: { id: 'home.document.unchanged', defaultMessage: 'unchanged' },
+  submitNote: {
+    id: 'home.document.submitNote',
+    defaultMessage:
+      'Submit changes copies the document and opens GitHub’s editor on <code>{file}</code>. The change becomes a pull request and reaches the app once somebody has reviewed and merged it, so you need a GitHub account. This page holds no password and no token (ADR 0058).',
+    description:
+      'Says what Submit changes does before anybody presses it. The tag wraps {file}, the repository path of the document, drawn in a monospace face.',
+  },
   saveNote: {
     id: 'home.document.saveNote',
     defaultMessage:
-      'Save writes <code>packages/app-core/src/data/home.layout.json</code> through the dev server, which refuses anything the core will not parse. The next step is a pull request rather than a write, the way the sources job already does it (ADR 0036 §15).',
+      'On a dev server, Save writes <code>{file}</code> in your own checkout, and refuses anything the core will not parse. It is a shortcut for developers; Submit changes is the way that ends in a pull request.',
     description:
-      'Says what Save does before anybody presses it, on a dev server. The tag wraps a repository path, drawn in a monospace face.',
-  },
-  copyNote: {
-    id: 'home.document.copyNote',
-    defaultMessage:
-      'This is the published site, so there is no server to write with and nothing here reaches the repository. Copy the document and put it in <code>packages/app-core/src/data/home.layout.json</code>, or open <code>/preview</code> on a dev server, where Save is offered.',
-    description:
-      'The same, on the published site, where there is no Save. The tag wraps a repository path and an address, both drawn in a monospace face.',
-  },
-  copied: {
-    id: 'home.document.copied',
-    defaultMessage: 'Copied.',
-    description:
-      'Confirms that the whole document is on the clipboard. frame.copied is the shorter word the address bar uses for a link.',
+      'Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face.',
   },
   refused: {
     id: 'home.document.refused',
@@ -481,14 +524,22 @@ export function HomeDocument({
   const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   /**
-   * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the reader the framed app boots
-   * as, read off the state tool's fixture in the address or, with none, off the session
-   * the app will find in storage. Not a second mechanism for previewing an audience, and
-   * not a switch of its own: `s=onboarded` is a paying member, `s=free-member` a free one.
+   * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the session the framed app holds,
+   * read out of the storage the two share and followed as it changes, whether a fixture
+   * wrote it, the held-open door did, or somebody signed in inside the frame
+   * (`frame/seed.ts` says why it is not read off the address). Not a second mechanism for
+   * previewing an audience: `s=onboarded` is a paying member, `s=free-member` a free one.
    */
-  const reader = useMemo(() => previewReader(state.seed), [state.seed]);
+  const session = useSyncExternalStore(subscribeSession, sessionSnapshot, () => null);
+  const reader = useMemo(() => readerOf(entitlementIn(session)), [session]);
   const [result, setResult] = useState<SaveResult | null>(null);
-  const [copied, setCopied] = useState(false);
+  /** Where the submit steps stand: shut, copied, or copied by hand because the clipboard was refused. */
+  const [submitted, setSubmitted] = useState<'copied' | 'no-clipboard' | null>(null);
+  const submitLink = useRef<HTMLAnchorElement>(null);
+  const submitField = useRef<HTMLTextAreaElement>(null);
+  const dirtyStatusId = useId();
+  const submitStatusId = useId();
+  const submitStepsId = useId();
   /**
    * Whether the frame scrolls to the block under the pointer.
    *
@@ -658,8 +709,21 @@ export function HomeDocument({
    */
   useEffect(() => {
     setResult(null);
-    setCopied(false);
+    setSubmitted(null);
   }, [layout]);
+
+  /*
+   * The steps open under the bar and the link to GitHub is where a keyboard goes next, so
+   * focus goes there. The link carries the two sentences above it as its description, which
+   * is what a screen reader hears on arrival instead of a live region that may or may not be
+   * announced when it is mounted with its text already in it. When the clipboard was
+   * refused, the field holding the document is where a keyboard goes instead.
+   */
+  useEffect(() => {
+    // Refused, the field is the next thing to do, not the link: there is nothing to paste yet.
+    if (submitted === 'no-clipboard') submitField.current?.focus();
+    else if (submitted === 'copied') submitLink.current?.focus();
+  }, [submitted]);
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
@@ -885,16 +949,119 @@ export function HomeDocument({
   return (
     <>
       {/*
-        One sentence, and it is the one the interface cannot draw.
+        The document's own bar: first in the panel, and held at the top of it while the list
+        scrolls. It says whether the document differs from the file, offers the way back to
+        the file, and offers the way out (ADR 0058 §2). It used to sit under the whole list,
+        which put the one action that matters a scroll away from every block it was about.
 
-        This was four. The other three described the track above it (midnight to
-        midnight), the list below it (the day in the document's order) and the frame
-        beside it (one minute of it) — three things a reader is looking at while they
-        read that they are looking at them. What is left is the rule that makes the
-        rest legible and that nothing on screen states: a moment holds the difference
-        and not the state.
+        `sticky` against the panel's own scroller, and the only sticky thing in it, so the
+        warning in `ui/Lookup.tsx` about a second sticky row inside something already fixed
+        does not apply. The negative margins take back the panel's padding, so the bar spans
+        the panel and its border meets both edges.
+
+        Two rows at the panel's width, and that is what keeps Back to the file apart from
+        Submit changes: one throws work away, the other sends it, and an outline button
+        beside a filled one at the same size reads as "pick either". So the status and the
+        way back share the first row, and Submit changes has the second to itself, at the
+        panel's full width, directly above the steps it opens.
       */}
-      <p className={NOTE}>{intl.formatMessage(COPY.rule)}</p>
+      <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
+        <div className="flex flex-wrap items-center gap-xs">
+          <span id={dirtyStatusId} className={cn(NOTE, 'mr-auto')}>
+            {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
+          </span>
+          <Button variant="outline" size="sm" disabled={!dirty} onClick={() => setLayout(SHIPPED)}>
+            <RotateCcw aria-hidden="true" />
+            {intl.formatMessage(COPY.revert)}
+          </Button>
+        </div>
+        {/*
+          A button and not a link, although it ends on github.com. The click puts the
+          document on the clipboard and opens the steps; the link inside them is what
+          leaves. A tab that opened on the first click would take the focus before anybody
+          had read what to do there.
+        */}
+        <div className="flex items-center gap-xs">
+          <Button
+            size="sm"
+            className="min-w-0 flex-1"
+            disabled={!dirty}
+            aria-expanded={submitted !== null}
+            // "unchanged" beside it is why it is off; a disabled button says nothing of itself.
+            aria-describedby={dirtyStatusId}
+            onClick={() => {
+              const sent = layout;
+              void copyForSubmit(sent).then((ok) => {
+                // Answered after the document moved on: what is on the clipboard is the old
+                // one, and the steps would claim otherwise. The layout effect already shut them.
+                if (getLayout() !== sent) return;
+                setSubmitted(ok ? 'copied' : 'no-clipboard');
+              });
+            }}
+          >
+            <GitPullRequest aria-hidden="true" />
+            {intl.formatMessage(COPY.submit)}
+          </Button>
+          {/* What Submit changes does, said before anybody presses it, behind the ⓘ. */}
+          <InfoTip about={intl.formatMessage(COPY.submit)} side="bottom" align="end">
+            <p>{intl.formatMessage(COPY.submitNote, { code, file: HOME_LAYOUT_FILE })}</p>
+          </InfoTip>
+        </div>
+
+        {submitted !== null && (
+          <div className="flex flex-col gap-xs">
+            <p id={submitStatusId} className="flex items-start gap-xs text-s text-on-canvas">
+              {submitted === 'copied' && (
+                <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
+              )}
+              <span className="min-w-0">
+                {intl.formatMessage(
+                  submitted === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+                )}
+              </span>
+            </p>
+            {submitted === 'no-clipboard' && (
+              <textarea
+                ref={submitField}
+                readOnly
+                aria-label={intl.formatMessage(COPY.documentField)}
+                value={formatLayoutDocument(layout)}
+                rows={8}
+                onFocus={(event) => event.currentTarget.select()}
+                className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
+              />
+            )}
+            <ol id={submitStepsId} className={`${NOTE} list-decimal space-y-4xs pl-m`}>
+              <li>{intl.formatMessage(COPY.submitPaste)}</li>
+              <li>{intl.formatMessage(COPY.submitBranch)}</li>
+              <li>{intl.formatMessage(COPY.submitMerge)}</li>
+            </ol>
+            <div className="flex flex-wrap items-center gap-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                className="mr-auto"
+                onClick={() => setSubmitted(null)}
+              >
+                <X aria-hidden="true" />
+                {intl.formatMessage(COPY.closeSubmit)}
+              </Button>
+              <Button asChild size="sm">
+                <a
+                  ref={submitLink}
+                  href={SUBMIT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-describedby={`${submitStatusId} ${submitStepsId}`}
+                >
+                  <ExternalLink aria-hidden="true" />
+                  {intl.formatMessage(COPY.openGithub)}
+                </a>
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <label className="flex items-center gap-2xs text-s text-on-canvas">
         <input
@@ -1013,16 +1180,20 @@ export function HomeDocument({
               dragging={carried !== null}
               onMove={(delta) => setLayout(moved(layout, section.id, delta))}
               onHidden={(hidden) =>
-                setLayout(writeHidden(layout, playhead.instant, section.id, hidden))
+                setLayout(writeHidden(layout, playhead.instant, section.id, hidden, reader))
               }
               onSetting={(key, value) =>
-                setLayout(writeSetting(layout, playhead.instant, section.id, key, value))
+                setLayout(writeSetting(layout, playhead.instant, section.id, key, value, reader))
               }
               reaches={reaches(reader, audienceOf(section))}
-              change={changeHeldAt(layout, playhead.instant, section.id)}
+              locked={!editableAt(layout, playhead.instant, section.id, reader)}
+              change={changeHeldAt(layout, playhead.instant, section.id, reader)}
+              taken={takenAudiences(layout, playhead.instant, section.id, reader)}
               onAudience={(audience) => setLayout(withAudience(layout, section.id, audience))}
               onChangeAudience={(audience) =>
-                setLayout(writeChangeAudience(layout, playhead.instant, section.id, audience))
+                setLayout(
+                  writeChangeAudience(layout, playhead.instant, section.id, audience, reader),
+                )
               }
               onRemove={() => setLayout(removed(layout, section.id))}
               outline={outline}
@@ -1031,26 +1202,15 @@ export function HomeDocument({
         </ol>
       </AppHost>
 
-      <div className="flex flex-wrap items-center gap-xs">
-        {/*
-          `mr-auto` rather than a neighbouring spot next to Save: the two are not a
-          matched pair. This one throws work away, Save writes the repository, and an
-          outline button beside a filled one at the same size still reads as "pick
-          either" unless something else keeps them apart.
-        */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="mr-auto"
-          disabled={!dirty}
-          onClick={() => setLayout(SHIPPED)}
-        >
-          <RotateCcw aria-hidden="true" />
-          {intl.formatMessage(COPY.revert)}
-        </Button>
-
-        {canSave ? (
+      {/*
+        On a dev server, Save, and what it does behind the ⓘ beside it. `canSave` is
+        `import.meta.env.DEV`, so the published site offers no Save and says nothing about
+        one, which is the shape the Tokens tool already has for a thing it cannot write.
+      */}
+      {canSave && (
+        <div className="flex items-center gap-xs">
           <Button
+            variant="outline"
             size="sm"
             disabled={!dirty}
             onClick={() =>
@@ -1062,38 +1222,12 @@ export function HomeDocument({
             <Save aria-hidden="true" />
             {intl.formatMessage(COPY.save)}
           </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              void navigator.clipboard.writeText(formatLayoutDocument(layout));
-              setCopied(true);
-            }}
-          >
-            <Copy aria-hidden="true" />
-            {intl.formatMessage(COPY.copy)}
-          </Button>
-        )}
-
-        <span className={NOTE}>{intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}</span>
-      </div>
-
-      {/*
-        The difference between the two Saves is said here rather than discovered by
-        pressing one. `canSave` is `import.meta.env.DEV`, so this is the published site
-        telling the truth about itself, which is the shape the Tokens tool already has.
-      */}
-      <p className={NOTE}>
-        {intl.formatMessage(canSave ? COPY.saveNote : COPY.copyNote, { code })}
-      </p>
-
-      {copied && (
-        <p className="flex items-center gap-xs text-s text-on-canvas">
-          <Check aria-hidden="true" className="size-[0.875rem] shrink-0" />
-          {intl.formatMessage(COPY.copied)}
-        </p>
+          <InfoTip about={intl.formatMessage(COPY.save)}>
+            <p>{intl.formatMessage(COPY.saveNote, { code, file: HOME_LAYOUT_FILE })}</p>
+          </InfoTip>
+        </div>
       )}
+
       {/*
         A refusal is a red fill with white text, not red text on the canvas. That is what
         the console's `error` badge does two files over, and it is the treatment that
@@ -1148,7 +1282,10 @@ function PointHead({
           <span className="text-m font-semibold text-on-canvas">
             {intl.formatMessage(COPY.pointStart)}
           </span>
-          <span className={NOTE}>{intl.formatMessage(COPY.pointStartLead, { until })}</span>
+          <span className={NOTE}>
+            {intl.formatMessage(COPY.pointStartLead, { until })}{' '}
+            <RuleTip about={intl.formatMessage(COPY.pointStart)} />
+          </span>
         </>
       ) : (
         <>
@@ -1165,7 +1302,10 @@ function PointHead({
               className={cn(FIELD, 'font-mono text-m font-semibold')}
             />
           </label>
-          <span className={NOTE}>{intl.formatMessage(COPY.pointSpan, { until, changes })}</span>
+          <span className={NOTE}>
+            {intl.formatMessage(COPY.pointSpan, { until, changes })}{' '}
+            <RuleTip about={intl.formatMessage(COPY.pointTime)} />
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -1189,6 +1329,24 @@ function PointHead({
         {intl.formatMessage(EDITION_COPY.landsOnDay)}
       </span>
     </div>
+  );
+}
+
+/**
+ * The rule that makes the rest legible and that nothing on screen states: a moment holds
+ * the difference and not the state.
+ *
+ * It was the one sentence left above the editor, out of four. The other three described
+ * the track, the list and the frame, which a reader is looking at while they read that
+ * they are looking at them. This one is background, which is wanted once, so it waits in
+ * the head of the point it is about.
+ */
+function RuleTip({ about }: { about: string }) {
+  const intl = useWorkbenchIntl();
+  return (
+    <InfoTip about={about} align="end">
+      <p>{intl.formatMessage(COPY.rule)}</p>
+    </InfoTip>
   );
 }
 
@@ -1243,7 +1401,9 @@ function Row({
   onHidden,
   onSetting,
   reaches: forReader,
+  locked,
   change,
+  taken,
   onAudience,
   onChangeAudience,
   onRemove,
@@ -1278,8 +1438,15 @@ function Row({
   onSetting: (key: string, value: string | number | null | undefined) => void;
   /** Whether the reader in the frame is in this block's audience (ADR 0060 §4). */
   reaches: boolean;
+  /**
+   * Whether this point holds changes about the block and none for the reader in the frame,
+   * so an edit here would land on nobody's screen being looked at (ADR 0060 §5).
+   */
+  locked: boolean;
   /** The change an edit at the playhead lands on for this block, if there is one. */
   change: HomeChange | undefined;
+  /** The audiences other changes about the block at this point already carry. */
+  taken: ReadonlySet<Audience>;
   /** Who the block is for, all day. */
   onAudience: (audience: Audience) => void;
   /** Who the change at the playhead is for. */
@@ -1620,6 +1787,7 @@ function Row({
                           block: spoken,
                         })
                 }
+                disabled={locked}
                 onClick={() => onHidden(!off)}
               >
                 {off ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
@@ -1723,11 +1891,14 @@ function Row({
             off={off}
             hiddenHere={hiddenHere}
             specs={specs}
+            locked={locked}
             onSetting={onSetting}
           />
           <Conditions
             section={section}
             change={change}
+            taken={taken}
+            locked={locked}
             reaches={forReader}
             onPlace={onAudience}
             onChange={onChangeAudience}
@@ -1759,6 +1930,7 @@ function Details({
   off,
   hiddenHere,
   specs,
+  locked,
   onSetting,
 }: {
   section: HomeSection;
@@ -1772,6 +1944,8 @@ function Details({
   off: boolean;
   hiddenHere: boolean;
   specs: readonly SettingSpec[];
+  /** No change here is for the framed reader, so the settings are switched off. */
+  locked: boolean;
   onSetting: (key: string, value: string | number | null | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -1805,7 +1979,7 @@ function Details({
           inherited={inherited.settings?.[spec.key]}
           layered={layered}
           inEdition={layer !== null}
-          disabled={off}
+          disabled={off || locked}
           onSet={(value) => onSetting(spec.key, value)}
         />
       ))}
@@ -1979,21 +2153,4 @@ function Count({
       </span>
     </div>
   );
-}
-
-/**
- * The audiences of the reader the framed app boots as.
- *
- * `frame/seed.ts` answers with the entitlement: a named fixture's by what it writes, or the
- * session already in the app's storage. Storage can refuse to be read, and a reader nobody
- * can name is the one in no audience but everyone's.
- */
-function previewReader(seed: string | null): Reader {
-  let store: Storage | null = null;
-  try {
-    store = window.localStorage;
-  } catch {
-    // Site data switched off: nothing is stored, so nobody is signed in.
-  }
-  return readerOf(entitlementFor(seed, store));
 }

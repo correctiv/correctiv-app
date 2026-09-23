@@ -9,6 +9,7 @@ import { href } from '../router';
 import { Slot } from '../shell/slots';
 import type { ShellProps } from '../shell/address';
 import { Button } from '../ui/kit/button';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/kit/tooltip';
 
 /** The file this project is designed in. One place, so nothing here is a copy. */
@@ -470,18 +471,22 @@ export function Design({ onAddress, wide, full }: ShellProps) {
             {intl.formatMessage(COPY.linksFile)}
           </span>
         </a>
-        <a
-          className={cn(
-            CARD,
-            'block transition-colors hover:border-stroke-strong hover:bg-surface',
-          )}
-          href={href('/preview')}
-        >
-          <span className="text-m font-medium text-on-canvas">
-            {intl.formatMessage(COPY.linksApp)}
-          </span>
-        </a>
-        <p className={NOTE}>{intl.formatMessage(COPY.linksNote)}</p>
+        <div className="flex items-center gap-xs">
+          <a
+            className={cn(
+              CARD,
+              'block min-w-0 flex-1 transition-colors hover:border-stroke-strong hover:bg-surface',
+            )}
+            href={href('/preview')}
+          >
+            <span className="text-m font-medium text-on-canvas">
+              {intl.formatMessage(COPY.linksApp)}
+            </span>
+          </a>
+          <InfoTip about={intl.formatMessage(COPY.linksApp)} align="end">
+            <p>{intl.formatMessage(COPY.linksNote)}</p>
+          </InfoTip>
+        </div>
       </Slot>
 
       <Slot id="design-clients">
@@ -512,12 +517,17 @@ export function Design({ onAddress, wide, full }: ShellProps) {
 
       <Slot id="design-code">
         <div className={CARD}>
-          <h4 className="text-m font-semibold text-on-canvas">
-            {intl.formatMessage(COPY.colours)}
-          </h4>
-          <p className={cn(NOTE, 'mt-3xs')}>
-            {intl.formatMessage(COPY.coloursNote, { pkg: TOKENS_PACKAGE, token: TOKEN, code })}
-          </p>
+          {/* The card's heading and its records stay; why it is so is behind the ⓘ. */}
+          <div className="flex items-center gap-xs">
+            <h4 className="text-m font-semibold text-on-canvas">
+              {intl.formatMessage(COPY.colours)}
+            </h4>
+            <InfoTip about={intl.formatMessage(COPY.colours)} align="end">
+              <p>
+                {intl.formatMessage(COPY.coloursNote, { pkg: TOKENS_PACKAGE, token: TOKEN, code })}
+              </p>
+            </InfoTip>
+          </div>
           <p className="mt-2xs text-s">
             <a className={LINK} href={href('/decisions/0010')}>
               ADR 0010
@@ -530,10 +540,14 @@ export function Design({ onAddress, wide, full }: ShellProps) {
         </div>
 
         <div className={CARD}>
-          <h4 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.board)}</h4>
-          <p className={cn(NOTE, 'mt-3xs')}>
-            {intl.formatMessage(COPY.boardNote, { path: PLUGIN_DIRECTORY, code })}
-          </p>
+          <div className="flex items-center gap-xs">
+            <h4 className="text-m font-semibold text-on-canvas">
+              {intl.formatMessage(COPY.board)}
+            </h4>
+            <InfoTip about={intl.formatMessage(COPY.board)} align="end">
+              <p>{intl.formatMessage(COPY.boardNote, { path: PLUGIN_DIRECTORY, code })}</p>
+            </InfoTip>
+          </div>
           <p className="mt-2xs text-s">
             <a className={LINK} href={href('/decisions/0021')}>
               ADR 0021
@@ -542,14 +556,20 @@ export function Design({ onAddress, wide, full }: ShellProps) {
         </div>
 
         <div className={CARD}>
-          <h4 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.plugin)}</h4>
-          <p className={cn(NOTE, 'mt-3xs')}>
-            {intl.formatMessage(COPY.pluginNote, {
-              codeFile: PLUGIN_CODE,
-              specFile: PLUGIN_SPEC,
-              code,
-            })}
-          </p>
+          <div className="flex items-center gap-xs">
+            <h4 className="text-m font-semibold text-on-canvas">
+              {intl.formatMessage(COPY.plugin)}
+            </h4>
+            <InfoTip about={intl.formatMessage(COPY.plugin)} align="end">
+              <p>
+                {intl.formatMessage(COPY.pluginNote, {
+                  codeFile: PLUGIN_CODE,
+                  specFile: PLUGIN_SPEC,
+                  code,
+                })}
+              </p>
+            </InfoTip>
+          </div>
           <p className="mt-2xs text-s">
             <a className={LINK} href={href('/design/plugin')}>
               {intl.formatMessage(COPY.pluginDoc)}

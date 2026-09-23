@@ -142,7 +142,7 @@ question nobody asked. The workbench needs it; the app does not.
 
 **Audiences everywhere: on places, on moments and on changes.** Three places to say one
 thing, and an editor then has to work out which of the three is in force. ~~One level, the
-one that already means "what differs".~~ Two since [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §4, the place and the change,
+one that already means "what differs".~~ Two since [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §2, the place and the change,
 which answer two questions and are applied one after the other; moments still carry none.
 
 ## What it costs
@@ -168,8 +168,8 @@ nobody.
 **The real list of audiences.** ~~Nobody has written the newsroom's own vocabulary
 down.~~ The product owner named three on 2026-09-23, and [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §3 is the list.
 What the shape has to be is decided — a closed, small set of names, each answerable from
-the sign-in response the app already holds, with no second request — and what the names are
-is not.
+the sign-in response the app already holds, with no second request — ~~and what the names are
+is not~~, and the names are decided too, by [ADR 0060](0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §3.
 
 **What an audience means for a reader who is signed out, and for one whose membership has
 lapsed.** The app can already tell those two apart: `AccessShortfall` in

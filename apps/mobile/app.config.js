@@ -16,12 +16,35 @@
 // app's own 404 screen: expo-router reads the browser's path, and without a base
 // it has no route called `app`. The address to open the app on its own in
 // development is therefore http://localhost:8081/app/ .
+//
+// And one value that is different on every build: `extra.builtAt`, the moment this
+// config was evaluated, which for `expo export` and a native build is the moment the
+// bundle was made. The app compares it with the `last-modified` of the home document
+// it fetches and draws the fetched copy only when that is not older than the build
+// (`packages/app-core/src/stores/homeLayout.ts`, `fetchedHomeLayout`), so an app update
+// or a local export of an edited document is not overridden by an older published one.
+// It reaches the app through `expo-constants`, which embeds this config at build time.
+//
+// **Only a cold bundle carries a fresh one**, and that is why `build:web` passes
+// `--clear`. Metro's transform cache keys a module on its source, not on the config
+// inlined into it, so a second export reuses the first one's `expo-constants` and with
+// it the first one's build time: measured on 2026-09-23, an export at 12:03:46 still
+// carried 12:03:16, and an `EXPO_PUBLIC_` variable behaved the same (set to 2001, then
+// 2002, the bundle kept 2001). A stale stamp is exactly the failure it exists to
+// prevent: a local export of an edited document would show `main`'s copy instead. The
+// price is the cache, 18 s for a cold export against 6 s for a warm one on the day it
+// was measured. CI and EAS start cold anyway; a local native release build does not,
+// and there `--clear` is on whoever builds it.
 module.exports = ({ config }) => {
   const baseUrl = process.env.EXPO_BASE_URL?.trim();
-  if (!baseUrl) return config;
+  const stamped = {
+    ...config,
+    extra: { ...config.extra, builtAt: new Date().toISOString() },
+  };
+  if (!baseUrl) return stamped;
 
   return {
-    ...config,
+    ...stamped,
     experiments: { ...config.experiments, baseUrl: baseUrl.replace(/\/+$/, '') },
   };
 };

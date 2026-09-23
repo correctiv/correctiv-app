@@ -9,6 +9,7 @@ import {
 
 import { audioMiddleware, audioReducer } from './audio';
 import { feedsReducer } from './feeds';
+import { homeLayoutReducer } from './homeLayout';
 import { interestsReducer } from './interests';
 import { mediaReducer } from './media';
 import { participationReducer } from './participation';
@@ -44,6 +45,7 @@ const combined = combineReducers({
   radio: radioReducer,
   audio: audioReducer,
   video: videoReducer,
+  homeLayout: homeLayoutReducer,
 });
 
 /**
@@ -74,8 +76,8 @@ function reducerFor(locale: Locale | undefined): typeof combined {
 /**
  * One Redux store for the whole core.
  *
- * What used to be ten independent observable stores is twelve slices of one state
- * tree. The slice files kept their names and their public shape — the state
+ * What used to be ten independent observable stores is one state tree of
+ * slices. The slice files kept their names and their public shape — the state
  * interfaces, the pure selectors and the German copy are unchanged — so the only
  * thing that moved is who owns the transition: a reducer now, not a closure over
  * `set`.

@@ -14,6 +14,7 @@ import { Slot } from '../shell/slots';
 import type { ShellProps } from '../shell/address';
 import { Badge } from '../ui/kit/badge';
 import { Button } from '../ui/kit/button';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Segmented } from '../ui/kit/segmented';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/kit/tooltip';
 import { Source } from '../ui/Lookup';
@@ -400,18 +401,29 @@ export function ComponentDetail({
       </Slot>
 
       <Slot id="rendering">
-        <Segmented
-          name="rendering"
-          legend={intl.formatMessage(COPY.drawnBy)}
-          value={rendering}
-          options={[
-            { value: 'direct', label: intl.formatMessage(COPY.drawnBySite) },
-            { value: 'bundle', label: intl.formatMessage(COPY.drawnByBundle) },
-          ]}
-          onChange={(value) => setRest({ r: value === 'direct' ? null : value })}
-          disabled={entry === undefined}
-        />
-        {entry === undefined ? (
+        <div className="flex items-end gap-xs">
+          <div className="min-w-0 flex-1">
+            <Segmented
+              name="rendering"
+              legend={intl.formatMessage(COPY.drawnBy)}
+              value={rendering}
+              options={[
+                { value: 'direct', label: intl.formatMessage(COPY.drawnBySite) },
+                { value: 'bundle', label: intl.formatMessage(COPY.drawnByBundle) },
+              ]}
+              onChange={(value) => setRest({ r: value === 'direct' ? null : value })}
+              disabled={entry === undefined}
+            />
+          </div>
+          {/* Why there are two, which a reader wants once. Why one of them is off, when
+              it is, stays on the panel below: that is the state of the control. */}
+          {entry !== undefined && (
+            <InfoTip about={intl.formatMessage(COPY.drawnBy)} className="mb-xs" align="end">
+              <p>{intl.formatMessage(COPY.twoRenderings)}</p>
+            </InfoTip>
+          )}
+        </div>
+        {entry === undefined && (
           <p className={NOTE}>
             {/* A recorded reason wins; `direct-ids.ts` says in its own header that
                 one written there has to be a descriptor. */}
@@ -419,8 +431,6 @@ export function ComponentDetail({
               reason: NOT_DRAWN[id] ?? intl.formatMessage(COPY.notDrawnReason),
             })}
           </p>
-        ) : (
-          <p className={NOTE}>{intl.formatMessage(COPY.twoRenderings)}</p>
         )}
         {rendering === 'bundle' && (
           <p className={NOTE}>

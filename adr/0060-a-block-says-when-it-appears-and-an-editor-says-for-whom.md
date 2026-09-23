@@ -67,8 +67,9 @@ code, and nothing reads one against the other. That is written where the list is
 `HOME_MODULE_AUDIENCES` in the same file, for the modules that have one. Absent is
 everyone. The fold needs it, so `scripts/generate-home-settings.mjs` carries it into
 `packages/app-core/src/lib/home-audience.generated.ts`, the same crossing for the same
-reason as the settings, with the same drift check. A section's own `audience` overrides it,
-and the editor writes that key only where it differs from the default.
+reason as the settings, with the same drift check. The document overrides it in
+`audiences`, a map from section id to audience beside `sections` (§6 says why it is not
+inside the section), and the editor writes an entry only where it differs from the default.
 
 **The early-access card is for paying members.** Its own words are a club member's,
 "Backstage · Früher lesen" over "Sie lesen jetzt, drei Tage vor allen anderen", and to a
@@ -93,6 +94,17 @@ Mitgliedschaft" is the profile's word for the tier, so the configurator and the 
 person the same thing. The rules read the tier and nothing else, because the tier is what
 tells these three apart; a trial is `paid` by the membership system's own answer, and an
 audience read off an amount would lock out the people being courted.
+
+**A local newsletter on a paid tier is a paying member.** `source: 'local-bundle'` says why
+the app is included, not who pays, and the simulated sign-in answers exactly that for a
+`lokal` address. Only a local bundle on the `free` tier is a free member.
+`packages/app-core/test/home-audience.test.ts` holds both, because widening `free-members` to
+every local bundle left every suite green until it did.
+
+**What the rules answer for a reader Home never draws for is harmless.** An expired trial, a
+membership without `appAccess`, and nobody signed in are refused at the door, so no fold is
+ever run for them. `readerOf` still answers for them, `everyone` and a tier, which is what the
+workbench needs to name the reader of a frame whose door is shut.
 
 `packages/app-core/src/lib/home-audience.ts` is ADR 0041 §3's one file: a `Record` over the
 union, so an audience without a rule does not compile.
@@ -119,9 +131,12 @@ every place that is not hidden **and is for this reader**. The two are separate 
 `hidden` is the state the day put the place in; the audience is who the place is for at all,
 so a moment that switches a place on does not widen who it is for.
 
-The app passes the session's entitlement. The workbench passes the reader the framed app
-boots as, read off the state tool's fixture in the address, or with none off the session in
-storage. **That is the preview, and there is no second mechanism**: `s=onboarded` is a paying
+The app passes the session's entitlement. The workbench passes the session the framed app
+holds, read out of the storage the two share and followed through `storage` events and the
+seed step's own announcement, so it is the reader the frame is showing: the fixture's, the
+held-open door's on a first visit, or whoever signed in inside the frame. It is not read off
+the address, which on a first visit named nobody while the frame drew a paid member.
+**That is the preview, and there is no second mechanism**: `s=onboarded` is a paying
 member, and a new fixture, `s=free-member`, is a 0 € member with a local newsletter. A block
 the framed reader is not in the audience of is greyed in the list, as a hidden one is, and
 its popover says why.
@@ -130,9 +145,18 @@ its popover says why.
 
 The popover gains "Zeigen für", who the block is for all day, and, where the point at the
 playhead has a change about the block, "Diese Änderung gilt für", which retargets that change.
-It does not choose a second one. A document may carry two changes for one place at one time
-for two audiences, ADR 0041's own example; the editor edits the first and leaves the other
-exactly as it is, and writing the pair is done in the file.
+It does not choose a second one, and it does not offer an audience another change about the
+block at that point already carries, because two changes for one audience at one point would
+be a rule about which wins.
+
+**An edit lands on the change the framed reader is in.** A document may carry two changes
+for one place at one time for two audiences, ADR 0041's own example. The editor edits the
+last of them that reaches the reader in the frame, because that is the one whose word stands
+on the screen beside it, and leaves the other exactly as it is. Where the point holds changes
+about the block and none of them reaches that reader, the controls are switched off and the
+popover says so: writing a new change for everybody there would override the others'
+audience as well, on a screen nobody is looking at. Framing a reader in that audience is how
+it is edited. Writing a new pair is done by retargeting one change and adding the other.
 
 ADR 0039 §10 has the editor take out a change that restates what the point inherits. With
 audiences in a document, what a point inherits depends on the reader, so **a change repeats
@@ -143,28 +167,31 @@ record.
 
 ### 6. What an older app does with it
 
-The version is 4. `audience` is a key a version 3 app does not know, and it has a rule for
-that already (ADR 0039 §6): **a section carrying one is dropped, and a change carrying one is
-dropped.** The change is the right loss: the place keeps what it inherited, which is a state
-somebody chose for everybody. The section is the costly one: an older app then draws that
-place for nobody, the audience it was meant for included.
+The version is 4, and this is a live case: apps fetch the document
+(`packages/app-core/src/stores/homeLayout.ts`, #245), so an app built before this record will
+meet one written after it.
 
-That is accepted, for three reasons that are measured rather than hoped. No app fetches a
-document yet (#245 is open), so no older app reads a fetched one. The shipped document
-carries no audience, and a module's default lives in the app rather than the document, so
-an older app reading it draws what it always drew. And the editor writes a section's
-`audience` only where it differs from the module's default, which keeps the costly case to
-the places somebody chose.
+**A place's audience sits beside the sections, in `audiences`,** a map from section id to
+audience, for the reason editions sit beside the day (ADR 0059 §5): a version 3 app reads the
+top level's known keys and nothing else, so it never sees the map and draws every place for
+everybody. That is a filter ignored, which §7 says is harmless, and never a block lost. The
+first version of this record wrote the audience inside the section, and a version 3 app drops
+a section carrying a key it does not know (ADR 0039 §6): one word, `everyone` on the
+early-access card to take its default off, removed the card for every reader of an older app,
+and on a callout the callout. Measured in review on 2026-09-23 against the frozen version 2
+parser, which has the same rule. The cost of the map is that a place's declaration is written
+in two parts of the file, which ADR 0039 §2 refused for a place's starting state; a filter is
+not state, and losing blocks is the worse trade.
 
-**An audience this app has no rule for** is refused the same way, at the same two levels:
-the change goes, and the section goes. ADR 0041 §3 argued against dropping a place, and its
-argument was about a change, where the place has a state to fall back on. A place has none;
-and the audience a later app adds is likelier to narrow than to widen, so drawing the place
-for everybody would show a block meant for a few to everyone else.
+**A change carrying `audience` is dropped by an older app**, by the same rule for an unknown
+key. The place keeps what it inherited, which is a state somebody chose for everybody: an
+older app shows every reader the day as it is for everyone, and ADR 0041's pair reaches
+neither of its audiences there. That is the cost that stands, and the editor writes the key
+only where a change is for somebody in particular; `everyone` is the key's absence.
 
-The alternative was a key beside `sections`, as ADR 0059 §5 did for editions, and it was
-refused: a place's audience would then be written in two parts of the file, away from the
-place it belongs to, which is what ADR 0039 §2 refused for a place's starting state.
+**An audience this app has no rule for** costs the least that carries it. In `audiences` it
+is the one entry, and the place is drawn as its module would draw it, which is what an older
+app does with the whole map; on a change it is the change, as ADR 0041 §3 said.
 
 ### 7. A filter, and nothing inside the door becomes locked
 
@@ -179,6 +206,9 @@ them as it was.
 true: the editor, the frame and a screenshot in a pull request show one reader's screen, and
 the fixture in the address says whose.
 
+**An older app ignores who a place is for and drops a change for somebody in particular.**
+Both are filters falling away, and §6 is why that is the better failure.
+
 **A declared condition can be wrong.** The name in `conditions.ts` and the early return in
 the module are two halves, and only a person reading both keeps them together.
 
@@ -188,8 +218,8 @@ cases there. The test beside the file holds each audience to at least one listed
 
 ## What this retires
 
-[ADR 0041](0041-a-change-may-name-an-audience.md), **three claims and one open item, struck
-in place.**
+[ADR 0041](0041-a-change-may-name-an-audience.md), **three claims and two clauses of one open item,
+struck in place.**
 
 - **Its status, "Not built."** This record builds it.
 - **§1, "Not on the place."** A place now says who it is for. What the argument under it was
@@ -198,9 +228,9 @@ in place.**
 - **"Why not the alternatives", "One level, the one that already means 'what differs'."**
   There are two levels now, the place and the change. Moments still carry none, which is the
   half of that paragraph that stands.
-- **"What is still open", "Nobody has written the newsroom's own vocabulary down."** The
-  product owner named three on 2026-09-23, and §3 above is the list. The rest of that item,
-  that the shape is decided and the names are not, is answered by the same section.
+- **"What is still open", "Nobody has written the newsroom's own vocabulary down", and
+  "and what the names are is not" beside it.** The product owner named three on
+  2026-09-23, and §3 above is the list.
 
 [ADR 0053](0053-the-editor-is-the-screen-and-the-drag-is-the-answer.md), **one clause.**
 "What it costs" says a block that measures no height draws a strip carrying its own name.
@@ -212,8 +242,7 @@ Read and deliberately left standing:
   audiences rather than one, and the call is `sectionsAtInstant` since ADR 0059. The decision
   the sentence carries, that the core holds no session, is what §4 above builds.
 - **ADR 0041 §3, that an unknown audience drops the one change and not the place.** True of
-  a change, which is all that record put an audience on; the sixth decision above gives a section the rule
-  a section already has, and says why.
+  a change, and the sixth decision above keeps it for a place as well.
 - **ADR 0041's other two open items**, what an audience means for a reader who is signed out
   or has lapsed, and whether `localAreas` is an audience. Neither reader is inside the door,
   and neither question is answered here.

@@ -3,6 +3,7 @@ import { defineMessages } from 'react-intl';
 import { DIAGRAMS } from '../diagrams';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { CardGrid, type Card } from '../ui/CardGrid';
+import { InfoTip } from '../ui/kit/info-tip';
 import { Page } from '../ui/Page';
 import { diagramRoute } from './DiagramView';
 
@@ -27,8 +28,16 @@ const COPY = defineMessages({
   },
   lede: {
     id: 'diagrams.lede',
+    defaultMessage: 'The same architecture the workbench explains in prose, drawn.',
+    description:
+      'The sentence under the heading, which says what the page is. The rest of what used to be this paragraph is diagrams.lede.more, behind the ⓘ at its end.',
+  },
+  ledeMore: {
+    id: 'diagrams.lede.more',
     defaultMessage:
-      'The same architecture the workbench explains in prose, drawn. Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step.',
+      'Each one is hand-authored SVG whose every fill and stroke comes from a class, so it follows the light and dark schemes on its own and there is no second asset to keep in step.',
+    description:
+      'Behind the ⓘ at the end of the sentence under the heading, followed there by diagrams.list.',
   },
   list: {
     id: 'diagrams.list',
@@ -79,10 +88,11 @@ export function DiagramIndex() {
             react-intl's own context, which the app's provider shadows inside an
             `AppHost`. `test/i18n.test.ts` fails on one, and `i18n/Localisation.tsx`
             carries the measurement. */}
-        {intl.formatMessage(COPY.lede)}
-      </p>
-      <p className="mt-s max-w-content text-m leading-relaxed text-on-canvas-muted">
-        {intl.formatMessage(COPY.list)}
+        {intl.formatMessage(COPY.lede)}{' '}
+        <InfoTip about={intl.formatMessage(COPY.title)}>
+          <p>{intl.formatMessage(COPY.ledeMore)}</p>
+          <p>{intl.formatMessage(COPY.list)}</p>
+        </InfoTip>
       </p>
 
       <CardGrid cards={cards} columns={2} />

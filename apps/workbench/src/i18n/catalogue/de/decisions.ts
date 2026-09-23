@@ -102,6 +102,7 @@ export const decisions: Record<string, string> = {
     '{count, plural, one {Es hat eine Aussage gestrichen in} other {Es hat Aussagen gestrichen in}}',
   'decisions.detail.read': 'ADR {number} lesen',
 
+  'decisions.footer.label': 'Woher diese Übersicht kommt',
   'decisions.footer.build':
     'Jede Zeile, jede Zahl und jede Kante oben wird beim Build aus den Protokollen selbst gelesen. Die Workbench hält keine Kopie davon, diese Übersicht kann <code>adr/</code> also nicht widersprechen, und wenn sie ein Protokoll nicht lesen kann, wird die Site nicht gebaut.',
   'decisions.footer.notes':

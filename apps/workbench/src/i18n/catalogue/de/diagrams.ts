@@ -26,8 +26,9 @@
  */
 export const diagrams: Record<string, string> = {
   'diagrams.title': 'Diagramme',
-  'diagrams.lede':
-    'Dieselbe Architektur, die die Workbench in Prosa erklärt, gezeichnet. Jede Zeichnung ist von Hand geschriebenes SVG, dessen Füllungen und Striche alle aus einer Klasse kommen. So folgt sie dem hellen und dem dunklen Schema von selbst, und es gibt kein zweites Asset, das mitgepflegt werden muss.',
+  'diagrams.lede': 'Dieselbe Architektur, die die Workbench in Prosa erklärt, gezeichnet.',
+  'diagrams.lede.more':
+    'Jede Zeichnung ist von Hand geschriebenes SVG, dessen Füllungen und Striche alle aus einer Klasse kommen. So folgt sie dem hellen und dem dunklen Schema von selbst, und es gibt kein zweites Asset, das mitgepflegt werden muss.',
   'diagrams.list':
     'Jede Zeichnung trägt dasselbe noch einmal als Liste unter sich. Diese Liste ist keine Bildunterschrift: Sie ist die Seite für alle, die mit dem Bild nichts anfangen können.',
 

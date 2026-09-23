@@ -109,6 +109,12 @@ const COPY = defineMessages({
     description:
       'A switched-off option in the “Show to” list. The app admits members only, so no reader of it is not yet a member; whether that changes is an open product question.',
   },
+  locked: {
+    id: 'conditions.locked',
+    defaultMessage: 'The change here is for another audience. Frame a reader in it to edit it.',
+    description:
+      'In a block’s popover, where the only change about the block at this point of the day is for an audience the reader signed in in the framed app is not in, so the controls are switched off.',
+  },
   notFor: {
     id: 'conditions.notFor',
     defaultMessage: 'Not in the frame: the reader signed in there is not in it.',
@@ -134,6 +140,8 @@ const FIELD =
 export function Conditions({
   section,
   change,
+  taken,
+  locked,
   reaches,
   onPlace,
   onChange,
@@ -141,6 +149,10 @@ export function Conditions({
   section: HomeSection;
   /** The change an edit at the playhead lands on for this block, if there is one. */
   change: HomeChange | undefined;
+  /** Audiences another change about the block at this point already has: not offered. */
+  taken: ReadonlySet<Audience>;
+  /** No change here is for the framed reader; said, and the change's control is absent. */
+  locked: boolean;
   /** Whether the reader in the frame is in this block's audience. */
   reaches: boolean;
   onPlace: (audience: Audience) => void;
@@ -176,6 +188,7 @@ export function Conditions({
         </select>
       </label>
       {!reaches && <p className={NOTE}>{intl.formatMessage(COPY.notFor)}</p>}
+      {locked && <p className={NOTE}>{intl.formatMessage(COPY.locked)}</p>}
 
       {change && (
         <label className="flex flex-col gap-4xs text-s font-medium text-on-canvas">
@@ -186,7 +199,7 @@ export function Conditions({
             className={cn(FIELD, 'w-full font-normal')}
           >
             {AUDIENCES.map((audience) => (
-              <option key={audience} value={audience}>
+              <option key={audience} value={audience} disabled={taken.has(audience)}>
                 {name(audience)}
               </option>
             ))}

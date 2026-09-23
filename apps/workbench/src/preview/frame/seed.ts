@@ -402,6 +402,55 @@ export function storedEntitlement(store: Storage): Entitlement | null {
 }
 
 /**
+ * The session as the app holds it in storage, as text, for a `useSyncExternalStore`.
+ *
+ * ADR 0060 §4: the home tool says whose screen it shows, and the answer has to be the one
+ * the frame is showing. Read at render time off the fixture in the address it was wrong on
+ * a first visit, where `Preview.tsx` holds the door open for a paid member in an effect that
+ * runs AFTER the tool rendered, and it never followed a sign-in or sign-out inside the frame
+ * (review of #250, item 2). So the tool reads the storage, and listens: the frame is another
+ * document on this origin, so its own writes arrive as `storage` events, and this page's
+ * writes, which fire none here, announce themselves with the event below.
+ */
+export const SESSION_EVENT = 'workbench:session';
+
+function announceSession(): void {
+  try {
+    window.dispatchEvent(new Event(SESSION_EVENT));
+  } catch {
+    // Not in a browser (a test, the dev server's endpoint): there is nobody to tell.
+  }
+}
+
+export function subscribeSession(onChange: () => void): () => void {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(SESSION_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(SESSION_EVENT, onChange);
+  };
+}
+
+/** The stored session's text, or null for none or a store that cannot be read. */
+export function sessionSnapshot(): string | null {
+  try {
+    return window.localStorage.getItem(`${STATE_PREFIX}store.session`);
+  } catch {
+    return null;
+  }
+}
+
+/** The entitlement in a stored session's text, or null. */
+export function entitlementIn(text: string | null): Entitlement | null {
+  try {
+    const held = text ? (JSON.parse(text) as { entitlement?: Entitlement | null }) : null;
+    return held?.entitlement ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The entitlement the app will find when it boots for this address.
  *
  * A named fixture answers by what it writes, asked of a scratch store rather than typed a
@@ -437,6 +486,7 @@ export function applyFixture(store: Storage, id: string): void {
   if (!chosen) return;
   clearApp(store);
   chosen.write(store);
+  announceSession();
 }
 
 /**
@@ -495,6 +545,7 @@ export function holdTheDoorOpen(store: Storage): void {
   try {
     kv(store, 'session', HELD_OPEN);
     store.setItem(SEEDED_KEY, new Date().toISOString());
+    announceSession();
   } catch {
     // Site data switched off. Nothing can be seeded, and nothing may throw.
   }

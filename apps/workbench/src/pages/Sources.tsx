@@ -36,6 +36,7 @@ import type {
 import { Badge } from '../ui/kit/badge';
 import { Segmented } from '../ui/kit/segmented';
 import { Button } from '../ui/kit/button';
+import { InfoTip } from '../ui/kit/info-tip';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { cn } from '../lib/cn';
 import { ageInWords, isStale, STALE_AFTER_DAYS } from '../lib/measured';
@@ -77,6 +78,8 @@ const CHIP_LINK =
   'hover:border-accent hover:text-on-canvas-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 const SECTION_HEAD = 'text-headline-l font-semibold tracking-tight text-on-canvas';
+/** A section's heading and the ⓘ beside it, which holds what used to be its lede. */
+const HEAD_ROW = 'flex items-center gap-xs';
 const SECTION_LEDE = 'mt-2xs max-w-content text-m text-on-canvas-muted';
 
 /**
@@ -385,14 +388,21 @@ const COPY = defineMessages({
     id: 'sources.measured.label',
     defaultMessage: 'How these figures were measured',
     description:
-      'The accessible name of the note under the lede, which is a block a screen reader announces as a group. It is never drawn.',
+      'The accessible name of the note under the lede, which is a block a screen reader announces as a group, and the visible label of the ⓘ inside it that opens sources.measured.how.',
   },
-  measuredNote: {
-    id: 'sources.measured.note',
+  measuredWhen: {
+    id: 'sources.measured.when',
     defaultMessage:
-      '<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}</strong>, by <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.',
+      '<strong>Every figure on this page was measured against the live sources on <f>{measured}</f>, {age}.</strong>',
     description:
-      'The first paragraph of that note. {measured} is the ISO day of the last run; {age} is how long ago that was and arrives as English prose out of src/lib/measured.ts, worked out in the reader’s browser, so the sentence has to read around an English fragment; {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <strong> carries the measurement itself, <f> draws the day in monospace and <code> the script’s path in this repository.',
+      'The first line of the note under the lede, always drawn: how fresh the figures are. {measured} is the ISO day of the last run; {age} is how long ago that was, worked out in the reader’s browser by src/lib/measured.ts. <strong> carries the whole line and <f> draws the day in monospace. How the run was taken is sources.measured.how, behind the ⓘ beside it.',
+  },
+  measuredHow: {
+    id: 'sources.measured.how',
+    defaultMessage:
+      'The run was <code>apps/workbench/scripts/measure-sources.mjs</code> on {where}. {answered} of {probes, plural, one {# source} other {# sources}} answered, with a {seconds}-second timeout and {attempts, plural, one {# attempt} other {# attempts}} each. The browser rendering this page checked nothing and cannot: the RSS feeds send no CORS header, which is why this is a script and not a refresh button.',
+    description:
+      'Behind the ⓘ in that note, after sources.measured.when says which day. {where} is the machine the run was taken on, in the run’s own words; {answered} is how many sources answered and {probes} how many were tried; {seconds} is the per-request timeout and {attempts} how many tries each source got. <code> draws the script’s path in this repository.',
   },
   measuredStale: {
     id: 'sources.measured.stale',
@@ -507,9 +517,14 @@ const COPY = defineMessages({
   gapsLede: {
     id: 'sources.gaps.lede',
     defaultMessage:
-      '{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken. Filled dots are what the app shows.',
+      '{count, plural, one {# source is} other {# sources are}} live and reachable, and the app reads a fraction of each. This is neither a broken source nor a missing one. It is a decision nobody has taken.',
+    description: 'Behind the ⓘ beside that heading. {count} is how many such sources there are.',
+  },
+  gapsLegend: {
+    id: 'sources.gaps.legend',
+    defaultMessage: 'Filled dots are what the app shows.',
     description:
-      'The line under that heading. {count} is how many such sources there are. The dots it names are the row of small circles on each card, one per thing the source carries.',
+      'The line under that heading, and the legend of the row of small circles on each card, one per thing the source carries.',
   },
   gapUsed: {
     id: 'sources.gap.used',
@@ -661,6 +676,12 @@ const COPY = defineMessages({
       'The line under that heading. “Q chip” is the small badge on a row, whose label is sources.question.chip; a translation that changes the letter there changes it here too.',
   },
 
+  footerLabel: {
+    id: 'sources.footer.label',
+    defaultMessage: 'Where this board comes from',
+    description:
+      'The footer’s one visible line, beside an ⓘ that opens the two paragraphs below. decisions.footer.label reads the same in English on the decisions board, which is a different board built out of different files.',
+  },
   footerFiles: {
     id: 'sources.footer.files',
     defaultMessage:
@@ -1382,25 +1403,38 @@ export function Sources() {
               aria-label={intl.formatMessage(COPY.measuredLabel)}
               className="mt-m max-w-content space-y-xs rounded-md border border-stroke border-l-2 border-l-accent bg-surface p-sm text-m text-on-canvas-muted"
             >
+              {/*
+              The day of the run and how long ago it was stay on the page: they are how
+              fresh everything below is, and the day comes out of `sources.measured.ts`
+              rather than being typed anywhere. How the run was taken is background and
+              waits behind the ⓘ. What else stays is what a reader acts on: a run too old
+              to trust, and the sources that did not answer.
+            */}
               <p>
                 {/* `intl.formatMessage` and never `<FormattedMessage>`: that
                     component reads react-intl's own context, which the app's
                     provider shadows inside an `AppHost`. `test/i18n.test.ts`
                     fails on one, and `i18n/Localisation.tsx` carries the
                     measurement. */}
-                {intl.formatMessage(COPY.measuredNote, {
+                {intl.formatMessage(COPY.measuredWhen, {
                   measured: MEASURED_ON,
                   age: ageInWords(intl, MEASURED_ON),
-                  where: MEASURED.where,
-                  answered: ANSWERED,
-                  probes: MEASURED.probes.length,
-                  seconds: MEASURED.timeoutMs / 1000,
-                  attempts: MEASURED.attempts,
                   strong,
                   f,
-                  code,
                 })}
               </p>
+              <InfoTip about={intl.formatMessage(COPY.measuredLabel)} showLabel>
+                <p>
+                  {intl.formatMessage(COPY.measuredHow, {
+                    where: MEASURED.where,
+                    answered: ANSWERED,
+                    probes: MEASURED.probes.length,
+                    seconds: MEASURED.timeoutMs / 1000,
+                    attempts: MEASURED.attempts,
+                    code,
+                  })}
+                </p>
+              </InfoTip>
               {/*
               The age is worked out in the browser, not at build time. This page is
               published and then sits there, and a figure nobody has questioned for
@@ -1503,15 +1537,19 @@ export function Sources() {
           </fieldset>
 
           <section className="min-w-0" aria-labelledby="h-findings">
-            <h2 id="h-findings" className={SECTION_HEAD}>
-              {intl.formatMessage(COPY.findingsTitle)}
-            </h2>
-            <p className={SECTION_LEDE}>
-              {intl.formatMessage(COPY.findingsLede, {
-                ailing: AILING.length,
-                feeds: FEEDS.length,
-              })}
-            </p>
+            <div className={HEAD_ROW}>
+              <h2 id="h-findings" className={SECTION_HEAD}>
+                {intl.formatMessage(COPY.findingsTitle)}
+              </h2>
+              <InfoTip about={intl.formatMessage(COPY.findingsTitle)}>
+                <p>
+                  {intl.formatMessage(COPY.findingsLede, {
+                    ailing: AILING.length,
+                    feeds: FEEDS.length,
+                  })}
+                </p>
+              </InfoTip>
+            </div>
 
             <ul className="mt-s grid gap-xs lg:grid-cols-3">
               {AILING.map((feed) => {
@@ -1567,12 +1605,16 @@ export function Sources() {
           </section>
 
           <section className="min-w-0" aria-labelledby="h-gaps">
-            <h2 id="h-gaps" className={SECTION_HEAD}>
-              {intl.formatMessage(COPY.gapsTitle)}
-            </h2>
-            <p className={SECTION_LEDE}>
-              {intl.formatMessage(COPY.gapsLede, { count: UNUSED.length })}
-            </p>
+            <div className={HEAD_ROW}>
+              <h2 id="h-gaps" className={SECTION_HEAD}>
+                {intl.formatMessage(COPY.gapsTitle)}
+              </h2>
+              <InfoTip about={intl.formatMessage(COPY.gapsTitle)}>
+                <p>{intl.formatMessage(COPY.gapsLede, { count: UNUSED.length })}</p>
+              </InfoTip>
+            </div>
+            {/* The one sentence of the old lede a reader needs to read the cards at all. */}
+            <p className={SECTION_LEDE}>{intl.formatMessage(COPY.gapsLegend)}</p>
 
             <ul className="mt-s grid gap-xs sm:grid-cols-2 xl:grid-cols-4">
               {UNUSED.map((gap) => {
@@ -1630,10 +1672,14 @@ export function Sources() {
           </section>
 
           <section className="min-w-0" aria-labelledby="h-board">
-            <h2 id="h-board" className={SECTION_HEAD}>
-              {intl.formatMessage(COPY.boardTitle)}
-            </h2>
-            <p className={SECTION_LEDE}>{intl.formatMessage(COPY.boardLede)}</p>
+            <div className={HEAD_ROW}>
+              <h2 id="h-board" className={SECTION_HEAD}>
+                {intl.formatMessage(COPY.boardTitle)}
+              </h2>
+              <InfoTip about={intl.formatMessage(COPY.boardTitle)}>
+                <p>{intl.formatMessage(COPY.boardLede)}</p>
+              </InfoTip>
+            </div>
 
             <div className="mt-s flex flex-wrap items-end gap-sm rounded-md border border-stroke bg-surface p-s">
               <div className="min-w-0 flex-1 basis-[16rem]">
@@ -1894,10 +1940,14 @@ export function Sources() {
           </section>
 
           <section className="min-w-0" aria-labelledby="h-questions">
-            <h2 id="h-questions" className={SECTION_HEAD}>
-              {intl.formatMessage(COPY.questionsTitle, { count: COUNTS.questions })}
-            </h2>
-            <p className={SECTION_LEDE}>{intl.formatMessage(COPY.questionsLede)}</p>
+            <div className={HEAD_ROW}>
+              <h2 id="h-questions" className={SECTION_HEAD}>
+                {intl.formatMessage(COPY.questionsTitle, { count: COUNTS.questions })}
+              </h2>
+              <InfoTip about={intl.formatMessage(COPY.questionsTitle, { count: COUNTS.questions })}>
+                <p>{intl.formatMessage(COPY.questionsLede)}</p>
+              </InfoTip>
+            </div>
 
             <ol className="mt-s space-y-xs">
               {QUESTIONS.map((question, index) => {
@@ -1941,9 +1991,11 @@ export function Sources() {
             </ol>
           </section>
 
-          <footer className="min-w-0 space-y-xs border-t border-stroke pt-sm text-m text-on-canvas-muted">
-            <p className="max-w-content">{intl.formatMessage(COPY.footerFiles, { code })}</p>
-            <p className="max-w-content">{intl.formatMessage(COPY.footerRemeasure, { code })}</p>
+          <footer className="min-w-0 border-t border-stroke pt-sm">
+            <InfoTip about={intl.formatMessage(COPY.footerLabel)} showLabel side="top">
+              <p>{intl.formatMessage(COPY.footerFiles, { code })}</p>
+              <p>{intl.formatMessage(COPY.footerRemeasure, { code })}</p>
+            </InfoTip>
           </footer>
         </div>
       </Page>

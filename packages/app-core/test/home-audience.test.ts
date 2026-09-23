@@ -20,6 +20,7 @@ import {
   stateAt,
   type HomeLayout,
 } from '../src/lib/home-layout';
+import { simulatedEntitlement } from '../src/services/auth.service';
 import type { Entitlement, MembershipTier } from '../src/types/models';
 import * as v2 from './__fixtures__/home-layout-v2';
 
@@ -77,6 +78,20 @@ describe('the one file that says what an audience means', () => {
     expect(sorted(readerOf(local))).toEqual(['everyone', 'free-members']);
   });
 
+  /**
+   * The review of #250, item 6: widening `free-members` to every local bundle left every
+   * suite green. The sign-in the app simulates gives a `lokal` address a paid tier with a
+   * local bundle, and that reader is a member with a contribution, because the rules read
+   * the tier and nothing else (ADR 0060 §3).
+   */
+  it('puts a local bundle on a paid tier among the paying members, and only there', () => {
+    const at = (email: string) => sorted(readerOf(simulatedEntitlement(email, { now: 0 })));
+    expect(simulatedEntitlement('lokal@example.org', { now: 0 }).source).toBe('local-bundle');
+    expect(at('lokal@example.org')).toEqual(['everyone', 'paying-members']);
+    expect(at('soli@example.org')).toEqual(['everyone', 'paying-members']);
+    expect(at('test@example.org')).toEqual(['everyone', 'paying-members']);
+  });
+
   it('lists every reader the rules can tell apart, and every audience has one in it', () => {
     // READERS is what the editor checks an edit against before calling it a repetition. An
     // audience no listed reader is in is an audience the editor would prune blind.
@@ -112,9 +127,15 @@ describe('the one file that says what an audience means', () => {
 });
 
 describe('the grammar, on a section and on a change', () => {
-  const day = (sections: unknown[], moments: unknown[] = [], editions?: unknown[]) => ({
+  const day = (
+    sections: unknown[],
+    moments: unknown[] = [],
+    editions?: unknown[],
+    audiences?: unknown,
+  ) => ({
     version: HOME_LAYOUT_VERSION,
     sections,
+    ...(audiences === undefined ? {} : { audiences }),
     moments,
     ...(editions ? { editions } : {}),
   });
@@ -122,8 +143,10 @@ describe('the grammar, on a section and on a change', () => {
   it('keeps an audience it knows, on both', () => {
     const layout = read(
       day(
-        [{ id: 'hero', module: 'a', audience: 'paying-members' }],
+        [{ id: 'hero', module: 'a' }],
         [{ at: '18:00', changes: [{ id: 'hero', audience: 'free-members', hidden: true }] }],
+        undefined,
+        { hero: 'paying-members' },
       ),
     );
     expect(layout.sections[0]?.audience).toBe('paying-members');
@@ -134,17 +157,44 @@ describe('the grammar, on a section and on a change', () => {
     });
   });
 
-  it('drops a section whose audience it has no rule for, and says which', () => {
+  /**
+   * ADR 0060 §6: a fault in `audiences` costs the one entry and never the place. The place
+   * is drawn as its module would draw it, which is also what an older app does with the key.
+   */
+  it('keeps a place whose audience it has no rule for, and drops only the entry', () => {
     const parse = parseHomeLayout(
-      day([
-        { id: 'hero', module: 'a', audience: 'not-yet-members' },
-        { id: 'rail', module: 'b' },
-      ]),
+      day(
+        [
+          { id: 'hero', module: 'a' },
+          { id: 'rail', module: 'b' },
+        ],
+        [],
+        undefined,
+        {
+          hero: 'not-yet-members',
+          gone: 'paying-members',
+        },
+      ),
     );
-    expect(parse.layout?.sections.map((section) => section.id)).toEqual(['rail']);
-    expect(parse.problems).toEqual([
-      { code: 'section-audience-unknown', context: { id: 'hero', audience: 'not-yet-members' } },
+    expect(parse.layout?.sections).toEqual([
+      { id: 'hero', module: 'a' },
+      { id: 'rail', module: 'b' },
     ]);
+    expect(parse.problems).toEqual([
+      { code: 'audience-unknown', context: { id: 'hero', audience: 'not-yet-members' } },
+      { code: 'audience-id-unknown', context: { id: 'gone' } },
+    ]);
+  });
+
+  it('refuses an audience written inside a section, as it refuses any key it does not know', () => {
+    const parse = parseHomeLayout(day([{ id: 'hero', module: 'a', audience: 'everyone' }]));
+    expect(parse.problems.map((problem) => problem.code)).toEqual(['section-unknown-key']);
+  });
+
+  it('reads nothing out of audiences that are not an object, and keeps every place', () => {
+    const parse = parseHomeLayout(day([{ id: 'hero', module: 'a' }], [], undefined, ['x']));
+    expect(parse.problems.map((problem) => problem.code)).toEqual(['audiences-not-an-object']);
+    expect(parse.layout?.sections).toEqual([{ id: 'hero', module: 'a' }]);
   });
 
   it('drops only the change whose audience it cannot read, and the place keeps its state', () => {
@@ -205,8 +255,9 @@ describe('the fold, with the reader as its third parameter', () => {
       sections: [
         { id: 'hero', module: 'article-hero' },
         { id: 'early', module: 'early-access-card' },
-        { id: 'free-only', module: 'b', audience: 'free-members', hidden: true },
+        { id: 'free-only', module: 'b', hidden: true },
       ],
+      audiences: { 'free-only': 'free-members' },
       moments: [
         {
           at: '18:00',
@@ -270,17 +321,19 @@ describe('the fold, with the reader as its third parameter', () => {
 
 describe('a document with audiences, read by an app that knows none', () => {
   /**
-   * ADR 0060 §6. The older parser is the frozen version 2 one, and a version 3 app has the
-   * same rule for a key it does not know: the section goes, and the change goes. What this
-   * pins is the consequence the record accepts: the change falls back to what every reader
-   * inherits, and a place carrying an audience is not drawn for anybody.
+   * ADR 0060 §6. The older parser is the frozen version 2 one, and a version 3 app reads a
+   * top-level key it does not know the same way: it never sees it. So a place with an
+   * audience is drawn for everybody, which is a filter ignored and not a block lost, and a
+   * change carrying `audience` is refused by the rule for a key it does not know, so the
+   * place keeps what every reader inherits.
    */
   const input = {
     version: HOME_LAYOUT_VERSION,
     sections: [
       { id: 'hero', module: 'article-hero' },
-      { id: 'club', module: 'backstage-teaser', audience: 'paying-members' },
+      { id: 'club', module: 'backstage-teaser' },
     ],
+    audiences: { club: 'paying-members' },
     moments: [
       {
         at: '18:00',
@@ -289,23 +342,15 @@ describe('a document with audiences, read by an app that knows none', () => {
     ],
   };
 
-  it('drops the section and the change, and reports both by the key', () => {
+  it('keeps every place, drops the change, and reports only the change', () => {
     const parse = v2.parseHomeLayout(input);
     expect(parse.problems.map((problem) => problem.code)).toEqual([
       'version-unknown',
-      'section-unknown-key',
       'change-unknown-key',
     ]);
-    expect(parse.layout?.sections.map((section) => section.id)).toEqual(['hero']);
-  });
-
-  it('refuses a change naming an audience even about a place it kept', () => {
-    const kept = { ...input, sections: [input.sections[0]] };
-    const parse = v2.parseHomeLayout(kept);
-    expect(parse.problems.map((problem) => problem.code)).toEqual([
-      'version-unknown',
-      'change-unknown-key',
+    expect(v2.sectionsAt(parse.layout!, 19 * 60).map((section) => section.id)).toEqual([
+      'hero',
+      'club',
     ]);
-    expect(v2.sectionsAt(parse.layout!, 19 * 60).map((section) => section.id)).toEqual(['hero']);
   });
 });

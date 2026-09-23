@@ -73,8 +73,11 @@
  *
  * [ADR 0060](../../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md)
  * builds [ADR 0041](../../../../adr/0041-a-change-may-name-an-audience.md). A place may say
- * who it is for (`audience` on a section, or its module's default), and a change may say
- * who it applies to (`audience` on a change, in the day or in an edition). The fold takes
+ * who it is for (its entry in the top-level `audiences`, or its module's default), and a
+ * change may say who it applies to (`audience` on a change, in the day or in an edition).
+ * The places' audiences sit beside `sections` rather than inside them for the reason
+ * editions do (ADR 0059 §5): an older app never sees the key, and draws the place for
+ * everybody instead of dropping it for everybody (ADR 0060 §6). The fold takes
  * the reader as it takes the instant: every change at or before the instant **whose
  * audience the reader is in**, and then every place that is not hidden **and is for this
  * reader**. `home-audience.ts` is the one file that says what an audience means.
@@ -103,9 +106,11 @@ import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
  * reader was looking at. It is deliberately not a gate: a document numbered for a later
  * app is reported and then read, part by part, exactly like every other one.
  *
- * It is 4 since ADR 0060, which added `audience` to a section and to a change. A version 3
- * app reads a version 4 document and refuses both, by the rule it already has for a key it
- * does not know: the section goes, or the change does. ADR 0060 §6 weighs that.
+ * It is 4 since ADR 0060, which added `audiences` beside the sections and `audience` to a
+ * change. A version 3 app reads a version 4 document, never sees `audiences` and so draws
+ * every place for everybody, which is a filter ignored and never a block lost; and it
+ * refuses a change carrying `audience` by the rule it has for a key it does not know, so
+ * that place keeps what it inherited. ADR 0060 §6 weighs both.
  *
  * It was 3 from ADR 0059, which added `editions`. A version 2 document is a version 3
  * document with no editions and is read exactly as it was, reported for its number like
@@ -115,9 +120,9 @@ import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
  * It was 2 from ADR 0039. A version 1 document is still read — it is reported and then
  * parsed — and what it loses is every section that carried a `dayparts` key, because
  * that key is a rule this app can no longer apply. There is no migration here and
- * nothing to migrate: the document is compiled in, nothing fetches one yet, and a
- * migration written against a document that has never been served is a guess with
- * upkeep.
+ * nothing to migrate: the fetch (`stores/homeLayout.ts`) arrived after version 2, so no
+ * version 1 document was ever served, and a migration written against a document that
+ * has never been served is a guess with upkeep.
  */
 export const HOME_LAYOUT_VERSION = 4;
 
@@ -163,6 +168,9 @@ export interface HomeSection {
    * Who this place is for, all day. Absent means its module's default, and a module with
    * none is for everyone (`home-audience.ts`). Not a state a moment can change: on a
    * change, `audience` says who the CHANGE is for, and one key does not mean two things.
+   *
+   * Read from the document's top-level `audiences`, keyed by the section's id, and never
+   * written inside a section: see the file's header, and ADR 0060 §6.
    */
   readonly audience?: Audience;
   /** Off at the start of the day. Absent means shown. */
@@ -244,10 +252,10 @@ export interface HomeLayout {
  * be an unrecognised key, so everything using it would be dropped and the screen would
  * lose the places the new field was added for.
  */
-const SECTION_KEYS: Record<keyof HomeSection, true> = {
+/** `audience` is not here: a document writes it in `audiences`, beside the sections. */
+const SECTION_KEYS: Record<Exclude<keyof HomeSection, 'audience'>, true> = {
   id: true,
   module: true,
-  audience: true,
   hidden: true,
   settings: true,
 };
@@ -299,7 +307,6 @@ export type LayoutProblemCode =
   | 'section-id-duplicate'
   | 'section-unknown-key'
   | 'section-hidden-invalid'
-  | 'section-audience-unknown'
   | 'section-settings-invalid'
   | 'section-setting-unknown'
   | 'section-setting-invalid'
@@ -315,6 +322,9 @@ export type LayoutProblemCode =
   | 'change-id-unknown'
   | 'change-unknown-key'
   | 'change-hidden-invalid'
+  | 'audiences-not-an-object'
+  | 'audience-id-unknown'
+  | 'audience-unknown'
   | 'change-audience-unknown'
   | 'change-settings-invalid'
   | 'change-setting-unknown'
@@ -350,7 +360,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** A name as written when it is one, or what it is when it is not. */
-function named(value: unknown): string {
+function spelled(value: unknown): string {
   return typeof value === 'string' ? value : typeOf(value);
 }
 
@@ -423,7 +433,7 @@ export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>
     return { layout: null, problems };
   }
 
-  const { version, sections, moments, editions } = input;
+  const { version, sections, audiences, moments, editions } = input;
 
   if (typeof version !== 'number' || !Number.isFinite(version)) {
     problems.push({ code: 'version-invalid', context: { type: typeOf(version) } });
@@ -448,10 +458,14 @@ export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>
   });
 
   const modules = new Map(parsed.map((section) => [section.id, section.module]));
+  const held = parseAudiences(audiences, modules, problems);
   return {
     layout: {
       version,
-      sections: parsed,
+      sections: parsed.map((section) => {
+        const audience = held.get(section.id);
+        return audience === undefined ? section : { ...section, audience };
+      }),
       moments: parseMoments(moments, modules, {}, problems),
       editions: parseEditions(editions, modules, problems),
     },
@@ -472,7 +486,7 @@ function parseSection(
     return null;
   }
 
-  const { id, module, audience, hidden, settings } = raw;
+  const { id, module, hidden, settings } = raw;
 
   // The id first, because every problem after this one names it: a section whose id
   // cannot be read is one nobody can address, and `index` is all a report can offer.
@@ -504,13 +518,6 @@ function parseSection(
     return null;
   }
 
-  // An audience this app has no rule for is a rule it cannot apply, so the place goes, as
-  // it goes for a key it does not know (ADR 0041 §3, ADR 0039 §6).
-  if (audience !== undefined && !isAudience(audience)) {
-    problems.push({ code: 'section-audience-unknown', context: { id, audience: named(audience) } });
-    return null;
-  }
-
   const parsedSettings = parseSettings(settings, module, id, 'section', problems);
   if (parsedSettings === REFUSED) return null;
 
@@ -522,10 +529,42 @@ function parseSection(
   return {
     id,
     module,
-    ...(audience === undefined ? {} : { audience }),
     ...(hidden === undefined ? {} : { hidden }),
     ...(parsedSettings ? { settings: parsedSettings } : {}),
   };
+}
+
+/**
+ * Who each place is for, from the top-level `audiences`: section id to audience.
+ *
+ * A fault here costs the one entry and never the place, which is the other way round from
+ * a key inside a section, and on purpose (ADR 0060 §6): an audience is a filter, so a
+ * place whose filter cannot be read is drawn as its module would draw it, and nobody
+ * loses a block over one word. That is also what an older app does with the whole key.
+ */
+function parseAudiences(
+  raw: unknown,
+  modules: ReadonlyMap<string, string>,
+  problems: LayoutProblem[],
+): ReadonlyMap<string, Audience> {
+  const held = new Map<string, Audience>();
+  if (raw === undefined) return held;
+  if (!isRecord(raw)) {
+    problems.push({ code: 'audiences-not-an-object', context: { type: typeOf(raw) } });
+    return held;
+  }
+  for (const [id, audience] of Object.entries(raw)) {
+    if (!modules.has(id)) {
+      problems.push({ code: 'audience-id-unknown', context: { id } });
+      continue;
+    }
+    if (!isAudience(audience)) {
+      problems.push({ code: 'audience-unknown', context: { id, audience: spelled(audience) } });
+      continue;
+    }
+    held.set(id, audience);
+  }
+  return held;
 }
 
 /** The sentinel a settings parse answers with when its owner has to go. */
@@ -766,7 +805,7 @@ function parseChange(
   if (audience !== undefined && !isAudience(audience)) {
     problems.push({
       code: 'change-audience-unknown',
-      context: { ...where, id, audience: named(audience) },
+      context: { ...where, id, audience: spelled(audience) },
     });
     return null;
   }
@@ -955,9 +994,12 @@ function parseEdition(
  *
  * **Once per document, not once per render.** This is a plain function with no memory of
  * its own; what makes the promise true is that the host calls it where it reads the
- * document (`apps/mobile/src/lib/home/layout.ts` parses once and keeps the answer), and
- * that is asserted there rather than assumed here. A reporter that fires on every frame
- * is not a louder report, it is a log nobody reads.
+ * document (`apps/mobile/src/lib/home/layout.ts` parses once and keeps the answer in
+ * memory, so it is once per document per process), and that is asserted there rather
+ * than assumed here. The one other caller is `stores/homeLayout.ts`, for a fetched
+ * document it refuses: that one never reaches the host, so nobody else could report it,
+ * and it is refused once per try. A reporter that fires on every frame is not a louder
+ * report, it is a log nobody reads.
  */
 export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
   for (const problem of problems) {

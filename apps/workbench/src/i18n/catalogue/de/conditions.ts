@@ -27,5 +27,7 @@ export const conditions: Record<string, string> = {
   'conditions.changeFor': 'Diese Änderung gilt für',
   'conditions.byDefault': '{audience} (Voreinstellung)',
   'conditions.notYet': 'Noch keine Mitglieder (in der App niemand)',
+  'conditions.locked':
+    'Die Änderung hier gilt für eine andere Zielgruppe. Zum Bearbeiten eine Person daraus im Rahmen anmelden.',
   'conditions.notFor': 'Im Rahmen nicht zu sehen: die angemeldete Person gehört nicht dazu.',
 };
