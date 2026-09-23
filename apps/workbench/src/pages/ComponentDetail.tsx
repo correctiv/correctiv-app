@@ -1,5 +1,5 @@
 import { ExternalLink, Maximize2, RotateCw } from 'lucide-react';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
 import api from 'virtual:api';
@@ -16,6 +16,7 @@ import { Badge } from '../ui/kit/badge';
 import { Button } from '../ui/kit/button';
 import { InfoTip } from '../ui/kit/info-tip';
 import { Segmented } from '../ui/kit/segmented';
+import { Select } from '../ui/kit/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/kit/tooltip';
 import { Source } from '../ui/Lookup';
 import { AppFrame } from '../preview/AppFrame';
@@ -26,8 +27,6 @@ const { groups } = api.components;
 
 const CARD = 'rounded-md border border-stroke bg-canvas p-xs';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
-const FIELD =
-  'h-[1.75rem] rounded-md border border-stroke bg-canvas px-2xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 /** The two renderings, and the parameter that chooses between them. */
 type Rendering = 'direct' | 'bundle';
@@ -226,6 +225,7 @@ export function ComponentDetail({
   full,
 }: ShellProps & { group: string; name: string }) {
   const intl = useWorkbenchIntl();
+  const deviceId = useId();
   const id = `${group}/${name}`;
   /*
    * Both halves of a platform split, because `?c=` carries no platform: the
@@ -448,22 +448,21 @@ export function ComponentDetail({
       </Slot>
 
       <Slot id="device">
-        <label className="flex flex-col gap-2xs">
-          <span className={NOTE}>{intl.formatMessage(COPY.device)}</span>
-          <select
-            className={cn(FIELD, 'w-full')}
+        <div className="flex flex-col gap-2xs">
+          <label htmlFor={deviceId} className={NOTE}>
+            {intl.formatMessage(COPY.device)}
+          </label>
+          <Select
+            id={deviceId}
+            className="w-full"
             value={device}
-            onChange={(event) =>
-              setRest({ d: event.target.value === DEFAULT_DEVICE ? null : event.target.value })
-            }
-          >
-            {DEVICES.filter((d) => d.id !== 'custom').map((d) => (
-              <option key={d.id} value={d.id}>
-                {deviceOption(intl, d)}
-              </option>
-            ))}
-          </select>
-        </label>
+            onValueChange={(next) => setRest({ d: next === DEFAULT_DEVICE ? null : next })}
+            options={DEVICES.filter((d) => d.id !== 'custom').map((d) => ({
+              value: d.id,
+              label: deviceOption(intl, d),
+            }))}
+          />
+        </div>
         <p className={cn(NOTE, 'tabular-nums')}>
           {size.w === 0
             ? intl.formatMessage(COPY.sizeAuto)

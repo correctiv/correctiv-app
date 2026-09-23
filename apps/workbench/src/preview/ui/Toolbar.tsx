@@ -17,6 +17,7 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
 import { Segmented } from '../../ui/kit/segmented';
+import { Select } from '../../ui/kit/select';
 import { Separator } from '../../ui/kit/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { Pages } from './Pages';
@@ -268,28 +269,23 @@ export function Toolbar({
       role="toolbar"
       aria-label={intl.formatMessage(COPY.toolbar)}
     >
-      <select
-        className={cn(FIELD, 'shrink-0 max-w-[7rem] sm:max-w-[13rem]')}
+      <Select
+        className="shrink-0 max-w-[7rem] sm:max-w-[13rem]"
         aria-label={intl.formatMessage(COPY.device)}
         value={state.device}
-        onChange={(e) =>
+        onValueChange={(device) =>
           onChange({
-            device: e.target.value,
+            device,
             landscape: false,
             // Carry the size over into `custom`, so picking it keeps what is on
             // screen. Not from `host`, whose `frameSize` is zero by design: the
             // stage measures that one, and spreading it collapsed the frame to
             // 0 × 0 with no way back but a reload.
-            ...(e.target.value === 'custom' && !host ? size : {}),
+            ...(device === 'custom' && !host ? size : {}),
           })
         }
-      >
-        {DEVICES.map((d) => (
-          <option key={d.id} value={d.id}>
-            {deviceOption(intl, d)}
-          </option>
-        ))}
-      </select>
+        options={DEVICES.map((d) => ({ value: d.id, label: deviceOption(intl, d) }))}
+      />
 
       {/*
         Only while the size is the person's own, as in the design. Every preset
@@ -437,14 +433,12 @@ export function Toolbar({
         Not hidden at the host's own size either, which the zoom and the orientation are:
         those two are about a frame there is not one of, and a language is about the app.
       */}
-      <select
-        className={cn(FIELD, 'shrink-0', !moreOpen && 'max-sm:hidden')}
+      <Select
+        className={cn('shrink-0', !moreOpen && 'max-sm:hidden')}
         aria-label={intl.formatMessage(COPY.language)}
         value={state.lang ?? ''}
-        onChange={(e) => onChange({ lang: isLocale(e.target.value) ? e.target.value : null })}
-      >
-        <option value="">{intl.formatMessage(COPY.languageShipped)}</option>
-        {/*
+        onValueChange={(lang) => onChange({ lang: isLocale(lang) ? lang : null })}
+        /*
           The two values are locale codes and are not translated, which is the exemption
           `ZOOMS` above takes for `50%` and `preview/routes.ts` takes for the app's own
           screen names. `de` is what the address carries, what the catalogue directory is
@@ -452,29 +446,24 @@ export function Toolbar({
           an identifier, and a German reader offered "Englisch" has been answered in the
           language they are trying to leave (`ui/Settings.tsx` makes the same point about
           its own picker).
-        */}
-        {LOCALES.map((code) => (
-          <option key={code} value={code}>
-            {code}
-          </option>
-        ))}
-      </select>
+        */
+        options={[
+          { value: '', label: intl.formatMessage(COPY.languageShipped) },
+          ...LOCALES.map((code) => ({ value: code, label: code })),
+        ]}
+      />
 
       {!host && (
-        <select
-          className={cn(FIELD, 'shrink-0', !moreOpen && 'max-sm:hidden')}
+        <Select
+          className={cn('shrink-0', !moreOpen && 'max-sm:hidden')}
           aria-label={intl.formatMessage(COPY.zoom)}
           value={String(state.zoom)}
-          onChange={(e) =>
-            onChange({ zoom: e.target.value === 'fit' ? 'fit' : Number(e.target.value) })
-          }
-        >
-          {ZOOMS.map((z) => (
-            <option key={z.value} value={z.value}>
-              {z.label ?? intl.formatMessage(COPY.zoomFit)}
-            </option>
-          ))}
-        </select>
+          onValueChange={(zoom) => onChange({ zoom: zoom === 'fit' ? 'fit' : Number(zoom) })}
+          options={ZOOMS.map((z) => ({
+            value: String(z.value),
+            label: z.label ?? intl.formatMessage(COPY.zoomFit),
+          }))}
+        />
       )}
 
       <Pages onPick={(route) => onChange({ route })} />

@@ -17,6 +17,7 @@ import { blocksFor } from '@/lib/home/screens';
 
 import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
+import { InfoTip } from '../../ui/kit/info-tip';
 import {
   Dialog,
   DialogContent,
@@ -91,10 +92,15 @@ const COPY = defineMessages({
   },
   lead: {
     id: 'home.palette.lead',
-    defaultMessage:
-      'The new block goes {where}. The list offers every block that fits this screen. Judge the result in the frame beside it.',
+    defaultMessage: 'The new block goes {where}.',
     description:
-      'The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as "at the very top".',
+      'The one line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as "at the very top".',
+  },
+  leadMore: {
+    id: 'home.palette.leadMore',
+    defaultMessage:
+      'The list offers every block that fits this screen. How it looks, you see in the frame beside it.',
+    description: 'Behind the ⓘ beside the palette dialog’s heading, home.palette.title.',
   },
   addModule: {
     id: 'home.palette.addModule',
@@ -184,9 +190,14 @@ export function InsertMark({
       </DialogTrigger>
 
       <DialogContent className="w-[min(60rem,92vw)]">
-        <DialogTitle className="text-l font-semibold text-on-canvas">
-          {intl.formatMessage(COPY.title)}
-        </DialogTitle>
+        <div className="flex items-center gap-2xs">
+          <DialogTitle className="text-l font-semibold text-on-canvas">
+            {intl.formatMessage(COPY.title)}
+          </DialogTitle>
+          <InfoTip about={intl.formatMessage(COPY.title)}>
+            <p>{intl.formatMessage(COPY.leadMore)}</p>
+          </InfoTip>
+        </div>
         <DialogDescription className="mt-3xs text-s leading-relaxed text-on-canvas-muted">
           {intl.formatMessage(COPY.lead, { where })}
         </DialogDescription>

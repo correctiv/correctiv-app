@@ -279,9 +279,9 @@ const COPY = defineMessages({
   feedRun: {
     id: 'sources.feed.run',
     defaultMessage:
-      '{category}. The run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.',
+      '{category}: the run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.',
     description:
-      'The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it and is not translated. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace.',
+      'The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it, in English and not translated, so it stands as a label before the colon rather than as part of the sentence. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace.',
   },
   feedUnmeasured: {
     id: 'sources.feed.unmeasured',
@@ -305,9 +305,9 @@ const COPY = defineMessages({
   },
   standsIn: {
     id: 'sources.standsIn',
-    defaultMessage: 'stands in for {what}',
+    defaultMessage: 'Stands in for:',
     description:
-      'The second line under a row’s name, where a sample file stands in for something real. {what} is what it stands in for, in the manifest’s own words, and is not translated.',
+      'The label at the head of the second line under a row’s name, where a sample file stands in for something real. What follows it is the manifest’s own words, printed as written and not translated, so this is a label and not the start of a sentence.',
   },
   measuredUsed: {
     id: 'sources.measured.used',
@@ -912,7 +912,7 @@ interface BoardRow {
   status: Status;
   kind: Kind;
   name: string;
-  sub?: string;
+  sub?: ReactNode;
   /** Only a live source can have one, and it is what marks the row. */
   severity?: Severity;
   /** Carries a finding: stale, broken, unused or invented. */
@@ -998,7 +998,7 @@ function feedRow(feed: Feed, index: number, family: SourceEntry, intl: IntlShape
       <>
         <p>
           {intl.formatMessage(COPY.feedRun, {
-            category: feed.category,
+            category: <span lang="en">{feed.category}</span>,
             measured: MEASURED_ON,
             posts: saysCount(intl, figures.posts),
             newest: saysNewest(intl, figures.newest),
@@ -1071,7 +1071,16 @@ function sourceRow(entry: SourceEntry, intl: IntlShape): BoardRow {
     status: entry.status,
     kind: entry.kind,
     name: entry.label,
-    sub: entry.standsIn ? intl.formatMessage(COPY.standsIn, { what: entry.standsIn }) : undefined,
+    /*
+     * A label, then the manifest's words on their own, marked as English. It was one
+     * sentence with the English spliced into the German (ADR 0052 §4 keeps the manifest as
+     * written; it never asked for that).
+     */
+    sub: entry.standsIn ? (
+      <>
+        {intl.formatMessage(COPY.standsIn)} <span lang="en">{entry.standsIn}</span>
+      </>
+    ) : undefined,
     attention: gap !== undefined || invented,
     questions,
     reads: readsCell(entry, intl),
@@ -1571,7 +1580,7 @@ export function Sources() {
                     </p>
                     <p className="text-m text-on-canvas-muted">
                       {intl.formatMessage(COPY.findingsFigures, {
-                        category: feed.category,
+                        category: <span lang="en">{feed.category}</span>,
                         posts: saysCount(intl, feedFigures(feed).posts),
                         newest: saysNewest(intl, feedFigures(feed).newest),
                         f,

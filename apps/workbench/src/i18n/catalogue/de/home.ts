@@ -75,8 +75,9 @@ export const home: Record<string, string> = {
   // German too since that table became descriptors, so these read German through.
   'home.palette.addHere': 'Einen Block hinzufügen: {where}',
   'home.palette.title': 'Einen Block hinzufügen',
-  'home.palette.lead':
-    'Der neue Block kommt {where}. Die Liste bietet jeden Block an, der auf diesen Bildschirm passt. Wie das aussieht, sehen Sie im Rahmen daneben.',
+  'home.palette.lead': 'Der neue Block kommt {where}.',
+  'home.palette.leadMore':
+    'Die Liste bietet jeden Block an, der auf diesen Bildschirm passt. Wie das aussieht, sehen Sie im Rahmen daneben.',
   'home.palette.addModule': '{name} hinzufügen. {what}',
 
   // What a block says instead of a drawing (`preview/home/HomeBlock.tsx`). Since ADR 0053
@@ -85,9 +86,9 @@ export const home: Record<string, string> = {
   'home.block.empty': '{block} zeigt hier nichts an.',
 
   // The editing surface (`preview/home/HomeDocument.tsx`). `{block}` comes out of
-  // `preview/home/document.ts` and is German. `{standsIn}` comes out of
-  // `content/sources.manifest.ts`, which ADR 0052 §4 leaves quoted as written, so
-  // that one sentence still reads German around an English fragment.
+  // `preview/home/document.ts` and is German. The inventory's own English, which ADR
+  // 0052 §4 leaves as written, is no longer spliced into a sentence here: it is quoted on
+  // its own behind the ⓘ beside „Beispieldaten“, under `home.setting.sampleQuote`.
   'home.document.rule':
     'Ein Moment enthält nur, was sich zu dieser Uhrzeit ändert. Alles andere bleibt wie vorher.',
   'home.document.follow': 'Den Rahmen zu dem Block scrollen, auf den Sie zeigen',
@@ -115,7 +116,7 @@ export const home: Record<string, string> = {
   // The head of the editor: which point is in effect, and what can be done to it.
   'home.point.midnight': 'Mitternacht',
   'home.point.start': 'Der Beginn des Tages',
-  'home.point.startLead': 'Das Layout ab Mitternacht bis {until}. Jeder Moment baut darauf auf.',
+  'home.point.startLead': 'von Mitternacht bis {until}',
   'home.point.time': 'Die Uhrzeit dieses Moments',
   'home.point.span':
     'bis {until} · {changes, plural, =0 {hier ändert sich noch nichts} one {# Änderung hier} other {# Änderungen hier}}',
@@ -142,7 +143,8 @@ export const home: Record<string, string> = {
   'home.setting.noPin': 'Die neueste Recherche (nichts angeheftet)',
   'home.setting.sampleBadge': 'Beispieldaten',
   'home.setting.sample':
-    'Eine feste Liste echter Artikel, nicht die von heute. Sie steht für {standsIn}.',
+    'Eine feste Auswahl echter Artikel, stellvertretend für das, was WordPress später liefert.',
+  'home.setting.sampleQuote': 'In der Statusübersicht der Quellen:',
 
   // What a save says back (`preview/home/write.ts`). `{said}` is the dev server's
   // own sentence and `{codes}` is the core's vocabulary; neither is translated, so

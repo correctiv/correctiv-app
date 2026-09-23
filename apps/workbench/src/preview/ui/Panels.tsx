@@ -109,7 +109,7 @@ const COPY = defineMessages({
     defaultMessage:
       'An iframe cannot get a colour scheme of its own. To reach the two rows marked DevTools, emulate <code>prefers-color-scheme</code> under Rendering in DevTools.',
     description:
-      'Under the list of four combinations. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated.',
+      'Behind the ⓘ beside “Device reports”, about the list of four combinations below it. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated.',
   },
 
   fixtures: {
@@ -367,7 +367,7 @@ const COPY = defineMessages({
     id: 'tools.inspect.note',
     defaultMessage: 'The block carries this view’s address.',
     description:
-      'Under the block, saying the one thing about it that is not obvious from reading it: whoever picks the note up can put the same thing back on screen.',
+      'Behind the ⓘ beside the copy button, saying the one thing about the block that is not obvious from reading it: whoever picks the note up can put the same thing back on screen.',
   },
 });
 
@@ -602,7 +602,13 @@ export function Appearance({ status, onChange }: Props) {
           </dd>
         </div>
         <div className={cn(CARD, 'min-w-0 px-xs py-2xs')}>
-          <dt className="text-s text-on-canvas-muted">{intl.formatMessage(COPY.deviceReports)}</dt>
+          <dt className="flex items-center gap-3xs text-s text-on-canvas-muted">
+            {intl.formatMessage(COPY.deviceReports)}
+            {/* Why the device's half cannot be switched from here, which is background. */}
+            <InfoTip about={intl.formatMessage(COPY.deviceReports)} align="end">
+              <p>{intl.formatMessage(COPY.appearanceNote, { code })}</p>
+            </InfoTip>
+          </dt>
           <dd className="mt-4xs flex min-w-0 items-center gap-2xs font-mono text-m text-on-canvas">
             <span
               className="size-[0.625rem] shrink-0 rounded-full border border-stroke-strong"
@@ -662,8 +668,6 @@ export function Appearance({ status, onChange }: Props) {
           );
         })}
       </ol>
-
-      <p className={NOTE}>{intl.formatMessage(COPY.appearanceNote, { code })}</p>
     </>
   );
 }
@@ -1239,6 +1243,10 @@ export function Inspect({ status, tools }: Props) {
                 <Copy aria-hidden="true" />
                 {intl.formatMessage(COPY.copyForAgent)}
               </Button>
+              {/* What the block is for, in the one clause not obvious from reading it. */}
+              <InfoTip about={intl.formatMessage(COPY.copyForAgent)}>
+                <p>{intl.formatMessage(COPY.blockNote)}</p>
+              </InfoTip>
               <Button
                 variant="outline"
                 size="sm"
@@ -1249,10 +1257,6 @@ export function Inspect({ status, tools }: Props) {
                 {intl.formatMessage(COPY.openInEditor)}
               </Button>
             </div>
-            {/* What the block is for, in the one clause that is not obvious from
-                reading it: the view's own address is in there, so whoever picks
-                this up can put the same thing back on screen. */}
-            <p className={NOTE}>{intl.formatMessage(COPY.blockNote)}</p>
           </>
         )}
       </fieldset>

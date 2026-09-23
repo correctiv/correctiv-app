@@ -50,6 +50,7 @@ import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
 import { InfoTip } from '../../ui/kit/info-tip';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
+import { Select } from '../../ui/kit/select';
 import { DEFAULT_DEVICE, preset } from '../devices';
 import { entitlementIn, sessionSnapshot, subscribeSession } from '../frame/seed';
 import { Conditions } from './Conditions';
@@ -272,9 +273,9 @@ const COPY = defineMessages({
   },
   pointStartLead: {
     id: 'home.point.startLead',
-    defaultMessage: 'The layout from midnight until {until}. Every moment builds on it.',
+    defaultMessage: 'from midnight until {until}',
     description:
-      'Under the day’s start. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none.',
+      'Beside the day’s start, the way home.point.span stands beside a moment: how long it lasts. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none. That every moment builds on it is behind the ⓘ beside it, home.document.rule.',
   },
   pointTime: {
     id: 'home.point.time',
@@ -392,9 +393,16 @@ const COPY = defineMessages({
   },
   sample: {
     id: 'home.setting.sample',
-    defaultMessage: 'A fixed list of real articles, not today’s. It stands in for {standsIn}.',
+    defaultMessage:
+      'A fixed selection of real articles, standing in for what WordPress will send later.',
     description:
-      'Beside the sample-data badge, for the newsroom, so it names no file. {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts.',
+      'Behind the ⓘ beside the sample-data badge, for the newsroom, so it names no file. The list of articles to pin is a checked-in stand-in until WordPress can answer which articles may lead the app.',
+  },
+  sampleQuote: {
+    id: 'home.setting.sampleQuote',
+    defaultMessage: 'In the source inventory:',
+    description:
+      'Behind the same ⓘ, above a quotation printed as the source inventory writes it, in English: what the checked-in list stands in for. The page that shows the inventory is called “Statusübersicht der Quellen” in German.',
   },
 });
 
@@ -1982,11 +1990,18 @@ function Details({
 
   return (
     <div className="flex flex-col gap-2xs">
-      <div className="flex flex-wrap items-baseline gap-2xs">
+      {/*
+        The name, and what the block draws behind the ⓘ beside it. The popover reads as name,
+        controls, badges; a sentence about the block is background, and the drawing it is
+        about is on screen beside the popover anyway.
+      */}
+      <div className="flex flex-wrap items-center gap-2xs">
         <span className="text-m font-semibold text-on-canvas">{say(intl, label)}</span>
+        <InfoTip about={say(intl, label)}>
+          <p>{intl.formatMessage(what)}</p>
+        </InfoTip>
         <code className={cn(CODE, 'ml-auto text-on-canvas-muted')}>{section.id}</code>
       </div>
-      <p className={NOTE}>{intl.formatMessage(what)}</p>
 
       {off && (
         <p className={cn(NOTE, 'flex flex-wrap items-center gap-2xs')}>
@@ -2075,8 +2090,10 @@ function Setting({
     >
       <div className="flex flex-wrap items-center gap-2xs">
         <span className="text-s font-medium text-on-canvas">{say(intl, label)}</span>
+        <InfoTip about={say(intl, label)}>
+          <p>{intl.formatMessage(what)}</p>
+        </InfoTip>
         {setHere && <Here />}
-        <span className={cn(NOTE, 'ml-auto')}>{intl.formatMessage(what)}</span>
       </div>
 
       {spec.kind === 'count' ? (
@@ -2089,28 +2106,46 @@ function Setting({
         />
       ) : (
         <>
-          <select
+          <Select
             disabled={disabled}
             aria-label={say(intl, label)}
             value={typeof value === 'string' ? value : ''}
-            onChange={(event) => onSet(event.target.value === '' ? null : event.target.value)}
-            className={cn(FIELD, 'w-full')}
-          >
-            <option value="">{intl.formatMessage(COPY.noPin)}</option>
-            {HOME_PINS.map((item) => (
-              <option key={item.url} value={item.url}>
-                {item.title}
-              </option>
-            ))}
-          </select>
+            onValueChange={(next) => onSet(next === '' ? null : next)}
+            className="w-full"
+            options={[
+              { value: '', label: intl.formatMessage(COPY.noPin) },
+              ...HOME_PINS.map((item) => ({ value: item.url, label: item.title })),
+            ]}
+          />
           {inEdition && typeof value === 'string' && (
             <Warning>{intl.formatMessage(EDITION_COPY.pinEarly)}</Warning>
           )}
+          {/*
+            The badge, and what it means behind the ⓘ: one sentence of this site's own, then
+            the inventory's own words, quoted as they are written (ADR 0052 §4 keeps the
+            manifest in its language; it does not ask for it to be spliced into a German
+            sentence, which is what this was).
+          */}
           {PIN_SOURCE?.status === 'sample' && (
-            <span className={NOTE}>
-              <Badge variant="outline">{intl.formatMessage(COPY.sampleBadge)}</Badge>{' '}
-              {intl.formatMessage(COPY.sample, { standsIn: PIN_SOURCE.standsIn, code })}
-            </span>
+            <div className="flex items-center gap-3xs">
+              <Badge variant="outline">{intl.formatMessage(COPY.sampleBadge)}</Badge>
+              <InfoTip about={intl.formatMessage(COPY.sampleBadge)}>
+                <p>{intl.formatMessage(COPY.sample)}</p>
+                {PIN_SOURCE.standsIn && (
+                  <figure className="space-y-3xs">
+                    <figcaption className="text-on-canvas-muted">
+                      {intl.formatMessage(COPY.sampleQuote)}
+                    </figcaption>
+                    <blockquote
+                      lang="en"
+                      className="border-l-2 border-stroke-strong pl-xs text-on-canvas-muted"
+                    >
+                      {PIN_SOURCE.standsIn}
+                    </blockquote>
+                  </figure>
+                )}
+              </InfoTip>
+            </div>
           )}
         </>
       )}

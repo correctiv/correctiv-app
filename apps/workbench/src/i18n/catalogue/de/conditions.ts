@@ -18,6 +18,14 @@ export const conditions: Record<string, string> = {
   'conditions.intrinsic.hasFactChecks': 'Erscheint nur, wenn Faktenchecks geladen sind.',
   'conditions.intrinsic.hasOpenCallout': 'Erscheint nur, solange ein Aufruf offen ist.',
 
+  // The same, as the chip in the popover; the sentence above is behind its ⓘ.
+  'conditions.chip.loadingOrOffline': 'Nur beim Laden oder offline',
+  'conditions.chip.hasLeadArticle': 'Nur mit Aufmacher',
+  'conditions.chip.hasSpotlightIssue': 'Nur mit Spotlight-Ausgabe',
+  'conditions.chip.hasMoreResearch': 'Nur mit weiteren Recherchen',
+  'conditions.chip.hasFactChecks': 'Nur mit Faktenchecks',
+  'conditions.chip.hasOpenCallout': 'Nur bei offenem Aufruf',
+
   // Who a block, and a change, is for.
   'conditions.audience.everyone': 'Alle',
   'conditions.audience.payingMembers': 'Mitglieder mit Beitrag',
@@ -27,8 +35,9 @@ export const conditions: Record<string, string> = {
   'conditions.changeFor': 'Diese Änderung gilt für',
   'conditions.byDefault': '{audience} (Voreinstellung)',
   'conditions.notYet': 'Noch keine Mitglieder (die App ist nur für Mitglieder)',
-  'conditions.stranding':
-    'Manche Zielgruppen lassen sich hier nicht wählen. Diese Änderung holt den Block von seinem anderen Platz weg. Würde sie nur für einige Leserinnen und Leser gelten, sähen die anderen den Block an keinem der beiden Plätze.',
+  'conditions.stranding': 'Manche Zielgruppen lassen sich hier nicht wählen.',
+  'conditions.strandingWhy':
+    'Diese Änderung holt den Block von seinem anderen Platz weg. Würde sie nur für einige Leserinnen und Leser gelten, sähen die anderen den Block an keinem der beiden Plätze.',
   'conditions.locked':
     'Diese Änderung gilt für eine andere Zielgruppe. Um sie zu bearbeiten, melden Sie im Rahmen eine Person aus dieser Zielgruppe an.',
   'conditions.notFor':

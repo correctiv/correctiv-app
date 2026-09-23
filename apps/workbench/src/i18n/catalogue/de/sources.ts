@@ -73,13 +73,13 @@ export const sources: Record<string, string> = {
 
   'sources.feed.newest': 'neuester Beitrag: <f>{newest}</f>',
   'sources.feed.run':
-    '{category}. Der Lauf vom <f>{measured}</f> fand {posts}, neuester Beitrag <f>{newest}</f>.',
+    '{category}: Der Lauf vom <f>{measured}</f> fand {posts}, neuester Beitrag <f>{newest}</f>.',
   'sources.feed.unmeasured':
     '<strong>Weder der Feed noch seine Kategorie haben in diesem Lauf geantwortet.</strong> Die Zahlen oben sind also unbekannt, nicht null. Was die fehlgeschlagene Messung gefunden hat, steht in ihrer Zeile in <code>apps/workbench/content/sources.measured.ts</code>.',
   'sources.feed.configured': 'Konfiguriert in <code>{module}</code>.',
 
   'sources.reads.none': 'nichts, keine Quelle benannt',
-  'sources.standsIn': 'steht stellvertretend für {what}',
+  'sources.standsIn': 'Platzhalter für:',
   'sources.measured.used': '{used} von {available} genutzt',
   'sources.measured.reachable': 'erreichbar',
   'sources.measured.silent': 'hat nicht geantwortet',

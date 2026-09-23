@@ -4,6 +4,8 @@ import { defineMessages } from 'react-intl';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
+import { InfoTip } from '../../ui/kit/info-tip';
+import { Select } from '../../ui/kit/select';
 import { layoutOf, SCENARIOS, scenarioNamed, type Scenario } from '../scenarios';
 import type { PreviewState } from '../state';
 import { arriving, entering, exiting, heldOf, leaving, loading, type Held } from './scenario';
@@ -32,12 +34,13 @@ const COPY = defineMessages({
     id: 'scenarios.sample',
     defaultMessage: 'Pinned articles are fixed examples. Everything else is live.',
     description:
-      'Under the scenario select while a scenario with sample data is open. Says honestly what is held still in the frame and what is not.',
+      'Behind the ⓘ beside the scenario select while a scenario with sample data is open. Says honestly what is held still in the frame and what is not.',
   },
   live: {
     id: 'scenarios.live',
     defaultMessage: 'All content is live.',
-    description: 'Under the scenario select while a scenario with live content is open.',
+    description:
+      'Behind the ⓘ beside the scenario select while a scenario with live content is open.',
   },
   ask: {
     id: 'scenarios.ask',
@@ -152,8 +155,6 @@ export function useScenario(
 }
 
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
-const FIELD =
-  'min-w-0 flex-1 rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 /** The list, what the open scenario shows, and the question when opening one would cost work. */
 export function ScenarioBar({ control }: { control: ScenarioControl }) {
@@ -167,26 +168,28 @@ export function ScenarioBar({ control }: { control: ScenarioControl }) {
         <label htmlFor={selectId} className="shrink-0 text-s text-on-canvas">
           {intl.formatMessage(COPY.label)}
         </label>
-        <select
+        <Select
           id={selectId}
-          className={FIELD}
+          className="flex-1"
           value={open?.name ?? ''}
-          onChange={(event) => control.choose(event.target.value || null)}
-        >
-          <option value="">{intl.formatMessage(COPY.none)}</option>
-          {SCENARIOS.map((scenario) => (
-            <option key={scenario.name} value={scenario.name}>
-              {intl.formatMessage(scenario.title)}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => control.choose(value || null)}
+          options={[
+            { value: '', label: intl.formatMessage(COPY.none) },
+            ...SCENARIOS.map((scenario) => ({
+              value: scenario.name,
+              label: intl.formatMessage(scenario.title),
+            })),
+          ]}
+        />
+        {/* What in the open scenario is held still and what is live, for whoever asks. */}
+        {open && !asking && (
+          <InfoTip about={intl.formatMessage(open.title)} align="end">
+            <p data-testid="scenario-content" data-content={open.content}>
+              {intl.formatMessage(open.content === 'sample' ? COPY.sample : COPY.live)}
+            </p>
+          </InfoTip>
+        )}
       </div>
-
-      {open && !asking && (
-        <p className={NOTE} data-testid="scenario-content" data-content={open.content}>
-          {intl.formatMessage(open.content === 'sample' ? COPY.sample : COPY.live)}
-        </p>
-      )}
 
       {asking && (
         <div role="alert" className="flex flex-col gap-2xs">

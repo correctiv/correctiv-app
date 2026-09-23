@@ -205,6 +205,30 @@
     "defaultMessage": "This change applies to",
     "description": "The label of the control that says who the change made to a block at this point of the day applies to."
   },
+  "conditions.chip.hasFactChecks": {
+    "defaultMessage": "Only with fact checks",
+    "description": "A small chip in a block’s popover. Short for conditions.intrinsic.hasFactChecks, which is behind the ⓘ beside it."
+  },
+  "conditions.chip.hasLeadArticle": {
+    "defaultMessage": "Only with a lead article",
+    "description": "A small chip in a block’s popover. Short for conditions.intrinsic.hasLeadArticle, which is behind the ⓘ beside it."
+  },
+  "conditions.chip.hasMoreResearch": {
+    "defaultMessage": "Only with more investigations",
+    "description": "A small chip in a block’s popover. Short for conditions.intrinsic.hasMoreResearch, which is behind the ⓘ beside it."
+  },
+  "conditions.chip.hasOpenCallout": {
+    "defaultMessage": "Only while a callout is open",
+    "description": "A small chip in a block’s popover. Short for conditions.intrinsic.hasOpenCallout, which is behind the ⓘ beside it."
+  },
+  "conditions.chip.hasSpotlightIssue": {
+    "defaultMessage": "Only with a Spotlight issue",
+    "description": "A small chip in a block’s popover. Short for conditions.intrinsic.hasSpotlightIssue, which is behind the ⓘ beside it. Spotlight is a newsletter’s name and stays as written."
+  },
+  "conditions.chip.loadingOrOffline": {
+    "defaultMessage": "Only while loading or offline",
+    "description": "A small chip in a block’s popover. Short for conditions.intrinsic.loadingOrOffline, which is behind the ⓘ beside it."
+  },
   "conditions.intrinsic.hasFactChecks": {
     "defaultMessage": "Appears only when fact checks have loaded."
   },
@@ -242,8 +266,12 @@
     "description": "The label of the control that says who a block is for, all day."
   },
   "conditions.stranding": {
-    "defaultMessage": "Some audiences cannot be chosen here. This change moves the block away from its other place. If it applied to only some readers, the others would see the block in neither place.",
-    "description": "Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place."
+    "defaultMessage": "Some audiences cannot be chosen here.",
+    "description": "Under the “This change applies to” list, while some of its options are switched off. Why is conditions.strandingWhy, behind the ⓘ beside it."
+  },
+  "conditions.strandingWhy": {
+    "defaultMessage": "This change moves the block away from its other place. If it applied to only some readers, the others would see the block in neither place.",
+    "description": "Behind the ⓘ beside conditions.stranding. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place."
   },
   "coreAndHost.adapter": {
     "defaultMessage": "<muted>adapter </muted><file>lib/platform/expo.ts</file><muted> and </muted><file>lib/audio/backend.ts</file><muted>, the whole cost of adding a host</muted>",
@@ -1438,8 +1466,12 @@
     "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
   },
   "home.palette.lead": {
-    "defaultMessage": "The new block goes {where}. The list offers every block that fits this screen. Judge the result in the frame beside it.",
-    "description": "The first line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
+    "defaultMessage": "The new block goes {where}.",
+    "description": "The one line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
+  },
+  "home.palette.leadMore": {
+    "defaultMessage": "The list offers every block that fits this screen. How it looks, you see in the frame beside it.",
+    "description": "Behind the ⓘ beside the palette dialog’s heading, home.palette.title."
   },
   "home.palette.title": {
     "defaultMessage": "Add a block",
@@ -1465,8 +1497,8 @@
     "description": "Names the point being edited when it is the document itself rather than one of its moments."
   },
   "home.point.startLead": {
-    "defaultMessage": "The layout from midnight until {until}. Every moment builds on it.",
-    "description": "Under the day’s start. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none."
+    "defaultMessage": "from midnight until {until}",
+    "description": "Beside the day’s start, the way home.point.span stands beside a moment: how long it lasts. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none. That every moment builds on it is behind the ⓘ beside it, home.document.rule."
   },
   "home.point.time": {
     "defaultMessage": "The time of this moment",
@@ -1563,12 +1595,16 @@
     "description": "The first option of the article picker, which leaves the module to its own default instead of naming an article."
   },
   "home.setting.sample": {
-    "defaultMessage": "A fixed list of real articles, not today’s. It stands in for {standsIn}.",
-    "description": "Beside the sample-data badge, for the newsroom, so it names no file. {standsIn} is what the inventory says the file stands in for, in English out of content/sources.manifest.ts."
+    "defaultMessage": "A fixed selection of real articles, standing in for what WordPress will send later.",
+    "description": "Behind the ⓘ beside the sample-data badge, for the newsroom, so it names no file. The list of articles to pin is a checked-in stand-in until WordPress can answer which articles may lead the app."
   },
   "home.setting.sampleBadge": {
     "defaultMessage": "sample data",
     "description": "Marks the article picker as a checked-in stand-in rather than a live feed. Read out of the source inventory, so it goes by itself on the day the row turns live."
+  },
+  "home.setting.sampleQuote": {
+    "defaultMessage": "In the source inventory:",
+    "description": "Behind the same ⓘ, above a quotation printed as the source inventory writes it, in English: what the checked-in list stands in for. The page that shows the inventory is called “Statusübersicht der Quellen” in German."
   },
   "home.setting.unknown.what": {
     "defaultMessage": "No description for it.",
@@ -2037,7 +2073,7 @@
   },
   "scenarios.live": {
     "defaultMessage": "All content is live.",
-    "description": "Under the scenario select while a scenario with live content is open."
+    "description": "Behind the ⓘ beside the scenario select while a scenario with live content is open."
   },
   "scenarios.none": {
     "defaultMessage": "None",
@@ -2049,7 +2085,7 @@
   },
   "scenarios.sample": {
     "defaultMessage": "Pinned articles are fixed examples. Everything else is live.",
-    "description": "Under the scenario select while a scenario with sample data is open. Says honestly what is held still in the frame and what is not."
+    "description": "Behind the ⓘ beside the scenario select while a scenario with sample data is open. Says honestly what is held still in the frame and what is not."
   },
   "scenarios.wahlabend": {
     "defaultMessage": "Election night (example)",
@@ -2558,8 +2594,8 @@
     "description": "The second line of the Measured cell on an article feed’s row. {newest} is the day of the newest post in that feed, or sources.newest.none or sources.newest.unknown where the run could not say. The manifest reports the finding and saysNewest() words it, so this hole is filled in the reader’s own language. <f> draws it in monospace so it never wraps."
   },
   "sources.feed.run": {
-    "defaultMessage": "{category}. The run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.",
-    "description": "The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it and is not translated. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace."
+    "defaultMessage": "{category}: the run of <f>{measured}</f> found {posts}, newest <f>{newest}</f>.",
+    "description": "The first line of an article feed’s detail. {category} is the feed’s category as the manifest writes it, in English and not translated, so it stands as a label before the colon rather than as part of the sentence. {measured} is the ISO day of the last run. {posts} is a number through the formatter or one of sources.count.*, and {newest} a day or one of sources.newest.*; the manifest reports the finding and this page words it. <f> draws a figure in monospace."
   },
   "sources.feed.unmeasured": {
     "defaultMessage": "<strong>Neither the feed nor its category answered in that run.</strong> So the figures above are unknown, not zero. The row in <code>apps/workbench/content/sources.measured.ts</code> says what the failed check found.",
@@ -2814,8 +2850,8 @@
     "description": "The live count beside the filters. {shown} is how many rows the filters leave and {total} how many rows the board has."
   },
   "sources.standsIn": {
-    "defaultMessage": "stands in for {what}",
-    "description": "The second line under a row’s name, where a sample file stands in for something real. {what} is what it stands in for, in the manifest’s own words, and is not translated."
+    "defaultMessage": "Stands in for:",
+    "description": "The label at the head of the second line under a row’s name, where a sample file stands in for something real. What follows it is the manifest’s own words, printed as written and not translated, so this is a label and not the start of a sentence."
   },
   "sources.state.broken": {
     "defaultMessage": "Live, broken",
@@ -2955,7 +2991,7 @@
   },
   "tools.appearance.note": {
     "defaultMessage": "An iframe cannot get a colour scheme of its own. To reach the two rows marked DevTools, emulate <code>prefers-color-scheme</code> under Rendering in DevTools.",
-    "description": "Under the list of four combinations. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated."
+    "description": "Behind the ⓘ beside “Device reports”, about the list of four combinations below it. DevTools and Rendering are the browser’s own name and the name of one of its panels; the run in <code> is a CSS media feature. None of the three is translated."
   },
   "tools.appearance.onScreen": {
     "defaultMessage": "on screen",
@@ -3059,7 +3095,7 @@
   },
   "tools.inspect.note": {
     "defaultMessage": "The block carries this view’s address.",
-    "description": "Under the block, saying the one thing about it that is not obvious from reading it: whoever picks the note up can put the same thing back on screen."
+    "description": "Behind the ⓘ beside the copy button, saying the one thing about the block that is not obvious from reading it: whoever picks the note up can put the same thing back on screen."
   },
   "tools.inspect.nothing": {
     "defaultMessage": "Nothing chosen.",

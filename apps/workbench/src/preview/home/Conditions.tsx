@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
 import {
@@ -15,7 +15,9 @@ import { MODULE_CONDITIONS, type IntrinsicCondition } from '@/lib/home/condition
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
-import { cn } from '../../lib/cn';
+import { Badge } from '../../ui/kit/badge';
+import { InfoTip } from '../../ui/kit/info-tip';
+import { Select } from '../../ui/kit/select';
 
 /**
  * When a block appears and for whom, in one place in the block's popover.
@@ -66,6 +68,50 @@ export const CONDITION_LABELS: Readonly<Record<IntrinsicCondition, WorkbenchMess
 };
 
 /**
+ * The same conditions as a chip of a few words, which is what the popover shows. The
+ * sentence above is behind the chip's ⓘ, and under a block that drew nothing, where it is
+ * the answer to "why is this empty" rather than background.
+ */
+export const CONDITION_CHIPS: Readonly<Record<IntrinsicCondition, WorkbenchMessage>> = {
+  'loading-or-offline': wbMessage({
+    id: 'conditions.chip.loadingOrOffline',
+    defaultMessage: 'Only while loading or offline',
+    description:
+      'A small chip in a block’s popover. Short for conditions.intrinsic.loadingOrOffline, which is behind the ⓘ beside it.',
+  }),
+  'has-lead-article': wbMessage({
+    id: 'conditions.chip.hasLeadArticle',
+    defaultMessage: 'Only with a lead article',
+    description:
+      'A small chip in a block’s popover. Short for conditions.intrinsic.hasLeadArticle, which is behind the ⓘ beside it.',
+  }),
+  'has-spotlight-issue': wbMessage({
+    id: 'conditions.chip.hasSpotlightIssue',
+    defaultMessage: 'Only with a Spotlight issue',
+    description:
+      'A small chip in a block’s popover. Short for conditions.intrinsic.hasSpotlightIssue, which is behind the ⓘ beside it. Spotlight is a newsletter’s name and stays as written.',
+  }),
+  'has-more-research': wbMessage({
+    id: 'conditions.chip.hasMoreResearch',
+    defaultMessage: 'Only with more investigations',
+    description:
+      'A small chip in a block’s popover. Short for conditions.intrinsic.hasMoreResearch, which is behind the ⓘ beside it.',
+  }),
+  'has-fact-checks': wbMessage({
+    id: 'conditions.chip.hasFactChecks',
+    defaultMessage: 'Only with fact checks',
+    description:
+      'A small chip in a block’s popover. Short for conditions.intrinsic.hasFactChecks, which is behind the ⓘ beside it.',
+  }),
+  'has-open-callout': wbMessage({
+    id: 'conditions.chip.hasOpenCallout',
+    defaultMessage: 'Only while a callout is open',
+    description:
+      'A small chip in a block’s popover. Short for conditions.intrinsic.hasOpenCallout, which is behind the ⓘ beside it.',
+  }),
+};
+
+/**
  * Each audience's name, in the newsroom's words (ADR 0041 §2). A `Record` over the core's
  * union for the same reason as above.
  */
@@ -111,10 +157,16 @@ const COPY = defineMessages({
   },
   stranding: {
     id: 'conditions.stranding',
-    defaultMessage:
-      'Some audiences cannot be chosen here. This change moves the block away from its other place. If it applied to only some readers, the others would see the block in neither place.',
+    defaultMessage: 'Some audiences cannot be chosen here.',
     description:
-      'Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place.',
+      'Under the “This change applies to” list, while some of its options are switched off. Why is conditions.strandingWhy, behind the ⓘ beside it.',
+  },
+  strandingWhy: {
+    id: 'conditions.strandingWhy',
+    defaultMessage:
+      'This change moves the block away from its other place. If it applied to only some readers, the others would see the block in neither place.',
+    description:
+      'Behind the ⓘ beside conditions.stranding. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place.',
   },
   locked: {
     id: 'conditions.locked',
@@ -138,8 +190,7 @@ export function conditionOf(module: string): WorkbenchMessage | null {
 }
 
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
-const FIELD =
-  'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+const LABEL = 'text-s font-medium text-on-canvas';
 
 /**
  * The popover's conditions: the module's own, read-only, then who the block is for, then,
@@ -173,59 +224,77 @@ export function Conditions({
   onChange: (audience: Audience) => void;
 }): ReactNode {
   const intl = useWorkbenchIntl();
-  const intrinsic = conditionOf(section.module);
+  const placeId = useId();
+  const changeId = useId();
+  const condition = MODULE_CONDITIONS[section.module];
   const fallback = defaultAudience(section.module);
   const place = section.audience ?? fallback;
   const name = (audience: Audience) => intl.formatMessage(AUDIENCE_LABELS[audience]);
 
   return (
     <div className="flex flex-col gap-2xs border-t border-stroke pt-2xs">
-      {intrinsic && <p className={NOTE}>{intl.formatMessage(intrinsic)}</p>}
+      {/*
+        What the block owns, as a chip: it is status, the reason the block may draw
+        nothing, so it stays in sight; the sentence that spells it out is behind the ⓘ.
+      */}
+      {condition && (
+        <div className="flex items-center gap-3xs">
+          <Badge variant="outline">{intl.formatMessage(CONDITION_CHIPS[condition])}</Badge>
+          <InfoTip about={intl.formatMessage(CONDITION_CHIPS[condition])}>
+            <p>{intl.formatMessage(CONDITION_LABELS[condition])}</p>
+          </InfoTip>
+        </div>
+      )}
 
-      <label className="flex flex-col gap-4xs text-s font-medium text-on-canvas">
-        {intl.formatMessage(COPY.placeFor)}
-        <select
+      <div className="flex flex-col gap-4xs">
+        <label htmlFor={placeId} className={LABEL}>
+          {intl.formatMessage(COPY.placeFor)}
+        </label>
+        <Select
+          id={placeId}
           value={place}
-          onChange={(event) => onPlace(event.target.value as Audience)}
-          className={cn(FIELD, 'w-full font-normal')}
-        >
-          {AUDIENCES.map((audience) => (
-            <option key={audience} value={audience}>
-              {audience === fallback
-                ? intl.formatMessage(COPY.byDefault, { audience: name(audience) })
-                : name(audience)}
-            </option>
-          ))}
-          <option disabled value="not-yet-members">
-            {intl.formatMessage(COPY.notYet)}
-          </option>
-        </select>
-      </label>
+          onValueChange={(value) => onPlace(value as Audience)}
+          className="w-full"
+          options={[
+            ...AUDIENCES.map((audience) => ({
+              value: audience,
+              label:
+                audience === fallback
+                  ? intl.formatMessage(COPY.byDefault, { audience: name(audience) })
+                  : name(audience),
+            })),
+            { value: 'not-yet-members', label: intl.formatMessage(COPY.notYet), disabled: true },
+          ]}
+        />
+      </div>
       {!reaches && <p className={NOTE}>{intl.formatMessage(COPY.notFor)}</p>}
       {locked && <p className={NOTE}>{intl.formatMessage(COPY.locked)}</p>}
 
       {change && (
-        <label className="flex flex-col gap-4xs text-s font-medium text-on-canvas">
-          {intl.formatMessage(COPY.changeFor)}
-          <select
+        <div className="flex flex-col gap-4xs">
+          <label htmlFor={changeId} className={LABEL}>
+            {intl.formatMessage(COPY.changeFor)}
+          </label>
+          <Select
+            id={changeId}
             value={change.audience ?? EVERYONE}
-            onChange={(event) => onChange(event.target.value as Audience)}
-            className={cn(FIELD, 'w-full font-normal')}
-          >
-            {AUDIENCES.map((audience) => (
-              <option
-                key={audience}
-                value={audience}
-                disabled={taken.has(audience) || stranding.has(audience)}
-              >
-                {name(audience)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => onChange(value as Audience)}
+            className="w-full"
+            options={AUDIENCES.map((audience) => ({
+              value: audience,
+              label: name(audience),
+              disabled: taken.has(audience) || stranding.has(audience),
+            }))}
+          />
           {stranding.size > 0 && (
-            <span className={cn(NOTE, 'font-normal')}>{intl.formatMessage(COPY.stranding)}</span>
+            <p className={NOTE}>
+              {intl.formatMessage(COPY.stranding)}{' '}
+              <InfoTip about={intl.formatMessage(COPY.stranding)}>
+                <p>{intl.formatMessage(COPY.strandingWhy)}</p>
+              </InfoTip>
+            </p>
           )}
-        </label>
+        </div>
       )}
     </div>
   );

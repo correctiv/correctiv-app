@@ -75,10 +75,10 @@ export function InfoTip({
         aria-label={showLabel ? undefined : name}
         title={name}
         /*
-         * Joined, not merged. `twMerge` reads this project's `text-s` as a colour, because
-         * `s` is not one of Tailwind's own sizes, and drops whichever of it and
-         * `text-on-canvas-muted` comes first. Nothing here is meant to override anything
-         * else here, so there is nothing for a merge to do but that.
+         * Joined, not merged. This was written when `twMerge` read this project's `text-s`
+         * as a colour and dropped it (#249, fixed in `lib/cn.ts`); it stays a join because
+         * nothing here is meant to override anything else here, so a merge has nothing
+         * to do.
          */
         className={clsx(
           'inline-flex shrink-0 items-center gap-3xs rounded-full align-middle text-on-canvas-muted',

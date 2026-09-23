@@ -88,10 +88,10 @@ export function Filter({
  * `details` keeps its panel in the DOM and only hides it, so anything expensive
  * in there is paid for by every row at once whether it is open or not.
  *
- * `text-s` on the row is for a child that cannot state its own size: the kit's
- * badge carries one in the same tailwind-merge group as its colour, so `cn` keeps
- * the last of the two and a badge can have the colour or the size and not both.
- * Every other child states its own, so setting it here costs nothing.
+ * `text-s` on the row was for a child that could not state its own size: the
+ * kit's badge carried one that `cn` read as a colour and dropped (#249). Since that
+ * was fixed the badge states its own, and every other child already did, so the
+ * row's is now a default nothing depends on and costs nothing to keep.
  */
 export function Disclosure({
   id,
