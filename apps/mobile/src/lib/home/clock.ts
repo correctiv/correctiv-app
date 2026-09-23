@@ -132,10 +132,18 @@ function subscribeToTime(listener: () => void): () => void {
  *
  * Null when nothing in the document ever changes. A home screen that is the same at every
  * instant needs no wake-up, and a timer armed for one is a timer that fires for nothing.
+ *
+ * **Never more than a day.** `setTimeout` holds a delay of at most 2^31 − 1 ms, about 24.8
+ * days, and fires at once past that; a cold review of #247 measured an edition three months
+ * out doing exactly that, and the web export re-rendering in a loop. The core now answers
+ * within a day and a bit (it counts Berlin midnight), and this cap is the second net under
+ * it rather than the mechanism: a wake-up that finds nothing changed just arms the next one.
  */
-function msUntilNextChange(layout: HomeLayout, now: Instant): number | null {
+export const LONGEST_WAIT_MS = 24 * 60 * 60 * 1000;
+
+export function msUntilNextChange(layout: HomeLayout, now: Instant): number | null {
   const next = nextChangeAfter(layout, now);
-  return next === null ? null : next - now;
+  return next === null ? null : Math.min(next - now, LONGEST_WAIT_MS);
 }
 
 /**
