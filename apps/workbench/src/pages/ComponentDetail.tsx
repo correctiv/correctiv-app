@@ -418,7 +418,7 @@ export function ComponentDetail({
           {/* Why there are two, which a reader wants once. Why one of them is off, when
               it is, stays on the panel below: that is the state of the control. */}
           {entry !== undefined && (
-            <InfoTip about={intl.formatMessage(COPY.drawnBy)} className="mb-xs" side="left">
+            <InfoTip about={intl.formatMessage(COPY.drawnBy)} className="mb-xs" align="end">
               <p>{intl.formatMessage(COPY.twoRenderings)}</p>
             </InfoTip>
           )}

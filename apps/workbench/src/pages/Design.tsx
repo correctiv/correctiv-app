@@ -483,7 +483,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
               {intl.formatMessage(COPY.linksApp)}
             </span>
           </a>
-          <InfoTip about={intl.formatMessage(COPY.linksApp)} side="left">
+          <InfoTip about={intl.formatMessage(COPY.linksApp)} align="end">
             <p>{intl.formatMessage(COPY.linksNote)}</p>
           </InfoTip>
         </div>
@@ -522,7 +522,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
             <h4 className="text-m font-semibold text-on-canvas">
               {intl.formatMessage(COPY.colours)}
             </h4>
-            <InfoTip about={intl.formatMessage(COPY.colours)} side="left">
+            <InfoTip about={intl.formatMessage(COPY.colours)} align="end">
               <p>
                 {intl.formatMessage(COPY.coloursNote, { pkg: TOKENS_PACKAGE, token: TOKEN, code })}
               </p>
@@ -544,7 +544,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
             <h4 className="text-m font-semibold text-on-canvas">
               {intl.formatMessage(COPY.board)}
             </h4>
-            <InfoTip about={intl.formatMessage(COPY.board)} side="left">
+            <InfoTip about={intl.formatMessage(COPY.board)} align="end">
               <p>{intl.formatMessage(COPY.boardNote, { path: PLUGIN_DIRECTORY, code })}</p>
             </InfoTip>
           </div>
@@ -560,7 +560,7 @@ export function Design({ onAddress, wide, full }: ShellProps) {
             <h4 className="text-m font-semibold text-on-canvas">
               {intl.formatMessage(COPY.plugin)}
             </h4>
-            <InfoTip about={intl.formatMessage(COPY.plugin)} side="left">
+            <InfoTip about={intl.formatMessage(COPY.plugin)} align="end">
               <p>
                 {intl.formatMessage(COPY.pluginNote, {
                   codeFile: PLUGIN_CODE,
