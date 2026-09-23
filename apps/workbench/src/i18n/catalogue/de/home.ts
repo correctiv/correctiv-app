@@ -66,6 +66,9 @@ export const home: Record<string, string> = {
   'home.timeline.addPointShort': 'Punkt setzen',
   'home.timeline.momentDrag': 'Der Moment um {time}, zum Verschieben ziehen',
   'home.timeline.momentGo': 'Zum Moment um {time} springen',
+  'home.timeline.date': '{date}',
+  'home.timeline.dayBefore': 'Der Tag davor',
+  'home.timeline.dayAfter': 'Der Tag danach',
 
   // The palette, and the hairline that opens it (`preview/home/Palette.tsx`).
   // `{where}`, `{name}` and `{what}` come out of `preview/home/document.ts` and are

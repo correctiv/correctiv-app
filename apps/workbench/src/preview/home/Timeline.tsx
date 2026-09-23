@@ -1,17 +1,41 @@
-import { Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Plus } from 'lucide-react';
 import { useRef, useSyncExternalStore } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 
-import { MINUTES_IN_DAY, type MinuteOfDay } from '@correctiv/app-core/lib/home-layout';
+import { addDays, berlinInstant, berlinWallClock } from '@correctiv/app-core/lib/berlin-time';
+import {
+  MINUTES_IN_DAY,
+  type HomeEdition,
+  type MinuteOfDay,
+} from '@correctiv/app-core/lib/home-layout';
 
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
 import type { PreviewState } from '../state';
-import { timeOf } from './clock';
-import { formatTimeOfDay, momentAt, movedMoment, pointAt, withMoment } from './document';
-import { minuteFrom, openedAt, parseMinute, percent, snap, STEP } from './minutes';
+import {
+  editionsOn,
+  formatTimeOfDay,
+  momentAt,
+  movedMoment,
+  pointAt,
+  targetAt,
+  withEdition,
+  withEditionMoment,
+  withMoment,
+} from './document';
+import { inkOf, nameOf } from './Edition';
+import {
+  openedAt,
+  parseMinute,
+  percent,
+  playheadFrom,
+  snap,
+  STEP,
+  timeAt,
+  timeOn,
+} from './minutes';
 import { getLayout, setLayout, subscribeLayout } from './store';
 
 /**
@@ -63,6 +87,48 @@ const COPY = defineMessages({
     defaultMessage: 'Go to the moment at {time}',
     description:
       'The accessible name of one stop on the track while the home tool is shut, when pressing it only moves the playhead. {time} is the moment’s time of day, as 18:30.',
+  },
+  date: {
+    id: 'home.timeline.date',
+    defaultMessage: '{date}',
+    description:
+      'The day the track is showing, beside the arrows that step it, as the weekday and the date: “Sat 27/09” in English, “Sa., 27.09.” in German. {date} is that day, already formatted for the language by the browser; the message exists so that a language can put words around it.',
+  },
+  dayBefore: {
+    id: 'home.timeline.dayBefore',
+    defaultMessage: 'The day before',
+    description:
+      'The accessible name of the arrow left of the date beside the track. It moves the playhead to the same minute one day earlier. home.timeline.dayAfter is its twin.',
+  },
+  dayAfter: {
+    id: 'home.timeline.dayAfter',
+    defaultMessage: 'The day after',
+    description:
+      'The accessible name of the arrow right of the date beside the track. It moves the playhead to the same minute one day later. home.timeline.dayBefore is its twin.',
+  },
+  editionHere: {
+    id: 'edition.here',
+    defaultMessage: 'Edition here',
+    description:
+      'The visible word on the button beside the track that starts an edition at the playhead. An edition is a named layer over the ordinary day, a campaign or an election night, active for a span of dates. edition.hereLong is the same button’s accessible name.',
+  },
+  editionHereLong: {
+    id: 'edition.hereLong',
+    defaultMessage: 'Start a one-day edition at this minute',
+    description:
+      'The accessible name of the button whose visible word is edition.here. The new edition starts at the playhead and ends at the same minute the next day; its popover in the panel changes both.',
+  },
+  editionBand: {
+    id: 'edition.band',
+    defaultMessage: '{edition}, on this day from {from} to {to}',
+    description:
+      'Read out for the coloured band an edition draws along the track. {edition} is the edition’s own title as the newsroom wrote it, or its id where it has none; {from} and {to} are times of day, as 18:00, and {to} is 24:00 where the edition runs on past midnight.',
+  },
+  editionMomentGo: {
+    id: 'edition.momentGo',
+    defaultMessage: 'Go to {time} in {edition}',
+    description:
+      'The accessible name of a stop an edition draws on the track, for one of its own moments. {time} is a time of day, as 23:00; {edition} is the edition’s title, or its id where it has none.',
   },
 });
 
@@ -139,15 +205,30 @@ export function Timeline({
   /*
    * The machine's own clock, so the track can mark it and the app can be put back on it.
    * `openedAt()` and not a `useState` of its own: the panel folds the document at the
-   * same minute, and `./minutes.ts` says what two reads of the clock would cost.
+   * same instant, and `./minutes.ts` says what two reads of the clock would cost.
    */
-  const realMinute = openedAt();
+  const opened = openedAt();
+  const real = berlinWallClock(opened);
 
   const simulated = state.time !== null;
-  const minute = minuteFrom(state.time, realMinute);
+  const playhead = playheadFrom(state.time, opened);
+  const minute = playhead.minute;
   const point = pointAt(layout, minute);
+  /*
+   * The layer an edit would land on, which decides what "Point here" makes: a moment of
+   * the day, or a moment of the edition running at the playhead (ADR 0059 §2).
+   */
+  const target = targetAt(layout, playhead.instant);
+  /* The editions on at some point of the playhead's day, which is what the track draws. */
+  const bands = editionsOn(layout, playhead.date);
 
-  const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
+  const goTo = (next: MinuteOfDay) => onChange({ time: timeAt(playhead, next) });
+  /*
+   * A day earlier or later at the same minute, which always names the day in the address:
+   * "Saturday at 18:00" is the link this whole row exists to produce.
+   */
+  const stepDay = (days: number) =>
+    onChange({ time: timeOn(addDays(playhead.date, days), minute) });
 
   /*
    * The two writes §3 allows, each refusing itself while the tool is shut.
@@ -168,9 +249,44 @@ export function Timeline({
 
   const addPoint = () => {
     if (!editing) return;
-    setLayout(withMoment(getLayout(), snap(minute)));
+    const current = getLayout();
+    const edition = targetAt(current, playhead.instant).edition;
+    setLayout(
+      edition === null
+        ? withMoment(current, snap(minute))
+        : withEditionMoment(current, edition.id, snap(minute)),
+    );
     goTo(snap(minute));
   };
+
+  /*
+   * ADR 0059 §8's "Edition here": a one-day edition from the playhead's minute, snapped
+   * the way a new moment is. The playhead then names its day, because an edition is about a
+   * date and a link to it that said only "18:00" would open on some other day.
+   */
+  const addEdition = () => {
+    if (!editing) return;
+    setLayout(withEdition(getLayout(), playhead.date, snap(minute)).layout);
+    onChange({ time: timeOn(playhead.date, snap(minute)) });
+  };
+
+  /* Whether "Point here" would make nothing, on whichever layer it would write. */
+  const pointTaken =
+    target.edition === null
+      ? momentAt(layout, snap(minute)) !== null
+      : target.edition.moments.some((moment) => moment.minute === snap(minute));
+
+  /*
+   * The day as the reader's language writes it, from a noon that is the same calendar day
+   * in every zone: the date is Berlin's, and the browser is only asked to spell it.
+   */
+  const [year, month, day] = playhead.date.split('-').map(Number);
+  const spelled = intl.formatDate(Date.UTC(year!, month! - 1, day!, 12), {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  });
 
   return (
     <div
@@ -181,17 +297,57 @@ export function Timeline({
     >
       <h2 className="sr-only">{intl.formatMessage(COPY.heading)}</h2>
 
-      <Track
-        moments={layout.moments}
-        minute={minute}
-        realMinute={realMinute}
-        simulated={simulated}
-        point={point}
-        labelled={!compact}
-        editing={editing}
-        onGoTo={goTo}
-        onMoveMoment={moveMoment}
-      />
+      {/*
+        The day the track is on, and a step either way. ADR 0059 §2: the playhead is an
+        instant now, so the track is one day of it and these are how the day changes; the
+        same minute a day along, which is how "Saturday at 18:00" is reached from a
+        Wednesday.
+      */}
+      <div className="flex shrink-0 items-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-[1.75rem]"
+          aria-label={intl.formatMessage(COPY.dayBefore)}
+          onClick={() => stepDay(-1)}
+        >
+          <ChevronLeft aria-hidden="true" />
+        </Button>
+        <span className="min-w-[6.5ch] text-center font-mono text-s tabular-nums text-on-canvas">
+          {intl.formatMessage(COPY.date, { date: spelled })}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-[1.75rem]"
+          aria-label={intl.formatMessage(COPY.dayAfter)}
+          onClick={() => stepDay(1)}
+        >
+          <ChevronRight aria-hidden="true" />
+        </Button>
+      </div>
+
+      {/*
+        The editions on this day ride above the track rather than on it, in a strip of the
+        same width, so the hours and the day's own stops keep the room ADR 0042 §1 moved
+        the track here to get. Only while there is an edition on the day.
+      */}
+      <div className="flex min-w-0 flex-1 flex-col gap-4xs">
+        {bands.length > 0 && (
+          <Bands bands={bands} date={playhead.date} labelled={!compact} onGoTo={goTo} />
+        )}
+        <Track
+          moments={layout.moments}
+          minute={minute}
+          realMinute={real.date === playhead.date ? real.minute : null}
+          simulated={simulated}
+          point={point}
+          labelled={!compact}
+          editing={editing}
+          onGoTo={goTo}
+          onMoveMoment={moveMoment}
+        />
+      </div>
 
       <label className="flex shrink-0 items-center gap-2xs">
         <span className="sr-only">{intl.formatMessage(COPY.timeField)}</span>
@@ -246,12 +402,33 @@ export function Timeline({
           size="sm"
           className="shrink-0"
           aria-label={intl.formatMessage(COPY.addPoint)}
-          disabled={momentAt(layout, snap(minute)) !== null}
+          disabled={pointTaken}
           onClick={addPoint}
         >
           <Plus aria-hidden="true" />
           <span aria-hidden="true" className="max-sm:hidden">
             {intl.formatMessage(COPY.addPointShort)}
+          </span>
+        </Button>
+      )}
+
+      {/*
+        The same kind of write, one level up, and on screen on the same terms: only while
+        the tool is open, because an edition is the document (ADR 0042 §3). It is never
+        disabled: two editions may start at one minute, and the fold has a rule for which
+        of them wins, which a refusal here would be pretending it had not.
+      */}
+      {editing && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          aria-label={intl.formatMessage(COPY.editionHereLong)}
+          onClick={addEdition}
+        >
+          <Layers aria-hidden="true" />
+          <span aria-hidden="true" className="max-sm:hidden">
+            {intl.formatMessage(COPY.editionHere)}
           </span>
         </Button>
       )}
@@ -287,7 +464,8 @@ function Track({
 }: {
   moments: readonly { minute: MinuteOfDay; at: string }[];
   minute: MinuteOfDay;
-  realMinute: MinuteOfDay;
+  /** The machine's clock, or null when the track is showing another day than today. */
+  realMinute: MinuteOfDay | null;
   simulated: boolean;
   point: MinuteOfDay | null;
   /** Whether the hours and the moments carry their times, which is what §4 gives up. */
@@ -312,7 +490,7 @@ function Track({
     <div
       ref={track}
       className={cn(
-        'relative min-w-0 flex-1 cursor-pointer select-none rounded-md border border-stroke bg-canvas',
+        'relative w-full min-w-0 cursor-pointer select-none rounded-md border border-stroke bg-canvas',
         labelled ? 'h-[3.25rem]' : 'h-[1.5rem]',
       )}
       onPointerDown={(event) => {
@@ -373,11 +551,13 @@ function Track({
         app would be showing if you pressed Live" is the thing a person needs to see next
         to what it is showing now.
       */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-y-0 w-px bg-on-canvas-muted/50"
-        style={{ left: percent(realMinute) }}
-      />
+      {realMinute !== null && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 w-px bg-on-canvas-muted/50"
+          style={{ left: percent(realMinute) }}
+        />
+      )}
 
       {/*
         The moments. A filled stop is the one in effect at the playhead, and at full width
@@ -436,6 +616,90 @@ function Track({
           )}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The editions on the track's day, one row each, above the track and as wide as it.
+ *
+ * ADR 0059 §2: each edition in its own colour, derived from its id, and each of its moments
+ * that falls on this day as a stop in that colour. One row per edition rather than one row
+ * for all, so that a one-off inside a campaign is two bands and not one mixed colour; the
+ * order is the document's. The label is the newsroom's title, which is data; the sentence a
+ * screen reader hears around it is this site's.
+ *
+ * A stop here only moves the playhead, while the tool is open as well as while it is shut.
+ * Moving an edition's moment is the panel's time field, because §8 builds no drag for it.
+ */
+function Bands({
+  bands,
+  date,
+  labelled,
+  onGoTo,
+}: {
+  bands: readonly { edition: HomeEdition; from: MinuteOfDay; to: MinuteOfDay }[];
+  /** The Berlin day of the track, which says which of an edition's moments fall on it. */
+  date: string;
+  labelled: boolean;
+  onGoTo: (minute: MinuteOfDay) => void;
+}) {
+  const intl = useWorkbenchIntl();
+
+  return (
+    <div className="flex w-full flex-col gap-4xs">
+      {bands.map(({ edition, from, to }) => {
+        const name = nameOf(edition);
+        return (
+          <div
+            key={edition.id}
+            className={cn('edition-ink relative w-full', labelled ? 'h-[0.875rem]' : 'h-[0.5rem]')}
+            style={inkOf(edition.id)}
+          >
+            <div
+              className="absolute inset-y-0 flex items-center overflow-hidden rounded-full bg-(--edition) px-3xs"
+              style={{ left: percent(from), width: `calc(${percent(to)} - ${percent(from)})` }}
+            >
+              <span className="sr-only">
+                {intl.formatMessage(COPY.editionBand, {
+                  edition: name,
+                  from: formatTimeOfDay(from),
+                  to: to === MINUTES_IN_DAY ? '24:00' : formatTimeOfDay(to),
+                })}
+              </span>
+              {labelled && (
+                <span
+                  aria-hidden="true"
+                  className="truncate text-[0.625rem] font-semibold leading-none text-canvas"
+                >
+                  {name}
+                </span>
+              )}
+            </div>
+            {edition.moments
+              .filter((moment) => {
+                const at = berlinInstant(date, moment.minute)!;
+                return at >= edition.start && at < edition.end;
+              })
+              .map((moment) => (
+                <button
+                  key={moment.minute}
+                  type="button"
+                  aria-label={intl.formatMessage(COPY.editionMomentGo, {
+                    time: moment.at,
+                    edition: name,
+                  })}
+                  className={cn(
+                    'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-pointer border-2 border-(--edition) bg-canvas',
+                    labelled ? 'size-[0.625rem]' : 'size-[0.5rem]',
+                  )}
+                  style={{ left: percent(moment.minute) }}
+                  onClick={() => onGoTo(moment.minute)}
+                />
+              ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

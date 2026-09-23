@@ -23,6 +23,8 @@ import { defineMessages } from 'react-intl';
 
 import {
   MINUTES_IN_DAY,
+  stateAtInstant,
+  type HomeEdition,
   type HomeLayout,
   type HomeSection,
   type MinuteOfDay,
@@ -39,19 +41,19 @@ import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { DEFAULT_DEVICE, preset } from '../devices';
-import { timeOf } from './clock';
 import type { PreviewState } from '../state';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
 import { InsertMark } from './Palette';
-import { minuteFrom, openedAt, parseMinute, STEP } from './minutes';
+import { EDITION_COPY, EditionHead, inkOf, nameOf, Warning } from './Edition';
+import { openedAt, parseMinute, playheadFrom, STEP, timeAt } from './minutes';
 import {
   changedAt,
+  decidedAt,
   differs,
-  effectiveAt,
   formatLayoutDocument,
   formatTimeOfDay,
-  inheritedAt,
+  inheritedFor,
   added,
   moduleLabel,
   moved,
@@ -63,11 +65,12 @@ import {
   settingsFor,
   SHIPPED,
   spanOf,
-  withHidden,
+  targetAt,
   withoutMoment,
   blockName,
   whereAt,
-  withSetting,
+  writeHidden,
+  writeSetting,
   type CountSetting,
   type Point,
   type SettingSpec,
@@ -574,14 +577,20 @@ export function HomeDocument({
   }, [carried !== null]);
 
   /*
-   * The same minute the track under the frame is drawing, out of the same two places:
+   * The same instant the track under the frame is drawing, out of the same two places:
    * the address while a time is simulated, and `openedAt()` while it is not.
-   * `minuteFrom` is what keeps the two readings one rule.
+   * `playheadFrom` is what keeps the two readings one rule.
    */
-  const minute = minuteFrom(state.time, openedAt());
+  const playhead = playheadFrom(state.time, openedAt());
+  const minute = playhead.minute;
   const point = pointAt(layout, minute);
   const moment = momentAt(layout, point);
   const span = spanOf(layout, point);
+  /*
+   * What an edit lands on: the narrowest edition running at the playhead, or the day
+   * (ADR 0059 §2). `point` above stays the day's, which is what the day's head names.
+   */
+  const target = targetAt(layout, playhead.instant);
 
   /*
    * The width a block draws at: the phone's, always, and not the device the frame is set
@@ -628,7 +637,7 @@ export function HomeDocument({
     setCopied(false);
   }, [layout]);
 
-  const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
+  const goTo = (next: MinuteOfDay) => onChange({ time: timeAt(playhead, next) });
 
   /**
    * Which gap the pointer is in, by the rows' own boxes.
@@ -813,9 +822,16 @@ export function HomeDocument({
     },
   });
 
-  const effective = effectiveAt(layout, point);
-  const inherited = inheritedAt(layout, point);
-  const edited = changedAt(layout, minute);
+  /*
+   * What the frame shows at the playhead, and what the target would show without its own
+   * point. For the day these are `effectiveAt` and `inheritedAt` as they always were; with
+   * an edition running they are the fold at the instant, which is the only honest reading
+   * once what lies under an edition goes on changing through its span.
+   */
+  const effective = stateAtInstant(layout, playhead.instant);
+  const inherited = inheritedFor(layout, playhead.instant, target);
+  const edited = changedAt(layout, playhead.instant);
+  const decided = decidedAt(layout, playhead.instant);
   const dirty = differs(layout);
 
   /**
@@ -863,21 +879,31 @@ export function HomeDocument({
         {intl.formatMessage(COPY.follow)}
       </label>
 
-      <PointHead
-        layout={layout}
-        point={point}
-        span={span}
-        changes={moment?.changes.length ?? 0}
-        onMove={(to) => {
-          if (point === null) return;
-          setLayout(movedMoment(layout, point, to));
-          goTo(to);
-        }}
-        onRemove={() => {
-          if (point === null) return;
-          setLayout(withoutMoment(layout, point));
-        }}
-      />
+      {target.edition === null ? (
+        <PointHead
+          layout={layout}
+          point={point}
+          span={span}
+          changes={moment?.changes.length ?? 0}
+          onMove={(to) => {
+            if (point === null) return;
+            setLayout(movedMoment(layout, point, to));
+            goTo(to);
+          }}
+          onRemove={() => {
+            if (point === null) return;
+            setLayout(withoutMoment(layout, point));
+          }}
+        />
+      ) : (
+        <EditionHead
+          layout={layout}
+          edition={target.edition}
+          point={target.point}
+          onLayout={setLayout}
+          onGoTo={goTo}
+        />
+      )}
 
       {/*
         One environment around the whole list, not one per row. `AppEnvironment` mounts a
@@ -919,7 +945,11 @@ export function HomeDocument({
               key={section.id}
               section={effective.find((held) => held.id === section.id) ?? section}
               inherited={inherited.find((held) => held.id === section.id) ?? section}
-              point={point}
+              point={target.point}
+              layer={target.edition === null ? null : nameOf(target.edition)}
+              decidedBy={
+                layout.editions.find((edition) => edition.id === decided.get(section.id)) ?? null
+              }
               index={index}
               last={index === layout.sections.length - 1}
               changed={edited.includes(section.id)}
@@ -955,9 +985,11 @@ export function HomeDocument({
                */
               dragging={carried !== null}
               onMove={(delta) => setLayout(moved(layout, section.id, delta))}
-              onHidden={(hidden) => setLayout(withHidden(layout, point, section.id, hidden))}
+              onHidden={(hidden) =>
+                setLayout(writeHidden(layout, playhead.instant, section.id, hidden))
+              }
               onSetting={(key, value) =>
-                setLayout(withSetting(layout, point, section.id, key, value))
+                setLayout(writeSetting(layout, playhead.instant, section.id, key, value))
               }
               onRemove={() => setLayout(removed(layout, section.id))}
               outline={outline}
@@ -1115,6 +1147,14 @@ function PointHead({
       {point === null && layout.moments.length === 0 && (
         <span className={cn(NOTE, 'w-full')}>{intl.formatMessage(COPY.noMoments)}</span>
       )}
+      {/*
+        Which layer an edit lands on, said every time and not only when it is an edition:
+        a line that appears only sometimes is a line nobody learns to look for (ADR 0059
+        §2). `Edition.tsx` says the other half of it.
+      */}
+      <span className="w-full text-s font-medium text-on-canvas">
+        {intl.formatMessage(EDITION_COPY.landsOnDay)}
+      </span>
     </div>
   );
 }
@@ -1153,6 +1193,8 @@ function Row({
   section,
   inherited,
   point,
+  layer,
+  decidedBy,
   index,
   last,
   changed: isChanged,
@@ -1172,7 +1214,17 @@ function Row({
 }: {
   section: HomeSection;
   inherited: HomeSection;
+  /** The point of the layer being edited: a moment's minute, or null for the layer's start. */
   point: Point;
+  /**
+   * The name of the edition an edit lands on, or null for the day.
+   *
+   * With `point` it says where a write goes: the day's start, a moment of the day, an
+   * edition's start, or a moment of an edition. The sentences below choose on both.
+   */
+  layer: string | null;
+  /** The edition that decides this block's state at the playhead, or null. The hairline. */
+  decidedBy: HomeEdition | null;
   index: number;
   last: boolean;
   changed: boolean;
@@ -1287,7 +1339,9 @@ function Row({
 
   const off = Boolean(section.hidden);
   const specs = settingsFor(section.module);
-  const hiddenHere = point !== null && Boolean(inherited.hidden) !== off;
+  /* Anywhere but the day's start, a value can be this point's own rather than handed down. */
+  const layered = point !== null || layer !== null;
+  const hiddenHere = layered && Boolean(inherited.hidden) !== off;
 
   return (
     /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */
@@ -1411,6 +1465,22 @@ function Row({
         <PopoverAnchor asChild>
           <div className="relative min-w-0 flex-1">
             {/*
+              ADR 0059 §2: a block whose state an edition decides at the playhead carries a
+              hairline at its edge in that edition's colour, so a glance down the list says
+              what the campaign changed and where the ordinary day shows through. Over the
+              drawing, at its left edge, where the gutter meets it.
+            */}
+            {decidedBy !== null && (
+              <span
+                className="edition-ink pointer-events-none absolute inset-y-0 left-0 z-10 w-[3px] bg-(--edition)"
+                style={inkOf(decidedBy.id)}
+              >
+                <span className="sr-only">
+                  {intl.formatMessage(EDITION_COPY.decides, { edition: nameOf(decidedBy) })}
+                </span>
+              </span>
+            )}
+            {/*
           Laid over the seam above this block, taking no height, so that two blocks meet
           the way they meet on the phone. ADR 0045 §6 is unchanged in what it asks for — a
           thin control between every pair and at each end — and only in what it may spend
@@ -1486,14 +1556,22 @@ function Row({
                 aria-pressed={!off}
                 className={cn('size-[1.75rem]', hiddenHere && 'text-accent')}
                 aria-label={
-                  at === null
-                    ? intl.formatMessage(off ? COPY.switchOnAtStart : COPY.switchOffAtStart, {
-                        block: spoken,
-                      })
-                    : intl.formatMessage(off ? COPY.switchOnAt : COPY.switchOffAt, {
+                  at !== null
+                    ? intl.formatMessage(off ? COPY.switchOnAt : COPY.switchOffAt, {
                         block: spoken,
                         time: at,
                       })
+                    : layer !== null
+                      ? intl.formatMessage(
+                          off ? EDITION_COPY.switchOnIn : EDITION_COPY.switchOffIn,
+                          {
+                            block: spoken,
+                            edition: layer,
+                          },
+                        )
+                      : intl.formatMessage(off ? COPY.switchOnAtStart : COPY.switchOffAtStart, {
+                          block: spoken,
+                        })
                 }
                 onClick={() => onHidden(!off)}
               >
@@ -1592,7 +1670,8 @@ function Row({
           <Details
             section={section}
             inherited={inherited}
-            point={point}
+            layered={layered}
+            layer={layer}
             at={at}
             off={off}
             hiddenHere={hiddenHere}
@@ -1620,7 +1699,8 @@ function Row({
 function Details({
   section,
   inherited,
-  point,
+  layered,
+  layer,
   at,
   off,
   hiddenHere,
@@ -1629,7 +1709,10 @@ function Details({
 }: {
   section: HomeSection;
   inherited: HomeSection;
-  point: Point;
+  /** Whether a value here can be this point's own, which is anywhere but the day's start. */
+  layered: boolean;
+  /** The edition an edit lands on, by name, or null for the day. */
+  layer: string | null;
   /** The point as a time, or `null` at the day's start. Read once by the row above. */
   at: string | null;
   off: boolean;
@@ -1650,9 +1733,11 @@ function Details({
 
       {off && (
         <p className={cn(NOTE, 'flex flex-wrap items-center gap-2xs')}>
-          {at === null
-            ? intl.formatMessage(COPY.offAtStart)
-            : intl.formatMessage(COPY.offAt, { time: at })}
+          {at !== null
+            ? intl.formatMessage(COPY.offAt, { time: at })
+            : layer !== null
+              ? intl.formatMessage(EDITION_COPY.offIn, { edition: layer })
+              : intl.formatMessage(COPY.offAtStart)}
           {hiddenHere && <Here />}
         </p>
       )}
@@ -1664,7 +1749,8 @@ function Details({
           spec={spec}
           value={section.settings?.[spec.key]}
           inherited={inherited.settings?.[spec.key]}
-          point={point}
+          layered={layered}
+          inEdition={layer !== null}
           disabled={off}
           onSet={(value) => onSetting(spec.key, value)}
         />
@@ -1701,7 +1787,8 @@ function Setting({
   spec,
   value,
   inherited,
-  point,
+  layered,
+  inEdition,
   disabled,
   onSet,
 }: {
@@ -1709,13 +1796,18 @@ function Setting({
   spec: SettingSpec;
   value: unknown;
   inherited: unknown;
-  point: Point;
+  layered: boolean;
+  /**
+   * Whether an edit here lands on an edition, which is when a pin needs its warning: until
+   * ADR 0059 §7's private plan exists, a pin in an edition is public the day it is merged.
+   */
+  inEdition: boolean;
   disabled: boolean;
   onSet: (value: string | number | null | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
   const { label, what } = settingLabel(module, spec);
-  const setHere = point !== null && value !== inherited;
+  const setHere = layered && value !== inherited;
 
   return (
     <div
@@ -1754,6 +1846,9 @@ function Setting({
               </option>
             ))}
           </select>
+          {inEdition && typeof value === 'string' && (
+            <Warning>{intl.formatMessage(EDITION_COPY.pinEarly)}</Warning>
+          )}
           {PIN_SOURCE?.status === 'sample' && (
             <span className={NOTE}>
               <Badge variant="outline">{intl.formatMessage(COPY.sampleBadge)}</Badge>{' '}

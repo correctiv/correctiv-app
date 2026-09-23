@@ -1,3 +1,4 @@
+import { parseBerlinDateTime } from '@correctiv/app-core/lib/berlin-time';
 import { parseTimeOfDay } from '@correctiv/app-core/lib/home-layout';
 import type { Locale } from '@correctiv/app-core/stores/settings';
 
@@ -41,7 +42,12 @@ export interface PreviewState {
   /** A storage fixture applied before the frame boots; see `frame/seed.ts`. */
   seed: string | null;
   /**
-   * `HH:MM`: what time the framed app is told it is, or `null` for its own clock.
+   * What time the framed app is told it is, or `null` for its own clock: `HH:MM` for that
+   * minute today, or `YYYY-MM-DDTHH:MM` for a day of its own, both Berlin wall clock.
+   *
+   * The date arrived with ADR 0059 §2, so that "what will readers see on Saturday at 18:00"
+   * is a link. A bare time keeps meaning today, so every link sent before it still opens on
+   * the hour it names.
    *
    * Here rather than inside the home tool because it is a way of looking at the app, the
    * way the device and the appearance are, and a link to the home screen at half past six
@@ -131,7 +137,10 @@ export function fromAddress(address: ShellAddress): PreviewState {
     lang: isLocale(lang) ? lang : null,
     seed: p.get('s'),
     // Junk is no time at all rather than an error: a stale link should still open.
-    time: parseTimeOfDay(p.get('tm')) === null ? null : p.get('tm'),
+    time:
+      parseTimeOfDay(p.get('tm')) === null && parseBerlinDateTime(p.get('tm')) === null
+        ? null
+        : p.get('tm'),
     // Default on, so the parameter is the exception and `tl=0` is the only thing it
     // spells. Anything else in it, including a missing one, is the default.
     timeline: p.get('tl') !== '0',

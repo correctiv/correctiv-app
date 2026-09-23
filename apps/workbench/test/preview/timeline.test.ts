@@ -225,10 +225,11 @@ describe('one playhead, two drawings', () => {
   });
 
   it('reads the machine’s clock from one place, so the two cannot be a minute apart', () => {
-    // `minuteOfDay(Date.now())` in two components is two readings, and on a page opened
-    // at 10:59:58 they are a minute apart: the track would put the playhead in one point
-    // and the panel would name the other.
-    expect(MINUTES).toMatch(/minuteOfDay\(Date\.now\(\)\)/);
+    // `Date.now()` in two components is two readings, and on a page opened at 10:59:58
+    // they are a minute apart: the track would put the playhead in one point and the
+    // panel would name the other. Since ADR 0059 the one reading is an instant, and each
+    // drawing turns it into a Berlin day and minute through the same `playheadFrom`.
+    expect(MINUTES).toMatch(/opened \?\?= Date\.now\(\)/);
     for (const file of [TIMELINE, PANEL]) {
       expect(file).toMatch(/openedAt\(\)/);
       expect(file).not.toMatch(/Date\.now\(\)/);
@@ -335,8 +336,9 @@ describe('the list is the day, and the blocks are drawn', () => {
   it('leaves the checkbox behind and keeps `hidden` in the document', () => {
     // ADR 0045 §5. What the checkbox had to do was say the block was off, and the
     // collapsed row says it without a word; what is left is the switching, which is an
-    // act rather than a field. The WRITE is unchanged — `withHidden` still puts the
-    // change into the moment in effect.
+    // act rather than a field. The WRITE is unchanged in kind: `writeHidden` puts the
+    // change into the point in effect, of the day through `withHidden`, or of the
+    // edition running at the playhead (ADR 0059 §2).
     //
     // The row and not the whole panel, because the panel has a checkbox again and should:
     // whether the frame follows the pointer is a setting, which is what a form field is
@@ -344,7 +346,7 @@ describe('the list is the day, and the blocks are drawn', () => {
     const row = PANEL.slice(PANEL.indexOf('function Row('), PANEL.indexOf('function Here('));
     expect(row).not.toMatch(/type="checkbox"/);
     expect(row).toMatch(/onHidden\(/);
-    expect(PANEL).toMatch(/withHidden\(/);
+    expect(PANEL).toMatch(/writeHidden\(/);
   });
 });
 

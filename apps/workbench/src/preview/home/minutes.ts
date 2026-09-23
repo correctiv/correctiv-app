@@ -1,4 +1,16 @@
-import { MINUTES_IN_DAY, minuteOfDay, type MinuteOfDay } from '@correctiv/app-core/lib/home-layout';
+import {
+  berlinInstant,
+  berlinWallClock,
+  formatBerlinDateTime,
+  parseBerlinDateTime,
+  type BerlinDate,
+  type Instant,
+} from '@correctiv/app-core/lib/berlin-time';
+import {
+  MINUTES_IN_DAY,
+  formatTimeOfDay,
+  type MinuteOfDay,
+} from '@correctiv/app-core/lib/home-layout';
 
 /**
  * The arithmetic the day's two drawings share, and the reason it is a file.
@@ -38,20 +50,59 @@ export function parseMinute(value: string): MinuteOfDay | null {
 }
 
 /**
- * The minute a drawing shows: the address while it names one, a fallback while it does
- * not.
+ * Where the playhead is: a Berlin day, a minute of it, and the instant the two make.
+ *
+ * `dated` is whether the address named the day. A bare `tm=18:30` is that minute today,
+ * which is what it meant before ADR 0059 gave the playhead a date, and moving the playhead
+ * along the track writes the address back in whichever of the two spellings it arrived in,
+ * so a link that did not name a day does not start naming one because somebody dragged.
+ */
+export interface Playhead {
+  readonly date: BerlinDate;
+  readonly minute: MinuteOfDay;
+  readonly instant: Instant;
+  readonly dated: boolean;
+}
+
+/**
+ * The playhead a drawing shows: the address while it names a time, the moment the page was
+ * opened while it does not.
  *
  * Both `Timeline.tsx` and `HomeDocument.tsx` read `state.time` this way, and it was the
  * same ternary copied into both when the track moved out of the panel — the exact
  * failure this file's header describes, one step earlier: a rule in two places agrees
  * with itself right up until somebody changes one of them.
  */
-export function minuteFrom(time: string | null, fallback: MinuteOfDay): MinuteOfDay {
-  return time === null ? fallback : (parseMinute(time) ?? fallback);
+export function playheadFrom(time: string | null, opened: Instant): Playhead {
+  const today = berlinWallClock(opened);
+  const dated = parseBerlinDateTime(time);
+  if (dated) {
+    return { ...dated, instant: berlinInstant(dated.date, dated.minute)!, dated: true };
+  }
+  const minute = time === null ? null : parseMinute(time);
+  const at = minute ?? today.minute;
+  return {
+    date: today.date,
+    minute: at,
+    instant: berlinInstant(today.date, at)!,
+    dated: false,
+  };
+}
+
+/** A minute on the playhead's day, in the address's spelling for that playhead. */
+export function timeAt(playhead: Playhead, minute: MinuteOfDay): string {
+  return playhead.dated
+    ? formatBerlinDateTime({ date: playhead.date, minute })
+    : formatTimeOfDay(minute);
+}
+
+/** The same minute on another day, which always names the day. */
+export function timeOn(date: BerlinDate, minute: MinuteOfDay): string {
+  return formatBerlinDateTime({ date, minute });
 }
 
 /**
- * The minute this page was opened at, which is what "the app's own clock" means here.
+ * The instant this page was opened at, which is what "the app's own clock" means here.
  *
  * One answer for the whole page, and that is the point of it being a function rather
  * than a `useState` initialiser in each of the two components. The track marks it and
@@ -71,9 +122,9 @@ export function minuteFrom(time: string | null, fallback: MinuteOfDay): MinuteOf
  * rather than when the site's bundle loads, which on a page somebody arrived at through
  * the handbook can be a different day.
  */
-let opened: MinuteOfDay | null = null;
+let opened: Instant | null = null;
 
-export function openedAt(): MinuteOfDay {
-  opened ??= minuteOfDay(Date.now());
+export function openedAt(): Instant {
+  opened ??= Date.now();
   return opened;
 }

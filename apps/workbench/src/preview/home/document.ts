@@ -1,9 +1,24 @@
 import {
+  addDays,
+  berlinInstant,
+  berlinWallClock,
+  formatBerlinDateTime,
+  parseBerlinDateTime,
+  type BerlinDate,
+  type Instant,
+} from '@correctiv/app-core/lib/berlin-time';
+import {
+  applyAll,
+  changesAt,
   DEFAULT_HOME_LAYOUT,
+  editionPointAt,
+  editionsAt,
   formatTimeOfDay,
   MINUTES_IN_DAY,
   stateAt,
+  stateAtInstant,
   type HomeChange,
+  type HomeEdition,
   type HomeLayout,
   type HomeMoment,
   type HomeSection,
@@ -482,12 +497,21 @@ export function removed(layout: HomeLayout, id: string): HomeLayout {
   const sections = layout.sections.filter((section) => section.id !== id);
   if (sections.length === layout.sections.length) return layout;
 
+  const without = (moments: readonly HomeMoment[]) =>
+    moments.map((moment) => ({
+      ...moment,
+      changes: moment.changes.filter((change) => change.id !== id),
+    }));
+
+  // An edition's changes name places exactly as the day's moments do, so they go too.
   return {
     ...layout,
     sections,
-    moments: layout.moments.map((moment) => ({
-      ...moment,
-      changes: moment.changes.filter((change) => change.id !== id),
+    moments: without(layout.moments),
+    editions: layout.editions.map((edition) => ({
+      ...edition,
+      changes: edition.changes.filter((change) => change.id !== id),
+      moments: without(edition.moments),
     })),
   };
 }
@@ -889,6 +913,345 @@ function sorted(moments: readonly HomeMoment[]): readonly HomeMoment[] {
   return [...moments].sort((a, b) => a.minute - b.minute);
 }
 
+// --- editions ------------------------------------------------------------------
+
+/**
+ * What an edit at an instant lands on: an edition and a point in it, or the day and a point
+ * in that.
+ *
+ * ADR 0059 §2: "An edit lands on the narrowest edition active at the playhead, or on the day
+ * when none is", which is ADR 0039 §10 one level up. The narrowest is the one the fold
+ * applies last (`editionsAt` is in precedence order), so it is also the one whose word
+ * stands; writing anywhere else would be writing a value the frame then does not show.
+ * Inside the edition the point is its start or the moment of it in effect, exactly as the
+ * day's point is the day's start or its moment in effect.
+ */
+export interface Target {
+  /** Null for the day. */
+  readonly edition: HomeEdition | null;
+  /** The moment's minute, or null for the start of the layer, day or edition. */
+  readonly point: Point;
+}
+
+export function targetAt(layout: HomeLayout, instant: Instant): Target {
+  const active = editionsAt(layout, instant);
+  const edition = active[active.length - 1];
+  if (edition) return { edition, point: editionPointAt(edition, instant) };
+  return { edition: null, point: pointAt(layout, berlinWallClock(instant).minute) };
+}
+
+/**
+ * The state a target INHERITS at an instant: the fold with the target's own point taken out.
+ *
+ * For the day this is `inheritedAt`, which is the day's history before the point. For an
+ * edition the same question has a subtler answer, because what is under an edition is not
+ * fixed across its span: the day beneath it goes on changing at its own moments. So the
+ * answer is at THIS instant, which is the one the frame shows and the one the person
+ * editing is looking at. The target is always applied last (it is the narrowest edition,
+ * and its point is the last of its moments to have happened), so taking it out of the list
+ * is the same as stopping the fold just before it.
+ */
+export function inheritedFor(
+  layout: HomeLayout,
+  instant: Instant,
+  target: Target,
+): readonly HomeSection[] {
+  if (target.edition === null) return inheritedAt(layout, target.point);
+  const id = target.edition.id;
+  return applyAll(
+    layout.sections,
+    changesAt(layout, instant).filter(
+      (applied) => !(applied.edition === id && applied.point === target.point),
+    ),
+  );
+}
+
+/**
+ * Switch a place on or off at an instant, on whatever the instant's target is.
+ *
+ * The day keeps its own rules, `withHidden` above, unchanged. An edition gets the same rule
+ * one level up: a value equal to what the edition would otherwise show at this instant is
+ * not written, it is taken out — so switching a block back to what the day says is the
+ * edition falling silent about it, and the day showing through again.
+ *
+ * What an edition does not get yet is `settled`'s second pass over the moments after the
+ * edit. An edition's moments are few and its span is short, and the pass needs a notion of
+ * "what a later moment inherits" that changes over the span; it is left out of this slice
+ * rather than approximated.
+ */
+export function writeHidden(
+  layout: HomeLayout,
+  instant: Instant,
+  id: string,
+  hidden: boolean,
+): HomeLayout {
+  const target = targetAt(layout, instant);
+  if (target.edition === null) return withHidden(layout, target.point, id, hidden);
+
+  const before = inheritedFor(layout, instant, target).find((section) => section.id === id);
+  const inherits = Boolean(before?.hidden) === hidden;
+  return withEditionChange(layout, target.edition.id, target.point, id, (change) => {
+    if (inherits) {
+      const { hidden: _hidden, ...rest } = change;
+      return rest;
+    }
+    return { ...change, hidden };
+  });
+}
+
+/** Set one setting at an instant, on whatever the instant's target is. The same rule. */
+export function writeSetting(
+  layout: HomeLayout,
+  instant: Instant,
+  id: string,
+  key: string,
+  value: SettingValue | undefined,
+): HomeLayout {
+  const target = targetAt(layout, instant);
+  if (target.edition === null) return withSetting(layout, target.point, id, key, value);
+
+  const before = inheritedFor(layout, instant, target).find((section) => section.id === id);
+  const inherited = before ? valueOf(before, key) : undefined;
+  const same = value !== undefined && inherited !== undefined && sameValue(inherited, value);
+  const next = same || value === undefined ? undefined : value;
+  return withEditionChange(layout, target.edition.id, target.point, id, (change) =>
+    withKey(change, key, next),
+  );
+}
+
+/** One edition replaced, in place, in the document's order. */
+function withEditionAs(
+  layout: HomeLayout,
+  id: string,
+  next: (edition: HomeEdition) => HomeEdition,
+): HomeLayout {
+  return {
+    ...layout,
+    editions: layout.editions.map((edition) => (edition.id === id ? next(edition) : edition)),
+  };
+}
+
+/** One change of an edition, at its start or at one of its moments, and dropped when empty. */
+function withEditionChange(
+  layout: HomeLayout,
+  editionId: string,
+  point: Point,
+  id: string,
+  next: (change: HomeChange) => HomeChange,
+): HomeLayout {
+  const rank = new Map(layout.sections.map((section, index) => [section.id, index]));
+  const edit = (changes: readonly HomeChange[]): readonly HomeChange[] => {
+    const held = changes.find((change) => change.id === id) ?? { id };
+    const edited = next(held);
+    const rest = changes.filter((change) => change.id !== id);
+    const kept = Object.keys(edited).length <= 1 ? rest : [...rest, edited];
+    return [...kept].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+  };
+
+  return withEditionAs(layout, editionId, (edition) =>
+    point === null
+      ? { ...edition, changes: edit(edition.changes) }
+      : {
+          ...edition,
+          moments: edition.moments.map((moment) =>
+            moment.minute === point ? { ...moment, changes: edit(moment.changes) } : moment,
+          ),
+        },
+  );
+}
+
+/**
+ * The id a new edition gets: `edition-` and the Berlin date it starts on, and then the
+ * smallest free suffix.
+ *
+ * ADR 0046 §2's rule for a block, for the same reason: an id is an address, and a machine
+ * that guessed a prettier one would collide with its next guess. The newsroom's own name for
+ * the edition is its `title`, which is data and can be anything.
+ */
+export function mintEditionId(layout: HomeLayout, date: BerlinDate): string {
+  const taken = new Set(layout.editions.map((edition) => edition.id));
+  const base = `edition-${date}`;
+  if (!taken.has(base)) return base;
+  for (let n = 2; n <= taken.size + 2; n += 1) {
+    const id = `${base}-${n}`;
+    if (!taken.has(id)) return id;
+  }
+  /* c8 ignore next */
+  throw new Error(`No free id for ${base}, which the bound above makes impossible.`);
+}
+
+/**
+ * A new edition of one day, starting at this instant and carrying nothing.
+ *
+ * ADR 0059 §8's "Edition here". One day because that is the unit a person thinks of first —
+ * tonight, Saturday — and the popover's two fields are where it becomes a fortnight. It
+ * carries nothing, for the reason a new moment carries nothing: somebody has said WHEN and
+ * not yet what, and an edition that changed the screen by existing would be doing a thing
+ * nobody asked for.
+ *
+ * The minute is the playhead's, snapped by the caller. Answers with the new id as well,
+ * because the caller wants to open what it just made.
+ */
+export function withEdition(
+  layout: HomeLayout,
+  date: BerlinDate,
+  minute: MinuteOfDay,
+): { layout: HomeLayout; id: string } {
+  const from = formatBerlinDateTime({ date, minute });
+  const until = formatBerlinDateTime({ date: addDays(date, 1), minute });
+  const id = mintEditionId(layout, date);
+  const edition = spanned({ id, from, until, start: 0, end: 0, changes: [], moments: [] });
+  return edition
+    ? { layout: { ...layout, editions: [...layout.editions, edition] }, id }
+    : { layout, id };
+}
+
+/** An edition with its instants worked out from what it says, or null when it says nonsense. */
+function spanned(edition: HomeEdition): HomeEdition | null {
+  const opens = parseBerlinDateTime(edition.from);
+  const closes = parseBerlinDateTime(edition.until);
+  if (!opens || !closes) return null;
+  const start = berlinInstant(opens.date, opens.minute)!;
+  const end = berlinInstant(closes.date, closes.minute)!;
+  if (end <= start) return null;
+  return { ...edition, start, end };
+}
+
+/**
+ * An edition's span, from the popover's two fields.
+ *
+ * A span the parser would refuse — not a date and time, or an end at or before the start —
+ * answers with the layout unchanged, which is what the field beside it then shows: the
+ * editor never makes a document it could not read back, which is the rule `movedMoment`
+ * follows for a moment landing on another one.
+ */
+export function withEditionSpan(
+  layout: HomeLayout,
+  id: string,
+  from: string,
+  until: string,
+): HomeLayout {
+  const held = layout.editions.find((edition) => edition.id === id);
+  if (!held) return layout;
+  const next = spanned({ ...held, from, until });
+  return next ? withEditionAs(layout, id, () => next) : layout;
+}
+
+/** The newsroom's name for an edition. Empty is no title, rather than an empty one. */
+export function withEditionTitle(layout: HomeLayout, id: string, title: string): HomeLayout {
+  const named = title.trim();
+  return withEditionAs(layout, id, (edition) => {
+    const { title: _title, ...rest } = edition;
+    return named.length === 0 ? rest : { ...rest, title };
+  });
+}
+
+/** An edition gone, with everything it carried. The day is untouched by it, by ADR 0059 §5. */
+export function withoutEdition(layout: HomeLayout, id: string): HomeLayout {
+  return { ...layout, editions: layout.editions.filter((edition) => edition.id !== id) };
+}
+
+/** A new moment inside an edition, carrying nothing. The day's rule for `withMoment`. */
+export function withEditionMoment(layout: HomeLayout, id: string, minute: MinuteOfDay): HomeLayout {
+  return withEditionAs(layout, id, (edition) => {
+    if (edition.moments.some((moment) => moment.minute === minute)) return edition;
+    const moment: HomeMoment = { at: formatTimeOfDay(minute), minute, changes: [] };
+    return { ...edition, moments: sorted([...edition.moments, moment]) };
+  });
+}
+
+/** A moment of an edition taken out, with what it carried. */
+export function withoutEditionMoment(
+  layout: HomeLayout,
+  id: string,
+  minute: MinuteOfDay,
+): HomeLayout {
+  return withEditionAs(layout, id, (edition) => ({
+    ...edition,
+    moments: edition.moments.filter((moment) => moment.minute !== minute),
+  }));
+}
+
+/** A moment of an edition moved to another time; landing on another moment is refused. */
+export function movedEditionMoment(
+  layout: HomeLayout,
+  id: string,
+  from: MinuteOfDay,
+  to: MinuteOfDay,
+): HomeLayout {
+  if (from === to || to < 0 || to >= MINUTES_IN_DAY) return layout;
+  return withEditionAs(layout, id, (edition) => {
+    if (edition.moments.some((moment) => moment.minute === to)) return edition;
+    return {
+      ...edition,
+      moments: sorted(
+        edition.moments.map((moment) =>
+          moment.minute === from ? { ...moment, at: formatTimeOfDay(to), minute: to } : moment,
+        ),
+      ),
+    };
+  });
+}
+
+/**
+ * Which edition decides each place's state at an instant: the last one to have changed it.
+ *
+ * What the hairline at a block's edge draws (ADR 0059 §2): a glance down the panel says what
+ * the campaign changed and where the ordinary day shows through. A place no edition touches
+ * is not in the map, and neither is one only the day's own moments changed.
+ */
+export function decidedAt(layout: HomeLayout, instant: Instant): ReadonlyMap<string, string> {
+  const decided = new Map<string, string>();
+  for (const applied of changesAt(layout, instant)) {
+    if (applied.edition === null) decided.delete(applied.change.id);
+    else decided.set(applied.change.id, applied.edition);
+  }
+  return decided;
+}
+
+/**
+ * The editions that are on at some point of a Berlin day, and where on that day's track.
+ *
+ * `from` and `to` are minutes of the day, clamped to it: an edition that began yesterday
+ * starts at 0, one that runs past midnight ends at 1440. Read through the wall clock rather
+ * than by subtracting instants, because the track is twenty-four hours of wall clock even
+ * on the two days a year that are not twenty-four hours long.
+ */
+export function editionsOn(
+  layout: HomeLayout,
+  date: BerlinDate,
+): readonly { edition: HomeEdition; from: MinuteOfDay; to: MinuteOfDay }[] {
+  const opens = berlinInstant(date, 0)!;
+  const closes = berlinInstant(addDays(date, 1), 0)!;
+  return layout.editions
+    .filter((edition) => edition.start < closes && edition.end > opens)
+    .map((edition) => ({
+      edition,
+      from: edition.start <= opens ? 0 : berlinWallClock(edition.start).minute,
+      to: edition.end >= closes ? MINUTES_IN_DAY : berlinWallClock(edition.end).minute,
+    }));
+}
+
+/**
+ * Where on the colour wheel an edition sits, from its id and nothing else.
+ *
+ * ADR 0059 §2: the same campaign is the same colour on every machine and in every screenshot
+ * in a pull request, which a colour chosen by hand or handed out in order could not promise
+ * (§9 refuses the first). FNV-1a over the id, which is short, has no dependency and spreads
+ * neighbouring ids like `edition-2026-09-27` and `edition-2026-09-28` apart.
+ *
+ * A hue only. The lightness comes from the palette in `styles/app.css`, so the colour follows
+ * the appearance setting the way every other colour on this site does.
+ */
+export function editionHue(id: string): number {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < id.length; index += 1) {
+    hash ^= id.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash % 360;
+}
+
 // --- what changed -------------------------------------------------------------
 
 /**
@@ -904,8 +1267,8 @@ export function differs(layout: HomeLayout): boolean {
 }
 
 /**
- * The ids whose place on the screen, or whose state AT THIS MINUTE, differs from the
- * shipped document at the same minute.
+ * The ids whose place on the screen, or whose state AT THIS INSTANT, differs from the
+ * shipped document at the same instant.
  *
  * At a minute, because that is the only honest comparison once the document is a day: a
  * section is not simply "changed", it is changed at eleven and not at nine, and a badge
@@ -915,11 +1278,11 @@ export function differs(layout: HomeLayout): boolean {
  * cannot be a per-section comparison: a section that moved makes its neighbour move too,
  * and an editor who lifted one block should not be told they changed four.
  */
-export function changedAt(layout: HomeLayout, minute: MinuteOfDay): readonly string[] {
+export function changedAt(layout: HomeLayout, instant: Instant): readonly string[] {
   const before = new Map(
-    stateAt(SHIPPED, minute).map((section, index) => [section.id, { section, index }]),
+    stateAtInstant(SHIPPED, instant).map((section, index) => [section.id, { section, index }]),
   );
-  return stateAt(layout, minute)
+  return stateAtInstant(layout, instant)
     .filter((section, index) => {
       const was = before.get(section.id);
       if (!was) return true;
@@ -1114,6 +1477,39 @@ function momentEntries(
   ]);
 }
 
+/**
+ * An edition, in the order ADR 0059 §3 writes one: who, what it is called, when, what it
+ * starts as, and what changes inside it.
+ *
+ * `changes` is written even when it is empty, as a moment's is: an edition somebody has
+ * just put down with nothing in it yet is a state of the document, and the empty list is
+ * where the next edit goes. `moments` is left out when there are none, as the top level
+ * leaves its own out. `start` and `end` are not written, for the reason `minute` is not.
+ */
+function editionEntries(
+  edition: HomeEdition,
+  order: ReadonlyMap<string, number>,
+  modules: ReadonlyMap<string, string>,
+): Obj {
+  const entries: (readonly [string, unknown])[] = [['id', edition.id]];
+  if (edition.title !== undefined) entries.push(['title', edition.title]);
+  entries.push(['from', edition.from], ['until', edition.until]);
+  const changes = [...edition.changes].sort(
+    (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
+  );
+  entries.push([
+    'changes',
+    changes.map((change) => changeEntries(change, modules.get(change.id) ?? '')),
+  ]);
+  if (edition.moments.length > 0) {
+    entries.push([
+      'moments',
+      edition.moments.map((moment) => momentEntries(moment, order, modules)),
+    ]);
+  }
+  return obj(entries);
+}
+
 export function formatLayoutDocument(layout: HomeLayout): string {
   const order = new Map(layout.sections.map((section, index) => [section.id, index]));
   const modules = new Map(layout.sections.map((section) => [section.id, section.module]));
@@ -1130,6 +1526,11 @@ export function formatLayoutDocument(layout: HomeLayout): string {
   if (layout.moments.length > 0) {
     const printed = layout.moments.map((moment) => momentEntries(moment, order, modules));
     entries.push(['moments', printed]);
+  }
+  // The same rule one level up: a document with no edition says nothing about editions.
+  if (layout.editions.length > 0) {
+    const printed = layout.editions.map((edition) => editionEntries(edition, order, modules));
+    entries.push(['editions', printed]);
   }
   return `${print(obj(entries), 0, 0, '')}\n`;
 }

@@ -49,6 +49,21 @@
   transition: flex-grow 200ms ease-out;
 }
 
+/*
+ * An edition's colour in the home editor, which is the one colour here the palette does not
+ * name, and still takes the half of it that matters from the palette.
+ *
+ * ADR 0059 §2 derives it from the edition's id, so a campaign is the same colour on every
+ * machine and in every screenshot; `preview/home/document.ts` turns the id into a hue and
+ * `Edition.tsx` sets it as `--edition-hue`. The lightness is `on-canvas-muted`'s own, read
+ * out of the token with relative colour syntax, so it follows the appearance setting the way
+ * the muted text does, and is legible on the canvas in both schemes for the same reason that
+ * text is. The chroma is the one number chosen here, and it is not a colour.
+ */
+.edition-ink {
+  --edition: oklch(from var(--color-on-canvas-muted) l 0.16 var(--edition-hue));
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
