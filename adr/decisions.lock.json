@@ -586,7 +586,10 @@
       ],
       "5": ["The pull request gets CI with a token held by CI, and says so when it does not"],
       "6": ["The address has a limit, and past it the change goes by the clipboard"],
-      "7": ["Nothing the issue says reaches a shell or a script as code"]
+      "7": [
+        "Nothing the issue says reaches a shell or a script as code",
+        "Nothing the issue says reaches a shell or a script as code, or GitHub as an instruction"
+      ]
     }
   }
 }

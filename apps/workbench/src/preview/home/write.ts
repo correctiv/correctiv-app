@@ -219,7 +219,7 @@ export async function save(layout: HomeLayout, format: Format): Promise<SaveResu
  * no credential on `correctiv.github.io` for anything else there to read.
  *
  * The issue's words follow the page's language, because they are for the person on
- * GitHub. The payload is the document exactly as Save would write it, and the prefix in
+ * GitHub. The payload is the document Save would write, on one line, and the prefix in
  * the title is `src/preview/submission.ts`'s and never translated, because the workflow
  * matches on it.
  *
@@ -234,7 +234,12 @@ export interface Submit {
 }
 
 export function submission(layout: HomeLayout, format: Format): Submit {
-  const issue = issueFor('home', formatLayoutDocument(layout), {
+  // Minified: the printed document spends most of its address on indentation, measured
+  // at 2,112 against 1,320 encoded characters for the shipped day. CI prints it again
+  // with `formatLayoutDocument`, so what reaches the repository is formatted either way,
+  // and one line of JSON is still readable to a maintainer looking at the issue.
+  const payload = JSON.stringify(JSON.parse(formatLayoutDocument(layout)));
+  const issue = issueFor('home', payload, {
     heading: format(COPY.issueHeading),
     lead: format(COPY.issueLead),
   });

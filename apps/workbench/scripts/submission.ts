@@ -30,6 +30,7 @@ import { createIntl, type IntlShape } from 'react-intl';
 
 import {
   parseHomeLayout,
+  stateAt,
   type HomeChange,
   type HomeEdition,
   type HomeLayout,
@@ -42,8 +43,12 @@ import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 import { HOME_LAYOUT_MAX_CHARS } from '@correctiv/app-core/stores/homeLayout';
 
 import { de } from '../src/i18n/catalogue/de/index.ts';
-import { say } from '../src/i18n/messages.ts';
-import { blockName, formatLayoutDocument, settingLabel } from '../src/preview/home/document.ts';
+import {
+  formatLayoutDocument,
+  MODULE_LABELS,
+  moduleLabel,
+  settingLabel,
+} from '../src/preview/home/document.ts';
 import {
   kindOfTitle,
   SUBMISSION_FENCE,
@@ -81,7 +86,9 @@ export class Refusal extends Error {
  * that, for whoever has to look deeper.
  */
 export function refusalText(refusal: Refusal): string {
-  const detail = refusal.detail ? `\n\nGenauer: ${refusal.detail}` : '';
+  // In a code span and through `plain`: a JSON parser's message quotes the input, and the
+  // input is the issue's.
+  const detail = refusal.detail ? `\n\nGenauer: ${shown(refusal.detail, 300)}` : '';
   switch (refusal.code) {
     case 'no-kind':
       return `Der Titel beginnt mit keiner bekannten Kennung wie ${SUBMISSION_KINDS.home.prefix}. Bitte stellen Sie sie wieder an den Anfang des Titels.`;
@@ -184,8 +191,12 @@ export function applyIssue(title: string, body: string, current: (file: string) 
  *
  * As strict as `packages/app-core/scripts/check-home-layout.ts`, which the deploy runs
  * over the same file, and for its reason: the app draws past a problem, but a document
- * with one is a document nobody meant to write. What is written is the parser's reading
- * printed again, so an unknown key in the issue does not reach the repository.
+ * with one is a document nobody meant to write. Stricter in one way the deploy cannot be:
+ * it passes the modules the app can draw, `MODULE_LABELS`' keys, which
+ * `test/preview/home-document.test.ts` holds to the app's `HOME_MODULES` in both
+ * directions. The core itself does not know that set (ADR 0036 §14), so the deploy's check
+ * cannot ask. What is written is the parser's reading printed again, so an unknown key in
+ * the issue does not reach the repository.
  */
 export function applyHome(payload: string, current: string): Applied {
   let document: unknown;
@@ -195,9 +206,9 @@ export function applyHome(payload: string, current: string): Applied {
     throw new Refusal('not-json', error instanceof Error ? error.message : String(error));
   }
 
-  const { layout, problems } = parseHomeLayout(document);
+  const { layout, problems } = parseHomeLayout(document, RENDERABLE);
   if (!layout || layout.sections.length === 0 || problems.length > 0) {
-    const codes = problems.map((problem) => `\`${problem.code}\``).join(', ');
+    const codes = [...new Set(problems.map((problem) => problem.code))].join(', ');
     throw new Refusal('refused', codes || 'kein Dokument mit Blöcken');
   }
 
@@ -212,6 +223,9 @@ export function applyHome(payload: string, current: string): Applied {
   };
 }
 
+/** Every module the app can draw, as the editor names them. */
+const RENDERABLE: ReadonlySet<string> = new Set(Object.keys(MODULE_LABELS));
+
 /** What the repository holds now, or an empty day if it holds nothing readable. */
 function readLayout(text: string): HomeLayout {
   try {
@@ -223,18 +237,74 @@ function readLayout(text: string): HomeLayout {
   return { version: 0, sections: [], moments: [], editions: [] };
 }
 
+// --- printing text out of the document ---------------------------------------------
+
+/**
+ * The longest a single value from the document may be when it is printed. An id or a
+ * title longer than this is not something a reviewer needs whole in a summary line.
+ */
+const VALUE_MAX = 80;
+
+/**
+ * A string out of the document, made harmless for a GitHub comment or pull request body.
+ *
+ * **The document is as untrusted as the issue it came in.** The parser takes any string
+ * for an edition's title, a pin and, apart from control characters, an id, and GitHub
+ * reads a body for instructions: `Closes #1` anywhere in it closes that issue on merge,
+ * `@team` notifies a team, and `<!--` hides everything after it, the real `Closes` line
+ * included. Measured by the security review of #252, which got all three through. So
+ * every such string passes here, and here does four things: collapses every run of
+ * whitespace, line breaks among them, into one space; drops what is left of control
+ * characters; caps the length; and swaps the four characters GitHub acts on for
+ * look-alikes that it does not: `#`, `@`, `<`, and the backtick, which would otherwise
+ * close the code span the caller puts the result in.
+ */
+export function plain(text: string, max = VALUE_MAX): string {
+  const collapsed = text
+    .replace(/\s+/g, ' ')
+    // oxlint-disable-next-line no-control-regex -- removing control characters is the point
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
+    .trim();
+  const capped = collapsed.length > max ? `${collapsed.slice(0, max - 1)}…` : collapsed;
+  return capped
+    .replace(/#/g, '＃')
+    .replace(/@/g, '＠')
+    .replace(/</g, '‹')
+    .replace(/>/g, '›')
+    .replace(/`/g, 'ˋ');
+}
+
+/** The same, inside a code span, which GitHub neither links nor reads for keywords. */
+export function shown(text: string, max = VALUE_MAX): string {
+  return `\`${plain(text, max) || ' '}\``;
+}
+
 // --- the summary ------------------------------------------------------------------
 
 /** The site's German, for the block names. The sentence frames below are not the site's. */
 const INTL: IntlShape = createIntl({ locale: 'de', defaultLocale: 'en', messages: de });
 
 /**
+ * The most the list of changes may take in a pull request's body. GitHub refuses a body
+ * over 65,536 characters with a 422, which the issue would then have been told was the
+ * automation failing; the review of #252 made a 7,057-character issue into a
+ * 106,483-character summary. A fifth of the limit leaves the rest of the body room, and
+ * a reviewer reads the diff past that point anyway.
+ */
+export const SUMMARY_MAX = 20_000;
+
+/** Modules that are furniture rather than content: a day of only these shows nothing. */
+const FURNITURE: ReadonlySet<string> = new Set(['home-header', 'feed-status']);
+
+/**
  * What changed between two home documents, as a list a person can read.
  *
- * Derived from the two parsed documents, never from the issue's prose: the issue is
- * whatever somebody left in it, and the diff is what will be merged. Blocks are named as
- * the editor names them, "Aufmacher (hero)", so a reviewer can find each one in the
- * workbench. Returns Markdown, a heading and one bullet per change.
+ * Derived from the two parsed documents rather than from the issue's prose, because the
+ * prose is whatever somebody left in it and the diff is what will be merged. That makes
+ * it truthful, not harmless: every string it prints from the document goes through
+ * `plain`. Blocks are named as the editor names them, the module's German name and the
+ * id, so a reviewer can find each one in the workbench. Returns Markdown: warnings first,
+ * then a heading and one bullet per change, capped at `SUMMARY_MAX`.
  */
 export function summariseHome(before: HomeLayout, after: HomeLayout): string {
   const lines = [
@@ -247,13 +317,57 @@ export function summariseHome(before: HomeLayout, after: HomeLayout): string {
     lines.push(`Das Dokument hat jetzt die Version ${after.version} statt ${before.version}.`);
   if (lines.length === 0)
     lines.push('Nur die Schreibweise der Datei ändert sich, nicht die Startseite.');
-  return ['### Was sich an der Startseite ändert', '', ...lines.map((line) => `- ${line}`)].join(
+
+  const bullets: string[] = [];
+  let used = 0;
+  for (const [index, line] of lines.entries()) {
+    const bullet = `- ${line}`;
+    if (used + bullet.length > SUMMARY_MAX) {
+      bullets.push(`- … und ${lines.length - index} weitere Änderungen, siehe den Diff.`);
+      break;
+    }
+    bullets.push(bullet);
+    used += bullet.length + 1;
+  }
+  return [...warnings(before, after), '### Was sich an der Startseite ändert', '', ...bullets].join(
     '\n',
   );
 }
 
+/**
+ * What a reviewer must not miss, in bold above the list: a day on which the home screen
+ * shows nothing, and a document that has lost most of its blocks. Both parse, and both
+ * would reach every reader on the next deploy.
+ */
+export function warnings(before: HomeLayout, after: HomeLayout): string[] {
+  const found: string[] = [];
+  const shows = (sections: readonly HomeSection[]) =>
+    sections.some((section) => !section.hidden && !FURNITURE.has(section.module));
+  const empty = [
+    ...(shows(after.sections) ? [] : ['zu Tagesbeginn']),
+    ...after.moments
+      .filter((moment) => !shows(stateAt(after, moment.minute)))
+      .map((moment) => `ab ${moment.at}`),
+  ];
+  if (empty.length > 0)
+    found.push(
+      `> **Achtung: Die Startseite zeigt ${empty.join(', ')} keinen Inhalt.** Außer Kopfzeile und Ladehinweis ist dann alles ausgeblendet. Bitte prüfen Sie, ob das gewollt ist.`,
+    );
+  const kept = after.sections.filter((section) =>
+    before.sections.some((was) => was.id === section.id),
+  ).length;
+  if (before.sections.length > 0 && kept < before.sections.length / 2)
+    found.push(
+      `> **Achtung: Von ${before.sections.length} Blöcken sind nur ${kept} übrig.** Bitte prüfen Sie, ob das gewollt ist.`,
+    );
+  return found.length > 0 ? [...found, ''] : [];
+}
+
+/** A block as the editor names it: its module's German name, and its id. */
 function quoted(section: HomeSection): string {
-  return `„${blockName(INTL, section)}“`;
+  const name = moduleLabel(section.module).label;
+  const words = typeof name === 'string' ? shown(name) : `„${INTL.formatMessage(name)}“`;
+  return `${words} (${shown(section.id)})`;
 }
 
 function byId(layout: HomeLayout): Map<string, HomeSection> {
@@ -353,15 +467,20 @@ function valueOf(
 }
 
 function settingName(section: HomeSection, spec: SettingSpec): string {
-  return `„${say(INTL, settingLabel(section.module, spec).label)}“`;
+  const label = settingLabel(section.module, spec).label;
+  return typeof label === 'string' ? shown(label) : `„${INTL.formatMessage(label)}“`;
 }
 
-/** A setting's value in words: a pinned article by its title, `null` as "none". */
+/**
+ * A setting's value in words: `null` as "none", a count as its number, and a pin by the
+ * title of the article when it is one of `HOME_PINS`, which is this repository's data.
+ * Any other pin is a string out of the document and is shown as one.
+ */
 function printed(value: SettingValue | undefined): string {
   if (value === null || value === undefined) return 'nichts angepinnt';
   if (typeof value === 'string') {
     const pin = HOME_PINS.find((item) => item.url === value);
-    return pin ? `„${pin.title}“` : `\`${value}\``;
+    return pin ? `„${pin.title}“` : shown(value);
   }
   return String(value);
 }
@@ -369,13 +488,13 @@ function printed(value: SettingValue | undefined): string {
 /** What one change does, in a few words, such as that a block is switched off. */
 function changeWords(change: HomeChange, sections: Map<string, HomeSection>): string {
   const section = sections.get(change.id);
-  const name = section ? quoted(section) : `\`${change.id}\``;
+  const name = section ? quoted(section) : shown(change.id);
   const parts: string[] = [];
   if (change.hidden !== undefined)
     parts.push(`${name} ${change.hidden ? 'ausgeblendet' : 'eingeblendet'}`);
   for (const [key, value] of Object.entries(change.settings ?? {})) {
     const spec = section ? settingsFor(section.module).find((each) => each.key === key) : undefined;
-    const label = section && spec ? settingName(section, spec) : `\`${key}\``;
+    const label = section && spec ? settingName(section, spec) : shown(key);
     parts.push(`${name}: ${label} ${printed(value)}`);
   }
   return parts.join(', ');
@@ -409,14 +528,14 @@ function momentLines(
   return lines;
 }
 
-/** `2026-09-24T06:00` as a German reader writes it. */
+/** `2026-09-24T06:00` as a German reader writes it. The parser has checked the shape. */
 function when(stamp: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})$/.exec(stamp);
-  return match ? `${match[3]}.${match[2]}.${match[1]}, ${match[4]}` : stamp;
+  return match ? `${match[3]}.${match[2]}.${match[1]}, ${match[4]}` : shown(stamp);
 }
 
 function editionName(edition: HomeEdition): string {
-  return edition.title ? `„${edition.title}“ (${edition.id})` : `\`${edition.id}\``;
+  return edition.title ? `${shown(edition.title)} (${shown(edition.id)})` : shown(edition.id);
 }
 
 /** Editions added, dropped and changed, and what changed inside one. */
@@ -441,7 +560,7 @@ function editionLines(before: HomeLayout, after: HomeLayout): string[] {
     if (was.from !== edition.from || was.until !== edition.until)
       lines.push(`Die Ausgabe ${editionName(edition)} gilt jetzt ${span}.`);
     if ((was.title ?? '') !== (edition.title ?? ''))
-      lines.push(`Die Ausgabe \`${edition.id}\` heißt jetzt ${editionName(edition)}.`);
+      lines.push(`Die Ausgabe ${shown(edition.id)} heißt jetzt ${editionName(edition)}.`);
     if (JSON.stringify(was.changes) !== JSON.stringify(edition.changes))
       lines.push(
         `Die Ausgabe ${editionName(edition)} beginnt jetzt mit: ${changesWords(edition.changes, sections)}.`,

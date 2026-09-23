@@ -1272,3 +1272,40 @@ describe('the shipped document, at version 3', () => {
     expect(DEFAULT_HOME_LAYOUT.editions).toEqual([]);
   });
 });
+
+describe('an id that carries a line break or another control character', () => {
+  // ADR 0061 §2: the submission workflow prints ids into a pull request's body, where a line
+  // of its own reading `Closes #1` is an instruction to GitHub. Refused, and reported by
+  // where it stood, never by what it said.
+  const smuggled = 'x`\n\nCloses #1\n\n@correctiv/everyone <!--';
+
+  it('refuses such a section, and names its place rather than its text', () => {
+    const { layout, problems } = parseHomeLayout({
+      version: 3,
+      sections: [
+        { id: 'header', module: 'home-header' },
+        { id: smuggled, module: 'article-hero' },
+      ],
+    });
+    expect(layout?.sections.map((section) => section.id)).toEqual(['header']);
+    expect(problems).toEqual([{ code: 'id-unsafe', context: { of: 'section', index: 1 } }]);
+    expect(JSON.stringify(problems)).not.toContain('Closes');
+  });
+
+  it('refuses such an edition', () => {
+    const { problems } = parseHomeLayout({
+      version: 3,
+      sections: [{ id: 'header', module: 'home-header' }],
+      editions: [{ id: smuggled, from: '2026-09-27T18:00', until: '2026-09-28T02:00' }],
+    });
+    expect(problems).toEqual([{ code: 'id-unsafe', context: { of: 'edition', index: 0 } }]);
+  });
+
+  it('still takes an id with spaces, umlauts and punctuation', () => {
+    const { problems } = parseHomeLayout({
+      version: 3,
+      sections: [{ id: 'Wahl-Abend: Ü 2026', module: 'home-header' }],
+    });
+    expect(problems).toEqual([]);
+  });
+});

@@ -270,6 +270,7 @@ export type LayoutProblemCode =
   | 'sections-not-an-array'
   | 'section-not-an-object'
   | 'section-id-invalid'
+  | 'id-unsafe'
   | 'section-module-invalid'
   | 'section-id-duplicate'
   | 'section-unknown-key'
@@ -317,6 +318,19 @@ export interface HomeLayoutParse {
   readonly layout: HomeLayout | null;
   readonly problems: readonly LayoutProblem[];
 }
+
+/**
+ * An id holding a control character, a line break among them.
+ *
+ * An id is an address, and every writer this repository has — the editor, the dev server's
+ * Save — mints them from a module's name. One with a line break in it is somebody writing
+ * the document by hand to smuggle text somewhere an id is printed: the submission workflow
+ * pastes ids into a pull request's body, where a line of its own reading `Closes #1` is an
+ * instruction to GitHub (ADR 0061 §2). The report carries where, never the value, because
+ * the value is the payload.
+ */
+// oxlint-disable-next-line no-control-regex -- matching control characters is the point
+const UNSAFE_ID = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -446,6 +460,10 @@ function parseSection(
   // cannot be read is one nobody can address, and `index` is all a report can offer.
   if (typeof id !== 'string' || id.length === 0) {
     problems.push({ code: 'section-id-invalid', context: { index, type: typeOf(id) } });
+    return null;
+  }
+  if (UNSAFE_ID.test(id)) {
+    problems.push({ code: 'id-unsafe', context: { of: 'section', index } });
     return null;
   }
   if (typeof module !== 'string' || module.length === 0) {
@@ -789,6 +807,10 @@ function parseEdition(
 
   if (typeof id !== 'string' || id.length === 0) {
     problems.push({ code: 'edition-id-invalid', context: { index, type: typeOf(id) } });
+    return null;
+  }
+  if (UNSAFE_ID.test(id)) {
+    problems.push({ code: 'id-unsafe', context: { of: 'edition', index } });
     return null;
   }
   if (taken.has(id)) {

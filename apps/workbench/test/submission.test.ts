@@ -10,10 +10,12 @@ import {
   applyHome,
   applyIssue,
   longestCommonRun,
+  plain,
   readSubmission,
   Refusal,
   refusalText,
   summariseHome,
+  SUMMARY_MAX,
   type RefusalCode,
 } from '../scripts/submission.ts';
 import {
@@ -44,6 +46,17 @@ function refusal(run: () => unknown): RefusalCode {
     run();
   } catch (error) {
     if (error instanceof Refusal) return error.code;
+    throw error;
+  }
+  throw new Error('expected a refusal');
+}
+
+/** The refusal itself, for what it says. */
+function refusedWith(run: () => unknown): Refusal {
+  try {
+    run();
+  } catch (error) {
+    if (error instanceof Refusal) return error;
     throw error;
   }
   throw new Error('expected a refusal');
@@ -129,14 +142,7 @@ describe('reading an issue', () => {
       'unchanged',
     ];
     for (const code of codes) expect(refusalText(new Refusal(code)).length).toBeGreaterThan(20);
-    const refused = (() => {
-      try {
-        applyHome('{ "version": 3, "sections": [] }', CURRENT);
-      } catch (error) {
-        return error as Refusal;
-      }
-      throw new Error('expected a refusal');
-    })();
+    const refused = refusedWith(() => applyHome('{ "version": 3, "sections": [] }', CURRENT));
     expect(refusalText(refused)).toContain('Genauer:');
   });
 });
@@ -144,7 +150,7 @@ describe('reading an issue', () => {
 describe('the summary a reviewer reads', () => {
   it('names a block switched off where the day starts, by the editor’s name for it', () => {
     expect(summariseHome(SHIPPED, EDITED)).toContain(
-      '„Aufmacher (hero)“ ist zu Tagesbeginn ausgeblendet.',
+      '„Aufmacher“ (`hero`) ist zu Tagesbeginn ausgeblendet.',
     );
   });
 
@@ -173,7 +179,7 @@ describe('the summary a reviewer reads', () => {
     const at = 18 * 60;
     const after = withHidden(withMoment(SHIPPED, at), at, 'briefing', true);
     expect(summariseHome(SHIPPED, after)).toContain(
-      'Neuer Moment um 18:00: „Spotlight-Briefing (briefing)“ ausgeblendet.',
+      'Neuer Moment um 18:00: „Spotlight-Briefing“ (`briefing`) ausgeblendet.',
     );
   });
 
@@ -186,8 +192,8 @@ describe('the summary a reviewer reads', () => {
       ],
     };
     const summary = summariseHome(SHIPPED, after);
-    expect(summary).toContain('„Backstage (backstage)“ ist entfernt.');
-    expect(summary).toContain('„Faktenchecks (fact-checks-2)“ ist neu, an Stelle 12 von 12.');
+    expect(summary).toContain('„Backstage“ (`backstage`) ist entfernt.');
+    expect(summary).toContain('„Faktenchecks“ (`fact-checks-2`) ist neu, an Stelle 12 von 12.');
   });
 
   it('names an edition added, with its span', () => {
@@ -203,13 +209,109 @@ describe('the summary a reviewer reads', () => {
     ];
     const applied = applyHome(JSON.stringify(edition), CURRENT);
     expect(applied.summary).toContain(
-      'Neue Ausgabe „Wahlabend“ (wahlabend), vom 27.09.2026, 18:00 bis 28.09.2026, 02:00 Uhr: „Aufmacher (hero)“ ausgeblendet.',
+      'Neue Ausgabe `Wahlabend` (`wahlabend`), vom 27.09.2026, 18:00 bis 28.09.2026, 02:00 Uhr: „Aufmacher“ (`hero`) ausgeblendet.',
     );
   });
 
   it('finds the longest run two orders share', () => {
     expect(longestCommonRun(['a', 'b', 'c', 'd'], ['b', 'c', 'a', 'd'])).toEqual(['b', 'c', 'd']);
     expect(longestCommonRun([], ['a'])).toEqual([]);
+  });
+});
+
+/**
+ * The security review of #252, its inputs kept as tests. Each of these got through the first
+ * version: text in the document became instructions to GitHub in the pull request's body, a
+ * summary outgrew what GitHub accepts as a body, and a home screen showing nothing passed.
+ */
+describe('what the review of #252 got through', () => {
+  /** Every way a body can tell GitHub to do something, or hide what follows. */
+  function harmless(markdown: string) {
+    expect(markdown).not.toMatch(/#\d/);
+    expect(markdown).not.toContain('@correctiv');
+    expect(markdown).not.toContain('<!--');
+    expect(markdown).not.toMatch(/^\s*(closes|fixes|resolves)\b/im);
+  }
+
+  const HOSTILE = 'Hallo\n\nFixes #2 `x` @correctiv/everyone <!-- und der Rest ist weg';
+
+  it('refuses an id that smuggles lines into the body', () => {
+    const document = JSON.parse(CURRENT);
+    document.editions = [
+      {
+        id: 'x`\n\nCloses #1\n\n@correctiv/everyone <!--',
+        title: HOSTILE,
+        from: '2026-09-27T18:00',
+        until: '2026-09-28T02:00',
+      },
+    ];
+    expect(refusal(() => applyHome(JSON.stringify(document), CURRENT))).toBe('refused');
+    harmless(refusalText(refusedWith(() => applyHome(JSON.stringify(document), CURRENT))));
+  });
+
+  it('prints a hostile title, id and pin as inert text on one line', () => {
+    const document = JSON.parse(CURRENT);
+    document.sections.push({ id: 'Fixes #5 @correctiv/everyone <b>', module: 'callout-teaser' });
+    document.sections[3].settings = { pin: 'Closes #3 <!-- https://example.invalid' };
+    document.editions = [
+      {
+        id: 'wahl #6',
+        title: HOSTILE,
+        from: '2026-09-27T18:00',
+        until: '2026-09-28T02:00',
+        changes: [{ id: 'hero', hidden: true }],
+      },
+    ];
+    const { summary } = applyHome(JSON.stringify(document), CURRENT);
+    harmless(summary);
+    for (const line of summary.split('\n').filter((each) => each.startsWith('- ')))
+      expect((line.match(/`/g) ?? []).length % 2).toBe(0);
+    expect(plain('a\n\nb\tc')).toBe('a b c');
+    expect(plain('x'.repeat(200))).toHaveLength(80);
+  });
+
+  it('quotes what the JSON parser said about the input inside a code span', () => {
+    const text = refusalText(
+      refusedWith(() => applyHome('Closes #4 <!-- @correctiv/everyone {', CURRENT)),
+    );
+    harmless(text);
+    expect(text).toMatch(/Genauer: `[^`]*`/);
+  });
+
+  it('keeps the summary far under the body GitHub accepts', () => {
+    const document = JSON.parse(CURRENT);
+    const ids = Array.from({ length: 30 }, (_, index) => `block-${'x'.repeat(60)}-${index}`);
+    document.sections.push(...ids.map((id) => ({ id, module: 'callout-teaser' })));
+    document.moments = Array.from({ length: 23 }, (_, hour) => ({
+      at: `${String(hour + 1).padStart(2, '0')}:00`,
+      changes: ids.map((id) => ({ id, hidden: hour % 2 === 0 })),
+    }));
+    const { summary } = applyHome(JSON.stringify(document), CURRENT);
+    expect(summary.length).toBeLessThanOrEqual(SUMMARY_MAX + 1000);
+    expect(summary).toMatch(/… und \d+ weitere Änderungen/);
+  });
+
+  it('warns in bold when nothing is left to see', () => {
+    const allHidden = {
+      ...SHIPPED,
+      sections: SHIPPED.sections.map((section) => ({ ...section, hidden: true })),
+      moments: [],
+    };
+    expect(summariseHome(SHIPPED, allHidden)).toContain(
+      '**Achtung: Die Startseite zeigt zu Tagesbeginn keinen Inhalt.**',
+    );
+    const onlyHeader = { ...SHIPPED, sections: [SHIPPED.sections[0]], moments: [] };
+    const warned = summariseHome(SHIPPED, onlyHeader);
+    expect(warned).toContain('keinen Inhalt');
+    expect(warned).toContain('**Achtung: Von 12 Blöcken sind nur 1 übrig.**');
+    expect(warned.indexOf('Achtung')).toBeLessThan(warned.indexOf('### Was sich'));
+    expect(summariseHome(SHIPPED, EDITED)).not.toContain('Achtung');
+  });
+
+  it('refuses a module the app cannot draw', () => {
+    const document = JSON.parse(CURRENT);
+    document.sections.push({ id: 'neu', module: 'no-such-module' });
+    expect(refusal(() => applyHome(JSON.stringify(document), CURRENT))).toBe('refused');
   });
 });
 
@@ -222,15 +324,16 @@ describe('.github/workflows/submission.yml', () => {
   const lines = text.split('\n');
 
   /**
-   * Every `run:` and `script:` block scalar, as its lines. A block runs from the key to the
-   * first line indented no deeper than the key. Read by hand rather than with a YAML
-   * library, because none is a dependency here and this needs only the one shape the file
-   * is written in; the floor below is what stops it passing on a file it no longer reads.
+   * Every `run:`, `script:` and `if:` value, block scalars included, as its lines. A value
+   * runs from the key to the first line indented no deeper than the key. Read by hand
+   * rather than with a YAML library, because none is a dependency here and this needs
+   * only the one shape the file is written in; the floors below are what stop it passing
+   * on a file it no longer reads.
    */
-  function blocks(): { key: string; body: string[] }[] {
-    const found: { key: string; body: string[] }[] = [];
+  function blocks(): { key: string; body: string[]; at: number }[] {
+    const found: { key: string; body: string[]; at: number }[] = [];
     lines.forEach((line, index) => {
-      const match = /^(\s*)(?:- )?(run|script):\s*(.*)$/.exec(line);
+      const match = /^(\s*)(?:- )?(run|script|if):\s*(.*)$/.exec(line);
       if (!match) return;
       const indent = match[1].length;
       const body = [match[3]];
@@ -238,9 +341,20 @@ describe('.github/workflows/submission.yml', () => {
         if (next.trim() !== '' && next.search(/\S/) <= indent) break;
         body.push(next);
       }
-      found.push({ key: match[2], body });
+      found.push({ key: match[2], body, at: index });
     });
     return found;
+  }
+
+  /** Each step, from its `- name:` to the next one, for the questions asked per step. */
+  function steps(): { name: string; text: string }[] {
+    const starts = lines
+      .map((line, index) => ({ match: /^\s+- name: (.*)$/.exec(line), index }))
+      .filter((each) => each.match);
+    return starts.map((start, i) => ({
+      name: start.match?.[1] ?? '',
+      text: lines.slice(start.index, starts[i + 1]?.index ?? lines.length).join('\n'),
+    }));
   }
 
   /*
@@ -251,30 +365,69 @@ describe('.github/workflows/submission.yml', () => {
    * somebody extends.
    */
   it('puts no expression inside any run: or script:', () => {
-    const found = blocks();
+    const found = blocks().filter((block) => block.key !== 'if');
     expect(found.filter((block) => block.key === 'run').length).toBeGreaterThanOrEqual(5);
-    expect(found.filter((block) => block.key === 'script').length).toBeGreaterThanOrEqual(4);
+    expect(found.filter((block) => block.key === 'script').length).toBeGreaterThanOrEqual(5);
     for (const block of found) expect(block.body.join('\n')).not.toContain('${{');
   });
 
   it('never names the issue’s body, and names its title only where GitHub evaluates it', () => {
     expect(text).not.toMatch(/github\.event\.issue\.body/);
-    const titled = lines.filter((line) => line.includes('github.event.issue.title'));
-    expect(titled.length).toBeGreaterThan(0);
-    for (const line of titled) expect(line.trim()).toMatch(/^if: /);
+    const inIf = new Set(
+      blocks()
+        .filter((block) => block.key === 'if')
+        .flatMap((block) => block.body.map((_, offset) => block.at + offset)),
+    );
+    const titled = lines
+      .map((line, index) => ({ line, index }))
+      .filter(({ line }) => line.includes('github.event.issue.title'));
+    expect(titled.length).toBeGreaterThanOrEqual(2);
+    for (const { index } of titled) expect(inIf.has(index)).toBe(true);
   });
 
-  it('starts for exactly the kinds that are built', () => {
-    const gate = lines.find((line) =>
-      /^\s+if: github\.event_name == 'workflow_dispatch'/.test(line),
-    );
-    const prefixes = [
-      ...(gate ?? '').matchAll(/startsWith\(github\.event\.issue\.title, '([^']+)'\)/g),
-    ].map((match) => match[1]);
+  it('starts for exactly the kinds that are built, in both jobs and in the first step', () => {
     const built = Object.values(SUBMISSION_KINDS)
       .filter((kind) => kind.built)
-      .map((kind) => kind.prefix);
-    expect(prefixes.sort()).toEqual([...built].sort());
+      .map((kind) => kind.prefix)
+      .sort();
+    const gates = blocks().filter(
+      (block) => block.key === 'if' && block.body.join(' ').includes('startsWith('),
+    );
+    expect(gates).toHaveLength(2);
+    for (const gate of gates) {
+      const prefixes = [
+        ...gate.body.join(' ').matchAll(/startsWith\(github\.event\.issue\.title, '([^']+)'\)/g),
+      ].map((match) => match[1]);
+      expect(prefixes.sort()).toEqual(built);
+    }
+    const listed = /const PREFIXES = (\[.*\]);/.exec(text)?.[1] ?? '[]';
+    expect((JSON.parse(listed.replace(/'/g, '"')) as string[]).sort()).toEqual(built);
+  });
+
+  /*
+   * The token. An install script is code from the registry; it must not run where a token
+   * that can push is lying in `.git/config`, and only the two steps that write to GitHub as
+   * the repository get the secret.
+   */
+  it('keeps the token away from the install and gives it to the push and the pull request only', () => {
+    expect(text).toContain('persist-credentials: false');
+    expect(text).toMatch(/run: npm ci --ignore-scripts\n/);
+    const holding = steps()
+      .filter((step) => step.text.includes('secrets.SUBMISSIONS_TOKEN'))
+      .map((step) => step.name);
+    expect(holding).toEqual(['Push the branch', 'Open or update the pull request']);
+  });
+
+  it('pins every action by commit, with its version beside it', () => {
+    const uses = lines.filter((line) => /^\s+(?:- )?uses: /.test(line));
+    expect(uses.length).toBeGreaterThanOrEqual(5);
+    for (const line of uses) expect(line).toMatch(/uses: [\w.-]+\/[\w.-]+@[0-9a-f]{40} # v\d/);
+  });
+
+  it('asks a dispatch for the text it was started for, and comments on an outsider once', () => {
+    expect(text).toMatch(/body_sha256:\n\s+description: .*\n\s+required: true/);
+    expect(text).toContain("'<!-- submission:outsider -->'");
+    expect(text).toMatch(/outsider:[\s\S]*?permissions:\n\s+issues: write\n\s+steps:/);
   });
 
   it('closes the issue with the English keyword on a line of its own', () => {

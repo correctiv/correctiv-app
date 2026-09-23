@@ -116,9 +116,16 @@ export function issueAddress(repo: string, issue: Issue, help: string): IssueAdd
   return { href: base + encodeURIComponent(help), fits: false };
 }
 
-/** Which kind a title names, by its prefix, or null. Case and leading space are forgiven. */
+/**
+ * Which kind a title names, by its prefix, or null.
+ *
+ * Case is forgiven and leading space is not, which is exactly what the workflow's `if:`
+ * does: GitHub's `startsWith` ignores case and trims nothing. A reader more forgiving than
+ * the gate would accept titles the gate never lets through, and the two would disagree
+ * about which issues are submissions.
+ */
 export function kindOfTitle(title: string): SubmissionKind | null {
-  const head = title.trimStart().toLowerCase();
+  const head = title.toLowerCase();
   for (const kind of Object.keys(SUBMISSION_KINDS) as SubmissionKind[]) {
     if (head.startsWith(SUBMISSION_KINDS[kind].prefix)) return kind;
   }

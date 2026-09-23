@@ -33,7 +33,7 @@ this repository already holds a token. The Learn6502 workflow
 | --- | --- |
 | How long may a prefilled `issues/new` address be, signed out? | GitHub redirects it to `/login?return_to=` with the whole address encoded a second time. That login address answers `500` from about 7000 characters, which a JSON body reaches at an issue address of about 4650 |
 | And the issue address itself? | Answered with that redirect (`302`) up to 7000 characters, `500` at 7500 and 8000, `414` from 9000. What a signed-in person is served was not measured, since that needs a session |
-| How long is the issue for a realistic edit? | 3047 characters: a move, a switch, a pin and a new moment on the shipped document |
+| How long is the issue for a realistic edit? | 3047 characters with the document as the printer writes it, 2084 with it on one line: a move, a switch, a pin and a new moment on the shipped document. For the shipped day alone the document takes 2112 encoded characters printed and 1320 on one line, with three editions 3890 and 2420 |
 | How is `ci.yml` started? | `pull_request` of every kind, and `push` to `main` only |
 | Does a pull request opened by a workflow start it? | Not with `GITHUB_TOKEN`: GitHub starts no workflow for an event that token caused. `sources.yml` found this out and runs the gate itself for that reason |
 
@@ -74,6 +74,15 @@ reason in German on the issue:
 - a block that is not JSON, and a document `parseHomeLayout` reads with any problem at all,
   which is the same strictness as `packages/app-core/scripts/check-home-layout.ts` and for
   its reason: a problem means a document nobody meant to write;
+- a module the app cannot draw. The parser is handed the workbench's `MODULE_LABELS` keys as
+  the renderable set, which `test/preview/home-document.test.ts` holds to the app's
+  `HOME_MODULES` in both directions. The deploy's check cannot do the same, because the core
+  does not know that set (ADR 0036 §14), so this is the one place a misspelt module is caught
+  before a reader's app draws past it;
+- an id holding a line break or another control character, which the core's parser now
+  refuses everywhere with a code of its own, `id-unsafe`, reporting where it stood and never
+  what it said. No writer this repository has mints such an id, and the only use for one is
+  to smuggle lines into a place ids are printed, which §7 is about;
 - a document equal to the file, because there would be nothing to review.
 
 What it writes is the parser's reading printed by `formatLayoutDocument`, the printer the dev
@@ -92,13 +101,23 @@ without publishing a mail address.
 The pull request is titled plainly in German, "Startseite: Änderung aus Issue #n", and its
 body says in German what changes: which blocks were moved, switched, added or removed, which
 setting now holds what (a pin by the article's title), which moments and editions were added,
-changed or dropped. **The summary is derived from a diff of the two parsed documents, never
-from the issue's prose**, because the prose is whatever somebody left in it and the diff is
-what will be merged. A moved block is one outside the longest order both documents share, so
-moving one block names that block rather than every block it pushed along. Blocks are named as
-the editor names them, "Aufmacher (hero)", out of the workbench's own German catalogue.
+changed or dropped. **The summary is derived from a diff of the two parsed documents rather
+than from the issue's prose**, because the prose is whatever somebody left in it and the diff
+is what will be merged. That makes it truthful and not harmless: the document is the issue's
+text too, and every string in it that reaches the summary is treated as §7 says. A moved
+block is one outside the longest order both documents share, so moving one block names that
+block rather than every block it pushed along. Blocks are named as the editor names them, the
+module's German name out of the workbench's catalogue and the id beside it. The list is
+capped at 20,000 characters and says how many changes it left out, because GitHub refuses a
+body over 65,536 with a 422, and the security review of #252 grew a summary past that.
 `Closes #n` stands on its own line in English, because a German body closes nothing
 (AGENTS.md).
+
+**A document that parses can still empty the home screen**, and that is a document somebody
+may well mean, so it is not refused. It is shouted: the summary opens with a bold German
+warning when no block but the header and the loading notice is shown where the day starts or
+after any moment, and when fewer than half of the blocks the file had are left. The reviewer
+decides, and cannot miss that there is something to decide.
 
 ### 3. A submission's kind is its title prefix, and the kinds are a registry; strings are the second kind, named and not built
 
@@ -134,25 +153,42 @@ next step, together with ADR 0056's picker, which is what would produce the obje
 ### 4. It runs by itself for the organisation and its collaborators, and a maintainer starts it for anybody else
 
 The repository is public, so anybody can open an issue with the prefix. The workflow runs by
-itself only when the issue's author is an `OWNER`, `MEMBER` or `COLLABORATOR`. For anybody
-else it writes on the issue, in German, that a maintainer can start it, and stops. A
-maintainer starts it with the workflow's manual run and the issue's number, which is also the
-retry for a run that failed.
+itself only when the issue's author is an `OWNER`, `MEMBER` or `COLLABORATOR`, and that is
+decided in the job's `if:`, so no runner starts for anybody else. Their issue gets one
+comment, from a second job that may write comments and nothing more, saying that a maintainer
+can start it; a marker in that comment keeps a stranger who closes and reopens the issue from
+making the repository say it again.
 
-The content would be safe either way: it is parsed rather than executed, it can write one
-file, and the merge is still the lock (ADR 0058 §2). What the gate is for is that the
-workflow holds a write token and spends the organisation's CI minutes, and a public issue
-tracker should not be a way for strangers to make this repository open pull requests on
-demand. An outsider's proposal is still welcome and still reaches the same review; it waits
-for one person to say it should.
+**A maintainer starts it by hand for the text they read, not for whatever the issue says by
+then.** The manual run takes the issue's number and the SHA-256 of its body, which the
+outsider comment prints. An outsider can edit their issue between a maintainer's reading and
+the run; the run hashes the body it fetched and refuses on a mismatch, telling the issue the
+new value and asking for a second reading. The same manual run is the retry for a run that
+failed, and every refusal on the issue carries the current value for it. The first step also
+checks the title's prefix, because a manual run can name any issue.
+
+The content is not harmless merely because it is parsed rather than executed. It can write
+one file, and the merge is still the lock (ADR 0058 §2), but what it says can reach a pull
+request's body, which GitHub reads for instructions, and the seventh decision here is about that. What the gate is for is
+that the workflow holds a write token and spends the organisation's CI minutes, and a public
+issue tracker should not be a way for strangers to make this repository open pull requests or
+write comments on demand. An outsider's proposal is still welcome and still reaches the same
+review; it waits for one person to say it should.
 
 ### 5. The pull request gets CI with a token held by CI, and says so when it does not
 
 A pull request opened with `GITHUB_TOKEN` starts no workflow, so `ci.yml` would never see a
-submission. **With the secret `SUBMISSIONS_TOKEN` set**, the checkout, the push and the pull
-request use it, and `ci.yml` runs as on any pull request a person opens, including on a
-retry's force-push. The token is CI's, stored as a repository secret; the workbench never sees
-it, which is ADR 0058 §1 intact.
+submission. **With the secret `SUBMISSIONS_TOKEN` set**, the push and the pull request use it, and
+`ci.yml` runs as on any pull request a person opens, including on a retry's force-push. The
+token is CI's, stored as a repository secret; the workbench never sees it, which is ADR 0058
+§1 intact.
+
+**Only the two steps that write to GitHub as the repository get it.** The checkout keeps no
+credential in `.git/config` (`persist-credentials: false`), the push hands its token to git
+in its own step, and `npm ci` runs with `--ignore-scripts`, so no install script from the
+registry ever runs where a token that can push could be read. Measured on 2026-09-23: `tsx`,
+`oxfmt` and the core's check all run on an install made without scripts. Every action is
+pinned by commit, with its version in a comment beside it.
 
 **Without the secret** the workflow falls back to its own token, which is the state this
 record is merged in. It then runs the two checks the file it wrote can break, the core's
@@ -168,6 +204,11 @@ time and fails at an issue address of about 4650, and a person from the newsroom
 be signed in when they click. The address alone is taken to 7000. 4000 is under the lower of
 the two, with room for a longer title.
 
+The document travels **on one line**. The printer's indentation cost more than a third of the address for the shipped day (the table above), and CI prints the document again anyway, so
+what reaches the repository is formatted either way. One line of JSON is still readable to a
+maintainer deciding about an outsider's issue, which is why it is not compressed as well:
+gzip would make the issue unreadable and would need a bounded inflate in CI.
+
 Past it, the link carries the title and a German sentence in place of the body asking the
 person to paste, and the same click puts the whole body on the clipboard, as Learn6502 does.
 The panel says so before the click, in the line under the button, and afterwards says whether
@@ -179,7 +220,7 @@ document that is no longer focused.
 The documents with editions ADR 0059 plans will cross 4000 sooner than the day alone does.
 That is what the fallback is for, and it costs one paste.
 
-### 7. Nothing the issue says reaches a shell or a script as code
+### 7. Nothing the issue says reaches a shell or a script as code, or GitHub as an instruction
 
 The title and the body are text anybody can write. `${{ … }}` inside a `run:` or a `script:`
 is pasted in before the shell or the JavaScript is parsed, so a title could become code. So
@@ -189,6 +230,16 @@ the Node script reads those files, every value a step needs arrives through `env
 expression once, in the job's `if:`, which GitHub evaluates and no shell sees.
 `test/submission.test.ts` reads the workflow and holds all of it, because this is the mistake
 that looks right in review.
+
+**The pull request's body and the comments are the second place text is read as
+instructions.** GitHub closes an issue for `Closes #1` anywhere in a body, notifies a team for
+`@team`, and hides everything after `<!--`, the real `Closes` line included. The security
+review of #252 got all three through an edition's id and title. So every string out of the
+document that is printed, an id, a title, a pin, and the JSON parser's message, which quotes
+the input, goes through one function, `plain` in `apps/workbench/scripts/submission.ts`: it
+collapses every run of whitespace into one space, drops control characters, caps the length,
+swaps `#`, `@`, `<`, `>` and the backtick for look-alikes GitHub does not act on, and the
+result is printed inside a code span. The review's inputs are kept as tests.
 
 ## Why not the alternatives
 
@@ -257,4 +308,7 @@ changes works as it does" describes that record's first slice and is not false.
 3. **The strings kind** (§3), with ADR 0056's picker.
 4. **A first real run.** Nothing here was run against github.com, because opening issues on
    this repository to test it was not wanted. The steps were run locally in a throwaway clone
-   with the scripts' GitHub calls faked, and the workflow passes `actionlint`.
+   installed with `npm ci --ignore-scripts`, with the scripts' GitHub calls faked, and the
+   workflow passes `actionlint`.
+5. **The editions' days are not checked for emptiness.** §2's warning reads the day and its
+   moments; an edition that switches everything off for its span passes without one.
