@@ -21,20 +21,18 @@ export const edition: Record<string, string> = {
     'bis {until} · {changes, plural, =0 {hier ändert sich noch nichts} one {# Änderung hier} other {# Änderungen hier}}',
   'edition.momentRemove': 'Den Moment um {time} aus {edition} entfernen',
   'edition.landsOnDay': 'Änderungen landen im gewöhnlichen Tag.',
-  'edition.landsOn': 'Änderungen landen in der Ausgabe „{edition}“, nicht im gewöhnlichen Tag.',
+  'edition.landsOn': 'Änderungen landen in der Ausgabe „{edition}“.',
 
   // The edition's popover.
   'edition.details': 'Zeitraum, Titel und Löschen für {edition}',
   'edition.title': 'Titel',
-  'edition.from': 'Von (Berliner Zeit)',
-  'edition.until': 'Bis (Berliner Zeit)',
-  'edition.untilNote':
-    'Zur Minute in „Bis“ ist die Ausgabe schon vorbei. Ein Ende am oder vor dem Beginn wird nicht übernommen.',
+  'edition.from': 'Beginnt um (Berliner Zeit)',
+  'edition.until': 'Endet um (Berliner Zeit)',
   'edition.remove': 'Ausgabe löschen',
   'edition.publicWhenMerged':
-    'Eine Ausgabe ist öffentlich, sobald sie gemergt ist. Ab dann stehen ihr Zeitraum, ihr Titel und alles, was sie ändert, im offenen Repository und in jeder Kopie der App. Reichen Sie sie nicht früher ein, als sie bekannt sein darf.',
+    'Eine Ausgabe ist öffentlich, sobald sie gemergt ist; reichen Sie sie also nicht früher ein, als sie bekannt sein darf.',
   'edition.pinEarly':
-    'Ein in einer Ausgabe angehefteter Artikel ist so früh öffentlich wie die Ausgabe. Um mit einem Stück unter Sperrfrist aufzumachen, setzen Sie bei der Veröffentlichung dessen Markierung in WordPress, statt es hier anzuheften.',
+    'Ein hier angehefteter Artikel ist so früh öffentlich wie die Ausgabe; für ein Stück unter Sperrfrist nutzen Sie stattdessen seine Markierung in WordPress.',
 
   // What a block's row says about an edition (`HomeDocument.tsx`).
   'edition.decides': '{edition} bestimmt diesen Block hier',

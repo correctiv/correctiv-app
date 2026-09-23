@@ -53,7 +53,7 @@ import {
   differs,
   formatLayoutDocument,
   formatTimeOfDay,
-  inheritedFor,
+  inheritedAt,
   added,
   moduleLabel,
   moved,
@@ -65,6 +65,7 @@ import {
   settingsFor,
   SHIPPED,
   spanOf,
+  inheritedFor,
   targetAt,
   withoutMoment,
   blockName,
@@ -591,6 +592,8 @@ export function HomeDocument({
    * (ADR 0059 §2). `point` above stays the day's, which is what the day's head names.
    */
   const target = targetAt(layout, playhead.instant);
+  /* A minute of the playhead's day, in the spelling the address arrived in. */
+  const timeOf = (next: MinuteOfDay) => timeAt(playhead, next);
 
   /*
    * The width a block draws at: the phone's, always, and not the device the frame is set
@@ -637,7 +640,7 @@ export function HomeDocument({
     setCopied(false);
   }, [layout]);
 
-  const goTo = (next: MinuteOfDay) => onChange({ time: timeAt(playhead, next) });
+  const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
   /**
    * Which gap the pointer is in, by the rows' own boxes.
@@ -829,7 +832,10 @@ export function HomeDocument({
    * once what lies under an edition goes on changing through its span.
    */
   const effective = stateAtInstant(layout, playhead.instant);
-  const inherited = inheritedFor(layout, playhead.instant, target);
+  const inherited =
+    target.edition === null
+      ? inheritedAt(layout, target.point)
+      : inheritedFor(layout, playhead.instant, target);
   const edited = changedAt(layout, playhead.instant);
   const decided = decidedAt(layout, playhead.instant);
   const dirty = differs(layout);

@@ -83,7 +83,7 @@ export const EDITION_COPY = defineMessages({
   },
   landsOn: {
     id: 'edition.landsOn',
-    defaultMessage: 'Edits land on the edition “{edition}”, not on the ordinary day.',
+    defaultMessage: 'Edits land on the edition “{edition}”.',
     description:
       'Says which layer an edit in the panel writes to while an edition is running at the playhead: the narrowest one, which is the one whose word the phone shows. {edition} is its title as the newsroom wrote it, or its id where it has none.',
   },
@@ -101,22 +101,15 @@ export const EDITION_COPY = defineMessages({
   },
   from: {
     id: 'edition.from',
-    defaultMessage: 'From (Berlin time)',
+    defaultMessage: 'Starts at (Berlin time)',
     description:
       'The label of the field for the date and time the edition starts. Every time in the home document is Berlin wall-clock time, whatever the browser’s own zone is, which is why the label says so.',
   },
   until: {
     id: 'edition.until',
-    defaultMessage: 'Until (Berlin time)',
+    defaultMessage: 'Ends at (Berlin time)',
     description:
-      'The label of the field for the date and time the edition ends. Exclusive: at that minute it is over, which edition.untilNote says under the fields.',
-  },
-  untilNote: {
-    id: 'edition.untilNote',
-    defaultMessage:
-      'At the minute in Until the edition is already over. An end at or before the start is not taken.',
-    description:
-      'Under the two date fields. The second sentence is why a field can spring back: the editor never writes a span the app would refuse.',
+      'The label of the field for the date and time the edition ends. At that minute it is already over, which “ends at” says without a note. An end at or before the start is not taken, and the field springs back.',
   },
   remove: {
     id: 'edition.remove',
@@ -127,14 +120,14 @@ export const EDITION_COPY = defineMessages({
   publicWhenMerged: {
     id: 'edition.publicWhenMerged',
     defaultMessage:
-      'An edition is public as soon as it is merged: its dates, its title and what it changes are in the open repository and in every copy of the app from then on. Submit it no earlier than it may be known.',
+      'An edition is public once merged, so submit it no earlier than it may be known.',
     description:
       'A warning in the edition’s popover. The repository is public, and the private plan that would keep a dated edition out of it until shortly before it starts is not built yet, so this is the whole of the protection for now.',
   },
   pinEarly: {
     id: 'edition.pinEarly',
     defaultMessage:
-      'A pin set in an edition is public as early as the edition is. To lead with an embargoed piece, set its flag in WordPress when it is published instead of pinning it here.',
+      'A pin here is public as early as the edition; lead with an embargoed piece through its WordPress flag instead.',
     description:
       'Shown beside a pinned article inside an edition, and in the edition’s popover when it pins one. The flag is the WordPress field that makes an article lead the app, which is set at publication and so never earlier than the article itself.',
   },
@@ -390,7 +383,6 @@ function EditionDetails({
           />
         </label>
       </div>
-      <p className={NOTE}>{intl.formatMessage(EDITION_COPY.untilNote)}</p>
 
       <Warning>{intl.formatMessage(EDITION_COPY.publicWhenMerged)}</Warning>
       {pinsAnything(edition) && <Warning>{intl.formatMessage(EDITION_COPY.pinEarly)}</Warning>}
