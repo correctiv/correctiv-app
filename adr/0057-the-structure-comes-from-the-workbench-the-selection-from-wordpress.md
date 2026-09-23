@@ -128,12 +128,19 @@ today, and it is a developer tool's public host. The day the app ships from a st
 day to ask whether the document should come from correctiv.org instead, which is where the
 rest of the app's content already comes from.
 
-**What exists today is not this.** `apps/mobile/src/lib/home/layout.ts` reads a
+**The preview override is not this.** `apps/mobile/src/lib/home/layout.ts` also reads a
 `workbench:home-layout` key out of `localStorage`, written by the editor and readable only
 because the framed app and the workbench are one origin. That is a preview seam and the
 file says so. It is web-only, it survives nothing, and it is not on the path to the fetch;
 both can stand, because the fetch answers "what does a phone draw today" and the override
 answers "what would this document look like".
+
+**A cost, named rather than discovered.** GitHub Pages takes one artifact per deploy, so the
+published document ships in the same job that builds the workbench. A workbench build that
+fails therefore holds every phone on the copy it last fetched. That is the degraded case
+ADR 0036 §9 and §10 were built for and not an empty screen, but it is a dependency of the
+app's content on the workbench building, and it is the thing to remove first if the
+document ever moves to correctiv.org.
 
 ### 5. If the editor becomes a WordPress plugin, the document goes with it and the rest stays
 
