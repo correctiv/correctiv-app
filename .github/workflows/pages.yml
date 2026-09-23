@@ -149,8 +149,8 @@ jobs:
       #      and nothing behind it
       #   5. the preview bundled without the app it frames, which is a device
       #      frame around a 404
-      #   6. the home document missing or not JSON, which every installed app
-      #      fetches: the app survives it on its last copy, and says nothing
+      #   6. the home document missing or not a clean layout, which every installed
+      #      app fetches: the app survives it on its last copy, and says nothing
       - name: Assert the deployable is not silently broken
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
@@ -265,14 +265,15 @@ jobs:
             exit 1
           fi
 
-          # The home document every installed app fetches. A phone that cannot parse
-          # it keeps its last good copy, which is correct and invisible, so a broken
-          # one would stand unnoticed for as long as nobody compared a phone with the
-          # repository. JSON is enough here: the layout grammar is the app's to judge
-          # (ADR 0036 §9), and the suite already holds the shipped one to parsing clean.
-          test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing — every installed app would keep drawing its last copy."; exit 1; }
-          node -e 'JSON.parse(require("fs").readFileSync("site/home.layout.json", "utf8"))' || {
-            echo "::error::site/home.layout.json is not JSON — every installed app would refuse it."
+          # The home document every installed app fetches. A phone that cannot use it
+          # keeps its last good copy, which is correct and invisible, so a broken one
+          # would stand unnoticed for as long as nobody compared a phone with the
+          # repository. So it is judged by the core's own parser, not by JSON.parse:
+          # `{"version":2,"sections":[]}` and `null` are both JSON, and both are an
+          # empty home screen. The script is stricter than the app and says why.
+          test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
+          npx tsx packages/app-core/scripts/check-home-layout.ts site/home.layout.json || {
+            echo "::error::site/home.layout.json is not a home layout the app would draw as written; the lines above name each problem."
             exit 1
           }
 
