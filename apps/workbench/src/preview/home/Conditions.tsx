@@ -109,6 +109,13 @@ const COPY = defineMessages({
     description:
       'A switched-off option in the “Show to” list. The app admits members only, so no reader of it is not yet a member; whether that changes is an open product question.',
   },
+  stranding: {
+    id: 'conditions.stranding',
+    defaultMessage:
+      'Some audiences are off: a change here hides the other place, and without this one some readers would see neither.',
+    description:
+      'Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place.',
+  },
   locked: {
     id: 'conditions.locked',
     defaultMessage: 'The change here is for another audience. Frame a reader in it to edit it.',
@@ -141,6 +148,7 @@ export function Conditions({
   section,
   change,
   taken,
+  stranding,
   locked,
   reaches,
   onPlace,
@@ -151,6 +159,11 @@ export function Conditions({
   change: HomeChange | undefined;
   /** Audiences another change about the block at this point already has: not offered. */
   taken: ReadonlySet<Audience>;
+  /**
+   * Audiences a retarget here would leave some reader, an older app's included, with none
+   * of a block its counterpart change hides (ADR 0060 §6): not offered, and said.
+   */
+  stranding: ReadonlySet<Audience>;
   /** No change here is for the framed reader; said, and the change's control is absent. */
   locked: boolean;
   /** Whether the reader in the frame is in this block's audience. */
@@ -199,11 +212,18 @@ export function Conditions({
             className={cn(FIELD, 'w-full font-normal')}
           >
             {AUDIENCES.map((audience) => (
-              <option key={audience} value={audience} disabled={taken.has(audience)}>
+              <option
+                key={audience}
+                value={audience}
+                disabled={taken.has(audience) || stranding.has(audience)}
+              >
                 {name(audience)}
               </option>
             ))}
           </select>
+          {stranding.size > 0 && (
+            <span className={cn(NOTE, 'font-normal')}>{intl.formatMessage(COPY.stranding)}</span>
+          )}
         </label>
       )}
     </div>

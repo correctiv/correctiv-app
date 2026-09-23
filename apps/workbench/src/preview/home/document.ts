@@ -29,6 +29,8 @@ import {
 import type { IntlShape } from 'react-intl';
 
 import {
+  audienceOf,
+  AUDIENCES,
   defaultAudience,
   EVERYONE,
   READERS,
@@ -1271,17 +1273,86 @@ export function writeChangeAudience(
   audience: Audience,
   reader: Reader = ANYONE,
 ): HomeLayout {
+  if (changeHeldAt(layout, instant, id, reader) === undefined) return layout;
+  if (takenAudiences(layout, instant, id, reader).has(audience)) return layout;
+  const edited = retargeted(layout, instant, id, audience, reader);
+  return strands(layout, edited, instant, id) ? layout : edited;
+}
+
+/** The retarget itself, with no judgement of what it leaves. */
+function retargeted(
+  layout: HomeLayout,
+  instant: Instant,
+  id: string,
+  audience: Audience,
+  reader: Reader,
+): HomeLayout {
   const retarget = (change: HomeChange): HomeChange => {
     const { audience: _audience, ...rest } = change;
     return audience === EVERYONE ? rest : { ...rest, audience };
   };
-  if (changeHeldAt(layout, instant, id, reader) === undefined) return layout;
-  if (takenAudiences(layout, instant, id, reader).has(audience)) return layout;
   const target = targetAt(layout, instant);
   if (target.edition !== null) {
     return withEditionChange(layout, target.edition.id, target.point, id, reader, retarget);
   }
   return withChange(layout, target.point!, id, reader, retarget);
+}
+
+/**
+ * Whether a retarget leaves some reader with none of a module the day drew for them here,
+ * where another change at the same point hides a place of that module.
+ *
+ * That is one half of a swap made for somebody in particular: the shipped callout is two
+ * changes at 11:00, one showing the lifted place and one hiding the other, and retargeting
+ * the first to paying members left everybody else with no callout at all (review of #250).
+ * Readers of an older app are the reader in no audience, because they drop a change that
+ * names one, so they are among the readers asked; ADR 0059 §5 needs their day to stay a
+ * whole screen. A retarget that takes a module away from a reader with no counterpart hiding
+ * it is an editorial choice and is left alone.
+ */
+function strands(before: HomeLayout, after: HomeLayout, instant: Instant, id: string): boolean {
+  const modules = new Map(after.sections.map((section) => [section.id, section.module]));
+  const target = targetAt(after, instant);
+  const here = changesAtTarget(after, target);
+  return READERS.some((reader) => {
+    const drawn = (layout: HomeLayout) =>
+      new Set(
+        stateAtInstant(layout, instant, reader)
+          .filter((section) => !section.hidden && reaches(reader, audienceOf(section)))
+          .map((section) => section.module),
+      );
+    const had = drawn(before);
+    const has = drawn(after);
+    return [...had].some(
+      (module) =>
+        !has.has(module) &&
+        here.some(
+          (change) =>
+            change.id !== id &&
+            change.hidden === true &&
+            reaches(reader, change.audience) &&
+            modules.get(change.id) === module,
+        ),
+    );
+  });
+}
+
+/**
+ * The audiences a retarget of the change at this instant may not choose because it would
+ * strand one half of a swap. The popover switches those options off and says why.
+ */
+export function strandingAudiences(
+  layout: HomeLayout,
+  instant: Instant,
+  id: string,
+  reader: Reader = ANYONE,
+): ReadonlySet<Audience> {
+  if (changeHeldAt(layout, instant, id, reader) === undefined) return new Set();
+  return new Set(
+    AUDIENCES.filter((audience) =>
+      strands(layout, retargeted(layout, instant, id, audience, reader), instant, id),
+    ),
+  );
 }
 
 /** One edition replaced, in place, in the document's order. */

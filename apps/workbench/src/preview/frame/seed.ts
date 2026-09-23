@@ -372,35 +372,6 @@ export const FIXTURES: Fixture[] = [
   },
 ];
 
-/** A `Storage` that lives only in memory, for asking a fixture what it would write. */
-function scratch(): Storage {
-  const held = new Map<string, string>();
-  return {
-    get length() {
-      return held.size;
-    },
-    clear: () => held.clear(),
-    getItem: (key) => held.get(key) ?? null,
-    key: (index) => [...held.keys()][index] ?? null,
-    removeItem: (key) => void held.delete(key),
-    setItem: (key, value) => void held.set(key, String(value)),
-  };
-}
-
-/**
- * The entitlement a store holds for the app's session, or null for none or one that cannot
- * be read. Only what the home tool needs to say whose screen it is showing (ADR 0060 §4).
- */
-export function storedEntitlement(store: Storage): Entitlement | null {
-  try {
-    const raw = store.getItem(`${STATE_PREFIX}store.session`);
-    const held = raw ? (JSON.parse(raw) as { entitlement?: Entitlement | null }) : null;
-    return held?.entitlement ?? null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * The session as the app holds it in storage, as text, for a `useSyncExternalStore`.
  *
@@ -432,9 +403,9 @@ export function subscribeSession(onChange: () => void): () => void {
 }
 
 /** The stored session's text, or null for none or a store that cannot be read. */
-export function sessionSnapshot(): string | null {
+export function sessionSnapshot(store?: Storage): string | null {
   try {
-    return window.localStorage.getItem(`${STATE_PREFIX}store.session`);
+    return (store ?? window.localStorage).getItem(`${STATE_PREFIX}store.session`);
   } catch {
     return null;
   }
@@ -448,25 +419,6 @@ export function entitlementIn(text: string | null): Entitlement | null {
   } catch {
     return null;
   }
-}
-
-/**
- * The entitlement the app will find when it boots for this address.
- *
- * A named fixture answers by what it writes, asked of a scratch store rather than typed a
- * second time, so a fixture and the home tool cannot disagree about whose screen it is.
- * No fixture, or one nothing answers to, leaves the storage alone, and the answer is what
- * the storage holds — which `holdTheDoorOpen` has made the held-open member's if nothing
- * else was there.
- */
-export function entitlementFor(seed: string | null, store: Storage | null): Entitlement | null {
-  const chosen = seed === null ? undefined : FIXTURES.find((f) => f.id === seed);
-  if (chosen) {
-    const written = scratch();
-    chosen.write(written);
-    return storedEntitlement(written);
-  }
-  return store ? storedEntitlement(store) : null;
 }
 
 /**

@@ -13,6 +13,7 @@ import {
 } from '../src/lib/home-audience';
 import {
   changesAt,
+  homeLayoutDocument,
   HOME_LAYOUT_VERSION,
   parseHomeLayout,
   sectionsAt,
@@ -23,6 +24,7 @@ import {
 import { simulatedEntitlement } from '../src/services/auth.service';
 import type { Entitlement, MembershipTier } from '../src/types/models';
 import * as v2 from './__fixtures__/home-layout-v2';
+import * as v3 from './__fixtures__/home-layout-v3';
 
 /**
  * Who a place and a change are for (ADR 0060, carrying out ADR 0041).
@@ -352,5 +354,72 @@ describe('a document with audiences, read by an app that knows none', () => {
       'hero',
       'club',
     ]);
+  });
+});
+
+/**
+ * The same questions against the parser `main` shipped the day before audiences, which
+ * reads editions (review of #250, second round, item 2). The version 2 fixture above cannot
+ * say what a version 3 app does with an audience inside an edition.
+ */
+describe('a document with audiences, read by the version 3 app', () => {
+  const planned = {
+    version: HOME_LAYOUT_VERSION,
+    sections: [
+      { id: 'hero', module: 'article-hero' },
+      { id: 'club', module: 'backstage-teaser' },
+    ],
+    audiences: { club: 'paying-members', hero: 'everyone' },
+    moments: [{ at: '18:00', changes: [{ id: 'hero', audience: 'paying-members', hidden: true }] }],
+    editions: [
+      {
+        id: 'wahl',
+        from: '2026-09-27T18:00',
+        until: '2026-09-28T02:00',
+        changes: [
+          { id: 'club', audience: 'free-members', hidden: true },
+          { id: 'hero', settings: { pin: 'https://wahl/' } },
+        ],
+      },
+    ],
+  };
+
+  it('never sees the audiences map, and reports nothing but the number for it', () => {
+    const parse = v3.parseHomeLayout({ ...planned, moments: [], editions: [] });
+    expect(parse.problems.map((problem) => problem.code)).toEqual(['version-unknown']);
+    expect(parse.layout?.sections.map((section) => section.id)).toEqual(['hero', 'club']);
+  });
+
+  it('drops a change naming an audience, in the day and in an edition, and keeps the rest', () => {
+    const parse = v3.parseHomeLayout(planned);
+    expect(parse.problems).toEqual([
+      { code: 'version-unknown', context: { version: HOME_LAYOUT_VERSION, expected: 3 } },
+      { code: 'change-unknown-key', context: { at: '18:00', id: 'hero', key: 'audience' } },
+      { code: 'change-unknown-key', context: { edition: 'wahl', id: 'club', key: 'audience' } },
+    ]);
+    const night = berlinInstant('2026-09-27', 20 * 60)!;
+    const drawn = v3.stateAtInstant(parse.layout!, night);
+    expect(drawn.map((section) => [section.id, section.hidden ?? false])).toEqual([
+      ['hero', false],
+      ['club', false],
+    ]);
+    expect(drawn[0]?.settings?.pin).toBe('https://wahl/');
+  });
+
+  it('draws the shipped document exactly as the version 3 document it was', () => {
+    const now = v3.parseHomeLayout(homeLayoutDocument);
+    const before = v3.parseHomeLayout({ ...homeLayoutDocument, version: 3 });
+    expect(now.problems.map((problem) => problem.code)).toEqual(['version-unknown']);
+    expect(before.problems).toEqual([]);
+    for (let minute = 0; minute < 24 * 60; minute += 5) {
+      const instant = berlinInstant('2026-09-03', minute)!;
+      expect(v3.sectionsAtInstant(now.layout!, instant)).toEqual(
+        v3.sectionsAtInstant(before.layout!, instant),
+      );
+      // And for a paying member this app draws what the version 3 app draws.
+      expect(sectionsAtInstant(read(homeLayoutDocument), instant, PAYING)).toEqual(
+        v3.sectionsAtInstant(now.layout!, instant),
+      );
+    }
   });
 });

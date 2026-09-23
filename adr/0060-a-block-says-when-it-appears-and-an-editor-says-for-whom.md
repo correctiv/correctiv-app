@@ -179,15 +179,27 @@ first version of this record wrote the audience inside the section, and a versio
 a section carrying a key it does not know (ADR 0039 §6): one word, `everyone` on the
 early-access card to take its default off, removed the card for every reader of an older app,
 and on a callout the callout. Measured in review on 2026-09-23 against the frozen version 2
-parser, which has the same rule. The cost of the map is that a place's declaration is written
-in two parts of the file, which ADR 0039 §2 refused for a place's starting state; a filter is
-not state, and losing blocks is the worse trade.
+parser, which has the same rule, and held since against the version 3 parser itself, frozen
+beside it. The cost of the map is that what is written about one place is in two parts of the
+file. That does not touch ADR 0039 §2, which refused a place's starting state living inside a
+moment, where it could be moved or deleted; a map beside `sections` is a sibling of them, as
+editions are (ADR 0059 §3), and a filter is not state.
 
 **A change carrying `audience` is dropped by an older app**, by the same rule for an unknown
 key. The place keeps what it inherited, which is a state somebody chose for everybody: an
 older app shows every reader the day as it is for everyone, and ADR 0041's pair reaches
 neither of its audiences there. That is the cost that stands, and the editor writes the key
 only where a change is for somebody in particular; `everyone` is the key's absence.
+
+**What the editor refuses for it.** The day for everyone is also every older app's day, and
+ADR 0059 §5 needs it to stay a whole screen. The shipped callout is a swap, two changes at
+11:00, one showing the lifted place and one hiding the other; retargeting only the first to
+paying members leaves everybody else, and every older app, with neither callout, because the
+hiding half still applies to them and the showing half no longer does. So the editor refuses
+a retarget that leaves some reader, the reader in no audience included, with none of a block
+that another change at the same point hides, and the popover switches those audiences off
+and says why. That holds the swap and nothing wider: a document written by hand can still
+build one, and the fold draws it as written.
 
 **An audience this app has no rule for** costs the least that carries it. In `audiences` it
 is the one entry, and the place is drawn as its module would draw it, which is what an older
@@ -238,6 +250,9 @@ A block with a condition of its own now says the condition instead (§1).
 
 Read and deliberately left standing:
 
+- **ADR 0039 §2, that a place's starting state is the document and not a moment.** The
+  `audiences` map sits beside `sections` and inside no moment, so it is the rule kept, as
+  editions keep it.
 - **ADR 0041 §4's `sectionsAt(layout, minute, audience)`.** The third argument is a set of
   audiences rather than one, and the call is `sectionsAtInstant` since ADR 0059. The decision
   the sentence carries, that the core holds no session, is what §4 above builds.

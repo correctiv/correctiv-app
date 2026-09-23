@@ -82,6 +82,7 @@ import {
   settingsFor,
   SHIPPED,
   spanOf,
+  strandingAudiences,
   takenAudiences,
   inheritedFor,
   targetAt,
@@ -1189,6 +1190,7 @@ export function HomeDocument({
               locked={!editableAt(layout, playhead.instant, section.id, reader)}
               change={changeHeldAt(layout, playhead.instant, section.id, reader)}
               taken={takenAudiences(layout, playhead.instant, section.id, reader)}
+              stranding={strandingAudiences(layout, playhead.instant, section.id, reader)}
               onAudience={(audience) => setLayout(withAudience(layout, section.id, audience))}
               onChangeAudience={(audience) =>
                 setLayout(
@@ -1404,6 +1406,7 @@ function Row({
   locked,
   change,
   taken,
+  stranding,
   onAudience,
   onChangeAudience,
   onRemove,
@@ -1447,6 +1450,8 @@ function Row({
   change: HomeChange | undefined;
   /** The audiences other changes about the block at this point already carry. */
   taken: ReadonlySet<Audience>;
+  /** The audiences a retarget here would strand one half of a swap with. */
+  stranding: ReadonlySet<Audience>;
   /** Who the block is for, all day. */
   onAudience: (audience: Audience) => void;
   /** Who the change at the playhead is for. */
@@ -1898,6 +1903,7 @@ function Row({
             section={section}
             change={change}
             taken={taken}
+            stranding={stranding}
             locked={locked}
             reaches={forReader}
             onPlace={onAudience}

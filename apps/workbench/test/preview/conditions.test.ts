@@ -31,10 +31,16 @@ import {
   writeChangeAudience,
   writeHidden,
   writeSetting,
+  strandingAudiences,
 } from '../../src/preview/home/document';
-import { entitlementFor, FIXTURES } from '../../src/preview/frame/seed';
-// The frozen version 2 parser, which reads unknown keys the way a version 3 app does.
-import * as older from '../../../../packages/app-core/test/__fixtures__/home-layout-v2';
+import {
+  applyFixture,
+  entitlementIn,
+  FIXTURES,
+  sessionSnapshot,
+} from '../../src/preview/frame/seed';
+// The parser `main` shipped before audiences, frozen: what a version 3 app does.
+import * as older from '../../../../packages/app-core/test/__fixtures__/home-layout-v3';
 
 /**
  * When a block appears and for whom, as the configurator shows and writes it (ADR 0060).
@@ -155,11 +161,29 @@ describe('who a block is for, as the editor writes it', () => {
     expect(changeHeldAt(back, DAY(15), 'mediathek')).toEqual({ id: 'mediathek', hidden: false });
   });
 
+  it('breaks a map of twelve audiences across lines, one place to a line', () => {
+    const every = SHIPPED.sections.reduce(
+      (layout, section, index) =>
+        withAudience(layout, section.id, index % 2 === 0 ? 'paying-members' : 'free-members'),
+      SHIPPED,
+    );
+    expect(every.sections.every((section) => section.audience !== undefined)).toBe(true);
+    const printed = formatLayoutDocument(every);
+    expect(printed).toMatch(/"audiences": \{\n/);
+    expect(oxfmt(printed)).toBe(printed);
+  });
+
   it('prints what oxfmt would print, with audiences on sections and on changes', () => {
     const lifted = withMoment(SHIPPED, AT(6, 30));
     const cases: HomeLayout[] = [
       withAudience(SHIPPED, 'backstage', 'paying-members'),
       withAudience(SHIPPED, 'early-access', 'everyone'),
+      // Every place given an audience: a map of twelve entries, which has to break.
+      SHIPPED.sections.reduce(
+        (layout, section, index) =>
+          withAudience(layout, section.id, index % 2 === 0 ? 'paying-members' : 'free-members'),
+        SHIPPED,
+      ),
       writeChangeAudience(
         withHidden(SHIPPED, AT(11), 'mediathek', true),
         DAY(12),
@@ -189,36 +213,61 @@ describe('who a block is for, as the editor writes it', () => {
 });
 
 describe('whose screen the preview shows', () => {
-  it('reads the reader off the fixture in the address, by what the fixture writes', () => {
-    expect(entitlementFor('onboarded', null)?.tier).toBe('paid');
-    expect(entitlementFor('free-member', null)).toMatchObject({
-      tier: 'free',
-      appAccess: true,
-      source: 'local-bundle',
-    });
-    expect(entitlementFor('fresh', null)).toBeNull();
+  /** A `Storage` in memory, which is what a fixture writes into and the tool reads out of. */
+  const memory = (): Storage => {
+    const held = new Map<string, string>();
+    return {
+      get length() {
+        return held.size;
+      },
+      clear: () => held.clear(),
+      getItem: (key) => held.get(key) ?? null,
+      key: (index) => [...held.keys()][index] ?? null,
+      removeItem: (key) => void held.delete(key),
+      setItem: (key, value) => void held.set(key, String(value)),
+    };
+  };
+  /** The entitlement the tool reads after a fixture is applied: the UI's own path. */
+  const after = (id: string) => {
+    const store = memory();
+    applyFixture(store, id);
+    return entitlementIn(sessionSnapshot(store));
+  };
+
+  it('reads, for every fixture, the entitlement the fixture wrote', () => {
+    for (const fixture of FIXTURES) {
+      const store = memory();
+      fixture.write(store);
+      const raw = store.getItem(`correctiv.state\\store.session`);
+      const written = raw === null ? null : (JSON.parse(raw).entitlement ?? null);
+      expect({ id: fixture.id, read: after(fixture.id) }).toEqual({
+        id: fixture.id,
+        read: written,
+      });
+    }
+    expect(after('fresh')).toBeNull();
   });
 
   it('puts the two fixtures in different audiences, which is what previewing one is', () => {
-    const paying = readerOf(entitlementFor('onboarded', null));
-    const free = readerOf(entitlementFor('free-member', null));
+    expect(after('free-member')).toMatchObject({ tier: 'free', source: 'local-bundle' });
+    const paying = readerOf(after('onboarded'));
+    const free = readerOf(after('free-member'));
     expect(paying.has('paying-members')).toBe(true);
     expect(free.has('free-members')).toBe(true);
     expect(free.has('paying-members')).toBe(false);
     expect(readerOf(member('soli')).has('paying-members')).toBe(true);
   });
 
-  it('falls back to what the app will find in storage when no fixture is named', () => {
-    const store = new Map<string, string>();
-    const storage = {
-      getItem: (key: string) => store.get(key) ?? null,
+  it('reads nothing out of a session it cannot parse, or a store it cannot reach', () => {
+    const store = memory();
+    store.setItem('correctiv.state\\store.session', '{not json');
+    expect(entitlementIn(sessionSnapshot(store))).toBeNull();
+    const refusing = {
+      getItem: () => {
+        throw new Error('SecurityError');
+      },
     } as unknown as Storage;
-    expect(entitlementFor(null, storage)).toBeNull();
-    FIXTURES.find((fixture) => fixture.id === 'free-member')!.write({
-      setItem: (key: string, value: string) => store.set(key, value),
-    } as unknown as Storage);
-    expect(entitlementFor(null, storage)?.tier).toBe('free');
-    expect(entitlementFor('no-such-fixture', storage)?.tier).toBe('free');
+    expect(sessionSnapshot(refusing)).toBeNull();
   });
 });
 
@@ -301,7 +350,10 @@ describe('what an older app does with what the editor writes', () => {
       expect(read.layout?.sections.map((section) => section.id)).toContain('early-access');
     }
     const callout = formatLayoutDocument(withAudience(SHIPPED, 'callout', 'paying-members'));
-    const drawn = older.sectionsAt(older.parseHomeLayout(JSON.parse(callout)).layout!, AT(9));
+    const drawn = older.sectionsAtInstant(
+      older.parseHomeLayout(JSON.parse(callout)).layout!,
+      DAY(9),
+    );
     expect(drawn.map((section) => section.id)).toContain('callout');
   });
 
@@ -311,5 +363,47 @@ describe('what an older app does with what the editor writes', () => {
     expect(back.problems).toEqual([]);
     const ids = sectionsAtInstant(back.layout!, DAY(9), FREE).map((section) => section.id);
     expect(ids).toContain('early-access');
+  });
+});
+
+/**
+ * The review of #250, second round, item 1. The shipped callout swap is two changes at
+ * 11:00, one showing the lifted callout and one hiding the other. Retargeting the first to
+ * paying members left everybody else, and every reader of an older app, which drops the
+ * change, with no callout at all.
+ */
+describe('a retarget that would strand one half of a swap', () => {
+  const ELEVEN = DAY(12);
+  const callouts = (layout: HomeLayout, reader: ReturnType<typeof readerOf>) =>
+    sectionsAtInstant(layout, ELEVEN, reader)
+      .filter((section) => section.module === 'callout-teaser')
+      .map((section) => section.id);
+
+  it('is refused, so every reader still gets one callout at eleven', () => {
+    const edited = writeChangeAudience(SHIPPED, ELEVEN, 'callout-lifted', 'paying-members');
+    expect(edited).toBe(SHIPPED);
+    for (const reader of [readerOf(null), FREE, PAYING]) {
+      expect(callouts(edited, reader)).toHaveLength(1);
+    }
+    expect(strandingAudiences(SHIPPED, ELEVEN, 'callout-lifted').has('paying-members')).toBe(true);
+  });
+
+  it('is refused inside an edition too', () => {
+    const made = withEdition(SHIPPED, '2026-09-27', AT(18));
+    const saturday = berlinInstant('2026-09-27', AT(19))!;
+    const swapped = writeHidden(
+      writeHidden(made.layout, saturday, 'callout-lifted', false),
+      saturday,
+      'callout',
+      true,
+    );
+    expect(writeChangeAudience(swapped, saturday, 'callout-lifted', 'free-members')).toBe(swapped);
+  });
+
+  it('still allows a retarget that takes nothing away from anybody', () => {
+    // Hiding the other callout only for paying members leaves everybody else with it.
+    const edited = writeChangeAudience(SHIPPED, ELEVEN, 'callout', 'paying-members');
+    expect(edited).not.toBe(SHIPPED);
+    expect(strandingAudiences(SHIPPED, ELEVEN, 'callout').size).toBe(0);
   });
 });

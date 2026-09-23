@@ -241,6 +241,10 @@
     "defaultMessage": "Show to",
     "description": "The label of the control that says who a block is for, all day."
   },
+  "conditions.stranding": {
+    "defaultMessage": "Some audiences are off: a change here hides the other place, and without this one some readers would see neither.",
+    "description": "Under the “This change applies to” list. The change belongs to a swap of two places at the same time; making it apply to only some readers would leave the others, and readers of older app versions, with neither place."
+  },
   "coreAndHost.adapter": {
     "defaultMessage": "<muted>adapter </muted><file>lib/platform/expo.ts</file><muted> and </muted><file>lib/audio/backend.ts</file><muted>, the whole cost of adding a host</muted>",
     "description": "The band across the top of the host’s box, centred. <file> marks a repository path in monospace, which stays as it is written; <muted> is the quieter type around the two paths."
