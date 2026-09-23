@@ -526,5 +526,30 @@
       ],
       "8": ["Saving edits the file through its syntax tree, and the validator is the placeholders"]
     }
+  },
+  "0057": {
+    "slugs": ["the-structure-comes-from-the-workbench-the-selection-from-wordpress"],
+    "decisions": {
+      "1": ["The workbench stays the editor, and the condition to leave it is named"],
+      "2": ["The document holds structure; it never holds an article"],
+      "3": ["A flag has to be answerable by a query, not merely present"],
+      "4": ["The document is published as a file beside the app, and the app fetches one constant"],
+      "5": [
+        "If the editor becomes a WordPress plugin, the document goes with it and the rest stays"
+      ]
+    }
+  },
+  "0058": {
+    "slugs": ["the-workbench-holds-no-power-and-github-is-who-you-are"],
+    "decisions": {
+      "1": ["The workbench holds no credential and performs no authorised write"],
+      "2": ["\"Submit changes\" copies the document and opens GitHub's editor for the file"],
+      "3": [
+        "GitHub is the identity and permission system, and an account per person is the price of running none"
+      ],
+      "4": ["The open repository is complete, and the private companion is optional"],
+      "5": ["What may go into the companion, and what never"],
+      "6": ["The open repository reaches the companion by a fetch in CI, not by a submodule"]
+    }
   }
 }

@@ -245,8 +245,10 @@ The shape the sources job has had since [#114](https://github.com/faktenforum/co
 a job measures something, writes a file, opens a pull request with what moved. Versioned,
 reviewable, revertible, no new infrastructure.
 
-This is the answer *while the configurator is ours*. It is not the answer for the newsroom,
-and that is the open question.
+This is the answer *while the configurator is ours*. ~~It is not the answer for the newsroom,
+and that is the open question.~~ It is, once each editor has a GitHub account and opens the
+pull request themselves: [ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md)
+§2 and §3.
 
 ### 16. Offline media downloads are a later decision
 
@@ -257,8 +259,12 @@ its own. Out of scope here so the rest can be built.
 ## What is still open
 
 **Where the configuration lives in production, and who may write it.** Every other question
-closed. This one depends on the source decision `SOURCES.md` carries: what serves the app's
-content decides what can serve its layout, and by whom.
+closed. ~~This one depends on the source decision `SOURCES.md` carries: what serves the app's
+content decides what can serve its layout, and by whom.~~ It did not:
+[ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md)
+decides the layout's home without that decision, by splitting the question in two. What
+does depend on the content source is which article a place shows, and that half is
+WordPress's by ADR 0057 §2.
 
 §15 is the answer for as long as we are the ones editing. §1 is what keeps that from
 becoming permanent by accident.

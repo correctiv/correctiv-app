@@ -330,9 +330,11 @@ its one slot.
 
 ## What is still open
 
-**Where the configuration lives in production, and who may write it** — unchanged, and
-still [ADR 0036](0036-the-home-screen-becomes-data.md)'s open question. This record makes
-the document more expressive and does not touch where it is served from.
+**Where the configuration lives in production, and who may write it** — ~~unchanged, and
+still [ADR 0036](0036-the-home-screen-becomes-data.md)'s open question~~, answered by
+[ADR 0057](0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md) §1
+and §4 and by [ADR 0058](0058-the-workbench-holds-no-power-and-github-is-who-you-are.md) §2.
+This record makes the document more expressive and does not touch where it is served from.
 
 **Whether a day is enough.** Everything here repeats every twenty-four hours. A weekend
 edition, a moment that fires once on an election night, a block that appears for three
