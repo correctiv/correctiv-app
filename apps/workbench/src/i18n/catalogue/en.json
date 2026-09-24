@@ -905,6 +905,26 @@
     "defaultMessage": "A program writes this page: <fileLink>{file}</fileLink> in the repository. It runs when the site is built, so there is nothing here to edit.",
     "description": "The line at the foot of the one document that is generated rather than read. {file} is the path of the PROGRAM and is not translated; <fileLink> is the link to it. document.source offers every other document as a file to edit, and offering this one would be an invitation to type into an output."
   },
+  "draft.active": {
+    "defaultMessage": "Draft active",
+    "description": "The badge on the draft marker, shown beside the device frame while a string or the home layout holds an unpublished edit in this browser."
+  },
+  "draft.discardLayout": {
+    "defaultMessage": "Discard home screen",
+    "description": "Button on the draft marker. The same action as “Discard changes” in the home tool (home.document.revert): puts the home document back to the shipped file."
+  },
+  "draft.discardStrings": {
+    "defaultMessage": "Discard texts",
+    "description": "Button on the draft marker. The same action as “Discard all” in the strings tool (tools.strings.discard): puts every edited German wording back to the catalogue."
+  },
+  "draft.layoutChanged": {
+    "defaultMessage": "home screen changed",
+    "description": "Part of the draft marker’s sentence: the home document differs from the file the app ships. home.document.changed is the same word inside the home tool."
+  },
+  "draft.stringsChanged": {
+    "defaultMessage": "{count, plural, one {# text changed} other {# texts changed}}",
+    "description": "Part of the draft marker’s sentence: how many app strings have an edited German wording in this browser. {count} is that number, drawn inline by the plural rule. tools.strings.changes counts the same thing inside the strings tool and reads the same in English."
+  },
   "drawing.failed": {
     "defaultMessage": "Did not render: {message}",
     "description": "Stands where a component of the app should have been drawn, on a surface of this site, after that component threw. {message} is the error’s own message out of the app’s source and is not translated."

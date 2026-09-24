@@ -13,7 +13,7 @@ import { InfoTip } from '../../ui/kit/info-tip';
 import type { Status } from '../api';
 import { copyNow } from '../clipboard';
 import type { Pick } from '../frame/locate';
-import { publishable, publishDraft, restoreDraft, type Draft } from './draft';
+import { DRAFT_DISCARD_EVENT, publishable, publishDraft, restoreDraft, type Draft } from './draft';
 import { buildIndex, resolve, type Resolution } from './match';
 import { EDITED_LOCALE } from './names';
 import { problemText } from './problems';
@@ -331,6 +331,18 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   useEffect(() => {
     if (copied === 'no-clipboard') copyField.current?.focus();
   }, [copied]);
+
+  /*
+   * "Alle verwerfen", asked for from outside this panel: the draft marker beside the
+   * frame reuses this exact action rather than clearing `workbench:strings` on its own,
+   * which would leave this state holding the same wordings and publishing them right
+   * back on the next keystroke.
+   */
+  useEffect(() => {
+    const onDiscard = () => setDraft({});
+    window.addEventListener(DRAFT_DISCARD_EVENT, onDiscard);
+    return () => window.removeEventListener(DRAFT_DISCARD_EVENT, onDiscard);
+  }, []);
 
   const live = useMemo(
     () => publishable(draft, baseline, (id) => BY_ID.get(id)?.english),

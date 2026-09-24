@@ -310,6 +310,7 @@ export const en: Record<string, string> = {
   "settings.textSize.section": "Text size",
   "settings.title": "Settings",
   "ui.back": "Back",
+  "ui.previewDraft": "Preview draft, not the published app",
   "ui.tabDiscover": "Discover",
   "ui.tabHome": "Home",
   "ui.tabMediathek": "Mediathek",

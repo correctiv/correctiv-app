@@ -983,6 +983,10 @@
     "defaultMessage": "Back",
     "description": "The way back out of a screen, in the header. form.back is the same word inside the participation form, where it steps back one page rather than leaving."
   },
+  "ui.previewDraft": {
+    "defaultMessage": "Preview draft, not the published app",
+    "description": "A small, non-interactive marker shown only on the web target, only while a workbench draft (an edited string or an edited home screen) is active in this browser. It never appears in a native build or in the published app with no draft set."
+  },
   "ui.tabDiscover": {
     "defaultMessage": "Discover",
     "description": "A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens."

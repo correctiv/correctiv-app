@@ -9,4 +9,5 @@ export const ui: Record<string, string> = {
   'ui.tabMediathek': 'Mediathek',
   'ui.tabParticipate': 'Mitmachen',
   'ui.tabProfile': 'Profil',
+  'ui.previewDraft': 'Entwurfsvorschau, nicht die veröffentlichte App',
 };

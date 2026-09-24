@@ -37,6 +37,7 @@ import {
 import { LoginGate } from '@/components/gate/LoginGate';
 import { RecoveryScreen } from '@/components/recovery/RecoveryScreen';
 import { expoAudio } from '@/lib/audio/backend';
+import { DraftMarker } from '@/lib/draftMarker';
 import { useHomeLayoutRefresh } from '@/lib/home/layout';
 import { stop as stopAudio } from '@/lib/audio/player';
 // Everything a component of this app needs around it before it draws: the
@@ -321,6 +322,13 @@ function AppShell() {
       {/* Explicit rather than "auto": auto follows the device, and the app's
           appearance setting may deliberately disagree with it. */}
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      {/*
+        Beside the routes rather than inside one, so it is on screen whichever the
+        door shows — the gate carries a draft's edited copy as much as any other
+        screen does. `DraftMarker` renders nothing of its own while no override
+        actually changes anything, on a phone always.
+      */}
+      <DraftMarker />
       {admitted ? (
         <Stack
           screenOptions={{
