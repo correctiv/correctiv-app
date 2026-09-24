@@ -189,9 +189,7 @@ export function buildReaderHtml(
     .join('');
   const styles = css.length > 0 ? `<style>${css.join('\n')}</style>` : '';
 
-  const hero = article.heroImageUrl
-    ? `<figure class="hero"><img src="${escapeHtml(article.heroImageUrl)}" alt=""></figure>`
-    : '';
+  const hero = heroHtml(article);
 
   /**
    * A fact check announces itself; everything else shows its section.
@@ -278,6 +276,50 @@ ${footer}
 }
 
 /**
+ * The picture above the headline: the hero image, or a video that stands in for it.
+ *
+ * The video does what correctiv.org's own `cvui/header-post` does with the same
+ * file: it plays on its own, muted, looping, inline and with no controls, so it is
+ * a picture that moves rather than something to watch. Each of those attributes
+ * is required somewhere: WebKit plays nothing inline that is not both `muted` and
+ * `playsinline`, and the host's WebView has to allow media to start without a tap.
+ * `aria-hidden` because it says nothing the image's empty `alt` does not.
+ *
+ * The image stays, as the `poster` until the first frame arrives and as the still
+ * that replaces the video for a reader who asked the system for less motion. That
+ * swap is CSS in `READER_LAYOUT_CSS`, since the document carries no script. The
+ * `media` on the `<source>` is the half that saves the download: Chromium honours
+ * it and picks no source under reduced motion (an empty `currentSrc`, measured on
+ * 2026-09-24), and a WebView that does not plays the video hidden, which costs
+ * bytes and not motion. Without an image there is no still to fall back to, and a reader who
+ * asked for less motion then gets no hero at all rather than a moving one.
+ *
+ * A document with scripting disabled gets its video's controls whether it asked for
+ * them or not, which is the HTML standard's rule, and the same state keeps
+ * `autoplay` from starting anything. Measured in Chromium on 2026-09-24: in
+ * `sandbox="allow-same-origin"` the video stayed paused behind its poster with a
+ * play bar across it, even with the browser's autoplay policy switched off. That
+ * was the web target's frame until ADR 0065 §5 gave it `allow-scripts` for the
+ * embeds, and measured the same day in the web export, the hero now plays there
+ * too, without controls. The document still runs no script of its own: its policy
+ * is `script-src 'none'`, and scripting being ENABLED is what the video rule reads.
+ * `READER_LAYOUT_CSS` keeps hiding forced controls and taking the pointer off the
+ * video, for a host whose frame has scripting off. The native WebViews play it.
+ */
+function heroHtml(article: Article): string {
+  const image = article.heroImageUrl ? escapeHtml(article.heroImageUrl) : '';
+  const img = image ? `<img src="${image}" alt="">` : '';
+  if (!article.heroVideoUrl) return img ? `<figure class="hero">${img}</figure>` : '';
+  const poster = image ? ` poster="${image}"` : '';
+  return (
+    `<figure class="hero hero--video">` +
+    `<video autoplay muted loop playsinline aria-hidden="true"${poster}>` +
+    `<source src="${escapeHtml(article.heroVideoUrl)}" media="(prefers-reduced-motion: no-preference)">` +
+    `</video>${img}</figure>`
+  );
+}
+
+/**
  * The reader's layout, written against the generated `--var-*` design tokens.
  *
  * For hosts that ship no reader stylesheet of their own. Every value comes from a
@@ -301,8 +343,12 @@ body{background:var(--var-color-canvas);color:var(--var-color-on-canvas);
   font-family:'Merriweather',Georgia,serif}
 article{max-width:38.75rem;margin:0 auto;padding-bottom:var(--var-spacing-3xl)}
 .hero{display:block;margin:0 0 var(--var-spacing-m)}
-.hero img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;
+.hero img,.hero video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;
   background:var(--var-color-surface)}
+.hero--video img{display:none}
+.hero video{pointer-events:none}
+.hero video::-webkit-media-controls{display:none!important}
+@media (prefers-reduced-motion: reduce){.hero--video video{display:none}.hero--video img{display:block}}
 .reader-header{padding:0 var(--var-spacing-m)}
 .badge{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:0.6875rem;
   letter-spacing:.4px;text-transform:uppercase;color:var(--var-color-white);
@@ -369,6 +415,16 @@ h1{font-family:'Merriweather',Georgia,serif;font-weight:700;font-size:var(--var-
   line-height:var(--var-leading-snug);letter-spacing:0;color:var(--var-color-on-canvas-accent)}
 .reader-body .embed-fallback::after{content:' \\2197'}
 .reader-body .embed-fallback--article::after{content:' \\2192'}
+/* An accordion from the site's cvui/interactive-list, rebuilt as <details> by
+   articles/blocks.ts, so it opens without a script. The disclosure triangle is the
+   browser's own and follows the text colour. */
+.reader-body details{margin:var(--var-spacing-m) 0;background:var(--var-color-surface);
+  border-radius:var(--var-radius-md)}
+.reader-body summary{font-family:'SourceSans3',sans-serif;font-weight:700;
+  font-size:var(--var-font-size-headline-s);line-height:var(--var-leading-snug);
+  padding:var(--var-spacing-s) var(--var-spacing-m);cursor:pointer}
+.reader-body details>:not(summary){margin-left:var(--var-spacing-m);margin-right:var(--var-spacing-m)}
+.reader-body details[open]{padding-bottom:var(--var-spacing-2xs)}
 .reader-footer{margin:var(--var-spacing-xl) var(--var-spacing-m) 0;
   background:var(--var-color-surface);border-radius:var(--var-radius-md);
   padding:var(--var-spacing-l);text-align:center}

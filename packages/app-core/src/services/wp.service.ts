@@ -34,6 +34,7 @@
  * per post instead, which is why this reads it there.
  */
 
+import { applyBlockRules, articleBlockRules, headerPostOf } from '../articles/blocks';
 import { rewriteEmbeds } from '../articles/embeds';
 import { estimateReadingMinutes } from '../articles/page-meta';
 import { ratingFromInterpretation } from '../articles/rating';
@@ -285,17 +286,24 @@ export function toFeedItem(post: WpPost, feed: FeedKey): FeedItem {
 /** A post as a fully extracted article, ready for `buildReaderHtml`. */
 export function toArticle(post: WpPost): ExtractedArticle {
   const body = post.content?.rendered ?? '';
+  // The block's byline names every author and Yoast's names one; see `headerPostOf`.
+  const headerPost = headerPostOf(body);
+  const yoast = author(post);
   return {
     title: plainText(post.title?.rendered ?? ''),
     kicker: text(post.acf?.['post::topline']) || undefined,
     excerpt: excerpt(post) || undefined,
-    authors: author(post) ? [author(post) as string] : [],
+    authors: headerPost.authors.length > 0 ? headerPost.authors : yoast ? [yoast] : [],
     publishedAt: isoFromGmt(post.date_gmt, ''),
     readingMinutes: readingMinutes(post) ?? estimateReadingMinutes(stripTags(body)),
     // `list` (706 px) and not `widget-post` (2560): the reader is a phone-width
     // WebView, and the offline generator already settled on 640 as enough.
     heroImageUrl: wpImage(post, 'list') ?? undefined,
-    bodyHtml: sanitizeArticleHtml(rewriteEmbeds(body)),
+    heroVideoUrl: headerPost.videoUrl,
+    // The same block table the page path reads (`articles/blocks.ts`), under the
+    // default ad prefix, because a REST body has no `<body>` to declare its own;
+    // then the embeds, before the cleaner would drop their frames.
+    bodyHtml: sanitizeArticleHtml(rewriteEmbeds(applyBlockRules(body, articleBlockRules()))),
     rating: ratingFromInterpretation(interpretation(post)),
   };
 }

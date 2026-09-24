@@ -122,6 +122,10 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
        *   allow-scripts also lifts the sandbox's block on a `<meta>` refresh, and a
        *   refresh to a page on this origin was exactly that document (ADR 0065 §7).
        *   Adding allow-scripts without both would be the old mistake.
+       * - allow-scripts also turns scripting on for the document as far as the
+       *   HTML video rules are concerned, so the hero video autoplays here as it
+       *   does on the phone, without the controls a frame with scripting off
+       *   forces on (measured 2026-09-24; `heroHtml` in the core's reader-html.ts).
        * - No allow-top-navigation is wanted either: every real link is routed by
        *   onNavigate, so the article must not be able to navigate the app away,
        *   and an embed inherits the same refusal.

@@ -36,11 +36,17 @@ export function decodeEntities(s: string): string {
     .replace(/&#8230;|&hellip;/g, '…');
 }
 
+/**
+ * A tag, its quoted attribute values included: a `>` inside quotes does not end it,
+ * and a `<` outside them does, which is what keeps this linear. It was `<[^>]*>`
+ * until 2026-09-24, which ran from every `<` to the next `>`, and on 120 KB of
+ * `<p x` with no `>` in it that took over two seconds.
+ */
+const TAG = /<(?:[^<>"']|"[^"]*"|'[^']*')*>/g;
+
 /** Markup out, text in, whitespace collapsed. */
 export function stripTags(html: string): string {
-  return decodeEntities(html.replace(/<[^>]*>/g, ' '))
-    .replace(/\s+/g, ' ')
-    .trim();
+  return decodeEntities(html.replace(TAG, ' ')).replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -71,32 +77,206 @@ export function escapeHtml(s: string): string {
 /**
  * The inner HTML of the first element whose opening tag matches `startRe`, with
  * nesting counted so a `<div>` inside the block does not end it early. Returns
- * null on markup it cannot balance.
+ * null when there is none, and on markup it cannot balance.
  */
 export function balancedBlock(html: string, startRe: RegExp): string | null {
-  const m = startRe.exec(html);
-  if (!m) return null;
-  const tag = /^<(\w+)/.exec(m[0])?.[1];
-  if (!tag) return null;
-  const open = new RegExp(`<${tag}[\\s>]`, 'gi');
-  const close = new RegExp(`</${tag}>`, 'gi');
+  const element = balancedElement(html, startRe);
+  return element && !('unbalanced' in element)
+    ? html.slice(element.innerStart, element.innerEnd)
+    : null;
+}
+
+/** Where one element sits in a string of markup. */
+export interface ElementSpan {
+  /** Index of the `<` that opens it. */
+  start: number;
+  /** Just past the `>` of the opening tag. */
+  innerStart: number;
+  /** Index of the `<` of its closing tag. */
+  innerEnd: number;
+  /** Just past the closing tag. */
+  end: number;
+}
+
+/**
+ * An element whose opening tag was found and whose end was not. A result of its
+ * own rather than `null`, because a caller walking a document has to tell "there
+ * are no more" from "this one is broken, look past it".
+ */
+export interface UnbalancedElement {
+  unbalanced: true;
+  start: number;
+  innerStart: number;
+}
+
+/**
+ * `balancedBlock`, with the positions rather than the text. `startRe` is tested
+ * against each opening tag `tags` finds, anchored at its `<`, so a match inside a
+ * script, a comment or an attribute value is not one.
+ */
+export function balancedElement(
+  html: string,
+  startRe: RegExp,
+): ElementSpan | UnbalancedElement | null {
+  const anchored = new RegExp(`^(?:${startRe.source})`, startRe.flags.replace(/[gy]/g, ''));
+  for (const tag of tags(html)) {
+    if (tag.closing || !anchored.test(html.slice(tag.start, tag.end))) continue;
+    return closeOf(html, tag);
+  }
+  return null;
+}
+
+/** The element `open` starts, balanced against the tags of its own name after it. */
+export function closeOf(html: string, open: Tag): ElementSpan | UnbalancedElement {
   let depth = 1;
-  let pos = m.index + m[0].length;
-  while (depth > 0) {
-    open.lastIndex = pos;
-    close.lastIndex = pos;
-    const o = open.exec(html);
-    const c = close.exec(html);
-    if (!c) return null; // broken markup
-    if (o && o.index < c.index) {
-      depth += 1;
-      pos = o.index + o[0].length;
-    } else {
-      depth -= 1;
-      pos = c.index + c[0].length;
+  for (const tag of tags(html, open.end)) {
+    if (tag.name !== open.name) continue;
+    depth += tag.closing ? -1 : 1;
+    if (depth === 0) {
+      return { start: open.start, innerStart: open.end, innerEnd: tag.start, end: tag.end };
     }
   }
-  return html.slice(m.index + m[0].length, pos - `</${tag}>`.length);
+  return { unbalanced: true, start: open.start, innerStart: open.end };
+}
+
+/**
+ * Every tag in the markup, and for each opening tag the closing tag that ends its
+ * element: `closeOf` for all of them at once, in one pass rather than one per
+ * element. An opening tag with no entry in `close` is one whose end is not there.
+ */
+export function pairedTags(html: string): { list: Tag[]; close: Map<Tag, Tag> } {
+  const list: Tag[] = [];
+  const close = new Map<Tag, Tag>();
+  const open = new Map<string, Tag[]>();
+  for (const tag of tags(html)) {
+    list.push(tag);
+    const stack = open.get(tag.name) ?? [];
+    if (!tag.closing) {
+      stack.push(tag);
+      open.set(tag.name, stack);
+      continue;
+    }
+    const opener = stack.pop();
+    if (opener) close.set(opener, tag);
+  }
+  return { list, close };
+}
+
+/** One tag as `tags` reads it. */
+export interface Tag {
+  /** Lower case. */
+  name: string;
+  closing: boolean;
+  /** Index of its `<`. */
+  start: number;
+  /** Just past its `>`. */
+  end: number;
+  /** Names lower case, values as written, entities still encoded. */
+  attrs: Record<string, string>;
+}
+
+/**
+ * Every tag from `from` on, read the way a browser tokenises them, in one pass.
+ *
+ * Regular expressions over the markup could not say where a block ends. They
+ * counted a `<div` inside a script, a style, a comment or a quoted attribute as a
+ * tag and missed `</div >`, and a lookahead for a block's marker rescanned to the
+ * next `>` from every `<`, which took 13.6 s on 120 KB of `<p x`. Found by a cold
+ * review of the block rules on 2026-09-24. This reads attributes with their
+ * quotes, skips comments and what is inside `<script>` and `<style>`, and looks at
+ * each character once. Markup that ends inside a tag or a comment ends the walk.
+ */
+export function* tags(html: string, from = 0): Generator<Tag> {
+  const n = html.length;
+  let pos = from;
+  while (pos < n) {
+    const lt = html.indexOf('<', pos);
+    if (lt < 0) return;
+    if (html.startsWith('<!--', lt)) {
+      const end = html.indexOf('-->', lt + 4);
+      if (end < 0) return;
+      pos = end + 3;
+      continue;
+    }
+    const closing = html[lt + 1] === '/';
+    let i = lt + (closing ? 2 : 1);
+    if (!/[A-Za-z]/.test(html[i] ?? '')) {
+      // `<!DOCTYPE` and `<?xml` run to the next `>`; a bare `<` is text.
+      if (html[lt + 1] === '!' || html[lt + 1] === '?') {
+        const gt = html.indexOf('>', lt);
+        if (gt < 0) return;
+        pos = gt + 1;
+      } else {
+        pos = lt + 1;
+      }
+      continue;
+    }
+    const nameStart = i;
+    while (i < n && !isSpace(html[i]) && html[i] !== '/' && html[i] !== '>') i++;
+    const name = html.slice(nameStart, i).toLowerCase();
+    const read = readAttributes(html, i);
+    if (!read) return;
+    yield { name, closing, start: lt, end: read.end, attrs: closing ? {} : read.attrs };
+    pos = read.end;
+    if (!closing && (name === 'script' || name === 'style')) {
+      const close = new RegExp(`</${name}\\s*>`, 'gi');
+      close.lastIndex = pos;
+      const m = close.exec(html);
+      if (!m) return;
+      pos = m.index; // the closing tag is the next one read
+    }
+  }
+}
+
+function isSpace(c: string | undefined): boolean {
+  return c === ' ' || c === '\n' || c === '\t' || c === '\r' || c === '\f';
+}
+
+/** A tag's attributes, from just past its name to just past its `>`. */
+function readAttributes(
+  html: string,
+  from: number,
+): { attrs: Record<string, string>; end: number } | null {
+  const attrs: Record<string, string> = Object.create(null) as Record<string, string>;
+  const n = html.length;
+  let i = from;
+  while (i < n) {
+    const c = html[i];
+    if (c === '>') return { attrs, end: i + 1 };
+    if (isSpace(c) || c === '/') {
+      i++;
+      continue;
+    }
+    const nameStart = i;
+    i++; // a name's first character may be anything else, `=` included
+    while (i < n && !isSpace(html[i]) && html[i] !== '/' && html[i] !== '>' && html[i] !== '=') {
+      i++;
+    }
+    const name = html.slice(nameStart, i).toLowerCase();
+    let j = i;
+    while (j < n && isSpace(html[j])) j++;
+    if (html[j] !== '=') {
+      attrs[name] ??= '';
+      continue;
+    }
+    j++;
+    while (j < n && isSpace(html[j])) j++;
+    const quote = html[j];
+    let value: string;
+    if (quote === '"' || quote === "'") {
+      const close = html.indexOf(quote, j + 1);
+      if (close < 0) return null;
+      value = html.slice(j + 1, close);
+      i = close + 1;
+    } else {
+      const valueStart = j;
+      while (j < n && !isSpace(html[j]) && html[j] !== '>') j++;
+      value = html.slice(valueStart, j);
+      i = j;
+    }
+    attrs[name] ??= value;
+  }
+  return null;
 }
 
 const META_TAG = /<meta[^>]*>/gi;
