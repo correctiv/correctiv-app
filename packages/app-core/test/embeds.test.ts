@@ -157,11 +157,11 @@ describe.each(PATHS)('embeds through the %s', (_name, clean) => {
     expect(fallbacks(html)).toEqual([
       {
         href: 'https://www.youtube-nocookie.com/embed/V8BxgDJlgec?si=90tWwcqSJDjKe5g5',
-        text: 'Open content from youtube-nocookie.com in the browser',
+        text: 'Open content from YouTube in the browser',
       },
       {
         href: 'https://www.youtube.com/embed/fAEldoY68tc?feature=oembed',
-        text: 'Open content from youtube.com in the browser',
+        text: 'Open content from YouTube in the browser',
       },
     ]);
     // The sentence introducing the video is still there to be read.
@@ -173,7 +173,7 @@ describe.each(PATHS)('embeds through the %s', (_name, clean) => {
     expect(fallbacks(html)).toEqual([
       {
         href: 'https://www.instagram.com/reel/DZb9VB7IBkT/?utm_source=ig_embed&utm_campaign=loading',
-        text: 'Open content from instagram.com in the browser',
+        text: 'Open content from Instagram in the browser',
       },
     ]);
     expect(html).not.toMatch(/instagram-media|Ein Beitrag geteilt von/);
@@ -183,7 +183,7 @@ describe.each(PATHS)('embeds through the %s', (_name, clean) => {
     expect(fallbacks(render('linkedin'))).toEqual([
       {
         href: 'https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7495104262541156353?compact=1',
-        text: 'Open content from linkedin.com in the browser',
+        text: 'Open content from LinkedIn in the browser',
       },
     ]);
   });
@@ -300,7 +300,42 @@ describe('the fallback link in the reader document', () => {
       german,
       { locale: 'de' },
     );
-    expect(fallbacks(html)[0].text).toBe('Inhalt von youtube.com im Browser öffnen');
+    expect(fallbacks(html)[0].text).toBe('Inhalt von YouTube im Browser öffnen');
+  });
+});
+
+describe("a fallback link's host, named for a person rather than a machine", () => {
+  /**
+   * The table `embeds.ts` carries for #273: a technical address like
+   * `youtube-nocookie.com` read as nothing to someone who does not run a video
+   * platform. Each case reaches the table through a real address, the same way a
+   * marker's `data-embed-host` does when `rewriteEmbeds` writes one.
+   */
+  const named = (href: string) =>
+    fallbacks(reader(`<a class="embed-fallback" href="${href}"></a>`))[0].text;
+
+  it.each([
+    ['https://www.youtube.com/watch?v=x', 'YouTube'],
+    ['https://www.youtube-nocookie.com/embed/x', 'YouTube'],
+    ['https://youtu.be/x', 'YouTube'],
+    ['https://m.youtube.com/watch?v=x', 'YouTube'],
+    ['https://www.instagram.com/reel/x/', 'Instagram'],
+    ['https://www.linkedin.com/posts/x', 'LinkedIn'],
+    ['https://x.com/correctiv/status/1', 'X'],
+    ['https://twitter.com/correctiv/status/1', 'X'],
+    ['https://www.facebook.com/correctiv/posts/1', 'Facebook'],
+    ['https://www.tiktok.com/@correctiv/video/1', 'TikTok'],
+    ['https://vimeo.com/1', 'Vimeo'],
+    ['https://open.spotify.com/track/1', 'Spotify'],
+    ['https://soundcloud.com/correctiv/x', 'SoundCloud'],
+  ])('names %s as %s', (href, name) => {
+    expect(named(href)).toBe(`Open content from ${name} in the browser`);
+  });
+
+  it('keeps the address for a host not on the table', () => {
+    expect(named('https://news.ycombinator.com/item?id=1')).toBe(
+      'Open content from news.ycombinator.com in the browser',
+    );
   });
 });
 

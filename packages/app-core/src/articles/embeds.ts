@@ -138,6 +138,46 @@ export function embedHost(url: string): string | undefined {
   return parseUrl(url)?.hostname.replace(/^www\./, '') || undefined;
 }
 
+/**
+ * The brand a short list of hosts is known by, keyed by the host `embedHost()`
+ * would give (#273): a technical address like `youtube-nocookie.com` reads as
+ * nothing to someone who does not run a video platform, where "YouTube" reads.
+ * Brand names need no translation, so these are plain strings and not a
+ * `coreMessage()` id, the same call `rendered-literals.test.ts` makes for a
+ * wordmark.
+ *
+ * Whatever is not on this list keeps its address; a table that guessed at a
+ * name for a host nobody vetted would be worse than the address it replaced.
+ */
+const EMBED_HOST_NAMES: Record<string, string> = {
+  'youtube.com': 'YouTube',
+  'youtube-nocookie.com': 'YouTube',
+  'youtu.be': 'YouTube',
+  'instagram.com': 'Instagram',
+  'linkedin.com': 'LinkedIn',
+  'x.com': 'X',
+  'twitter.com': 'X',
+  'facebook.com': 'Facebook',
+  'tiktok.com': 'TikTok',
+  'vimeo.com': 'Vimeo',
+  'spotify.com': 'Spotify',
+  'soundcloud.com': 'SoundCloud',
+};
+
+/**
+ * The name a fallback link shows for `host`: a brand from `EMBED_HOST_NAMES` if
+ * one covers it, else `host` itself. Matched by suffix, so a subdomain
+ * `embedHost()` had no `www.` to strip from — `m.youtube.com`,
+ * `open.spotify.com` — reaches the same name as the bare host, without a second
+ * table entry for each one.
+ */
+export function embedHostName(host: string): string {
+  for (const [known, name] of Object.entries(EMBED_HOST_NAMES)) {
+    if (host === known || host.endsWith(`.${known}`)) return name;
+  }
+  return host;
+}
+
 /** `url` if it is an absolute http(s) address, else undefined. */
 export function safeHref(url: string): string | undefined {
   // An empty one would resolve to the base, a link to somewhere nobody chose.
@@ -187,7 +227,7 @@ export function embedFallbackLink(
       ? `${EMBED_FALLBACK_CLASS} ${EMBED_FALLBACK_CLASS}--article`
       : EMBED_FALLBACK_CLASS,
     href,
-    text: isArticle ? words.openArticle : words.openElsewhere(host),
+    text: isArticle ? words.openArticle : words.openElsewhere(embedHostName(host)),
   };
 }
 
