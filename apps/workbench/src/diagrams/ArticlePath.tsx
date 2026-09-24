@@ -74,7 +74,7 @@ export const RUNGS = [
   },
   {
     y: 214,
-    call: "getCached('articles', url, 24 h)",
+    call: "getCached('articles-2', url, 24 h)",
     note: 'an article extracted earlier today, still inside its window.',
     aside: null,
     timeout: null,
@@ -95,7 +95,7 @@ export const RUNGS = [
   },
   {
     y: 388,
-    call: "getStale('articles', url)",
+    call: "getStale('articles-2', url)",
     note: 'expired beats absent. A miss here is the only way this throws.',
     aside: null,
     timeout: null,

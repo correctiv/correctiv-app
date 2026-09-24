@@ -17,6 +17,7 @@ import { buildReaderHtml, READER_LAYOUT_CSS, type ReaderCopy } from '../src/arti
 import type { Article, ArticleExtractor } from '../src/articles/types';
 import { decodeEntities, stripTags } from '../src/lib/html';
 import { toArticle } from '../src/services/wp.service';
+import { heroVideoOf } from '../src/articles/blocks';
 
 function fixture(name: string): string {
   return readFileSync(
@@ -157,6 +158,15 @@ describe.each([
       [...body.matchAll(/<summary>([\s\S]*?)<\/summary>/g)].map((m) => stripTags(m[1]));
     expect(summaries(fromString.bodyHtml)).toEqual(summaries(fromDom.bodyHtml));
   });
+
+  /**
+   * Word for word, not to within a tenth. A block one backend dropped and the
+   * other kept is text a reader of one host reads and a reader of the other does
+   * not, and a ratio over a long page cannot see a paragraph.
+   */
+  it('on the text a person reads, word for word', () => {
+    expect(plain(fromString.bodyHtml)).toBe(plain(fromDom.bodyHtml));
+  });
 });
 
 /** What a person reads of a body: its text, entities decoded. */
@@ -283,6 +293,140 @@ describe('blocks that are not the article (REST API)', () => {
 
   it('carries no hero video on a post without a header-post block', () => {
     expect(restArticle(285784).heroVideoUrl).toBeUndefined();
+  });
+});
+
+/**
+ * One body through all three paths: the REST API's, and a page around it for each
+ * extractor. What comes out is the text a person reads.
+ */
+function throughEveryPath(body: string): [string, string][] {
+  const page = `<html><body class="single aa-prefix-corre-"><div class="entry-content detail__content">${body}</div></body></html>`;
+  return [
+    ['rest', toArticle({ content: { rendered: body } }).bodyHtml],
+    ['string', extractArticleFromString(page).bodyHtml],
+    ['dom', extractArticleFromDom(page).bodyHtml],
+  ];
+}
+
+/**
+ * Markup the balancing has to read as a browser would. Found by a cold review of
+ * this branch on 2026-09-24; every case here failed on its first version.
+ */
+describe('finding where a block ends', () => {
+  /**
+   * A `<div` that is not a tag: inside a script, a style, a comment or a quoted
+   * attribute value. Counted as one, it held the placement open past its end and
+   * the REST path cut the paragraph after the ad along with it.
+   */
+  it('does not count a div inside a script, a style, a comment or an attribute', () => {
+    const body =
+      '<div class="wp-block-group"><p>A1</p><div class="corre-entity-placement">' +
+      `<script>var s='<div>'</script><style>.x::before{content:"<div>"}</style>` +
+      '<!-- <div> --><span title="<div>">AD</span></div><p>KEPT</p></div><p>A3</p>';
+    for (const [path, html] of throughEveryPath(body)) {
+      expect([path, plain(html)]).toEqual([path, 'A1 KEPT A3']);
+    }
+  });
+
+  it('closes an element on </div > as well as on </div>', () => {
+    const body = '<p>A1</p><div class="corre-entity-placement"><p>AD</p></div ><p>A2</p>';
+    for (const [path, html] of throughEveryPath(body)) {
+      expect([path, plain(html)]).toEqual([path, 'A1 A2']);
+    }
+  });
+
+  it('does not take <divider> for a <div>', () => {
+    const body =
+      '<p>A1</p><div class="corre-entity-placement"><divider></divider><p>AD</p></div><p>A2</p>';
+    expect(plain(throughEveryPath(body)[0][1])).toBe('A1 A2');
+  });
+
+  /**
+   * One placement whose end cannot be found must not let the next one through.
+   * It used to end the search: `null` meant both "no more" and "cannot balance".
+   */
+  it('goes on past a placement it cannot balance', () => {
+    const body =
+      '<p>A1</p><div class="corre-entity-placement"><p>AD1</p>' +
+      '<div class="corre-entity-placement"><p>AD2</p></div><p>A3</p>';
+    const [, rest] = throughEveryPath(body)[0];
+    expect(plain(rest)).not.toContain('AD2');
+    expect(plain(rest)).toContain('A3');
+  });
+
+  /** The cheap divergences between a regex and a parser, closed. */
+  it('recognises an unquoted class and a quoted > before it', () => {
+    const body =
+      '<p>A1</p><div class=corre-entity-placement><p>AD1</p></div>' +
+      '<div data-x="a>b" class="corre-entity-placement"><p>AD2</p></div><p>A2</p>';
+    for (const [path, html] of throughEveryPath(body)) {
+      expect([path, plain(html)]).toEqual([path, 'A1 A2']);
+    }
+  });
+
+  /**
+   * Linear, not quadratic. The marker was a lookahead that rescanned to the next
+   * `>` from every `<`: 13.6 s for the first of these and 26.5 s for the second on
+   * the reviewer's machine. The bound is generous on purpose; what it catches is
+   * seconds.
+   */
+  it('reads hostile markup in linear time', () => {
+    for (const body of ['<p x'.repeat(30000), '<a class="x '.repeat(20000)]) {
+      const started = performance.now();
+      toArticle({ content: { rendered: body } });
+      heroVideoOf(body);
+      expect(performance.now() - started).toBeLessThan(1000);
+    }
+  });
+});
+
+describe('the fallback rules', () => {
+  /**
+   * An accordion item without a panel is not rebuilt, and its toggle is unwrapped
+   * so the title stays the heading's text instead of leaving an empty `<h3>`.
+   */
+  it('keeps a toggle’s title as heading text when its item has no panel', () => {
+    const body =
+      '<div data-cvui-interactive-list-item><h3><button data-cvui-interactive-list-toggle>' +
+      '<span>Methodik</span><svg><path d="M0"></path></svg></button></h3></div><p>A1</p>';
+    for (const [path, html] of throughEveryPath(body)) {
+      expect([path, html]).toEqual([path, expect.stringMatching(/<h3>\s*(<span>)?Methodik/)]);
+    }
+  });
+});
+
+describe('the hero video address', () => {
+  const header = (src: string) =>
+    `<header class="wp-block-cvui-header-post"><video autoplay muted src="${src}"></video></header><p>A1</p>`;
+
+  it('is refused unless it is http or https', () => {
+    expect(heroVideoOf(header('javascript:alert(1)'))).toBeUndefined();
+    expect(heroVideoOf(header('&#106;avascript:alert(1)'))).toBeUndefined();
+    expect(heroVideoOf(header('data:video/mp4;base64,AAAA'))).toBeUndefined();
+  });
+
+  it('is resolved against correctiv.org when it is relative', () => {
+    expect(heroVideoOf(header('/wp-content/uploads/a.mp4'))).toBe(
+      'https://correctiv.org/wp-content/uploads/a.mp4',
+    );
+  });
+});
+
+/**
+ * The byline the block carries is the whole one. REST's `yoast_head_json.author`
+ * names one author, and the reader printed "von Silvia Stöber" over an article by
+ * two people.
+ */
+describe('the authors cvui/header-post names', () => {
+  it('are preferred over the single name the REST API gives', () => {
+    const post = REST_POSTS.find((p) => p.id === 287636);
+    const article = toArticle({ ...post, yoast_head_json: { author: 'Silvia Stöber' } });
+    expect(article.authors).toEqual(['Alexej Hock', 'Silvia Stöber']);
+  });
+
+  it.each(BACKENDS)('are the byline on the page, for the %s backend', (_name, extract) => {
+    expect(extract(HEADER_POST_PAGE).authors).toEqual(['Alexej Hock', 'Silvia Stöber']);
   });
 });
 

@@ -7,7 +7,8 @@ import { parseDocument } from 'htmlparser2';
 import {
   adPrefixOf,
   articleBlockRules,
-  heroVideoOf,
+  carries as tagCarries,
+  headerPostOf,
   type BlockMarker,
   type BlockRule,
 } from '../blocks';
@@ -90,8 +91,7 @@ function all(query: string, doc: Document | Element): Element[] {
 }
 
 function carries(node: Element, marker: BlockMarker): boolean {
-  if ('attribute' in marker) return marker.attribute in (node.attribs ?? {});
-  return (node.attribs?.class ?? '').split(/\s+/).includes(marker.class);
+  return tagCarries(node.attribs ?? {}, marker);
 }
 
 /** The first element under `nodes`, depth first, that carries the marker. */
@@ -190,9 +190,13 @@ export const extractArticleFromDom: ArticleExtractor = (html: string): Extracted
   const excerptEl = one('.detail__excerpt', doc);
   const excerpt = (excerptEl ? textContent(excerptEl).trim() : '') || meta.excerpt;
 
-  const authors = all('.detail__authors a, .detail__authors-link', doc)
+  // A page opening with `cvui/header-post` has no `detail__authors`; the block's
+  // byline is the only one (`articles/blocks.ts`).
+  const headerPost = headerPostOf(html);
+  const bylined = all('.detail__authors a, .detail__authors-link', doc)
     .map((a) => textContent(a).trim())
     .filter(Boolean);
+  const authors = headerPost.authors.length > 0 ? headerPost.authors : bylined;
 
   const timeEl = one('time.detail__date, time[datetime]', doc);
   const datetime = timeEl ? getAttributeValue(timeEl, 'datetime') : undefined;
@@ -222,7 +226,7 @@ export const extractArticleFromDom: ArticleExtractor = (html: string): Extracted
     publishedText,
     readingMinutes: meta.readingMinutes ?? estimateReadingMinutes(bodyText),
     heroImageUrl: meta.heroImageUrl,
-    heroVideoUrl: heroVideoOf(html),
+    heroVideoUrl: headerPost.videoUrl,
     bodyHtml,
     rating,
   };

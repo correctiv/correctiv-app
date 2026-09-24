@@ -1,4 +1,13 @@
-import { balancedBlock, balancedElement, decodeEntities, escapeHtml, stripTags } from '../lib/html';
+import {
+  closeOf,
+  decodeEntities,
+  escapeHtml,
+  pairedTags,
+  stripTags,
+  tags,
+  type ElementSpan,
+  type Tag,
+} from '../lib/html';
 
 /**
  * The blocks in a correctiv.org article body that are not article text, and what
@@ -21,23 +30,25 @@ import { balancedBlock, balancedElement, decodeEntities, escapeHtml, stripTags }
  * same table. `test/articles.test.ts` holds both to the same pages.
  *
  * What is not in the table is kept and left to the cleaner behind it. Order
- * matters: the string interpreter runs one rule over the whole body before the
- * next, so a rule that only catches what an earlier one could not use comes after.
+ * matters: the first rule a tag matches decides, so a rule that only catches what
+ * an earlier one could not use comes after it.
  */
 
 /** How a block is recognised: a token of its `class`, or an attribute it carries. */
 export type BlockMarker = { class: string } | { attribute: string };
 
-export type BlockRule = { block: string; marker: BlockMarker } & (
-  | { action: 'drop' | 'unwrap' }
+export type BlockRule =
+  | { block: string; marker: BlockMarker; action: 'drop' }
+  | { block: string; marker: BlockMarker; action: 'unwrap' }
   | {
+      block: string;
+      marker: BlockMarker;
       action: 'details';
       /** The element whose text becomes the `<summary>`. */
       summary: BlockMarker;
       /** The element whose contents become the rest of the `<details>`. */
       panel: BlockMarker;
-    }
-);
+    };
 
 /**
  * The prefix this site gave Advanced Ads, which the plugin writes in front of
@@ -105,15 +116,12 @@ export function articleBlockRules(adPrefix: string = DEFAULT_AD_PREFIX): readonl
     },
     /**
      * `cvui/infobox`: the box is clipped to 100 px by an inline style and a button
-     * lifts it. The button says nothing but "Mehr anzeigen" to a screen reader, in
-     * all 7 infoboxes of 300 posts; the text worth keeping is all in the panel,
-     * which is unwrapped so its clipping style goes with it.
+     * lifts it. The text worth keeping is all in the panel, which is unwrapped so its
+     * clipping style goes with it. The button says nothing but "Mehr anzeigen" to a
+     * screen reader, in all 7 infoboxes of 300 posts, and has no rule: every cleaner
+     * behind this table drops a `<button>` with its contents, which is the very
+     * habit the accordion rule above exists to get ahead of.
      */
-    {
-      block: 'cvui/infobox toggle',
-      marker: { attribute: 'data-cvui-infobox-toggle' },
-      action: 'drop',
-    },
     {
       block: 'cvui/infobox panel',
       marker: { attribute: 'data-cvui-infobox-panel' },
@@ -122,80 +130,150 @@ export function articleBlockRules(adPrefix: string = DEFAULT_AD_PREFIX): readonl
   ];
 }
 
-/** The regex source for "a token in this attribute's value", or the attribute itself. */
-function markerSource(marker: BlockMarker): string {
-  if ('class' in marker) {
-    return `\\sclass\\s*=\\s*["'](?:[^"']*\\s)?${escapeRegExp(marker.class)}(?=[\\s"'])`;
-  }
-  return `\\s${escapeRegExp(marker.attribute)}(?=[\\s=/>])`;
-}
-
-/** An opening tag carrying the marker, attributes in any order and over any number of lines. */
-function openingTag(marker: BlockMarker): RegExp {
-  return new RegExp(`<[a-z][a-z0-9]*(?=[^>]*${markerSource(marker)})[^>]*>`, 'gi');
-}
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/**
+ * Whether an element carries the marker, from its attributes as a parser gives
+ * them. The one test both interpreters make, so they cannot disagree about what a
+ * block is: `extract/dom.ts` hands it an element's `attribs`, and this file the
+ * attributes `tags` read, unquoted values and a `>` inside quotes included.
+ */
+export function carries(attrs: Record<string, string>, marker: BlockMarker): boolean {
+  if ('attribute' in marker) return Object.prototype.hasOwnProperty.call(attrs, marker.attribute);
+  return (attrs.class ?? '').split(/\s+/).includes(marker.class);
 }
 
 /**
  * Apply the rules to a body as a string.
  *
  * The same outcome as `extract/dom.ts` for every block in the table, which is what
- * lets both backends promise the same reader: the elements are found with
- * `balancedElement`, so a block that nests `<div>`s is cut whole. Where it cannot
- * balance an element it leaves that element alone rather than guess its end.
+ * lets both backends promise the same reader. One walk over the tags, with every
+ * element's end found in the same pass (`pairedTags`), so a block that nests
+ * `<div>`s is cut whole and the time grows with the body and not with its square.
+ * The first rule a tag matches decides, and an element is decided before what is
+ * inside it, as in the DOM interpreter. An element whose end is not in the markup
+ * is left alone rather than given a guessed one, and the walk goes on past its
+ * opening tag, so one broken placement does not let the next one through.
  */
 export function applyBlockRules(body: string, rules: readonly BlockRule[]): string {
-  let out = body;
-  for (const rule of rules) {
-    const tag = openingTag(rule.marker);
-    let from = 0;
-    for (;;) {
-      const el = balancedElement(out, tag, from);
-      if (!el) break;
-      const replacement = replace(out, el, rule);
-      if (replacement === null) {
-        from = el.innerStart; // not ours to change; look past its opening tag
-        continue;
+  const { list, close } = pairedTags(body);
+  /** Closing tags of unwrapped elements, left out when the walk reaches them. */
+  const unwrapped = new Set<Tag>();
+  let out = '';
+  let cursor = 0; // everything before this is already in `out`, or deliberately not
+  for (const tag of list) {
+    if (tag.start < cursor) continue;
+    if (tag.closing) {
+      if (unwrapped.has(tag)) {
+        out += body.slice(cursor, tag.start);
+        cursor = tag.end;
       }
-      out = out.slice(0, el.start) + replacement + out.slice(el.end);
-      from = el.start;
+      continue;
     }
+    const rule = rules.find((r) => carries(tag.attrs, r.marker));
+    const end = rule ? close.get(tag) : undefined;
+    if (!rule || !end) continue;
+    if (rule.action === 'unwrap') {
+      out += body.slice(cursor, tag.start);
+      cursor = tag.end;
+      unwrapped.add(end);
+      continue;
+    }
+    const replacement =
+      rule.action === 'drop' ? '' : details(body.slice(tag.end, end.start), rule, rules);
+    if (replacement === null) continue; // not rebuilt; what is inside gets its own rules
+    out += body.slice(cursor, tag.start) + replacement;
+    cursor = end.end;
   }
-  return out;
+  return out + body.slice(cursor);
 }
 
-function replace(
-  html: string,
-  el: { innerStart: number; innerEnd: number },
-  rule: BlockRule,
+/** An accordion item as `<details>`, or null when it lacks a title or a panel. */
+function details(
+  inner: string,
+  rule: Extract<BlockRule, { action: 'details' }>,
+  rules: readonly BlockRule[],
 ): string | null {
-  const inner = html.slice(el.innerStart, el.innerEnd);
-  switch (rule.action) {
-    case 'drop':
-      return '';
-    case 'unwrap':
-      return inner;
-    case 'details': {
-      const summary = balancedBlock(inner, openingTag(rule.summary));
-      const panel = balancedBlock(inner, openingTag(rule.panel));
-      if (summary === null || panel === null) return null;
-      return `<details><summary>${escapeHtml(stripTags(summary))}</summary>${panel}</details>`;
-    }
+  const summary = markedElement(inner, rule.summary);
+  const panel = markedElement(inner, rule.panel);
+  if (!summary || !panel) return null;
+  const title = stripTags(inner.slice(summary.innerStart, summary.innerEnd));
+  const contents = applyBlockRules(inner.slice(panel.innerStart, panel.innerEnd), rules);
+  return `<details><summary>${escapeHtml(title)}</summary>${contents}</details>`;
+}
+
+/** The first balanced element in `html` that carries the marker. */
+function markedElement(html: string, marker: BlockMarker): ElementSpan | null {
+  for (const tag of tags(html)) {
+    if (tag.closing || !carries(tag.attrs, marker)) continue;
+    const el = closeOf(html, tag);
+    if (!('unbalanced' in el)) return el;
   }
+  return null;
+}
+
+const HEADER_POST: BlockMarker = { class: 'wp-block-cvui-header-post' };
+
+/** What a `cvui/header-post` block carries that the reader keeps. */
+export interface HeaderPost {
+  /** The looping video of its `full-width` variant, http or https only. */
+  videoUrl?: string;
+  /** Every author it names, in its order. Empty without the block. */
+  authors: string[];
 }
 
 /**
- * The video of a `cvui/header-post` block, if the markup carries one.
+ * What the reader keeps of a `cvui/header-post` block before the rules drop it.
  *
- * The block renders one `<video src>` in its `full-width` variant and nothing else
- * that moves: no poster, no second format (`render.php` in the theme's component
- * system). Read before the rules drop the block, from the page or from a REST body.
+ * The video: the block renders one `<video src>` in its `full-width` variant and
+ * nothing else that moves, no poster and no second format (`render.php` in the
+ * theme's component system). The address is resolved against correctiv.org and
+ * kept only if it is http or https, because it goes into the reader document as a
+ * `src` and a `javascript:` there is the page's to run.
+ *
+ * The authors: the block's byline is the links to `/team/<person>/` in it, all of
+ * them. The REST API's `yoast_head_json.author` names one person, so the reader
+ * printed "von Silvia Stöber" over post 287636, which is by Alexej Hock and Silvia
+ * Stöber; and a page with this block has no `detail__authors` at all. Measured on
+ * 2026-09-24.
  */
+export function headerPostOf(html: string): HeaderPost {
+  for (const tag of tags(html)) {
+    if (tag.closing || !carries(tag.attrs, HEADER_POST)) continue;
+    const el = closeOf(html, tag);
+    return readHeaderPost(html, tag.end, 'unbalanced' in el ? html.length : el.innerEnd);
+  }
+  return { authors: [] };
+}
+
+/** `headerPostOf(html).videoUrl`. */
 export function heroVideoOf(html: string): string | undefined {
-  const block = balancedBlock(html, openingTag({ class: 'wp-block-cvui-header-post' }));
-  const src = block ? /<video\b[^>]*\ssrc=["']([^"']+)["']/i.exec(block)?.[1] : undefined;
-  return src ? decodeEntities(src) : undefined;
+  return headerPostOf(html).videoUrl;
+}
+
+function readHeaderPost(html: string, from: number, to: number): HeaderPost {
+  let videoUrl: string | undefined;
+  const authors: string[] = [];
+  let authorStart = -1;
+  for (const tag of tags(html, from)) {
+    if (tag.start >= to) break;
+    if (!tag.closing && (tag.name === 'video' || tag.name === 'source') && !videoUrl) {
+      videoUrl = tag.attrs.src ? safeVideoUrl(tag.attrs.src) : undefined;
+    } else if (!tag.closing && tag.name === 'a' && /\/team\/[^/]/.test(tag.attrs.href ?? '')) {
+      authorStart = tag.end;
+    } else if (tag.closing && tag.name === 'a' && authorStart >= 0) {
+      const name = stripTags(html.slice(authorStart, tag.start));
+      if (name && !authors.includes(name)) authors.push(name);
+      authorStart = -1;
+    }
+  }
+  return { videoUrl, authors };
+}
+
+function safeVideoUrl(raw: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(decodeEntities(raw).trim(), 'https://correctiv.org/');
+  } catch {
+    return undefined;
+  }
+  return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : undefined;
 }

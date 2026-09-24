@@ -1,5 +1,5 @@
 import { balancedBlock, sanitizeArticleHtml, stripTags } from '../../lib/html';
-import { adPrefixOf, applyBlockRules, articleBlockRules, heroVideoOf } from '../blocks';
+import { adPrefixOf, applyBlockRules, articleBlockRules, headerPostOf } from '../blocks';
 import { estimateReadingMinutes, extractPageMeta } from '../page-meta';
 import { ratingFromPage, ratingFromText } from '../rating';
 import type { ArticleExtractor, ExtractedArticle } from '../types';
@@ -38,7 +38,11 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
   const authorLine = authorsBlock
     ? stripTags(authorsBlock.replace(/<time[\s\S]*?<\/time>/gi, '')).replace(/^von\s+/i, '')
     : '';
-  const authors = authorLine ? splitAuthors(authorLine) : [];
+  // A page opening with `cvui/header-post` has no `detail__authors`; the block's
+  // byline is the only one (`articles/blocks.ts`).
+  const headerPost = headerPostOf(html);
+  const authors =
+    headerPost.authors.length > 0 ? headerPost.authors : authorLine ? splitAuthors(authorLine) : [];
 
   // The first `<time datetime>` on the page, which is what the DOM backend's
   // `time.detail__date, time[datetime]` selects. This asked for the class on the
@@ -69,7 +73,7 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
     publishedText,
     readingMinutes: meta.readingMinutes ?? estimateReadingMinutes(stripTags(bodyHtml)),
     heroImageUrl: meta.heroImageUrl,
-    heroVideoUrl: heroVideoOf(html),
+    heroVideoUrl: headerPost.videoUrl,
     bodyHtml,
     rating,
   };
