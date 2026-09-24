@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import {
@@ -144,7 +144,20 @@ describe('the document the editor writes', () => {
     expect(formatLayoutDocument(SHIPPED)).toBe(source(FILE));
   });
 
-  it('prints what oxfmt would print, for an edit of every kind', () => {
+  /**
+   * Every case below, printed and run through `oxfmt`, ahead of the assertions
+   * that read it (#275).
+   *
+   * Not inline in the `it()`: each case round-trips through a spawned `oxfmt`
+   * process, 21 spawns in a row, which took 2.3s on an otherwise idle machine
+   * and 14.4s measured on 2026-09-24 against 18 busy loops on a 20-core box —
+   * past Vitest's 5s default `testTimeout` and past its 10s default
+   * `hookTimeout` too, which is why this `beforeAll` states its own. 30s is
+   * twice the loaded measurement above, not a guess: raise it again only
+   * against a new measurement, the way this one was reached.
+   */
+  let oxfmtCases: { printed: string; formatted: string }[];
+  beforeAll(() => {
     const lifted = withMoment(SHIPPED, AT(6, 30));
     const cases: HomeLayout[] = [
       SHIPPED,
@@ -207,9 +220,15 @@ describe('the document the editor writes', () => {
       ),
     ];
 
-    for (const layout of cases) {
+    oxfmtCases = cases.map((layout) => {
       const printed = formatLayoutDocument(layout);
-      expect(oxfmt(printed)).toBe(printed);
+      return { printed, formatted: oxfmt(printed) };
+    });
+  }, 30_000);
+
+  it('prints what oxfmt would print, for an edit of every kind', () => {
+    for (const { printed, formatted } of oxfmtCases) {
+      expect(formatted).toBe(printed);
     }
   });
 
