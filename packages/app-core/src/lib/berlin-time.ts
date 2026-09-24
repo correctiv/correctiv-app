@@ -110,6 +110,25 @@ export function berlinWallClock(instant: Instant): WallClock {
   };
 }
 
+/**
+ * The Berlin day of an instant, as a `Date` safe to hand to a formatter that reads its
+ * own runtime's local fields — `Intl.DateTimeFormat` with no `timeZone`, which is what
+ * `format.ts` uses throughout.
+ *
+ * `new Date(instant)` is the wrong half of this: an absolute instant, read back through
+ * whatever zone the device is in. A reader east of Berlin can be into the next calendar
+ * day there while Berlin's own evening is still running, and the home screen's header
+ * showed exactly that split date once it started taking the fold's instant instead of its
+ * own (#254) — a real device is one fixed zone, but not necessarily Berlin's. Local noon of
+ * the Berlin day sidesteps it instead of asking the device to agree with Berlin: built and
+ * read back through the SAME zone, whichever one that is, its local calendar fields are
+ * always this day, never the one before or after it.
+ */
+export function berlinCalendarDate(instant: Instant): Date {
+  const [year, month, day] = dateParts(berlinWallClock(instant).date)!;
+  return new Date(year, month, day, 12);
+}
+
 /** The parts of a Berlin date, or null when it is not one the calendar has. */
 function dateParts(date: string): [number, number, number] | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);

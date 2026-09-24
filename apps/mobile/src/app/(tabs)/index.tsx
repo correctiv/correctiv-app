@@ -52,13 +52,14 @@ export default function HomeScreen() {
   const layout = useHomeLayout();
   const { entitlement } = useSession();
   const reader = useMemo(() => readerOf(entitlement), [entitlement]);
-  const sections = sectionsAtInstant(layout, useHomeInstant(layout), reader);
+  const instant = useHomeInstant(layout);
+  const sections = sectionsAtInstant(layout, instant, reader);
 
   return (
     <Screen>
       {sections.map((section) => {
         const Module = HOME_MODULES[section.module];
-        return Module ? <Module key={section.id} section={section} /> : null;
+        return Module ? <Module key={section.id} section={section} instant={instant} /> : null;
       })}
     </Screen>
   );

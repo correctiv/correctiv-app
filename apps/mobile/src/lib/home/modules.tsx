@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, View } from 'react-native';
 
+import type { Instant } from '@correctiv/app-core/lib/berlin-time';
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 import { itemCount, pinnedItem } from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
@@ -94,6 +95,13 @@ export const placeTestID = (id: string): string => `home-section-${id}`;
 
 export interface HomeModuleProps {
   readonly section: HomeSection;
+  /**
+   * The instant the fold drew this render at — the screen's `useHomeInstant(layout)`,
+   * passed down rather than re-read, so that a module reading the time agrees with the
+   * one that decided whether it appears at all (#254). Most modules have no use for it;
+   * `HomeHeaderModule` is the one that does.
+   */
+  readonly instant: Instant;
 }
 
 /** A renderer for one place. Returns null when it has nothing to show. */
@@ -127,9 +135,9 @@ function openCallout(entry: { slug: string }): void {
   router.push({ pathname: '/aufruf/[slug]', params: { slug: entry.slug } });
 }
 
-const HomeHeaderModule: HomeModule = ({ section }) => (
+const HomeHeaderModule: HomeModule = ({ section, instant }) => (
   <Place section={section}>
-    <HomeHeader />
+    <HomeHeader instant={instant} />
   </Place>
 );
 

@@ -74,13 +74,14 @@ const mono = (chunks: ReactNode[]) => <span className="font-mono">{chunks}</span
  *
  * ## What it is handed, and what it may not reach for
  *
- * Its whole input is the section. It does not read the playhead, the layout
- * store or `PreviewState`, and that is a constraint rather than an omission:
- * ADR 0046 §5 has a drawing re-render on its section and not on the clock, and a
- * block that reached for the hour itself would defeat that silently — it would
- * go stale rather than slow, which is the worse of the two failures. The clock
- * reaches a block only by changing its section, which is what `stateAt` already
- * does.
+ * The section, plus `Date.now()` for the one module that draws a date (#254) — never
+ * the playhead, the layout store or `PreviewState`, and that is a constraint rather
+ * than an omission: ADR 0046 §5 has a drawing re-render on its section and not on the
+ * clock, and a block that reached for the hour itself would defeat that silently — it
+ * would go stale rather than slow, which is the worse of the two failures. The clock
+ * reaches a block only by changing its section, which is what `stateAt` already does;
+ * the wall-clock date on the one block that shows it is the exception this list
+ * accepts, the same way it accepts drawing less than the frame below.
  *
  * ## It is not its own host
  *
@@ -258,7 +259,10 @@ function Block({ section, deviceWidth, absent = false }: HomeBlockProps): ReactN
           }}
         >
           <DrawnBoundary label={section.id}>
-            <Module section={section} />
+            {/* `Date.now()`, not the playhead: "What it is handed" above still holds — this
+                reads the clock once, at whatever moment something else causes a render,
+                the same as any other value here, rather than being wired to it. */}
+            <Module section={section} instant={Date.now()} />
           </DrawnBoundary>
         </div>
       </div>
