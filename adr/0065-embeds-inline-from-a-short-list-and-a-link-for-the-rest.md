@@ -1,6 +1,8 @@
 # ADR 0065 — Embeds render inline from a short list, and the rest become a link
 
-Status: accepted, 2026-09-24, **built in the same pull request**. The host list in §1 is a
+Status: accepted, 2026-09-24, **built in the same pull request**, and §4, §5 and §7
+revised in it the same day after a cold security review found that a `<meta>` refresh in a
+body turned the web reader into any page, on the app's own origin included. The host list in §1 is a
 proposal: the newsroom and data protection may change it, and changing it is one edit to
 `INLINE_EMBED_HOSTS` in `packages/app-core/src/articles/embeds.ts`. Verified in the web
 export in a browser; **iOS and Android unrun**.
@@ -64,6 +66,15 @@ but `cf_clearance` is a cookie, set by Cloudflare's bot protection on the docume
 host; whether that needs consent is a question for data protection, not for this record.
 Taking it off is the one-line edit the status line names.
 
+"On the list" means **everybody who publishes on that platform**, not CORRECTIV: anybody
+can make a Datawrapper chart, a Flourish story or a 23degrees map, and a frame from
+the host is theirs to fill. That is accepted because what they fill it with is
+cross-origin to the reader and has no way out of the frame on its own: a load inside a
+frame stays inside it and is held to web schemes on iOS (§4), every navigation of the
+reader itself goes through the link rule, and what the frame could still reach through a
+frame nested in it is §7's. What it does not give them is a way to put something in an
+article; a CORRECTIV editor still has to embed it.
+
 This list is a **proposal** from a measurement, not a policy anyone at CORRECTIV has
 signed. It lives in one place so that it can be changed there: the three cleaners, the
 reader's Content Security Policy (§5) and the tests all read it.
@@ -124,10 +135,14 @@ picture of what it is: somebody else's page, drawn for a light one.
 loads, not only for the document's. The reader handed all of them to its link rule, which
 sends any https address that is not an article to the system browser, so an inline chart
 would have opened Safari as the article appeared. A load that is not the top frame's is
-now allowed without asking. Which frames the document may have at all is its Content
-Security Policy (§5), built from the list in §1, and what an allowed embed frames inside
-itself (a Flourish story frames its visualisations) is part of allowing it. The top frame
-still goes through the same rule as before. Android does not report a frame's first load,
+now allowed without asking, **if its scheme is `https`, `about`, `data` or `blob`**
+(`allowsFrameLoad` in the app), and refused otherwise. The embeds publish anybody's
+content (§1), and a frame nested in one must not be able to hand the phone a `tel:`, an
+`itms-apps:`, `correctiv://` or any other scheme the system acts on without a tap. Which
+frames the document may have at all is its Content Security Policy (§5), built from the
+list in §1, and what an allowed embed frames inside itself (a Flourish story frames its
+visualisations) is part of allowing it. The top frame still goes through the same rule
+as before. Android does not report a frame's first load,
 and marks what it reports as top-frame, so nothing changes there.
 
 ### 5. The document runs no script, by policy, and so the web frame may carry `allow-scripts`
@@ -135,18 +150,33 @@ and marks what it reports as top-frame, so nothing changes there.
 `buildReaderHtml` puts a Content Security Policy first in the document's `<head>`:
 `script-src 'none'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`, and
 `frame-src` listing the hosts of §1. The document never had a script of its own; now a
-hole in a cleaner meets the browser rather than the app, and a frame the cleaners should
-not have let through is refused by the browser as well. A policy in a `<meta>` can be
-tightened by a later one and never loosened, so a body that carries its own changes
-nothing.
+script a cleaner missed meets the browser rather than the app, and a frame the cleaners
+should not have let through is refused by the browser as well. `frame-src` also holds when
+an embed navigates ITSELF: an embed sending itself to a page on the app's origin was
+refused, measured 2026-09-24. A policy in a `<meta>` can be tightened by a later one and
+never loosened, so a body that carries its own changes nothing.
+
+What the policy does not cover is markup that acts **without** a script, and a `<meta>`
+refresh is the one that mattered: the sandbox used to block it as an automatic feature,
+`allow-scripts` lifts that block, and the policy says nothing about it. §7 is the answer.
 
 On the web, the reader is an `<iframe srcDoc>` and its sandbox is inherited by every frame
 inside it. It carried `allow-same-origin` alone, which would render every inline embed of
 §1 as an empty box. It carries `allow-same-origin allow-scripts` now. The two together
 were ruled out in [ADR 0004](0004-react-native-pivot.md) because a same-origin frame that
-runs script can lift its own sandbox; what stops the reader document running script is now
-the policy above rather than the missing flag. The embeds are cross-origin, so they reach
-nothing of the app's either way.
+runs script can lift its own sandbox, and that is still true. What is claimed here is
+narrower: the reader document itself runs no script, because of the policy above, and it
+cannot be made to BECOME a document that runs one, because §7 takes out what would
+navigate it. A page on the app's origin inside the reader frame would have the app's
+origin and a sandbox it can lift, and the review showed a refresh putting one there; that
+is the case this decision rests on keeping out, and why §7 is not optional.
+
+`allow-same-origin` stays, and it was weighed rather than kept by habit. Without it the
+frame's document has an opaque origin, which is the stronger position, but the parent
+reads `contentDocument` for two things that have no other way: every click on a link, so
+that a link goes through `onNavigate` like on the phone, and the scroll offset that moves
+the header. Both would need a script in the document posting to the parent, which the
+policy above rules out, and the reader keeping no script is worth more than the flag.
 
 ### 6. The link's words are written when the document is built
 
@@ -157,11 +187,48 @@ formatted through `ReaderCopy` (`core.reader.embedFallback` with `{host}`,
 `core.reader.embedArticle`). Rebuilt rather than filled in: the address is re-checked as
 http(s), everything is escaped, and whatever else the marker carried is gone.
 
+### 7. The body is gated for what acts without a script, and an embed that can do without an origin gets none
+
+Measured by the cold review on the web export, 2026-09-24: a body carrying
+`<meta http-equiv="refresh" content="1;url=https://example.com/">` turned the reader frame
+into example.com inside the app's chrome, and with `url=/some-page.html` on the app's own
+origin that page ran script and read `parent.document` and `parent.localStorage`. The app
+is published on `correctiv.github.io`, shared with CORRECTIV's other Pages sites, so a page
+on the same origin is not hypothetical. On the phone the same refresh was already a
+navigation the reader handed to the system browser without a tap.
+
+- **The last gate is `buildReaderHtml`.** A body comes out of a cleaner, but also out of the
+  article cache and the offline bundle, written by whatever cleaner was current when it was
+  stored. So the document builder takes out, whatever the cleaners did, every `<meta>`,
+  `<base>`, `<link>`, `<portal>`, `<object>`, `<embed>`, `<applet>`, `<param>`, `<frame>`
+  and `<frameset>`, in any casing, and rebuilds every frame as the canonical one from a
+  listed host or removes it, so a `srcdoc` or an `onload` does not survive. To a fixpoint,
+  because a removal can put a tag back together: `<me<meta>ta …>` is a refresh once the inner
+  tag is gone.
+- **`sanitizeArticleHtml` drops the same set**, and runs its removals to a fixpoint as well,
+  with the frames last and only the exact form `rewriteEmbeds` writes let through, because
+  `<ifr<script></script>ame class="reader-embed" srcdoc="…">` was a frame with the reader's
+  own class once the script was gone.
+- **A frame nested inside an embed** is the route left after both, and it was measured in the
+  same browser: a frame inside a cross-origin embed that loads a page on the app's origin
+  gets that origin and the reader's inherited sandbox, and read `top.localStorage`. So the
+  listed hosts whose embeds draw the same without an origin of their own get a `sandbox`
+  without `allow-same-origin`, and everything under them is opaque; the same probe read
+  `top blocked` then. That is Datawrapper and Flourish, `OPAQUE_EMBED_HOSTS`. CORRECTIV's
+  own map apps and 23degrees read their own storage and draw nothing in that sandbox
+  ("no interactivity?"), and DocumentCloud answered 403 behind Cloudflare's bot check in
+  both modes, so those three keep their origin and this route stays open under them. What
+  it needs is a page on the app's origin that somebody other than CORRECTIV controls; a
+  page like that could read the app's storage without the reader, by being visited.
+
 ## What this does not decide
 
 - **A WebView per embed.** Not needed yet: the reader is one WebView already, and an inline
   frame inside it is the cheapest way to show an embed. It becomes the question once the
   article is drawn natively rather than as a document, which is not planned.
+- **A sandbox for the three hosts that keep their origin** (§7). For `cdn.correctiv.org` it
+  is CORRECTIV's own code, which could stop reading storage; for 23degrees and DocumentCloud
+  it is somebody else's decision.
 - **Consent.** The app asks nobody about anything here, because nothing it loads inline set
   a cookie in the measurement. A host that starts to is a change to §1's list, and
   somebody has to notice it; nothing re-measures the table.
@@ -173,9 +240,12 @@ http(s), everything is escaped, and whatever else the marker carried is gone.
 
 ## What it retires
 
-- [ADR 0004](0004-react-native-pivot.md), two sentences about the web reader's sandbox:
+- [ADR 0004](0004-react-native-pivot.md), two statements about the web reader's sandbox:
   that it carries `allow-same-origin` and nothing else because the reader needs no script,
-  and that the two flags must never be set together. Struck where they stand, by §5.
+  and that the two flags must never be set together. Struck where they stand, by §5. The
+  reason ADR 0004 gave for the second, that the frame could then remove its own sandbox,
+  is still true and is left standing; ADR 0065 §5 and ADR 0065 §7 are what this record does
+  about it.
 - [ADR 0017](0017-native-rendering-as-the-rule-a-webview-for-the-exception.md) §2, that
   `sanitizeArticleHtml` discards a frame. Struck where it stands, by §2. The table row in
   its Context ("iframes are dropped") was true when measured and is left.

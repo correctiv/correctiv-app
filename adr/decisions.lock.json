@@ -652,7 +652,10 @@
       "5": [
         "The document runs no script, by policy, and so the web frame may carry `allow-scripts`"
       ],
-      "6": ["The link's words are written when the document is built"]
+      "6": ["The link's words are written when the document is built"],
+      "7": [
+        "The body is gated for what acts without a script, and an embed that can do without an origin gets none"
+      ]
     }
   }
 }

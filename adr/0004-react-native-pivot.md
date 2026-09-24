@@ -92,10 +92,9 @@ reader needs no JS, and leaving out `allow-scripts` costs nothing.~~ It carries
 inherit the frame's sandbox, voided by [ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §5.
 `allow-same-origin` is
 needed so clicks inside the iframe run through the same `onNavigate` as in the native
-WebView. ~~The two must never be set together — the frame could then remove its own
-sandbox.~~ They are set together now, and the document's own Content Security Policy,
-`script-src 'none'`, is what keeps it from running the script that would lift the sandbox,
-voided by [ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §5.
+WebView. ~~The two must never be set together~~ (they are, on purpose, voided by
+[ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §5) — the
+frame could then remove its own sandbox.
 
 ## Verified
 
