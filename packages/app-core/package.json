@@ -10,7 +10,8 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@correctiv/prose-and-code": "*"
+    "@correctiv/prose-and-code": "*",
+    "parse5": "^7.3.0"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",

@@ -1,3 +1,4 @@
+import { parse, type DefaultTreeAdapterMap } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
 import { extractArticleFromDom } from '../src/articles/extract/dom';
@@ -141,6 +142,9 @@ function violations(body: string): string[] {
       if ((key === 'href' || key === 'src') && !ADDRESS.test(value)) {
         out.push(`${key}="${value}" on <${name}>`);
       }
+      if (key === 'src' && !/^https?:\/\//.test(value)) {
+        out.push(`src="${value}" on <${name}>, which only loads over http(s)`);
+      }
       if (key === 'srcset') {
         for (const candidate of value.split(/,\s+/)) {
           if (!SRCSET_CANDIDATE.test(candidate)) out.push(`srcset candidate "${candidate}"`);
@@ -230,6 +234,16 @@ const CORPUS: string[] = [
   // A box is a class the reader styles and nothing more.
   '<div class="infobox x" style="max-height:1px" onclick="x()" id="y"><p>x</p></div>',
   '<div class="wp-block-cvui-infobox"><button>Mehr anzeigen</button><div data-cvui-infobox-panel style="max-height:100px"><p>x</p></div></div>',
+  '<span class="infobox">x</span>',
+  // A box a browser closes early, whose `</div>` then closes the reader's wrapper.
+  '<ul><li>Punkt<div class="cvui-block wp-block-cvui-infobox"><li>AUSSERHALB</li></div></li></ul><p><img src="/a.jpg" width="3000" height="10">Nach dem Kasten</p>',
+  '<ul><li><div class="infobox"><li>ESCAPED</li></div></li></ul><p>AFTER</p>',
+  '<p><b><div class="infobox"><li>x</li><p>y<div class="infobox"><li>z</li></div></p></div></b></p><p>AFTER</p>',
+  '<div class="infobox"><li>a<div class="infobox"><li>b</li></div></li></div><p>AFTER</p>',
+  // An address that ends in a comma once the URL parser has trimmed it.
+  '<img srcset="/b,\u0001 1x, /c.jpg 2x">',
+  // An image address a mail client would open.
+  '<img src="mailto:x@example.org">',
   '<a href="https://example.org/" title="a > b" data-x="<meta http-equiv=refresh>">x</a>',
 ];
 
@@ -249,6 +263,46 @@ describe.each(PATHS)('what reaches the reader through the %s', (_name, clean) =>
     'holds nothing outside the table, corpus entry %i',
     (_index, fragment) => {
       expect(violations(body(fragment as string))).toEqual([]);
+    },
+  );
+});
+
+type Node = DefaultTreeAdapterMap['node'];
+type Element = DefaultTreeAdapterMap['element'];
+
+const isElement = (node: Node): node is Element => 'tagName' in node;
+const classOf = (node: Element) => node.attrs.find((a) => a.name === 'class')?.value ?? '';
+
+function* elementsUnder(node: Node): Generator<Element> {
+  for (const child of 'childNodes' in node ? node.childNodes : []) {
+    if (!isElement(child)) continue;
+    yield child;
+    yield* elementsUnder(child);
+  }
+}
+
+/**
+ * The document as a browser builds it, not as the gate's own parser does. parse5
+ * implements the HTML standard's tree construction, implied end tags, list items
+ * and all; htmlparser2 applies few of them, and a tree the two read differently
+ * is how a body could reach past the reader's wrapper.
+ */
+describe.each(PATHS)('the reader document as a browser parses it, through the %s', (_n, clean) => {
+  it.each(CORPUS.map((fragment, index) => [index, fragment]))(
+    'keeps the body inside its wrapper, corpus entry %i',
+    (_index, fragment) => {
+      const document = parse(reader(clean(fragment as string)));
+      const all = [...elementsUnder(document)];
+      const wrapper = all.find((el) => classOf(el) === 'reader-body');
+      expect(wrapper?.parentNode && isElement(wrapper.parentNode)).toBe(true);
+      const siblings = (wrapper!.parentNode as Element).childNodes.filter(isElement);
+      const next = siblings[siblings.indexOf(wrapper!) + 1];
+      expect(next?.tagName).toBe('footer');
+      expect(classOf(next!)).toBe('reader-footer');
+      // Every box sits straight in the wrapper, where the gate put it.
+      for (const box of all.filter((el) => classOf(el) === 'infobox')) {
+        expect(box.parentNode).toBe(wrapper);
+      }
     },
   );
 });
@@ -333,6 +387,43 @@ describe('the gate', () => {
       bodyOf(reader('<div class="infobox x" style="max-height:1px" onclick="x()"><p>x</p></div>')),
     ).toBe('<div class="infobox"><p>x</p></div>');
     expect(bodyOf(reader('<div class="wp-block-cvui-infobox"><p>x</p></div>'))).toBe('<p>x</p>');
+  });
+
+  it('keeps a box only at the top of the body, and its words wherever it was', () => {
+    expect(
+      bodyOf(reader('<ul><li><div class="infobox"><li>ESCAPED</li></div></li></ul><p>AFTER</p>')),
+    ).toBe('<ul><li>ESCAPED</li></ul><p>AFTER</p>');
+    expect(bodyOf(reader('<blockquote><div class="infobox"><p>x</p></div></blockquote>'))).toBe(
+      '<blockquote><p>x</p></blockquote>',
+    );
+  });
+
+  it('keeps a list item only straight inside a list', () => {
+    expect(
+      bodyOf(reader('<ul><li>a<b><li>b</li></b></li></ul><div class="infobox"><li>c</li></div>')),
+    ).toBe('<ul><li>a<b>b</b></li></ul><div class="infobox">c</div>');
+  });
+
+  it('keeps no class on anything but a div', () => {
+    expect(bodyOf(reader('<p><span class="infobox">x</span></p>'))).toBe('<p>x</p>');
+  });
+
+  it('drops a candidate that would end in a comma once written out', () => {
+    expect(bodyOf(reader('<img srcset="/b,\u0001 1x, /c.jpg 2x">'))).toBe(
+      '<img srcset="https://correctiv.org/c.jpg 2x">',
+    );
+  });
+
+  it('loads an image over http(s) only, and a mail address is not one', () => {
+    expect(bodyOf(reader('<p><img src="mailto:x@example.org" alt="a"></p>'))).toBe(
+      '<p><img alt="a"></p>',
+    );
+  });
+
+  it('drops a break at the start or the end of a paragraph, and keeps one inside it', () => {
+    expect(bodyOf(reader('<p><br>Im <strong>Sommer</strong><br>2014<br> </p>'))).toBe(
+      '<p>Im <strong>Sommer</strong><br>2014</p>',
+    );
   });
 
   it('keeps the infobox of a REST body as a box', () => {

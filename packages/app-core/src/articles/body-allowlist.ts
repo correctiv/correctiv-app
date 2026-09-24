@@ -135,11 +135,13 @@ const PIXELS = /^\d{1,4}$/;
 const DESCRIPTOR = /^(?:\d{1,5}w|\d{1,2}(?:\.\d{1,3})?x)?$/;
 
 /**
- * What `sizes` may say: media conditions and lengths, `calc()` included. It is
- * only ever read as a length list, so this is a bound on what the attribute can
- * carry rather than a defence; anything else drops it, and the browser then
- * assumes the full width of the screen, which is what the reader's column is on
- * a phone.
+ * What `sizes` may hold: letters, digits, whitespace and the punctuation of media
+ * conditions and lengths, `calc()` included. That lets through functions it has no
+ * use for, `url()` or `var()`, and they are harmless, because `sizes` is only ever
+ * read as a list of lengths and never fetches anything. So this bounds what the
+ * attribute can carry rather than defending anything; a value outside it is
+ * dropped, and the browser then assumes the full width of the screen, which is
+ * what the reader's column is on a phone.
  */
 const SIZES = /^[a-z0-9\s(),.:%+\-*/]{1,300}$/i;
 
@@ -180,8 +182,32 @@ export function gateReaderBody(
   return serialize(nodes, { encodeEntities: 'utf8' });
 }
 
-/** Recursively: drop, unwrap, or keep with the table's attributes. */
-export function allowlistNodes(children: AnyNode[], options: AllowlistOptions): AnyNode[] {
+/**
+ * Recursively: drop, unwrap, or keep with the table's attributes.
+ *
+ * `parent` is the nearest KEPT element above these children, which is what their
+ * parent will be once the unwrapped ones in between are gone, and undefined at the
+ * top of the body. Two tags are kept only where a browser re-reading the output
+ * builds the same tree this parser did, because htmlparser2 applies few of the HTML
+ * standard's implied end tags and the browser applies all of them:
+ *
+ * - An `<li>` only straight inside a `<ul>` or an `<ol>`. A browser that meets an
+ *   `<li>` closes an open one above it, looking up through any `<div>` and `<p>` on
+ *   the way and stopping at a list. With every `<li>` in a list of its own, the
+ *   list is always the first thing that search meets.
+ * - A box only at the top of the body. It is the one `<div>` the gate emits, and a
+ *   `</div>` the browser does not match to it closes the reader's own wrapper, after
+ *   which the rest of the body sits outside every rule of the reader's stylesheet.
+ *   `<ul><li><div class="infobox"><li>` did exactly that, measured with parse5 on
+ *   2026-09-24: the inner `<li>` closed the outer one and the box with it. At the
+ *   top, nothing the box can hold reaches past it. A box found further down is
+ *   unwrapped and keeps its words.
+ */
+export function allowlistNodes(
+  children: AnyNode[],
+  options: AllowlistOptions,
+  parent?: string,
+): AnyNode[] {
   const out: AnyNode[] = [];
   for (const node of children) {
     if (node.type === 'text') {
@@ -214,25 +240,35 @@ export function allowlistNodes(children: AnyNode[], options: AllowlistOptions): 
     }
     if (DROP.has(tag)) continue;
 
-    const cleaned = allowlistNodes(node.children ?? [], options);
-    const box = tag === 'div' ? boxClass(node.attribs ?? {}) : undefined;
-    if (box) {
-      node.children = cleaned;
-      node.attribs = { class: box };
-      if (!options.dropEmpty || hasContent(node)) out.push(node);
-      continue;
-    }
-    const allowed = KEEP[tag];
+    const box = tag === 'div' && parent === undefined ? boxClass(node.attribs ?? {}) : undefined;
+    const allowed =
+      tag === 'li' && parent !== 'ul' && parent !== 'ol' ? undefined : box ? [] : KEEP[tag];
     if (!allowed) {
-      out.push(...cleaned);
+      out.push(...allowlistNodes(node.children ?? [], options, parent));
       continue;
     }
 
-    node.children = cleaned;
-    node.attribs = keptAttributes(node.attribs ?? {}, allowed);
+    const cleaned = allowlistNodes(node.children ?? [], options, tag);
+    node.children = tag === 'p' ? withoutEdgeBreaks(cleaned) : cleaned;
+    node.attribs = box ? { class: box } : keptAttributes(node.attribs ?? {}, allowed);
     if (!options.dropEmpty || TABLE_PARTS.has(tag) || hasContent(node)) out.push(node);
   }
   return out;
+}
+
+/**
+ * A paragraph without a `<br>` at its start or its end. correctiv.org writes
+ * `<p><br>Im November 2016 …` in its infoboxes, which is a blank line the reader
+ * then prints on top of the paragraph's own margin.
+ */
+function withoutEdgeBreaks(children: AnyNode[]): AnyNode[] {
+  const isBreak = (node: AnyNode) => isElement(node) && node.name.toLowerCase() === 'br';
+  const isBlank = (node: AnyNode) => node.type === 'text' && !(node as Text).data.trim();
+  let start = 0;
+  let end = children.length;
+  while (start < end && (isBlank(children[start]) || isBreak(children[start]))) start++;
+  while (end > start && (isBlank(children[end - 1]) || isBreak(children[end - 1]))) end--;
+  return children.slice(start, end);
 }
 
 function keptAttributes(
