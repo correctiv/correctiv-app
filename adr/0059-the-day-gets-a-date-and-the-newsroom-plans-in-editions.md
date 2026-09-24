@@ -238,6 +238,12 @@ asked for" and "and it is deliberately not built ahead of somebody wanting it" a
 was asked for on 2026-09-23, and this record is the addition that paragraph foresaw. "None of
 them is expressible" stays true until §8 is built, and is left standing.
 
+**ADR 0042 §4**, "folds onto one line", in its heading and its second paragraph. The zoom
+switch §2 asks for, built in [#258](https://github.com/correctiv/correctiv-app/pull/258), costs
+the row its width: kept on one line, the day's track was cut off on a phone. So the row wraps,
+and the track, or the week or the month, takes a line of its own where the controls leave it
+too little. The order down the screen, which is the half of §4 worth stating, is unchanged.
+
 No record states that the day is read in the device's local time, so §6 strikes nothing; the
 comment on `minuteOfDay` changes with the code.
 

@@ -336,7 +336,10 @@
       "1": ["The timeline sits below the framed app, in the stage"],
       "2": ["Drawn where the document governs the route, and nowhere else"],
       "3": ["Looking never changes anything"],
-      "4": ["Below 1024 it folds onto one line, and the order down the screen never changes"],
+      "4": [
+        "Below 1024 it folds onto one line, and the order down the screen never changes",
+        "Below 1024 it ~~folds onto one line~~, voided by [ADR 0059](0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §2, and the order down the screen never changes"
+      ],
       "5": [
         "`full` keeps the timeline above 1024 and gives it up below, on the line that already exists"
       ]

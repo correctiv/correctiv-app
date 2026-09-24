@@ -91,11 +91,14 @@ What looking does write is the address — `tm=18:30`, by
 [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md) §9 — and that is the point of
 it. A view of the home screen at half past six is a thing to send somebody.
 
-### 4. Below 1024 it folds onto one line, and the order down the screen never changes
+### 4. Below 1024 it ~~folds onto one line~~, voided by [ADR 0059](0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §2, and the order down the screen never changes
 
 Frame, then timeline, then the tools. At every width.
 
-Below 1024 the timeline lies between the frame and the tool row, folded onto one line:
+Below 1024 the timeline lies between the frame and the tool row, ~~folded onto one line~~
+(voided by [ADR 0059](0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §2: since its zoom switch arrived in
+[#258](https://github.com/correctiv/correctiv-app/pull/258) the row wraps, and the track takes a
+line of its own where the controls leave it too little):
 playhead, time, and the moments as unlabelled points. The labels are what does not fit; the
 track itself is one-dimensional and fits anywhere.
 

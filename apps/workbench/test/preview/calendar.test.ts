@@ -130,6 +130,41 @@ describe('the lanes the bands are laid out in', () => {
     expect(bandsIn(layout, WEEK)).toEqual({ bands: [], lanes: 0 });
   });
 
+  it('gives a two-hour edition in the month a day’s width, its title beside it, and a lane', () => {
+    const MONTH = daysOf('month', '2030-09-01');
+    const SIZES = { min: 1, title: 4 };
+    const night = withSpan(SHIPPED, 'wahlabend', '2030-09-10T18:00', '2030-09-10T20:00');
+    // Starts at the next midnight: exactly, it would not touch the two hours at all.
+    const layout = withSpan(night, 'kampagne', '2030-09-11T00:00', '2030-09-20T00:00');
+
+    expect(bandsIn(layout, MONTH).lanes).toBe(1);
+
+    const { bands, lanes } = bandsIn(layout, MONTH, SIZES);
+    const byId = Object.fromEntries(bands.map((band) => [band.edition.id, band]));
+    const two = byId.wahlabend!;
+    expect(lanes).toBe(2);
+    expect(two.lane).not.toBe(byId.kampagne!.lane);
+    // Still where it really is, only drawn a day wide.
+    expect(two.from).toBeCloseTo((9 + 18 / 24) / 30);
+    expect(two.left).toBe(two.from);
+    expect(two.right - two.left).toBeCloseTo(1 / 30);
+    // Four days of title do not fit into one, so it goes beside the band, where it has room.
+    expect(two).toMatchObject({ label: 'right', labelLeft: two.right });
+    expect(two.labelRight - two.labelLeft).toBeCloseTo(4 / 30);
+    // The campaign is ten days, room enough for its title inside.
+    expect(byId.kampagne!.label).toBe('inside');
+  });
+
+  it('puts the title on the left of a short edition at the strip’s right edge', () => {
+    const MONTH = daysOf('month', '2030-09-01');
+    const layout = withSpan(SHIPPED, 'spaet', '2030-09-30T22:00', '2030-10-01T00:00');
+    const [band] = bandsIn(layout, MONTH, { min: 1, title: 4 }).bands;
+    // Pushed back from the edge so that it is a day wide and still ends there.
+    expect(band!.right).toBe(1);
+    expect(band!.right - band!.left).toBeCloseTo(1 / 30);
+    expect(band).toMatchObject({ label: 'left', labelRight: band!.left });
+  });
+
   it('frees a lane for a later edition once the one in it has ended', () => {
     let layout = withSpan(SHIPPED, 'a', '2030-09-23T00:00', '2030-09-27T00:00');
     layout = withSpan(layout, 'b', '2030-09-24T00:00', '2030-09-25T00:00');

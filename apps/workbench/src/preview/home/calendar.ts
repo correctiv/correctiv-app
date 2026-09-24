@@ -96,23 +96,48 @@ export function stepped(span: Span, date: BerlinDate, by: number): BerlinDate {
 /**
  * One edition drawn across the days on screen.
  *
- * `from` and `to` are shares of the strip's width, 0 to 1, read through the wall clock the
- * way the day's track is: a day is a column whatever its length, and 18:00 is three quarters
- * of the way across it on the two days a year that have 23 or 25 hours as well. `before`
- * and `after` say the edition runs on past the edge of what is shown, which the band draws.
- * `firstDay` and `lastDay` are the days it touches at all, unclipped, for its name: an end
- * at exactly midnight belongs to the day before, because `until` is exclusive.
+ * `from` and `to` are where it really starts and ends, as shares of the strip's width, 0 to 1,
+ * read through the wall clock the way the day's track is: a day is a column whatever its
+ * length, and 18:00 is three quarters of the way across it on the two days a year that have
+ * 23 or 25 hours as well. `left` and `right` are where the band is DRAWN, which is the same
+ * span widened to the minimum a band may be (see `BandSizes`), so an election night of eight
+ * hours is something the eye finds in a month. `label` says where its title goes: inside the
+ * band where it fits, otherwise beside it, to the right, or to the left where the right is
+ * the edge of the strip; `labelLeft` and `labelRight` are the room it is given there.
+ *
+ * `before` and `after` say the edition runs on past the edge of what is shown, which the
+ * band draws. `firstDay` and `lastDay` are the days it touches at all, unclipped, for its
+ * name: an end at exactly midnight belongs to the day before, because `until` is exclusive.
  */
 export interface Band {
   readonly edition: HomeEdition;
   readonly lane: number;
   readonly from: number;
   readonly to: number;
+  readonly left: number;
+  readonly right: number;
+  readonly label: 'inside' | 'right' | 'left';
+  readonly labelLeft: number;
+  readonly labelRight: number;
   readonly before: boolean;
   readonly after: boolean;
   readonly firstDay: BerlinDate;
   readonly lastDay: BerlinDate;
 }
+
+/**
+ * How wide a band is drawn at least, and how much room its title needs, both in days.
+ *
+ * In days because a day column is the one unit both zooms have, and its width in pixels is
+ * whatever the window gives; `Calendar.tsx` picks the two numbers per zoom and says why.
+ */
+export interface BandSizes {
+  readonly min: number;
+  readonly title: number;
+}
+
+/** No widening and no room for a title: the band exactly as long as the edition. */
+const EXACT: BandSizes = { min: 0, title: 0 };
 
 /** The last day an edition is on for at least a minute, which is not always `until`'s date. */
 export function lastDayOf(edition: HomeEdition): BerlinDate {
@@ -124,15 +149,18 @@ export function lastDayOf(edition: HomeEdition): BerlinDate {
  * The editions on any of these days, as bands, each in a lane of its own where it would
  * otherwise overlap another.
  *
- * Laid out greedily, left to right: by where a band starts, the longer first where two
- * start together, then the document's order; each goes into the lowest lane whose last
- * band has ended by the time it begins. Touching is not overlapping, so an edition that
- * ends at midnight and one that starts at that midnight share a lane. The lane is a
- * drawing and says nothing about precedence, which is the fold's question (ADR 0059 §4).
+ * What may not overlap is what is DRAWN: the band at its minimum width and its title beside
+ * it where the title does not fit inside, so a label never runs into another band. Laid out
+ * greedily, left to right: by where that drawn extent starts, the longer first where two start
+ * together, then the document's order; each goes into the lowest lane whose last extent has
+ * ended by the time it begins. Touching is not overlapping, so an edition that ends at
+ * midnight and one that starts at that midnight share a lane. The lane is a drawing and says
+ * nothing about precedence, which is the fold's question (ADR 0059 §4).
  */
 export function bandsIn(
   layout: HomeLayout,
   days: readonly BerlinDate[],
+  sizes: BandSizes = EXACT,
 ): { bands: readonly Band[]; lanes: number } {
   const first = days[0];
   const last = days[days.length - 1];
@@ -140,6 +168,8 @@ export function bandsIn(
   const opens = berlinInstant(first, 0)!;
   const closes = berlinInstant(addDays(last, 1), 0)!;
   const index = new Map(days.map((day, at) => [day, at]));
+  const min = Math.min(1, sizes.min / days.length);
+  const title = Math.min(1, sizes.title / days.length);
 
   const share = (instant: Instant): number => {
     if (instant <= opens) return 0;
@@ -151,24 +181,42 @@ export function bandsIn(
   const placed = layout.editions
     .map((edition, order) => ({ edition, order }))
     .filter(({ edition }) => edition.start < closes && edition.end > opens)
-    .map(({ edition, order }) => ({
-      edition,
-      order,
-      from: share(edition.start),
-      to: share(edition.end),
-    }))
-    .sort((a, b) => a.from - b.from || b.to - b.from - (a.to - a.from) || a.order - b.order);
+    .map(({ edition, order }) => {
+      const from = share(edition.start);
+      const to = share(edition.end);
+      // Widened to the right, from where it really starts; pushed back from the edge.
+      const right = Math.min(1, Math.max(to, from + min));
+      const left = Math.min(from, right - min);
+      const inside = right - left >= title;
+      const label: Band['label'] = inside ? 'inside' : right + title <= 1 ? 'right' : 'left';
+      const labelLeft =
+        label === 'right' ? right : label === 'left' ? Math.max(0, left - title) : left;
+      const labelRight = label === 'right' ? right + title : label === 'left' ? left : right;
+      return {
+        edition,
+        order,
+        from,
+        to,
+        left,
+        right,
+        label,
+        labelLeft,
+        labelRight,
+        start: Math.min(left, labelLeft),
+        end: Math.max(right, labelRight),
+      };
+    })
+    .sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start) || a.order - b.order);
 
   const ends: number[] = [];
-  const bands = placed.map(({ edition, from, to }) => {
-    let lane = ends.findIndex((end) => end <= from);
+  const bands = placed.map(({ edition, order: _order, start, end, ...drawn }) => {
+    let lane = ends.findIndex((taken) => taken <= start);
     if (lane === -1) lane = ends.length;
-    ends[lane] = to;
+    ends[lane] = end;
     return {
       edition,
       lane,
-      from,
-      to,
+      ...drawn,
       before: edition.start < opens,
       after: edition.end > closes,
       firstDay: berlinWallClock(edition.start).date,

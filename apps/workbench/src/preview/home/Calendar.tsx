@@ -20,6 +20,7 @@ import {
   noonOf,
   weekdayOf,
   type Band,
+  type BandSizes,
   type DayChoice,
 } from './calendar';
 import { editableFrom, withEditionAcross } from './document';
@@ -52,6 +53,22 @@ const COPY = defineMessages({
       'Shown under the week or month when a drag across days made no edition: every minute of those days already belongs to a narrower edition, or one runs over exactly those days, so a new one would never be the one an edit lands on.',
   },
 });
+
+/**
+ * How wide a band is drawn at least, and how much room its title is given, in days.
+ *
+ * An edition of a few hours is exactly what somebody looks for in the overview, an election
+ * night or a live event, and drawn to scale it is a sliver. So a band is never narrower than a
+ * third of a day in the week, where a column is wide, and a whole day in the month, where it
+ * is a finger's width: enough to see and to hit, and still starting at its real minute. The
+ * title needs about a hundred pixels, which is roughly one week column and four month
+ * columns at the width the stage has beside an open panel; where the band is narrower than
+ * that, the title goes beside it, and a narrower window truncates it with an ellipsis.
+ */
+const SIZES: Record<'week' | 'month', BandSizes> = {
+  week: { min: 1 / 3, title: 1 },
+  month: { min: 1, title: 4 },
+};
 
 /** The words for an edition's band, which are the edition's vocabulary. */
 const BAND_COPY = defineMessages({
@@ -118,7 +135,10 @@ export function Calendar({
   today: BerlinDate;
   simulated: boolean;
   editing: boolean;
-  /** Whether the bands carry their titles, which is what ADR 0042 §4 gives up below 1024. */
+  /**
+   * Whether the day heads carry their weekday, which is what ADR 0042 §4 gives up below 1024.
+   * The bands carry their titles at every width: a title is what somebody looks for here.
+   */
   labelled: boolean;
   /** Moves the playhead, in `tm=`'s dated spelling. */
   onTime: (time: string) => void;
@@ -136,7 +156,7 @@ export function Calendar({
   const [refused, setRefused] = useState(false);
 
   const days = daysOf(span, playhead.date);
-  const { bands, lanes } = bandsIn(layout, days);
+  const { bands, lanes } = bandsIn(layout, days, SIZES[span]);
   const choice: DayChoice = { anchor: playhead.date, focus: extent ?? playhead.date };
   const [first, last] = chosenDays(choice);
   const focusDay = days.includes(choice.focus) ? choice.focus : days[0]!;
@@ -226,7 +246,8 @@ export function Calendar({
 
   /* Heights in rem, so the bands and the columns agree on where a lane is. */
   const head = span === 'month' && labelled ? 1.75 : labelled ? 1.125 : 0.875;
-  const lane = labelled ? 1 : 0.5;
+  // Every band carries its title now, at every width, so a lane is tall enough for a line.
+  const lane = 1;
   const gap = 0.125;
   const height = head + Math.max(lanes, 1) * (lane + gap) + 0.25;
 
@@ -332,49 +353,71 @@ export function Calendar({
           />
         )}
 
-        {/* The editions. */}
-        {bands.map((band) => (
-          <button
-            key={band.edition.id}
-            type="button"
-            data-band=""
-            aria-label={bandName(band)}
-            title={labelled ? undefined : nameOf(band.edition)}
-            className={cn(
-              'edition-ink @container absolute flex min-w-[0.375rem] items-center gap-4xs overflow-hidden bg-(--edition) px-3xs text-canvas',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-canvas',
-              band.before ? 'rounded-l-none' : 'rounded-l-full',
-              band.after ? 'rounded-r-none' : 'rounded-r-full',
-            )}
-            style={{
-              ...inkOf(band.edition.id),
-              top: `${head + band.lane * (lane + gap)}rem`,
-              height: `${lane}rem`,
-              left: `${band.from * 100}%`,
-              width: `${(band.to - band.from) * 100}%`,
-            }}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => choose(band)}
-          >
-            {band.before && labelled && (
-              <ChevronLeft aria-hidden="true" className="-ml-4xs size-[0.75rem] shrink-0" />
-            )}
-            {labelled && (
+        {/*
+          The editions. One button per band, as wide as what it draws: the band at its
+          drawn width and, where the title did not fit inside, the title beside it, so a
+          click on the title chooses the edition as a click on the band does.
+        */}
+        {bands.map((band) => {
+          const start = Math.min(band.left, band.labelLeft);
+          const width = Math.max(band.right, band.labelRight) - start;
+          const at = (share: number) => `${((share - start) / width) * 100}%`;
+          const name = nameOf(band.edition);
+          return (
+            <button
+              key={band.edition.id}
+              type="button"
+              data-band=""
+              aria-label={bandName(band)}
+              className={cn(
+                'edition-ink absolute rounded-full',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-canvas',
+              )}
+              style={{
+                ...inkOf(band.edition.id),
+                top: `${head + band.lane * (lane + gap)}rem`,
+                height: `${lane}rem`,
+                left: `${start * 100}%`,
+                width: `${width * 100}%`,
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => choose(band)}
+            >
               <span
                 aria-hidden="true"
-                className="hidden min-w-0 flex-1 truncate text-center text-[0.625rem] font-semibold leading-none @min-[4rem]:block"
+                className={cn(
+                  'absolute inset-y-0 flex items-center gap-4xs overflow-hidden bg-(--edition) px-3xs text-canvas',
+                  band.before ? 'rounded-l-none' : 'rounded-l-full',
+                  band.after ? 'rounded-r-none' : 'rounded-r-full',
+                )}
+                style={{ left: at(band.left), width: at(start + band.right - band.left) }}
               >
-                {nameOf(band.edition)}
+                {band.before && <ChevronLeft className="-ml-4xs size-[0.75rem] shrink-0" />}
+                {band.label === 'inside' && (
+                  <span className="min-w-0 flex-1 truncate text-center text-[0.625rem] font-semibold leading-none">
+                    {name}
+                  </span>
+                )}
+                {band.after && <ChevronRight className="-mr-4xs ml-auto size-[0.75rem] shrink-0" />}
               </span>
-            )}
-            {band.after && labelled && (
-              <ChevronRight
-                aria-hidden="true"
-                className="-mr-4xs ml-auto size-[0.75rem] shrink-0"
-              />
-            )}
-          </button>
-        ))}
+              {band.label !== 'inside' && (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute inset-y-0 truncate px-3xs text-[0.625rem] font-semibold leading-[1rem] text-(--edition)',
+                    band.label === 'left' ? 'text-right' : 'text-left',
+                  )}
+                  style={{
+                    left: at(band.labelLeft),
+                    width: at(start + band.labelRight - band.labelLeft),
+                  }}
+                >
+                  {name}
+                </span>
+              )}
+            </button>
+          );
+        })}
 
         {/* The playhead, a line inside its day at its minute: the day's track, seen from further out. */}
         {playheadAt !== -1 && (
@@ -445,7 +488,13 @@ function DayLabel({
     <span aria-hidden="true" className="flex flex-col items-center gap-4xs">
       {labelled && (
         <span className="hidden text-[0.5625rem] text-on-canvas-muted @min-[36rem]:inline">
-          {spell(day, { weekday: 'narrow' })}
+          {/*
+            Two letters, not the browser's narrow form: "S" is both Saturday and Sunday in
+            German and in English. The short form cut to two is Mo Di Mi Do Fr Sa So, and
+            Mo Tu We Th Fr Sa Su; narrower than that the weekday goes and the Monday marks
+            and the weekend tint say which day is which.
+          */}
+          {spell(day, { weekday: 'short' }).slice(0, 2)}
         </span>
       )}
       <span className={cn(tone, !monday && !today && 'hidden @min-[26rem]:inline')}>{number}</span>
