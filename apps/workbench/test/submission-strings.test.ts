@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -483,8 +484,22 @@ describe('the proof', () => {
  */
 describe('the whole path, in a throwaway repository', () => {
   let root: string;
+  /*
+   * Without the `GIT_*` variables of whatever git is running this suite. The pre-push
+   * hook runs `npm run check` with `GIT_DIR` set to this repository's, and a `git init`
+   * and `git add .` in the throwaway directory then staged it over this repository's own
+   * index: measured on 2026-09-24, on this test's first push. No hooks either, since
+   * the repository's own would run inside the copy.
+   */
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) if (key.startsWith('GIT_')) delete env[key];
   const git = (...args: string[]) =>
-    execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+    execFileSync('git', ['-c', 'core.hooksPath=/dev/null', ...args], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      env,
+    });
 
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'strings-submission-'));
@@ -493,6 +508,9 @@ describe('the whole path, in a throwaway repository', () => {
     cpSync(join(ROOT, ENGLISH_EXTRACTION), join(root, ENGLISH_EXTRACTION));
     cpSync(join(ROOT, '.oxfmtrc.json'), join(root, '.oxfmtrc.json'));
     git('init', '-q');
+    // Nothing below may touch any repository but the throwaway one.
+    if (realpathSync(git('rev-parse', '--show-toplevel').trim()) !== realpathSync(root))
+      throw new Error('git does not see the throwaway directory as its own repository');
     git('add', '.');
     git('-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-qm', 'main');
   });
