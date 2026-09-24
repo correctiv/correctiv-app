@@ -3,9 +3,53 @@
  */
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeLayout } from '@correctiv/app-core/lib/home-layout';
+
+/**
+ * A handful of made-up rows, not the generated table `virtual:strings` otherwise
+ * reads off disk.
+ *
+ * `DraftMarker.tsx` reads that module to know the shipped German for the ids a
+ * string draft might rework, the same way `StringsTool.tsx` does. The real table is
+ * `apps/workbench/content/strings.generated.json`, written by `npm run strings` and
+ * not committed — CI does not run that generator before this suite, so importing the
+ * component for real would fail on a fresh checkout with "…strings.generated.json is
+ * missing" (`plugin/index.ts`'s `load()`), which is a fact about a build artifact and
+ * not about the marker. `test/strings.test.ts` takes the same way out for
+ * `strings-model.ts`'s own pure functions, with fixtures instead of the real table;
+ * this is the same fixture shape, mocked at the one seam that reads it, because the
+ * component itself imports the module directly rather than taking rows as a
+ * parameter.
+ */
+vi.mock('virtual:strings', () => ({
+  default: {
+    locales: ['de', 'en'],
+    strings: [
+      {
+        id: 'home.viewAll',
+        surface: 'app',
+        namespace: 'home',
+        english: 'See all',
+        description: null,
+        file: 'apps/mobile/src/lib/home/modules.tsx',
+        line: 56,
+        translations: { de: 'Alle ansehen', en: 'See all' },
+      },
+      {
+        id: 'home.factChecks',
+        surface: 'app',
+        namespace: 'home',
+        english: 'Fact checks',
+        description: null,
+        file: 'apps/mobile/src/lib/home/modules.tsx',
+        line: 56,
+        translations: { de: 'Faktenchecks', en: 'Fact checks' },
+      },
+    ],
+  },
+}));
 
 import { Localisation } from '../../src/i18n/Localisation';
 import { SOURCE_LANGUAGE } from '../../src/i18n/language';
