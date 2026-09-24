@@ -113,10 +113,45 @@ function escape(text: string): string {
 /** A formatted number: a digit, then digits, separators and the spaces `Intl` groups with. */
 const NUMBER_PATTERN = '(\\d[\\d.,\\s\\u00a0\\u202f]*?)';
 
+/**
+ * The separators the app joins values into one line with, where a line is composed in
+ * code rather than written as a message: `Autorin · 23. September · 3 Min. Lesezeit`.
+ */
+const SEPARATORS = [' · '];
+
+/**
+ * A free hole at the start or end of a pattern, kept from reaching across a separator.
+ *
+ * ADR 0056 §2 decided to match on the text node, and names two shapes it can meet:
+ * decoration beside a message, and a message spanning children. A line the app composes
+ * in code is a third, which §2 does not cover: author, date and reading time joined with
+ * " · " arrive as ONE text node, and a message that begins with a hole,
+ * `{minutes} Min. Lesezeit`, matched the whole line by swallowing the author and the date
+ * through that hole. Measured on 2026-09-24, it was then the only candidate, so the panel
+ * named the wrong id with confidence.
+ *
+ * So an edge hole may not swallow a separator the message's own fixed text does not
+ * contain. Such a line then resolves to no id, or to the right one, and never to a wrong
+ * one alone; "no id" is an honest answer for a line that is mostly content. A hole in
+ * the middle is left as it is, because fixed text on both sides already anchors it, and
+ * a number hole never matches a separator anyway.
+ */
+function edgeHole(forbidden: readonly string[]): string {
+  if (forbidden.length === 0) return '([\\s\\S]+?)';
+  const not = forbidden.map((separator) => escape(separator)).join('|');
+  return `((?:(?!${not})[\\s\\S])+?)`;
+}
+
 function toPattern(parts: Part[]): RegExp {
+  const fixed = parts.filter((part): part is string => typeof part === 'string').join('');
+  const forbidden = SEPARATORS.filter((separator) => !normalise(fixed).includes(separator.trim()));
   const body = parts
     .map((part, index) => {
-      if (isHole(part)) return part.hole === 'number' ? NUMBER_PATTERN : '([\\s\\S]+?)';
+      if (isHole(part)) {
+        if (part.hole === 'number') return NUMBER_PATTERN;
+        const edge = index === 0 || index === parts.length - 1;
+        return edge ? edgeHole(forbidden) : '([\\s\\S]+?)';
+      }
       let text = part;
       if (index === 0) text = text.trimStart();
       if (index === parts.length - 1) text = text.trimEnd();

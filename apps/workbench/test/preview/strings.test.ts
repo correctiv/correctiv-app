@@ -178,6 +178,29 @@ describe('a pattern too loose to match on takes no part (§3)', () => {
   });
 });
 
+describe('an edge hole does not reach across a composed line’s separator', () => {
+  const index = buildIndex([
+    ['x.lead', '{minutes} Min. Lesezeit'],
+    ['x.tail', 'Recherche von {authors}'],
+    ['x.middle', 'Von {authors} geprüft'],
+    ['x.own', '{tier} · seit {date}'],
+  ]);
+
+  it('keeps a leading or trailing hole inside one segment of the line', () => {
+    expect(candidates(index, 'Anna Muster · 23. September · 3 Min. Lesezeit')).toEqual([]);
+    expect(candidates(index, 'Recherche von Anna · 3 Min. Lesezeit')).toEqual([]);
+    expect(candidates(index, 'Recherche von Anna und Ben')).toEqual(['x.tail']);
+  });
+
+  it('leaves a hole in the middle as it was', () => {
+    expect(candidates(index, 'Von Anna · Ben geprüft')).toEqual(['x.middle']);
+  });
+
+  it('lets a message whose own text holds the separator match across it', () => {
+    expect(candidates(index, 'Mitgliedschaft · seit 4. März')).toEqual(['x.own']);
+  });
+});
+
 describe('a number hole takes a number', () => {
   const index = buildIndex([
     ['x.count', '{count, plural, one {# Beitrag bisher} other {# Beiträge bisher}}'],
@@ -375,6 +398,24 @@ describe('over the app’s real German', () => {
       .filter((entry) => !candidates(index, entry.translations.de!).includes(entry.id))
       .map((entry) => entry.id);
     expect(missed).toEqual([]);
+  });
+
+  /**
+   * The line under a feed headline is composed in code, author, date and reading time
+   * joined with " · ", and reaches the page as ONE text node. Measured on 2026-09-24:
+   * `{minutes} Min. Lesezeit` swallowed the author and the date through its leading
+   * hole and was the only candidate, so the panel named the wrong id with confidence.
+   * "No id" is an acceptable answer here; that one is not.
+   */
+  it('does not confidently name the wrong id for the composed byline', () => {
+    const line = 'Caroline Lindekamp · 23. September · 3 Min. Lesezeit';
+    expect(candidates(index, line)).not.toEqual(['core.reader.readingTime']);
+    expect(candidates(index, line)).not.toContain('core.reader.readingTime');
+    // The reading time on its own is still found, by both messages that can print it.
+    expect(candidates(index, '3 Min. Lesezeit').sort()).toEqual([
+      'article.readingTime',
+      'core.reader.readingTime',
+    ]);
   });
 
   it('keeps the loose ids to the few the record expected', () => {
