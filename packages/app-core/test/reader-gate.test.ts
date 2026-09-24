@@ -80,7 +80,7 @@ const TAGS: Record<string, readonly string[]> = {
   blockquote: [],
   figure: [],
   figcaption: [],
-  img: ['src', 'alt', 'width', 'height'],
+  img: ['src', 'srcset', 'sizes', 'alt', 'width', 'height'],
   a: ['href', 'class'],
   strong: [],
   em: [],
@@ -99,10 +99,18 @@ const TAGS: Record<string, readonly string[]> = {
   th: [],
   td: [],
   iframe: ['class', 'src', 'sandbox', 'title', 'name', 'height', 'loading'],
+  // Only as the box `blocks.ts` puts round an infobox; every other `<div>` goes.
+  div: ['class'],
 };
 
 /** Every address the body may still carry: absolute http(s), or a mail address. */
 const ADDRESS = /^(?:https?:\/\/|mailto:)/;
+
+/**
+ * One candidate of a kept `srcset`: an absolute http(s) address with no whitespace,
+ * then a width, a density or nothing.
+ */
+const SRCSET_CANDIDATE = /^https?:\/\/\S+(?: (?:\d+w|\d+(?:\.\d+)?x))?$/;
 
 /**
  * Every tag in `body`, read with a pattern and not a parser, because the browser
@@ -133,11 +141,19 @@ function violations(body: string): string[] {
       if ((key === 'href' || key === 'src') && !ADDRESS.test(value)) {
         out.push(`${key}="${value}" on <${name}>`);
       }
+      if (key === 'srcset') {
+        for (const candidate of value.split(/,\s+/)) {
+          if (!SRCSET_CANDIDATE.test(candidate)) out.push(`srcset candidate "${candidate}"`);
+        }
+      }
       if (
         key === 'class' &&
-        !/^(?:embed-fallback(?: embed-fallback--article)?|reader-embed)$/.test(value)
+        !/^(?:embed-fallback(?: embed-fallback--article)?|reader-embed|infobox)$/.test(value)
       ) {
         out.push(`class="${value}" on <${name}>`);
+      }
+      if (name === 'div' && !(key === 'class' && value === 'infobox')) {
+        out.push(`<div> as anything but an infobox`);
       }
     }
   }
@@ -200,6 +216,20 @@ const CORPUS: string[] = [
   '<details open ontoggle="x()"><summary onclick="x()">s</summary>x</details>',
   '<table><a href="/x">x</a><tr><td background="/x">y</td></tr></table>',
   '<video src="/x" autoplay></video><audio src="/x"></audio><picture><source srcset="/x"></picture>',
+  // A srcset is a list of addresses, and every one of them is an address.
+  '<img srcset="javascript:alert(1) 1x, /a.jpg 2x">',
+  '<img srcset="data:text/html,<script>alert(1)</script> 1x">',
+  '<img srcset="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg== 2x, vbscript:x 3x">',
+  '<img srcset=" java\tscript:alert(1) 1x">',
+  '<img srcset="/a.jpg 1x, "/b.jpg 2x" onerror="x()">',
+  '<img srcset=\'/a.jpg 1x", onerror=x() "\'>',
+  '<img srcset="/a,b.jpg 1x,/c.jpg,, /d.jpg 400w">',
+  '<img srcset="/a.jpg 1x onerror=x(), /b.jpg (max-width: 1px) 2x">',
+  '<img srcset="/a.jpg 100w" sizes="</div><script>alert(1)</script>">',
+  '<img sizes="(max-width: 706px) 100vw, 706px" srcset="/a.jpg 706w">',
+  // A box is a class the reader styles and nothing more.
+  '<div class="infobox x" style="max-height:1px" onclick="x()" id="y"><p>x</p></div>',
+  '<div class="wp-block-cvui-infobox"><button>Mehr anzeigen</button><div data-cvui-infobox-panel style="max-height:100px"><p>x</p></div></div>',
   '<a href="https://example.org/" title="a > b" data-x="<meta http-equiv=refresh>">x</a>',
 ];
 
@@ -242,11 +272,84 @@ describe('the gate', () => {
     expect(bodyOf(reader('<p><a href="javascript:alert(1)">x</a></p>'))).toBe('<p><a>x</a></p>');
   });
 
+  describe('a srcset', () => {
+    it('keeps every candidate, each address written out absolute', () => {
+      expect(
+        bodyOf(
+          reader(
+            '<img src="/a-706.jpg" srcset="/a-706.jpg 706w, https://correctiv.org/a-1412.jpg 1412w" sizes="(max-width: 706px) 100vw, 706px">',
+          ),
+        ),
+      ).toBe(
+        '<img src="https://correctiv.org/a-706.jpg" srcset="https://correctiv.org/a-706.jpg 706w, https://correctiv.org/a-1412.jpg 1412w" sizes="(max-width: 706px) 100vw, 706px">',
+      );
+    });
+
+    it('drops a candidate whose address is not an image address, and keeps the rest', () => {
+      expect(
+        bodyOf(
+          reader(
+            '<img srcset="javascript:alert(1) 1x, data:text/html,<script>x</script> 2x, /b.jpg 3x">',
+          ),
+        ),
+      ).toBe('<img srcset="https://correctiv.org/b.jpg 3x">');
+    });
+
+    it('drops the attribute when no candidate is left', () => {
+      expect(bodyOf(reader('<img src="/a.jpg" srcset="javascript:x 1x, vbscript:y 2x">'))).toBe(
+        '<img src="https://correctiv.org/a.jpg">',
+      );
+    });
+
+    it('reads a comma inside an address as part of it, the way a browser does', () => {
+      expect(bodyOf(reader('<img srcset="/a,b.jpg 1x,/c.jpg,, /d.jpg 400w">'))).toBe(
+        '<img srcset="https://correctiv.org/a,b.jpg 1x, https://correctiv.org/c.jpg, https://correctiv.org/d.jpg 400w">',
+      );
+    });
+
+    it('drops a candidate whose descriptor is not a width or a density', () => {
+      expect(
+        bodyOf(
+          reader('<img srcset="/a.jpg 1x onerror=x(), /b.jpg (max-width: 1px) 2x, /c.jpg 2x">'),
+        ),
+      ).toBe('<img srcset="https://correctiv.org/c.jpg 2x">');
+    });
+
+    it('survives a quote left open, as whatever the parser made of it', () => {
+      const body = bodyOf(reader('<p><img srcset="/a.jpg 1x, "/b.jpg 2x" onerror="x()"></p>'));
+      expect(violations(body)).toEqual([]);
+      expect(body).toBe('<p><img srcset="https://correctiv.org/a.jpg 1x"></p>');
+    });
+
+    it('drops a sizes that is not a list of lengths', () => {
+      expect(bodyOf(reader('<img src="/a.jpg" sizes="</div><script>x</script>">'))).toBe(
+        '<img src="https://correctiv.org/a.jpg">',
+      );
+    });
+  });
+
+  it('keeps an infobox as a box with its one class, and nothing else of the div', () => {
+    expect(
+      bodyOf(reader('<div class="infobox x" style="max-height:1px" onclick="x()"><p>x</p></div>')),
+    ).toBe('<div class="infobox"><p>x</p></div>');
+    expect(bodyOf(reader('<div class="wp-block-cvui-infobox"><p>x</p></div>'))).toBe('<p>x</p>');
+  });
+
+  it('keeps the infobox of a REST body as a box', () => {
+    const fragment =
+      '<div class="cvui-block wp-block-cvui-infobox"><div data-cvui-infobox-panel style="max-height: 100px"><p>Im Kasten</p></div><button>Mehr anzeigen</button></div><p>Danach</p>';
+    expect(bodyOf(reader(toArticle({ content: { rendered: fragment } } as Post).bodyHtml))).toBe(
+      '<div class="infobox"><p>Im Kasten</p></div><p>Danach</p>',
+    );
+  });
+
   it('keeps what the reader shows, byte for byte where it can', () => {
     const kept =
       '<h2>Titel</h2><p>Ein <strong>Absatz</strong> mit <a href="https://correctiv.org/x/">Link</a> &amp; Umlauten: äöü „…“</p>' +
       '<figure><img src="https://correctiv.org/a.jpg" alt="Ein Bild"><figcaption>Bild: x</figcaption></figure>' +
-      '<details><summary>Frage</summary><p>Antwort</p></details>';
+      '<details><summary>Frage</summary><p>Antwort</p></details>' +
+      '<div class="infobox"><p>Kasten</p></div>' +
+      '<p><img src="https://correctiv.org/a.jpg" srcset="https://correctiv.org/a.jpg 706w, https://correctiv.org/b.jpg 1412w" sizes="(max-width: 706px) 100vw, 706px"></p>';
     expect(bodyOf(reader(kept))).toBe(kept);
   });
 });

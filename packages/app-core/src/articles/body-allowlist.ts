@@ -4,6 +4,7 @@ import { textContent } from 'domutils';
 import { Text } from 'domhandler';
 import { parseDocument } from 'htmlparser2';
 
+import { READER_BOX_CLASSES } from './blocks';
 import {
   EMBED_FALLBACK_CLASS,
   EMBED_FRAME_CLASS,
@@ -54,7 +55,10 @@ const KEEP: Record<string, readonly string[]> = {
   blockquote: [],
   figure: [],
   figcaption: [],
-  img: ['src', 'alt', 'width', 'height'],
+  // The sizes the site offers, so a device loads the one it needs rather than the
+  // `src`, which WordPress sets to a large one. Every address in `srcset` is held
+  // to the rule `src` is (`imageSet` below).
+  img: ['src', 'srcset', 'sizes', 'alt', 'width', 'height'],
   a: ['href'],
   strong: [],
   em: [],
@@ -127,6 +131,24 @@ const BASE = 'https://correctiv.org/';
 
 const PIXELS = /^\d{1,4}$/;
 
+/** A candidate's descriptor in `srcset`: a width, a density, or none. */
+const DESCRIPTOR = /^(?:\d{1,5}w|\d{1,2}(?:\.\d{1,3})?x)?$/;
+
+/**
+ * What `sizes` may say: media conditions and lengths, `calc()` included. It is
+ * only ever read as a length list, so this is a bound on what the attribute can
+ * carry rather than a defence; anything else drops it, and the browser then
+ * assumes the full width of the screen, which is what the reader's column is on
+ * a phone.
+ */
+const SIZES = /^[a-z0-9\s(),.:%+\-*/]{1,300}$/i;
+
+/** The one class a box keeps, if it carries one the reader styles (`blocks.ts`). */
+function boxClass(attribs: Record<string, string>): string | undefined {
+  const classes = (attribs.class ?? '').split(/\s+/);
+  return READER_BOX_CLASSES.find((name) => classes.includes(name));
+}
+
 export interface AllowlistOptions {
   /**
    * Drop a kept element with neither text nor media in it. The extractor wants
@@ -193,6 +215,13 @@ export function allowlistNodes(children: AnyNode[], options: AllowlistOptions): 
     if (DROP.has(tag)) continue;
 
     const cleaned = allowlistNodes(node.children ?? [], options);
+    const box = tag === 'div' ? boxClass(node.attribs ?? {}) : undefined;
+    if (box) {
+      node.children = cleaned;
+      node.attribs = { class: box };
+      if (!options.dropEmpty || hasContent(node)) out.push(node);
+      continue;
+    }
     const allowed = KEEP[tag];
     if (!allowed) {
       out.push(...cleaned);
@@ -219,11 +248,17 @@ function keptAttributes(
         ? linkAddress(value)
         : name === 'src'
           ? imageAddress(value)
-          : name === 'width' || name === 'height'
-            ? PIXELS.test(value)
-              ? value
-              : undefined
-            : value;
+          : name === 'srcset'
+            ? imageSet(value)
+            : name === 'sizes'
+              ? SIZES.test(value)
+                ? value.trim()
+                : undefined
+              : name === 'width' || name === 'height'
+                ? PIXELS.test(value)
+                  ? value
+                  : undefined
+                : value;
     if (kept !== undefined) out[name] = kept;
   }
   return out;
@@ -258,6 +293,58 @@ function linkAddress(value: string): string | undefined {
 function imageAddress(value: string): string | undefined {
   const url = parse(value);
   return url && ['https:', 'http:'].includes(url.protocol) ? url.toString() : undefined;
+}
+
+/**
+ * A `srcset`, candidate by candidate: each address held to `imageAddress` and
+ * written out absolute, each descriptor to a width or a density. A candidate that
+ * fails either is left out and the rest are kept; with none left, so is the
+ * attribute. What is written is rebuilt from the parts, never the value as it came.
+ *
+ * Read the way the HTML standard reads it, because the browser is the reader that
+ * matters: an address runs to the next whitespace and may hold commas, a comma at
+ * its end ends the candidate, and a comma inside a descriptor's parentheses does
+ * not.
+ */
+function imageSet(value: string): string | undefined {
+  const kept: string[] = [];
+  for (const { url, descriptor } of srcsetCandidates(value)) {
+    const address = imageAddress(url);
+    if (!address || !DESCRIPTOR.test(descriptor)) continue;
+    // An address that ended in a comma would end its candidate early when the
+    // browser reads it back; resolving never adds one, and this says so.
+    if (address.endsWith(',')) continue;
+    kept.push(descriptor ? `${address} ${descriptor}` : address);
+  }
+  return kept.length > 0 ? kept.join(', ') : undefined;
+}
+
+function srcsetCandidates(value: string): { url: string; descriptor: string }[] {
+  const out: { url: string; descriptor: string }[] = [];
+  let i = 0;
+  while (i < value.length) {
+    while (i < value.length && /[\s,]/.test(value[i])) i++;
+    if (i >= value.length) break;
+    let end = i;
+    while (end < value.length && !/\s/.test(value[end])) end++;
+    let url = value.slice(i, end);
+    i = end;
+    let descriptor = '';
+    if (url.endsWith(',')) {
+      url = url.replace(/,+$/, '');
+    } else {
+      let depth = 0;
+      while (i < value.length && (value[i] !== ',' || depth > 0)) {
+        if (value[i] === '(') depth++;
+        else if (value[i] === ')' && depth > 0) depth--;
+        descriptor += value[i];
+        i++;
+      }
+      i++; // the comma
+    }
+    if (url) out.push({ url, descriptor: descriptor.trim() });
+  }
+  return out;
 }
 
 function parse(value: string): URL | undefined {

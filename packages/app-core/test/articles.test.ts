@@ -143,10 +143,16 @@ describe.each([
 
   it('and only the DOM backend removes classes and inline styles', () => {
     // Bar the two an embed leaves behind, which are the reader's own (ADR 0065,
-    // asserted in `embeds.test.ts`).
-    expect(fromDom.bodyHtml).not.toMatch(/ class="(?!embed-fallback"|reader-embed")| style="/i);
+    // asserted in `embeds.test.ts`), and the box `blocks.ts` puts round an infobox.
+    expect(fromDom.bodyHtml).not.toMatch(
+      / class="(?!embed-fallback"|reader-embed"|infobox")| style="/i,
+    );
     // Not a defect in the string backend — a documented limit of regex cleanup.
     expect(fromString.bodyHtml).toMatch(/ class="/i);
+  });
+
+  it('on the infoboxes they marked, word for word', () => {
+    expect(infoboxes(fromString.bodyHtml)).toEqual(infoboxes(fromDom.bodyHtml));
   });
 
   /**
@@ -173,6 +179,10 @@ describe.each([
 
 /** What a person reads of a body: its text, entities decoded. */
 const plain = (html: string) => stripTags(html);
+
+/** The text of every box `blocks.ts` put round an infobox, in order. */
+const infoboxes = (html: string) =>
+  [...html.matchAll(/<div class="infobox">([\s\S]*?)<\/div>/g)].map((m) => stripTags(m[1]));
 
 /**
  * Blocks in a correctiv.org body that are not the article, and what the reader
@@ -258,6 +268,14 @@ describe.each(BACKENDS)('blocks that are not the article (%s backend)', (_name, 
       // The panel's inline style clips it to 100 px, which the theme's script lifts.
       expect(article.bodyHtml).not.toContain('max-height');
     });
+
+    it('is marked as one box the reader styles, first line to last and nothing else', () => {
+      const boxes = infoboxes(article.bodyHtml);
+      expect(boxes).toHaveLength(1);
+      expect(boxes[0]).toContain('Im Sommer 2014 präsentierte Jürgen Elsässer');
+      expect(boxes[0]).toContain('groß angelegten Betrugsschema Juicy Fields');
+      expect(boxes[0]).not.toContain('Das Russische Haus hat Ermittler');
+    });
   });
 });
 
@@ -283,6 +301,13 @@ describe('blocks that are not the article (REST API)', () => {
     expect(plain(article.bodyHtml)).toContain('groß angelegten Betrugsschema Juicy Fields');
     expect(plain(article.bodyHtml)).not.toContain('Mehr anzeigen');
     expect(article.bodyHtml).not.toContain('max-height');
+  });
+
+  it('marks the infobox as one box the reader styles', () => {
+    const boxes = infoboxes(restArticle(287636).bodyHtml);
+    expect(boxes).toHaveLength(1);
+    expect(boxes[0]).toContain('Im Sommer 2014 präsentierte Jürgen Elsässer');
+    expect(boxes[0]).toContain('groß angelegten Betrugsschema Juicy Fields');
   });
 
   it('turns an interactive list into details with the title as summary', () => {

@@ -80,6 +80,12 @@ function applyBlockRules(children: AnyNode[], rules: readonly BlockRule[]): AnyN
       out.push(...applyBlockRules(node.children ?? [], rules));
       continue;
     }
+    if (rule?.action === 'box') {
+      out.push(
+        new Element('div', { class: rule.className }, applyBlockRules(node.children ?? [], rules)),
+      );
+      continue;
+    }
     if (rule?.action === 'details') {
       const summary = findMarked(node.children ?? [], rule.summary);
       const panel = findMarked(node.children ?? [], rule.panel);

@@ -425,6 +425,14 @@ h1{font-family:'Merriweather',Georgia,serif;font-weight:700;font-size:var(--var-
   padding:var(--var-spacing-s) var(--var-spacing-m);cursor:pointer}
 .reader-body details>:not(summary){margin-left:var(--var-spacing-m);margin-right:var(--var-spacing-m)}
 .reader-body details[open]{padding-bottom:var(--var-spacing-2xs)}
+/* An infobox from the site's cvui/infobox, marked by articles/blocks.ts: an aside
+   to the article, set apart the way the site sets it apart, as a filled box. The
+   fill alone is nearly white on white in the light scheme, so the edge says it. */
+.reader-body .infobox{margin:var(--var-spacing-m) 0;padding:var(--var-spacing-m);
+  background:var(--var-color-surface);border:1px solid var(--var-color-stroke);
+  border-radius:var(--var-radius-md);font-family:'SourceSans3',sans-serif;
+  font-size:var(--var-font-size-text-m);line-height:var(--var-leading-loose);letter-spacing:0}
+.reader-body .infobox>:last-child{margin-bottom:0}
 .reader-footer{margin:var(--var-spacing-xl) var(--var-spacing-m) 0;
   background:var(--var-color-surface);border-radius:var(--var-radius-md);
   padding:var(--var-spacing-l);text-align:center}

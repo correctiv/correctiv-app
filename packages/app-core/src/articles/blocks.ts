@@ -24,8 +24,9 @@ import {
  *
  * A rule names the block by a marker the markup already carries (a class token or
  * an attribute) and says what happens: `drop` removes it with everything inside,
- * `unwrap` keeps its contents and loses the element, `details` rebuilds it as an
- * HTML disclosure. `applyBlockRules` below does that over a string, for the REST
+ * `unwrap` keeps its contents and loses the element, `box` keeps its contents in a
+ * `<div>` carrying one class the reader styles, `details` rebuilds it as an HTML
+ * disclosure. `applyBlockRules` below does that over a string, for the REST
  * body and for `extract/string.ts`; `extract/dom.ts` walks its parsed tree with the
  * same table. `test/articles.test.ts` holds both to the same pages.
  *
@@ -43,12 +44,27 @@ export type BlockRule =
   | {
       block: string;
       marker: BlockMarker;
+      action: 'box';
+      /** The one class the `<div>` carries, and one of `READER_BOX_CLASSES`. */
+      className: ReaderBoxClass;
+    }
+  | {
+      block: string;
+      marker: BlockMarker;
       action: 'details';
       /** The element whose text becomes the `<summary>`. */
       summary: BlockMarker;
       /** The element whose contents become the rest of the `<details>`. */
       panel: BlockMarker;
     };
+
+/**
+ * The classes a `box` rule may write, and the only classes the reader's gate keeps
+ * on a `<div>` (`body-allowlist.ts`). A class is what lets the reader's stylesheet
+ * find the block after every cleaner has taken the site's own classes off it.
+ */
+export const READER_BOX_CLASSES = ['infobox'] as const;
+export type ReaderBoxClass = (typeof READER_BOX_CLASSES)[number];
 
 /**
  * The prefix this site gave Advanced Ads, which the plugin writes in front of
@@ -115,7 +131,19 @@ export function articleBlockRules(adPrefix: string = DEFAULT_AD_PREFIX): readonl
       action: 'unwrap',
     },
     /**
-     * `cvui/infobox`: the box is clipped to 100 px by an inline style and a button
+     * `cvui/infobox`, the outer element: `<div class="… wp-block-cvui-infobox">`,
+     * which the site fills grey. Without a class of its own the reader printed its
+     * paragraphs as the article's, with nothing to say where the aside began or
+     * ended. What is inside gets the rules too, so the panel below is unwrapped.
+     */
+    {
+      block: 'cvui/infobox',
+      marker: { class: 'wp-block-cvui-infobox' },
+      action: 'box',
+      className: 'infobox',
+    },
+    /**
+     * `cvui/infobox`, the panel: the box is clipped to 100 px by an inline style and a button
      * lifts it. The text worth keeping is all in the panel, which is unwrapped so its
      * clipping style goes with it. The button says nothing but "Mehr anzeigen" to a
      * screen reader, in all 7 infoboxes of 300 posts, and has no rule: every cleaner
@@ -155,15 +183,16 @@ export function carries(attrs: Record<string, string>, marker: BlockMarker): boo
  */
 export function applyBlockRules(body: string, rules: readonly BlockRule[]): string {
   const { list, close } = pairedTags(body);
-  /** Closing tags of unwrapped elements, left out when the walk reaches them. */
-  const unwrapped = new Set<Tag>();
+  /** Closing tags of unwrapped or boxed elements, and what the walk writes for each. */
+  const unwrapped = new Map<Tag, string>();
   let out = '';
   let cursor = 0; // everything before this is already in `out`, or deliberately not
   for (const tag of list) {
     if (tag.start < cursor) continue;
     if (tag.closing) {
-      if (unwrapped.has(tag)) {
-        out += body.slice(cursor, tag.start);
+      const replacement = unwrapped.get(tag);
+      if (replacement !== undefined) {
+        out += body.slice(cursor, tag.start) + replacement;
         cursor = tag.end;
       }
       continue;
@@ -171,10 +200,11 @@ export function applyBlockRules(body: string, rules: readonly BlockRule[]): stri
     const rule = rules.find((r) => carries(tag.attrs, r.marker));
     const end = rule ? close.get(tag) : undefined;
     if (!rule || !end) continue;
-    if (rule.action === 'unwrap') {
-      out += body.slice(cursor, tag.start);
+    if (rule.action === 'unwrap' || rule.action === 'box') {
+      const box = rule.action === 'box';
+      out += body.slice(cursor, tag.start) + (box ? `<div class="${rule.className}">` : '');
       cursor = tag.end;
-      unwrapped.add(end);
+      unwrapped.set(end, box ? '</div>' : '');
       continue;
     }
     const replacement =
