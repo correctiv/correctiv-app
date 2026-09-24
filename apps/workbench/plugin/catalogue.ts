@@ -71,8 +71,8 @@ export function literal(text: string): string {
     .replaceAll(quote, `\\${quote}`)
     .replaceAll('\n', '\\n')
     .replaceAll('\r', '\\r')
-    .replaceAll(' ', '\\u2028')
-    .replaceAll(' ', '\\u2029');
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
   return `${quote}${escaped}${quote}`;
 }
 

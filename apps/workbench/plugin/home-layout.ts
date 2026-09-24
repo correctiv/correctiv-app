@@ -41,6 +41,15 @@ import { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_FILE } from '../src/preview/home/name
  *   repository to the room. `req.socket.remoteAddress` is the connection's own peer,
  *   which no header can forge, and there is no proxy in front of this to make it lie.
  * - **Anything but POST.** A GET that wrote a file would be reachable from an `<img>`.
+ * - **Another site's request, which loopback does not rule out.** A page open in the
+ *   developer's own browser reaches `localhost` from this machine, so the peer address
+ *   is loopback and the check above passes. A cold review of #259 measured it: a
+ *   `no-cors` POST sent as `text/plain` from another origin rewrote a catalogue file.
+ *   So a request that names an `Origin` other than this server's own, or that the
+ *   browser marks `Sec-Fetch-Site: cross-site`, is refused, and the body has to be
+ *   declared `application/json`. That type is not one a page may send across origins
+ *   without a preflight, and nothing here answers a preflight, so the browser never
+ *   sends the POST at all.
  * - **A body over 64 KiB.** The shipped document is under a kilobyte and the grammar has
  *   no way to grow that fast; the limit is about a socket that never ends.
  * - **A document `parseHomeLayout` cannot read, and one it can only half read.** ADR
@@ -71,6 +80,24 @@ export function fromLoopback(req: IncomingMessage): boolean {
   return address === '::1' || /^(::ffff:)?127\./.test(address);
 }
 
+/**
+ * Whether a browser sent this on behalf of another site.
+ *
+ * `Origin` is compared with the `Host` the request was addressed to, which is this
+ * server's own address as the page that sent it saw it. A request with neither header,
+ * `curl` from a terminal, is somebody on this machine and passes.
+ */
+export function fromAnotherSite(req: IncomingMessage): boolean {
+  if (req.headers['sec-fetch-site'] === 'cross-site') return true;
+  const origin = req.headers.origin;
+  if (origin === undefined) return false;
+  try {
+    return new URL(origin).host !== req.headers.host;
+  } catch {
+    return true; // `null`, or anything else that is not an origin this server has
+  }
+}
+
 export function answer(res: ServerResponse, status: number, body: Record<string, unknown>): void {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json');
@@ -78,18 +105,62 @@ export function answer(res: ServerResponse, status: number, body: Record<string,
 }
 
 /**
- * The request body, or null if it ran past the limit.
+ * Every refusal that comes before the body is read, for both endpoints.
  *
- * Exported with the two above for `./strings.ts`, the second endpoint, which refuses on
- * the same conditions for the same reasons and should not be a second copy of them.
+ * Answers the request and returns true where it was refused. Here rather than in each
+ * endpoint so that `./strings.ts`, the second one, cannot drift from the first: the
+ * hole the cold review of #259 found was in both, because it had been copied.
+ * Each answer carries a `code`, which the interface words in the reader's language.
  */
-export async function read(req: IncomingMessage): Promise<string | null> {
-  let text = '';
-  for await (const chunk of req) {
-    text += chunk;
-    if (text.length > LIMIT) return null;
+export function refused(req: IncomingMessage, res: ServerResponse): boolean {
+  if (!fromLoopback(req)) {
+    answer(res, 403, {
+      code: 'not-loopback',
+      error: 'This endpoint answers the machine it runs on only.',
+    });
+    return true;
   }
-  return text;
+  if (req.method !== 'POST') {
+    res.setHeader('allow', 'POST');
+    answer(res, 405, {
+      code: 'method',
+      error: `${req.method ?? 'That'} is not how this endpoint is written to.`,
+    });
+    return true;
+  }
+  if (fromAnotherSite(req)) {
+    answer(res, 403, { code: 'cross-site', error: 'This endpoint answers this site only.' });
+    return true;
+  }
+  const type = (req.headers['content-type'] ?? '').split(';')[0]!.trim().toLowerCase();
+  if (type !== 'application/json') {
+    answer(res, 415, {
+      code: 'content-type',
+      error: 'The body has to be sent as application/json.',
+    });
+    return true;
+  }
+  return false;
+}
+
+/**
+ * The request body as UTF-8, or null if it ran past the limit.
+ *
+ * The chunks are collected as bytes and decoded once. Appending each chunk to a string
+ * decodes it on its own, and a character split between two chunks became two U+FFFD:
+ * measured in the cold review of #259, "Größe" reached a catalogue file as "Gr��ße".
+ * The limit counts bytes for the same reason, since bytes are what a socket delivers.
+ */
+export async function read(req: AsyncIterable<unknown>, limit = LIMIT): Promise<string | null> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    const bytes = typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer);
+    size += bytes.length;
+    if (size > limit) return null;
+    chunks.push(bytes);
+  }
+  return Buffer.concat(chunks).toString('utf8');
 }
 
 type Parse = typeof import('@correctiv/app-core/lib/home-layout');
@@ -104,16 +175,12 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     // The query string is not this endpoint's to read, and `req.url` may carry one.
     if ((req.url ?? '').split('?')[0] !== HOME_LAYOUT_ENDPOINT) return next();
 
-    if (!fromLoopback(req)) {
-      return answer(res, 403, { error: 'This endpoint answers the machine it runs on only.' });
-    }
-    if (req.method !== 'POST') {
-      res.setHeader('allow', 'POST');
-      return answer(res, 405, { error: `${req.method ?? 'That'} is not how a document is sent.` });
-    }
+    if (refused(req, res)) return;
 
     const body = await read(req);
-    if (body === null) return answer(res, 413, { error: 'The document is larger than 64 KiB.' });
+    if (body === null) {
+      return answer(res, 413, { code: 'too-large', error: 'The document is larger than 64 KiB.' });
+    }
 
     let input: unknown;
     try {

@@ -3,9 +3,11 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 import { findWording, literal, replaceWording } from '../../plugin/catalogue.ts';
+import { de } from '../../../../packages/catalogue/src/de/index.ts';
 import { ROOT } from '../../plugin/collect.ts';
 import { applyWordings } from '../../plugin/strings.ts';
 import {
@@ -42,11 +44,8 @@ describe('the two ends of the strings seam', () => {
     expect(PREVIEW_STRINGS_KEY.startsWith('workbench:')).toBe(true);
   });
 
-  it('is what the app hands its provider', () => {
-    const provider = source('apps/mobile/src/i18n/Localisation.tsx');
-    expect(provider).toContain('usePreviewStrings(locale, CATALOGUES[locale])');
-    expect(provider).toContain('messages={messages}');
-  });
+  // That the app's provider reads the key and follows it is the app's own test,
+  // `apps/mobile/__tests__/preview-strings.test.tsx`, which renders the provider.
 });
 
 describe('a rendering is looked up by its text (§1)', () => {
@@ -141,10 +140,8 @@ describe('the text node comes before the element’s text (§2)', () => {
     ]);
   });
 
-  it('reads the pointer’s text node before the element in the picker itself', () => {
-    const picker = source('apps/workbench/src/preview/frame/locate.ts');
-    expect(picker).toContain('texts: pointedTexts(doc, pointer.clientX, pointer.clientY, target)');
-  });
+  // What the picker reads under the pointer, and in which order, is
+  // `strings-dom.test.ts`, against a document.
 });
 
 describe('a pattern too loose to match on takes no part (§3)', () => {
@@ -169,6 +166,35 @@ describe('a pattern too loose to match on takes no part (§3)', () => {
     ]);
     expect(edge.loose.has('c.four')).toBe(false);
     expect(edge.loose.has('c.three')).toBe(true);
+  });
+
+  it('takes a whole id out when one of its branches is loose, and says so of every branch', () => {
+    // `# Tag` has three fixed letters and `# Tage` four; per rendering, "3 Tage" could be
+    // picked and "1 Tag" not, while the panel called the id "cannot be picked".
+    const days = buildIndex([['x.days', '{count, plural, one {# Tag} other {# Tage}}']]);
+    expect(days.loose.has('x.days')).toBe(true);
+    expect(candidates(days, '1 Tag')).toEqual([]);
+    expect(candidates(days, '3 Tage')).toEqual([]);
+  });
+});
+
+describe('a number hole takes a number', () => {
+  const index = buildIndex([
+    ['x.count', '{count, plural, one {# Beitrag bisher} other {# Beiträge bisher}}'],
+    ['x.number', 'Noch {left, number} Plätze frei'],
+    ['x.any', 'Noch {left} Plätze frei'],
+  ]);
+
+  it('matches digits and the separators a formatted number carries', () => {
+    expect(candidates(index, '12 Beiträge bisher')).toEqual(['x.count']);
+    expect(candidates(index, '1.234 Beiträge bisher')).toEqual(['x.count']);
+    expect(candidates(index, '1\u202f234 Beiträge bisher')).toEqual(['x.count']);
+  });
+
+  it('does not match words where a number goes', () => {
+    expect(candidates(index, 'Viele Beiträge bisher')).toEqual([]);
+    expect(candidates(index, 'Noch viele Plätze frei')).toEqual(['x.any']);
+    expect(candidates(index, 'Noch 3 Plätze frei').sort()).toEqual(['x.any', 'x.number']);
   });
 });
 
@@ -232,6 +258,33 @@ describe('saving replaces one literal and nothing else (§8)', () => {
     expect(literal("Sie's")).toBe('"Sie\'s"');
     expect(literal('a\'b"c')).toBe("'a\\'b\"c'");
     expect(literal('back\\slash')).toBe("'back\\\\slash'");
+  });
+
+  /**
+   * Every literal the writer prints has to read back, through the compiler, as the text
+   * it was given. A raw line break inside quotes is not a string literal at all, so the
+   * file would stop parsing; U+2028 and U+2029 are legal inside one since ES2019, and are
+   * escaped anyway so that an entry stays one line to every line-based reader of the
+   * file, `git diff` and the reviewer included, instead of breaking invisibly.
+   */
+  it('reads back through the compiler as the text it was given', () => {
+    for (const text of [
+      'eins\nzwei',
+      'eins\r\nzwei',
+      'eins\u2028zwei',
+      'eins\u2029zwei',
+      "Sie's",
+      'a\'b"c',
+      'back\\slash',
+      '„Zitat“ {count}',
+    ]) {
+      const file = `export const x = { 'x.id': ${literal(text)} };\n`;
+      const parsed = ts.createSourceFile('x.ts', file, ts.ScriptTarget.Latest, true);
+      expect((parsed as unknown as { parseDiagnostics: unknown[] }).parseDiagnostics).toEqual([]);
+      expect(findWording(file, 'x.id')?.text).toBe(text);
+      expect(file.split('\n').length).toBe(2);
+      expect(/[\u2028\u2029]/.test(file)).toBe(false);
+    }
   });
 });
 
@@ -298,11 +351,15 @@ describe('the save writes into the real catalogue, all or nothing (§7, §8)', (
   });
 });
 
+/**
+ * Built here from the catalogue and the extraction, which are both in the repository,
+ * rather than read from `content/strings.generated.json`, which is a build artifact:
+ * CI has none, and the first version of this test failed there on a missing file.
+ * `scripts/strings.mjs` joins the same two sources the same way for the app's rows.
+ */
 describe('over the app’s real German', () => {
-  const model = JSON.parse(source('apps/workbench/content/strings.generated.json')) as {
-    strings: { id: string; surface: string; translations: Record<string, string | null> }[];
-  };
-  const app = model.strings.filter((entry) => entry.surface === 'app');
+  const extracted = JSON.parse(source(ENGLISH_EXTRACTION)) as Record<string, unknown>;
+  const app = Object.keys(extracted).map((id) => ({ id, translations: { de: de[id] ?? null } }));
   const index = buildIndex(app.map((entry) => [entry.id, entry.translations.de ?? ''] as const));
 
   it('reads the catalogue it is checking (guards against a silently empty table)', () => {

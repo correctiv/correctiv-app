@@ -147,6 +147,13 @@ export const tools: Record<string, string> = {
   'tools.strings.changes': '{count, plural, one {# Text geändert} other {# Texte geändert}}',
   'tools.strings.save': 'In den Katalog schreiben',
   'tools.strings.saved': 'Geschrieben nach {paths}.',
+  'tools.strings.savedStale':
+    'Geschrieben nach {paths}. Die Liste ließ sich nicht neu aufbauen, führen Sie vor dem nächsten Blick darauf npm run workbench:strings aus.',
+  'tools.strings.rejected':
+    'Der Dev-Server hat das Speichern abgelehnt (HTTP {status}). Es wurde nichts geschrieben.',
+  'tools.strings.rejectedOrigin':
+    'Der Dev-Server nimmt nur von dieser Seite auf diesem Rechner etwas an. Es wurde nichts geschrieben.',
+  'tools.strings.quoted': '„{text}“',
   'tools.strings.refused': 'Nichts wurde geschrieben. {ids}',
   'tools.strings.saveFailed': 'Der Dev-Server hat nicht geantwortet: {detail}',
   'tools.strings.copy': 'Änderungen kopieren',

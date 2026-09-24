@@ -17,6 +17,7 @@
  * ([ADR 0056](../../../../../adr/0056-a-string-is-picked-where-it-renders.md) §6).
  */
 import { EDITED_LOCALE, PREVIEW_STRINGS_KEY } from './names';
+import { checkWording } from './validate';
 
 /** Id to German, only for wordings that differ from the shipped catalogue. */
 export type Draft = Readonly<Record<string, string>>;
@@ -57,4 +58,27 @@ export function restoreDraft(shipped: Readonly<Record<string, string | null>>): 
   } catch {
     return {};
   }
+}
+
+/**
+ * The entries of a draft that may reach the frame: they pass the validator and differ
+ * from the catalogue.
+ *
+ * What a person types goes into the draft whatever it is, so the field keeps it while
+ * they are halfway through a placeholder; only this reaches `publishDraft`. `english`
+ * answers an id's English, and `undefined` for an id the app has none of, which is
+ * dropped here as well as in the app.
+ */
+export function publishable(
+  draft: Draft,
+  baseline: Readonly<Record<string, string>>,
+  english: (id: string) => string | undefined,
+): Draft {
+  const out: Record<string, string> = {};
+  for (const [id, wording] of Object.entries(draft)) {
+    const source = english(id);
+    if (source === undefined || wording === baseline[id]) continue;
+    if (checkWording(source, wording).length === 0) out[id] = wording;
+  }
+  return out;
 }

@@ -35,7 +35,7 @@ const VIEW = VIEWS.preview;
  * This is the route that used to be seven `isApp` branches in `App.tsx`. Its
  * body is the stage; everything else it has — the frame controls, the
  * tools, the two numbers on the rail, the readout and the link — goes into the
- * places the declaration in `shell/views.ts` keeps for it. Six of those tools
+ * places the declaration in `shell/views.ts` keeps for it. Most of those tools
  * are `preview/ui/Panels.tsx`; `preview/home/` holds a document of its own
  * rather than a readout, and `preview/strings/` holds a draft of the German.
  *

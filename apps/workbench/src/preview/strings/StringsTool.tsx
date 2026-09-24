@@ -11,9 +11,10 @@ import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
 import type { Status } from '../api';
 import type { Pick } from '../frame/locate';
-import { publishDraft, restoreDraft, type Draft } from './draft';
+import { publishable, publishDraft, restoreDraft, type Draft } from './draft';
 import { buildIndex, resolve, type Resolution } from './match';
-import { EDITED_LOCALE, STRINGS_ENDPOINT } from './names';
+import { EDITED_LOCALE } from './names';
+import { saveWordings, type SaveOutcome } from './save';
 import { checkWording, type WordingProblem } from './validate';
 
 /**
@@ -169,6 +170,32 @@ const COPY = defineMessages({
     description:
       'After a save. {paths} is a comma-separated list of repository paths, which stay as they are.',
   },
+  savedStale: {
+    id: 'tools.strings.savedStale',
+    defaultMessage:
+      'Written to {paths}. The list could not be rebuilt, so run npm run workbench:strings before trusting it.',
+    description:
+      'After a save whose files were written but whose table of strings was not rebuilt. {paths} is a comma-separated list of repository paths, and the command stays as it is.',
+  },
+  rejected: {
+    id: 'tools.strings.rejected',
+    defaultMessage: 'The dev server refused the save (HTTP {status}). Nothing was written.',
+    description:
+      'After a save the dev server turned away before reading it. {status} is the numeric response status.',
+  },
+  rejectedOrigin: {
+    id: 'tools.strings.rejectedOrigin',
+    defaultMessage:
+      'The dev server only takes a save from this site on this machine. Nothing was written.',
+    description:
+      'After a save refused because it came from another machine or another site, which the endpoint refuses on purpose.',
+  },
+  quoted: {
+    id: 'tools.strings.quoted',
+    defaultMessage: '“{text}”',
+    description:
+      'The text that was picked, in quotation marks. {text} is the app’s own wording, printed as it is. Use the quotation marks of the language.',
+  },
   refused: {
     id: 'tools.strings.refused',
     defaultMessage: 'Nothing was written. {ids}',
@@ -253,15 +280,26 @@ function problemText(
   }
 }
 
-/** The draft's entries that pass the validator and differ from the catalogue. */
-function publishable(draft: Draft, baseline: Readonly<Record<string, string>>): Draft {
-  const out: Record<string, string> = {};
-  for (const [id, wording] of Object.entries(draft)) {
-    const entry = BY_ID.get(id);
-    if (!entry || wording === baseline[id]) continue;
-    if (checkWording(entry.english, wording).length === 0) out[id] = wording;
+/** What the panel says about a save, in the reader's language and never the server's. */
+function outcomeText(intl: ReturnType<typeof useWorkbenchIntl>, outcome: SaveOutcome): string {
+  switch (outcome.kind) {
+    case 'saved': {
+      const paths = outcome.paths.join(', ');
+      return intl.formatMessage(outcome.table ? COPY.saved : COPY.savedStale, { paths });
+    }
+    case 'refused':
+      return intl.formatMessage(COPY.refused, {
+        ids: outcome.ids
+          .map((r) => `${r.id}: ${r.problems.map((p) => problemText(intl, p)).join(' ')}`)
+          .join(' '),
+      });
+    case 'rejected':
+      return outcome.code === 'cross-site' || outcome.code === 'not-loopback'
+        ? intl.formatMessage(COPY.rejectedOrigin)
+        : intl.formatMessage(COPY.rejected, { status: outcome.status });
+    case 'unreachable':
+      return intl.formatMessage(COPY.saveFailed, { detail: outcome.detail });
   }
-  return out;
 }
 
 interface Props {
@@ -290,7 +328,10 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   const [filter, setFilter] = useState('');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const live = useMemo(() => publishable(draft, baseline), [draft, baseline]);
+  const live = useMemo(
+    () => publishable(draft, baseline, (id) => BY_ID.get(id)?.english),
+    [draft, baseline],
+  );
   useEffect(() => publishDraft(live), [live]);
 
   const lang = status.lang ?? EDITED_LOCALE;
@@ -345,41 +386,12 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   };
 
   const save = async () => {
-    try {
-      const response = await fetch(STRINGS_ENDPOINT, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(live),
-      });
-      const body = (await response.json()) as {
-        paths?: string[];
-        error?: string;
-        refused?: { id: string; problems: (WordingProblem | { code: 'unknown-id' })[] }[];
-      };
-      if (!response.ok) {
-        const ids = (body.refused ?? [])
-          .map((r) => `${r.id}: ${r.problems.map((p) => problemText(intl, p)).join(' ')}`)
-          .join(' ');
-        setResult({
-          ok: false,
-          text: intl.formatMessage(COPY.refused, { ids: ids || body.error }),
-        });
-        return;
-      }
+    const outcome = await saveWordings(live);
+    if (outcome.kind === 'saved') {
       setSaved((current) => ({ ...current, ...live }));
       setDraft({});
-      setResult({
-        ok: true,
-        text: intl.formatMessage(COPY.saved, { paths: (body.paths ?? []).join(', ') }),
-      });
-    } catch (error) {
-      setResult({
-        ok: false,
-        text: intl.formatMessage(COPY.saveFailed, {
-          detail: error instanceof Error ? error.message : String(error),
-        }),
-      });
     }
+    setResult({ ok: outcome.kind === 'saved', text: outcomeText(intl, outcome) });
   };
 
   return (
@@ -401,7 +413,7 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
       {resolution && (
         <div className={cn(CARD, 'flex flex-col gap-2xs px-xs py-2xs')}>
           <p className="min-w-0 truncate font-mono text-s text-on-canvas" title={resolution.text}>
-            {`"${resolution.text}"`}
+            {intl.formatMessage(COPY.quoted, { text: resolution.text })}
           </p>
           {resolution.ids.length === 0 && <p className={NOTE}>{intl.formatMessage(COPY.noId)}</p>}
           {resolution.ids.length > 1 && (
@@ -461,11 +473,15 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
                 problems.length > 0 && 'border-accent',
               )}
             />
-            {problems.map((problem) => (
-              <p key={problem.code} role="alert" className="text-s text-accent">
-                {problemText(intl, problem)}
-              </p>
-            ))}
+            {/* Polite and always mounted, so a screen reader hears a problem when it
+                changes rather than the same sentence again on every keystroke. */}
+            <div aria-live="polite" className="flex flex-col gap-4xs">
+              {problems.map((problem) => (
+                <p key={problem.code} className="text-s text-accent">
+                  {problemText(intl, problem)}
+                </p>
+              ))}
+            </div>
           </div>
           <div>
             <Button

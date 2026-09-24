@@ -29,8 +29,21 @@ export const MIN_FIXED = 4;
 /** At most this many renderings per message. A plural inside a select multiplies. */
 const MAX_VARIANTS = 64;
 
-/** A message as it can render: fixed text, and `null` where a value goes. */
-type Part = string | null;
+/**
+ * A message as it can render: fixed text, and a hole where a value goes.
+ *
+ * `number` is a hole that only a number fills: `#` in a plural branch and a
+ * `{n, number}` argument. It matches digits and the separators a formatted number
+ * carries, so `# Tage` does not also match "Alle Tage". `any` is every other argument,
+ * whose value the table cannot know.
+ */
+type Hole = { hole: 'any' | 'number' };
+type Part = string | Hole;
+
+const ANY: Hole = { hole: 'any' };
+const NUMBER: Hole = { hole: 'number' };
+
+const isHole = (part: Part | undefined): part is Hole => typeof part === 'object';
 
 /** Whitespace as a browser lays it out, so a line break in a catalogue matches a space. */
 export function normalise(text: string): string {
@@ -42,13 +55,13 @@ export function normalise(text: string): string {
  *
  * Every branch of a plural or a select is a rendering of its own, which is how the
  * measurement in the ADR was taken and the only way `# Artikel` and `Ein Artikel` are
- * both recognised. `#` is a hole like any argument.
+ * both recognised.
  */
 function variants(elements: MessageFormatElement[]): Part[][] {
   let out: Part[][] = [[]];
   for (const element of elements) {
     if (element.type === TYPE.literal) {
-      out = out.map((parts) => [...parts, element.value]);
+      out = out.map((parts) => parts.concat(element.value));
     } else if (element.type === TYPE.plural || element.type === TYPE.select) {
       const branches = Object.values(element.options).flatMap((option) => variants(option.value));
       out = out
@@ -59,20 +72,26 @@ function variants(elements: MessageFormatElement[]): Part[][] {
       // own checks parse them; a tag's children render inline if one ever is.
       const inner = variants(element.children);
       out = out.flatMap((parts) => inner.map((branch) => parts.concat(branch)));
+    } else if (element.type === TYPE.pound || element.type === TYPE.number) {
+      out = out.map((parts) => parts.concat(NUMBER));
     } else {
-      out = out.map((parts) => [...parts, null]);
+      out = out.map((parts) => parts.concat(ANY));
     }
   }
   return out;
 }
 
-/** Adjacent literals joined and adjacent holes folded, so the pattern has one shape. */
+/**
+ * Adjacent literals joined and adjacent holes folded, so the pattern has one shape.
+ * Two holes side by side are one hole; it is a number only if both were.
+ */
 function compact(parts: Part[]): Part[] {
   const out: Part[] = [];
   for (const part of parts) {
     const last = out[out.length - 1];
-    if (part === null) {
-      if (last !== null) out.push(null);
+    if (isHole(part)) {
+      if (!isHole(last)) out.push(part);
+      else if (last.hole !== part.hole) out[out.length - 1] = ANY;
     } else if (typeof last === 'string') out[out.length - 1] = last + part;
     else out.push(part);
   }
@@ -81,7 +100,8 @@ function compact(parts: Part[]): Part[] {
 
 function fixedLetters(parts: Part[]): number {
   return parts.reduce(
-    (sum, part) => sum + (part ? (part.match(/[\p{L}\p{N}]/gu)?.length ?? 0) : 0),
+    (sum, part) =>
+      sum + (typeof part === 'string' ? (part.match(/[\p{L}\p{N}]/gu)?.length ?? 0) : 0),
     0,
   );
 }
@@ -90,10 +110,13 @@ function escape(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/gu, '\\s+');
 }
 
+/** A formatted number: a digit, then digits, separators and the spaces `Intl` groups with. */
+const NUMBER_PATTERN = '(\\d[\\d.,\\s\\u00a0\\u202f]*?)';
+
 function toPattern(parts: Part[]): RegExp {
   const body = parts
     .map((part, index) => {
-      if (part === null) return '([\\s\\S]+?)';
+      if (isHole(part)) return part.hole === 'number' ? NUMBER_PATTERN : '([\\s\\S]+?)';
       let text = part;
       if (index === 0) text = text.trimStart();
       if (index === parts.length - 1) text = text.trimEnd();
@@ -122,10 +145,19 @@ export interface StringIndex {
   exact: ReadonlyMap<string, readonly string[]>;
   /** Messages with holes, as anchored patterns. */
   patterns: readonly { id: string; pattern: RegExp }[];
-  /** Ids with a rendering too loose to match on, which §3 has the panel name. */
+  /** Ids too loose to match on, which take no part and which §3 has the panel name. */
   loose: ReadonlySet<string>;
 }
 
+/**
+ * The index over every wording.
+ *
+ * **Loose is decided per id, not per rendering.** One branch of a plural under the
+ * threshold takes the whole id out, its exact branches included. The first version
+ * decided per rendering, so `1 Tag` could not be picked while `3 Tage` could, and the
+ * panel called the id "cannot be picked" either way; the cold review of #259 found it.
+ * A person who is told an id cannot be pointed at should find that true of every branch.
+ */
 export function buildIndex(
   wordings: Iterable<readonly [id: string, wording: string]>,
 ): StringIndex {
@@ -134,19 +166,20 @@ export function buildIndex(
   const loose = new Set<string>();
 
   for (const [id, wording] of wordings) {
+    const all = renderings(wording);
+    if (all.some((parts) => parts.some(isHole) && fixedLetters(parts) < MIN_FIXED)) {
+      loose.add(id);
+      continue;
+    }
     const seen = new Set<string>();
-    for (const parts of renderings(wording)) {
-      if (!parts.includes(null)) {
+    for (const parts of all) {
+      if (!parts.some(isHole)) {
         const text = normalise(parts.join(''));
         if (!text || seen.has(`=${text}`)) continue;
         seen.add(`=${text}`);
         const ids = exact.get(text);
         if (ids) ids.push(id);
         else exact.set(text, [id]);
-        continue;
-      }
-      if (fixedLetters(parts) < MIN_FIXED) {
-        loose.add(id);
         continue;
       }
       const pattern = toPattern(parts);

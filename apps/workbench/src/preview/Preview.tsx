@@ -530,7 +530,7 @@ export function usePreview() {
     onChange,
     onResize,
     onLoad,
-    /** The home tool's own outline, separate from `tools`: the home tool is not one of the six. */
+    /** The home tool's own outline, separate from `tools`: the home tool is not in `ui/Panels.tsx`. */
     /** See above: the page may not write the address until the store has read it. */
     started,
     outlineSection: setHoveredSection,

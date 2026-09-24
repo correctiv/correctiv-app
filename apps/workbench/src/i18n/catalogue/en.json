@@ -3353,9 +3353,21 @@
     "defaultMessage": "The catalogue has no such id.",
     "description": "A refusal from the dev server’s save, for an id no German catalogue file carries. The workbench may reword a string and may not add one."
   },
+  "tools.strings.quoted": {
+    "defaultMessage": "“{text}”",
+    "description": "The text that was picked, in quotation marks. {text} is the app’s own wording, printed as it is. Use the quotation marks of the language."
+  },
   "tools.strings.refused": {
     "defaultMessage": "Nothing was written. {ids}",
     "description": "After a save the dev server refused. {ids} lists each refused id with its reason, already worded."
+  },
+  "tools.strings.rejected": {
+    "defaultMessage": "The dev server refused the save (HTTP {status}). Nothing was written.",
+    "description": "After a save the dev server turned away before reading it. {status} is the numeric response status."
+  },
+  "tools.strings.rejectedOrigin": {
+    "defaultMessage": "The dev server only takes a save from this site on this machine. Nothing was written.",
+    "description": "After a save refused because it came from another machine or another site, which the endpoint refuses on purpose."
   },
   "tools.strings.reset": {
     "defaultMessage": "Back to the catalogue",
@@ -3372,6 +3384,10 @@
   "tools.strings.saved": {
     "defaultMessage": "Written to {paths}.",
     "description": "After a save. {paths} is a comma-separated list of repository paths, which stay as they are."
+  },
+  "tools.strings.savedStale": {
+    "defaultMessage": "Written to {paths}. The list could not be rebuilt, so run npm run workbench:strings before trusting it.",
+    "description": "After a save whose files were written but whose table of strings was not rebuilt. {paths} is a comma-separated list of repository paths, and the command stays as it is."
   },
   "tools.strings.several": {
     "defaultMessage": "{count} ids have this wording. Choose one:",

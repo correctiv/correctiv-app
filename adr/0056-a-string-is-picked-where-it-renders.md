@@ -195,7 +195,13 @@ the key is nobody asking.
 ### 8. Saving edits the file through its syntax tree, and the validator is the placeholders
 
 A second endpoint beside `homeLayoutEndpoint`, with its conditions unchanged and for the
-reasons that file already gives: loopback only, POST only, bounded body, and absent from
+reasons that file already gives: ~~loopback only, POST only, bounded body~~ — wrong on the
+day this was written, as a list: loopback does not rule out another site's page in the
+developer's own browser, and a `no-cors` POST sent as `text/plain` rewrote a catalogue
+file through both endpoints, measured 2026-09-24 in the cold review of #259. Both now also
+refuse a request whose `Origin` is not the server's own or that is marked
+`Sec-Fetch-Site: cross-site`, and any body not declared `application/json`, which a page
+cannot send across origins without a preflight. And absent from
 the production bundle by construction rather than by a flag.
 
 What is different is the write. A catalogue file is TypeScript with comments in it, and
