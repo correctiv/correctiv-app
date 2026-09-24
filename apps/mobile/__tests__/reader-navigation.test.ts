@@ -3,6 +3,7 @@ import {
   classifyReaderLink,
   readerClickAction,
   resolveReaderLink,
+  shouldStartReaderLoad,
 } from '@/lib/articles/readerNavigation';
 
 /**
@@ -148,5 +149,63 @@ describe('resolveReaderLink', () => {
     expect(resolveReaderLink('/faktencheck/2026/08/04/x/', BASE)).toBe(
       'https://correctiv.org/faktencheck/2026/08/04/x/',
     );
+  });
+});
+
+/**
+ * What the native reader does with a top-frame load (issue #271). Android's
+ * WebView cannot load a `mailto:` itself and replaced the article with its own
+ * error page, so the two schemes the system handles go to it instead, and the
+ * WebView is told not to load them.
+ */
+describe('shouldStartReaderLoad', () => {
+  function run(target: string, answer: boolean) {
+    const routed: string[] = [];
+    const handedOff: string[] = [];
+    const load = shouldStartReaderLoad(
+      target,
+      (url) => {
+        routed.push(url);
+        return answer;
+      },
+      (url) => handedOff.push(url),
+    );
+    return { load, routed, handedOff };
+  }
+
+  it('hands mailto: and tel: to the system and keeps the article', () => {
+    expect(run('mailto:redaktion@correctiv.org', true)).toEqual({
+      load: false,
+      routed: ['mailto:redaktion@correctiv.org'],
+      handedOff: ['mailto:redaktion@correctiv.org'],
+    });
+    expect(run('TEL:+493040549680', true)).toMatchObject({
+      load: false,
+      handedOff: ['TEL:+493040549680'],
+    });
+  });
+
+  it('lets the document load what the router lets through', () => {
+    expect(run('about:blank', true)).toEqual({
+      load: true,
+      routed: ['about:blank'],
+      handedOff: [],
+    });
+    expect(run('data:image/png;base64,iVBORw0KGgo=', true).load).toBe(true);
+  });
+
+  it('loads nothing the router took, and hands nothing off', () => {
+    expect(run('https://example.org/', false)).toEqual({
+      load: false,
+      routed: ['https://example.org/'],
+      handedOff: [],
+    });
+  });
+
+  it('hands off a mailto: link the real router lets through', () => {
+    const handedOff: string[] = [];
+    const route = (url: string) => classifyReaderLink(url) === 'allow';
+    expect(shouldStartReaderLoad('mailto:a@b.de', route, (url) => handedOff.push(url))).toBe(false);
+    expect(handedOff).toEqual(['mailto:a@b.de']);
   });
 });

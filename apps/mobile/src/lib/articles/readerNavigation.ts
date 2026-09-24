@@ -54,6 +54,30 @@ export function allowsFrameLoad(target: string): boolean {
 }
 
 /**
+ * Whether the native WebView may perform a top-frame load of `target`, the answer
+ * `onShouldStartLoadWithRequest` wants. `handOff` receives the address when the
+ * system should have it instead.
+ *
+ * Every target goes through `onNavigate` first, as on the web. When it answers
+ * "let the webview do it", `mailto:` and `tel:` are still not the WebView's to
+ * load: Android's WebView cannot, and replaced the article with its own
+ * "net::ERR_UNKNOWN_URL_SCHEME" page (measured on the API 36 emulator, 2026-09-24,
+ * issue #271). They go to `handOff` and the WebView stays on the article, which is
+ * the outcome `readerClickAction` gives the same two schemes on the web. Any other
+ * scheme `onNavigate` lets through loads as before.
+ */
+export function shouldStartReaderLoad(
+  target: string,
+  onNavigate: (url: string) => boolean,
+  handOff: (url: string) => void,
+): boolean {
+  if (!onNavigate(target)) return false;
+  if (!/^(?:mailto|tel):/i.test(target)) return true;
+  handOff(target);
+  return false;
+}
+
+/**
  * What the web reader does with a click on a link inside the article: route it,
  * or cancel it. Never let the frame follow it, bar the two schemes the system
  * takes over without the frame going anywhere.

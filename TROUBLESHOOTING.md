@@ -451,6 +451,17 @@ is still on the door or if moving a block does not change what it draws.
   **with a window**: real Mesa renders, SwiftShader is never loaded, boots in ten
   seconds. Headless would need `setsebool -P selinuxuser_execheap 1`, i.e. relaxing
   a hardening default.
+- **An emulator with animations off asks for reduced motion.** The WebView reads
+  `animator_duration_scale` 0, which is also what "Remove animations" in the
+  accessibility settings sets, as `prefers-reduced-motion: reduce`. The reader's
+  header video is then swapped for its still on purpose, and it looks exactly like a
+  video that fails to autoplay. Issue #271 reported it as that: on the API 36 emulator
+  on 2026-09-24 the same build and article showed a frozen hero at scale 0 and a
+  moving one at scale 1. A plain test page without the media query plays either way,
+  so it does not tell the two apart. → Check
+  `adb shell settings get global animator_duration_scale` before calling the video
+  broken. The tours set it to 1 and put it back afterwards (`quiet_system_ui` in
+  `screens/tools/lib.sh`), so an emulator left at 0 is a normal state.
 
 ## Design tokens and styling
 

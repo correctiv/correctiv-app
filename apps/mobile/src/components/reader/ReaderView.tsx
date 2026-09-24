@@ -1,6 +1,7 @@
 import { WebView } from 'react-native-webview';
 
-import { allowsFrameLoad } from '@/lib/articles/readerNavigation';
+import { allowsFrameLoad, shouldStartReaderLoad } from '@/lib/articles/readerNavigation';
+import { openExternal } from '@/lib/openExternal';
 
 import { READER_BASE_URL, type ReaderViewProps } from './types';
 
@@ -25,10 +26,14 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
        * document may have at all is its Content Security Policy, built from the
        * core's host list. Android does not report a frame's first load, and marks
        * everything it does report top-frame, so for it nothing changes. The top frame
-       * still goes through onNavigate, as every link does.
+       * still goes through onNavigate, as every link does, and a `mailto:` or `tel:`
+       * it lets through is handed to the system rather than loaded
+       * (`shouldStartReaderLoad`).
        */
       onShouldStartLoadWithRequest={(request) =>
-        request.isTopFrame === false ? allowsFrameLoad(request.url) : onNavigate(request.url)
+        request.isTopFrame === false
+          ? allowsFrameLoad(request.url)
+          : shouldStartReaderLoad(request.url, onNavigate, openExternal)
       }
       showsVerticalScrollIndicator={false}
       // Let the content start underneath the transparent overlay header.
