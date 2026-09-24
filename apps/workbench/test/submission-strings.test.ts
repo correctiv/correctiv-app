@@ -635,11 +635,18 @@ describe('the proof', () => {
 describe('the whole path, in a throwaway repository', () => {
   let root: string;
   /*
-   * Without the `GIT_*` variables of whatever git is running this suite. The pre-push
-   * hook runs `npm run check` with `GIT_DIR` set to this repository's, and a `git init`
-   * and `git add .` in the throwaway directory then staged it over this repository's own
-   * index: measured on 2026-09-24, on this test's first push. No hooks either, since
-   * the repository's own would run inside the copy.
+   * A git that can see no repository but the throwaway one, whoever runs this suite.
+   *
+   * The pre-push hook runs `npm run check` with `GIT_DIR` set to this repository's. The
+   * first version of this test ran `git init` and `git add .` under it: the add staged the
+   * copy over this repository's own index, and a `git init` with `GIT_DIR` pointing at a
+   * linked worktree's directory reinitialises the repository behind it as bare, which set
+   * `core.bare = true` in the configuration every worktree of this machine shares, measured
+   * on 2026-09-24. So: every `GIT_*` variable is dropped, no system or global
+   * configuration is read, discovery stops at the temporary directory's parent, hooks are
+   * off, the repository is created at an explicit path, and before anything is written
+   * the test asks git where the repository it would use is and stops unless the answer is
+   * inside the temporary directory.
    */
   const env = { ...process.env };
   for (const key of Object.keys(env)) if (key.startsWith('GIT_')) delete env[key];
@@ -648,19 +655,43 @@ describe('the whole path, in a throwaway repository', () => {
       cwd: root,
       encoding: 'utf8',
       stdio: 'pipe',
-      env,
+      env: {
+        ...env,
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_CONFIG_GLOBAL: '/dev/null',
+        GIT_CEILING_DIRECTORIES: dirname(root),
+      },
     });
+  const inside = (path: string) => {
+    const real = realpathSync(path);
+    const base = realpathSync(root);
+    return real === base || real.startsWith(`${base}/`);
+  };
 
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'strings-submission-'));
+    // Before the first write: no repository may be visible from here at all.
+    let visible: string | null = null;
+    try {
+      visible = git('rev-parse', '--absolute-git-dir').trim();
+    } catch {
+      visible = null;
+    }
+    if (visible !== null) throw new Error(`git sees a repository from the temp dir: ${visible}`);
     mkdirSync(join(root, dirname(ENGLISH_EXTRACTION)), { recursive: true });
     cpSync(join(ROOT, GERMAN_CATALOGUE_DIR), join(root, GERMAN_CATALOGUE_DIR), { recursive: true });
     cpSync(join(ROOT, ENGLISH_EXTRACTION), join(root, ENGLISH_EXTRACTION));
     cpSync(join(ROOT, '.oxfmtrc.json'), join(root, '.oxfmtrc.json'));
-    git('init', '-q');
+    git('init', '-q', '--initial-branch=main', root);
     // Nothing below may touch any repository but the throwaway one.
-    if (realpathSync(git('rev-parse', '--show-toplevel').trim()) !== realpathSync(root))
-      throw new Error('git does not see the throwaway directory as its own repository');
+    for (const asked of ['--show-toplevel', '--absolute-git-dir', '--git-common-dir']) {
+      const answer = git('rev-parse', asked).trim();
+      if (
+        !inside(join(root, answer.startsWith('/') ? '' : '.')) ||
+        !inside(answer.startsWith('/') ? answer : join(root, answer))
+      )
+        throw new Error(`git rev-parse ${asked} is outside the throwaway directory: ${answer}`);
+    }
     git('add', '.');
     git('-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-qm', 'main');
   });
