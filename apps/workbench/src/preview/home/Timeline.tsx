@@ -4,7 +4,7 @@ import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 
-import { addDays, berlinInstant, berlinWallClock } from '@correctiv/app-core/lib/berlin-time';
+import { berlinInstant, berlinWallClock } from '@correctiv/app-core/lib/berlin-time';
 import {
   MINUTES_IN_DAY,
   type HomeEdition,
@@ -13,7 +13,11 @@ import {
 
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
+import { InfoTip } from '../../ui/kit/info-tip';
+import { Segmented } from '../../ui/kit/segmented';
 import type { PreviewState } from '../state';
+import { Calendar } from './Calendar';
+import { isSpan, noonOf, SPANS, stepped, weekNumberOf, type Span } from './calendar';
 import {
   editionsOn,
   formatTimeOfDay,
@@ -36,7 +40,7 @@ import {
   timeAt,
   timeOn,
 } from './minutes';
-import { getLayout, setLayout, subscribeLayout } from './store';
+import { getLayout, setLayout, setOpenEdition, subscribeLayout } from './store';
 
 /**
  * Everything the day says, in ENGLISH; the German that ships is
@@ -130,11 +134,103 @@ const COPY = defineMessages({
     description:
       'Read out for the coloured band an edition draws along the track. {edition} is the edition’s own title as the newsroom wrote it, or its id where it has none; {from} and {to} are times of day, as 18:00, and {to} is 24:00 where the edition runs on past midnight.',
   },
+  zoom: {
+    id: 'home.timeline.zoom',
+    defaultMessage: 'Zoom',
+    description:
+      'The legend of the three-way switch beside the date under the frame: whether the track shows one day, a week or a month. Read aloud, and the heading of its ⓘ explanation.',
+  },
+  zoomHelp: {
+    id: 'home.timeline.zoomHelp',
+    defaultMessage:
+      'Week and month show each edition as a band. Click a day to see it in the frame, click a band to edit its edition. While the Home layout is open, drag across days to make an edition of them. With the keyboard: the arrow keys choose a day, Shift and an arrow key widen the choice, Enter makes the edition.',
+    description:
+      'The explanation behind the ⓘ beside the switch between day, week and month under the frame. An edition is a named layer over the ordinary day, as a campaign or an election night.',
+  },
+  weekBefore: {
+    id: 'home.timeline.weekBefore',
+    defaultMessage: 'The week before',
+    description:
+      'The accessible name of the arrow left of the date at week zoom. It moves the playhead seven days earlier. home.timeline.weekAfter is its twin.',
+  },
+  weekAfter: {
+    id: 'home.timeline.weekAfter',
+    defaultMessage: 'The week after',
+    description:
+      'The accessible name of the arrow right of the date at week zoom. It moves the playhead seven days later. home.timeline.weekBefore is its twin.',
+  },
+  monthBefore: {
+    id: 'home.timeline.monthBefore',
+    defaultMessage: 'The month before',
+    description:
+      'The accessible name of the arrow left of the date at month zoom. It moves the playhead to the same day a month earlier. home.timeline.monthAfter is its twin.',
+  },
+  monthAfter: {
+    id: 'home.timeline.monthAfter',
+    defaultMessage: 'The month after',
+    description:
+      'The accessible name of the arrow right of the date at month zoom. It moves the playhead to the same day a month later. home.timeline.monthBefore is its twin.',
+  },
+  week: {
+    id: 'home.timeline.week',
+    defaultMessage: 'Wk {week}',
+    description:
+      'The week the track is showing at week zoom, beside the arrows that step it. {week} is the ISO week number, as 40; German writes it “KW 40”.',
+  },
+  month: {
+    id: 'home.timeline.month',
+    defaultMessage: '{month}',
+    description:
+      'The month the track is showing at month zoom, beside the arrows that step it. {month} is the month and year already spelled by the browser, as “September 2030”; the message exists so that a language can put words around it.',
+  },
   editionMomentGo: {
     id: 'edition.momentGo',
     defaultMessage: 'Go to {time} in {edition}',
     description:
       'The accessible name of a stop an edition draws on the track, for one of its own moments. {time} is a time of day, as 23:00; {edition} is the edition’s title, or its id where it has none.',
+  },
+});
+
+/**
+ * The three zooms' names: the word on the switch, and the letter it shrinks to below 1024.
+ *
+ * `ZOOM_LABELS` because it is a `Record` of labels for the zooms, as AGENTS.md names one.
+ */
+const ZOOM_LABELS = defineMessages({
+  day: {
+    id: 'home.timeline.zoomDay',
+    defaultMessage: 'Day',
+    description:
+      'One segment of the switch under the frame: the track shows one day, hour by hour.',
+  },
+  week: {
+    id: 'home.timeline.zoomWeek',
+    defaultMessage: 'Week',
+    description:
+      'One segment of the switch under the frame: the track shows the week, Monday to Sunday.',
+  },
+  month: {
+    id: 'home.timeline.zoomMonth',
+    defaultMessage: 'Month',
+    description: 'One segment of the switch under the frame: the track shows the whole month.',
+  },
+  dayShort: {
+    id: 'home.timeline.zoomDayShort',
+    defaultMessage: 'D',
+    description:
+      'The letter home.timeline.zoomDay shrinks to on a narrow window. The full word is still read aloud.',
+  },
+  weekShort: {
+    id: 'home.timeline.zoomWeekShort',
+    defaultMessage: 'W',
+    description:
+      'The letter home.timeline.zoomWeek shrinks to on a narrow window. The full word is still read aloud.',
+  },
+  monthShort: {
+    id: 'home.timeline.zoomMonthShort',
+    defaultMessage: 'M',
+    description:
+      'The letter home.timeline.zoomMonth shrinks to on a narrow window. The full word is still read aloud.',
   },
 });
 
@@ -230,11 +326,12 @@ export function Timeline({
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeAt(playhead, next) });
   /*
-   * A day earlier or later at the same minute, which always names the day in the address:
-   * "Saturday at 18:00" is the link this whole row exists to produce.
+   * A day, a week or a month earlier or later at the same minute, which always names the day
+   * in the address: "Saturday at 18:00" is the link this whole row exists to produce.
    */
-  const stepDay = (days: number) =>
-    onChange({ time: timeOn(addDays(playhead.date, days), minute) });
+  const span = state.span;
+  const stepDay = (by: number) =>
+    onChange({ time: timeOn(stepped(span, playhead.date, by), minute) });
 
   /*
    * The two writes §3 allows, each refusing itself while the tool is shut.
@@ -272,7 +369,10 @@ export function Timeline({
    */
   const addEdition = () => {
     if (!editing) return;
-    setLayout(withEdition(getLayout(), playhead.date, snap(minute)).layout);
+    const made = withEdition(getLayout(), playhead.date, snap(minute));
+    setLayout(made.layout);
+    // Open for its title, as a drag across days does (`Calendar.tsx`).
+    setOpenEdition(made.id);
     onChange({ time: timeOn(playhead.date, snap(minute)) });
   };
   /*
@@ -291,19 +391,37 @@ export function Timeline({
    * The day as the reader's language writes it, from a noon that is the same calendar day
    * in every zone: the date is Berlin's, and the browser is only asked to spell it.
    */
-  const [year, month, day] = playhead.date.split('-').map(Number);
-  const spelled = intl.formatDate(Date.UTC(year!, month! - 1, day!, 12), {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: 'UTC',
-  });
+  const noon = noonOf(playhead.date);
+  const spelled =
+    span === 'week'
+      ? intl.formatMessage(COPY.week, { week: weekNumberOf(playhead.date) })
+      : span === 'month'
+        ? intl.formatMessage(COPY.month, {
+            month: intl.formatDate(noon, {
+              month: compact ? 'short' : 'long',
+              year: 'numeric',
+              timeZone: 'UTC',
+            }),
+          })
+        : intl.formatMessage(COPY.date, {
+            date: intl.formatDate(noon, {
+              weekday: 'short',
+              day: '2-digit',
+              month: '2-digit',
+              timeZone: 'UTC',
+            }),
+          });
+  const before = { day: COPY.dayBefore, week: COPY.weekBefore, month: COPY.monthBefore }[span];
+  const after = { day: COPY.dayAfter, week: COPY.weekAfter, month: COPY.monthAfter }[span];
 
   return (
     <div
       className={cn(
         'flex shrink-0 items-center gap-xs border-t border-stroke bg-surface',
         compact ? 'px-xs py-3xs' : 'px-s py-2xs',
+        // The track takes a line of its own where the controls leave it too little: the
+        // day below a width it can be read at, the week and the month always.
+        'flex-wrap gap-y-3xs',
       )}
     >
       <h2 className="sr-only">{intl.formatMessage(COPY.heading)}</h2>
@@ -319,19 +437,24 @@ export function Timeline({
           variant="ghost"
           size="icon"
           className="size-[1.75rem]"
-          aria-label={intl.formatMessage(COPY.dayBefore)}
+          aria-label={intl.formatMessage(before)}
           onClick={() => stepDay(-1)}
         >
           <ChevronLeft aria-hidden="true" />
         </Button>
-        <span className="min-w-[6.5ch] text-center font-mono text-s tabular-nums text-on-canvas">
-          {intl.formatMessage(COPY.date, { date: spelled })}
+        <span
+          className={cn(
+            'text-center font-mono text-s tabular-nums text-on-canvas',
+            span === 'month' ? 'min-w-[9ch] whitespace-nowrap' : 'min-w-[6.5ch]',
+          )}
+        >
+          {spelled}
         </span>
         <Button
           variant="ghost"
           size="icon"
           className="size-[1.75rem]"
-          aria-label={intl.formatMessage(COPY.dayAfter)}
+          aria-label={intl.formatMessage(after)}
           onClick={() => stepDay(1)}
         >
           <ChevronRight aria-hidden="true" />
@@ -339,25 +462,85 @@ export function Timeline({
       </div>
 
       {/*
+        ADR 0059 §2's three zooms of the one axis, beside the stepper whose step they set.
+        The kit's segmented control, so it is one radio group and one tab stop; below 1024
+        each word shrinks to its letter and is still read whole.
+      */}
+      <div className="flex shrink-0 items-center gap-3xs">
+        <Segmented
+          name="timeline-zoom"
+          legend={intl.formatMessage(COPY.zoom)}
+          value={span}
+          options={SPANS.map((value: Span) => {
+            const word = intl.formatMessage(ZOOM_LABELS[value]);
+            const letter = intl.formatMessage(ZOOM_LABELS[`${value}Short`]);
+            return {
+              value,
+              label: compact ? (
+                <>
+                  <span aria-hidden="true">{letter}</span>
+                  <span className="sr-only">{word}</span>
+                </>
+              ) : (
+                word
+              ),
+            };
+          })}
+          onChange={(next) => {
+            if (isSpan(next)) onChange({ span: next });
+          }}
+          className="[&_label>span]:px-2xs [&_label>span]:py-4xs"
+        />
+        {span !== 'day' && (
+          <InfoTip about={intl.formatMessage(COPY.zoom)} side="top">
+            <p>{intl.formatMessage(COPY.zoomHelp)}</p>
+          </InfoTip>
+        )}
+      </div>
+
+      {/*
         The editions on this day ride above the track rather than on it, in a strip of the
         same width, so the hours and the day's own stops keep the room ADR 0042 §1 moved
         the track here to get. Only while there is an edition on the day.
+
+        Further out, the week or the month in the track's place, with the editions as bands
+        across the days (`Calendar.tsx`).
       */}
-      <div className="flex min-w-0 flex-1 flex-col gap-4xs">
-        {bands.length > 0 && (
-          <Bands bands={bands} date={playhead.date} labelled={!compact} onGoTo={goTo} />
+      <div
+        className={cn(
+          'flex min-w-0 flex-1 flex-col gap-4xs',
+          span === 'day' ? 'min-w-[min(100%,20rem)]' : 'order-last basis-full',
         )}
-        <Track
-          moments={layout.moments}
-          minute={minute}
-          realMinute={real.date === playhead.date ? real.minute : null}
-          simulated={simulated}
-          point={point}
-          labelled={!compact}
-          editing={editing}
-          onGoTo={goTo}
-          onMoveMoment={moveMoment}
-        />
+      >
+        {span === 'day' ? (
+          <>
+            {bands.length > 0 && (
+              <Bands bands={bands} date={playhead.date} labelled={!compact} onGoTo={goTo} />
+            )}
+            <Track
+              moments={layout.moments}
+              minute={minute}
+              realMinute={real.date === playhead.date ? real.minute : null}
+              simulated={simulated}
+              point={point}
+              labelled={!compact}
+              editing={editing}
+              onGoTo={goTo}
+              onMoveMoment={moveMoment}
+            />
+          </>
+        ) : (
+          <Calendar
+            layout={layout}
+            span={span}
+            playhead={playhead}
+            today={real.date}
+            simulated={simulated}
+            editing={editing}
+            labelled={!compact}
+            onTime={(time) => onChange({ time })}
+          />
+        )}
       </div>
 
       <label className="flex shrink-0 items-center gap-2xs">

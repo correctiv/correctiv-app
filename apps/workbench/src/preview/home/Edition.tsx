@@ -1,5 +1,5 @@
 import { SlidersHorizontal, Trash2, TriangleAlert } from 'lucide-react';
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
 import type { HomeEdition, HomeLayout, MinuteOfDay } from '@correctiv/app-core/lib/home-layout';
@@ -19,6 +19,7 @@ import {
   withoutEditionMoment,
 } from './document';
 import { parseMinute, STEP } from './minutes';
+import { getOpenEdition, setOpenEdition, subscribeOpenEdition } from './store';
 
 /**
  * An edition, as the panel shows the one an edit would land on.
@@ -27,7 +28,8 @@ import { parseMinute, STEP } from './minutes';
  * §8's first slice: the edition's name and colour, which of its points is being edited, a
  * popover with its span, its title and a delete, and the two warnings the private pipeline
  * of §7 would make unnecessary and has not been built to. What is deliberately not here is
- * §8's list of what is left out: the strip and its zooms, the layer chip, conflict badges.
+ * the rest of §8's list of what is left out: the layer chip and conflict badges. The strip
+ * and its zooms are `Calendar.tsx`, which opens this popover through `./store.ts`.
  *
  * A file of its own rather than more of `HomeDocument.tsx`, which is the day's panel and
  * already long; this is the layer above it, and what the two share is the document module.
@@ -224,7 +226,20 @@ export function EditionHead({
   onGoTo: (minute: MinuteOfDay) => void;
 }) {
   const intl = useWorkbenchIntl();
-  const [open, setOpen] = useState(false);
+  /*
+   * Open is a fact held in `./store.ts`, so the strip under the frame can open it. Closed
+   * when this head stops showing the edition, or the id would stay set and the popover
+   * spring open the next time the playhead happened to cross it.
+   */
+  const opened = useSyncExternalStore(subscribeOpenEdition, getOpenEdition, getOpenEdition);
+  const open = opened === edition.id;
+  const setOpen = (next: boolean) => setOpenEdition(next ? edition.id : null);
+  useEffect(
+    () => () => {
+      if (getOpenEdition() === edition.id) setOpenEdition(null);
+    },
+    [edition.id],
+  );
   const name = nameOf(edition);
   const moment = point === null ? null : edition.moments.find((held) => held.minute === point);
   const next = edition.moments.find((held) => held.minute > (point ?? -1));

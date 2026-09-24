@@ -1454,6 +1454,74 @@ export function withEdition(
 }
 
 /**
+ * A new edition over whole Berlin days, from the first day's midnight to the midnight after
+ * the last, carrying nothing: what a drag across the week or the month makes (ADR 0059 §2).
+ *
+ * The two days may come in either order, because a drag can run leftwards. Written as wall
+ * clock, `00:00` to `00:00`, so a span over the last Sunday of March is 23 hours shorter
+ * than a week of 24 and the one over October's is longer, and the document says neither.
+ *
+ * **It makes exactly the days that were dragged**, unlike `withEdition`, which shortens the
+ * new edition to fit inside the one running at the playhead. Somebody who dragged over three
+ * days meant three, and a wider edition around a narrower one is legitimate: the campaign
+ * around the election night. What the rule behind `withEdition` protects is that an edit
+ * made on the new edition can land on it somewhere, so that is what is checked. `at` is the
+ * first instant at which it would, and null with the layout unchanged where no minute of the
+ * span has it as the narrowest, because narrower editions already cover every one, or where
+ * an edition already runs over exactly these days.
+ */
+export function withEditionAcross(
+  layout: HomeLayout,
+  one: BerlinDate,
+  other: BerlinDate,
+): { layout: HomeLayout; id: string | null; at: Instant | null } {
+  const [first, last] = one <= other ? [one, other] : [other, one];
+  const id = mintEditionId(layout, first);
+  const edition = spanned({
+    id,
+    from: formatBerlinDateTime({ date: first, minute: 0 }),
+    until: formatBerlinDateTime({ date: addDays(last, 1), minute: 0 }),
+    start: 0,
+    end: 0,
+    changes: [],
+    moments: [],
+  });
+  /* c8 ignore next */
+  if (!edition) return { layout, id: null, at: null };
+  // A copy of an edition's span is a tie the fold would break by id, and one of the two
+  // would never take an edit: `withEdition` refuses the same case.
+  const copy = layout.editions.some(
+    (held) => held.start === edition.start && held.end === edition.end,
+  );
+  if (copy) return { layout, id: null, at: null };
+  const next = { ...layout, editions: [...layout.editions, edition] };
+  const at = editableFrom(next, id);
+  return at === null ? { layout, id: null, at: null } : { layout: next, id, at };
+}
+
+/**
+ * The first instant of an edition's span at which an edit would land on it, or null for
+ * never, or for an id the document does not have.
+ *
+ * What the playhead goes to when a band is chosen: its start, unless a narrower edition
+ * is running there, in which case the end of the first such one. Those ends are the only
+ * instants at which the answer can turn from no to yes, since an edition only ever loses
+ * the playhead to one that has started.
+ */
+export function editableFrom(layout: HomeLayout, id: string): Instant | null {
+  const edition = layout.editions.find((held) => held.id === id);
+  if (!edition) return null;
+  const candidates = [
+    edition.start,
+    ...layout.editions
+      .map((other) => other.end)
+      .filter((end) => end > edition.start && end < edition.end)
+      .sort((a, b) => a - b),
+  ];
+  return candidates.find((at) => targetAt(layout, at).edition?.id === id) ?? null;
+}
+
+/**
  * An edition with its instants worked out from what it says, or null when it says something
  * the core would refuse: not a date and time, a minute the spring change skips
  * (`edition-span-in-gap`), or an end at or before the start.

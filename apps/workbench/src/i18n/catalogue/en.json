@@ -913,6 +913,10 @@
     "defaultMessage": "{edition}, on this day from {from} to {to}",
     "description": "Read out for the coloured band an edition draws along the track. {edition} is the edition’s own title as the newsroom wrote it, or its id where it has none; {from} and {to} are times of day, as 18:00, and {to} is 24:00 where the edition runs on past midnight."
   },
+  "edition.days": {
+    "defaultMessage": "{sameMonth, select, yes {{edition}, {month} {fromDay} to {toDay}} other {{edition}, {from} to {to}}}",
+    "description": "The accessible name of an edition’s band in the week or month under the frame. {edition} is its title as the newsroom wrote it, or its id. {sameMonth} is yes when its first and last day are in one month, and then {month} is that month’s name and {fromDay} and {toDay} the two days’ numbers; otherwise {from} and {to} are the two days in full, as “September 27”."
+  },
   "edition.decides": {
     "defaultMessage": "{edition} sets this block here",
     "description": "Read out for the coloured hairline at a block’s edge, which marks a block whose state at the playhead an edition sets rather than the ordinary day. {edition} is the edition’s title, or its id where it has none."
@@ -968,6 +972,10 @@
   "edition.offIn": {
     "defaultMessage": "Not on screen in {edition}.",
     "description": "Says when a switched-off block is off, in its details popover, while an edition’s starting state is being edited. {edition} is the edition’s title, or its id."
+  },
+  "edition.oneDay": {
+    "defaultMessage": "{edition}, {day}",
+    "description": "The accessible name of an edition’s band in the week or month under the frame, for an edition on one day only. {edition} is its title, or its id; {day} is the day, as “27 September”."
   },
   "edition.pinEarly": {
     "defaultMessage": "This pin is public as soon as the edition is. To lead with an embargoed piece, use its flag in WordPress instead.",
@@ -1311,6 +1319,18 @@
     "defaultMessage": "Not shown: the app has no block called <name>{module}</name>.",
     "description": "Stands in for a block whose module this app has no renderer for, which happens while the document is ahead of the app. {module} is the word the document used, drawn in a monospace face."
   },
+  "home.calendar.chosen": {
+    "defaultMessage": "{from} to {to} chosen",
+    "description": "Read out when several days have been chosen with Shift and an arrow key, or by dragging. {from} and {to} are the first and last day, as “28 September”."
+  },
+  "home.calendar.refused": {
+    "defaultMessage": "Editions that take precedence already cover all of these days. Edit one of those instead.",
+    "description": "Shown under the week or month when a drag across days made no edition: every minute of those days already belongs to a narrower edition, or one runs over exactly those days, so a new one would never be the one an edit lands on."
+  },
+  "home.calendar.today": {
+    "defaultMessage": "{day}, today",
+    "description": "The accessible name of the column for today in the week or month under the frame. {day} is the date already spelled by the browser, as “Monday, 28 September”."
+  },
   "home.document.changed": {
     "defaultMessage": "changed",
     "description": "The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
@@ -1646,9 +1666,65 @@
     "defaultMessage": "Go to the moment at {time}",
     "description": "The accessible name of one stop on the track while the home tool is shut, when pressing it only moves the playhead. {time} is the moment’s time of day, as 18:30."
   },
+  "home.timeline.month": {
+    "defaultMessage": "{month}",
+    "description": "The month the track is showing at month zoom, beside the arrows that step it. {month} is the month and year already spelled by the browser, as “September 2030”; the message exists so that a language can put words around it."
+  },
+  "home.timeline.monthAfter": {
+    "defaultMessage": "The month after",
+    "description": "The accessible name of the arrow right of the date at month zoom. It moves the playhead to the same day a month later. home.timeline.monthBefore is its twin."
+  },
+  "home.timeline.monthBefore": {
+    "defaultMessage": "The month before",
+    "description": "The accessible name of the arrow left of the date at month zoom. It moves the playhead to the same day a month earlier. home.timeline.monthAfter is its twin."
+  },
   "home.timeline.time": {
     "defaultMessage": "The time the frame is showing",
     "description": "The label of the time field beside the track. Read aloud and never seen."
+  },
+  "home.timeline.week": {
+    "defaultMessage": "Wk {week}",
+    "description": "The week the track is showing at week zoom, beside the arrows that step it. {week} is the ISO week number, as 40; German writes it “KW 40”."
+  },
+  "home.timeline.weekAfter": {
+    "defaultMessage": "The week after",
+    "description": "The accessible name of the arrow right of the date at week zoom. It moves the playhead seven days later. home.timeline.weekBefore is its twin."
+  },
+  "home.timeline.weekBefore": {
+    "defaultMessage": "The week before",
+    "description": "The accessible name of the arrow left of the date at week zoom. It moves the playhead seven days earlier. home.timeline.weekAfter is its twin."
+  },
+  "home.timeline.zoom": {
+    "defaultMessage": "Zoom",
+    "description": "The legend of the three-way switch beside the date under the frame: whether the track shows one day, a week or a month. Read aloud, and the heading of its ⓘ explanation."
+  },
+  "home.timeline.zoomDay": {
+    "defaultMessage": "Day",
+    "description": "One segment of the switch under the frame: the track shows one day, hour by hour."
+  },
+  "home.timeline.zoomDayShort": {
+    "defaultMessage": "D",
+    "description": "The letter home.timeline.zoomDay shrinks to on a narrow window. The full word is still read aloud."
+  },
+  "home.timeline.zoomHelp": {
+    "defaultMessage": "Week and month show each edition as a band. Click a day to see it in the frame, click a band to edit its edition. While the Home layout is open, drag across days to make an edition of them. With the keyboard: the arrow keys choose a day, Shift and an arrow key widen the choice, Enter makes the edition.",
+    "description": "The explanation behind the ⓘ beside the switch between day, week and month under the frame. An edition is a named layer over the ordinary day, as a campaign or an election night."
+  },
+  "home.timeline.zoomMonth": {
+    "defaultMessage": "Month",
+    "description": "One segment of the switch under the frame: the track shows the whole month."
+  },
+  "home.timeline.zoomMonthShort": {
+    "defaultMessage": "M",
+    "description": "The letter home.timeline.zoomMonth shrinks to on a narrow window. The full word is still read aloud."
+  },
+  "home.timeline.zoomWeek": {
+    "defaultMessage": "Week",
+    "description": "One segment of the switch under the frame: the track shows the week, Monday to Sunday."
+  },
+  "home.timeline.zoomWeekShort": {
+    "defaultMessage": "W",
+    "description": "The letter home.timeline.zoomWeek shrinks to on a narrow window. The full word is still read aloud."
   },
   "home.where.between": {
     "defaultMessage": "between {before} and {after}",

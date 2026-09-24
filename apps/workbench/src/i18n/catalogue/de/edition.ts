@@ -14,6 +14,11 @@ export const edition: Record<string, string> = {
   'edition.band': '{edition}, an diesem Tag von {from} bis {to}',
   'edition.momentGo': 'Zu {time} in {edition} springen',
 
+  // A band in the week or the month (`preview/home/Calendar.tsx`).
+  'edition.days':
+    '{sameMonth, select, yes {{edition}, {fromDay}. bis {toDay}. {month}} other {{edition}, {from} bis {to}}}',
+  'edition.oneDay': '{edition}, {day}',
+
   // The head of the panel while an edition is what an edit lands on (`Edition.tsx`).
   'edition.kind': 'Ausgabe',
   'edition.start': 'Beginn der Ausgabe, bis {until}',

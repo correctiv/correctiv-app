@@ -6,6 +6,7 @@ import type { ShellAddress } from '../shell/address';
 import { DEFAULT_DEVICE, DEVICES, HOST_DEVICE, preset } from './devices';
 import { isLocale } from './frame/locale';
 import { TOKENS, type Overrides, type Scheme } from './frame/tokens';
+import { isSpan, type Span } from './home/calendar';
 import { scenarioNamed } from './scenarios';
 
 /** The app's own appearance setting. `null` means "leave the app alone". */
@@ -72,6 +73,17 @@ export interface PreviewState {
    */
   time: string | null;
   /**
+   * How far out the track under the frame is: a day, a week or a month, `zm=week` and
+   * `zm=month`, and no `zm` for the day, so every link written before the zooms opens as it
+   * did.
+   *
+   * ADR 0059 §2's three zooms of one axis. The playhead is `time` at every zoom and this
+   * says only how much of the axis is drawn around it, so a link to the week of the
+   * election night shows that week and the phone at the minute it names. `zm` and not `z`,
+   * which has been the frame's scale since the first five parameters.
+   */
+  span: Span;
+  /**
    * Whether the day is drawn under the frame.
    *
    * On by default, and off is what travels in the address, because the reason to write
@@ -102,6 +114,7 @@ export const INITIAL: PreviewState = {
   seed: null,
   scenario: null,
   time: null,
+  span: 'day',
   timeline: true,
   overrides: {},
   check: false,
@@ -161,6 +174,8 @@ export function fromAddress(address: ShellAddress): PreviewState {
     time: p.has('tm') ? (isTime(askedTime) ? askedTime : null) : (scenario?.opensAt ?? null),
     // Default on, so the parameter is the exception and `tl=0` is the only thing it
     // spells. Anything else in it, including a missing one, is the default.
+    // Junk is the day, which is what a missing one is.
+    span: isSpan(p.get('zm')) ? (p.get('zm') as Span) : 'day',
     timeline: p.get('tl') !== '0',
     overrides: parseOverrides(p.get('kl'), p.get('kd')),
     check: p.has('check'),
@@ -213,6 +228,7 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   if (scenario) p.set('sc', scenario.name);
   unlessDefault(p, 's', state.seed, scenario?.session ?? null);
   unlessDefault(p, 'tm', state.time, scenario?.opensAt ?? null);
+  if (state.span !== 'day') p.set('zm', state.span);
   if (!state.timeline) p.set('tl', '0');
   if (state.check) p.set('check', '1');
   const light = writeOverrides(state.overrides, 'light');

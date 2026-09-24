@@ -69,6 +69,27 @@ export const home: Record<string, string> = {
   'home.timeline.date': '{date}',
   'home.timeline.dayBefore': 'Der Tag davor',
   'home.timeline.dayAfter': 'Der Tag danach',
+  'home.timeline.zoom': 'Zeitraum',
+  'home.timeline.zoomHelp':
+    'Woche und Monat zeigen jede Ausgabe als Balken. Klicken Sie auf einen Tag, um ihn im Rahmen zu sehen, und auf einen Balken, um seine Ausgabe zu bearbeiten. Ist das „Startseiten-Layout“ offen, legt Ziehen über mehrere Tage eine Ausgabe für diese Tage an. Mit der Tastatur: Die Pfeiltasten wählen einen Tag, Umschalt und Pfeiltaste erweitern die Auswahl, die Eingabetaste legt die Ausgabe an.',
+  'home.timeline.zoomDay': 'Tag',
+  'home.timeline.zoomWeek': 'Woche',
+  'home.timeline.zoomMonth': 'Monat',
+  'home.timeline.zoomDayShort': 'T',
+  'home.timeline.zoomWeekShort': 'W',
+  'home.timeline.zoomMonthShort': 'M',
+  'home.timeline.weekBefore': 'Die Woche davor',
+  'home.timeline.weekAfter': 'Die Woche danach',
+  'home.timeline.monthBefore': 'Der Monat davor',
+  'home.timeline.monthAfter': 'Der Monat danach',
+  'home.timeline.week': 'KW {week}',
+  'home.timeline.month': '{month}',
+
+  // The week and the month under the frame (`preview/home/Calendar.tsx`).
+  'home.calendar.today': '{day}, heute',
+  'home.calendar.chosen': '{from} bis {to} ausgewählt',
+  'home.calendar.refused':
+    'Diese Tage sind schon ganz von Ausgaben belegt, die Vorrang haben. Bearbeiten Sie stattdessen eine davon.',
 
   // The palette, and the hairline that opens it (`preview/home/Palette.tsx`).
   // `{where}`, `{name}` and `{what}` come out of `preview/home/document.ts` and are
