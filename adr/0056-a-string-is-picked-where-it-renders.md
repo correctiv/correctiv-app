@@ -1,6 +1,7 @@
 # ADR 0056 — A string is picked where it renders, and the German is what is edited
 
-Status: accepted, 2026-09-22, **not built**. Measured on 2026-09-21, and the measurement
+Status: accepted, 2026-09-22, **built in #259**; the published site's way out, ADR 0061
+§3's strings submission, is not. Measured on 2026-09-21, and the measurement
 is in the Context below because it decided the shape rather than confirming it. Retires
 nothing.
 
