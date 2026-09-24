@@ -149,7 +149,7 @@ still undecided.
 A minimum interval between fetches keeps a reader who switches apps constantly from
 hammering the source.
 
-### 6. ~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md) §1
+### 6. ~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md)'s "What this retires"
 
 ~~Skipping what it does not recognise (§7) already solves what a version number would solve,
 and it solves the mixed case too — an app that knows every place but one. A version

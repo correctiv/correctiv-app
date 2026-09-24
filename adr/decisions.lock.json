@@ -257,7 +257,8 @@
       "6": [
         "No version number in the document",
         "~~No version number in the document~~",
-        "~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md) §1"
+        "~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md) §1",
+        "~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md)'s \"What this retires\""
       ],
       "7": ["An unknown place is drawn past, and reported"],
       "8": ["A pinned item that has vanished falls back to the place's rule"],
