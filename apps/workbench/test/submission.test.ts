@@ -7,9 +7,9 @@ import { HOME_LAYOUT_VERSION } from '@correctiv/app-core/lib/home-layout';
 import { HOME_LAYOUT_MAX_CHARS } from '@correctiv/app-core/stores/homeLayout';
 
 import { ROOT } from '../plugin/collect.ts';
+import { applyIssue, KINDS } from '../scripts/submission-kinds.ts';
 import {
   applyHome,
-  applyIssue,
   longestCommonRun,
   plain,
   readSubmission,
@@ -68,18 +68,49 @@ const EDITED = withHidden(SHIPPED, null, 'hero', true);
 describe('reading an issue', () => {
   it('takes the payload out of what the workbench writes, and applies it', () => {
     const { title, body } = issueOf(formatLayoutDocument(EDITED));
-    const applied = applyIssue(title, body, () => CURRENT);
+    const applied = applyIssue(title, body, { read: () => CURRENT, list: () => [] });
     expect(applied.kind).toBe('home');
-    expect(applied.file).toBe(SUBMISSION_KINDS.home.file);
-    expect(applied.content).toBe(formatLayoutDocument(EDITED));
+    expect(applied.files).toEqual([
+      { path: SUBMISSION_KINDS.home.file, content: formatLayoutDocument(EDITED) },
+    ]);
+    expect(applied.format).toBe(false);
   });
 
-  it('forgives prose around the block and a pasted body with Windows line ends', () => {
+  it('forgives a lead of its own and a pasted body with Windows line ends', () => {
     const { title } = issueOf('');
-    const body = `Hallo,\r\n\r\n\`\`\`json\r\n${formatLayoutDocument(EDITED).replace(/\n/g, '\r\n')}\`\`\`\r\n\r\nDanke`;
+    const body = `Hallo,\r\nbitte übernehmen.\r\n\r\n\`\`\`json\r\n${formatLayoutDocument(EDITED).replace(/\n/g, '\r\n')}\`\`\`\r\n\r\n`;
     expect(JSON.parse(readSubmission(title, body).payload)).toMatchObject({
       version: HOME_LAYOUT_VERSION,
     });
+    // And the block alone, which is what somebody who deleted the lead leaves.
+    expect(readSubmission(title, `\`\`\`json\n{}\n\`\`\``).payload).toBe('{}\n');
+  });
+
+  /*
+   * The shape the workbench writes and nothing else, because a reader that takes any fence
+   * and a renderer that shows only some disagree about what the issue says. Each of these
+   * was a body the renderer and the first reader read differently, measured with
+   * `gh api markdown` in the cold review of #263.
+   */
+  it('refuses a body that is not the workbench’s shape, wherever the difference is', () => {
+    const { title, body } = issueOf(CURRENT);
+    const fenced = body.slice(body.indexOf('```'));
+    const cases = [
+      // A fence inside an attribute renders as nothing, and was read.
+      `Harmlos.\n\n<div title="\n\n${fenced}\n">\n</div>\n`,
+      `<div title="\n${fenced}">`,
+      // An indented fence renders as a block, and was not read.
+      `Harmlos.\n\n   ${fenced}`,
+      // Prose after the block, which a reader might take for part of the change.
+      `${body}\nDanke!`,
+      // A backtick or an angle bracket in the lead.
+      `Siehe \`x\`.\n\n${fenced}`,
+      `Das <b>ist</b> es.\n\n${fenced}`,
+      // A lead that runs into the fence without a blank line.
+      `Harmlos.\n${fenced}`,
+    ];
+    for (const hostile of cases)
+      expect(refusal(() => readSubmission(title, hostile))).toBe('body-shape');
   });
 
   it('refuses a body without the block', () => {
@@ -94,13 +125,27 @@ describe('reading an issue', () => {
     expect(refusal(() => readSubmission(title, `${body}\n${body}`))).toBe('several-blocks');
   });
 
-  it('refuses a title without a known prefix, and a kind that is named and not built', () => {
+  it('refuses a title without a known prefix, and reads each built kind’s', () => {
     const { body } = issueOf(CURRENT);
     expect(refusal(() => readSubmission('Startseite geändert', body))).toBe('no-kind');
     expect(refusal(() => readSubmission('[irgendwas] Startseite', body))).toBe('no-kind');
-    expect(refusal(() => readSubmission(issueOf(CURRENT, 'strings').title, body))).toBe(
-      'kind-not-built',
-    );
+    expect(refusal(() => readSubmission(' [startseite] mit Leerzeichen', body))).toBe('no-kind');
+    expect(readSubmission(issueOf(CURRENT, 'strings').title, body).kind).toBe('strings');
+  });
+
+  it('has a way through for every kind it calls built, and none for a kind it does not', () => {
+    for (const kind of Object.keys(SUBMISSION_KINDS) as SubmissionKind[])
+      expect(KINDS[kind] !== null).toBe(SUBMISSION_KINDS[kind].built);
+  });
+
+  /*
+   * GitHub renders nothing of an HTML comment, so a block inside one is a change nobody
+   * reading the issue sees, a maintainer deciding about an outsider's issue included.
+   */
+  it('refuses a body with an HTML comment in it, wherever it stands', () => {
+    const { title, body } = issueOf(CURRENT);
+    expect(refusal(() => readSubmission(title, `<!-- ${body} -->`))).toBe('hidden-text');
+    expect(refusal(() => readSubmission(title, `${body}\n<!-- danke -->`))).toBe('hidden-text');
   });
 
   it('refuses a payload larger than the app itself would read', () => {
@@ -140,9 +185,14 @@ describe('reading an issue', () => {
       'too-large',
       'no-block',
       'several-blocks',
+      'hidden-text',
       'not-json',
       'refused',
       'unchanged',
+      'not-wordings',
+      'texts-too-large',
+      'texts-refused',
+      'texts-unchanged',
     ];
     for (const code of codes) expect(refusalText(new Refusal(code)).length).toBeGreaterThan(20);
     const refused = refusedWith(() => applyHome('{ "version": 3, "sections": [] }', CURRENT));
@@ -428,9 +478,77 @@ describe('.github/workflows/submission.yml', () => {
   });
 
   it('asks a dispatch for the text it was started for, and comments on an outsider once', () => {
-    expect(text).toMatch(/body_sha256:\n\s+description: .*\n\s+required: true/);
-    expect(text).toContain("'<!-- submission:outsider -->'");
-    expect(text).toMatch(/outsider:[\s\S]*?permissions:\n\s+issues: write\n\s+steps:/);
+    expect(text).toMatch(/text_sha256:\n\s+description: .*\n\s+required: true/);
+    // The number is a number, so that "05" and "5" are one concurrency group.
+    expect(text).toMatch(
+      /issue:\n\s+description: .*\n\s+required: true\n(\s+#.*\n)*\s+type: number/,
+    );
+    expect(text).not.toMatch(/body_sha256|body-sha256/);
+    // The outsider's job reads one file of the repository and writes comments, nothing else.
+    expect(text).toMatch(
+      /outsider:[\s\S]*?permissions:\n\s+contents: read\n\s+issues: write\n\s+steps:/,
+    );
+    expect(text).toContain('sparse-checkout: apps/workbench/scripts/submission-quote.mjs');
+    expect(text).toContain('quote.quoteComment(');
+    // A dispatch runs the text the automation quoted, never the issue as it is by then.
+    const read = steps().find((step) => step.name === 'Read the issue')!.text;
+    expect(read).toContain('text = quote.approved(comments, process.env.EXPECTED_SHA);');
+    expect(read).toMatch(
+      /if \(dispatched\) \{[\s\S]*?quote\.approved[\s\S]*?\} else \{[\s\S]*?getCollaboratorPermissionLevel/,
+    );
+    expect(read).toContain("permission !== 'admin' && permission !== 'write'");
+    // The failure comment carries no value to start a run with.
+    const failure = steps().find((step) => step.name === 'Say why there is no pull request')!.text;
+    expect(failure).not.toMatch(/sha256/i);
+  });
+
+  it('hands the push its token in git’s environment, never in the address', () => {
+    const push = steps().find((step) => step.name === 'Push the branch')!.text;
+    expect(push).not.toMatch(/x-access-token:\$\{?TOKEN\}?@/);
+    expect(push).toContain('GIT_CONFIG_KEY_0=http.https://github.com/.extraheader');
+    expect(push).toContain('echo "::add-mask::$BASIC"');
+    expect(push).toMatch(/git push --force "https:\/\/github\.com\/\$\{GITHUB_REPOSITORY\}\.git"/);
+  });
+
+  /*
+   * The allow-list (ADR 0062 §2). The commit may only carry what the proof listed, the
+   * proof runs for every kind and before the commit, and nothing else in the file stages a
+   * change. A second `git add` would be a way round the proof that reads like tidying up.
+   */
+  it('commits only what the proof listed, and proves before it commits', () => {
+    const names = steps().map((step) => step.name);
+    const write = names.indexOf('Write the files from the issue');
+    const prove = names.indexOf('Prove the tree');
+    const commit = names.indexOf('Commit as the person who opened the issue');
+    expect(write).toBeGreaterThanOrEqual(0);
+    expect(prove).toBeGreaterThan(write);
+    expect(commit).toBeGreaterThan(prove);
+
+    const proof = steps()[prove]!.text;
+    expect(proof).toContain('apps/workbench/scripts/submission-verify.ts');
+    expect(proof).toContain('"$RUNNER_TEMP/submission-files.txt"');
+    expect(proof).not.toMatch(/^\s+(if|continue-on-error):/m);
+    expect(text).not.toMatch(/continue-on-error/);
+
+    const code = lines.filter((line) => !line.trim().startsWith('#'));
+    const adds = code.filter((line) => /\bgit\b.*\badd\b/.test(line));
+    expect(adds).toEqual([expect.stringContaining('git --literal-pathspecs add \\')]);
+    expect(steps()[commit]!.text).toContain(
+      '--pathspec-from-file="$RUNNER_TEMP/submission-files.txt" --pathspec-file-nul',
+    );
+    expect(code.join('\n')).not.toMatch(/git (add|commit) (-A|--all|-a|\.)/);
+    // The one-file assertion in shell is gone, and nothing takes a file name from an output.
+    expect(text).not.toMatch(/outputs\.file\b/);
+  });
+
+  it('checks each built kind’s files by that kind’s own checks', () => {
+    const built = (Object.keys(SUBMISSION_KINDS) as SubmissionKind[]).filter(
+      (kind) => SUBMISSION_KINDS[kind].built,
+    );
+    for (const kind of built) expect(text).toContain(`if: steps.apply.outputs.kind == '${kind}'`);
+    const texts = steps().find((step) => step.name === 'Check the written texts')!.text;
+    expect(texts).toContain('npx oxfmt --check');
+    expect(texts).toContain('npm test -w @correctiv/catalogue');
   });
 
   it('closes the issue with the English keyword on a line of its own', () => {

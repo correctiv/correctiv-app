@@ -3321,6 +3321,18 @@
     "defaultMessage": "German",
     "description": "The label over the field where the German wording is edited."
   },
+  "tools.strings.issue.heading": {
+    "defaultMessage": "Changes to the app’s texts",
+    "description": "The title of the GitHub issue Submit texts opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+  },
+  "tools.strings.issue.help": {
+    "defaultMessage": "The changes were too long for the link, so they are on your clipboard. Delete this text, paste the changes here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",
+    "description": "Stands in the body of the GitHub issue instead of the changes, when they are too long to go in the address. “Create” is GitHub’s own button and stays in English."
+  },
+  "tools.strings.issue.lead": {
+    "defaultMessage": "These changes to the app’s German texts come from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
+    "description": "The first paragraph of the GitHub issue Submit texts opens, above the changed wordings. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
+  },
   "tools.strings.loose": {
     "defaultMessage": "cannot be picked",
     "description": "A badge on an id made almost entirely of placeholders, which the picker cannot recognise by its text and does not try to. Lower case."
@@ -3341,10 +3353,6 @@
     "defaultMessage": "Without a development build there is no source stack, so a text that several ids share cannot be narrowed down to one. Finding it by its text still works.",
     "description": "Under the pick button in the published export, where Metro is not there to say which file drew what."
   },
-  "tools.strings.noSubmit": {
-    "defaultMessage": "Submitting texts from the published site is not built yet. Copy the changes and send them to somebody who runs the workbench locally.",
-    "description": "In the published site, where the dev server’s save does not exist and the texts kind of submission is named but not built."
-  },
   "tools.strings.pick": {
     "defaultMessage": "Pick a text",
     "description": "Arms the strings tool’s picker. tools.strings.picking is what the same button says once it is armed."
@@ -3361,6 +3369,10 @@
     "defaultMessage": "The German has placeholders the English does not: {names}",
     "description": "A refusal under the German field. {names} is a comma-separated list of placeholder names, each written in braces as the message spells it, which stay as they are."
   },
+  "tools.strings.problem.kind": {
+    "defaultMessage": "The German uses these placeholders differently from the English: {names}",
+    "description": "A refusal under the German field, and on a submission issue, when a placeholder keeps its name but changes its kind, such as a plural becoming a date. {names} is a comma-separated list of placeholder names, each in braces, which stay as they are."
+  },
   "tools.strings.problem.missing": {
     "defaultMessage": "The English has placeholders the German lost: {names}",
     "description": "A refusal under the German field. {names} is a comma-separated list of placeholder names, each written in braces as the message spells it, which stay as they are."
@@ -3369,9 +3381,17 @@
     "defaultMessage": "This is not a valid message: {detail}",
     "description": "A refusal under the German field. {detail} is the ICU parser’s own error code, such as MALFORMED_ARGUMENT, which is not translated."
   },
+  "tools.strings.problem.tooLong": {
+    "defaultMessage": "The German is longer than {max} characters.",
+    "description": "A refusal under the German field, and on a submission issue. {max} is the most characters a wording may have, a number."
+  },
   "tools.strings.problem.unknown": {
     "defaultMessage": "The catalogue has no such id.",
-    "description": "A refusal from the dev server’s save, for an id no German catalogue file carries. The workbench may reword a string and may not add one."
+    "description": "A refusal from the dev server’s save or a submission, for an id no German catalogue file carries. The workbench may reword a string and may not add one."
+  },
+  "tools.strings.problem.unsafe": {
+    "defaultMessage": "The German holds an invisible character, {character}, at character {position}. Type the text at that place again without the character.",
+    "description": "A refusal under the German field, and on a submission issue, for a control character, a line separator, a direction mark or a zero-width character, which a reviewer cannot see. {character} is its Unicode code such as U+200B, which stays as it is; {position} is where it stands, counted in characters from one."
   },
   "tools.strings.quoted": {
     "defaultMessage": "“{text}”",
@@ -3416,6 +3436,34 @@
   "tools.strings.shown": {
     "defaultMessage": "{shown} of {total}",
     "description": "Beside the filter. {shown} is how many rows the list prints, {total} how many match the filter."
+  },
+  "tools.strings.submit": {
+    "defaultMessage": "Submit texts",
+    "description": "Opens a new GitHub issue carrying the changed German, which a workflow turns into a pull request. A link styled as a button."
+  },
+  "tools.strings.submitCopied": {
+    "defaultMessage": "The changed texts are on your clipboard. Paste them into the issue on GitHub.",
+    "description": "After Submit texts, when the changes went by the clipboard."
+  },
+  "tools.strings.submitField": {
+    "defaultMessage": "The changed texts",
+    "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
+  },
+  "tools.strings.submitHint": {
+    "defaultMessage": "GitHub opens with your changed texts filled in. One click on “Create” submits them. You need a GitHub account.",
+    "description": "The one line under Submit texts. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
+  },
+  "tools.strings.submitHintLong": {
+    "defaultMessage": "These changes are too long for a link. The click copies them to your clipboard, and you paste them in on GitHub. You need a GitHub account.",
+    "description": "Stands in for tools.strings.submitHint when the changes are too long to travel in the address, so they go by the clipboard."
+  },
+  "tools.strings.submitNoClipboard": {
+    "defaultMessage": "The browser did not let this page use the clipboard. Copy the changed texts from this field and paste them into the issue on GitHub.",
+    "description": "After Submit texts, when the changes were too long for the link and the browser refused the clipboard."
+  },
+  "tools.strings.submitNote": {
+    "defaultMessage": "Submit texts opens a new issue on GitHub with your changed German in it. A pull request is then made from the issue automatically, which may change these wordings and nothing else. They reach the app once someone has checked and merged it. This page stores no password and no token.",
+    "description": "Behind the ⓘ beside Submit texts: what happens after the click."
   },
   "tools.strings.writtenIn": {
     "defaultMessage": "Written in {place}. Changing the English is a change to the code.",

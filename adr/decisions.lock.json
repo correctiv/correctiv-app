@@ -610,5 +610,27 @@
         "Nothing the issue says reaches a shell or a script as code, or GitHub as an instruction"
       ]
     }
+  },
+  "0062": {
+    "slugs": ["the-texts-submission-may-change-wordings-and-nothing-else"],
+    "decisions": {
+      "1": ["The texts kind is the dev server's save made again, and shares every part of it"],
+      "2": ["What a kind may change is an allow-list, and the one-file assertion becomes a proof"],
+      "3": ["The tree is proven by a second reader, after the formatter and before the commit"],
+      "4": [
+        "The validator refuses what a reviewer cannot see, and a wording without end",
+        "The validator refuses what a reviewer cannot see, a wording without end, and a placeholder of another kind"
+      ],
+      "5": [
+        "A submission is refused whole, and an issue with an HTML comment is refused for every kind",
+        "A submission is refused whole, and an issue is read only in the shape the workbench writes"
+      ],
+      "6": ["The wordings travel one per line, in id order"],
+      "7": ["A maintainer approves the text the automation quoted, and the run takes that text"],
+      "8": ["Running by itself needs an account that can write here"],
+      "9": [
+        "The job that holds the token runs only this repository's code, and the split is deferred"
+      ]
+    }
   }
 }

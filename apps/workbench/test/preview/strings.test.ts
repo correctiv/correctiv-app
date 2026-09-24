@@ -6,10 +6,9 @@ import { join } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import { findWording, literal, replaceWording } from '../../plugin/catalogue.ts';
+import { applyWordings, findWording, literal, replaceWording } from '../../plugin/catalogue.ts';
 import { de } from '../../../../packages/catalogue/src/de/index.ts';
 import { ROOT } from '../../plugin/collect.ts';
-import { applyWordings } from '../../plugin/strings.ts';
 import {
   buildIndex,
   candidates,

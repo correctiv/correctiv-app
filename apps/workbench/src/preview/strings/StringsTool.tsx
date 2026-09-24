@@ -1,4 +1,4 @@
-import { Copy, Languages, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Check, Copy, GitPullRequest, Languages, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -9,12 +9,16 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
+import { InfoTip } from '../../ui/kit/info-tip';
 import type { Status } from '../api';
+import { copyNow } from '../clipboard';
 import type { Pick } from '../frame/locate';
 import { DRAFT_DISCARD_EVENT, publishable, publishDraft, restoreDraft, type Draft } from './draft';
 import { buildIndex, resolve, type Resolution } from './match';
 import { EDITED_LOCALE } from './names';
+import { problemText } from './problems';
 import { saveWordings, type SaveOutcome } from './save';
+import { stringsSubmission } from './submit';
 import { checkWording, type WordingProblem } from './validate';
 
 /**
@@ -123,35 +127,6 @@ const COPY = defineMessages({
     defaultMessage: 'Back to the catalogue',
     description: 'Puts this one id’s German back to what the repository has.',
   },
-  problemEmpty: {
-    id: 'tools.strings.problem.empty',
-    defaultMessage: 'The German is empty.',
-    description: 'A refusal under the German field. Nothing reaches the frame while it stands.',
-  },
-  problemSyntax: {
-    id: 'tools.strings.problem.syntax',
-    defaultMessage: 'This is not a valid message: {detail}',
-    description:
-      'A refusal under the German field. {detail} is the ICU parser’s own error code, such as MALFORMED_ARGUMENT, which is not translated.',
-  },
-  problemMissing: {
-    id: 'tools.strings.problem.missing',
-    defaultMessage: 'The English has placeholders the German lost: {names}',
-    description:
-      'A refusal under the German field. {names} is a comma-separated list of placeholder names, each written in braces as the message spells it, which stay as they are.',
-  },
-  problemExtra: {
-    id: 'tools.strings.problem.extra',
-    defaultMessage: 'The German has placeholders the English does not: {names}',
-    description:
-      'A refusal under the German field. {names} is a comma-separated list of placeholder names, each written in braces as the message spells it, which stay as they are.',
-  },
-  problemUnknown: {
-    id: 'tools.strings.problem.unknown',
-    defaultMessage: 'The catalogue has no such id.',
-    description:
-      'A refusal from the dev server’s save, for an id no German catalogue file carries. The workbench may reword a string and may not add one.',
-  },
   changes: {
     id: 'tools.strings.changes',
     defaultMessage: '{count, plural, one {# text changed} other {# texts changed}}',
@@ -217,12 +192,49 @@ const COPY = defineMessages({
     defaultMessage: 'Discard all',
     description: 'Throws every change away and puts the frame back to the catalogue.',
   },
-  noSubmit: {
-    id: 'tools.strings.noSubmit',
-    defaultMessage:
-      'Submitting texts from the published site is not built yet. Copy the changes and send them to somebody who runs the workbench locally.',
+  submit: {
+    id: 'tools.strings.submit',
+    defaultMessage: 'Submit texts',
     description:
-      'In the published site, where the dev server’s save does not exist and the texts kind of submission is named but not built.',
+      'Opens a new GitHub issue carrying the changed German, which a workflow turns into a pull request. A link styled as a button.',
+  },
+  submitHint: {
+    id: 'tools.strings.submitHint',
+    defaultMessage:
+      'GitHub opens with your changed texts filled in. One click on “Create” submits them. You need a GitHub account.',
+    description:
+      'The one line under Submit texts. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English.',
+  },
+  submitHintLong: {
+    id: 'tools.strings.submitHintLong',
+    defaultMessage:
+      'These changes are too long for a link. The click copies them to your clipboard, and you paste them in on GitHub. You need a GitHub account.',
+    description:
+      'Stands in for tools.strings.submitHint when the changes are too long to travel in the address, so they go by the clipboard.',
+  },
+  submitCopied: {
+    id: 'tools.strings.submitCopied',
+    defaultMessage: 'The changed texts are on your clipboard. Paste them into the issue on GitHub.',
+    description: 'After Submit texts, when the changes went by the clipboard.',
+  },
+  submitNoClipboard: {
+    id: 'tools.strings.submitNoClipboard',
+    defaultMessage:
+      'The browser did not let this page use the clipboard. Copy the changed texts from this field and paste them into the issue on GitHub.',
+    description:
+      'After Submit texts, when the changes were too long for the link and the browser refused the clipboard.',
+  },
+  submitField: {
+    id: 'tools.strings.submitField',
+    defaultMessage: 'The changed texts',
+    description:
+      'The name read out for the field that holds the issue’s text when the clipboard was refused.',
+  },
+  submitNote: {
+    id: 'tools.strings.submitNote',
+    defaultMessage:
+      'Submit texts opens a new issue on GitHub with your changed German in it. A pull request is then made from the issue automatically, which may change these wordings and nothing else. They reach the app once someone has checked and merged it. This page stores no password and no token.',
+    description: 'Behind the ⓘ beside Submit texts: what happens after the click.',
   },
   filter: {
     id: 'tools.strings.filter',
@@ -257,27 +269,12 @@ const HAYSTACK = new Map(
   ]),
 );
 
-/** Placeholder names spelled as a translator types them, `{count}`. */
-function braces(names: string[]): string {
-  return names.map((name) => `{${name}}`).join(', ');
-}
-
-function problemText(
+/** One refusal in words, the same words the submission workflow uses on GitHub. */
+function problemWords(
   intl: ReturnType<typeof useWorkbenchIntl>,
   problem: WordingProblem | { code: 'unknown-id' },
 ): string {
-  switch (problem.code) {
-    case 'empty':
-      return intl.formatMessage(COPY.problemEmpty);
-    case 'syntax':
-      return intl.formatMessage(COPY.problemSyntax, { detail: problem.detail });
-    case 'missing':
-      return intl.formatMessage(COPY.problemMissing, { names: braces(problem.names) });
-    case 'extra':
-      return intl.formatMessage(COPY.problemExtra, { names: braces(problem.names) });
-    case 'unknown-id':
-      return intl.formatMessage(COPY.problemUnknown);
-  }
+  return problemText((message, values) => intl.formatMessage(message, values), problem);
 }
 
 /** What the panel says about a save, in the reader's language and never the server's. */
@@ -290,7 +287,7 @@ function outcomeText(intl: ReturnType<typeof useWorkbenchIntl>, outcome: SaveOut
     case 'refused':
       return intl.formatMessage(COPY.refused, {
         ids: outcome.ids
-          .map((r) => `${r.id}: ${r.problems.map((p) => problemText(intl, p)).join(' ')}`)
+          .map((r) => `${r.id}: ${r.problems.map((p) => problemWords(intl, p)).join(' ')}`)
           .join(' '),
       });
     case 'rejected':
@@ -327,6 +324,13 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  /** Only for changes too long for the address: whether the click put them on the clipboard. */
+  const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
+  const copyField = useRef<HTMLTextAreaElement>(null);
+  const submitHintId = useId();
+  useEffect(() => {
+    if (copied === 'no-clipboard') copyField.current?.focus();
+  }, [copied]);
 
   /*
    * "Alle verwerfen", asked for from outside this panel: the draft marker beside the
@@ -386,9 +390,15 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   const wording = entry ? (draft[entry.id] ?? baseline[entry.id] ?? '') : '';
   const problems = entry ? checkWording(entry.english, wording) : [];
   const changed = Object.keys(live).length;
+  /** Where Submit texts goes: the wordings that pass the validator and differ, and only those. */
+  const offer =
+    changed > 0
+      ? stringsSubmission(live, (message, values) => intl.formatMessage(message, values))
+      : null;
 
   const edit = (id: string, next: string) => {
     setResult(null);
+    setCopied(null);
     setDraft((current) => {
       const copy = { ...current };
       if (next === baseline[id]) delete copy[id];
@@ -490,7 +500,7 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
             <div aria-live="polite" className="flex flex-col gap-4xs">
               {problems.map((problem) => (
                 <p key={problem.code} className="text-s text-accent">
-                  {problemText(intl, problem)}
+                  {problemWords(intl, problem)}
                 </p>
               ))}
             </div>
@@ -509,14 +519,69 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
         </div>
       )}
 
-      {changed > 0 && (
+      {offer && (
         <div className={cn(CARD, 'flex flex-col gap-xs p-xs')}>
           <p className="text-s font-medium text-on-canvas">
             {intl.formatMessage(COPY.changes, { count: changed })}
           </p>
+          {/*
+            A link styled as a button, as the home tool's Submit changes is and for its reason
+            (ADR 0061 §1): the click leaves for GitHub in a new tab, and a link is what a
+            browser opens a tab for without a popup blocker in the way. It is only here while
+            something has changed, so it never offers an issue that would change nothing.
+          */}
+          <div className="flex items-center gap-xs">
+            <Button asChild size="sm" className="min-w-0 flex-1">
+              <a
+                href={offer.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-describedby={submitHintId}
+                onClick={() => {
+                  // Too long for the address: the link carries a request to paste, and this
+                  // puts the changes where the paste will find them, inside the same click.
+                  if (!offer.fits) setCopied(copyNow(offer.body) ? 'copied' : 'no-clipboard');
+                }}
+              >
+                <GitPullRequest aria-hidden="true" />
+                {intl.formatMessage(COPY.submit)}
+              </a>
+            </Button>
+            <InfoTip about={intl.formatMessage(COPY.submit)} side="bottom" align="end">
+              <p>{intl.formatMessage(COPY.submitNote)}</p>
+            </InfoTip>
+          </div>
+          <p id={submitHintId} className={NOTE}>
+            {intl.formatMessage(offer.fits ? COPY.submitHint : COPY.submitHintLong)}
+          </p>
+          {copied !== null && (
+            <div className="flex flex-col gap-xs">
+              <output className="flex items-start gap-xs text-s text-on-canvas">
+                {copied === 'copied' && (
+                  <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
+                )}
+                <span className="min-w-0">
+                  {intl.formatMessage(
+                    copied === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+                  )}
+                </span>
+              </output>
+              {copied === 'no-clipboard' && (
+                <textarea
+                  ref={copyField}
+                  readOnly
+                  aria-label={intl.formatMessage(COPY.submitField)}
+                  value={offer.body}
+                  rows={8}
+                  onFocus={(event) => event.currentTarget.select()}
+                  className={cn(CARD, 'w-full p-xs font-mono text-[0.75rem] leading-snug')}
+                />
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-xs">
             {import.meta.env.DEV && (
-              <Button size="sm" onClick={() => void save()}>
+              <Button variant="outline" size="sm" onClick={() => void save()}>
                 <Save aria-hidden="true" />
                 {intl.formatMessage(COPY.save)}
               </Button>
@@ -537,13 +602,13 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
               onClick={() => {
                 setDraft({});
                 setResult(null);
+                setCopied(null);
               }}
             >
               <Trash2 aria-hidden="true" />
               {intl.formatMessage(COPY.discard)}
             </Button>
           </div>
-          {!import.meta.env.DEV && <p className={NOTE}>{intl.formatMessage(COPY.noSubmit)}</p>}
         </div>
       )}
       {result && (

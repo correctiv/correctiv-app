@@ -5,9 +5,14 @@ import { createIntl } from 'react-intl';
 import { describe, expect, it } from 'vitest';
 
 import { REPO, ROOT } from '../../plugin/collect.ts';
+import { de as appGerman } from '../../../../packages/catalogue/src/de/index.ts';
+import { readWordings } from '../../scripts/submission-strings.ts';
+import { readSubmission } from '../../scripts/submission.ts';
 import { de } from '../../src/i18n/catalogue/de';
 import { HOME_LAYOUT_FILE, SHIPPED, withHidden } from '../../src/preview/home/document';
-import { copyNow, submission } from '../../src/preview/home/write';
+import { copyNow } from '../../src/preview/clipboard';
+import { submission } from '../../src/preview/home/write';
+import { stringsSubmission } from '../../src/preview/strings/submit';
 import {
   issueAddress,
   issueFor,
@@ -84,5 +89,52 @@ describe('an address too long for GitHub', () => {
   it('answers false rather than throwing where there is no clipboard', () => {
     // Node has no `document` in this suite, which is the refused case.
     expect(copyNow('text')).toBe(false);
+  });
+});
+
+describe('where Submit texts sends a person (ADR 0062)', () => {
+  const WORDINGS = {
+    'home.viewAll': 'Alle zeigen',
+    'home.latestResearch': 'Unsere neuesten Recherchen',
+  };
+
+  it('is a new issue on this repository, titled with the strings kind’s prefix', () => {
+    const { href, fits } = stringsSubmission(WORDINGS, format, REPO);
+    expect(fits).toBe(true);
+    const url = new URL(href);
+    expect(`${url.origin}${url.pathname}`).toBe(`${REPO}/issues/new`);
+    const title = url.searchParams.get('title') ?? '';
+    expect(kindOfTitle(title)).toBe('strings');
+    expect(title).toBe('[texte] Änderungen an den Texten der App');
+  });
+
+  /*
+   * The two ends of one format: what the workbench opens is what the workflow reads. A
+   * change on either side that the other did not follow is a submission that fails on
+   * GitHub, which is the one place nobody sees it fail before a person does.
+   */
+  it('carries the wordings one per line, in id order, as the workflow reads them back', () => {
+    const { href, body } = stringsSubmission(WORDINGS, format, REPO);
+    const url = new URL(href);
+    expect(url.searchParams.get('body')).toBe(body);
+    const { kind, payload } = readSubmission(url.searchParams.get('title') ?? '', body);
+    expect(kind).toBe('strings');
+    expect(payload).toBe(
+      '{\n  "home.latestResearch": "Unsere neuesten Recherchen",\n  "home.viewAll": "Alle zeigen"\n}\n',
+    );
+    expect(readWordings(payload)).toEqual(WORDINGS);
+  });
+
+  it('goes by the clipboard past the address limit, keeping the title', () => {
+    const many = Object.fromEntries(
+      Object.entries(appGerman)
+        .slice(0, 60)
+        .map(([id, wording]) => [id, `${wording} (überarbeitet)`]),
+    );
+    const { href, fits, body } = stringsSubmission(many, format, REPO);
+    expect(fits).toBe(false);
+    expect(href.length).toBeLessThanOrEqual(SUBMISSION_ADDRESS_LIMIT);
+    expect(kindOfTitle(new URL(href).searchParams.get('title') ?? '')).toBe('strings');
+    expect(readWordings(readSubmission('[texte] x', body).payload)).toEqual(many);
   });
 });
