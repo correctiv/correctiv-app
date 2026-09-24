@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
+import { readerClickAction } from '@/lib/articles/readerNavigation';
+
 import { READER_BASE_URL, type ReaderViewProps } from './types';
 
 /**
@@ -40,23 +42,23 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
   const intl = useIntl();
   const frameRef = useRef<HTMLIFrameElement | null>(null);
 
+  /*
+   * Every click on a link or an image-map area inside the article is routed or
+   * cancelled, never followed by the frame (`readerClickAction`, ADR 0065 §7). A
+   * click elsewhere, on a `<summary>` for instance, is left alone. An SVG link
+   * carries its address as `xlink:href`, which is read too; the core's gate keeps
+   * no SVG, and this is the second line behind it.
+   */
   const handleClick = useCallback(
     (event: MouseEvent) => {
       const target = event.target as Element | null;
-      const anchor = target?.closest?.('a');
-      const href = anchor?.getAttribute('href');
-      if (!href) return;
-
-      // Resolve relative hrefs the same way the native WebView's baseUrl does,
-      // so onNavigate sees an absolute URL on both platforms.
-      let absolute: string;
-      try {
-        absolute = new URL(href, READER_BASE_URL).toString();
-      } catch {
-        return; // Not a URL we can reason about — let the iframe deal with it.
+      const link = target?.closest?.('a, area');
+      if (!link) return;
+      const href =
+        link.getAttribute('href') ?? link.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+      if (readerClickAction(href, READER_BASE_URL, onNavigate) === 'prevent') {
+        event.preventDefault();
       }
-
-      if (!onNavigate(absolute)) event.preventDefault();
     },
     [onNavigate],
   );

@@ -32,7 +32,8 @@ src/ports/       KeyValueStore · BlobStore · ContentBundle · AudioBackend · 
 src/types/       FeedItem, Video, AudioTrack, MediaChannel
 src/articles/    the Article model, the fact-check vocabulary, page meta,
                  the reader document, the load cascade, the offline collector
-  extract/       string.ts (no dependencies) and dom.ts (htmlparser2)
+  extract/       string.ts (no dependencies) and dom.ts (htmlparser2);
+                 the reader document's gate, body-allowlist.ts, parses too
 src/services/    http · cache (network-first / cache-first) · rss · search ·
                  podcast · peertube
 src/stores/      feeds · audio · podcasts · media · video · session · interests ·

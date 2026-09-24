@@ -52,3 +52,36 @@ export function classifyReaderLink(target: string): ReaderLinkAction {
 export function allowsFrameLoad(target: string): boolean {
   return /^(?:https|about|data|blob):/i.test(target);
 }
+
+/**
+ * What the web reader does with a click on a link inside the article: route it,
+ * or cancel it. Never let the frame follow it, bar the two schemes the system
+ * takes over without the frame going anywhere.
+ *
+ * On the web the reader is a frame on the app's own origin, so a page the frame
+ * navigated to there would have the app's storage (ADR 0065 §7). Every link is
+ * therefore resolved against the reader's base, as the native WebView's baseUrl
+ * resolves it, and handed to `onNavigate`; a link whose address cannot be read is
+ * cancelled rather than left to the browser, which is what the old handler did
+ * with an SVG link (`xlink:href`, no `href`) and never saw an `<area>` at all.
+ * When `onNavigate` answers "let the webview do it", which it does for a scheme it
+ * does not recognise, only `mailto:` and `tel:` go through: the system opens them
+ * and the frame stays where it is. The phone needs none of this, because there the
+ * WebView reports every top-frame load to `onShouldStartLoadWithRequest`, taps
+ * included, and a load is the only way to leave the document.
+ */
+export function readerClickAction(
+  href: string | null,
+  base: string,
+  onNavigate: (url: string) => boolean,
+): 'prevent' | 'let-through' {
+  if (!href) return 'prevent';
+  let absolute: string;
+  try {
+    absolute = new URL(href, base).toString();
+  } catch {
+    return 'prevent';
+  }
+  if (!onNavigate(absolute)) return 'prevent';
+  return /^(?:mailto|tel):/i.test(absolute) ? 'let-through' : 'prevent';
+}

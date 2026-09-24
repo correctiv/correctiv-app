@@ -1,4 +1,8 @@
-import { allowsFrameLoad, classifyReaderLink } from '@/lib/articles/readerNavigation';
+import {
+  allowsFrameLoad,
+  classifyReaderLink,
+  readerClickAction,
+} from '@/lib/articles/readerNavigation';
 
 /**
  * The reader's link routing, which used to be eleven inline lines in `artikel.tsx`
@@ -75,5 +79,45 @@ describe('allowsFrameLoad', () => {
     ' https://x.example/',
   ])('refuses a frame %s', (target) => {
     expect(allowsFrameLoad(target)).toBe(false);
+  });
+});
+
+/**
+ * What a click inside the web reader does (ADR 0065 §7). The rule is that no tap
+ * navigates the reader frame itself: a link is routed through `onNavigate`, or the
+ * click is cancelled. The frame shares the app's origin, so a page it navigated to
+ * on that origin would have the app's storage, and the re-check of 2026-09-24 did
+ * exactly that through an `<area>` and an SVG link the old handler did not see.
+ */
+describe('readerClickAction', () => {
+  const BASE = 'https://correctiv.org/';
+
+  function run(href: string | null, answer: boolean) {
+    const seen: string[] = [];
+    const action = readerClickAction(href, BASE, (url) => {
+      seen.push(url);
+      return answer;
+    });
+    return { action, seen };
+  }
+
+  it('routes a link, and cancels the click the router took', () => {
+    expect(run('/faktencheck/2026/08/04/x/', false)).toEqual({
+      action: 'prevent',
+      seen: ['https://correctiv.org/faktencheck/2026/08/04/x/'],
+    });
+  });
+
+  it('cancels a link the router hands back unless the system takes it', () => {
+    expect(run('mailto:redaktion@correctiv.org', true).action).toBe('let-through');
+    expect(run('tel:+493040549680', true).action).toBe('let-through');
+    expect(run('data:text/html,x', true).action).toBe('prevent');
+    expect(run('about:blank', true).action).toBe('prevent');
+    expect(run('javascript:alert(1)', true).action).toBe('prevent');
+  });
+
+  it('cancels a link with no address it can read', () => {
+    expect(run(null, true)).toEqual({ action: 'prevent', seen: [] });
+    expect(run('', true)).toEqual({ action: 'prevent', seen: [] });
   });
 });

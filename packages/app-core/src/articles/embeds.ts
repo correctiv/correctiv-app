@@ -18,7 +18,8 @@ import { decodeEntities, escapeHtml } from '../lib/html';
  *   renders in the reader.
  * - `<a class="embed-fallback" href data-embed-host>` with NO text, for every other
  *   embed. It carries no prose because a body is cached without a locale;
- *   `buildReaderHtml` writes the words into it, in the language of the moment.
+ *   `buildReaderHtml` writes the words into it, in the language of the moment,
+ *   through `embedFallbackLink` while its gate walks the tree.
  *
  * Regular expressions rather than a parser, because the string cleaner has to run
  * where the core cannot carry one (`articles/types.ts`). The DOM cleaner calls the
@@ -132,21 +133,6 @@ export function embedElementAttributes(
   return null;
 }
 
-/**
- * Every frame in `html` rebuilt as the canonical one, or removed.
- *
- * For `buildReaderHtml`, which does not trust the body it is handed (ADR 0065
- * §7): a frame that is not ours, or ours from a host that is not listed, goes,
- * and one that is keeps the attributes `frame()` writes and nothing else, so a
- * `srcdoc` or an `onload` on it goes too.
- */
-export function canonicalFrames(html: string): string {
-  return html.replace(IFRAME, (_match, open: string) => {
-    const attrs = embedElementAttributes('iframe', attributes(`<iframe${open}>`));
-    return attrs ? frame(attrs.src, attrs) : '';
-  });
-}
-
 /** The host a fallback names: the URL's, without a `www.`. */
 export function embedHost(url: string): string | undefined {
   return parseUrl(url)?.hostname.replace(/^www\./, '') || undefined;
@@ -161,7 +147,7 @@ export function safeHref(url: string): string | undefined {
     : undefined;
 }
 
-/** The words `fillEmbedFallbacks` writes, already in the reader's language. */
+/** The words a fallback link says, already in the reader's language. */
 export interface EmbedFallbackWords {
   /** For an embed that opens in the browser, named by its host. */
   openElsewhere: (host: string) => string;
@@ -169,35 +155,40 @@ export interface EmbedFallbackWords {
   openArticle: string;
 }
 
-const FALLBACK_MARKER = new RegExp(
-  `<a\\b[^>]*\\bclass=["']${EMBED_FALLBACK_CLASS}["'][^>]*>[\\s\\S]*?</a\\s*>`,
-  'gi',
-);
+/** A fallback link as the reader document shows it. */
+export interface EmbedFallbackLink {
+  className: string;
+  href: string;
+  text: string;
+}
 
 /**
- * Every fallback link in a cleaned body, given its words and rebuilt from
- * nothing but what it needs.
+ * What a fallback marker becomes in the reader, from the marker's attributes.
  *
- * Rebuilt rather than filled in, so what reaches the document is decided here:
- * an `href` that is not http(s) falls back to the article's own address, and one
- * that is neither is no link at all. Everything in the tag is escaped on the way
- * out, whatever the body said.
+ * Built from nothing but what it needs, so what reaches the document is decided
+ * here: an `href` that is not http(s) falls back to the article's own address, and
+ * one that is neither is no link at all (null). `body-allowlist.ts` calls this
+ * while it walks the tree and writes the result as a node, so the words are text
+ * and the address an attribute value, both escaped by the serialiser. Nothing here
+ * reads markup: the regex that used to find the markers in the gated body misread
+ * a `>` inside a quoted attribute value, measured 2026-09-24.
  */
-export function fillEmbedFallbacks(
-  body: string,
+export function embedFallbackLink(
+  attrs: Record<string, string>,
   words: EmbedFallbackWords,
   articleUrl: string,
-): string {
-  return body.replace(FALLBACK_MARKER, (marker) => {
-    const attrs = attributes(/^<a\b[^>]*>/i.exec(marker)?.[0] ?? '');
-    const href = safeHref(attrs.href ?? '') ?? safeHref(articleUrl);
-    if (!href) return '';
-    const isArticle = attrs['data-embed-kind'] === EMBED_KIND_ARTICLE;
-    const host = attrs['data-embed-host'] || embedHost(href) || '';
-    const text = isArticle ? words.openArticle : words.openElsewhere(host);
-    const modifier = isArticle ? ` ${EMBED_FALLBACK_CLASS}--article` : '';
-    return `<a class="${EMBED_FALLBACK_CLASS}${modifier}" href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
-  });
+): EmbedFallbackLink | null {
+  const href = safeHref(attrs.href ?? '') ?? safeHref(articleUrl);
+  if (!href) return null;
+  const isArticle = attrs['data-embed-kind'] === EMBED_KIND_ARTICLE;
+  const host = attrs['data-embed-host'] || embedHost(href) || '';
+  return {
+    className: isArticle
+      ? `${EMBED_FALLBACK_CLASS} ${EMBED_FALLBACK_CLASS}--article`
+      : EMBED_FALLBACK_CLASS,
+    href,
+    text: isArticle ? words.openArticle : words.openElsewhere(host),
+  };
 }
 
 // --- the rewriting ------------------------------------------------------------

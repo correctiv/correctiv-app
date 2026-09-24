@@ -183,6 +183,16 @@ const OTHER_FRAMES = /<iframe\b[^>]*>(?:[\s\S]*?<\/iframe\s*>)?/gi;
  * one copy too many. Measured on a live article body, `content.rendered` carries
  * only `a br div em figure h2 hr img p span strong` — so this is defence against
  * the post that embeds something, not a fix for one that already does.
+ *
+ * **It is not the reader's security boundary**, and nothing should rely on it
+ * being one. That is `gateReaderBody` in `articles/body-allowlist.ts`, which
+ * `buildReaderHtml` runs over every body whatever produced it: an allowlist over
+ * a parsed tree. This function was the boundary for a day, and a re-check on
+ * 2026-09-24 found two bodies no denylist of this shape stops, a tag left open at
+ * the end and an `<area>` nobody had listed (ADR 0065 §7). What it does is
+ * cleaning: the bytes the cache and the offline bundle store are smaller and
+ * nearer to what the reader shows, and the string extractor's output is readable
+ * on its own.
  */
 export function sanitizeArticleHtml(body: string): string {
   let out = body;
@@ -197,6 +207,10 @@ export function sanitizeArticleHtml(body: string): string {
     out = stripActiveMarkup(out);
     out = out.replace(OTHER_FRAMES, (frame) => (CANONICAL_FRAME.test(frame) ? frame : ''));
   }
+  // A tag left open at the very end, which whatever is written after the body
+  // would close. The gate parses it as text; dropping it here keeps it out of the
+  // cache as well.
+  out = out.replace(/<[a-z!/?][^>]*$/i, '');
   // Tracking pixels (1x1) and empty lazyload imgs without a src.
   out = out.replace(/<img[^>]+(facebook\.com\/tr|height="1")[^>]*>/gi, '');
   // Reduce <picture>/<source> variants to the <img> - the reader loads srcset itself.

@@ -164,15 +164,23 @@ describe('core stays platform-free', () => {
   });
 
   /**
-   * The DOM extraction backend is the one place in the core that has runtime
-   * dependencies, and it exists so a host without an HTML parser does not need one.
-   * Nothing outside it may import it. An accidental import somewhere central would
-   * pull htmlparser2 into a bundle whose resolver cannot handle it, and that failure
-   * shows up on a device, not here.
+   * The parser lives in two files, and nothing else may import it. An accidental
+   * import somewhere central would pull htmlparser2 into a bundle whose resolver
+   * cannot handle it, and that failure shows up on a device, not here.
+   *
+   * It was ONE file, the DOM extraction backend, so that a host without an HTML
+   * parser would not need one. The second is `articles/body-allowlist.ts`, the
+   * reader document's last gate, and it is there on purpose: that gate was a
+   * regular-expression denylist until 2026-09-24, and two bodies a re-check found
+   * went through it that an allowlist over a parsed tree stops by construction
+   * (ADR 0065 §7). So a host that builds the reader document carries the parser.
+   * A host that only extracts, a plain Node script with the string backend, still
+   * does not.
    */
-  it('keeps the HTML parser inside the DOM extraction backend', () => {
+  it('keeps the HTML parser inside the DOM extraction backend and the reader gate', () => {
     const parserImports = files.filter((full) => {
       if (full.endsWith(join('articles', 'extract', 'dom.ts'))) return false;
+      if (full.endsWith(join('articles', 'body-allowlist.ts'))) return false;
       return /from '(?:htmlparser2|css-select|domutils|dom-serializer|domhandler)'/.test(
         readFileSync(full, 'utf8'),
       );

@@ -1,7 +1,8 @@
-import { escapeHtml, stripActiveMarkup } from '../lib/html';
+import { escapeHtml } from '../lib/html';
 import { formatDate } from '../lib/format';
 import { coreMessage } from '../i18n/messages';
-import { canonicalFrames, fillEmbedFallbacks, INLINE_EMBED_HOSTS } from './embeds';
+import { gateReaderBody } from './body-allowlist';
+import { INLINE_EMBED_HOSTS } from './embeds';
 import { ratingTone } from './rating';
 import type { Locale } from '../stores/settings';
 import type { Article } from './types';
@@ -157,30 +158,6 @@ export interface ReaderHtmlOptions {
 const ROOT_FONT_PX = 16;
 
 /**
- * The last gate between a body and the reader, and it does not trust the body.
- *
- * A body reaches this function out of a cleaner, but also out of the article
- * cache and the offline bundle, written by whatever cleaner was current when it
- * was stored. So what acts from the body WITHOUT a script is taken out here once
- * more, whatever the cleaners did: a `<meta>` refresh, a `<base>`, a `<link>`,
- * a plug-in, and every frame that is not the canonical one from a listed host.
- * The Content Security Policy below covers script and not these. On the web the
- * frame's `allow-scripts` lifts the sandbox's block on a refresh, and a refresh to
- * a page on the app's own origin is a page with script and the app's storage; on
- * the phone a refresh is a navigation the reader hands to the system browser
- * without a tap (ADR 0065 §7). To a fixpoint, because each half can put a tag back
- * together for the other.
- */
-function gateBody(bodyHtml: string): string {
-  let out = bodyHtml;
-  for (let previous = ''; previous !== out;) {
-    previous = out;
-    out = canonicalFrames(stripActiveMarkup(out));
-  }
-  return out;
-}
-
-/**
  * The document's Content Security Policy, first thing in its `<head>`.
  *
  * No script at all, because the document has none of its own and needs none: the
@@ -264,8 +241,11 @@ export function buildReaderHtml(
    */
   const footer = `<p class="support-line">${escapeHtml(copy.support)}</p>`;
 
-  const body = fillEmbedFallbacks(
-    gateBody(article.bodyHtml),
+  // The last gate: every body, from wherever it came, held to one table over a
+  // parsed tree, with the fallback markers turned into links in the reader's
+  // language (ADR 0065 §7, `body-allowlist.ts`).
+  const body = gateReaderBody(
+    article.bodyHtml,
     { openElsewhere: copy.embedFallback, openArticle: copy.embedArticle },
     article.url,
   );

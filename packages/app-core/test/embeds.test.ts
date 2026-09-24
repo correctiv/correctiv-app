@@ -64,6 +64,12 @@ function reader(bodyHtml: string): string {
   return buildReaderHtml(article, COPY, { locale: 'en' });
 }
 
+/** What the document holds between the body's opening tag and the footer. */
+function bodyOf(html: string): string {
+  const start = html.indexOf('<div class="reader-body">') + '<div class="reader-body">'.length;
+  return html.slice(start, html.indexOf('</div>\n<footer class="reader-footer">'));
+}
+
 /** The frames the document renders, as src plus the attributes that size them. */
 function frames(html: string): { src: string; height?: string; name?: string }[] {
   return [...html.matchAll(/<iframe\b([^>]*)>/g)].map(([, attrs]) => ({
@@ -245,16 +251,27 @@ describe.each(PATHS)('embeds through the %s', (_name, clean) => {
 describe('the fallback link in the reader document', () => {
   it('is rebuilt from the marker, whatever else the marker carried', () => {
     const html = reader(
-      '<a class="embed-fallback" href="javascript:alert(1)" onclick="alert(2)" ' +
+      '<a class="embed-fallback extra" href="https://youtube.com/x" onclick="alert(2)" ' +
         'data-embed-host="&quot;&gt;&lt;script&gt;alert(3)&lt;/script&gt;">old words</a>',
     );
-    expect(html).not.toMatch(/javascript:|onclick|<script|old words/);
+    expect(html).not.toMatch(/onclick|<script|old words|extra/);
     expect(fallbacks(html)).toEqual([
       {
-        href: ARTICLE_URL,
+        href: 'https://youtube.com/x',
         text: 'Open content from "><script>alert(3)</script> in the browser',
       },
     ]);
+  });
+
+  /**
+   * A marker whose address is not http(s) is no marker to the gate, so it stays a
+   * plain link, and the gate takes its address away. Inert, and the words the body
+   * carried are all that is left of it.
+   */
+  it('stops being a marker when its address is not one', () => {
+    const html = reader('<a class="embed-fallback" href="javascript:alert(1)">old words</a>');
+    expect(html).not.toMatch(/javascript:|embed-fallback"/);
+    expect(bodyOf(html)).toBe('<a>old words</a>');
   });
 
   it('names the host of its own address when the marker names none', () => {
@@ -316,7 +333,8 @@ describe('a body handed to the reader directly', () => {
     );
     const body = PAGE_AFTER_CSP(html);
     expect(body).not.toMatch(/<(meta|base|link|object|embed|portal|frame|frameset|applet)\b/i);
-    expect(body).not.toMatch(/refresh/i);
+    // What a reassembly leaves is escaped text; what matters is that no tag holds it.
+    expect(body).not.toMatch(/<[^>]*http-equiv/i);
     expect(body).toContain('<p>Text</p>');
   });
 
