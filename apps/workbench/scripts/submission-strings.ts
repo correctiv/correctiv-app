@@ -18,6 +18,7 @@
  * that is printed on GitHub goes through `shown`.
  */
 import { createIntl, type IntlShape } from 'react-intl';
+import ts from 'typescript';
 
 import {
   applyWordings,
@@ -72,7 +73,36 @@ export function readWordings(payload: string): Record<string, string> {
     throw new Refusal('not-json', error instanceof Error ? error.message : String(error));
   }
   if (!isWordings(value) || Object.keys(value).length === 0) throw new Refusal('not-wordings');
+  const twice = duplicateKeys(payload);
+  if (twice.length > 0)
+    throw new Refusal(
+      'duplicate-ids',
+      '',
+      twice.map((id) => shown(id)),
+    );
   return value;
+}
+
+/**
+ * The keys a JSON object names more than once. `JSON.parse` keeps the last and says
+ * nothing, so a block could show a reviewer one wording for an id and apply another
+ * further down. The workbench never writes an id twice (ADR 0062 §5). Read with the
+ * TypeScript compiler's JSON parser, which keeps every property it sees, and decoded,
+ * so `"home.viewAll"` and its escaped spelling are the same key.
+ */
+export function duplicateKeys(payload: string): string[] {
+  const file = ts.parseJsonText('payload.json', payload);
+  const root = file.statements[0]?.expression;
+  if (!root || !ts.isObjectLiteralExpression(root)) return [];
+  const seen = new Set<string>();
+  const twice = new Set<string>();
+  for (const property of root.properties) {
+    const name = property.name;
+    if (!name || !(ts.isStringLiteral(name) || ts.isIdentifier(name))) continue;
+    if (seen.has(name.text)) twice.add(name.text);
+    seen.add(name.text);
+  }
+  return [...twice].sort();
 }
 
 /** Every catalogue file, by path, as the repository holds it. */

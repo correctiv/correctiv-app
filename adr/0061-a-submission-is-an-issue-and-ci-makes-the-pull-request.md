@@ -163,11 +163,15 @@ can start it; a marker in that comment keeps a stranger who closes and reopens t
 making the repository say it again.
 
 **A maintainer starts it by hand for the text they read, not for whatever the issue says by
-then.** The manual run takes the issue's number and the SHA-256 of its body, which the
+then.** ~~The manual run takes the issue's number and the SHA-256 of its body, which the
 outsider comment prints. An outsider can edit their issue between a maintainer's reading and
 the run; the run hashes the body it fetched and refuses on a mismatch, telling the issue the
 new value and asking for a second reading. The same manual run is the retry for a run that
-failed, and every refusal on the issue carries the current value for it. The first step also
+failed, and every refusal on the issue carries the current value for it.~~ Voided by
+[ADR 0062](0062-the-texts-submission-may-change-wordings-and-nothing-else.md) §7: the
+comment printed the value of the text as opened, so an issue edited and edited back ran a
+text the maintainer had not read; the run now takes the text the automation quoted, and no
+refusal carries a value. The first step also
 checks the title's prefix, because a manual run can name any issue.
 
 The content is not harmless merely because it is parsed rather than executed. It can write

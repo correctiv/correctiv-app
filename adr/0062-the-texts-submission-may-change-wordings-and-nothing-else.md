@@ -4,7 +4,8 @@ Status: accepted, 2026-09-24, **built in the same pull request**. It carries out
 [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §3's strings
 kind, which that record named and deferred, and gives the published site the way out that
 [ADR 0056](0056-a-string-is-picked-where-it-renders.md) left to it. Not run against
-github.com; see what is still open.
+github.com; see what is still open. Its decisions 4, 5 and 7 to 9 were revised in the same pull
+request after a cold security review of #263, before anything merged.
 
 ## Context
 
@@ -106,27 +107,39 @@ A failure here is never the person's: their submission passed the write. It is t
 automation disagreeing with itself, so the workflow writes no reason file and the issue is
 told that the fault is not theirs.
 
-### 4. The validator refuses what a reviewer cannot see, and a wording without end
+### 4. The validator refuses what a reviewer cannot see, a wording without end, and a placeholder of another kind
 
-`checkWording` gains two refusals, and because it is the one validator, the tool shows them
-while a person types, the dev server's save refuses them, and so does the workflow:
+`checkWording` gains three refusals, and because it is the one validator, the tool shows
+them while a person types, the dev server's save refuses them, and so does the workflow:
 
 - **a wording over `WORDING_MAX`**, 1000 characters, four times the longest in the
   catalogue;
-- **a character a reviewer cannot see in a diff**: C0 and C1 controls including the line
-  break and the tab, the line and paragraph separators, the marks that reverse the
-  direction of the text around them, zero-width characters, the byte-order mark,
-  noncharacters, and half of a surrogate pair. None is in the catalogue (the table above),
-  and what one does in a pull request is make the wording on the page differ from the
-  wording in the review. The refusal names the character by its code and says where it
-  stands. The soft hyphen stays allowed, because it breaks a long German word in a narrow
-  button and is a translator's tool.
+- **a character a reviewer cannot see in a diff**, by Unicode category where there is one:
+  controls (`Cc`, the line break, the tab and C1's next line among them), format characters
+  (`Cf`: direction marks and the Trojan Source isolates, zero-width characters, the
+  byte-order mark, tags, the Mongolian vowel separator, interlinear annotation marks),
+  surrogates, private use, unassigned code points, noncharacters, and the line and
+  paragraph separators; and by name where the category calls a blank character visible: the
+  combining grapheme joiner, the variation selectors, the Hangul fillers and the blank
+  Braille pattern. The first version listed ranges by hand and let most of these through,
+  `'ㅤㅤ'` as a wording among them; found by the cold review of #263. None is in the
+  catalogue (the table above), and what one does in a pull request is make the wording on
+  the page differ from the wording in the review. The refusal names the character by its
+  code and says where it stands. The soft hyphen is the one exception by name, because it
+  breaks a long German word in a narrow button and is a translator's tool, and a wording
+  that is blank once the soft hyphens are taken out is empty;
+- **a placeholder that keeps its name and changes its kind.** `{count, plural, …}` in the
+  English and `{count, date, short}` in the German passed a comparison of names. A
+  placeholder is now its name, its type and its style, or whether a plural counts or
+  orders, and the German has to carry each name the way the English does.
 
-`literal()` already escapes a quote, a backslash, a line break and U+2028; a wording that
-tries to end its literal therefore lands as text. A `${…}` substitution never reaches the
-file at all, because ICU reads the braces as a placeholder the English does not have.
+`literal()` escapes a quote, a backslash, a line break and U+2028, so a wording that tries
+to end its literal lands as text. A `${…}` in a wording is not refused by ICU in every
+case: `${count} Artikel` against `{count} items` is a valid message, a dollar before the
+placeholder. It is harmless because `literal()` only ever writes a quoted string and never
+a template literal, so the dollar stays text; the test holds both halves.
 
-### 5. A submission is refused whole, and an issue with an HTML comment is refused for every kind
+### 5. A submission is refused whole, and an issue is read only in the shape the workbench writes
 
 One invalid entry refuses the whole issue and writes nothing, as the dev server's save does:
 a pull request that carried half of what somebody meant would be a pull request they would
@@ -134,12 +147,20 @@ have to notice is incomplete. The refusal lists every refused id with its reason
 twenty, and every id and value in it goes through ADR 0061 §7's `shown`. An entry whose
 wording is already the catalogue's is left out and named in the summary rather than
 refused, because the published site's table is a build older than `main` and such an entry
-is nobody's mistake; an issue in which every entry is unchanged is refused.
+is nobody's mistake; an issue in which every entry is unchanged is refused. **An id written
+twice in the block is refused**: `JSON.parse` keeps the last and says nothing, so a block
+could show one wording for an id and apply another further down, and the workbench never
+writes an id twice.
 
-**An issue body containing `<!--` is refused, whatever its kind.** GitHub renders nothing of
-an HTML comment, so a block inside one is a change the issue shows nobody, the maintainer
-who reads an outsider's issue before starting the run by hand (ADR 0061 §4) included. The
-workbench never writes one. This is the one change to the home kind's reading.
+**The body is read only in the shape the workbench writes, for every kind**: a lead of
+plain prose, a blank line, one fenced `json` block at the start of its line, and nothing
+after it but whitespace, with neither `<` nor a backtick in the lead, and no `<!--`
+anywhere. A reader that takes any fence it can find and a renderer that shows only some of
+them disagree about what the issue says, and the maintainer who reads an outsider's issue
+sees the renderer's answer. The first version refused only `<!--`; the cold review of #263
+measured with `gh api markdown` that a fence inside an HTML attribute renders as nothing
+and was still read, and that an indented fence renders as a block and was not. This is the
+one change to the home kind's reading, and the workbench's own bodies pass it unchanged.
 
 ### 6. The wordings travel one per line, in id order
 
@@ -150,6 +171,57 @@ its own line, sorted. Twenty realistic rewordings take about 3200 characters and
 under 4000. Past that the tool does what the home tool does: the link carries the title and
 a sentence asking the person to paste, the same click puts the whole body on the clipboard,
 and a refused clipboard puts it in a field.
+
+### 7. A maintainer approves the text the automation quoted, and the run takes that text
+
+The first version bound a maintainer's manual run to the SHA-256 of the issue body the
+outsider comment printed, and the run applied the body as it was when the run fetched it
+if the hash matched. The comment was written when the issue was opened, and nothing
+watched an edit, so the cold review of #263 found the sequence: open with a malicious text,
+edit to a harmless one, let the maintainer read that and start the run with the value the
+comment printed, edit back before the run. The hash matched, and the run applied a text
+the maintainer had not read. The failure comment made it worse by printing the value for
+the issue as it was, which invited a retry for a text nobody had looked at.
+
+So the comment on an outsider's issue now **quotes the title and the body**, in code blocks
+fenced longer than any run of backticks in them, where GitHub renders every character as
+itself, and prints the SHA-256 of title and body together. The maintainer reads the
+comment, which the outsider cannot edit, and starts the run with the issue's number and
+that value. The run takes the title and the body out of the automation's own comment whose
+quote has that value, from `github-actions[bot]` only, and only if the comment is still
+exactly what the automation would write for that text; the issue as it is by then is not
+read at all. An edit after the comment changes nothing about what runs, and a different
+text needs a new issue. `apps/workbench/scripts/submission-quote.mjs` writes and reads the
+quote, with no dependency, because the outsider's job has no install and checks out that
+one file. The failure comment carries no value any more. A submission from inside the
+organisation that failed is retried by closing and reopening its issue.
+
+### 8. Running by itself needs an account that can write here
+
+ADR 0061 §4 lets the run start by itself for an `OWNER`, `MEMBER` or `COLLABORATOR`, and
+`COLLABORATOR` includes somebody given read access only. So the first step now asks the API
+for the author's permission on this repository, and only `write` or `admin` runs by itself.
+Anybody else's issue gets §7's quoting comment and waits for a maintainer, as an outsider's
+does, and is told so. That the lookup works with the workflow's own token is assumed from
+how widely it is used, not measured here; if it fails, the issue waits, which is the safe way
+to fail.
+
+### 9. The job that holds the token runs only this repository's code, and the split is deferred
+
+Two small hardenings: the push hands its token to git as an HTTP header through git's
+environment, never in the address or on a command line, and masks the encoded form; and
+the manual run's issue number is a `number` input, so `5` and `05` are one concurrency
+group.
+
+**Splitting the job is deferred.** The stronger design runs the reading, the write and the
+proof in a job without a write token and hands the proven files to a second job as an
+artifact, so that a bug in a parser the issue reaches could not act with the token. It is
+not done here because what that job runs is this repository's code from `main`, installed
+without install scripts, over the issue as data; because the token is given to the two
+steps that write to GitHub and to nothing else (ADR 0061 §5); and because the split adds an
+artifact whose contents the second job would have to prove again before committing, which
+is most of §3 run twice. It is the next step if the job ever runs anything the repository
+did not write.
 
 ## Why not the alternatives
 
@@ -174,19 +246,25 @@ beside each kind (§2).
 **ADR 0056, "What is still open", whether this ends in a pull request.** From the published
 site it does, by ADR 0061's route and this record's kind.
 
+**ADR 0061 §4, how a maintainer's run is bound.** "The manual run takes the issue's number
+and the SHA-256 of its body" to "every refusal on the issue carries the current value for
+it": the run takes the text the automation quoted, and no refusal carries a value (§7).
+
 ADR 0056's and ADR 0061's status lines are updated as statuses and not struck.
 
 Read and left standing: ADR 0061 §2's "asserts that it is the only file that changed", which
 is still what happens for the home kind, now inside the proof rather than in shell; ADR 0061
 §3's "It is **not built here**", which is true of that record's pull request; ADR 0061 §6's
 limit and its one-line home document; ADR 0061 §7, whose rule this workflow still keeps, no
-expression in any `run:` or `script:`. ADR 0056 §7's limit is the same limit, enforced now
-in a third place.
+expression in any `run:` or `script:`; ADR 0061 §4's heading, "for the text they read",
+which §7 makes true, and its "runs by itself only when the issue's author is an `OWNER`,
+`MEMBER` or `COLLABORATOR`", still a condition, now beside §8's. ADR 0056 §7's limit is the
+same limit, enforced now in a third place.
 
 ## What is still open
 
 1. **A first real run**, as for ADR 0061's kind. Nothing here was run against github.com.
-   The steps were run locally, in a clone with a sample issue body, and the test above runs
+   The steps were run locally, in this checkout with a sample issue body, and a test runs
    the write, oxfmt and the proof against a throwaway git repository. The catalogue test
    inside the workflow was run on an install made with scripts; that vitest runs on
    `npm ci --ignore-scripts` is assumed from ADR 0061's measurement that tsx and oxfmt do,
@@ -196,3 +274,7 @@ in a third place.
 3. **A stale table.** The published site's table is a build older than `main`. A wording
    somebody submits over one that changed on `main` since replaces it; the summary prints
    both, and the reviewer sees it, but nothing refuses it.
+4. **The quote and the permission lookup on github.com.** That GitHub stores a comment
+   exactly as it was sent, which §7's round trip relies on, and that the permission lookup
+   answers the workflow's own token, are both unmeasured; either failing refuses the run
+   rather than letting one through.

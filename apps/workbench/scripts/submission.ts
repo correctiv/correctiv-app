@@ -69,6 +69,8 @@ export type RefusalCode =
   | 'no-block'
   | 'several-blocks'
   | 'hidden-text'
+  | 'body-shape'
+  | 'duplicate-ids'
   | 'not-json'
   | 'refused'
   | 'unchanged'
@@ -120,6 +122,10 @@ export function refusalText(refusal: Refusal): string {
       return `Die Einreichung ist zu groß. Mehr als ${HOME_LAYOUT_MAX_CHARS / 1024} KiB liest auch die App nicht.${detail}`;
     case 'no-block':
       return 'Im Issue steht keine Änderung. Wenn die Workbench sie in die Zwischenablage gelegt hat: Bearbeiten Sie das Issue, fügen Sie sie über dem Hinweistext ein und speichern Sie.';
+    case 'body-shape':
+      return 'Das Issue hat nicht die Form, in der die Workbench es schreibt: oben der Hinweistext, darunter genau ein `json`-Block und danach nichts mehr. Im Hinweistext dürfen weder spitze Klammern noch Backticks stehen. Bitte reichen Sie die Änderung noch einmal aus der Workbench ein, ohne das Issue davor zu bearbeiten.';
+    case 'duplicate-ids':
+      return `Im Block steht dieselbe ID mehr als einmal. Die Workbench schreibt jede ID nur einmal, deshalb ist nicht klar, welcher Wortlaut gemeint ist. Bitte reichen Sie die Änderung noch einmal aus der Workbench ein.${items}`;
     case 'hidden-text':
       return 'Im Issue steht ein HTML-Kommentar. GitHub zeigt seinen Inhalt nicht an, und was dort steht, würde doch mitgelesen. Deshalb nimmt die Automatik kein Issue mit einem an. Bitte entfernen Sie ihn oder reichen Sie die Änderung noch einmal aus der Workbench ein.';
     case 'several-blocks':
@@ -161,10 +167,21 @@ const MAX_BODY = HOME_LAYOUT_MAX_CHARS * 2;
 const HTML_COMMENT = '<!--';
 
 /** An opening fence for the payload: its own line, the info string, nothing after it. */
-const OPENING = new RegExp(`^\`\`\`${SUBMISSION_FENCE}[ \\t]*\\r?$`, 'gm');
+const OPENING = new RegExp(`^\`\`\`${SUBMISSION_FENCE}[ \\t]*$`, 'gm');
 
 /**
  * The kind and the payload of an issue, or a `Refusal`.
+ *
+ * **The body has to be the shape the workbench writes, and nothing else** (ADR 0062 §5):
+ * a lead of plain prose, a blank line, one fenced `json` block at the start of its line,
+ * and nothing after the closing fence but whitespace. The lead may hold neither `<` nor a
+ * backtick. Measured in the cold review of #263 with `gh api markdown`: a fence inside
+ * an HTML attribute (`<div title="` and the block and `">`) renders as nothing and was
+ * read, while an indented fence renders as a block and was not. A reader that takes any
+ * fence it can find and a renderer that shows only some of them disagree about what the
+ * issue says, and the maintainer who reads an outsider's issue sees the renderer's
+ * answer. So the reader accepts only a body on which both give the same one. Line ends
+ * are read as GitHub may store them after a paste, `\r\n` as `\n`.
  *
  * Exactly one fenced `json` block, because two is somebody having pasted the document a
  * second time beside the first, and choosing one of them would be choosing for them.
@@ -179,14 +196,18 @@ export function readSubmission(title: string, body: string): Submission {
   // included. The workbench never writes one. ADR 0062 §5.
   if (body.includes(HTML_COMMENT)) throw new Refusal('hidden-text');
 
-  const openings = [...body.matchAll(OPENING)];
-  if (openings.length === 0) throw new Refusal('no-block');
+  const text = body.replace(/\r\n?/g, '\n');
+  const openings = [...text.matchAll(OPENING)];
+  if (openings.length === 0) throw new Refusal(text.includes('`') ? 'body-shape' : 'no-block');
   if (openings.length > 1) throw new Refusal('several-blocks');
 
-  const start = openings[0].index + openings[0][0].length;
-  const rest = body.slice(start).replace(/^\n/, '');
-  const close = /^```[ \t]*\r?$/m.exec(rest);
+  const lead = text.slice(0, openings[0].index);
+  if (/[<`]/.test(lead) || (lead !== '' && !lead.endsWith('\n\n'))) throw new Refusal('body-shape');
+
+  const rest = text.slice(openings[0].index + openings[0][0].length).replace(/^\n/, '');
+  const close = /^```[ \t]*$/m.exec(rest);
   if (!close) throw new Refusal('no-block');
+  if (rest.slice(close.index + close[0].length).trim() !== '') throw new Refusal('body-shape');
 
   const payload = rest.slice(0, close.index);
   if (payload.length > HOME_LAYOUT_MAX_CHARS)

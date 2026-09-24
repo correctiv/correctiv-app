@@ -76,12 +76,41 @@ describe('reading an issue', () => {
     expect(applied.format).toBe(false);
   });
 
-  it('forgives prose around the block and a pasted body with Windows line ends', () => {
+  it('forgives a lead of its own and a pasted body with Windows line ends', () => {
     const { title } = issueOf('');
-    const body = `Hallo,\r\n\r\n\`\`\`json\r\n${formatLayoutDocument(EDITED).replace(/\n/g, '\r\n')}\`\`\`\r\n\r\nDanke`;
+    const body = `Hallo,\r\nbitte übernehmen.\r\n\r\n\`\`\`json\r\n${formatLayoutDocument(EDITED).replace(/\n/g, '\r\n')}\`\`\`\r\n\r\n`;
     expect(JSON.parse(readSubmission(title, body).payload)).toMatchObject({
       version: HOME_LAYOUT_VERSION,
     });
+    // And the block alone, which is what somebody who deleted the lead leaves.
+    expect(readSubmission(title, `\`\`\`json\n{}\n\`\`\``).payload).toBe('{}\n');
+  });
+
+  /*
+   * The shape the workbench writes and nothing else, because a reader that takes any fence
+   * and a renderer that shows only some disagree about what the issue says. Each of these
+   * was a body the renderer and the first reader read differently, measured with
+   * `gh api markdown` in the cold review of #263.
+   */
+  it('refuses a body that is not the workbench’s shape, wherever the difference is', () => {
+    const { title, body } = issueOf(CURRENT);
+    const fenced = body.slice(body.indexOf('```'));
+    const cases = [
+      // A fence inside an attribute renders as nothing, and was read.
+      `Harmlos.\n\n<div title="\n\n${fenced}\n">\n</div>\n`,
+      `<div title="\n${fenced}">`,
+      // An indented fence renders as a block, and was not read.
+      `Harmlos.\n\n   ${fenced}`,
+      // Prose after the block, which a reader might take for part of the change.
+      `${body}\nDanke!`,
+      // A backtick or an angle bracket in the lead.
+      `Siehe \`x\`.\n\n${fenced}`,
+      `Das <b>ist</b> es.\n\n${fenced}`,
+      // A lead that runs into the fence without a blank line.
+      `Harmlos.\n${fenced}`,
+    ];
+    for (const hostile of cases)
+      expect(refusal(() => readSubmission(title, hostile))).toBe('body-shape');
   });
 
   it('refuses a body without the block', () => {
@@ -449,9 +478,36 @@ describe('.github/workflows/submission.yml', () => {
   });
 
   it('asks a dispatch for the text it was started for, and comments on an outsider once', () => {
-    expect(text).toMatch(/body_sha256:\n\s+description: .*\n\s+required: true/);
-    expect(text).toContain("'<!-- submission:outsider -->'");
-    expect(text).toMatch(/outsider:[\s\S]*?permissions:\n\s+issues: write\n\s+steps:/);
+    expect(text).toMatch(/text_sha256:\n\s+description: .*\n\s+required: true/);
+    // The number is a number, so that "05" and "5" are one concurrency group.
+    expect(text).toMatch(
+      /issue:\n\s+description: .*\n\s+required: true\n(\s+#.*\n)*\s+type: number/,
+    );
+    expect(text).not.toMatch(/body_sha256|body-sha256/);
+    // The outsider's job reads one file of the repository and writes comments, nothing else.
+    expect(text).toMatch(
+      /outsider:[\s\S]*?permissions:\n\s+contents: read\n\s+issues: write\n\s+steps:/,
+    );
+    expect(text).toContain('sparse-checkout: apps/workbench/scripts/submission-quote.mjs');
+    expect(text).toContain('quote.quoteComment(');
+    // A dispatch runs the text the automation quoted, never the issue as it is by then.
+    const read = steps().find((step) => step.name === 'Read the issue')!.text;
+    expect(read).toContain('text = quote.approved(comments, process.env.EXPECTED_SHA);');
+    expect(read).toMatch(
+      /if \(dispatched\) \{[\s\S]*?quote\.approved[\s\S]*?\} else \{[\s\S]*?getCollaboratorPermissionLevel/,
+    );
+    expect(read).toContain("permission !== 'admin' && permission !== 'write'");
+    // The failure comment carries no value to start a run with.
+    const failure = steps().find((step) => step.name === 'Say why there is no pull request')!.text;
+    expect(failure).not.toMatch(/sha256/i);
+  });
+
+  it('hands the push its token in git’s environment, never in the address', () => {
+    const push = steps().find((step) => step.name === 'Push the branch')!.text;
+    expect(push).not.toMatch(/x-access-token:\$\{?TOKEN\}?@/);
+    expect(push).toContain('GIT_CONFIG_KEY_0=http.https://github.com/.extraheader');
+    expect(push).toContain('echo "::add-mask::$BASIC"');
+    expect(push).toMatch(/git push --force "https:\/\/github\.com\/\$\{GITHUB_REPOSITORY\}\.git"/);
   });
 
   /*

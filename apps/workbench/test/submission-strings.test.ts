@@ -19,6 +19,7 @@ import { findWording, onlyWordingsChanged } from '../plugin/catalogue.ts';
 import { ROOT } from '../plugin/collect.ts';
 import {
   applyIssue,
+  KINDS,
   mayWrite,
   parsePorcelain,
   verifyIssue,
@@ -35,7 +36,8 @@ import {
 import { readSubmission, Refusal, refusalText, type RefusalCode } from '../scripts/submission.ts';
 import { ENGLISH_EXTRACTION, GERMAN_CATALOGUE_DIR } from '../src/preview/strings/names.ts';
 import { stringsPayload } from '../src/preview/strings/submit.ts';
-import { WORDING_MAX } from '../src/preview/strings/validate.ts';
+import { checkWording, WORDING_MAX } from '../src/preview/strings/validate.ts';
+import { de as appGerman } from '../../../packages/catalogue/src/de/index.ts';
 import { issueFor } from '../src/preview/submission.ts';
 
 /**
@@ -151,7 +153,7 @@ describe('reading a texts issue', () => {
     );
   });
 
-  it('forgives Markdown and HTML around the block, and reads only the block', () => {
+  it('refuses Markdown and HTML around the block, since they can show a different block', () => {
     const { title, body } = issueOf({ 'home.viewAll': 'Alle zeigen' });
     const decorated = [
       '# Bitte übernehmen',
@@ -167,10 +169,17 @@ describe('reading a texts issue', () => {
       '> Danke, **@correctiv/everyone**, Fixes #1',
       '<img src=x onerror=alert(1)>',
     ].join('\n');
-    const applied = applyIssue(title, decorated, REPO);
-    expect(applied.files.map((file) => file.path)).toEqual([HOME]);
-    expect(wordingIn(applied.files, 'home.factChecks')).toBe('Faktenchecks');
-    harmless(applied.summary);
+    expect(code(() => applyIssue(title, decorated, REPO))).toBe('body-shape');
+    // Markdown in the lead that hides nothing is fine; it renders, and the block with it.
+    const lead = `# Bitte übernehmen\n\n**Danke**, @correctiv/everyone, Fixes #1\n\n${body.slice(body.indexOf('```'))}`;
+    expect(applyIssue(title, lead, REPO).files.map((file) => file.path)).toEqual([HOME]);
+  });
+
+  it('refuses an id written twice in the block, which JSON.parse would silently keep once', () => {
+    const payload = '{\n  "home.viewAll": "Harmlos",\n  "home.v\\u0069ewAll": "Böse"\n}';
+    const refusal = refused(() => applyStrings(payload, REPO));
+    expect(refusal.code).toBe('duplicate-ids');
+    expect(refusalText(refusal)).toContain('- `home.viewAll`');
   });
 
   it('refuses a second json block, and a block hidden in an HTML comment', () => {
@@ -239,6 +248,28 @@ describe('a wording that tries to leave its literal', () => {
     harmless(applied.summary);
   });
 
+  /*
+   * `${name}` where the English has `{name}` is a valid ICU message, a dollar sign before
+   * the placeholder, and passes the validator. It is harmless only because `literal()`
+   * never writes a template literal: the dollar stays text inside quotes.
+   */
+  it('writes a dollar before a placeholder as text, and refuses a substitution nobody has', () => {
+    const english = JSON.parse(MAIN.get(ENGLISH_EXTRACTION)!) as Record<
+      string,
+      { defaultMessage: string }
+    >;
+    // A message with exactly one simple placeholder, whatever it is called.
+    const id = Object.keys(english).find((key) =>
+      /^[^{}]*\{\w+\}[^{}]*$/.test(english[key]!.defaultMessage),
+    )!;
+    const name = /\{(\w+)\}/.exec(english[id]!.defaultMessage)![1]!;
+    const wording = `\${${name}} Artikel`;
+    const { applied, after, changes } = written({ [id]: wording });
+    expect(wordingIn(applied.files, id)).toBe(wording);
+    for (const { content } of applied.files) expect(content).not.toContain(`\`\${${name}`);
+    expect(verifyStrings(stringsPayload({ [id]: wording }), changes, treeOf(after))).toEqual([]);
+  });
+
   it('refuses a template substitution, which ICU reads as a placeholder nobody has', () => {
     for (const wording of ['`${process.exit(1)}`', '${globalThis}'])
       expect(code(() => applyStrings(stringsPayload({ 'home.viewAll': wording }), REPO))).toBe(
@@ -255,6 +286,26 @@ describe('a wording that tries to leave its literal', () => {
       [`Alle ${String.fromCodePoint(0x202e)}nehesna`, 'U+202E'],
       [`Alle${String.fromCodePoint(0x200b)} ansehen`, 'U+200B'],
       [`Alle ansehen${String.fromCharCode(0xd800)}`, 'U+D800'],
+      // The Trojan Source isolates, and the C1 next line.
+      ...[0x2066, 0x2067, 0x2068, 0x2069, 0x0085, 0x0080, 0x009f, 0x007f].map(
+        (point) =>
+          [
+            `Alle${String.fromCodePoint(point)} ansehen`,
+            `U+${point.toString(16).toUpperCase().padStart(4, '0')}`,
+          ] as [string, string],
+      ),
+      // What the cold review of #263 got through the first version.
+      ...[
+        0x180e, 0x034f, 0xfe00, 0xfe0f, 0xe0100, 0xe01ef, 0xe0000, 0xe0041, 0xe007f, 0x115f, 0x1160,
+        0x3164, 0xffa0, 0x2800, 0x206a, 0x206f, 0xfff9, 0xfffb, 0x1d173, 0x1d17a, 0xfdd0, 0xfdef,
+        0xfffe, 0x1fffe, 0x10ffff, 0xe000, 0xf8ff, 0xf0000,
+      ].map(
+        (point) =>
+          [
+            `Alle${String.fromCodePoint(point)} ansehen`,
+            `U+${point.toString(16).toUpperCase().padStart(4, '0')}`,
+          ] as [string, string],
+      ),
     ];
     for (const [wording, character] of cases) {
       const refusal = refused(() =>
@@ -268,6 +319,52 @@ describe('a wording that tries to leave its literal', () => {
     expect(wordingIn(written({ 'home.factChecks': soft }).applied.files, 'home.factChecks')).toBe(
       soft,
     );
+  });
+
+  it('passes every wording the catalogue ships, so a stricter rule refuses nobody’s work', () => {
+    const english = JSON.parse(MAIN.get(ENGLISH_EXTRACTION)!) as Record<
+      string,
+      { defaultMessage: string }
+    >;
+    const refusedIds = Object.entries(appGerman)
+      .filter(([id, wording]) => checkWording(english[id]!.defaultMessage, wording).length > 0)
+      .map(([id]) => id);
+    expect(Object.keys(appGerman).length).toBeGreaterThan(100);
+    expect(refusedIds).toEqual([]);
+  });
+
+  it('refuses a wording that is blank once what cannot be seen is taken out', () => {
+    for (const wording of [
+      String.fromCodePoint(0x3164, 0x3164),
+      String.fromCodePoint(0xad),
+      ` ${String.fromCodePoint(0xad)} `,
+    ]) {
+      const refusal = refused(() =>
+        applyStrings(stringsPayload({ 'home.viewAll': wording }), REPO),
+      );
+      expect(refusalText(refusal)).toContain('Das Deutsche ist leer.');
+    }
+  });
+
+  it('refuses a placeholder that keeps its name and changes its kind', () => {
+    const english = JSON.parse(MAIN.get(ENGLISH_EXTRACTION)!) as Record<
+      string,
+      { defaultMessage: string }
+    >;
+    const plural = Object.keys(english).find((key) =>
+      /\{count, plural,/.test(english[key]!.defaultMessage),
+    )!;
+    const refusal = refused(() =>
+      applyStrings(stringsPayload({ [plural]: '{count, date, short} Artikel' }), REPO),
+    );
+    expect(refusalText(refusal)).toContain('anders als das Englische: `{count}`');
+    const plain = Object.keys(english).find((key) =>
+      /^[^{}]*\{\w+\}[^{}]*$/.test(english[key]!.defaultMessage),
+    )!;
+    const name = /\{(\w+)\}/.exec(english[plain]!.defaultMessage)![1]!;
+    expect(
+      code(() => applyStrings(stringsPayload({ [plain]: `{${name}, number, percent}` }), REPO)),
+    ).toBe('texts-refused');
   });
 
   it('refuses a wording over the length bound', () => {
@@ -433,6 +530,59 @@ describe('the proof', () => {
         /^packages\/catalogue\/src\/de\/(evil|ui|home)\.ts$/.test(change.path),
       );
     }
+  });
+
+  it('lets each kind write its own files and nothing else', () => {
+    expect(mayWrite('strings', HOME)).toBe(true);
+    expect(mayWrite('strings', `${GERMAN_CATALOGUE_DIR}/index.ts`)).toBe(false);
+    expect(mayWrite('strings', 'packages/catalogue/src/en.json')).toBe(false);
+    expect(mayWrite('strings', `${GERMAN_CATALOGUE_DIR}/../../../../.github/workflows/x.yml`)).toBe(
+      false,
+    );
+    expect(mayWrite('home', 'packages/app-core/src/data/home.layout.json')).toBe(true);
+    expect(mayWrite('home', HOME)).toBe(false);
+  });
+
+  /*
+   * The two uses of `mayWrite` outside a kind, which no real kind can reach, because every
+   * kind writes only its own files. A kind that one day does not is what they are for, so
+   * the test puts one in the table for the length of a call.
+   */
+  it('refuses a kind’s write and a kind’s proof that reach outside the kind', () => {
+    const original = KINDS.strings!;
+    const table = KINDS as Record<string, unknown>;
+    try {
+      table.strings = {
+        apply: () => ({
+          files: [{ path: '.github/workflows/x.yml', content: '' }],
+          summary: '',
+          format: false,
+        }),
+        verify: () => [],
+      };
+      const { title, body } = issueOf({ 'home.viewAll': 'Alle zeigen' });
+      expect(() => applyIssue(title, body, REPO)).toThrow(/may not write/);
+      const outside: Change[] = [{ status: ' M', path: '.github/workflows/x.yml' }];
+      expect(verifyIssue(title, body, outside, treeOf(MAIN)).problems).toEqual([
+        'the strings kind may not change .github/workflows/x.yml',
+      ]);
+    } finally {
+      table.strings = original;
+    }
+  });
+
+  it('fails when main itself holds an id twice', () => {
+    const { after, changes } = written(WORDINGS);
+    const ui = `${GERMAN_CATALOGUE_DIR}/ui.ts`;
+    const doubled = new Map(MAIN);
+    doubled.set(
+      ui,
+      MAIN.get(ui)!.replace("'ui.back':", "'home.viewAll': 'Doppelt',\n  'ui.back':"),
+    );
+    const tree: Tree = { ...treeOf(after), before: (path) => doubled.get(path)! };
+    expect(verifyStrings(PAYLOAD, changes, tree)).toContain(
+      'home.viewAll is not one wording on main',
+    );
   });
 
   it('reads the scanner rather than the parser, and says what it found', () => {

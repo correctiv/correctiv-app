@@ -140,12 +140,14 @@ export const tools: Record<string, string> = {
   'tools.strings.problem.empty': 'Das Deutsche ist leer.',
   'tools.strings.problem.tooLong': 'Das Deutsche ist länger als {max} Zeichen.',
   'tools.strings.problem.unsafe':
-    'Im Deutschen steht ein unsichtbares Zeichen, {character}, an Stelle {position}. Tippen Sie den Text dort ohne es neu.',
+    'Im Deutschen steht ein unsichtbares Zeichen, {character}, an Stelle {position}. Geben Sie den Text an dieser Stelle ohne das Zeichen neu ein.',
   'tools.strings.problem.syntax': 'Das ist keine gültige Meldung: {detail}',
   'tools.strings.problem.missing':
     'Das Englische hat Platzhalter, die im Deutschen fehlen: {names}',
   'tools.strings.problem.extra':
     'Das Deutsche hat Platzhalter, die das Englische nicht hat: {names}',
+  'tools.strings.problem.kind':
+    'Das Deutsche verwendet diese Platzhalter anders als das Englische: {names}',
   'tools.strings.problem.unknown': 'Diese ID gibt es im Katalog nicht.',
   'tools.strings.changes': '{count, plural, one {# Text geändert} other {# Texte geändert}}',
   'tools.strings.save': 'In den Katalog schreiben',

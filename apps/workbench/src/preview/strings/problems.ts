@@ -29,7 +29,7 @@ export const PROBLEM_COPY = {
   unsafe: wbMessage({
     id: 'tools.strings.problem.unsafe',
     defaultMessage:
-      'The German holds an invisible character, {character}, at character {position}. Type the text there again without it.',
+      'The German holds an invisible character, {character}, at character {position}. Type the text at that place again without the character.',
     description:
       'A refusal under the German field, and on a submission issue, for a control character, a line separator, a direction mark or a zero-width character, which a reviewer cannot see. {character} is its Unicode code such as U+200B, which stays as it is; {position} is where it stands, counted in characters from one.',
   }),
@@ -50,6 +50,12 @@ export const PROBLEM_COPY = {
     defaultMessage: 'The German has placeholders the English does not: {names}',
     description:
       'A refusal under the German field. {names} is a comma-separated list of placeholder names, each written in braces as the message spells it, which stay as they are.',
+  }),
+  kind: wbMessage({
+    id: 'tools.strings.problem.kind',
+    defaultMessage: 'The German uses these placeholders differently from the English: {names}',
+    description:
+      'A refusal under the German field, and on a submission issue, when a placeholder keeps its name but changes its kind, such as a plural becoming a date. {names} is a comma-separated list of placeholder names, each in braces, which stay as they are.',
   }),
   unknown: wbMessage({
     id: 'tools.strings.problem.unknown',
@@ -93,6 +99,8 @@ export function problemText(
       return format(PROBLEM_COPY.missing, { names: quote(braces(problem.names)) });
     case 'extra':
       return format(PROBLEM_COPY.extra, { names: quote(braces(problem.names)) });
+    case 'kind':
+      return format(PROBLEM_COPY.kind, { names: quote(braces(problem.names)) });
     case 'unknown-id':
       return format(PROBLEM_COPY.unknown);
   }
