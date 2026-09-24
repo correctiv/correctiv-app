@@ -22,6 +22,36 @@ import { checkWording } from './validate';
 /** Id to German, only for wordings that differ from the shipped catalogue. */
 export type Draft = Readonly<Record<string, string>>;
 
+/**
+ * Fired in THIS document whenever `publishDraft` writes or clears the key.
+ *
+ * The browser's own `storage` event never reaches the document that made the write —
+ * that is the asymmetry `apps/mobile/src/lib/strings.ts` relies on, and the frame is a
+ * different document, so it gets one. The draft marker sits beside the tool that owns
+ * this key, in the same document, and needs the other half: a write telling itself.
+ * `preview/frame/seed.ts`'s `SESSION_EVENT` is the same pattern for the seeded session.
+ */
+export const DRAFT_CHANGED_EVENT = 'workbench:strings-draft-changed';
+
+/**
+ * Fired only by `discardDraft` below, and heard only by `StringsTool.tsx`.
+ *
+ * `publishDraft({})` alone clears the key the frame reads, but the tool's own editor
+ * keeps whatever a person had typed in its React state, which would publish it right
+ * back on the next keystroke. This is "Alle verwerfen", pressed from the draft marker
+ * rather than from the panel that owns the button — the same discard, told to a second
+ * listener rather than reimplemented for it.
+ */
+export const DRAFT_DISCARD_EVENT = 'workbench:strings-draft-discard';
+
+function announce(event: string): void {
+  try {
+    window.dispatchEvent(new Event(event));
+  } catch {
+    // Not a browser (a test, the dev server's endpoint): there is nobody to tell.
+  }
+}
+
 /** Put the draft where the frame will find it, or take the key away when it is empty. */
 export function publishDraft(draft: Draft): void {
   try {
@@ -30,7 +60,36 @@ export function publishDraft(draft: Draft): void {
       window.localStorage.setItem(PREVIEW_STRINGS_KEY, JSON.stringify({ [EDITED_LOCALE]: draft }));
   } catch {
     // Site data switched off. Nothing can be previewed, and nothing may throw.
+    return;
   }
+  announce(DRAFT_CHANGED_EVENT);
+}
+
+/** Reactive read of the draft: this document's own writes, and another tab's. */
+export function subscribeDraftChange(listener: () => void): () => void {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return () => {};
+  }
+  window.addEventListener(DRAFT_CHANGED_EVENT, listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    window.removeEventListener(DRAFT_CHANGED_EVENT, listener);
+    window.removeEventListener('storage', listener);
+  };
+}
+
+/** How many ids the draft currently reworks, read straight from storage. */
+export function draftCount(shipped: Readonly<Record<string, string | null>>): number {
+  return Object.keys(restoreDraft(shipped)).length;
+}
+
+/**
+ * "Alle verwerfen", callable from outside the strings tool: clears the key the frame
+ * reads and tells the tool's own editor state to let go of it too.
+ */
+export function discardDraft(): void {
+  publishDraft({});
+  announce(DRAFT_DISCARD_EVENT);
 }
 
 /**

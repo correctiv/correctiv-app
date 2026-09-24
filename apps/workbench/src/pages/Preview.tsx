@@ -23,6 +23,7 @@ import {
 } from '../preview/ui/Panels';
 import { Readout } from '../preview/ui/Readout';
 import { StringsTool } from '../preview/strings/StringsTool';
+import { DraftMarker } from '../preview/ui/DraftMarker';
 import { Stage } from '../preview/ui/Stage';
 import { LinkBar, Toolbar } from '../preview/ui/Toolbar';
 
@@ -125,30 +126,43 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
 
   return (
     <>
-      <Stage
-        state={state}
-        size={preview.size}
-        scale={preview.scale}
-        stageRef={preview.stageRef}
-        frameRef={preview.frameRef}
-        onResize={preview.onResize}
-        onLoad={preview.onLoad}
-        timeline={
-          timeline ? (
-            <Timeline
-              state={state}
-              onChange={preview.onChange}
-              /*
-               * ADR 0042 §3: the tool being open is what adds the two writes. Not a
-               * second switch — "the tool is open" is already the sentence that
-               * separates reading the document from writing it.
-               */
-              editing={address.tool === 'home'}
-              compact={!wide}
-            />
-          ) : null
-        }
-      />
+      {/*
+        Above the frame rather than inside `Stage`, which only lays the frame out and
+        would otherwise be the one place drawing a fact about two tools it does not
+        hold state for. A normal flow element and not an overlay: the frame's own
+        `useStage` measures the box it is actually given, so the stage simply gets
+        less of it while this is showing, rather than the marker floating over
+        content it might obscure.
+      */}
+      <div className="flex h-full min-h-0 flex-col gap-xs">
+        <DraftMarker scenario={scenario} />
+        <div className="min-h-0 flex-1">
+          <Stage
+            state={state}
+            size={preview.size}
+            scale={preview.scale}
+            stageRef={preview.stageRef}
+            frameRef={preview.frameRef}
+            onResize={preview.onResize}
+            onLoad={preview.onLoad}
+            timeline={
+              timeline ? (
+                <Timeline
+                  state={state}
+                  onChange={preview.onChange}
+                  /*
+                   * ADR 0042 §3: the tool being open is what adds the two writes. Not a
+                   * second switch — "the tool is open" is already the sentence that
+                   * separates reading the document from writing it.
+                   */
+                  editing={address.tool === 'home'}
+                  compact={!wide}
+                />
+              ) : null
+            }
+          />
+        </div>
+      </div>
 
       <Slot id="context-bar">
         <Toolbar

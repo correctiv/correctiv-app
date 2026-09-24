@@ -138,11 +138,16 @@ export const tools: Record<string, string> = {
   'tools.strings.german': 'Deutsch',
   'tools.strings.reset': 'Zurück zum Katalog',
   'tools.strings.problem.empty': 'Das Deutsche ist leer.',
+  'tools.strings.problem.tooLong': 'Das Deutsche ist länger als {max} Zeichen.',
+  'tools.strings.problem.unsafe':
+    'Im Deutschen steht ein unsichtbares Zeichen, {character}, an Stelle {position}. Geben Sie den Text an dieser Stelle ohne das Zeichen neu ein.',
   'tools.strings.problem.syntax': 'Das ist keine gültige Meldung: {detail}',
   'tools.strings.problem.missing':
     'Das Englische hat Platzhalter, die im Deutschen fehlen: {names}',
   'tools.strings.problem.extra':
     'Das Deutsche hat Platzhalter, die das Englische nicht hat: {names}',
+  'tools.strings.problem.kind':
+    'Das Deutsche verwendet diese Platzhalter anders als das Englische: {names}',
   'tools.strings.problem.unknown': 'Diese ID gibt es im Katalog nicht.',
   'tools.strings.changes': '{count, plural, one {# Text geändert} other {# Texte geändert}}',
   'tools.strings.save': 'In den Katalog schreiben',
@@ -158,8 +163,25 @@ export const tools: Record<string, string> = {
   'tools.strings.saveFailed': 'Der Dev-Server hat nicht geantwortet: {detail}',
   'tools.strings.copy': 'Änderungen kopieren',
   'tools.strings.discard': 'Alle verwerfen',
-  'tools.strings.noSubmit':
-    'Texte von der veröffentlichten Seite einzureichen ist noch nicht gebaut. Kopieren Sie die Änderungen und schicken Sie sie jemandem, der die Workbench lokal startet.',
+  'tools.strings.submit': 'Texte einreichen',
+  'tools.strings.submitHint':
+    'GitHub öffnet sich mit Ihren geänderten Texten. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
+  'tools.strings.submitHintLong':
+    'Diese Änderungen sind zu lang für einen Link. Der Klick kopiert sie in die Zwischenablage, auf GitHub fügen Sie sie ein. Dafür brauchen Sie ein GitHub-Konto.',
+  'tools.strings.submitCopied':
+    'Die geänderten Texte liegen in der Zwischenablage. Fügen Sie sie auf GitHub in das Issue ein.',
+  'tools.strings.submitNoClipboard':
+    'Der Browser hat den Zugriff auf die Zwischenablage nicht erlaubt. Kopieren Sie die geänderten Texte aus diesem Feld und fügen Sie sie auf GitHub in das Issue ein.',
+  'tools.strings.submitField': 'Die geänderten Texte',
+  'tools.strings.submitNote':
+    '„Texte einreichen“ öffnet auf GitHub ein neues Issue mit Ihrem geänderten Deutsch. Daraus entsteht automatisch ein Pull Request, der diese Wortlaute ändern darf und sonst nichts. In der App erscheinen sie, sobald jemand ihn geprüft und übernommen hat. Diese Seite speichert kein Passwort und keinen Token.',
   'tools.strings.filter': 'Text suchen',
   'tools.strings.shown': '{shown} von {total}',
+  // The issue Texte einreichen opens (`preview/strings/submit.ts`). „Create“ is GitHub's own
+  // button, which GitHub labels in English, so it is quoted as it reads there.
+  'tools.strings.issue.heading': 'Änderungen an den Texten der App',
+  'tools.strings.issue.lead':
+    'Diese Änderungen an den deutschen Texten der App kommen aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, und dieses Issue verlinkt ihn. Bitte lassen Sie den Block darunter, wie er ist.',
+  'tools.strings.issue.help':
+    'Die Änderungen waren zu lang für den Link. Sie liegen deshalb in Ihrer Zwischenablage. Löschen Sie diesen Text, fügen Sie die Änderungen hier ein (Strg+V, auf dem Mac Cmd+V) und klicken Sie auf „Create“.',
 };

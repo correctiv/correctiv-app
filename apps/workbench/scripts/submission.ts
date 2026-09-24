@@ -1,5 +1,7 @@
 /**
- * Reads a submission issue back, checks it and turns it into the one file it changes.
+ * Reads a submission issue back, checks it and, for the home kind, turns it into the one
+ * file it changes. The strings kind is `./submission-strings.ts`, and the table of kinds
+ * that joins the two is `./submission-kinds.ts`.
  *
  * The workflow half of [ADR 0061](../../../adr/0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md).
  * `src/preview/submission.ts` is the format both ends share; this is what
@@ -12,8 +14,8 @@
  * the fact. So the body is read as data and nothing else: one fenced block is cut out,
  * parsed as JSON and handed to the kind's own validator, and what is written is what that
  * validator printed rather than what arrived. No part of the issue becomes a path, a
- * branch name or a command. The kind decides the one file, and the kind comes from a
- * fixed table.
+ * branch name or a command. The kind decides the files, and the kind comes from a fixed
+ * table.
  *
  * **Why it lives in the workbench.** The home kind prints its file with
  * `formatLayoutDocument`, which is the workbench's printer and the one the dev server's
@@ -66,18 +68,33 @@ export type RefusalCode =
   | 'too-large'
   | 'no-block'
   | 'several-blocks'
+  | 'hidden-text'
+  | 'body-shape'
+  | 'duplicate-ids'
   | 'not-json'
   | 'refused'
-  | 'unchanged';
+  | 'unchanged'
+  | 'not-wordings'
+  | 'texts-too-large'
+  | 'texts-refused'
+  | 'texts-unchanged';
 
 export class Refusal extends Error {
   constructor(
     readonly code: RefusalCode,
     readonly detail = '',
+    /**
+     * One line per thing refused, already made harmless with `shown`, for a refusal that
+     * has several parts: the strings kind names every id it refused and why.
+     */
+    readonly items: readonly string[] = [],
   ) {
     super(detail ? `${code}: ${detail}` : code);
   }
 }
+
+/** The most items a refusal lists before it says how many it left out. */
+export const REFUSAL_ITEMS_MAX = 20;
 
 /**
  * What the issue is told, in plain German, and what to do about it.
@@ -90,6 +107,12 @@ export function refusalText(refusal: Refusal): string {
   // In a code span and through `plain`: a JSON parser's message quotes the input, and the
   // input is the issue's.
   const detail = refusal.detail ? `\n\nGenauer: ${shown(refusal.detail, 300)}` : '';
+  const shownItems = refusal.items.slice(0, REFUSAL_ITEMS_MAX).map((item) => `- ${item}`);
+  const left = refusal.items.length - shownItems.length;
+  const items =
+    shownItems.length === 0
+      ? ''
+      : `\n\n${[...shownItems, ...(left > 0 ? [`- … und ${left} weitere.`] : [])].join('\n')}`;
   switch (refusal.code) {
     case 'no-kind':
       return `Der Titel beginnt mit keiner bekannten Kennung wie ${SUBMISSION_KINDS.home.prefix}. Bitte stellen Sie sie wieder an den Anfang des Titels.`;
@@ -99,6 +122,12 @@ export function refusalText(refusal: Refusal): string {
       return `Die Einreichung ist zu groß. Mehr als ${HOME_LAYOUT_MAX_CHARS / 1024} KiB liest auch die App nicht.${detail}`;
     case 'no-block':
       return 'Im Issue steht keine Änderung. Wenn die Workbench sie in die Zwischenablage gelegt hat: Bearbeiten Sie das Issue, fügen Sie sie über dem Hinweistext ein und speichern Sie.';
+    case 'body-shape':
+      return 'Das Issue hat nicht die Form, in der die Workbench es schreibt: oben der Hinweistext, darunter genau ein `json`-Block und danach nichts mehr. Im Hinweistext dürfen weder spitze Klammern noch Backticks stehen. Bitte reichen Sie die Änderung noch einmal aus der Workbench ein, ohne das Issue davor zu bearbeiten.';
+    case 'duplicate-ids':
+      return `Im Block steht dieselbe ID mehr als einmal. Die Workbench schreibt jede ID nur einmal, deshalb ist nicht klar, welcher Wortlaut gemeint ist. Bitte reichen Sie die Änderung noch einmal aus der Workbench ein.${items}`;
+    case 'hidden-text':
+      return 'Im Issue steht ein HTML-Kommentar. GitHub zeigt seinen Inhalt nicht an, und was dort steht, würde doch mitgelesen. Deshalb nimmt die Automatik kein Issue mit einem an. Bitte entfernen Sie ihn oder reichen Sie die Änderung noch einmal aus der Workbench ein.';
     case 'several-blocks':
       return `Im Issue stehen mehrere \`${SUBMISSION_FENCE}\`-Blöcke. Es darf nur einer sein. Bitte lassen Sie nur den aus der Workbench stehen.`;
     case 'not-json':
@@ -107,6 +136,14 @@ export function refusalText(refusal: Refusal): string {
       return `Die App würde dieses Dokument nicht so zeichnen, wie es geschrieben ist. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'unchanged':
       return 'Die eingereichte Startseite ist dieselbe, die schon im Repository steht. Es gibt nichts zu ändern.';
+    case 'not-wordings':
+      return `Der Block im Issue ist keine Liste von Texten, wie die Workbench sie schreibt: Erwartet ist ein Objekt aus Text-ID und deutschem Wortlaut, mit mindestens einem Eintrag. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'texts-too-large':
+      return `Die Einreichung ist zu groß. Bitte teilen Sie die Texte auf mehrere Issues auf.${detail}`;
+    case 'texts-refused':
+      return `Diese Texte lassen sich so nicht übernehmen. Geändert wurde nichts, auch keiner der übrigen Texte. Bitte korrigieren Sie sie in der Workbench und reichen Sie die Änderungen noch einmal ein.${items}`;
+    case 'texts-unchanged':
+      return 'Alle eingereichten Texte stehen schon so im Katalog. Es gibt nichts zu ändern.';
   }
 }
 
@@ -126,11 +163,25 @@ export interface Submission {
  */
 const MAX_BODY = HOME_LAYOUT_MAX_CHARS * 2;
 
+/** Where an HTML comment starts, which GitHub hides with everything up to its end. */
+const HTML_COMMENT = '<!--';
+
 /** An opening fence for the payload: its own line, the info string, nothing after it. */
-const OPENING = new RegExp(`^\`\`\`${SUBMISSION_FENCE}[ \\t]*\\r?$`, 'gm');
+const OPENING = new RegExp(`^\`\`\`${SUBMISSION_FENCE}[ \\t]*$`, 'gm');
 
 /**
  * The kind and the payload of an issue, or a `Refusal`.
+ *
+ * **The body has to be the shape the workbench writes, and nothing else** (ADR 0062 §5):
+ * a lead of plain prose, a blank line, one fenced `json` block at the start of its line,
+ * and nothing after the closing fence but whitespace. The lead may hold neither `<` nor a
+ * backtick. Measured in the cold review of #263 with `gh api markdown`: a fence inside
+ * an HTML attribute (`<div title="` and the block and `">`) renders as nothing and was
+ * read, while an indented fence renders as a block and was not. A reader that takes any
+ * fence it can find and a renderer that shows only some of them disagree about what the
+ * issue says, and the maintainer who reads an outsider's issue sees the renderer's
+ * answer. So the reader accepts only a body on which both give the same one. Line ends
+ * are read as GitHub may store them after a paste, `\r\n` as `\n`.
  *
  * Exactly one fenced `json` block, because two is somebody having pasted the document a
  * second time beside the first, and choosing one of them would be choosing for them.
@@ -140,15 +191,23 @@ export function readSubmission(title: string, body: string): Submission {
   if (kind === null) throw new Refusal('no-kind');
   if (!SUBMISSION_KINDS[kind].built) throw new Refusal('kind-not-built');
   if (body.length > MAX_BODY) throw new Refusal('too-large', `${body.length} Zeichen`);
+  // GitHub renders nothing of a comment, so a block inside one is a change the page shows
+  // nobody, the maintainer who reads an outsider's issue before starting the run
+  // included. The workbench never writes one. ADR 0062 §5.
+  if (body.includes(HTML_COMMENT)) throw new Refusal('hidden-text');
 
-  const openings = [...body.matchAll(OPENING)];
-  if (openings.length === 0) throw new Refusal('no-block');
+  const text = body.replace(/\r\n?/g, '\n');
+  const openings = [...text.matchAll(OPENING)];
+  if (openings.length === 0) throw new Refusal(text.includes('`') ? 'body-shape' : 'no-block');
   if (openings.length > 1) throw new Refusal('several-blocks');
 
-  const start = openings[0].index + openings[0][0].length;
-  const rest = body.slice(start).replace(/^\n/, '');
-  const close = /^```[ \t]*\r?$/m.exec(rest);
+  const lead = text.slice(0, openings[0].index);
+  if (/[<`]/.test(lead) || (lead !== '' && !lead.endsWith('\n\n'))) throw new Refusal('body-shape');
+
+  const rest = text.slice(openings[0].index + openings[0][0].length).replace(/^\n/, '');
+  const close = /^```[ \t]*$/m.exec(rest);
   if (!close) throw new Refusal('no-block');
+  if (rest.slice(close.index + close[0].length).trim() !== '') throw new Refusal('body-shape');
 
   const payload = rest.slice(0, close.index);
   if (payload.length > HOME_LAYOUT_MAX_CHARS)
@@ -158,33 +217,14 @@ export function readSubmission(title: string, body: string): Submission {
 
 // --- the kinds --------------------------------------------------------------------
 
-export interface Applied {
+/** What the home kind writes: its one file, printed, and the summary for the pull request. */
+export interface AppliedHome {
   /** The repository path written, which is the kind's own and never the issue's. */
   file: string;
   /** The file's new content, already formatted as the repository's formatter prints it. */
   content: string;
   /** What changed, as Markdown in German, for the pull request's body. */
   summary: string;
-}
-
-/** Turns a payload into the file it becomes, given what the file holds now. */
-export type Apply = (payload: string, current: string) => Applied;
-
-/**
- * Kind to what applies it. `null` is a kind that is named and not built, and the type
- * makes a kind without an entry here a compile error rather than a silent skip.
- */
-export const APPLY: Readonly<Record<SubmissionKind, Apply | null>> = {
-  home: applyHome,
-  strings: null,
-};
-
-/** The whole path from issue to file, for the workflow's one call. */
-export function applyIssue(title: string, body: string, current: (file: string) => string) {
-  const { kind, payload } = readSubmission(title, body);
-  const apply = APPLY[kind];
-  if (!apply) throw new Refusal('kind-not-built');
-  return { kind, ...apply(payload, current(SUBMISSION_KINDS[kind].file)) };
 }
 
 /**
@@ -199,7 +239,7 @@ export function applyIssue(title: string, body: string, current: (file: string) 
  * cannot ask. What is written is the parser's reading printed again, so an unknown key in
  * the issue does not reach the repository.
  */
-export function applyHome(payload: string, current: string): Applied {
+export function applyHome(payload: string, current: string): AppliedHome {
   let document: unknown;
   try {
     document = JSON.parse(payload);
@@ -319,6 +359,19 @@ export function summariseHome(before: HomeLayout, after: HomeLayout): string {
   if (lines.length === 0)
     lines.push('Nur die Schreibweise der Datei ändert sich, nicht die Startseite.');
 
+  return [
+    ...warnings(before, after),
+    '### Was sich an der Startseite ändert',
+    '',
+    ...bulleted(lines),
+  ].join('\n');
+}
+
+/**
+ * Lines as Markdown bullets, stopping before `SUMMARY_MAX` and saying how many were left
+ * out. Every kind's summary goes through this, for the 422 `SUMMARY_MAX` is there for.
+ */
+export function bulleted(lines: readonly string[]): string[] {
   const bullets: string[] = [];
   let used = 0;
   for (const [index, line] of lines.entries()) {
@@ -330,9 +383,7 @@ export function summariseHome(before: HomeLayout, after: HomeLayout): string {
     bullets.push(bullet);
     used += bullet.length + 1;
   }
-  return [...warnings(before, after), '### Was sich an der Startseite ändert', '', ...bullets].join(
-    '\n',
-  );
+  return bullets;
 }
 
 /**

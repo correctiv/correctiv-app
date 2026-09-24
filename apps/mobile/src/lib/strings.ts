@@ -100,3 +100,19 @@ export function usePreviewStrings(locale: Locale, shipped: Catalogue): Catalogue
   const text = useSyncExternalStore(subscribeToStrings, previewStringsText, () => null);
   return useMemo(() => withPreviewStrings(text, locale, shipped), [text, locale, shipped]);
 }
+
+/**
+ * Whether the workbench is currently saying any string differently, for `lib/draftMarker.tsx`.
+ *
+ * `withPreviewStrings` hands back `shipped` itself, unchanged, whenever nothing in the
+ * key applies — an id outside the shipped catalogue, a value that already matches it, or
+ * no key at all — so a reference check on its answer is the same question
+ * `usePreviewStrings` already answers for the provider, asked here instead of trusted to
+ * the caller to re-derive. A second call rather than reading the provider's own
+ * `messages`: this hook has no `IntlProvider` to read one from, and mounting the marker
+ * inside `Localisation.tsx` would draw it into every gallery specimen that provider also
+ * wraps, which is not this marker's audience.
+ */
+export function useHasPreviewStringsOverride(locale: Locale, shipped: Catalogue): boolean {
+  return usePreviewStrings(locale, shipped) !== shipped;
+}

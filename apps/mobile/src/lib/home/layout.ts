@@ -208,6 +208,48 @@ export function useHomeLayout(): HomeLayout {
 }
 
 /**
+ * Whether the workbench is replacing the home document outright, right now, with one
+ * that actually reads differently from what ships.
+ *
+ * **Not `overrideText() !== null` alone**, which was measured overcounting: a key that
+ * cannot be parsed, or that parses to something `parseHomeLayout` refuses, is not drawn
+ * at all — `homeLayout()` above falls back to `DEFAULT_HOME_LAYOUT` for exactly that
+ * document, so the screen matches what ships while the key still holds text. So this
+ * parses the override the same way `homeLayout()` does and compares the result to the
+ * bundled document, rather than trusting presence.
+ *
+ * **Not a comparison against `homeLayout()`'s own answer either**, which can differ
+ * from the bundle for a reason that is not a draft at all: ADR 0036 §4's fetched copy,
+ * a newer document this build simply asked for. Comparing the override in isolation is
+ * what keeps this from firing on that ordinary case.
+ *
+ * Exported beside the key for `lib/draftMarker.tsx`, the one caller with no business
+ * asking anything else about the document.
+ */
+function overrideDiffers(): boolean {
+  const text = overrideText();
+  if (text === null) return false;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return false;
+  }
+  const { layout } = parseHomeLayout(parsed, RENDERABLE);
+  if (!layout) return false;
+  return JSON.stringify(layout) !== JSON.stringify(DEFAULT_HOME_LAYOUT);
+}
+
+/**
+ * The same function serves as the snapshot and the server snapshot, as `useHomeLayout`
+ * above already does: the static export prerenders with no `window`, so `overrideText()`
+ * answers `null` there on its own and this answers `false`.
+ */
+export function useHomeLayoutOverrideActive(): boolean {
+  return useSyncExternalStore(subscribeToLayout, overrideDiffers, overrideDiffers);
+}
+
+/**
  * Fetch the home document at launch and on every return to the foreground (§5).
  *
  * Called once, from the root layout, after persistence has hydrated: before that the
