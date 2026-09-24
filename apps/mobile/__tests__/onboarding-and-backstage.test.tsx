@@ -48,7 +48,7 @@ function systemBack(): boolean {
   let handled = false;
   act(() => {
     const event = { type: 'hardwareBackPress', timeStamp: Date.now() };
-    handled = [...backListeners].reverse().some((listener) => listener(event) === true);
+    handled = backListeners.toReversed().some((listener) => listener(event) === true);
   });
   return handled;
 }
@@ -140,6 +140,26 @@ describe('onboarding and Android back', () => {
     expect(systemBack()).toBe(true);
     expect(coreStore.getState().settings.onboardingDone).toBe(true);
     expect(replace).toHaveBeenCalledWith('/(tabs)');
+  });
+
+  /*
+   * `useSystemBack` removes its listener on unmount. Without that, an onboarding
+   * that has gone would still answer back from under Home, and a second one would
+   * register beside the first: two answers to one press.
+   */
+  it('stops answering back once it has unmounted, and a remount answers once', () => {
+    canGoBack.mockReturnValue(false);
+    const first = render(<OnboardingScreen />);
+    act(() => first.unmount());
+    expect(backListeners).toHaveLength(0);
+    expect(systemBack()).toBe(false);
+    expect(replace).not.toHaveBeenCalled();
+
+    const second = render(<OnboardingScreen />);
+    press(second, 'Los geht’s');
+    expect(backListeners).toHaveLength(1);
+    expect(systemBack()).toBe(true);
+    expect(renderedText(second)).toContain('Recherchen für die Gesellschaft');
   });
 
   it('opened over the app, leaves the first page to the navigator', () => {
