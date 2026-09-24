@@ -351,6 +351,51 @@ describe('the fold, which is the whole model', () => {
     const noon = berlinInstant('2026-09-27', AT(12))!;
     expect(sectionsAtInstant(unsorted, noon, ANYONE).map((s) => s.id)).toEqual(['a']);
   });
+
+  /**
+   * `continue` fixed the FILTER — a moment past the minute no longer stops the scan — but
+   * it applies whatever qualifies in ARRAY order, and two moments on the SAME section is
+   * where that shows. "Later wins" (`applyChange`'s own comment, and `stateAt`'s above) is
+   * a claim about MINUTE order, and an unsorted array applied in its own order gets it
+   * backwards: the moment that is earlier in the array, not the one later in the day,
+   * would be what stands.
+   */
+  it('applies two moments on the same section by minute, not by array position', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
+      // 15:00 written before 11:00, and both touch `rail`.
+      moments: [
+        { at: '15:00', minute: AT(15), changes: [{ id: 'rail', settings: { count: 2 } }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'rail', settings: { count: 9 } }] },
+      ],
+      editions: [],
+    };
+
+    // 15:00 is chronologically later, so its value stands at 20:00 — whichever order the
+    // array holds the two moments in.
+    expect(stateAt(unsorted, AT(20), ANYONE).find((s) => s.id === 'rail')?.settings).toEqual({
+      count: 2,
+    });
+  });
+
+  /** The same conflict, folding by instant through `changesAt` and `stateAtInstant`. */
+  it('applies two moments on the same section by minute, folding by instant too', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
+      moments: [
+        { at: '15:00', minute: AT(15), changes: [{ id: 'rail', settings: { count: 2 } }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'rail', settings: { count: 9 } }] },
+      ],
+      editions: [],
+    };
+
+    const evening = berlinInstant('2026-09-27', AT(20))!;
+    expect(
+      stateAtInstant(unsorted, evening, ANYONE).find((s) => s.id === 'rail')?.settings,
+    ).toEqual({ count: 2 });
+  });
 });
 
 /** A Berlin wall-clock instant, which is how every test below names a time. */

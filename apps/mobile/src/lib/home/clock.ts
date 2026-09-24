@@ -3,6 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   berlinInstant,
   berlinWallClock,
+  nextBerlinMidnightAfter,
   parseBerlinDateTime,
   type Instant,
 } from '@correctiv/app-core/lib/berlin-time';
@@ -123,27 +124,37 @@ function subscribeToTime(listener: () => void): () => void {
 }
 
 /**
- * How long until the document's answer next changes, from a real instant, in milliseconds.
+ * How long until the document's answer next changes, or the header's date does, from a
+ * real instant, in milliseconds.
  *
  * `nextChangeAfter` answers with an instant, since editions begin and end on a date, so
  * this is a subtraction. It used to be here that the next moment's minute was turned into
  * a local instant, and Berlin's clock changes are the core's arithmetic now
  * (`berlin-time.ts`), so there is one of it rather than one per host.
  *
- * Null when nothing in the document ever changes. A home screen that is the same at every
- * instant needs no wake-up, and a timer armed for one is a timer that fires for nothing.
+ * **Never null, since #254.** `nextChangeAfter` answers `null` for a layout with no
+ * moments and no editions, correctly — nothing in the FOLD ever changes, so a wake-up
+ * armed for it alone would fire for nothing. The header names a Berlin calendar day
+ * from the same instant, though, and that changes at midnight whichever layout is
+ * loaded, so `nextBerlinMidnightAfter` is included unconditionally: a moment-less,
+ * edition-less document used to mean no timer at all, which meant the header stayed on
+ * whatever day it first rendered until something UNRELATED re-rendered the screen.
  *
  * **Never more than a day.** `setTimeout` holds a delay of at most 2^31 − 1 ms, about 24.8
  * days, and fires at once past that; a cold review of #247 measured an edition three months
  * out doing exactly that, and the web export re-rendering in a loop. The core now answers
  * within a day and a bit (it counts Berlin midnight), and this cap is the second net under
- * it rather than the mechanism: a wake-up that finds nothing changed just arms the next one.
+ * it rather than the mechanism: a wake-up that turns out to change nothing just arms the
+ * next one. With the midnight candidate always present the cap is now provably never
+ * reached, but it costs nothing to keep as the second net it always was.
  */
 export const LONGEST_WAIT_MS = 24 * 60 * 60 * 1000;
 
-export function msUntilNextChange(layout: HomeLayout, now: Instant): number | null {
-  const next = nextChangeAfter(layout, now);
-  return next === null ? null : Math.min(next - now, LONGEST_WAIT_MS);
+export function msUntilNextChange(layout: HomeLayout, now: Instant): number {
+  const fold = nextChangeAfter(layout, now);
+  const midnight = nextBerlinMidnightAfter(now);
+  const next = fold === null ? midnight : Math.min(fold, midnight);
+  return Math.min(next - now, LONGEST_WAIT_MS);
 }
 
 /**
@@ -157,9 +168,11 @@ export function msUntilNextChange(layout: HomeLayout, now: Instant): number | nu
  * touched it.
  *
  * One timer to the next change, which React cancels with the screen. Not a slice and not
- * an interval: the document knows exactly when its answer changes, so there is one
- * wake-up per change and nothing to poll. A device that sleeps through one fires the
- * timer on resume, which is the moment the screen is next seen.
+ * an interval: the document knows exactly when its answer changes (or, since #254, when
+ * the header's calendar day does even if nothing in the document does — `msUntilNextChange`
+ * is never null), so there is one wake-up per change and nothing to poll. A device that
+ * sleeps through one fires the timer on resume, which is the moment the screen is next
+ * seen.
  *
  * While a simulated time is set there is no timer at all, because the clock is not what
  * is deciding: an editor dragging along the day would otherwise have the screen jump
@@ -173,7 +186,6 @@ export function useHomeInstant(layout: HomeLayout): Instant {
   useEffect(() => {
     if (simulated !== null) return;
     const wait = msUntilNextChange(layout, now);
-    if (wait === null) return;
     const timer = setTimeout(() => setNow(Date.now()), Math.max(0, wait));
     return () => clearTimeout(timer);
   }, [layout, simulated, now]);

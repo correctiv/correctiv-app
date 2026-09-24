@@ -189,6 +189,25 @@ export function addDays(date: BerlinDate, days: number): BerlinDate {
 }
 
 /**
+ * The next Berlin midnight strictly after this instant.
+ *
+ * `home-layout.ts`'s `nextChangeAfter` computes exactly this as one of its candidates,
+ * and it is here too because a host's clock needs it independently of the document: the
+ * home header names a Berlin calendar day (ADR 0059 §6), which changes at Berlin midnight
+ * whether or not anything in the document does, and `nextChangeAfter` answers `null` for
+ * a layout with no moments and no editions — correctly, that is a fact about the FOLD, not
+ * about the header. `apps/mobile/src/lib/home/clock.ts` is where the two are combined.
+ *
+ * Always strictly after `instant`: today's Berlin day runs at most to minute 1439, and
+ * tomorrow's midnight is the first instant of the day after it, so no filtering is needed
+ * the way `nextChangeAfter`'s other candidates need it.
+ */
+export function nextBerlinMidnightAfter(instant: Instant): Instant {
+  const { date } = berlinWallClock(instant);
+  return berlinInstant(addDays(date, 1), 0)!;
+}
+
+/**
  * `YYYY-MM-DDTHH:MM`, as the document writes `from` and `until`, into its two halves.
  *
  * As strict as `parseTimeOfDay` is about a time, for the same reason: a parser that

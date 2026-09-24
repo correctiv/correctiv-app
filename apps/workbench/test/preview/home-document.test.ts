@@ -582,6 +582,42 @@ describe('the vocabulary the editor offers', () => {
     expect(spanOf(SHIPPED, AT(14))).toEqual({ from: AT(14), to: 24 * 60 });
   });
 
+  /**
+   * `HomeLayout['moments']` says "in time order" in a comment, and the parser and the
+   * editor keep that true, but the type does not — a value built by hand, past both of
+   * them, is not sorted just because every other caller's is. `pointAt` and `spanOf` read
+   * the minutes alone, so array order cannot change what they answer; folding through
+   * `effectiveAt` (which is `stateAt`, `packages/app-core/src/lib/home-layout.ts`) is the
+   * one that has to get the ORDER right too, because two moments touching the same
+   * section is exactly the case "the last one wins" is a claim about.
+   */
+  it('does not assume the moments are in time order', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
+      // Written 15:00 before 11:00, and both touch `rail`.
+      moments: [
+        { at: '15:00', minute: AT(15), changes: [{ id: 'rail', settings: { count: 2 } }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'rail', settings: { count: 9 } }] },
+      ],
+      editions: [],
+    };
+
+    expect(pointAt(unsorted, AT(9))).toBeNull();
+    expect(pointAt(unsorted, AT(12))).toBe(AT(11));
+    expect(pointAt(unsorted, AT(20))).toBe(AT(15));
+
+    expect(spanOf(unsorted, null)).toEqual({ from: 0, to: AT(11) });
+    expect(spanOf(unsorted, AT(11))).toEqual({ from: AT(11), to: AT(15) });
+    expect(spanOf(unsorted, AT(15))).toEqual({ from: AT(15), to: 24 * 60 });
+
+    // 15:00 is the later moment, so it wins at 20:00 — whichever order the array holds
+    // the two in.
+    expect(effectiveAt(unsorted, AT(20), ANYONE).find((s) => s.id === 'rail')?.settings).toEqual({
+      count: 2,
+    });
+  });
+
   /** What a point inherits is everything strictly before it; what it produces includes it. */
   it('tells what a point inherits from what it produces', () => {
     const lifted = (sections: readonly { id: string; hidden?: boolean }[]) =>
