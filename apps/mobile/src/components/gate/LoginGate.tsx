@@ -1,10 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
 import { defineMessages, useIntl, type MessageDescriptor } from 'react-intl';
-import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View, type TextInput } from 'react-native';
 
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
-import { Button, Card, Hairline, Overline, SafeAreaView, SplitRow, Typo } from '@/components/ui';
+import {
+  Button,
+  Card,
+  Hairline,
+  Overline,
+  SafeAreaView,
+  SplitRow,
+  ScaledTextInput,
+  Typo,
+} from '@/components/ui';
 import { formatDate } from '@correctiv/app-core/lib/format';
 import type { SignInFailure } from '@correctiv/app-core/services/auth.service';
 import { accessShortfall, type AccessShortfall } from '@correctiv/app-core/stores/session';
@@ -253,7 +262,7 @@ function SignInForm() {
       <Typo variant="headline-xs" className="mt-m">
         {intl.formatMessage(COPY.emailHeading)}
       </Typo>
-      <TextInput
+      <ScaledTextInput
         value={email}
         onChangeText={setEmail}
         placeholder={intl.formatMessage(COPY.emailPlaceholder)}
@@ -275,7 +284,7 @@ function SignInForm() {
       <Typo variant="headline-xs" className="mt-s">
         {intl.formatMessage(COPY.passwordHeading)}
       </Typo>
-      <TextInput
+      <ScaledTextInput
         ref={passwordRef}
         value={password}
         onChangeText={setPassword}

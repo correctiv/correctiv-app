@@ -1017,8 +1017,8 @@
     "defaultMessage": "Largest text scale"
   },
   "fixtures.bigType.hint": {
-    "defaultMessage": "A++ (1.15). The article view is the first thing to break at this size.",
-    "description": "The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the factor it multiplies by. “The reader” here is the article view, not a person."
+    "defaultMessage": "A++ (1.15), chosen in the app: it replaces the system text size on every screen, the article included.",
+    "description": "The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the size the whole app is drawn at, in place of the device’s own text size rather than on top of it."
   },
   "fixtures.bundle": {
     "defaultMessage": "Bundled content only",

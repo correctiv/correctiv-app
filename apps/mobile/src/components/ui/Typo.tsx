@@ -1,4 +1,4 @@
-import { Text, type TextProps } from 'react-native';
+import type { TextProps } from 'react-native';
 
 import {
   typography,
@@ -11,6 +11,8 @@ import {
   type TypoVariant,
   type ColorToken,
 } from '@/lib/theme';
+
+import { ScaledText } from './ScaledText';
 
 export type TypoProps = TextProps & {
   /** Composite variant from typography.css: typeface, size, tracking, line height. */
@@ -57,7 +59,7 @@ export type TypoProps = TextProps & {
  * `none` on `button` is a decision: a control's label is a name rather than a
  * sentence, and a name divided across two lines reads as a fault in the control.
  * It is `Typo variant="button"` this governs, not `ui/Button`, which sets
- * `typography.button` on a `Text` of its own.
+ * `typography.button` on a `ScaledText` of its own.
  */
 const HYPHENATION: Record<TypoVariant, 'none' | 'normal'> = {
   'text-article': 'normal',
@@ -80,7 +82,7 @@ const HYPHENATION: Record<TypoVariant, 'none' | 'normal'> = {
  *
  * **Not every line of text in the app, and the exceptions are worth knowing**
  * because what this component declares does not reach them. `ui/Button`,
- * `ui/Badge` and `ui/Chip` each render a `Text` of their own with a
+ * `ui/Badge` and `ui/Chip` each render a `ScaledText` of their own with a
  * `typography[...]` style, so none of them is hyphenated whatever the table above
  * says. That is right for all three — they draw one short label in a box sized
  * for it — and it is the reason a rule that belongs to every line of text has to
@@ -104,7 +106,7 @@ export function Typo({
         }
       : null;
   return (
-    <Text
+    <ScaledText
       className={className}
       /*
        * German compounds are longer than the lines a phone draws, and a word that

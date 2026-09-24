@@ -67,11 +67,21 @@ const DEVELOPER_ONLY = /^gallery\//;
  * What puts words inside a box.
  *
  * `Typo` and `Text` are the app's two, and `Button`, `Badge` and `Chip` are here
- * because each renders a `Text` of its own — the same three `Typo`'s docblock names
+ * because each renders a text of its own — the same three `Typo`'s docblock names
  * for the same reason. Without them a fixed-height box holding only a `<Button>`
- * would read as empty from here.
+ * would read as empty from here. `ScaledText` and `ScaledTextInput` are what every
+ * one of those renders since ADR 0033, and the only raw text the app may draw, so a
+ * box holding one directly holds words.
  */
-const TEXT_BEARING = new Set(['Typo', 'Text', 'Button', 'Badge', 'Chip']);
+const TEXT_BEARING = new Set([
+  'Typo',
+  'Text',
+  'ScaledText',
+  'ScaledTextInput',
+  'Button',
+  'Badge',
+  'Chip',
+]);
 
 const FILES = filesUnder(SRC, /\.tsx$/).filter((path) => !DEVELOPER_ONLY.test(under(SRC, path)));
 

@@ -1,8 +1,19 @@
 # ADR 0033 — One text size for the whole app, the system's by default
 
-Status: accepted, 2026-09-16, decided by the product side. Not built. The scale's values
-and its ceiling are named as open below, and [#158](https://github.com/faktenforum/correctiv-app/issues/158)
-has to land first for reasons this record gives.
+Status: accepted, 2026-09-16, decided by the product side. ~~Not built.~~ **§1 built in
+[#260](https://github.com/correctiv/correctiv-app/pull/260)**, after #158 had landed: one setting, following the system by default, and a
+chosen size replaces the system's rather than multiplying it, the article included. The
+scale's values and its ceiling are named as open below, and [#158](https://github.com/faktenforum/correctiv-app/issues/158)
+has to land first for reasons this record gives. What the build chose where this record
+leaves it open is the conservative answer each time: the same three steps and the same
+ceiling of 1.15, with the settings screen saying that larger type is the system's; the
+reader keeps taking a number into its root font size, now the app's whole scale, with
+Android's WebView pinned to a text zoom of 100 so the system is not applied twice. The
+"one place" is `apps/mobile/src/lib/theme/textScaling.tsx`, one context fed by one store
+subscription, behind the two elements React Native draws text with, `ui/ScaledText` and
+`ui/ScaledTextInput`. The accessibility check names exactly those two, both as the only
+opt-out and as the only files that may take a raw `Text` or `TextInput` at all. The platform's own chrome, the native tab
+bar's labels and iOS's back label, is not reached and follows the system. iOS unrun.
 
 ## Context
 
@@ -97,7 +108,12 @@ the one surface where type is set in `rem` against a root the app does not own.
 
 ## What it retires
 
-`settings.textScale`'s meaning, though not yet the field: it stops being "the article's
+`settings.textScale`'s meaning, ~~though not yet the field~~ and the field with it, as it
+was built in [#260](https://github.com/correctiv/correctiv-app/pull/260): the setting is `settings.textSize`, because the rename is what
+migrates an installed app, whose old value is then never read as an override it was not.
+It stops being "the article's
 size" and becomes "the app's size". The sentence in the settings screen that says it
 affects the article view becomes false the day this lands, and the German for it lives in
-`apps/mobile/src/i18n/catalogue/de/settings.ts` under `settings.textScale.note`.
+~~`apps/mobile/src/i18n/catalogue/de/settings.ts`~~ `packages/catalogue/src/de/settings.ts`,
+since [ADR 0049](0049-the-catalogue-is-a-package.md) moved the catalogue into a package,
+under `settings.textScale.note`.

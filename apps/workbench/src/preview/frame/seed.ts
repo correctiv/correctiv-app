@@ -68,7 +68,7 @@ const CONTENT_FEEDS = ['recherchen', 'faktencheck', 'klima', 'schweiz', 'lokal',
 const ONBOARDED = {
   onboardingDone: true,
   pushOptIn: false,
-  textScale: 1,
+  textSize: 'system',
   newsletter: { spotlight: false, spotlightCh: false, klima: false },
   theme: 'system',
 };
@@ -361,13 +361,14 @@ export const FIXTURES: Fixture[] = [
     label: wbMessage({ id: 'fixtures.bigType', defaultMessage: 'Largest text scale' }),
     hint: wbMessage({
       id: 'fixtures.bigType.hint',
-      defaultMessage: 'A++ (1.15). The article view is the first thing to break at this size.',
+      defaultMessage:
+        'A++ (1.15), chosen in the app: it replaces the system text size on every screen, the article included.',
       description:
-        'The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the factor it multiplies by. “The reader” here is the article view, not a person.',
+        'The line under the “Largest text scale” fixture. A++ is the app’s own name for that step of the text-size control and stays as it is written; 1.15 is the size the whole app is drawn at, in place of the device’s own text size rather than on top of it.',
     }),
     write: (s) => {
       kv(s, 'session', SIGNED_IN);
-      kv(s, 'settings', { ...ONBOARDED, textScale: 1.15 });
+      kv(s, 'settings', { ...ONBOARDED, textSize: 1.15 });
     },
   },
 ];

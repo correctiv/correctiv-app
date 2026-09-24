@@ -16,7 +16,7 @@ import { goBack } from '@/lib/navigation/goBack';
 import { useDocumentTitle } from '@/lib/navigation/documentTitle';
 import { openExternal } from '@/lib/openExternal';
 import { shareArticle } from '@/lib/shareArticle';
-import { useCoreActions, useIsSaved, useLocale, useTextScale } from '@/lib/store/core';
+import { useAppTextScale, useCoreActions, useIsSaved, useLocale } from '@/lib/store/core';
 import { sizes, useColors, useIsDark } from '@/lib/theme';
 
 /**
@@ -100,8 +100,9 @@ export default function ArtikelScreen() {
    */
   const canSave = Boolean(title ?? article?.title);
   // Both are read per render, never snapshotted: the appearance has to reach the
-  // reader's colour block, and the text-size setting its root font size.
-  const textScale = useTextScale();
+  // reader's colour block, and the app's text scale its root font size. The same
+  // scale every other screen is drawn at, not one of the article's own (ADR 0033).
+  const textScale = useAppTextScale();
   const locale = useLocale();
   const isDark = useIsDark();
 

@@ -282,11 +282,11 @@ describe('completing onboarding for a held-open door', () => {
   it('keeps every other field a held-open session already had', () => {
     const store = new FakeStorage() as unknown as Storage;
     holdTheDoorOpen(store);
-    store.setItem(`${STATE_PREFIX}store.settings`, JSON.stringify({ textScale: 1.15 }));
+    store.setItem(`${STATE_PREFIX}store.settings`, JSON.stringify({ textSize: 1.15 }));
 
     ensureOnboarded(store);
 
-    expect(payload(store, 'settings')).toEqual({ textScale: 1.15, onboardingDone: true });
+    expect(payload(store, 'settings')).toEqual({ textSize: 1.15, onboardingDone: true });
   });
 
   it('writes nothing once onboarding is already done', () => {

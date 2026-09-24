@@ -1,6 +1,7 @@
-import { Pressable, Text, type PressableProps } from 'react-native';
+import { Pressable, type PressableProps } from 'react-native';
 
 import { typography, useColors, type ColorToken } from '@/lib/theme';
+import { ScaledText } from './ScaledText';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'club' | 'onEmphasis';
 
@@ -60,11 +61,11 @@ export function Button({
       ].join(' ')}
       {...rest}
     >
-      <Text
+      <ScaledText
         style={[typography.button, { color: colors[LABEL_COLOR[variant]], textAlign: 'center' }]}
       >
         {title}
-      </Text>
+      </ScaledText>
     </Pressable>
   );
 }

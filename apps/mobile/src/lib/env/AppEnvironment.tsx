@@ -45,6 +45,7 @@ import '@/global.css';
 import { Localisation } from '@/i18n/Localisation';
 import { coreStore } from '@/lib/store/core';
 import { useAppearance, useGivenAppearance, type ThemeSetting } from '@/lib/theme';
+import { TextSizeProvider } from '@/lib/theme/textScaling';
 
 import { useAppFonts } from './fonts';
 
@@ -92,11 +93,15 @@ export function AppEnvironment({ children, appearance, insets }: AppEnvironmentP
           above everything drawn, because a component that formats a message finds
           no provider otherwise — in the app OR in the workbench. */}
       <Localisation>
-        <SafeArea insets={insets}>
-          {/* `flex: 1` fills a device window and is inert in a page's block box,
-              where the specimen's own height decides. */}
-          <GestureHandlerRootView style={{ flex: 1 }}>{children}</GestureHandlerRootView>
-        </SafeArea>
+        {/* The app's one subscription to the text size (ADR 0033); every line of
+            text reads it from here. */}
+        <TextSizeProvider>
+          <SafeArea insets={insets}>
+            {/* `flex: 1` fills a device window and is inert in a page's block box,
+                where the specimen's own height decides. */}
+            <GestureHandlerRootView style={{ flex: 1 }}>{children}</GestureHandlerRootView>
+          </SafeArea>
+        </TextSizeProvider>
       </Localisation>
     </Provider>
   );

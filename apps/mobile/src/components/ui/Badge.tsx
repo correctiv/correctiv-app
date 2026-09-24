@@ -1,6 +1,7 @@
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 
 import { typography, useColors, type ColorToken } from '@/lib/theme';
+import { ScaledText } from './ScaledText';
 
 type Tone = 'emphasis' | 'club' | 'neutral' | 'live';
 
@@ -74,7 +75,7 @@ export function Badge({ label, tone = 'emphasis', className }: BadgeProps) {
       {tone === 'live' && (
         <View className="mr-3xs rounded-full bg-accent" style={{ width: 7, height: 7 }} />
       )}
-      <Text
+      <ScaledText
         numberOfLines={1}
         style={[
           typography['text-s'],
@@ -88,7 +89,7 @@ export function Badge({ label, tone = 'emphasis', className }: BadgeProps) {
         ]}
       >
         {label}
-      </Text>
+      </ScaledText>
     </View>
   );
 }

@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { SampleHitRow, sampleTarget } from '@/components/discover/SampleHitRow';
 import { ArticleRow } from '@/components/feed/ArticleRow';
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
-import { Hairline, Overline, ScreenHeader, Typo } from '@/components/ui';
+import { Hairline, Overline, ScreenHeader, ScaledTextInput, Typo } from '@/components/ui';
 import { MIN_SEARCH_QUERY, searchProjectHits } from '@correctiv/app-core/stores/search';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 import { openArticle } from '@/lib/openArticle';
@@ -105,7 +105,7 @@ export default function SucheScreen() {
           the platform's own search field is a different interaction on each of
           them and this screen's three empty states are bound to this one. */}
       <ScreenHeader title={intl.formatMessage(COPY.screenTitle)} drawnBar>
-        <TextInput
+        <ScaledTextInput
           value={query}
           onChangeText={setQuery}
           placeholder={intl.formatMessage(COPY.placeholder)}
