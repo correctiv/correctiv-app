@@ -16,13 +16,14 @@ import { diaries, earlyAccess } from '@correctiv/app-core/data/backstage';
 // it on native, and a screen with a header therefore reaches expo-router for more
 // than `router` now (ADR 0030).
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => false) },
   useLocalSearchParams: jest.fn(() => ({})),
   Stack: { Screen: () => null },
 }));
 jest.mock('@/lib/openArticle', () => ({ openArticle: jest.fn() }));
 
 import { router } from 'expo-router';
+import { BackHandler, type HardwareBackPressEvent } from 'react-native';
 
 import { press, render, renderedText } from './support/rendering';
 
@@ -34,9 +35,31 @@ import { coreStore } from '@/lib/store/core';
 
 const push = router.push as jest.Mock;
 const replace = router.replace as jest.Mock;
+const canGoBack = router.canGoBack as jest.Mock;
+
+/**
+ * Android's back, as `useSystemBack` receives it: the listeners registered on
+ * `BackHandler`, last registered first, until one of them returns true. Whether the
+ * navigator would then pop or the app would close is outside a render, so a result
+ * of `false` is what "the navigator answers" means here.
+ */
+let backListeners: ((event: HardwareBackPressEvent) => boolean | null | undefined)[] = [];
+function systemBack(): boolean {
+  let handled = false;
+  act(() => {
+    const event = { type: 'hardwareBackPress', timeStamp: Date.now() };
+    handled = [...backListeners].reverse().some((listener) => listener(event) === true);
+  });
+  return handled;
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
+  backListeners = [];
+  jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, listener) => {
+    backListeners.push(listener);
+    return { remove: () => (backListeners = backListeners.filter((l) => l !== listener)) };
+  });
   act(() => {
     coreStore.dispatch(resetStore());
   });
@@ -87,6 +110,44 @@ describe('onboarding', () => {
 
     press(tree, 'Fertig');
     expect(coreStore.getState().settings.onboardingDone).toBe(true);
+  });
+});
+
+/**
+ * Issue #120. The three pages are one screen, so the navigator cannot step through
+ * them: before this, back from the second page dropped the whole flow, and on a first
+ * launch, where the onboarding was reached with `replace` and nothing is under it,
+ * back from any page closed the app.
+ */
+describe('onboarding and Android back', () => {
+  it('steps back a page instead of leaving the flow', () => {
+    const tree = render(<OnboardingScreen />);
+    press(tree, 'Los geht’s');
+    press(tree, 'Weiter');
+    expect(renderedText(tree)).toContain('Fertig');
+
+    expect(systemBack()).toBe(true);
+    expect(renderedText(tree)).toContain('Weiter');
+    expect(systemBack()).toBe(true);
+    expect(renderedText(tree)).toContain('Recherchen für die Gesellschaft');
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('on a first launch, backs out of the first page the way the skip does', () => {
+    canGoBack.mockReturnValue(false);
+    render(<OnboardingScreen />);
+
+    expect(systemBack()).toBe(true);
+    expect(coreStore.getState().settings.onboardingDone).toBe(true);
+    expect(replace).toHaveBeenCalledWith('/(tabs)');
+  });
+
+  it('opened over the app, leaves the first page to the navigator', () => {
+    canGoBack.mockReturnValue(true);
+    render(<OnboardingScreen />);
+
+    expect(systemBack()).toBe(false);
+    expect(replace).not.toHaveBeenCalled();
   });
 });
 

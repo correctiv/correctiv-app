@@ -35,6 +35,16 @@
 // price is the cache, 18 s for a cold export against 6 s for a warm one on the day it
 // was measured. CI and EAS start cold anyway; a local native release build does not,
 // and there `--clear` is on whoever builds it.
+//
+// And a value that is static but needs its reason beside it, which JSON cannot carry:
+// `android.predictiveBackGestureEnabled: false` in app.json is a decision, not a
+// default left standing ([ADR 0063](../../adr/0063-android-back-is-the-navigators-and-the-onboarding-answers-its-own.md) §2).
+// Turned on, it draws nothing: React Native 0.86's `ReactActivity` keeps an
+// `OnBackPressedCallback` enabled for as long as the activity lives, and Android
+// previews the screen behind only when no callback is enabled. Measured on the
+// emulator on 2026-09-24 with the flag on, a half-held back gesture showed the arrow
+// and no preview on Home and on a pushed route, while the system's Settings app
+// showed the preview under the same gesture.
 module.exports = ({ config }) => {
   const baseUrl = process.env.EXPO_BASE_URL?.trim();
   const stamped = {

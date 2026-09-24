@@ -6,8 +6,10 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SettingRow } from '@/components/profile/SettingRow';
 import { Button, Card, Chip, SafeAreaView, SplitRow, Typo } from '@/components/ui';
 import { interests } from '@correctiv/app-core/data/interests';
+import { onboardingBack } from '@correctiv/app-core/lib/back';
 import { useCoreActions, useSelectedInterests, useSettings } from '@/lib/store/core';
 import { useDocumentTitle } from '@/lib/navigation/documentTitle';
+import { useSystemBack } from '@/lib/navigation/useSystemBack';
 import { sizes, useColors } from '@/lib/theme';
 
 /**
@@ -107,6 +109,19 @@ export default function OnboardingScreen() {
     actions.settings.completeOnboarding();
     router.replace('/(tabs)');
   };
+
+  /*
+   * Android's back, which the navigator would answer by popping the whole screen:
+   * from the second page it skipped the flow, and on a first launch, where the
+   * onboarding is the only screen, it left the app. `onboardingBack` in the core
+   * says what happens instead and why the first page's answer is the skip.
+   */
+  useSystemBack(() => {
+    const next = onboardingBack(step, router.canGoBack());
+    if (next.kind === 'step') setStep(next.to);
+    else if (next.kind === 'skip') finish();
+    return next.kind !== 'leave';
+  });
 
   const mission = step === 0;
 

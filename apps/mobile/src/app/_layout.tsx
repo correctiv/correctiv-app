@@ -257,6 +257,15 @@ function AppShell() {
    * is a value the shell renders: signing in has to open the app in the same tick,
    * and signing out has to close it. It reads the entitlement, never the
    * contribution, see `stores/session`.
+   *
+   * **Back on the door leaves the app, and that is a decision** (issue #120). There
+   * is no navigator behind the gate, so nothing answers Android's back and the
+   * system closes the app, as it does from Home. That is right for a door: behind it
+   * there is nothing a signed-out reader may see, so there is nowhere for back to go,
+   * and a back that did nothing would be the one screen a reader could not leave the
+   * usual way. A deep link opened while signed out lands on the door as well, and
+   * back leaves from there too, measured on the emulator with the button and with the
+   * gesture. Do not add a `BackHandler` here to "fix" it.
    */
   const admitted = useIsAdmitted();
 

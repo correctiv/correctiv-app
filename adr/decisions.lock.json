@@ -610,5 +610,14 @@
         "Nothing the issue says reaches a shell or a script as code, or GitHub as an instruction"
       ]
     }
+  },
+  "0063": {
+    "slugs": ["android-back-is-the-navigators-and-the-onboarding-answers-its-own"],
+    "decisions": {
+      "1": ["The navigator answers back, and a screen answers only for what is not a route"],
+      "2": ["Predictive back stays off, because turned on it draws nothing"],
+      "3": ["Back on the door leaves the app"],
+      "4": ["On the web, browser back is the browser's"]
+    }
   }
 }
