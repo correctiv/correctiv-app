@@ -2,6 +2,7 @@ import {
   allowsFrameLoad,
   classifyReaderLink,
   readerClickAction,
+  resolveReaderLink,
 } from '@/lib/articles/readerNavigation';
 
 /**
@@ -119,5 +120,33 @@ describe('readerClickAction', () => {
   it('cancels a link with no address it can read', () => {
     expect(run(null, true)).toEqual({ action: 'prevent', seen: [] });
     expect(run('', true)).toEqual({ action: 'prevent', seen: [] });
+  });
+});
+
+/**
+ * The address `ReaderView.web.tsx` opens from the parent window for a
+ * `'let-through'` result (issue #274): the frame's own attempt at a `mailto:` or
+ * `tel:` link is silently discarded by its sandbox — Chrome logs "Navigation to
+ * external protocol blocked by sandbox" and nothing happens — so the click is
+ * cancelled and this address is opened from outside the frame instead, where no
+ * sandbox applies.
+ */
+describe('resolveReaderLink', () => {
+  const BASE = 'https://correctiv.org/';
+
+  it('resolves a mailto: address, unchanged', () => {
+    expect(resolveReaderLink('mailto:redaktion@correctiv.org', BASE)).toBe(
+      'mailto:redaktion@correctiv.org',
+    );
+  });
+
+  it('resolves a tel: address, unchanged', () => {
+    expect(resolveReaderLink('tel:+493040549680', BASE)).toBe('tel:+493040549680');
+  });
+
+  it('resolves the same way readerClickAction does internally, base included', () => {
+    expect(resolveReaderLink('/faktencheck/2026/08/04/x/', BASE)).toBe(
+      'https://correctiv.org/faktencheck/2026/08/04/x/',
+    );
   });
 });

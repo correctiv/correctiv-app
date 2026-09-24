@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
-import { readerClickAction } from '@/lib/articles/readerNavigation';
+import { readerClickAction, resolveReaderLink } from '@/lib/articles/readerNavigation';
 
 import { READER_BASE_URL, type ReaderViewProps } from './types';
 
@@ -48,6 +48,14 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
    * click elsewhere, on a `<summary>` for instance, is left alone. An SVG link
    * carries its address as `xlink:href`, which is read too; the core's gate keeps
    * no SVG, and this is the second line behind it.
+   *
+   * `'let-through'` is `mailto:`/`tel:`: the frame's sandbox has neither
+   * `allow-popups` nor `allow-top-navigation`, so its own attempt at either is
+   * silently discarded (`readerNavigation.ts` has the console line Chrome logs for
+   * it, measured 2026-09-24, issue #274). This `window` is the PARENT's, which
+   * carries no sandbox, so setting its address opens the mail or dial handler
+   * without the frame going anywhere — the same outcome `onNavigate` gives an
+   * `https:` link one branch up, in `artikel.tsx`'s `openExternal`.
    */
   const handleClick = useCallback(
     (event: MouseEvent) => {
@@ -56,8 +64,14 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
       if (!link) return;
       const href =
         link.getAttribute('href') ?? link.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-      if (readerClickAction(href, READER_BASE_URL, onNavigate) === 'prevent') {
+      const action = readerClickAction(href, READER_BASE_URL, onNavigate);
+      if (action === 'prevent') {
         event.preventDefault();
+        return;
+      }
+      if (href) {
+        event.preventDefault();
+        window.location.href = resolveReaderLink(href, READER_BASE_URL);
       }
     },
     [onNavigate],
@@ -129,6 +143,16 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
        * - No allow-top-navigation is wanted either: every real link is routed by
        *   onNavigate, so the article must not be able to navigate the app away,
        *   and an embed inherits the same refusal.
+       * - Without allow-popups or an allow-top-navigation-* flag, this frame's own
+       *   attempt at a `mailto:` or `tel:` link is silently discarded (issue #274).
+       *   Chrome's console names allow-top-navigation-to-custom-protocols for
+       *   exactly this case, and it is still not wanted: a sandbox flag is
+       *   inherited by every frame nested in this one, so granting it here would
+       *   also hand it to an embed — the same reach `allowsFrameLoad` exists to
+       *   refuse an embed on native, where iOS reports its every load. allow-popups
+       *   is broader again, a standing grant to open a window at all. `handleClick`
+       *   below opens the two schemes from the PARENT window instead, which is not
+       *   sandboxed and needs no flag here to do it.
        */
       // The rule's warning is the ADR 0004 argument above; ADR 0065 §5 and §7 answer it.
       // oxlint-disable-next-line react/iframe-missing-sandbox

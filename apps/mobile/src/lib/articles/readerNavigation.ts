@@ -64,10 +64,15 @@ export function allowsFrameLoad(target: string): boolean {
  * resolves it, and handed to `onNavigate`; a link whose address cannot be read is
  * cancelled rather than left to the browser, which is what the old handler did
  * with an SVG link (`xlink:href`, no `href`) and never saw an `<area>` at all.
- * When `onNavigate` answers "let the webview do it", which it does for a scheme it
- * does not recognise, only `mailto:` and `tel:` go through: the system opens them
- * and the frame stays where it is. The phone needs none of this, because there the
- * WebView reports every top-frame load to `onShouldStartLoadWithRequest`, taps
+ * When `onNavigate` answers "let the system have it", which it does for a scheme
+ * it does not recognise, only `mailto:` and `tel:` go through as `'let-through'`.
+ * The frame cannot open either itself: without `allow-popups` or
+ * `allow-top-navigation` its own attempt is silently discarded by the sandbox
+ * ("Navigation to external protocol blocked by sandbox", measured in Chrome on
+ * 2026-09-24, issue #274). `ReaderView.web.tsx` cancels the click and opens the
+ * resolved address from the PARENT window instead, which carries no sandbox at
+ * all — the frame still goes nowhere. The phone needs none of this, because there
+ * the WebView reports every top-frame load to `onShouldStartLoadWithRequest`, taps
  * included, and a load is the only way to leave the document.
  */
 export function readerClickAction(
@@ -84,4 +89,19 @@ export function readerClickAction(
   }
   if (!onNavigate(absolute)) return 'prevent';
   return /^(?:mailto|tel):/i.test(absolute) ? 'let-through' : 'prevent';
+}
+
+/**
+ * The address `ReaderView.web.tsx` opens from the parent window for a
+ * `readerClickAction` result of `'let-through'`.
+ *
+ * Repeats the resolution `readerClickAction` already did internally rather than
+ * have the host trust the raw `href` attribute a second time — a browser trims
+ * surrounding whitespace and resolves an entity on the way, which is why the two
+ * call sites must agree byte for byte on how a link becomes an address. `mailto:`
+ * and `tel:` carry no path to resolve against `base`, so in practice this returns
+ * `href` verbatim; it takes `base` anyway so a caller need not know that.
+ */
+export function resolveReaderLink(href: string, base: string): string {
+  return new URL(href, base).toString();
 }
