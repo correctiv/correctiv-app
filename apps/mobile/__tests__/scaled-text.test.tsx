@@ -1,3 +1,4 @@
+import { Profiler } from 'react';
 import { StyleSheet, Text, TextInput } from 'react-native';
 import { act } from 'react-test-renderer';
 
@@ -6,6 +7,8 @@ import { Typo } from '@/components/ui/Typo';
 import { coreActions, coreStore } from '@/lib/store/core';
 import { typography } from '@/lib/theme';
 import { resetStore } from '@correctiv/app-core/stores/store';
+
+import { ScaledText } from '@/components/ui/ScaledText';
 
 import { render } from './support/rendering';
 
@@ -66,5 +69,47 @@ describe('the app text size, where it is applied', () => {
     expect(style.fontSize).toBeCloseTo(Number(base.fontSize) * 0.9);
     // Everything that is not a metric passes through untouched.
     expect(style.color).toBe('red');
+  });
+
+  it("draws the recovery screen's way, following the system, with no provider above it", () => {
+    // The root error boundary renders outside the app's Provider; a store read
+    // there would throw inside the boundary. `render()` mounts the provider, so
+    // this mounts the bare element through a renderer of its own.
+    const { create } =
+      jest.requireActual<typeof import('react-test-renderer')>('react-test-renderer');
+    act(() => {
+      coreActions.settings.setTextSize(1.15);
+    });
+    let tree!: ReturnType<typeof create>;
+    act(() => {
+      tree = create(<ScaledText style={base}>Probe</ScaledText>);
+    });
+    expect(tree.root.findByType(Text).props.allowFontScaling).toBe(true);
+    act(() => tree.unmount());
+  });
+
+  it('re-renders a line of text on its own setting and on no other', () => {
+    // One subscription at the root, to the primitive `textSize`. The first version
+    // had every text subscribe to the whole settings object, so a switch anywhere
+    // in the settings re-drew every line on the screen.
+    let commits = 0;
+    render(
+      <Profiler id="probe" onRender={() => (commits += 1)}>
+        <Typo variant="text-m">Probe</Typo>
+      </Profiler>,
+    );
+    const mounted = commits;
+
+    act(() => {
+      coreActions.settings.setPushOptIn(true);
+      coreActions.settings.setTheme('dark');
+      coreActions.settings.setActiveTab('profile');
+    });
+    expect(commits).toBe(mounted);
+
+    act(() => {
+      coreActions.settings.setTextSize(0.9);
+    });
+    expect(commits).toBe(mounted + 1);
   });
 });

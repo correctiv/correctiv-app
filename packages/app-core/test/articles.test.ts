@@ -13,7 +13,7 @@ import {
   RATING_LABELS,
   ratingTone,
 } from '../src/articles/rating';
-import { buildReaderHtml, type ReaderCopy } from '../src/articles/reader-html';
+import { buildReaderHtml, READER_LAYOUT_CSS, type ReaderCopy } from '../src/articles/reader-html';
 import type { Article, ArticleExtractor } from '../src/articles/types';
 import { decodeEntities, stripTags } from '../src/lib/html';
 
@@ -353,6 +353,13 @@ describe('reader html', () => {
     expect(buildReaderHtml(article, copy, { locale: 'de', textScale: 1.25 })).toContain(
       'font-size:20px',
     );
+  });
+
+  it('sets no text in the layout in px, so all of it follows that root', () => {
+    // The host pins Android's WebView to a text zoom of 100 (ADR 0033), so a size in
+    // px would stay put while the rest of the article grew. The badge and the verdict
+    // were 11px and 13px until a review caught it.
+    expect(READER_LAYOUT_CSS.match(/font-size:\s*[\d.]+px/g) ?? []).toEqual([]);
   });
 });
 

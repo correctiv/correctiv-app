@@ -217,10 +217,41 @@ interface Reading {
    * font scale off, anywhere: the literal `false` and a cap of 1 or below, and any
    * value the parser cannot read as neither — `allowFontScaling={followsSystem}`
    * is an opt-out on every render where the expression is false.
+   *
+   * Read in two places: as a JSX prop, and as a key of any object literal, which is
+   * what catches `const OFF = { allowFontScaling: false }; <Text {...OFF} />` —
+   * the spread itself names nothing, the object it spreads does. An object literal
+   * is `tag: '{…}'` here. **Blind** to a value that arrives from outside the file
+   * or out of a call: `<Text {...props} />` where a caller wrote the key, or a
+   * spread of what a function returned. The caller's own literal is still read
+   * where it is written, so what escapes is a key assembled at runtime.
+   *
+   * Why a cap above 1 does not count: `maxFontSizeMultiplier={1.3}` still lets the
+   * text grow with the reader's setting, to a ceiling somebody chose and a reviewer
+   * can argue about. At 1 or below the text can never grow at all, which is the
+   * setting switched off under another name.
    */
   optOuts: Named[];
   /** Tag names seen inside a control, so `RENDERS_NO_TEXT` can be held to the app. */
   childTags: Set<string>;
+}
+
+const SCALING_PROPS = new Set(['allowFontScaling', 'maxFontSizeMultiplier']);
+
+/**
+ * Whether a written value leaves the system's scaling on: the literal `true`, or a
+ * cap above 1 (the reason is on `Reading.optOuts`). Everything else, an expression
+ * included, may turn the reader's setting off. `undefined` is a value the parser
+ * could not see, and counts as an opt-out.
+ */
+function keepsScaling(name: string, expression: ts.Expression | undefined): boolean {
+  if (expression === undefined) return false;
+  if (expression.kind === ts.SyntaxKind.TrueKeyword) return true;
+  return (
+    name === 'maxFontSizeMultiplier' &&
+    ts.isNumericLiteral(expression) &&
+    Number(expression.text) > 1
+  );
 }
 
 function read(): Reading {
@@ -281,22 +312,29 @@ function read(): Reading {
               out.blankLabels.push({ file, line: lineOf(prop), tag, props: [name] });
             }
           }
-          if (name === 'allowFontScaling' || name === 'maxFontSizeMultiplier') {
+          if (SCALING_PROPS.has(name)) {
             const value = prop.initializer;
+            // A bare `allowFontScaling` is `true`.
+            const bare = value === undefined;
             const expression =
               value !== undefined && ts.isJsxExpression(value) ? value.expression : undefined;
-            // A bare `allowFontScaling` is `true`, and so is the literal; a cap above 1
-            // still scales. Everything else may turn the reader's setting off.
-            const harmless =
-              value === undefined ||
-              (expression !== undefined &&
-                (expression.kind === ts.SyntaxKind.TrueKeyword ||
-                  (name === 'maxFontSizeMultiplier' &&
-                    ts.isNumericLiteral(expression) &&
-                    Number(expression.text) > 1)));
-            const off = !harmless;
-            if (off) out.optOuts.push({ file, line: lineOf(prop), tag, props: [name] });
+            if (!bare && !keepsScaling(name, expression)) {
+              out.optOuts.push({ file, line: lineOf(prop), tag, props: [name] });
+            }
           }
+        }
+      }
+
+      // The same two keys in an object literal, which is where a spread gets them.
+      if (
+        (ts.isPropertyAssignment(node) || ts.isShorthandPropertyAssignment(node)) &&
+        ts.isObjectLiteralExpression(node.parent)
+      ) {
+        const name =
+          ts.isIdentifier(node.name) || ts.isStringLiteral(node.name) ? node.name.text : '';
+        const expression = ts.isPropertyAssignment(node) ? node.initializer : undefined;
+        if (SCALING_PROPS.has(name) && !keepsScaling(name, expression)) {
+          out.optOuts.push({ file, line: lineOf(node), tag: '{…}', props: [name] });
         }
       }
       node.forEachChild(visit);
@@ -329,6 +367,76 @@ const SCALING_OPT_OUTS: Record<string, string> = {
     "ADR 0033: the app's text size replaces the system's when a reader chooses one",
   'components/ui/ScaledTextInput.tsx <TextInput> allowFontScaling':
     'ADR 0033: the same replacement, for the text a reader types into a field',
+};
+
+/**
+ * Every place a raw `Text` or `TextInput` is taken from React Native: a value import
+ * (`import { Text } from 'react-native'`, renamed or not), and a property read of
+ * one off `Animated` or off a namespace import of the module (`Animated.Text`,
+ * `RN.TextInput`). A type-only import is not one, because it draws nothing.
+ *
+ * Over `.ts` as well as `.tsx`, because a component can be created without JSX.
+ * Blind to `require('react-native')` and to a primitive handed in from outside the
+ * app, neither of which the app writes.
+ */
+const RAW_TEXT = new Set(['Text', 'TextInput']);
+const SOURCES = filesUnder(SRC, /\.tsx?$/).filter((path) => !DEVELOPER_ONLY.test(under(SRC, path)));
+
+function rawTextUses(): string[] {
+  const found: string[] = [];
+  for (const path of SOURCES) {
+    const file = under(SRC, path);
+    const source = ts.createSourceFile(
+      path,
+      readFileSync(path, 'utf8'),
+      ts.ScriptTarget.Latest,
+      /* setParentNodes */ true,
+      path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    );
+    // `Animated` always, and whatever name a namespace import of the module took.
+    const owners = new Set(['Animated']);
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isImportDeclaration(node) &&
+        ts.isStringLiteral(node.moduleSpecifier) &&
+        node.moduleSpecifier.text === 'react-native' &&
+        node.importClause &&
+        !node.importClause.isTypeOnly
+      ) {
+        const bindings = node.importClause.namedBindings;
+        if (bindings && ts.isNamespaceImport(bindings)) owners.add(bindings.name.text);
+        if (bindings && ts.isNamedImports(bindings)) {
+          for (const element of bindings.elements) {
+            const imported = (element.propertyName ?? element.name).text;
+            if (!element.isTypeOnly && RAW_TEXT.has(imported)) found.push(`${file}: ${imported}`);
+          }
+        }
+      }
+      if (
+        ts.isPropertyAccessExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        owners.has(node.expression.text) &&
+        RAW_TEXT.has(node.name.text)
+      ) {
+        found.push(`${file}: ${node.expression.text}.${node.name.text}`);
+      }
+      node.forEachChild(visit);
+    };
+    visit(source);
+  }
+  return found;
+}
+
+/**
+ * The two files that may draw raw text, because they are where the app's text size
+ * is applied. Anything else that imports `Text` draws a line the reader's chosen size
+ * never reaches, which looks right at the default and wrong only after somebody has
+ * used the setting.
+ */
+const RAW_TEXT_ALLOWED: Record<string, string> = {
+  'components/ui/ScaledText.tsx: Text': 'ADR 0033: the one Text, which applies the app text size',
+  'components/ui/ScaledTextInput.tsx: TextInput':
+    'ADR 0033: the one TextInput, for the same reason',
 };
 
 const app = read();
@@ -374,6 +482,32 @@ describe('a control reaches a screen reader', () => {
     const blank = app.blankLabels.map((use) => `${at(use)} → <${use.tag}> ${use.props[0]}=""`);
 
     expect(blank).toEqual([]);
+  });
+
+  describe('draws text only through the component that applies the app text size', () => {
+    // ADR 0033. A raw `Text` is the other way to get a line past the setting, and
+    // the one nothing above sees: it opts out of nothing, it simply never asks.
+    // `ui/ScaledText` and `ui/ScaledTextInput` are where the size is applied, and
+    // `Typo`, `Button`, `Badge` and `Chip` render the first of them.
+    const uses = rawTextUses();
+    const { arrivals, stale } = ratchet(uses, RAW_TEXT_ALLOWED);
+
+    it('reads the app (guards against a walk that matched no import)', () => {
+      expect(
+        floorFaults({
+          'files read': { found: SOURCES.length, atLeast: FILES.length },
+          'raw text found': { found: uses.length, atLeast: 2 },
+        }),
+      ).toEqual([]);
+    });
+
+    it('takes a raw Text or TextInput nowhere else', () => {
+      expect(arrivals).toEqual([]);
+    });
+
+    it('excuses nothing that is no longer there', () => {
+      expect(stale).toEqual([]);
+    });
   });
 
   describe('turns the system font size off nowhere but in the one place', () => {

@@ -9,9 +9,10 @@ leaves it open is the conservative answer each time: the same three steps and th
 ceiling of 1.15, with the settings screen saying that larger type is the system's; the
 reader keeps taking a number into its root font size, now the app's whole scale, with
 Android's WebView pinned to a text zoom of 100 so the system is not applied twice. The
-"one place" is one hook, `apps/mobile/src/lib/theme/textScaling.ts`, behind the two
-elements React Native draws text with, `ui/ScaledText` and `ui/ScaledTextInput`, and the
-accessibility check names exactly those two. The platform's own chrome, the native tab
+"one place" is `apps/mobile/src/lib/theme/textScaling.tsx`, one context fed by one store
+subscription, behind the two elements React Native draws text with, `ui/ScaledText` and
+`ui/ScaledTextInput`. The accessibility check names exactly those two, both as the only
+opt-out and as the only files that may take a raw `Text` or `TextInput` at all. The platform's own chrome, the native tab
 bar's labels and iOS's back label, is not reached and follows the system. iOS unrun.
 
 ## Context

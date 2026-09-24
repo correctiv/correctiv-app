@@ -253,14 +253,14 @@ article{max-width:38.75rem;margin:0 auto;padding-bottom:var(--var-spacing-3xl)}
 .hero img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;
   background:var(--var-color-surface)}
 .reader-header{padding:0 var(--var-spacing-m)}
-.badge{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:11px;
+.badge{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:0.6875rem;
   letter-spacing:.4px;text-transform:uppercase;color:var(--var-color-white);
   background:var(--var-color-accent);
   padding:3px 8px;border-radius:var(--var-radius-s);margin-bottom:var(--var-spacing-xs)}
 h1{font-family:'Merriweather',Georgia,serif;font-weight:700;font-size:var(--var-font-size-headline-xl);
   line-height:var(--var-leading-tight);letter-spacing:var(--var-letter-spacing-tighter);
   margin-bottom:var(--var-spacing-s)}
-.rating{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:13px;
+.rating{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:0.8125rem;
   letter-spacing:.3px;text-transform:uppercase;padding:6px 12px;border-radius:var(--var-radius-md);
   margin-bottom:var(--var-spacing-s);background:var(--var-color-grey-300);
   color:var(--var-color-on-canvas)}

@@ -207,6 +207,8 @@ export const useAppTextScale = () => {
   const { fontScale } = useWindowDimensions();
   return useAppSelector((s) => appTextScale(s.settings, fontScale));
 };
+/** The stored text size, a primitive; `lib/theme/textScaling`'s provider is its one text-drawing reader. */
+export const useTextSize = () => useAppSelector((s) => s.settings.textSize);
 /** Whether the text follows the system, which is the default (ADR 0033). */
 export const useTextSizeFollowsSystem = () =>
   useAppSelector((s) => textSizeFollowsSystem(s.settings));

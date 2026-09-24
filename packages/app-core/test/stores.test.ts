@@ -110,6 +110,8 @@ describe('the one text size (ADR 0033)', () => {
   it('refuses a size no control offers', () => {
     store.dispatch(setTextSize(0.9));
     store.dispatch(setTextSize(1.5 as TextSize));
+    store.dispatch(setTextSize('1.15' as unknown as TextSize));
+    store.dispatch(setTextSize(null as unknown as TextSize));
     expect(settingsNow().textSize).toBe(0.9);
     store.dispatch(setTextSize('system'));
     expect(settingsNow().textSize).toBe('system');
@@ -408,6 +410,31 @@ describe('persist', () => {
     await platform.keyValue.setString(
       'store.settings',
       JSON.stringify({ theme: 'dark', textSize: 1.5 }),
+    );
+    configurePlatform(platform);
+
+    await persist(store, [settings()]);
+
+    expect(store.getState().settings.textSize).toBe('system');
+    expect(store.getState().settings.theme).toBe('dark');
+  });
+
+  // A stored value is whatever an older build, a hand edit or a corrupt write left,
+  // and JSON can carry a string that looks like a step, a null or a structure. Each
+  // one is dropped, the reader follows the system, and the fields beside it survive.
+  it.each([
+    ['a step spelled as a string', '1.15'],
+    ['the word for the default in the wrong case', 'System'],
+    ['null', null],
+    ['an object', { scale: 1.15 }],
+    ['an array', [1.15]],
+    ['a boolean', true],
+    ['zero', 0],
+  ])('drops a stored text size that is %s', async (_, textSize) => {
+    const platform = createMemoryPlatform();
+    await platform.keyValue.setString(
+      'store.settings',
+      JSON.stringify({ theme: 'dark', textSize }),
     );
     configurePlatform(platform);
 
