@@ -74,7 +74,35 @@ export function escapeHtml(s: string): string {
  * null on markup it cannot balance.
  */
 export function balancedBlock(html: string, startRe: RegExp): string | null {
-  const m = startRe.exec(html);
+  const element = balancedElement(html, startRe);
+  return element ? html.slice(element.innerStart, element.innerEnd) : null;
+}
+
+/** Where one element sits in a string of markup, as `balancedElement` finds it. */
+export interface ElementSpan {
+  /** Index of the `<` that opens it. */
+  start: number;
+  /** Just past the `>` of the opening tag. */
+  innerStart: number;
+  /** Index of the `<` of its closing tag. */
+  innerEnd: number;
+  /** Just past the closing tag. */
+  end: number;
+}
+
+/**
+ * `balancedBlock`, with the positions rather than the text, and a place to start
+ * looking: what a caller needs to cut an element out or put something in its place.
+ * `startRe` has to match the whole opening tag. It is copied with the `g` flag and
+ * searched from `from`, so the caller's own `lastIndex` is never touched.
+ */
+export function balancedElement(html: string, startRe: RegExp, from = 0): ElementSpan | null {
+  const re = new RegExp(
+    startRe.source,
+    startRe.flags.includes('g') ? startRe.flags : `${startRe.flags}g`,
+  );
+  re.lastIndex = from;
+  const m = re.exec(html);
   if (!m) return null;
   const tag = /^<(\w+)/.exec(m[0])?.[1];
   if (!tag) return null;
@@ -82,6 +110,7 @@ export function balancedBlock(html: string, startRe: RegExp): string | null {
   const close = new RegExp(`</${tag}>`, 'gi');
   let depth = 1;
   let pos = m.index + m[0].length;
+  let innerEnd = pos;
   while (depth > 0) {
     open.lastIndex = pos;
     close.lastIndex = pos;
@@ -93,10 +122,11 @@ export function balancedBlock(html: string, startRe: RegExp): string | null {
       pos = o.index + o[0].length;
     } else {
       depth -= 1;
+      innerEnd = c.index;
       pos = c.index + c[0].length;
     }
   }
-  return html.slice(m.index + m[0].length, pos - `</${tag}>`.length);
+  return { start: m.index, innerStart: m.index + m[0].length, innerEnd, end: pos };
 }
 
 const META_TAG = /<meta[^>]*>/gi;

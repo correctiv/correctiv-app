@@ -34,6 +34,7 @@
  * per post instead, which is why this reads it there.
  */
 
+import { applyBlockRules, articleBlockRules, heroVideoOf } from '../articles/blocks';
 import { estimateReadingMinutes } from '../articles/page-meta';
 import { ratingFromInterpretation } from '../articles/rating';
 import type { ExtractedArticle } from '../articles/types';
@@ -294,7 +295,10 @@ export function toArticle(post: WpPost): ExtractedArticle {
     // `list` (706 px) and not `widget-post` (2560): the reader is a phone-width
     // WebView, and the offline generator already settled on 640 as enough.
     heroImageUrl: wpImage(post, 'list') ?? undefined,
-    bodyHtml: sanitizeArticleHtml(body),
+    heroVideoUrl: heroVideoOf(body),
+    // The same block table the page path reads (`articles/blocks.ts`), under the
+    // default ad prefix, because a REST body has no `<body>` to declare its own.
+    bodyHtml: sanitizeArticleHtml(applyBlockRules(body, articleBlockRules())),
     rating: ratingFromInterpretation(interpretation(post)),
   };
 }

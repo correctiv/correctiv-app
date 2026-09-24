@@ -1771,7 +1771,7 @@
     "description": "The last paragraph under the drawing. <code> marks an import path, which stays as it is written."
   },
   "insideCore.alt.lede": {
-    "defaultMessage": "<code>packages/app-core</code>, 63 TypeScript files. Imports point down the stack. Layers from the top:",
+    "defaultMessage": "<code>packages/app-core</code>, 64 TypeScript files. Imports point down the stack. Layers from the top:",
     "description": "The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.alt.lib": {
@@ -1831,7 +1831,7 @@
     "description": "The line beside the two small chips reading string and DOM. <file> marks a type name in monospace, which stays as it is written."
   },
   "insideCore.files": {
-    "defaultMessage": "63 TypeScript files",
+    "defaultMessage": "64 TypeScript files",
     "description": "The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English."
   },
   "insideCore.imports": {
@@ -1839,7 +1839,7 @@
     "description": "The label on the long arrow down the left edge, set on its side. It is as long as the stack is tall, about 500 units, so length is not the constraint here."
   },
   "insideCore.lede": {
-    "defaultMessage": "63 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
+    "defaultMessage": "64 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
     "description": "The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.lib": {

@@ -113,6 +113,11 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
        *   frame.contentDocument, which a fully sandboxed frame would deny.
        * - Never add allow-scripts alongside allow-same-origin — together they let
        *   the frame remove its own sandbox, which defeats the point.
+       * - The price is the hero video: a frame without allow-scripts does not
+       *   autoplay and forces a video's controls on. Measured on 2026-09-24, so
+       *   the core's reader CSS hides those controls and the web shows the poster,
+       *   the hero image, as a still. The native WebView plays it; see `heroHtml` in
+       *   packages/app-core/src/articles/reader-html.ts.
        * - No allow-top-navigation is wanted either: every real link is routed by
        *   onNavigate, so the article must not be able to navigate the app away.
        */

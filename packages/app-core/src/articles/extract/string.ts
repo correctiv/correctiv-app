@@ -1,4 +1,5 @@
 import { balancedBlock, sanitizeArticleHtml, stripTags } from '../../lib/html';
+import { adPrefixOf, applyBlockRules, articleBlockRules, heroVideoOf } from '../blocks';
 import { estimateReadingMinutes, extractPageMeta } from '../page-meta';
 import { ratingFromPage, ratingFromText } from '../rating';
 import type { ArticleExtractor, ExtractedArticle } from '../types';
@@ -39,10 +40,12 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
     : '';
   const authors = authorLine ? splitAuthors(authorLine) : [];
 
-  const dateMatch =
-    /<time[^>]*class="[^"]*detail__date[^"]*"[^>]*datetime="([^"]+)"[^>]*>([\s\S]*?)<\/time>/.exec(
-      html,
-    );
+  // The first `<time datetime>` on the page, which is what the DOM backend's
+  // `time.detail__date, time[datetime]` selects. This asked for the class on the
+  // `<time>` itself until 2026-09-24, and two of three measured pages put it on a
+  // wrapping `<div>` or leave it off, so this backend returned no date where the
+  // other returned one.
+  const dateMatch = /<time\b[^>]*\bdatetime="([^"]+)"[^>]*>([\s\S]*?)<\/time>/.exec(html);
   const publishedAt = dateMatch ? toIso(dateMatch[1]) : '';
   const publishedText = dateMatch ? stripTags(dateMatch[2]) || undefined : undefined;
 
@@ -51,7 +54,11 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
   const rating = ratingFromPage(html) ?? ratingFromText(blockText(html, 'detail__rating-text'));
 
   const bodyBlock = balancedBlock(html, /<div[^>]*class="[^"]*detail__content[^"]*"[^>]*>/);
-  const bodyHtml = bodyBlock ? sanitizeArticleHtml(bodyBlock) : '';
+  // The blocks first, while the buttons an accordion keeps its titles in are still
+  // there for them to read; see `articles/blocks.ts`.
+  const bodyHtml = bodyBlock
+    ? sanitizeArticleHtml(applyBlockRules(bodyBlock, articleBlockRules(adPrefixOf(html))))
+    : '';
 
   return {
     title,
@@ -62,6 +69,7 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
     publishedText,
     readingMinutes: meta.readingMinutes ?? estimateReadingMinutes(stripTags(bodyHtml)),
     heroImageUrl: meta.heroImageUrl,
+    heroVideoUrl: heroVideoOf(html),
     bodyHtml,
     rating,
   };

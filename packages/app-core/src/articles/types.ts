@@ -60,6 +60,16 @@ export interface Article {
   publishedText?: string;
   readingMinutes: number;
   heroImageUrl?: string;
+  /**
+   * A video that stands in for the hero image, looping and silent.
+   *
+   * Only a `cvui/header-post` block in its `full-width` variant has one, which was
+   * one post of 300 measured on 2026-09-24; the block is dropped from the body and
+   * this is what it leaves behind (`articles/blocks.ts`). The image stays the
+   * poster and the still for a reader who asked for less motion, so an article
+   * with a video still has `heroImageUrl` wherever it had one before.
+   */
+  heroVideoUrl?: string;
   /** Sanitised article HTML for the reader. */
   bodyHtml: string;
   rating?: FactcheckRating;
