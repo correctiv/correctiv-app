@@ -1,4 +1,5 @@
 import { balancedBlock, sanitizeArticleHtml, stripTags } from '../../lib/html';
+import { rewriteEmbeds } from '../embeds';
 import { estimateReadingMinutes, extractPageMeta } from '../page-meta';
 import { ratingFromPage, ratingFromText } from '../rating';
 import type { ArticleExtractor, ExtractedArticle } from '../types';
@@ -51,7 +52,7 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
   const rating = ratingFromPage(html) ?? ratingFromText(blockText(html, 'detail__rating-text'));
 
   const bodyBlock = balancedBlock(html, /<div[^>]*class="[^"]*detail__content[^"]*"[^>]*>/);
-  const bodyHtml = bodyBlock ? sanitizeArticleHtml(bodyBlock) : '';
+  const bodyHtml = bodyBlock ? sanitizeArticleHtml(rewriteEmbeds(bodyBlock)) : '';
 
   return {
     title,

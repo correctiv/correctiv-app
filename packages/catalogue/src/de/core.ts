@@ -44,4 +44,6 @@ export const core: Record<string, string> = {
   'core.reader.byline': 'von {authors}',
   'core.reader.readingTime': '{minutes} Min. Lesezeit',
   'core.reader.support': 'Ermöglicht durch Unterstützer:innen wie Sie. Danke, dass Sie dabei sind.',
+  'core.reader.embedFallback': 'Inhalt von {host} im Browser öffnen',
+  'core.reader.embedArticle': 'Eingebetteten Artikel lesen',
 };

@@ -240,7 +240,7 @@ describe('what the index says is not built', () => {
    */
   it('flags the records whose iOS half is unrun', () => {
     const unrun = RECORDS.filter((record) => record.caveats.some((c) => c.includes('unrun')));
-    expect(unrun.map((r) => r.number)).toEqual(['0013', '0030', '0033']);
+    expect(unrun.map((r) => r.number)).toEqual(['0013', '0030', '0033', '0065']);
   });
 });
 

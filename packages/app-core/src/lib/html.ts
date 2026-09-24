@@ -123,8 +123,17 @@ export function metaTags(html: string): Map<string, string> {
   return tags;
 }
 
-/** Elements that are never article content. Removed with their contents. */
-const DROP_TAGS = ['script', 'noscript', 'iframe', 'form', 'style', 'svg', 'button'];
+/**
+ * Elements that are never article content. Removed with their contents.
+ *
+ * `iframe` is not on it: every caller hands the body through `rewriteEmbeds`
+ * (`articles/embeds.ts`) first, which decides what a frame becomes, and
+ * `OTHER_FRAMES` below drops whatever reaches here without having been through it.
+ */
+const DROP_TAGS = ['script', 'noscript', 'form', 'style', 'svg', 'button'];
+
+/** Any frame but the one `rewriteEmbeds` writes. The class is named there. */
+const OTHER_FRAMES = /<iframe\b(?![^>]*\bclass="reader-embed")[^>]*>(?:[\s\S]*?<\/iframe\s*>)?/gi;
 
 /**
  * Clean an article body for the reader, by denylist.
@@ -142,6 +151,7 @@ export function sanitizeArticleHtml(body: string): string {
   for (const tag of DROP_TAGS) {
     out = out.replace(new RegExp(`<${tag}[\\s\\S]*?</${tag}>`, 'gi'), '');
   }
+  out = out.replace(OTHER_FRAMES, '');
   // Tracking pixels (1x1) and empty lazyload imgs without a src.
   out = out.replace(/<img[^>]+(facebook\.com\/tr|height="1")[^>]*>/gi, '');
   // Reduce <picture>/<source> variants to the <img> - the reader loads srcset itself.

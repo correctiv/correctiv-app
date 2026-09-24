@@ -69,5 +69,7 @@ function readerCopy(article: Article, intl: IntlShape): ReaderCopy {
         : undefined,
     readingTime: intl.formatMessage(READER_COPY.readingTime, { minutes: article.readingMinutes }),
     support: intl.formatMessage(READER_COPY.support),
+    embedFallback: (host) => intl.formatMessage(READER_COPY.embedFallback, { host }),
+    embedArticle: intl.formatMessage(READER_COPY.embedArticle),
   };
 }

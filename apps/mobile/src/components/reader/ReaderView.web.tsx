@@ -102,21 +102,27 @@ export function ReaderView({ html, onNavigate, onScroll }: ReaderViewProps) {
       srcDoc={html}
       title={intl.formatMessage(COPY.frameTitle)}
       /*
-       * allow-same-origin and NOTHING else, deliberately:
+       * allow-same-origin and allow-scripts, and NOTHING else:
        *
-       * - The document body comes from a remote page. extract.ts drops <script>,
-       *   <style>, <iframe> and <form> and allows only href/src/alt, and
-       *   buildReaderHtml adds no script of its own — so the reader needs no JS
-       *   at all. Omitting allow-scripts therefore costs nothing and means a hole
-       *   in the sanitiser cannot turn into script execution on the demo origin.
        * - allow-same-origin is required: the click interception above reads
        *   frame.contentDocument, which a fully sandboxed frame would deny.
-       * - Never add allow-scripts alongside allow-same-origin — together they let
-       *   the frame remove its own sandbox, which defeats the point.
+       * - allow-scripts is for the embeds, not for the document (ADR 0065 §5). A
+       *   sandbox is inherited by every frame inside this one, so without it a
+       *   Datawrapper chart the core let through renders as an empty box.
+       * - The document itself still runs no script. This used to be guaranteed by
+       *   leaving allow-scripts out, which is also why the two flags together were
+       *   ruled out here: a frame that runs script and shares the app's origin can
+       *   lift its own sandbox. It is guaranteed now by the document's Content
+       *   Security Policy, `script-src 'none'`, first in its <head> and built by
+       *   the core (READER_CSP); a hole in a cleaner meets that rather than the
+       *   app. Adding allow-scripts without that policy would be the old mistake.
        * - No allow-top-navigation is wanted either: every real link is routed by
-       *   onNavigate, so the article must not be able to navigate the app away.
+       *   onNavigate, so the article must not be able to navigate the app away,
+       *   and an embed inherits the same refusal.
        */
-      sandbox="allow-same-origin"
+      // The rule's warning is the ADR 0004 argument above, answered by READER_CSP.
+      // oxlint-disable-next-line react/iframe-missing-sandbox
+      sandbox="allow-same-origin allow-scripts"
       // The native WebView fills its parent; match that so the overlay header
       // sits in the same place on both platforms.
       style={{ flex: 1, width: '100%', height: '100%', border: 'none' }}

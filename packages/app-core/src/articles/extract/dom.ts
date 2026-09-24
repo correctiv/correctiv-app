@@ -4,6 +4,12 @@ import { getAttributeValue, textContent } from 'domutils';
 import { selectAll, selectOne } from 'css-select';
 import { parseDocument } from 'htmlparser2';
 
+import {
+  EMBED_FALLBACK_CLASS,
+  EMBED_FRAME_CLASS,
+  embedElementAttributes,
+  rewriteEmbeds,
+} from '../embeds';
 import { estimateReadingMinutes, extractPageMeta } from '../page-meta';
 import { ratingFromPage, ratingFromText } from '../rating';
 import type { ArticleExtractor, ExtractedArticle } from '../types';
@@ -67,6 +73,9 @@ const DROP = new Set([
 /** Attributes allowed per tag. Everything else — class, style, data-* — goes. */
 const ATTRS: Record<string, string[]> = { a: ['href'], img: ['src', 'alt'] };
 
+/** What `embeds.ts` leaves behind: media, as far as an empty paragraph is concerned. */
+const EMBEDS = `iframe.${EMBED_FRAME_CLASS}, a.${EMBED_FALLBACK_CLASS}`;
+
 function isElement(node: AnyNode): node is Element {
   return node.type === 'tag' || node.type === 'script' || node.type === 'style';
 }
@@ -89,6 +98,13 @@ function sanitizeChildren(children: AnyNode[]): AnyNode[] {
     }
     if (!isElement(node)) continue; // comments, CDATA and friends
     const tag = node.name.toLowerCase();
+    const embed = embedElementAttributes(tag, node.attribs ?? {});
+    if (embed) {
+      node.attribs = embed;
+      node.children = [];
+      out.push(node);
+      continue;
+    }
     if (DROP.has(tag)) continue;
 
     const cleaned = sanitizeChildren(node.children ?? []);
@@ -105,7 +121,7 @@ function sanitizeChildren(children: AnyNode[]): AnyNode[] {
     // Empty paragraphs and headings with neither text nor media are layout noise.
     const hasText = textContent(node).trim().length > 0;
     const hasMedia =
-      tag === 'img' || tag === 'br' || tag === 'hr' || selectOne('img', node) != null;
+      tag === 'img' || tag === 'br' || tag === 'hr' || selectOne(`img, ${EMBEDS}`, node) != null;
     if (hasText || hasMedia) out.push(node);
   }
   return out;
@@ -141,7 +157,11 @@ export const extractArticleFromDom: ArticleExtractor = (html: string): Extracted
   let bodyHtml = '';
   let bodyText = '';
   if (contentEl) {
-    contentEl.children = sanitizeChildren(contentEl.children);
+    // Embeds are rewritten as markup, the way the string backend does it, so the
+    // policy in `embeds.ts` is one function rather than one per backend.
+    contentEl.children = sanitizeChildren(
+      parseDocument(rewriteEmbeds(serialize(contentEl.children))).children,
+    );
     bodyHtml = serialize(contentEl.children).trim();
     bodyText = textContent(contentEl);
   }

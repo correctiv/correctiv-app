@@ -243,6 +243,14 @@
     "defaultMessage": "by {authors}",
     "description": "The byline in the article document the reader renders. {authors} is the list of authors, already joined."
   },
+  "core.reader.embedArticle": {
+    "defaultMessage": "Read the embedded article",
+    "description": "A link in the article document where the article embeds another CORRECTIV article. Tapping it opens that article in the app, not in a browser."
+  },
+  "core.reader.embedFallback": {
+    "defaultMessage": "Open content from {host} in the browser",
+    "description": "A link in the article document where the article embeds something the app does not load, a video or a social media post. Tapping it opens the system browser. {host} is the address it comes from without \"www.\", for example \"youtube.com\" or \"instagram.com\"."
+  },
   "core.reader.factcheckBadge": {
     "defaultMessage": "Fact check",
     "description": "The badge on a fact check inside the article document. Uppercased by the code that builds the document, so write it in normal case. home.factCheckBadge is the same word on the home screen's rail."

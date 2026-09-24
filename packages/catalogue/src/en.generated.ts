@@ -82,6 +82,8 @@ export const en: Record<string, string> = {
   "core.rating.true": "True",
   "core.rating.unproven": "Unproven",
   "core.reader.byline": "by {authors}",
+  "core.reader.embedArticle": "Read the embedded article",
+  "core.reader.embedFallback": "Open content from {host} in the browser",
   "core.reader.factcheckBadge": "Fact check",
   "core.reader.readingTime": "{minutes} min read",
   "core.reader.support": "Made possible by supporters like you. Thank you for being here.",
