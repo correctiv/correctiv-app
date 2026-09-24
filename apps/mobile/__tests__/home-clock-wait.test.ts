@@ -23,7 +23,7 @@ const christmas = parseHomeLayout({
 describe('the wait until Home next changes', () => {
   it('stays inside what a timer can hold, for an edition months away', () => {
     const now = berlinInstant('2026-09-23', 12 * 60)!;
-    const wait = msUntilNextChange(christmas, now)!;
+    const wait = msUntilNextChange(christmas, now);
     expect(wait).toBeLessThan(TIMER_MAX);
     expect(wait).toBeLessThanOrEqual(LONGEST_WAIT_MS);
     // The next wake-up is tonight's Berlin midnight, where the answer is asked again.
@@ -36,5 +36,25 @@ describe('the wait until Home next changes', () => {
     // one is more than a day away, and the cap is what answers.
     const now = berlinInstant('2026-10-25', 0)! + 1000;
     expect(msUntilNextChange(christmas, now)).toBe(LONGEST_WAIT_MS);
+  });
+
+  /**
+   * A document with no moments and no editions once meant no wake-up at all, because
+   * `nextChangeAfter` correctly answers `null` for a fold that never changes — and
+   * `useHomeInstant` read that as "nothing to arm" and never re-rendered on its own. That
+   * was fine before the header named a date off the same instant (#254): a document with
+   * nothing to say is not a header with nothing to say, and the masthead would have frozen
+   * on whatever day the screen first mounted, past every Berlin midnight after it, until an
+   * unrelated re-render happened to land.
+   */
+  it('still wakes at Berlin midnight for a document with no moments and no editions', () => {
+    const flat = parseHomeLayout({
+      version: 3,
+      sections: [{ id: 'header', module: 'home-header' }],
+    }).layout!;
+    const now = berlinInstant('2026-09-23', 12 * 60)!;
+    const wait = msUntilNextChange(flat, now);
+    expect(wait).toBeLessThan(TIMER_MAX);
+    expect(now + wait).toBe(berlinInstant('2026-09-24', 0));
   });
 });

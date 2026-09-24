@@ -90,6 +90,7 @@ import {
   berlinDayMinute,
   berlinInstant,
   berlinWallClock,
+  nextBerlinMidnightAfter,
   parseBerlinDateTime,
   type Instant,
 } from './berlin-time';
@@ -1031,6 +1032,32 @@ export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
 }
 
 /**
+ * `layout.moments`, sorted by minute, whichever order the array itself holds them in.
+ *
+ * `HomeLayout['moments']` says "in time order" in a comment, which the parser and the
+ * editor keep true and the type does not — a value built by hand, past both of them, is
+ * not sorted just because every other caller's is. `stateAt` and `changesAt` used to
+ * trust the comment on both halves of folding a moment in: which ones qualify, and in
+ * what order they are applied. `break` got the first half wrong — it stopped at the
+ * first moment later than the minute asked for rather than continuing past it to find
+ * every one at or before it, so a moment already past could sit behind one still to come
+ * and never be reached at all. `continue` fixed that alone, but it still applies whatever
+ * qualifies in ARRAY order, and two moments touching the SAME section is exactly where
+ * that shows: "the later one wins" (`applyChange`'s own comment) is a claim about the
+ * MINUTE, not the array position, and folding out of order can make the earlier moment's
+ * value the one left standing.
+ *
+ * A copy, sorted, rather than `.toSorted()`: this package ships to Hermes, which
+ * `services/wp.service.ts` already measured cannot be relied on for that method, and
+ * `Array#sort` has been stable since ES2019, so two moments at one minute keep the
+ * order the array already held them in. A full sort costs nothing extra over a day's
+ * dozen or so moments.
+ */
+function inOrder(moments: readonly HomeMoment[]): readonly HomeMoment[] {
+  return moments.slice().sort((a, b) => a.minute - b.minute);
+}
+
+/**
  * The document folded up to a minute of the day: every place, in order, in the state it
  * is in at that time — hidden ones included.
  *
@@ -1046,6 +1073,8 @@ export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
  * A moment whose `changes` are empty contributes nothing, which is what makes it
  * indistinguishable from a moment that is not in the document at all — not by a rule
  * written somewhere, but because folding an empty list is the identity.
+ *
+ * `inOrder` above is what keeps this correct whether or not the array itself is sorted.
  */
 export function stateAt(
   layout: HomeLayout,
@@ -1054,8 +1083,8 @@ export function stateAt(
 ): readonly HomeSection[] {
   const byId = new Map(layout.sections.map((section) => [section.id, section]));
 
-  for (const moment of layout.moments) {
-    if (moment.minute > minute) break;
+  for (const moment of inOrder(layout.moments)) {
+    if (moment.minute > minute) continue;
     for (const change of moment.changes) {
       const section = byId.get(change.id);
       if (!section || !reaches(reader, change.audience)) continue;
@@ -1213,8 +1242,9 @@ export function editionPointAt(edition: HomeEdition, instant: Instant): MinuteOf
  * Every change the fold applies at an instant, in the order it applies them.
  *
  * The day's moments at or before the instant's Berlin minute, as `stateAt` has always
- * applied them; then every active edition in precedence order, each contributing its own
- * `changes` and then its moments in the order they last happened. Later wins.
+ * applied them — `inOrder` and `continue`, for the reason given there; then every
+ * active edition in precedence order, each contributing its own `changes` and then its
+ * moments in the order they last happened. Later wins.
  */
 export function changesAt(
   layout: HomeLayout,
@@ -1224,8 +1254,8 @@ export function changesAt(
   const minute = minuteOfDay(instant);
   const applied: AppliedChange[] = [];
 
-  for (const moment of layout.moments) {
-    if (moment.minute > minute) break;
+  for (const moment of inOrder(layout.moments)) {
+    if (moment.minute > minute) continue;
     for (const change of moment.changes) {
       applied.push({ edition: null, point: moment.minute, change });
     }
@@ -1323,6 +1353,15 @@ export function applyAll(
  *
  * The day's moments are compared against `minuteOfDay`, the reading the fold uses, so in
  * the autumn's repeated hour a moment that has already happened is not waited for again.
+ *
+ * **This is a fact about the FOLD**, `stateAtInstant`/`sectionsAtInstant`'s answer, and
+ * correctly `null` for a layout with no moments and no editions: nothing in THAT answer
+ * ever changes. The home header names a Berlin calendar day too (ADR 0059 §6), which
+ * changes at midnight whether or not the fold does, and a host that armed only this timer
+ * would freeze the header on a moment-less, edition-less document. That is not this
+ * function's question to answer — `nextBerlinMidnightAfter` in `berlin-time.ts` is the
+ * one always-true candidate, and `apps/mobile/src/lib/home/clock.ts` is where a host
+ * combines the two.
  */
 export function nextChangeAfter(layout: HomeLayout, instant: Instant): Instant | null {
   const { date } = berlinWallClock(instant);
@@ -1334,7 +1373,7 @@ export function nextChangeAfter(layout: HomeLayout, instant: Instant): Instant |
     candidates.push(berlinInstant(date, moment.minute)!);
   }
   if (layout.moments.length > 0 || layout.editions.length > 0) {
-    candidates.push(berlinInstant(addDays(date, 1), 0)!);
+    candidates.push(nextBerlinMidnightAfter(instant));
   }
 
   for (const edition of layout.editions) {

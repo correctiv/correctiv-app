@@ -299,6 +299,103 @@ describe('the fold, which is the whole model', () => {
       expect(stateAt(backwards, minute, ANYONE)).toEqual(stateAt(layout(), minute, ANYONE));
     }
   });
+
+  /**
+   * `HomeLayout['moments']` says "in time order" in a comment, and nothing but the
+   * parser and the editor keep that true — the type does not, so a value built by hand,
+   * past both of them, is not sorted just because every other caller's is. `stateAt` used
+   * to trust it anyway: `if (moment.minute > minute) break;` stops at the first moment
+   * later than the instant, which is only the LAST qualifying one when the array happens
+   * to be sorted. Out of order, it stops before the array's first entry and everything
+   * after it — including a moment that has already happened — is silently never applied.
+   * `continue` costs a full scan instead of an early exit, which is nothing over a day's
+   * dozen or so moments.
+   */
+  it('does not assume the moments are in time order', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [
+        { id: 'a', module: 'x' },
+        { id: 'b', module: 'x' },
+      ],
+      // Written 14:00 before 11:00: a moment already past (11:00) sits AFTER one still to
+      // come (14:00) in the array.
+      moments: [
+        { at: '14:00', minute: AT(14), changes: [{ id: 'a', hidden: true }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'b', hidden: true }] },
+      ],
+      editions: [],
+    };
+
+    // Noon: 11:00 has happened, 14:00 has not. 'b' is hidden, 'a' is not.
+    const noon = stateAt(unsorted, AT(12), ANYONE);
+    expect(noon.find((s) => s.id === 'b')?.hidden).toBe(true);
+    expect(noon.find((s) => s.id === 'a')?.hidden).toBeFalsy();
+  });
+
+  /** `changesAt`, which `sectionsAtInstant` folds through, has the identical `break`. */
+  it('does not assume the moments are in time order, folding by instant either', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [
+        { id: 'a', module: 'x' },
+        { id: 'b', module: 'x' },
+      ],
+      moments: [
+        { at: '14:00', minute: AT(14), changes: [{ id: 'a', hidden: true }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'b', hidden: true }] },
+      ],
+      editions: [],
+    };
+
+    const noon = berlinInstant('2026-09-27', AT(12))!;
+    expect(sectionsAtInstant(unsorted, noon, ANYONE).map((s) => s.id)).toEqual(['a']);
+  });
+
+  /**
+   * `continue` fixed the FILTER — a moment past the minute no longer stops the scan — but
+   * it applies whatever qualifies in ARRAY order, and two moments on the SAME section is
+   * where that shows. "Later wins" (`applyChange`'s own comment, and `stateAt`'s above) is
+   * a claim about MINUTE order, and an unsorted array applied in its own order gets it
+   * backwards: the moment that is earlier in the array, not the one later in the day,
+   * would be what stands.
+   */
+  it('applies two moments on the same section by minute, not by array position', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
+      // 15:00 written before 11:00, and both touch `rail`.
+      moments: [
+        { at: '15:00', minute: AT(15), changes: [{ id: 'rail', settings: { count: 2 } }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'rail', settings: { count: 9 } }] },
+      ],
+      editions: [],
+    };
+
+    // 15:00 is chronologically later, so its value stands at 20:00 — whichever order the
+    // array holds the two moments in.
+    expect(stateAt(unsorted, AT(20), ANYONE).find((s) => s.id === 'rail')?.settings).toEqual({
+      count: 2,
+    });
+  });
+
+  /** The same conflict, folding by instant through `changesAt` and `stateAtInstant`. */
+  it('applies two moments on the same section by minute, folding by instant too', () => {
+    const unsorted: HomeLayout = {
+      version: HOME_LAYOUT_VERSION,
+      sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
+      moments: [
+        { at: '15:00', minute: AT(15), changes: [{ id: 'rail', settings: { count: 2 } }] },
+        { at: '11:00', minute: AT(11), changes: [{ id: 'rail', settings: { count: 9 } }] },
+      ],
+      editions: [],
+    };
+
+    const evening = berlinInstant('2026-09-27', AT(20))!;
+    expect(
+      stateAtInstant(unsorted, evening, ANYONE).find((s) => s.id === 'rail')?.settings,
+    ).toEqual({ count: 2 });
+  });
 });
 
 /** A Berlin wall-clock instant, which is how every test below names a time. */

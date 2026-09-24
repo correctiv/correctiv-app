@@ -331,12 +331,20 @@ export { formatTimeOfDay, settingsFor, type CountSetting, type SettingSpec };
  */
 export type Point = MinuteOfDay | null;
 
-/** The point in effect at a minute: the last moment at or before it, or the day's start. */
+/**
+ * The point in effect at a minute: the last moment at or before it, or the day's start.
+ *
+ * `HomeLayout['moments']` is "in time order" by comment, not by type — the parser and the
+ * editor keep that true, but this is a full scan for the largest qualifying minute rather
+ * than an early exit on the first one past it (`packages/app-core/src/lib/home-layout.ts`'s
+ * `stateAt` argues the same change at length), so a moment out of order costs nothing here
+ * either.
+ */
 export function pointAt(layout: HomeLayout, minute: MinuteOfDay): Point {
   let held: Point = null;
   for (const moment of layout.moments) {
-    if (moment.minute > minute) break;
-    held = moment.minute;
+    if (moment.minute > minute) continue;
+    if (held === null || moment.minute > held) held = moment.minute;
   }
   return held;
 }
@@ -351,12 +359,17 @@ export function momentAt(layout: HomeLayout, point: Point): HomeMoment | null {
  * How long a point lasts: from it, to the next moment or to midnight.
  *
  * What the panel prints as the heading of whatever is being edited, because "11:00" on
- * its own does not say what an edit here will affect and "11:00 until 14:00" does.
+ * its own does not say what an edit here will affect and "11:00 until 14:00" does. The
+ * smallest minute later than `from`, over the whole list, for the reason `pointAt` above
+ * scans rather than stops.
  */
 export function spanOf(layout: HomeLayout, point: Point): { from: number; to: number } {
   const from = point ?? 0;
-  const next = layout.moments.find((moment) => moment.minute > from);
-  return { from, to: next?.minute ?? MINUTES_IN_DAY };
+  let to = MINUTES_IN_DAY;
+  for (const moment of layout.moments) {
+    if (moment.minute > from && moment.minute < to) to = moment.minute;
+  }
+  return { from, to };
 }
 
 /**

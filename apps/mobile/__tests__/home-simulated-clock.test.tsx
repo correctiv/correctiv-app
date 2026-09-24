@@ -40,7 +40,7 @@ import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { sessionActions } from '@correctiv/app-core/stores/session';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
-import { findAllPressable, render } from './support/rendering';
+import { findAllPressable, render, renderedText } from './support/rendering';
 
 import HomeScreen from '@/app/(tabs)/index';
 import { HOME_TIME_OVERRIDE_KEY } from '@/lib/home/clock';
@@ -213,5 +213,17 @@ describe('a simulated time in storage', () => {
     });
 
     expect(position(tree)).toBe('top');
+  });
+
+  /**
+   * The header used to read `new Date()` on its own, so the simulated instant moved the
+   * sections but left the masthead on the machine's real date — one screen, two days
+   * (#254). `HomeHeader` now takes the same instant `useHomeInstant` hands the fold.
+   */
+  it('moves the header’s date along with the rest of the screen', () => {
+    store.set(HOME_TIME_OVERRIDE_KEY, '2026-12-25T10:00');
+    const text = renderedText(renderAtNine());
+    expect(text).toContain('Freitag, 25. Dezember 2026');
+    expect(text).not.toContain('Donnerstag, 3. September 2026');
   });
 });

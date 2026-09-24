@@ -558,7 +558,10 @@ const LISTED = [
   {
     folder: 'home',
     entries: [
-      { name: 'HomeHeader', specimens: [{ label: 'default', node: <HomeHeader /> }] },
+      {
+        name: 'HomeHeader',
+        specimens: [{ label: 'default', node: <HomeHeader instant={Date.now()} /> }],
+      },
       {
         name: 'SpotlightBriefing',
         note: 'Loads the newsletter archive on first render, so this entry makes a request.',

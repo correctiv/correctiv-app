@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addDays,
+  berlinCalendarDate,
   berlinDayMinute,
   berlinInstant,
   berlinWallClock,
   formatBerlinDateTime,
   isBerlinDate,
+  nextBerlinMidnightAfter,
   parseBerlinDateTime,
 } from '../src/lib/berlin-time';
 
@@ -100,6 +102,64 @@ describe('an instant on Berlin’s wall clock', () => {
     }
     expect(checked).toBeGreaterThan(6 * 365 * 24);
     expect(disagreements).toEqual([]);
+  });
+});
+
+describe('berlinCalendarDate, the day a formatter with no zone of its own can read', () => {
+  /**
+   * The original bug (#254): a device is one fixed zone, and reading an absolute instant
+   * through it can land on a different calendar day than Berlin's. 20:00 UTC on 27
+   * September is still 22:00 in Berlin (UTC+2 in September) that same evening, but it is
+   * already 10:00 on the 28th fourteen hours further east — Kiribati's, which really runs
+   * that far ahead of UTC. `berlinCalendarDate` has to answer the 27th whichever zone reads
+   * it back; `new Date(instant)` would not.
+   */
+  it('names Berlin’s day, not the day a zone far enough east would read the instant as', () => {
+    const instant = Date.UTC(2026, 8, 27, 20, 0);
+    expect(berlinWallClock(instant).date).toBe('2026-09-27');
+
+    const original = process.env.TZ;
+    try {
+      process.env.TZ = 'Pacific/Kiritimati'; // UTC+14, so the naive read is a day ahead.
+      expect(new Intl.DateTimeFormat('en-CA').format(new Date(instant))).toBe('2026-09-28');
+      expect(new Intl.DateTimeFormat('en-CA').format(berlinCalendarDate(instant))).toBe(
+        '2026-09-27',
+      );
+    } finally {
+      process.env.TZ = original;
+    }
+  });
+
+  /** Local noon on the day itself, so a formatter reading it back needs no zone at all. */
+  it('is local noon of the Berlin day', () => {
+    const instant = berlinInstant('2026-06-12', 23 * 60 + 30)!;
+    const date = berlinCalendarDate(instant);
+    expect([date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()]).toEqual([
+      2026, 5, 12, 12,
+    ]);
+  });
+});
+
+describe('nextBerlinMidnightAfter', () => {
+  it('is always strictly after the instant, at the start of the next Berlin day', () => {
+    expect(nextBerlinMidnightAfter(berlinInstant('2026-09-27', 0)!)).toBe(
+      berlinInstant('2026-09-28', 0),
+    );
+    expect(nextBerlinMidnightAfter(berlinInstant('2026-09-27', 23 * 60 + 59)!)).toBe(
+      berlinInstant('2026-09-28', 0),
+    );
+  });
+
+  /** Both sides of a clock change, since a Berlin day either side of one is not 24 hours. */
+  it('holds across a change of clocks', () => {
+    // The autumn day is 25 hours; the next midnight is still the next calendar day.
+    expect(nextBerlinMidnightAfter(berlinInstant('2026-10-25', 12 * 60)!)).toBe(
+      berlinInstant('2026-10-26', 0),
+    );
+    // The spring day is 23 hours, same claim.
+    expect(nextBerlinMidnightAfter(berlinInstant('2026-03-29', 12 * 60)!)).toBe(
+      berlinInstant('2026-03-30', 0),
+    );
   });
 });
 

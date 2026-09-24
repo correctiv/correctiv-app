@@ -110,6 +110,25 @@ export function berlinWallClock(instant: Instant): WallClock {
   };
 }
 
+/**
+ * The Berlin day of an instant, as a `Date` safe to hand to a formatter that reads its
+ * own runtime's local fields — `Intl.DateTimeFormat` with no `timeZone`, which is what
+ * `format.ts` uses throughout.
+ *
+ * `new Date(instant)` is the wrong half of this: an absolute instant, read back through
+ * whatever zone the device is in. A reader east of Berlin can be into the next calendar
+ * day there while Berlin's own evening is still running, and the home screen's header
+ * showed exactly that split date once it started taking the fold's instant instead of its
+ * own (#254) — a real device is one fixed zone, but not necessarily Berlin's. Local noon of
+ * the Berlin day sidesteps it instead of asking the device to agree with Berlin: built and
+ * read back through the SAME zone, whichever one that is, its local calendar fields are
+ * always this day, never the one before or after it.
+ */
+export function berlinCalendarDate(instant: Instant): Date {
+  const [year, month, day] = dateParts(berlinWallClock(instant).date)!;
+  return new Date(year, month, day, 12);
+}
+
 /** The parts of a Berlin date, or null when it is not one the calendar has. */
 function dateParts(date: string): [number, number, number] | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
@@ -167,6 +186,25 @@ export function addDays(date: BerlinDate, days: number): BerlinDate {
   if (!parts) return date;
   const [year, month, day] = parts;
   return dateOf(new Date(Date.UTC(year, month, day + days)));
+}
+
+/**
+ * The next Berlin midnight strictly after this instant.
+ *
+ * `home-layout.ts`'s `nextChangeAfter` computes exactly this as one of its candidates,
+ * and it is here too because a host's clock needs it independently of the document: the
+ * home header names a Berlin calendar day (ADR 0059 §6), which changes at Berlin midnight
+ * whether or not anything in the document does, and `nextChangeAfter` answers `null` for
+ * a layout with no moments and no editions — correctly, that is a fact about the FOLD, not
+ * about the header. `apps/mobile/src/lib/home/clock.ts` is where the two are combined.
+ *
+ * Always strictly after `instant`: today's Berlin day runs at most to minute 1439, and
+ * tomorrow's midnight is the first instant of the day after it, so no filtering is needed
+ * the way `nextChangeAfter`'s other candidates need it.
+ */
+export function nextBerlinMidnightAfter(instant: Instant): Instant {
+  const { date } = berlinWallClock(instant);
+  return berlinInstant(addDays(date, 1), 0)!;
 }
 
 /**
