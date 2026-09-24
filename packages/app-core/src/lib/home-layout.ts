@@ -1046,6 +1046,13 @@ export function reportLayoutProblems(problems: readonly LayoutProblem[]): void {
  * A moment whose `changes` are empty contributes nothing, which is what makes it
  * indistinguishable from a moment that is not in the document at all — not by a rule
  * written somewhere, but because folding an empty list is the identity.
+ *
+ * `continue`, not `break`. `HomeLayout['moments']` says "in time order" in a comment,
+ * which the parser and the editor keep true and the type does not — a value built by
+ * hand, past both of them, is not sorted just because every other caller's is. `break`
+ * assumed the array was, and stopped at the first moment later than `minute` rather than
+ * the last one at or before it, so a moment already past could be skipped along with
+ * everything after it. A full scan costs nothing over a day's dozen or so moments.
  */
 export function stateAt(
   layout: HomeLayout,
@@ -1055,7 +1062,7 @@ export function stateAt(
   const byId = new Map(layout.sections.map((section) => [section.id, section]));
 
   for (const moment of layout.moments) {
-    if (moment.minute > minute) break;
+    if (moment.minute > minute) continue;
     for (const change of moment.changes) {
       const section = byId.get(change.id);
       if (!section || !reaches(reader, change.audience)) continue;
@@ -1213,8 +1220,9 @@ export function editionPointAt(edition: HomeEdition, instant: Instant): MinuteOf
  * Every change the fold applies at an instant, in the order it applies them.
  *
  * The day's moments at or before the instant's Berlin minute, as `stateAt` has always
- * applied them; then every active edition in precedence order, each contributing its own
- * `changes` and then its moments in the order they last happened. Later wins.
+ * applied them — `continue` and not `break`, for the reason given there; then every
+ * active edition in precedence order, each contributing its own `changes` and then its
+ * moments in the order they last happened. Later wins.
  */
 export function changesAt(
   layout: HomeLayout,
@@ -1225,7 +1233,7 @@ export function changesAt(
   const applied: AppliedChange[] = [];
 
   for (const moment of layout.moments) {
-    if (moment.minute > minute) break;
+    if (moment.minute > minute) continue;
     for (const change of moment.changes) {
       applied.push({ edition: null, point: moment.minute, change });
     }
