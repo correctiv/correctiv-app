@@ -26,8 +26,16 @@ let listener: ((status: PlaybackStatus) => void) | null = null;
 
 function instance(): ExpoAudioPlayer {
   if (!player) {
-    player = createAudioPlayer(null, { updateInterval: 500 });
-    player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+    const created = createAudioPlayer(null, { updateInterval: 500 });
+    player = created;
+    created.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+      /*
+       * Only the current player speaks for the track. A released player's teardown
+       * runs later on Android (`sharedObjectDidRelease` launches it on the main
+       * thread), so its last status can arrive after the next track has built a new
+       * player; forwarded, a stale "finished" would stop that track.
+       */
+      if (player !== created) return;
       listener?.({
         playing: status.playing,
         loaded: status.isLoaded,
