@@ -11,7 +11,7 @@ import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
 import type { Status } from '../api';
 import type { Pick } from '../frame/locate';
-import { publishable, publishDraft, restoreDraft, type Draft } from './draft';
+import { DRAFT_DISCARD_EVENT, publishable, publishDraft, restoreDraft, type Draft } from './draft';
 import { buildIndex, resolve, type Resolution } from './match';
 import { EDITED_LOCALE } from './names';
 import { saveWordings, type SaveOutcome } from './save';
@@ -327,6 +327,18 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  /*
+   * "Alle verwerfen", asked for from outside this panel: the draft marker beside the
+   * frame reuses this exact action rather than clearing `workbench:strings` on its own,
+   * which would leave this state holding the same wordings and publishing them right
+   * back on the next keystroke.
+   */
+  useEffect(() => {
+    const onDiscard = () => setDraft({});
+    window.addEventListener(DRAFT_DISCARD_EVENT, onDiscard);
+    return () => window.removeEventListener(DRAFT_DISCARD_EVENT, onDiscard);
+  }, []);
 
   const live = useMemo(
     () => publishable(draft, baseline, (id) => BY_ID.get(id)?.english),
