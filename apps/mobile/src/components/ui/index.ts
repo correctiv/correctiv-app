@@ -27,3 +27,5 @@ export { SplitRow } from './SplitRow';
 export type { SplitRowProps } from './SplitRow';
 export { Thumbnail } from './Thumbnail';
 export type { ThumbnailProps } from './Thumbnail';
+export { ScaledText } from './ScaledText';
+export { ScaledTextInput } from './ScaledTextInput';

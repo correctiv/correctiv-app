@@ -346,7 +346,7 @@ describe('reader html', () => {
     ).toContain('<link rel="stylesheet" href="assets/reader/reader.css">');
   });
 
-  it('scales the root font size with the app text-size setting', () => {
+  it('sets the root font size from the app text scale, the one every screen takes', () => {
     expect(buildReaderHtml(article, copy, { locale: 'de', textScale: 1 })).toContain(
       'font-size:16px',
     );

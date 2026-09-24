@@ -219,7 +219,6 @@ const STILL_ON_THE_V1_TIER: Record<string, number> = {
   'app/aufruf/[slug].tsx: grey-500': 2,
   'app/backstage.tsx: grey-500': 4,
   'app/behauptung/[id].tsx: grey-500': 2,
-  'app/einstellungen.tsx: grey-500': 1,
   'app/faktenforum.tsx: grey-500': 1,
   'app/formular.tsx: grey-500': 1,
   'app/gespeichert.tsx: grey-500': 2,

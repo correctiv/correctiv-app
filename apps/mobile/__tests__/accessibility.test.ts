@@ -212,7 +212,12 @@ interface Reading {
   images: Named[];
   /** Every `accessibilityLabel=""` and `accessibilityLabel={' '}`, anywhere. */
   blankLabels: Named[];
-  /** Every `allowFontScaling={false}` and `maxFontSizeMultiplier={1}`, anywhere. */
+  /**
+   * Every `allowFontScaling` and `maxFontSizeMultiplier` that can switch the system's
+   * font scale off, anywhere: the literal `false` and a cap of 1 or below, and any
+   * value the parser cannot read as neither — `allowFontScaling={followsSystem}`
+   * is an opt-out on every render where the expression is false.
+   */
   optOuts: Named[];
   /** Tag names seen inside a control, so `RENDERS_NO_TEXT` can be held to the app. */
   childTags: Set<string>;
@@ -278,12 +283,18 @@ function read(): Reading {
           }
           if (name === 'allowFontScaling' || name === 'maxFontSizeMultiplier') {
             const value = prop.initializer;
-            const off =
-              value !== undefined &&
-              ts.isJsxExpression(value) &&
-              value.expression !== undefined &&
-              (value.expression.kind === ts.SyntaxKind.FalseKeyword ||
-                (ts.isNumericLiteral(value.expression) && Number(value.expression.text) <= 1));
+            const expression =
+              value !== undefined && ts.isJsxExpression(value) ? value.expression : undefined;
+            // A bare `allowFontScaling` is `true`, and so is the literal; a cap above 1
+            // still scales. Everything else may turn the reader's setting off.
+            const harmless =
+              value === undefined ||
+              (expression !== undefined &&
+                (expression.kind === ts.SyntaxKind.TrueKeyword ||
+                  (name === 'maxFontSizeMultiplier' &&
+                    ts.isNumericLiteral(expression) &&
+                    Number(expression.text) > 1)));
+            const off = !harmless;
             if (off) out.optOuts.push({ file, line: lineOf(prop), tag, props: [name] });
           }
         }
@@ -295,6 +306,30 @@ function read(): Reading {
 
   return out;
 }
+
+/**
+ * The one exception ADR 0033 names, with its reason, and the only one.
+ *
+ * `ui/ScaledText` is where the app's own text size is applied. Following the
+ * system, which is the default, it scales like every other text; with a size
+ * chosen in the settings, that size REPLACES the system's, and the platform's own
+ * scaling has to stop for the replacement to be exact rather than a product. The
+ * rule above is about who chooses: an opt-out that takes the choice away from a
+ * reader is the defect, and this one hands the same reader a different dial with
+ * the system's value as the default. Two entries because React Native has two
+ * elements that draw text, and both take the prop; the record's condition was one
+ * place, and this is one hook, `lib/theme/textScaling`, deciding for both.
+ *
+ * ADR 0033 is explicit about the alternative: if the scale had to be applied at
+ * every call site, the decision should come back to the record instead of this
+ * list growing. So an arrival here is the thing to argue about, not a line to add.
+ */
+const SCALING_OPT_OUTS: Record<string, string> = {
+  'components/ui/ScaledText.tsx <Text> allowFontScaling':
+    "ADR 0033: the app's text size replaces the system's when a reader chooses one",
+  'components/ui/ScaledTextInput.tsx <TextInput> allowFontScaling':
+    'ADR 0033: the same replacement, for the text a reader types into a field',
+};
 
 const app = read();
 
@@ -341,14 +376,29 @@ describe('a control reaches a screen reader', () => {
     expect(blank).toEqual([]);
   });
 
-  it('turns the system font size off nowhere', () => {
+  describe('turns the system font size off nowhere but in the one place', () => {
     // Issue #102: "keep content reachable rather than switching scaling off".
     // `allowFontScaling={false}` and `maxFontSizeMultiplier={1}` are the two ways
     // to make a label ignore the reader's own setting, and both look like a fix for
     // the clipping that `tour-a11y.sh` photographs. The clipping is the bug.
-    const off = app.optOuts.map((use) => `${at(use)} → <${use.tag}> ${use.props[0]} opts out`);
+    //
+    // Keyed by file, element and prop rather than by line, so an excuse cannot be
+    // inherited by whatever lands on its line next, and a second opt-out in the same
+    // file is an arrival rather than a free rider.
+    const { arrivals, stale } = ratchet(
+      app.optOuts.map((use) => `${use.file} <${use.tag}> ${use.props[0]}`),
+      SCALING_OPT_OUTS,
+    );
 
-    expect(off).toEqual([]);
+    it('acquires no opt-out anywhere else', () => {
+      expect(arrivals).toEqual([]);
+    });
+
+    it('excuses nothing that is no longer there', () => {
+      // The other direction: if the app's scale moves out of `ScaledText`, the
+      // excuse has to go with it rather than wait for the next opt-out to land.
+      expect(stale).toEqual([]);
+    });
   });
 });
 

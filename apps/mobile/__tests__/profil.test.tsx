@@ -370,7 +370,8 @@ describe('settings', () => {
   it('switches theme between system, light and dark', () => {
     const tree = render(<EinstellungenScreen />);
     const toggle = (label: string, value: boolean) => {
-      const row = tree.root.find(
+      // The first match: the text-size row below carries the same words (ADR 0033).
+      const [row] = tree.root.findAll(
         (n) => n.props?.accessibilityLabel === label && !!n.props?.onValueChange,
       );
       act(() => {
@@ -385,9 +386,36 @@ describe('settings', () => {
     expect(coreStore.getState().settings.theme).toBe('dark');
   });
 
-  it('sets the reader text scale', () => {
-    press(render(<EinstellungenScreen />), 'Textgröße A++');
-    expect(coreStore.getState().settings.textScale).toBe(1.15);
+  it('follows the system text size until a size is chosen, and then replaces it', () => {
+    const tree = render(<EinstellungenScreen />);
+    const switches = () =>
+      tree.root.findAll(
+        (n) =>
+          n.props?.accessibilityLabel === 'An Systemeinstellung orientieren' &&
+          !!n.props?.onValueChange,
+      );
+    // Two rows with the appearance row's words, one per setting (ADR 0033).
+    expect(switches()).toHaveLength(2);
+    expect(coreStore.getState().settings.textSize).toBe('system');
+    expect(renderedText(tree)).toContain('auch in Artikeln');
+    // The steps only exist once the system option is off, as the dark switch does.
+    expect(tree.root.findAll((n) => n.props?.accessibilityLabel === 'Textgröße A++')).toEqual([]);
+
+    act(() => {
+      switches()[1].props.onValueChange(false);
+    });
+    // React Native's jest preset reports a font scale of 2, so the choice starts at
+    // the step nearest it, which is the largest, rather than at the default.
+    expect(coreStore.getState().settings.textSize).toBe(1.15);
+
+    press(tree, 'Textgröße A');
+    expect(coreStore.getState().settings.textSize).toBe(0.9);
+    expect(coreStore.getState().settings.theme).toBe('system');
+
+    act(() => {
+      switches()[1].props.onValueChange(true);
+    });
+    expect(coreStore.getState().settings.textSize).toBe('system');
   });
 
   it('resets the demo state across the stores that hold it', () => {
@@ -404,7 +432,7 @@ describe('settings', () => {
     expect(coreStore.getState().settings).toMatchObject({
       onboardingDone: false,
       pushOptIn: false,
-      textScale: 1,
+      textSize: 'system',
     });
     expect(renderedText(tree)).toContain('✓ Zurückgesetzt');
   });

@@ -931,7 +931,8 @@
     "defaultMessage": "Dark mode"
   },
   "settings.appearance.followSystem": {
-    "defaultMessage": "Follow the system setting"
+    "defaultMessage": "Follow the system setting",
+    "description": "A switch in the Appearance section: on, the app is light or dark as the device is. settings.textSize.followSystem is the same words for the switch in the Text size section, one decision taking the same shape twice."
   },
   "settings.appearance.section": {
     "defaultMessage": "Appearance"
@@ -958,15 +959,22 @@
     "defaultMessage": "Notifications",
     "description": "A section heading in the settings. onboarding.push.label is the same word as the label of a switch in the onboarding."
   },
-  "settings.textScale.note": {
-    "defaultMessage": "Affects the article view."
+  "settings.textSize.followSystem": {
+    "defaultMessage": "Follow the system setting",
+    "description": "A switch in the Text size section: on, the whole app uses the device's text size. settings.appearance.followSystem is the same words for the switch in the Appearance section, one decision taking the same shape twice."
   },
-  "settings.textScale.option": {
+  "settings.textSize.noteManual": {
+    "defaultMessage": "Applies to the whole app, articles included, in place of your device's text size. For larger text, follow the system setting and choose the size on your device."
+  },
+  "settings.textSize.noteSystem": {
+    "defaultMessage": "The whole app, articles included, uses the text size set on your device."
+  },
+  "settings.textSize.option": {
     "defaultMessage": "Text size {scale}",
     "description": "The accessible name of one text-size button, read aloud and never seen. {scale} is the sample letters the button shows; it is one message so the language decides where the sample goes."
   },
-  "settings.textScale.section": {
-    "defaultMessage": "Text size in an article"
+  "settings.textSize.section": {
+    "defaultMessage": "Text size"
   },
   "settings.title": {
     "defaultMessage": "Settings"

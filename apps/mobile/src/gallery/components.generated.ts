@@ -54,6 +54,8 @@ export type ComponentId =
   | 'ui/Overline'
   | 'ui/Rail'
   | 'ui/SafeAreaView'
+  | 'ui/ScaledText'
+  | 'ui/ScaledTextInput'
   | 'ui/Screen'
   | 'ui/ScreenHeader'
   | 'ui/ScreenHeaderBar'

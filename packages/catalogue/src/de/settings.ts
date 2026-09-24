@@ -19,9 +19,13 @@ export const settings: Record<string, string> = {
   'settings.appearance.followSystem': 'An Systemeinstellung orientieren',
   'settings.appearance.dark': 'Dunkelmodus',
 
-  'settings.textScale.section': 'Textgröße im Artikel',
-  'settings.textScale.option': 'Textgröße {scale}',
-  'settings.textScale.note': 'Wirkt sich auf die Artikel-Ansicht aus.',
+  'settings.textSize.section': 'Textgröße',
+  'settings.textSize.followSystem': 'An Systemeinstellung orientieren',
+  'settings.textSize.option': 'Textgröße {scale}',
+  'settings.textSize.noteSystem':
+    'Die ganze App verwendet die Textgröße Ihres Geräts, auch in Artikeln.',
+  'settings.textSize.noteManual':
+    'Gilt für die ganze App, auch für Artikel, anstelle der Textgröße Ihres Geräts. Für größere Schrift folgen Sie der Systemeinstellung und wählen die Größe auf Ihrem Gerät.',
 
   'settings.about.section': 'Über CORRECTIV',
   'settings.about.body':

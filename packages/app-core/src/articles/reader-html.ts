@@ -101,7 +101,16 @@ export interface ReaderHtmlOptions {
   css?: string[];
   /** Stylesheet hrefs, resolved against the WebView's base url. */
   stylesheets?: string[];
-  /** The app's text-size setting; scales the root font size. 1 = default. */
+  /**
+   * The app's text scale, the same factor every other screen is drawn at
+   * ([ADR 0033](../../../../adr/0033-one-text-size-for-the-whole-app-the-systems-by-default.md)):
+   * the system's font scale, or the step a reader chose in its place. It sets the
+   * root font size, so every `rem` in the document follows. 1 = the design's size.
+   *
+   * It is the WHOLE scale, so the host has to keep the browser from applying the
+   * system's a second time — on Android the WebView's own text zoom follows the
+   * system font setting unless it is pinned to 100.
+   */
   textScale?: number;
   /**
    * What goes in `<html lang>`, which is not decoration.

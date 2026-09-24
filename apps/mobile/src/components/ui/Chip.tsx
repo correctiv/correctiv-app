@@ -1,6 +1,7 @@
-import { Pressable, Text } from 'react-native';
+import { Pressable } from 'react-native';
 
 import { sizes, typography, useColors } from '@/lib/theme';
+import { ScaledText } from './ScaledText';
 
 export type ChipProps = {
   label: string;
@@ -54,7 +55,7 @@ export function Chip({ label, selected = false, onPress, className }: ChipProps)
        */
       style={{ minHeight: sizes.tapTarget }}
     >
-      <Text
+      <ScaledText
         style={[
           typography['text-s'],
           {
@@ -66,7 +67,7 @@ export function Chip({ label, selected = false, onPress, className }: ChipProps)
         ]}
       >
         {label}
-      </Text>
+      </ScaledText>
     </Pressable>
   );
 }
