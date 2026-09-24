@@ -36,3 +36,19 @@ export function classifyReaderLink(target: string): ReaderLinkAction {
   if (/^https?:/.test(target)) return 'external';
   return 'allow';
 }
+
+/**
+ * Whether a frame inside the article may load `target` without the reader being
+ * asked, which is how iOS reports every load an embed makes (ADR 0065 §4).
+ *
+ * Web schemes only. The embeds on the core's list publish what anybody on their
+ * platform wrote, so a frame nested in one is not CORRECTIV's content; it may draw
+ * itself, and it may not hand the phone a `tel:`, an `itms-apps:`, `correctiv://`
+ * or any other scheme the system would act on. A frame's first load of anything
+ * else is refused rather than sent through `classifyReaderLink`, because nobody
+ * tapped it. Plain `http:` is refused too: every listed host serves https, and the
+ * document's policy only frames https.
+ */
+export function allowsFrameLoad(target: string): boolean {
+  return /^(?:https|about|data|blob):/i.test(target);
+}

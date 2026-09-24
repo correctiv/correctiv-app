@@ -46,6 +46,23 @@ export const INLINE_EMBED_HOSTS: readonly string[] = [
   'flo.uri.sh',
 ];
 
+/**
+ * The listed hosts whose frames also work WITHOUT an origin of their own, and are
+ * given none: a `sandbox` without `allow-same-origin`, which every frame inside
+ * them inherits.
+ *
+ * Measured 2026-09-24 (ADR 0065 §7): a frame nested in an embed that loads a page
+ * on the app's own origin reaches the app's storage through `top`, and a sandbox
+ * here closes that for everything under the embed. Datawrapper and Flourish draw
+ * the same inside it; WordPress embeds Datawrapper that way itself. CORRECTIV's own
+ * apps and 23degrees read their own storage and draw nothing, and DocumentCloud
+ * could not be measured behind Cloudflare's bot check, so those three keep theirs.
+ */
+export const OPAQUE_EMBED_HOSTS: readonly string[] = ['datawrapper.dwcdn.net', 'flo.uri.sh'];
+
+/** The sandbox an `OPAQUE_EMBED_HOSTS` frame gets. Popups, so a source link opens. */
+export const EMBED_SANDBOX = 'allow-scripts allow-popups allow-popups-to-escape-sandbox';
+
 export const EMBED_FRAME_CLASS = 'reader-embed';
 export const EMBED_FALLBACK_CLASS = 'embed-fallback';
 
@@ -105,15 +122,7 @@ export function embedElementAttributes(
   const classes = (attribs.class ?? '').split(/\s+/);
   if (tag === 'iframe' && classes.includes(EMBED_FRAME_CLASS)) {
     const src = attribs.src ?? '';
-    if (!isInlineEmbedUrl(src)) return null;
-    return {
-      class: EMBED_FRAME_CLASS,
-      src,
-      ...(attribs.title ? { title: attribs.title } : {}),
-      ...(attribs.name ? { name: attribs.name } : {}),
-      ...(HEIGHT.test(attribs.height ?? '') ? { height: attribs.height } : {}),
-      loading: 'lazy',
-    };
+    return isInlineEmbedUrl(src) ? frameAttributes(src, attribs) : null;
   }
   if (tag === 'a' && classes.includes(EMBED_FALLBACK_CLASS)) {
     const href = attribs.href;
@@ -121,6 +130,21 @@ export function embedElementAttributes(
     return pick(attribs, ['class', 'href', 'data-embed-host', 'data-embed-kind']);
   }
   return null;
+}
+
+/**
+ * Every frame in `html` rebuilt as the canonical one, or removed.
+ *
+ * For `buildReaderHtml`, which does not trust the body it is handed (ADR 0065
+ * §7): a frame that is not ours, or ours from a host that is not listed, goes,
+ * and one that is keeps the attributes `frame()` writes and nothing else, so a
+ * `srcdoc` or an `onload` on it goes too.
+ */
+export function canonicalFrames(html: string): string {
+  return html.replace(IFRAME, (_match, open: string) => {
+    const attrs = embedElementAttributes('iframe', attributes(`<iframe${open}>`));
+    return attrs ? frame(attrs.src, attrs) : '';
+  });
 }
 
 /** The host a fallback names: the URL's, without a `www.`. */
@@ -223,15 +247,28 @@ function rewriteFrame(attrs: Record<string, string>): string {
  * need, the others because they ask for permissions and layout the reader decides.
  */
 function frame(src: string, attrs: Record<string, string>): string {
-  const height = HEIGHT.test(attrs.height ?? '') ? attrs.height : undefined;
-  const title = attrs.title ? decodeEntities(attrs.title) : undefined;
-  return (
-    `<iframe class="${EMBED_FRAME_CLASS}" src="${escapeHtml(src)}"` +
-    (title ? ` title="${escapeHtml(title)}"` : '') +
-    (attrs.name ? ` name="${escapeHtml(attrs.name)}"` : '') +
-    (height ? ` height="${height}"` : '') +
-    ` loading="lazy"></iframe>`
-  );
+  const serialised = Object.entries(frameAttributes(src, attrs))
+    .map(([name, value]) => ` ${name}="${escapeHtml(value)}"`)
+    .join('');
+  return `<iframe${serialised}></iframe>`;
+}
+
+/**
+ * The attributes of the canonical frame, in the order they are written, for the
+ * string path (`frame()`) and the tree path (`extract/dom.ts`) alike. The order
+ * is the one `lib/html.ts` recognises a canonical frame by.
+ */
+function frameAttributes(src: string, attrs: Record<string, string>): Record<string, string> {
+  const host = parseUrl(src)?.hostname ?? '';
+  return {
+    class: EMBED_FRAME_CLASS,
+    src,
+    ...(OPAQUE_EMBED_HOSTS.includes(host) ? { sandbox: EMBED_SANDBOX } : {}),
+    ...(attrs.title ? { title: decodeEntities(attrs.title) } : {}),
+    ...(attrs.name ? { name: attrs.name } : {}),
+    ...(HEIGHT.test(attrs.height ?? '') ? { height: attrs.height } : {}),
+    loading: 'lazy',
+  };
 }
 
 /**

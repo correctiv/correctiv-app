@@ -1,4 +1,4 @@
-import { classifyReaderLink } from '@/lib/articles/readerNavigation';
+import { allowsFrameLoad, classifyReaderLink } from '@/lib/articles/readerNavigation';
 
 /**
  * The reader's link routing, which used to be eleven inline lines in `artikel.tsx`
@@ -41,4 +41,39 @@ describe('classifyReaderLink', () => {
       expect(classifyReaderLink(target)).toBe('allow');
     },
   );
+});
+
+/**
+ * What a frame inside the article may load without asking, which on iOS is every
+ * load an embed makes (ADR 0065 §4). A web scheme, and nothing the operating system
+ * would act on: an embed publishes what anybody on its platform wrote, so a nested
+ * frame must not be able to hand the phone a call, a store page or the app's own
+ * scheme without a tap.
+ */
+describe('allowsFrameLoad', () => {
+  it.each([
+    'https://datawrapper.dwcdn.net/YBoom/7/',
+    'https://flo.uri.sh/story/3759922/embed',
+    'about:blank',
+    'about:srcdoc',
+    'data:text/html,<p>x</p>',
+    'blob:https://flo.uri.sh/5d4c',
+    'HTTPS://DATAWRAPPER.DWCDN.NET/x',
+  ])('lets a frame load %s', (target) => {
+    expect(allowsFrameLoad(target)).toBe(true);
+  });
+
+  it.each([
+    'tel:+493040549680',
+    'mailto:redaktion@correctiv.org',
+    'itms-apps://apps.apple.com/app/id1',
+    'correctiv://join',
+    'intent://x#Intent;end',
+    'javascript:alert(1)',
+    'http://datawrapper.dwcdn.net/x',
+    'file:///etc/hosts',
+    ' https://x.example/',
+  ])('refuses a frame %s', (target) => {
+    expect(allowsFrameLoad(target)).toBe(false);
+  });
 });

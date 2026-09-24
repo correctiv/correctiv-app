@@ -128,12 +128,50 @@ export function metaTags(html: string): Map<string, string> {
  *
  * `iframe` is not on it: every caller hands the body through `rewriteEmbeds`
  * (`articles/embeds.ts`) first, which decides what a frame becomes, and
- * `OTHER_FRAMES` below drops whatever reaches here without having been through it.
+ * `OTHER_FRAMES` below drops whatever reaches here in any other shape.
  */
 const DROP_TAGS = ['script', 'noscript', 'form', 'style', 'svg', 'button'];
 
-/** Any frame but the one `rewriteEmbeds` writes. The class is named there. */
-const OTHER_FRAMES = /<iframe\b(?![^>]*\bclass="reader-embed")[^>]*>(?:[\s\S]*?<\/iframe\s*>)?/gi;
+/**
+ * Elements that act from the body without a script: a `<meta>` refresh
+ * navigates the document, `<base>` re-points every relative address, `<link>`
+ * loads and prerenders, and the rest are plug-ins and frames of other kinds.
+ * Only the tags go, opening and closing, because what an `<object>` holds is
+ * fallback content and inert without it (ADR 0065 §7).
+ */
+const ACTIVE_TAGS =
+  /<\/?(?:meta|base|link|portal|object|embed|applet|param|frame|frameset)\b[^>]*>/gi;
+
+/**
+ * Take out every element that acts without a script, to a fixpoint.
+ *
+ * Repeated because a removal can put a tag back together: `<me<meta>ta …>` is a
+ * refresh once the inner tag is gone. Exported for `buildReaderHtml`, which runs
+ * it again over a body from the cache or the offline bundle, written by whatever
+ * cleaner was current then.
+ */
+export function stripActiveMarkup(html: string): string {
+  let out = html;
+  for (let previous = ''; previous !== out;) {
+    previous = out;
+    out = out.replace(/<(script|noscript)\b[\s\S]*?<\/\1\s*>/gi, '');
+    out = out.replace(/<\/?(?:script|noscript)\b[^>]*>/gi, '');
+    out = out.replace(ACTIVE_TAGS, '');
+  }
+  return out;
+}
+
+/**
+ * The one frame that may stay: exactly as `rewriteEmbeds` writes it, attribute
+ * for attribute. Whether its host is on the list is `buildReaderHtml`'s check and
+ * the document's policy, not this pattern's; what this pattern refuses is a frame
+ * with anything else on it, a `srcdoc` first of all.
+ */
+const CANONICAL_FRAME =
+  /^<iframe class="reader-embed" src="https:\/\/[^"<>\s]+"(?: sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox")?(?: title="[^"<>]*")?(?: name="[^"<>]*")?(?: height="\d{2,4}")? loading="lazy"><\/iframe>$/;
+
+/** Any frame but the canonical one, with what it holds. */
+const OTHER_FRAMES = /<iframe\b[^>]*>(?:[\s\S]*?<\/iframe\s*>)?/gi;
 
 /**
  * Clean an article body for the reader, by denylist.
@@ -148,10 +186,17 @@ const OTHER_FRAMES = /<iframe\b(?![^>]*\bclass="reader-embed")[^>]*>(?:[\s\S]*?<
  */
 export function sanitizeArticleHtml(body: string): string {
   let out = body;
-  for (const tag of DROP_TAGS) {
-    out = out.replace(new RegExp(`<${tag}[\\s\\S]*?</${tag}>`, 'gi'), '');
+  // To a fixpoint, and the frames last, because every removal here can put a tag
+  // back together out of the text on either side of it: `<ifr<script></script>ame`
+  // is a frame once the script is gone.
+  for (let previous = ''; previous !== out;) {
+    previous = out;
+    for (const tag of DROP_TAGS) {
+      out = out.replace(new RegExp(`<${tag}[\\s\\S]*?</${tag}>`, 'gi'), '');
+    }
+    out = stripActiveMarkup(out);
+    out = out.replace(OTHER_FRAMES, (frame) => (CANONICAL_FRAME.test(frame) ? frame : ''));
   }
-  out = out.replace(OTHER_FRAMES, '');
   // Tracking pixels (1x1) and empty lazyload imgs without a src.
   out = out.replace(/<img[^>]+(facebook\.com\/tr|height="1")[^>]*>/gi, '');
   // Reduce <picture>/<source> variants to the <img> - the reader loads srcset itself.

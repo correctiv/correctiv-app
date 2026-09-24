@@ -6,7 +6,7 @@ import { extractArticleFromDom } from '../src/articles/extract/dom';
 import { extractArticleFromString } from '../src/articles/extract/string';
 import { buildReaderHtml, type ReaderCopy } from '../src/articles/reader-html';
 import type { Article } from '../src/articles/types';
-import { decodeEntities } from '../src/lib/html';
+import { decodeEntities, stripActiveMarkup } from '../src/lib/html';
 import { toArticle } from '../src/services/wp.service';
 
 /**
@@ -114,6 +114,25 @@ describe.each(PATHS)('embeds through the %s', (_name, clean) => {
     expect(html).not.toContain('#bathing-sites-map');
   });
 
+  /**
+   * A frame nested inside an embed that loads a page on the app's own origin
+   * reaches the app's storage through `top`, measured 2026-09-24 (ADR 0065 §7).
+   * An embed that works without its own origin is given none, so nothing inside
+   * it has one. CORRECTIV's own apps and 23degrees draw nothing that way.
+   */
+  it('gives the frames that work without an origin a sandbox of their own', () => {
+    const sandbox = (name: string) =>
+      [...render(name).matchAll(/<iframe\b[^>]*>/g)].map(
+        ([tag]) => /\bsandbox="([^"]*)"/.exec(tag)?.[1],
+      );
+    const opaque = 'allow-scripts allow-popups allow-popups-to-escape-sandbox';
+    expect(sandbox('datawrapper-html')).toEqual([opaque]);
+    expect(sandbox('datawrapper-figure')).toEqual([opaque]);
+    expect(sandbox('flourish')).toEqual([opaque]);
+    expect(sandbox('correctiv-cdn')).toEqual([undefined]);
+    expect(sandbox('documentcloud')).toEqual([undefined]);
+  });
+
   it('renders a DocumentCloud document', () => {
     expect(frames(render('documentcloud')).map((f) => f.src)).toEqual([
       'https://embed.documentcloud.org/documents/28408410/pages/1/?embed=1&embed=1#?secret=U61dgC2AKD',
@@ -187,6 +206,34 @@ describe.each(PATHS)('embeds through the %s', (_name, clean) => {
     ]);
   });
 
+  /**
+   * A tag split by another the cleaner removes is put back together by the removal.
+   * The frame this makes carries the reader's own class and a `srcdoc`, which is a
+   * whole document of the author's choosing inside the reader.
+   */
+  it('does not let a removal reassemble a frame', () => {
+    const body = clean(
+      '<p><ifr<script></script>ame class="reader-embed" srcdoc="<p>x</p>"></iframe></p>' +
+        '<p><ifr<script></script>ame src="https://evil.example/"></iframe></p>',
+    );
+    // A parser leaves the attempt as inert text, which is why the second pattern
+    // asks for an attribute inside a tag and not for the word.
+    expect(body).not.toMatch(/<iframe/i);
+    expect(body).not.toMatch(/<[^>]*\bsrcdoc=/i);
+  });
+
+  it('drops markup that acts without a script: a refresh, a base, a stylesheet, a plug-in', () => {
+    const body = clean(
+      '<p>Text</p><META HTTP-EQUIV="refresh" content="0;url=https://example.com/">' +
+        '<meta\nhttp-equiv=refresh content="1;url=/other.html"><base href="https://evil.example/">' +
+        '<link rel="stylesheet" href="https://evil.example/x.css"><object data="x"></object>' +
+        '<embed src="x"><portal src="https://evil.example/"></portal><frameset><frame src="x"></frameset>' +
+        '<me<meta>ta http-equiv="refresh" content="0;url=https://example.com/">',
+    );
+    expect(body).not.toMatch(/<(meta|base|link|object|embed|portal|frame|frameset)\b/i);
+    expect(body).toContain('<p>Text</p>');
+  });
+
   it('never turns a frame address into a script address', () => {
     const html = reader(clean('<p><iframe src="javascript:alert(1)"></iframe></p>'));
     expect(html).not.toContain('javascript:');
@@ -246,16 +293,67 @@ describe('the fallback link in the reader document', () => {
  * `<meta>` only covers what the parser meets after it, so its place is asserted
  * as well as its words.
  */
+/**
+ * The last gate: `buildReaderHtml` does not trust the body it is handed. A body
+ * also comes out of the article cache and the offline bundle, written by whatever
+ * cleaner was current then, so what acts from the body without a script is taken
+ * out here as well as in the cleaners. On the web, the frame's `allow-scripts`
+ * lifts the sandbox's block on a refresh, which the Content Security Policy does
+ * not cover; on the phone, a refresh is a navigation the reader hands to the
+ * system browser without anybody having tapped.
+ */
+describe('a body handed to the reader directly', () => {
+  const PAGE_AFTER_CSP = (html: string) => html.slice(html.indexOf('<body>'));
+
+  it('loses every refresh, base, link and plug-in, however it is spelled', () => {
+    const html = reader(
+      '<p>Text</p><meta http-equiv="refresh" content="1;url=https://example.com/">' +
+        '<MeTa\thttp-equiv="Refresh" content="0;url=/same-origin.html">' +
+        '<me<meta>ta http-equiv="refresh" content="0;url=https://example.com/">' +
+        '<base href="https://evil.example/"><link rel="stylesheet" href="https://evil.example/x.css">' +
+        '<object data="x"></object><embed src="x"><portal src="x"></portal>' +
+        '<frameset><frame src="x"></frameset><applet code="x"></applet>',
+    );
+    const body = PAGE_AFTER_CSP(html);
+    expect(body).not.toMatch(/<(meta|base|link|object|embed|portal|frame|frameset|applet)\b/i);
+    expect(body).not.toMatch(/refresh/i);
+    expect(body).toContain('<p>Text</p>');
+  });
+
+  /** On its own, because it is exported and a caller need not loop around it. */
+  it('is stripped to a fixpoint by the function the gate is built on', () => {
+    expect(
+      stripActiveMarkup('<me<meta>ta http-equiv="refresh" content="0;url=/x.html"><p>Text</p>'),
+    ).toBe('<p>Text</p>');
+  });
+
+  it('keeps a frame only as the canonical one, and only from a listed host', () => {
+    const html = reader(
+      '<iframe class="reader-embed" src="https://evil.example/x" loading="lazy"></iframe>' +
+        '<iframe class="reader-embed" src="https://datawrapper.dwcdn.net/a/1/" srcdoc="x" ' +
+        'height="400" onload="x()"></iframe>' +
+        '<iframe srcdoc="<meta http-equiv=refresh content=0;url=/x.html>"></iframe>',
+    );
+    expect(frames(html)).toEqual([
+      { src: 'https://datawrapper.dwcdn.net/a/1/', height: '400', name: undefined },
+    ]);
+    expect(html).not.toMatch(/srcdoc|onload|evil\.example/);
+  });
+});
+
 describe("the reader document's Content Security Policy", () => {
   const html = reader('<p>Text</p>');
   const policy = /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/.exec(html)?.[1];
 
-  it('runs no script and frames only the listed hosts', () => {
-    expect(policy).toContain("script-src 'none'");
-    expect(policy).toContain("object-src 'none'");
-    expect(policy).toMatch(
-      /frame-src https:\/\/datawrapper\.dwcdn\.net https:\/\/cdn\.correctiv\.org https:\/\/app\.23degrees\.io https:\/\/embed\.documentcloud\.org https:\/\/flo\.uri\.sh(;|$)/,
-    );
+  /** Whole, so that a directive taken out is a failure rather than a shorter string. */
+  it('runs no script, takes no base or plug-in, and frames only the listed hosts', () => {
+    expect(policy?.split('; ')).toEqual([
+      "script-src 'none'",
+      "object-src 'none'",
+      "base-uri 'none'",
+      "form-action 'none'",
+      'frame-src https://datawrapper.dwcdn.net https://cdn.correctiv.org https://app.23degrees.io https://embed.documentcloud.org https://flo.uri.sh',
+    ]);
   });
 
   it('comes before anything in the head that could load', () => {
