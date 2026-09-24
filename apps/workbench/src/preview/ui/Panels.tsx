@@ -15,7 +15,7 @@ import { defineMessages, type MessageDescriptor } from 'react-intl';
 import { COMBINATIONS, type Status } from '../api';
 import type { Level, LogEntry } from '../frame/console';
 import { frameLabel, frameShort, handover } from '../handover';
-import type { Located } from '../frame/locate';
+import type { Located, Pick } from '../frame/locate';
 import { findingKey, MIN_TAP, type Finding } from '../frame/measure';
 import { FIXTURES } from '../frame/seed';
 import { asCss, PALETTE, TOKENS, type Overrides, type Scheme } from '../frame/tokens';
@@ -393,6 +393,12 @@ export interface ToolBindings {
     selected: number;
     setSelected: (index: number) => void;
     open: (frame: Located) => void;
+  };
+  /** The strings tool's picker (`preview/strings/`), which is armed apart from the inspector's. */
+  strings: {
+    picking: boolean;
+    setPicking: (on: boolean) => void;
+    pick: Pick | null;
   };
 }
 

@@ -18,6 +18,7 @@ export const shell: Record<string, string> = {
   'shell.section.tokens': 'Tokens',
   'shell.section.measure': 'Messen',
   'shell.section.inspect': 'Prüfen',
+  'shell.section.strings': 'Texte',
   'shell.section.designLinks': 'Öffnen',
   'shell.section.designClients': 'Desktop-Programme',
   'shell.section.designCode': 'Wo es den Code erreicht',

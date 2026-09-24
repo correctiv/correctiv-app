@@ -22,7 +22,7 @@ import { attachConsole } from './frame/console';
 import { applyTheme, BASE, driveRoute, frameRoute, keepFramePath, navigate } from './frame/handle';
 import { outlineByTestId } from './frame/highlight';
 import { reveal } from './frame/reveal';
-import { armPicker, openInEditor, type Located } from './frame/locate';
+import { armPicker, openInEditor, type Located, type Pick } from './frame/locate';
 import { audit, setOutline, type Finding } from './frame/measure';
 import { waitReady } from './frame/ready';
 import { applyFixture, ensureOnboarded, holdTheDoorOpen } from './frame/seed';
@@ -80,6 +80,13 @@ export function usePreview() {
   } | null>(null);
   const [picking, setPicking] = useState(false);
   const [hit, setHit] = useState<{ label: string; frames: Located[] } | null>(null);
+  /**
+   * The strings tool's own pick, apart from the inspector's because it asks a different
+   * question of the same click: which message id, not which line. One picker is armed at
+   * a time, so arming either disarms the other.
+   */
+  const [stringsPicking, setStringsPicking] = useState(false);
+  const [stringsPick, setStringsPick] = useState<Pick | null>(null);
   /**
    * The home document's row currently hovered or focused, and whether the frame follows
    * it there. None when nothing is hovered.
@@ -367,12 +374,20 @@ export function usePreview() {
 
   useEffect(() => {
     if (!picking) return;
-    return armPicker(win(), (frames, label) => {
+    return armPicker(win(), ({ hits: frames, label }) => {
       setHit({ label, frames });
       setSelected(0);
       setPicking(false);
     });
   }, [picking, loaded]);
+
+  useEffect(() => {
+    if (!stringsPicking) return;
+    return armPicker(win(), (pick) => {
+      setStringsPick(pick);
+      setStringsPicking(false);
+    });
+  }, [stringsPicking, loaded]);
 
   /**
    * The home tool's row, outlined in the frame while it is hovered or focused.
@@ -482,11 +497,22 @@ export function usePreview() {
     measure: { outline, setOutline: setOutlineOn, report, run: () => setReport(audit(win())) },
     inspect: {
       picking,
-      setPicking,
+      setPicking: (on) => {
+        if (on) setStringsPicking(false);
+        setPicking(on);
+      },
       hit,
       selected,
       setSelected,
       open: (frame) => void openInEditor(frame),
+    },
+    strings: {
+      picking: stringsPicking,
+      setPicking: (on) => {
+        if (on) setPicking(false);
+        setStringsPicking(on);
+      },
+      pick: stringsPick,
     },
   };
 
@@ -504,7 +530,7 @@ export function usePreview() {
     onChange,
     onResize,
     onLoad,
-    /** The home tool's own outline, separate from `tools`: the seventh tool, not one of the six. */
+    /** The home tool's own outline, separate from `tools`: the home tool is not one of the six. */
     /** See above: the page may not write the address until the store has read it. */
     started,
     outlineSection: setHoveredSection,

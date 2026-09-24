@@ -37,6 +37,7 @@ export type SectionId =
   | 'tokens'
   | 'measure'
   | 'inspect'
+  | 'strings'
   // /design
   | 'design-links'
   | 'design-clients'
@@ -135,6 +136,12 @@ export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
   tokens: wbMessage({ id: 'shell.section.tokens', defaultMessage: 'Tokens' }),
   measure: wbMessage({ id: 'shell.section.measure', defaultMessage: 'Measure' }),
   inspect: wbMessage({ id: 'shell.section.inspect', defaultMessage: 'Inspect' }),
+  strings: wbMessage({
+    id: 'shell.section.strings',
+    defaultMessage: 'Texts',
+    description:
+      'The preview tool that finds a string of the framed app by pointing at it and edits its German. Not the /strings page, which lists every string and edits nothing.',
+  }),
   'design-links': wbMessage({
     id: 'shell.section.designLinks',
     defaultMessage: 'Open',
@@ -253,12 +260,12 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
 
   preview: {
     kind: 'preview',
-    sections: ['appearance', 'state', 'home', 'console', 'tokens', 'measure', 'inspect'],
+    sections: ['appearance', 'state', 'home', 'console', 'tokens', 'measure', 'inspect', 'strings'],
     panelTitle: wbMessage({
       id: 'shell.panel.tools',
       defaultMessage: 'Tools',
       description:
-        'The name of the right panel on /preview, which holds the seven tools for inspecting the framed app.',
+        'The name of the right panel on /preview, which holds the tools for inspecting the framed app.',
     }),
     panelWidth: '31%',
     contextBar: true,

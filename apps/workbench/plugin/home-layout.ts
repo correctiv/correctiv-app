@@ -8,7 +8,8 @@ import { ROOT } from './collect.ts';
 import { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_FILE } from '../src/preview/home/names.ts';
 
 /**
- * The one thing the workbench writes back into the repository, and only in development.
+ * The first thing the workbench writes back into the repository, and only in development.
+ * `./strings.ts` is the second, and borrows the three refusals below.
  *
  * ADR 0036 §15 says the configurator opens a pull request. This is not that, and it is
  * deliberately the step before it: the same document, written to the same path, by a
@@ -65,19 +66,24 @@ const LIMIT = 64 * 1024;
  * Node writes an IPv4 peer on a dual-stack socket as `::ffff:127.0.0.1`, which is why
  * this is not an equality test against two strings.
  */
-function fromLoopback(req: IncomingMessage): boolean {
+export function fromLoopback(req: IncomingMessage): boolean {
   const address = req.socket.remoteAddress ?? '';
   return address === '::1' || /^(::ffff:)?127\./.test(address);
 }
 
-function answer(res: ServerResponse, status: number, body: Record<string, unknown>): void {
+export function answer(res: ServerResponse, status: number, body: Record<string, unknown>): void {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json');
   res.end(JSON.stringify(body));
 }
 
-/** The request body, or null if it ran past the limit. */
-async function read(req: IncomingMessage): Promise<string | null> {
+/**
+ * The request body, or null if it ran past the limit.
+ *
+ * Exported with the two above for `./strings.ts`, the second endpoint, which refuses on
+ * the same conditions for the same reasons and should not be a second copy of them.
+ */
+export async function read(req: IncomingMessage): Promise<string | null> {
   let text = '';
   for await (const chunk of req) {
     text += chunk;

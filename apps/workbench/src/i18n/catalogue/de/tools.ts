@@ -116,4 +116,43 @@ export const tools: Record<string, string> = {
   'tools.inspect.handover.context': 'Kontext',
   'tools.inspect.handover.view': 'Ansicht',
   'tools.inspect.handover.noLabel': '(kein Label)',
+
+  // The strings tool, `preview/strings/StringsTool.tsx`. What it edits is the app's
+  // German, which is printed as it stands and is not this site's to translate.
+  'tools.strings.pick': 'Text auswählen',
+  'tools.strings.picking': 'Klicken Sie im Rahmen auf einen Text',
+  'tools.strings.noOwners':
+    'Ohne Development-Build gibt es keinen Quell-Stack. Ein Wortlaut, den mehrere IDs teilen, lässt sich deshalb nicht auf eine eingrenzen. Die Suche über den Text funktioniert trotzdem.',
+  'tools.strings.english':
+    'Der Rahmen ist auf Englisch. Bearbeitet wird hier das Deutsche, eine Änderung ist also erst zu sehen, wenn der Rahmen wieder Deutsch ist.',
+  'tools.strings.noId':
+    'Keine Text-ID. Das ist Inhalt, ein Name oder eine Marke, die die App nicht übersetzt. Es sei denn, es ist eine der wenigen Meldungen, die fast nur aus Platzhaltern bestehen, die Liste kennzeichnet sie.',
+  'tools.strings.several': '{count} IDs haben diesen Wortlaut. Wählen Sie eine:',
+  'tools.strings.narrowed': 'Über den Quell-Stack eingegrenzt.',
+  'tools.strings.edited': 'geändert',
+  'tools.strings.loose': 'nicht auswählbar',
+  'tools.strings.looseNote':
+    'Diese Meldung besteht fast nur aus Platzhaltern, ihr Text passt deshalb auf beinahe jeden Satz. Der Picker lässt sie aus, statt zu raten. Sie finden sie hier in der Liste.',
+  'tools.strings.englishSource': 'Englisch, und das ist Quellcode',
+  'tools.strings.writtenIn': 'Steht in {place}. Das Englische zu ändern ist eine Änderung am Code.',
+  'tools.strings.german': 'Deutsch',
+  'tools.strings.reset': 'Zurück zum Katalog',
+  'tools.strings.problem.empty': 'Das Deutsche ist leer.',
+  'tools.strings.problem.syntax': 'Das ist keine gültige Meldung: {detail}',
+  'tools.strings.problem.missing':
+    'Das Englische hat Platzhalter, die im Deutschen fehlen: {names}',
+  'tools.strings.problem.extra':
+    'Das Deutsche hat Platzhalter, die das Englische nicht hat: {names}',
+  'tools.strings.problem.unknown': 'Diese ID gibt es im Katalog nicht.',
+  'tools.strings.changes': '{count, plural, one {# Text geändert} other {# Texte geändert}}',
+  'tools.strings.save': 'In den Katalog schreiben',
+  'tools.strings.saved': 'Geschrieben nach {paths}.',
+  'tools.strings.refused': 'Nichts wurde geschrieben. {ids}',
+  'tools.strings.saveFailed': 'Der Dev-Server hat nicht geantwortet: {detail}',
+  'tools.strings.copy': 'Änderungen kopieren',
+  'tools.strings.discard': 'Alle verwerfen',
+  'tools.strings.noSubmit':
+    'Texte von der veröffentlichten Seite einzureichen ist noch nicht gebaut. Kopieren Sie die Änderungen und schicken Sie sie jemandem, der die Workbench lokal startet.',
+  'tools.strings.filter': 'Text suchen',
+  'tools.strings.shown': '{shown} von {total}',
 };

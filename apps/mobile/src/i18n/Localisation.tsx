@@ -10,6 +10,7 @@ import { CATALOGUES } from '@correctiv/catalogue';
 import { intlLocale } from '@correctiv/app-core/lib/format';
 import type { Locale } from '@correctiv/app-core/stores/settings';
 import { isOwnDocument } from '@/lib/ownDocument';
+import { usePreviewStrings } from '@/lib/strings';
 import { useLocale } from '@/lib/store/core';
 
 /**
@@ -113,6 +114,9 @@ function useDocumentLanguage(locale: Locale): void {
 export function Localisation({ children }: { children: ReactNode }) {
   const locale = useLocale();
   useDocumentLanguage(locale);
+  // The shipped catalogue, unless the workbench is rewording a string on screen; only
+  // an id this catalogue already carries can be reworded. `lib/strings.ts` says why.
+  const messages = usePreviewStrings(locale, CATALOGUES[locale]);
   return (
     <IntlProvider
       /*
@@ -134,7 +138,7 @@ export function Localisation({ children }: { children: ReactNode }) {
       */
       locale={intlLocale(locale)}
       defaultLocale={intlLocale('en')}
-      messages={CATALOGUES[locale]}
+      messages={messages}
       onError={onError}
     >
       {children}

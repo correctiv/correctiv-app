@@ -184,23 +184,70 @@ const SWALLOWED = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click'] 
 /** A press that ends without a click still has to answer. */
 const INTERACTION_END_MS = 400;
 
-export function armPicker(
-  win: Window | null,
-  onHit: (hits: Located[], label: string) => void,
-): () => void {
+/**
+ * The text that was pointed at, in the order a lookup should try it.
+ *
+ * [ADR 0056](../../../../../adr/0056-a-string-is-picked-where-it-renders.md) §2: the
+ * text node under the pointer first, and the element's whole text only after it.
+ * `textContent` concatenates every text child, and a row whose label ends in an arrow
+ * writes that arrow as a node of its own beside the message, so the element reads
+ * `Alle ansehen →` while the catalogue holds `Alle ansehen`. Decoration is common and a
+ * message spanning children is something nothing in the app does today, so the order
+ * that looks backwards is the one that finds the string.
+ *
+ * The node is only offered when it is inside the element the pointer landed on: the
+ * caret APIs answer with the NEAREST text, which past the end of a short label can be a
+ * neighbour's.
+ */
+export function pointedTexts(doc: Document, x: number, y: number, target: Element): string[] {
+  const texts: string[] = [];
+  const caret = doc as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node } | null;
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+  };
+  let node: Node | null = null;
+  try {
+    node =
+      caret.caretPositionFromPoint?.(x, y)?.offsetNode ??
+      caret.caretRangeFromPoint?.(x, y)?.startContainer ??
+      null;
+  } catch {
+    node = null;
+  }
+  if (node && node.nodeType === 3 && target.contains(node)) {
+    const text = (node.textContent ?? '').trim();
+    if (text) texts.push(text);
+  }
+  const whole = (target.textContent ?? '').trim();
+  if (whole && !texts.includes(whole)) texts.push(whole);
+  return texts;
+}
+
+/** What a pick hands back: the owner chain, the handover's label, and the pointed texts. */
+export interface Pick {
+  hits: Located[];
+  /** Prose for the handover block, cut short; not a key (ADR 0056 §2). */
+  label: string;
+  /** `pointedTexts`, whole. */
+  texts: string[];
+}
+
+export function armPicker(win: Window | null, onHit: (pick: Pick) => void): () => void {
   const doc = win?.document;
   if (!doc) return () => {};
 
   clearHighlight(win);
 
-  let pending: { hits: Promise<Located[]>; label: string } | null = null;
+  let pending: { hits: Promise<Located[]>; label: string; texts: string[] } | null = null;
   let fallback: number | undefined;
 
   const deliver = () => {
     const current = pending;
     pending = null;
     win?.clearTimeout(fallback);
-    if (current) void current.hits.then((hits) => onHit(hits, current.label));
+    if (current) {
+      void current.hits.then((hits) => onHit({ hits, label: current.label, texts: current.texts }));
+    }
   };
 
   const swallow = (event: Event) => {
@@ -211,9 +258,11 @@ export function armPicker(
       const target = event.composedPath()[0];
       if (!isElement(target)) return;
       markPicked(win, target);
+      const pointer = event as PointerEvent;
       pending = {
         hits: locate(win, target),
         label: (target.textContent ?? '').trim().slice(0, 40),
+        texts: pointedTexts(doc, pointer.clientX, pointer.clientY, target),
       };
       return;
     }

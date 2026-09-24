@@ -22,6 +22,7 @@ import {
   Tokens,
 } from '../preview/ui/Panels';
 import { Readout } from '../preview/ui/Readout';
+import { StringsTool } from '../preview/strings/StringsTool';
 import { Stage } from '../preview/ui/Stage';
 import { LinkBar, Toolbar } from '../preview/ui/Toolbar';
 
@@ -32,11 +33,11 @@ const VIEW = VIEWS.preview;
  * its own.
  *
  * This is the route that used to be seven `isApp` branches in `App.tsx`. Its
- * body is the stage; everything else it has — the frame controls, the seven
+ * body is the stage; everything else it has — the frame controls, the
  * tools, the two numbers on the rail, the readout and the link — goes into the
  * places the declaration in `shell/views.ts` keeps for it. Six of those tools
- * are `preview/ui/Panels.tsx`; the seventh is `preview/home/`, which holds a
- * document of its own rather than a readout.
+ * are `preview/ui/Panels.tsx`; `preview/home/` holds a document of its own
+ * rather than a readout, and `preview/strings/` holds a draft of the German.
  *
  * **The two halves of the address meet here and nowhere else.** The shell owns
  * `tool` and `full`; the frame owns `d`, `o`, `z`, `w`, `h`, `t`, `lg`, `s`, `sc`, `tm`,
@@ -206,6 +207,15 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
 
       <Slot id="inspect">
         <Inspect {...panels} />
+      </Slot>
+
+      <Slot id="strings">
+        <StringsTool
+          status={preview.status}
+          picking={preview.tools.strings.picking}
+          setPicking={preview.tools.strings.setPicking}
+          pick={preview.tools.strings.pick}
+        />
       </Slot>
 
       <Slot id="status">

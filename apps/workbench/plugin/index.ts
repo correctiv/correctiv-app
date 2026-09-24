@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 
 import { collectDocs, ROOT } from './collect.ts';
 import { homeLayoutEndpoint } from './home-layout.ts';
+import { stringsEndpoint } from './strings.ts';
 
 const MODULE_ID = 'virtual:docs';
 const API_ID = 'virtual:api';
@@ -87,12 +88,14 @@ export function docsPlugin(): Plugin {
       // looks like the plugin not working.
       server.watcher.add(watched.length > 0 ? watched : [join(ROOT, 'adr'), join(ROOT, '*.md')]);
 
-      // The one thing this site writes back, and the reason it is here rather
-      // than in a plugin of its own: `configureServer` is the hook that does not
+      // The two things this site writes back, and the reason they are here rather
+      // than in a plugin of their own: `configureServer` is the hook that does not
       // run in a build, so a dev-only endpoint costs nothing in the published
-      // bundle, and the repository has exactly one of these to read.
-      // `plugin/home-layout.ts` is what it refuses and why.
+      // bundle, and the repository has one place to read them in.
+      // `plugin/home-layout.ts` is what they refuse and why; `plugin/strings.ts` is
+      // the German of the strings tool (ADR 0056 §8), on the same terms.
       server.middlewares.use(homeLayoutEndpoint(server));
+      server.middlewares.use(stringsEndpoint());
     },
 
     handleHotUpdate({ file, server }) {
