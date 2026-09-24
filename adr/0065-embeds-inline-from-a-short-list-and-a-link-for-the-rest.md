@@ -2,7 +2,9 @@
 
 Status: accepted, 2026-09-24, **built in the same pull request**, and §4, §5 and §7
 revised in it the same day after a cold security review found that a `<meta>` refresh in a
-body turned the web reader into any page, on the app's own origin included. The host list in §1 is a
+body turned the web reader into any page, on the app's own origin included. §7's gate was
+revised a second time the same day, from a denylist to an allowlist over a parsed tree,
+after a re-check found two bodies the first revision let through. The host list in §1 is a
 proposal: the newsroom and data protection may change it, and changing it is one edit to
 `INLINE_EMBED_HOSTS` in `packages/app-core/src/articles/embeds.ts`. Verified in the web
 export in a browser; **iOS and Android unrun**.
@@ -199,16 +201,51 @@ navigation the reader handed to the system browser without a tap.
 
 - **The last gate is `buildReaderHtml`.** A body comes out of a cleaner, but also out of the
   article cache and the offline bundle, written by whatever cleaner was current when it was
-  stored. So the document builder takes out, whatever the cleaners did, every `<meta>`,
+  stored. ~~So the document builder takes out, whatever the cleaners did, every `<meta>`,
   `<base>`, `<link>`, `<portal>`, `<object>`, `<embed>`, `<applet>`, `<param>`, `<frame>`
   and `<frameset>`, in any casing, and rebuilds every frame as the canonical one from a
   listed host or removes it, so a `srcdoc` or an `onload` does not survive. To a fixpoint,
   because a removal can put a tag back together: `<me<meta>ta …>` is a refresh once the inner
-  tag is gone.
-- **`sanitizeArticleHtml` drops the same set**, and runs its removals to a fixpoint as well,
+  tag is gone.~~ Wrong on the day it was written, measured 2026-09-24 by the re-check of the
+  pull request: a denylist of regular expressions let two bodies through, below.
+- **The gate is an allowlist over a parsed tree** (`gateReaderBody` in
+  `articles/body-allowlist.ts`). The body is parsed with htmlparser2, and what is written into
+  the document is the serialisation of a tree the gate built: tags from one table, each with
+  the attributes the table gives it, an address only as absolute `https`, `http` or `mailto`
+  with a relative one resolved against correctiv.org, a frame only as the canonical one from
+  a listed host, and every attribute value quoted and every `<` in text escaped. Everything
+  else is unwrapped and keeps its words, or, for a script, a style, a form, an SVG, a player
+  and the like, dropped with what it holds. A browser re-parsing that output can rearrange the
+  allowed tags and cannot find one that is not there. The table is the one the DOM extractor
+  already cleaned with, moved into the same module, so the extractor and the gate cannot
+  disagree; it gained `details` and `summary` for the accordions and the table elements, of
+  which two of the 300 posts carried one.
+- **Why the denylist was abandoned rather than extended.** The re-check reproduced two
+  bodies in Chrome against the reader's sandbox. A `<meta http-equiv=refresh …` left
+  unterminated at the very end of the body had no `>` for the pattern to find, and the
+  builder's own `</div>` after it closed the tag: the frame went to the app's origin and read
+  `parent.localStorage` without a tap. And `<img usemap><map><area href="/x">` was on nobody's
+  list: one tap on the picture navigated the frame to the app's origin, and an SVG link
+  (`xlink:href`) did the same. Both were a missing entry, and a list of what is forbidden is
+  finished only when nobody finds the next one. An allowlist over a tree is finished when it is
+  written: an unterminated tag is text to a parser, and a `<map>` is not in the table.
+- **What it costs is the parser.** The core kept htmlparser2 inside the DOM extractor so that
+  a host without one would not need it (`test/boundary.test.ts`). The gate is the second file
+  allowed to import it, so a host that builds the reader document now carries the parser. The
+  one host does already; a script that only extracts, with the string backend, still does not.
+- **The web reader routes every tap on a link or an area**, and cancels one it cannot route
+  (`readerClickAction`): no tap navigates the frame itself, bar `mailto:` and `tel:`, which the
+  system takes over while the frame stays. The phone needs no such rule, because the WebView
+  reports every top-frame load to `onShouldStartLoadWithRequest`, a tap included.
+- ~~**`sanitizeArticleHtml` drops the same set**~~ (the gate holds a table now, so there is no
+  set to share; wrong on the day it was written, measured 2026-09-24)
+  **`sanitizeArticleHtml` drops the set the denylist gate dropped**, and runs its removals to a
+  fixpoint as well,
   with the frames last and only the exact form `rewriteEmbeds` writes let through, because
   `<ifr<script></script>ame class="reader-embed" srcdoc="…">` was a frame with the reader's
-  own class once the script was gone.
+  own class once the script was gone. It also drops a tag left open at the very end. **It is
+  not the boundary**, and says so: what it does is keep what the cache stores small and
+  near to what the reader shows.
 - **A frame nested inside an embed** is the route left after both, and it was measured in the
   same browser: a frame inside a cross-origin embed that loads a page on the app's origin
   gets that origin and the reader's inherited sandbox, and read `top.localStorage`. So the
@@ -226,6 +263,9 @@ navigation the reader handed to the system browser without a tap.
 - **A WebView per embed.** Not needed yet: the reader is one WebView already, and an inline
   frame inside it is the cheapest way to show an embed. It becomes the question once the
   article is drawn natively rather than as a document, which is not planned.
+- **A reader document without the parser.** A host that cannot carry htmlparser2 cannot
+  build the reader document any more (§7). None exists; the day one does, the answer is a
+  gate of its own over the same table, not the denylist back.
 - **A sandbox for the three hosts that keep their origin** (§7). For `cdn.correctiv.org` it
   is CORRECTIV's own code, which could stop reading storage; for 23degrees and DocumentCloud
   it is somebody else's decision.
