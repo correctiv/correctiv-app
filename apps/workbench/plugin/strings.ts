@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 
-import { findWording, replaceWording } from './catalogue.ts';
+import { applyWordings, catalogueFiles } from './catalogue.ts';
 import { ROOT } from './collect.ts';
 import { answer, read, refused as refusedEarly } from './home-layout.ts';
 import {
@@ -11,7 +11,7 @@ import {
   GERMAN_CATALOGUE_DIR,
   STRINGS_ENDPOINT,
 } from '../src/preview/strings/names.ts';
-import { checkWording, type WordingProblem } from '../src/preview/strings/validate.ts';
+import { isWordings } from '../src/preview/strings/validate.ts';
 
 /**
  * The second thing the workbench writes back into the repository, and only in development.
@@ -25,7 +25,7 @@ import { checkWording, type WordingProblem } from '../src/preview/strings/valida
  * §1 for the reason ADR 0061 §1 gives the home layout's Save: the person running it can
  * already write the file with an editor, and what it buys is that the file receives what
  * the validator passed. The published site's way out is ADR 0061's submission, whose
- * strings kind is named there and is not built yet.
+ * strings kind (ADR 0062) makes the same write through the same `applyWordings`.
  *
  * The body is `{ "<id>": "<German>" }`. **All or nothing**: an id the German catalogue
  * does not carry, which is ADR 0056 §7's limit, or a wording `checkWording` refuses, and
@@ -37,62 +37,6 @@ import { checkWording, type WordingProblem } from '../src/preview/strings/valida
  * cross the print width and oxfmt is what decides where that line breaks, and last
  * rebuilds the table the picker reads (`regenerateTable`).
  */
-
-interface Refused {
-  id: string;
-  problems: (WordingProblem | { code: 'unknown-id' })[];
-}
-
-function catalogueFiles(root: string): string[] {
-  return readdirSync(join(root, GERMAN_CATALOGUE_DIR))
-    .filter((name) => name.endsWith('.ts') && name !== 'index.ts')
-    .map((name) => `${GERMAN_CATALOGUE_DIR}/${name}`);
-}
-
-function isWordings(value: unknown): value is Record<string, string> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.values(value).every((wording) => typeof wording === 'string')
-  );
-}
-
-/**
- * The files the wordings would produce, or the refusals that stop them.
- *
- * Exported for the test, which runs it over copies of the real catalogue: the middleware
- * around it is the home layout's, and what is new is this.
- */
-export function applyWordings(
-  wordings: Record<string, string>,
-  english: Readonly<Record<string, { defaultMessage?: string }>>,
-  sources: ReadonlyMap<string, string>,
-): { written: Map<string, string>; refused: Refused[] } {
-  const next = new Map(sources);
-  const touched = new Set<string>();
-  const refused: Refused[] = [];
-
-  for (const [id, wording] of Object.entries(wordings)) {
-    const path = [...next.keys()].find((file) => findWording(next.get(file)!, id) !== null);
-    const source = english[id]?.defaultMessage;
-    if (path === undefined || source === undefined) {
-      refused.push({ id, problems: [{ code: 'unknown-id' }] });
-      continue;
-    }
-    const problems = checkWording(source, wording);
-    if (problems.length > 0) {
-      refused.push({ id, problems });
-      continue;
-    }
-    next.set(path, replaceWording(next.get(path)!, id, wording)!);
-    touched.add(path);
-  }
-
-  const written = new Map<string, string>();
-  if (refused.length === 0) for (const path of touched) written.set(path, next.get(path)!);
-  return { written, refused };
-}
 
 /** What the endpoint does after writing, handed in so a test can run it over a copy. */
 export interface StringsEndpointOptions {
@@ -165,7 +109,9 @@ export function stringsEndpoint({
       { defaultMessage?: string }
     >;
     const sources = new Map(
-      catalogueFiles(root).map((path) => [path, readFileSync(join(root, path), 'utf8')] as const),
+      catalogueFiles(readdirSync(join(root, GERMAN_CATALOGUE_DIR))).map(
+        (path) => [path, readFileSync(join(root, path), 'utf8')] as const,
+      ),
     );
 
     const { written, refused } = applyWordings(input, english, sources);

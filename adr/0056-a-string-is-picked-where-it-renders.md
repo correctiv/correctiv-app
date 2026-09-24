@@ -1,7 +1,7 @@
 # ADR 0056 — A string is picked where it renders, and the German is what is edited
 
 Status: accepted, 2026-09-22, **built in #259**; the published site's way out, ADR 0061
-§3's strings submission, is not. Measured on 2026-09-21, and the measurement
+§3's strings submission, built by [ADR 0062](0062-the-texts-submission-may-change-wordings-and-nothing-else.md). Measured on 2026-09-21, and the measurement
 is in the Context below because it decided the shape rather than confirming it. Retires
 nothing.
 
@@ -230,9 +230,11 @@ not apply to them, and the second half of the tool would be a different interact
 [ADR 0050](0050-the-workbench-gets-a-second-audience.md) §3 keeps the two catalogues
 apart; nothing here argues they should stay unequal in what can edit them.
 
-**Whether this ends in a pull request**, as ADR 0036 §15 says the configurator should.
+~~**Whether this ends in a pull request**, as ADR 0036 §15 says the configurator should.
 The same answer is the right one and for the same reason, and the same step before it is
-what this record decides: write the file, look at the diff, commit it by hand.
+what this record decides: write the file, look at the diff, commit it by hand.~~ Voided by
+[ADR 0062](0062-the-texts-submission-may-change-wordings-and-nothing-else.md): from the published site it ends in a pull request, by ADR 0061's route. The dev
+server's save still writes the file for a developer to commit by hand.
 
 **Whether the twins should be resolvable at all.** Two ids with the same German are a fact
 about the catalogue, and `twinsOf` already shows them on `/strings`. This tool now has a

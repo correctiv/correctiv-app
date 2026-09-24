@@ -98,7 +98,8 @@ import {
 import { guarded as isGuarded } from './scenario';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
 import { getLayout, setLayout, subscribeLayout } from './store';
-import { canSave, copyNow, publish, save, submission, type SaveResult } from './write';
+import { copyNow } from '../clipboard';
+import { canSave, publish, save, submission, type SaveResult } from './write';
 
 /**
  * The home screen's document, as a day somebody can arrange.

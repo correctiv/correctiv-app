@@ -14,6 +14,7 @@
  */
 
 import { HOME_LAYOUT_FILE } from './home/names';
+import { GERMAN_CATALOGUE_DIR } from './strings/names';
 
 /**
  * Every kind of submission there is or is about to be.
@@ -28,25 +29,30 @@ import { HOME_LAYOUT_FILE } from './home/names';
  *
  * `built` is false for a kind that has a name and a prefix and no way through yet. The
  * workflow does not start for it; `test/submission.test.ts` holds the workflow's `if:` to
- * exactly the built prefixes, so building the strings kind is one flag here and one line
- * there, and forgetting the second is a red test.
+ * exactly the built prefixes, so building a kind is one flag here and one line there, and
+ * forgetting the second is a red test.
+ *
+ * What a kind may write is named here too, as a `file` or a `dir`, and it is the whole of
+ * what the workflow lets it commit: `scripts/submission-verify.ts` holds every path the run
+ * changed to it before anything is committed (ADR 0062 §2).
  */
 export const SUBMISSION_KINDS = {
-  /** The home screen's document. ADR 0061 §2. */
+  /** The home screen's document, one file. ADR 0061 §2. */
   home: {
     prefix: '[startseite]',
     file: HOME_LAYOUT_FILE,
     built: true,
   },
   /**
-   * The German catalogue. ADR 0061 §3: named, not built. What it would carry is a JSON
-   * object of id to German, and the workflow would write it into the catalogue's
-   * TypeScript through the compiler API, the way ADR 0056 §8 writes one literal.
+   * The German catalogue, one file per id namespace in the directory, and only the
+   * wordings of ids it already carries. ADR 0061 §3, built by ADR 0062: the payload is an
+   * object of id to German, and the workflow replaces each id's string literal in the
+   * catalogue's TypeScript through the compiler API, the way ADR 0056 §8 writes one.
    */
   strings: {
     prefix: '[texte]',
-    file: 'packages/catalogue/src/de/',
-    built: false,
+    dir: GERMAN_CATALOGUE_DIR,
+    built: true,
   },
 } as const;
 

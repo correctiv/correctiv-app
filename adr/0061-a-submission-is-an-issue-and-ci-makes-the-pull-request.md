@@ -134,8 +134,11 @@ one German word, `[startseite]` now and `[texte]` next.
 - **Only in the title.** The body does not repeat the kind; a second place to say it would be
   a second place to disagree.
 
-In the workflow's script each kind maps to the one file it writes and the function that
-validates and prints it, in a table typed over the kinds, so a kind without an entry is a
+~~In the workflow's script each kind maps to the one file it writes and the function that
+validates and prints it~~ (voided by
+[ADR 0062](0062-the-texts-submission-may-change-wordings-and-nothing-else.md) §2: the
+strings kind writes a file per namespace it rewords, and each kind maps to what applies it
+and what proves it), in a table typed over the kinds, so a kind without an entry is a
 compile error. A kind can be named with no way through yet; the workflow does not start for
 it, and `test/submission.test.ts` holds the workflow's `if:` to exactly the kinds that are
 built.
@@ -320,7 +323,8 @@ changes works as it does" describes that record's first slice and is not false.
 2. **Whether GitHub reports `MEMBER` for somebody whose organisation membership is private.**
    Not measured. If it does not, their issues wait for a maintainer, which fails the safe way;
    making the membership public, or adding them as collaborators, would be the answer.
-3. **The strings kind** (§3), with ADR 0056's picker.
+3. ~~**The strings kind** (§3), with ADR 0056's picker.~~ Voided by [ADR 0062](0062-the-texts-submission-may-change-wordings-and-nothing-else.md), which
+   builds it.
 4. **A first real run.** Nothing here was run against github.com, because opening issues on
    this repository to test it was not wanted. The steps were run locally in a throwaway clone
    installed with `npm ci --ignore-scripts`, with the scripts' GitHub calls faked, and the
