@@ -2,7 +2,7 @@
 
 Status: accepted, 2026-09-23, decided by the product side on a design memo written for this
 record. ~~**Not built.** §8 names the first slice, which is being built beside it.~~ §8 is built
-in [#247](https://github.com/correctiv/correctiv-app/pull/247), and §6 with it; §7 and the strip and zooms of §2 are not.
+in [#247](https://github.com/correctiv/correctiv-app/pull/247), and §6 with it; §7 ~~and the strip and zooms of §2 are not~~ is not; the strip and its zooms of §2 are built in [#258](https://github.com/correctiv/correctiv-app/pull/258).
 
 ## Context
 
@@ -246,6 +246,7 @@ comment on `minuteOfDay` changes with the code.
 1. ~~**Hermes and `Europe/Berlin`**, measured on an Android device before §6 is relied on.~~
    Not needed since #247, for the reason under §6.
 2. **The horizon**, which is the newsroom's to set; 36 hours is where it starts.
-3. **The strip and its zooms**, the layer chip and the conflict badges, after §8 has been used.
+3. ~~**The strip and its zooms**,~~ Built in [#258](https://github.com/correctiv/correctiv-app/pull/258).
+   The layer chip and the conflict badges, after §8 has been used, are still open.
 4. **The private pipeline of §7**, which is the companion's first consumer and brings ADR 0058
    §4's check with it.
