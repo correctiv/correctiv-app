@@ -13,6 +13,7 @@
 import { bindActionCreators, type StoreEnhancer } from '@reduxjs/toolkit';
 import type { router } from 'expo-router';
 import { useEffect, useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useDispatch, useSelector, useStore, type TypedUseSelectorHook } from 'react-redux';
 
 import {
@@ -63,7 +64,12 @@ import {
   sessionActions,
   signIn,
 } from '@correctiv/app-core/stores/session';
-import { locale as selectLocale, settingsActions } from '@correctiv/app-core/stores/settings';
+import {
+  appTextScale,
+  locale as selectLocale,
+  settingsActions,
+  textSizeFollowsSystem,
+} from '@correctiv/app-core/stores/settings';
 import { previewLocale, SHIPPED_LOCALE } from '@/lib/locale';
 import {
   fetchIssues,
@@ -191,7 +197,21 @@ export const useVideo = () => useAppSelector((s) => s.video);
  */
 export const useIsAdmitted = () => useAppSelector((s) => selectIsAdmitted(s.session, Date.now()));
 export const useActiveTab = () => useAppSelector((s) => s.settings.activeTab);
-export const useTextScale = () => useAppSelector((s) => s.settings.textScale);
+/**
+ * The factor every text in the app is drawn at, articles included (ADR 0033): the
+ * system's font scale, or the step the reader chose in its place. The system's value
+ * is measured here and handed to the core's selector, because it changes while the
+ * app runs and only the host can read it.
+ */
+export const useAppTextScale = () => {
+  const { fontScale } = useWindowDimensions();
+  return useAppSelector((s) => appTextScale(s.settings, fontScale));
+};
+/** The stored text size, a primitive; `lib/theme/textScaling`'s provider is its one text-drawing reader. */
+export const useTextSize = () => useAppSelector((s) => s.settings.textSize);
+/** Whether the text follows the system, which is the default (ADR 0033). */
+export const useTextSizeFollowsSystem = () =>
+  useAppSelector((s) => textSizeFollowsSystem(s.settings));
 export const useTheme = () => useAppSelector((s) => s.settings.theme);
 /** The language to render in, named by this host above; `i18n/Localisation` is its one reader. */
 export const useLocale = () => useAppSelector((s) => selectLocale(s.settings));

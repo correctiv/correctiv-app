@@ -56,5 +56,6 @@ export const fixtures: Record<string, string> = {
   'fixtures.bundle.hint': 'Die App zeigt nur die mitgelieferten Inhalte, als wäre sie offline.',
 
   'fixtures.bigType': 'Größte Textgröße',
-  'fixtures.bigType.hint': 'A++ (1,15). Bei dieser Größe bricht die Artikelansicht als Erstes.',
+  'fixtures.bigType.hint':
+    'A++ (1,15), in der App gewählt: ersetzt die Textgröße des Systems auf jedem Bildschirm, auch im Artikel.',
 };

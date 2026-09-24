@@ -28,11 +28,19 @@ import {
 } from '../src/stores/savedArticles';
 import {
   PERSISTED_KEYS,
+  TEXT_SIZE_STEPS,
+  appTextScale,
   completeOnboarding,
+  nearestTextSizeStep,
+  resetForDemo,
+  scaleTextMetrics,
   setActiveTab,
+  setTextSize,
   setTheme,
   settingsActions,
+  textSizeFollowsSystem,
   type SettingsState,
+  type TextSize,
 } from '../src/stores/settings';
 import { createAppStore, resetStore, type AppStore } from '../src/stores/store';
 import { close, isActive, opened, play, statusChanged } from '../src/stores/video';
@@ -77,6 +85,60 @@ describe('settings slice', () => {
     store.dispatch(setTheme('dark'));
     expect(store.getState().settings.onboardingDone).toBe(true);
     expect(store.getState().settings.theme).toBe('dark');
+  });
+});
+
+describe('the one text size (ADR 0033)', () => {
+  const settingsNow = () => store.getState().settings;
+
+  it('follows the system by default, and takes its value exactly', () => {
+    expect(textSizeFollowsSystem(settingsNow())).toBe(true);
+    expect(appTextScale(settingsNow(), 1)).toBe(1);
+    expect(appTextScale(settingsNow(), 2)).toBe(2);
+  });
+
+  it('replaces the system scale with a chosen step rather than multiplying it', () => {
+    store.dispatch(setTextSize(1.15));
+    expect(textSizeFollowsSystem(settingsNow())).toBe(false);
+    // The same choice is the same size on every phone: at system 200 % a
+    // multiplier would give 2.3, which nothing in the app was ever seen at.
+    expect(appTextScale(settingsNow(), 1)).toBe(1.15);
+    expect(appTextScale(settingsNow(), 2)).toBe(1.15);
+    expect(appTextScale(settingsNow(), 0.85)).toBe(1.15);
+  });
+
+  it('refuses a size no control offers', () => {
+    store.dispatch(setTextSize(0.9));
+    store.dispatch(setTextSize(1.5 as TextSize));
+    store.dispatch(setTextSize('1.15' as unknown as TextSize));
+    store.dispatch(setTextSize(null as unknown as TextSize));
+    expect(settingsNow().textSize).toBe(0.9);
+    store.dispatch(setTextSize('system'));
+    expect(settingsNow().textSize).toBe('system');
+  });
+
+  it('starts a manual choice at the step nearest the system', () => {
+    expect(nearestTextSizeStep(1)).toBe(1);
+    expect(nearestTextSizeStep(0.85)).toBe(0.9);
+    expect(nearestTextSizeStep(1.1)).toBe(1.15);
+    // The ceiling holds: a large system scale lands on the largest step.
+    expect(nearestTextSizeStep(2)).toBe(TEXT_SIZE_STEPS.at(-1));
+  });
+
+  it('scales a style by its font size and line height only', () => {
+    expect(scaleTextMetrics({ fontSize: 20, lineHeight: 30, letterSpacing: 1 }, 1.15)).toEqual({
+      fontSize: 23,
+      lineHeight: 34.5,
+      letterSpacing: 1,
+    });
+    // A style without the metrics is returned as it came.
+    expect(scaleTextMetrics({ color: 'red' }, 2)).toEqual({ color: 'red' });
+  });
+
+  it('goes back to the system on the demo reset', () => {
+    store.dispatch(setTextSize(0.9));
+    store.dispatch(resetForDemo());
+    expect(settingsNow().textSize).toBe('system');
   });
 });
 
@@ -289,18 +351,97 @@ describe('persist', () => {
     const platform = createMemoryPlatform();
     await platform.keyValue.setString(
       'store.settings',
-      JSON.stringify({ theme: 'dark', textScale: 1.5, activeTab: 'profile', bogus: 1 }),
+      JSON.stringify({ theme: 'dark', textSize: 1.15, activeTab: 'profile', bogus: 1 }),
     );
     configurePlatform(platform);
 
     await persist(store, [settings()]);
 
     expect(store.getState().settings.theme).toBe('dark');
-    expect(store.getState().settings.textScale).toBe(1.5);
+    expect(store.getState().settings.textSize).toBe(1.15);
     // Not in PERSISTED_KEYS, so a stale payload cannot override live shell state…
     expect(store.getState().settings.activeTab).toBe('home');
     // …nor inject state the slice never declared.
     expect(store.getState().settings).not.toHaveProperty('bogus');
+  });
+
+  /**
+   * ADR 0033's migration. Every installed app has a `textScale` on disk, because the
+   * writer stores every declared key and 1 was the default. Read as the new meaning
+   * it would be an override of 1 for everybody, which is the system's font setting
+   * switched off on every phone that ever started the app; the reader who had set
+   * A++ for the article would get it pinned on every screen instead. So the old key
+   * is not read at all and everyone follows the system, which is the default the
+   * record decides, and the first write drops the old key from storage.
+   */
+  it('migrates an old article text scale to following the system', async () => {
+    vi.useFakeTimers();
+    for (const old of [0.9, 1, 1.15]) {
+      const fresh = createAppStore();
+      const platform = createMemoryPlatform();
+      // eslint-disable-next-line no-await-in-loop
+      await platform.keyValue.setString(
+        'store.settings',
+        JSON.stringify({ onboardingDone: true, theme: 'dark', textScale: old }),
+      );
+      configurePlatform(platform);
+      // eslint-disable-next-line no-await-in-loop
+      await persist(fresh, [settings()]);
+
+      expect(fresh.getState().settings.textSize).toBe('system');
+      expect(fresh.getState().settings).not.toHaveProperty('textScale');
+      // Everything else on the same payload survives the migration.
+      expect(fresh.getState().settings.theme).toBe('dark');
+      expect(fresh.getState().settings.onboardingDone).toBe(true);
+
+      fresh.dispatch(setTheme('light'));
+      // eslint-disable-next-line no-await-in-loop
+      await vi.advanceTimersByTimeAsync(300);
+      // eslint-disable-next-line no-await-in-loop
+      const saved = JSON.parse((await platform.keyValue.getString('store.settings')) ?? '{}');
+      expect(saved).not.toHaveProperty('textScale');
+      expect(saved.textSize).toBe('system');
+    }
+    vi.useRealTimers();
+  });
+
+  it('drops a stored text size this build does not offer', async () => {
+    const platform = createMemoryPlatform();
+    await platform.keyValue.setString(
+      'store.settings',
+      JSON.stringify({ theme: 'dark', textSize: 1.5 }),
+    );
+    configurePlatform(platform);
+
+    await persist(store, [settings()]);
+
+    expect(store.getState().settings.textSize).toBe('system');
+    expect(store.getState().settings.theme).toBe('dark');
+  });
+
+  // A stored value is whatever an older build, a hand edit or a corrupt write left,
+  // and JSON can carry a string that looks like a step, a null or a structure. Each
+  // one is dropped, the reader follows the system, and the fields beside it survive.
+  it.each([
+    ['a step spelled as a string', '1.15'],
+    ['the word for the default in the wrong case', 'System'],
+    ['null', null],
+    ['an object', { scale: 1.15 }],
+    ['an array', [1.15]],
+    ['a boolean', true],
+    ['zero', 0],
+  ])('drops a stored text size that is %s', async (_, textSize) => {
+    const platform = createMemoryPlatform();
+    await platform.keyValue.setString(
+      'store.settings',
+      JSON.stringify({ theme: 'dark', textSize }),
+    );
+    configurePlatform(platform);
+
+    await persist(store, [settings()]);
+
+    expect(store.getState().settings.textSize).toBe('system');
+    expect(store.getState().settings.theme).toBe('dark');
   });
 
   it('discards corrupt persistence instead of throwing', async () => {

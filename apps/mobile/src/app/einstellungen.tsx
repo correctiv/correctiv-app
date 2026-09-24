@@ -5,7 +5,18 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SettingRow } from '@/components/profile/SettingRow';
 import { Button, Hairline, ScreenHeader, SectionCard, Typo } from '@/components/ui';
 import { openExternal } from '@/lib/openExternal';
-import { useCoreActions, useSession, useSettings } from '@/lib/store/core';
+import {
+  useAppTextScale,
+  useCoreActions,
+  useSession,
+  useSettings,
+  useTextSizeFollowsSystem,
+} from '@/lib/store/core';
+import {
+  nearestTextSizeStep,
+  TEXT_SIZE_STEPS,
+  type TextSizeStep,
+} from '@correctiv/app-core/stores/settings';
 import type { EntitlementSource } from '@correctiv/app-core/types/models';
 
 /**
@@ -36,21 +47,42 @@ const COPY = defineMessages({
   followSystem: {
     id: 'settings.appearance.followSystem',
     defaultMessage: 'Follow the system setting',
+    description:
+      'A switch in the Appearance section: on, the app is light or dark as the device is. settings.textSize.followSystem is the same words for the switch in the Text size section, one decision taking the same shape twice.',
   },
   darkMode: { id: 'settings.appearance.dark', defaultMessage: 'Dark mode' },
-  textScaleSection: { id: 'settings.textScale.section', defaultMessage: 'Text size in an article' },
+  textSizeSection: { id: 'settings.textSize.section', defaultMessage: 'Text size' },
+  /**
+   * The same words as the appearance row on purpose: ADR 0033 gives the text size
+   * the shape the appearance setting already has, so a reader who has learned one
+   * row has learned both. Its own id all the same, because they are two switches.
+   */
+  textSizeFollowSystem: {
+    id: 'settings.textSize.followSystem',
+    defaultMessage: 'Follow the system setting',
+    description:
+      "A switch in the Text size section: on, the whole app uses the device's text size. settings.appearance.followSystem is the same words for the switch in the Appearance section, one decision taking the same shape twice.",
+  },
   /**
    * One message with the sample in it, not the word plus the letters. A screen
    * reader reads this whole, and where the size goes in that sentence is a question
    * about the language rather than about the control.
    */
-  textScaleOption: {
-    id: 'settings.textScale.option',
+  textSizeOption: {
+    id: 'settings.textSize.option',
     defaultMessage: 'Text size {scale}',
     description:
       'The accessible name of one text-size button, read aloud and never seen. {scale} is the sample letters the button shows; it is one message so the language decides where the sample goes.',
   },
-  textScaleNote: { id: 'settings.textScale.note', defaultMessage: 'Affects the article view.' },
+  textSizeNoteSystem: {
+    id: 'settings.textSize.noteSystem',
+    defaultMessage: 'The whole app, articles included, uses the text size set on your device.',
+  },
+  textSizeNoteManual: {
+    id: 'settings.textSize.noteManual',
+    defaultMessage:
+      "Applies to the whole app, articles included, in place of your device's text size. For larger text, follow the system setting and choose the size on your device.",
+  },
   aboutSection: { id: 'settings.about.section', defaultMessage: 'About CORRECTIV' },
   website: { id: 'settings.about.website', defaultMessage: 'Open correctiv.org' },
   imprint: { id: 'settings.about.imprint', defaultMessage: 'Legal notice' },
@@ -74,17 +106,15 @@ const COPY = defineMessages({
 });
 
 /**
- * Affects the article typography in the reader.
+ * The sizes a reader can choose in place of the system's, for the whole app.
  *
  * The labels are samples of the size rather than words — the same three letters in
  * every language — so they are not messages. What names them for a screen reader is
- * `COPY.textScaleOption`, which takes one of these as its placeholder.
+ * `COPY.textSizeOption`, which takes one of these as its placeholder. Typed as a
+ * record over the core's steps, so a step added there stops this file compiling
+ * until it has a label.
  */
-const TEXT_SCALES = [
-  { label: 'A', value: 0.9 },
-  { label: 'A+', value: 1 },
-  { label: 'A++', value: 1.15 },
-];
+const TEXT_SIZE_LABELS: Record<TextSizeStep, string> = { 0.9: 'A', 1: 'A+', 1.15: 'A++' };
 
 /** Where the about section sends people, with the label each link carries. */
 const LINKS: Array<{ title: MessageDescriptor; url: string }> = [
@@ -123,6 +153,8 @@ export default function EinstellungenScreen() {
   const [resetDone, setResetDone] = useState(false);
 
   const followSystem = settings.theme === 'system';
+  const textFollowsSystem = useTextSizeFollowsSystem();
+  const textScale = useAppTextScale();
   const accessLine = intl.formatMessage(
     session.entitlement?.source ? SOURCE_LABELS[session.entitlement.source] : COPY.accessNone,
   );
@@ -182,33 +214,51 @@ export default function EinstellungenScreen() {
           )}
         </SectionCard>
 
-        <SectionCard label={intl.formatMessage(COPY.textScaleSection)} className="mt-m">
-          <View className="flex-row gap-s">
-            {TEXT_SCALES.map((scale) => {
-              const active = settings.textScale === scale.value;
-              return (
-                <Pressable
-                  key={scale.label}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: active }}
-                  accessibilityLabel={intl.formatMessage(COPY.textScaleOption, {
-                    scale: scale.label,
-                  })}
-                  onPress={() => actions.settings.setTextScale(scale.value)}
-                  className={[
-                    'flex-1 items-center rounded-md border py-s active:opacity-80',
-                    active ? 'border-accent bg-surface' : 'border-stroke',
-                  ].join(' ')}
-                >
-                  <Typo variant="text-m" weight={active ? 'bold' : 'normal'}>
-                    {scale.label}
-                  </Typo>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Typo variant="text-s" color="grey-500" className="mt-s">
-            {intl.formatMessage(COPY.textScaleNote)}
+        {/* The appearance row's shape for type (ADR 0033): follow the system, or
+            turn that off and choose. Turned off, the choice starts at the step
+            nearest the size the reader is already looking at. */}
+        <SectionCard label={intl.formatMessage(COPY.textSizeSection)} className="mt-m">
+          <SettingRow
+            label={intl.formatMessage(COPY.textSizeFollowSystem)}
+            value={textFollowsSystem}
+            onValueChange={(value) =>
+              actions.settings.setTextSize(value ? 'system' : nearestTextSizeStep(textScale))
+            }
+          />
+          {!textFollowsSystem && (
+            <>
+              <Hairline className="my-2xs" />
+              <View className="flex-row gap-s" accessibilityRole="radiogroup">
+                {TEXT_SIZE_STEPS.map((step) => {
+                  const active = settings.textSize === step;
+                  const label = TEXT_SIZE_LABELS[step];
+                  return (
+                    <Pressable
+                      key={step}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: active }}
+                      accessibilityLabel={intl.formatMessage(COPY.textSizeOption, {
+                        scale: label,
+                      })}
+                      onPress={() => actions.settings.setTextSize(step)}
+                      className={[
+                        'flex-1 items-center rounded-md border py-s active:opacity-80',
+                        active ? 'border-accent bg-surface' : 'border-stroke',
+                      ].join(' ')}
+                    >
+                      <Typo variant="text-m" weight={active ? 'bold' : 'normal'}>
+                        {label}
+                      </Typo>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
+          <Typo variant="text-s" color="on-canvas-muted" className="mt-s">
+            {intl.formatMessage(
+              textFollowsSystem ? COPY.textSizeNoteSystem : COPY.textSizeNoteManual,
+            )}
           </Typo>
         </SectionCard>
 

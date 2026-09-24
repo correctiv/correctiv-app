@@ -166,6 +166,10 @@ put a data package in charge of the core's type; that is the wrong direction for
   file per id namespace, and that directory is the only place under `apps/mobile/src` where a
   German character may be written." Both halves move: the directory is
   `packages/catalogue/src/de/`, and under `apps/mobile/src` there is now no such place at all.
+- [ADR 0033](0033-one-text-size-for-the-whole-app-the-systems-by-default.md)'s "the German
+  for it lives in `apps/mobile/src/i18n/catalogue/de/settings.ts`", the same move as the
+  AGENTS.md sentence above. It was missed here and struck on 2026-09-24 in [#260](https://github.com/correctiv/correctiv-app/pull/260), the pull
+  request that built 0033 and found it by reading the path.
 - **Nothing in [ADR 0026](0026-react-native-review-and-hardening.md) §6 about
   `lib/format.ts`, and that is a correction.** An earlier draft of this record struck
   "those tables are deletable rather than parameterisable" there. A cold review pointed

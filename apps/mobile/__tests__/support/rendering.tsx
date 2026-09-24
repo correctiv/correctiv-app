@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 
 import { Localisation } from '@/i18n/Localisation';
 import { coreStore } from '@/lib/store/core';
+import { TextSizeProvider } from '@/lib/theme/textScaling';
 
 /**
  * Shared screen-rendering helpers.
@@ -51,7 +52,9 @@ export function render(element: React.ReactElement): ReactTestRenderer {
             list is short of that environment on purpose — fonts and the gesture
             root are what a device has and a test tree does not. */}
         <Localisation>
-          <SafeAreaProvider initialMetrics={METRICS}>{element}</SafeAreaProvider>
+          <TextSizeProvider>
+            <SafeAreaProvider initialMetrics={METRICS}>{element}</SafeAreaProvider>
+          </TextSizeProvider>
         </Localisation>
       </Provider>,
     );

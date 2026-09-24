@@ -231,16 +231,16 @@ describe('what the index says is not built', () => {
   });
 
   /**
-   * Both records that say it, not only the one that shouts it.
+   * Every record that says it, not only the one that shouts it.
    *
    * The first version of this took the index's **bold** spans, on the argument
    * that bolding is a deliberate act. It reads the set wrongly: ADR 0030 bolds
    * "iOS unrun" and ADR 0013 writes the same words plain, and a board that flagged
    * one and not the other would be inventing a distinction the index never made.
    */
-  it('flags both of the records whose iOS half is unrun', () => {
+  it('flags the records whose iOS half is unrun', () => {
     const unrun = RECORDS.filter((record) => record.caveats.some((c) => c.includes('unrun')));
-    expect(unrun.map((r) => r.number)).toEqual(['0013', '0030']);
+    expect(unrun.map((r) => r.number)).toEqual(['0013', '0030', '0033']);
   });
 });
 

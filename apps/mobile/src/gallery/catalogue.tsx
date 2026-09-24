@@ -66,6 +66,8 @@ import {
   Overline,
   Rail,
   SafeAreaView,
+  ScaledText,
+  ScaledTextInput,
   SplitRow,
   Screen,
   SectionCard,
@@ -377,6 +379,26 @@ const LISTED = [
         name: 'Hairline',
         note: 'One dp in `stroke`. Visible against both surfaces, which is the point of it.',
         specimens: [{ label: 'default', node: <Hairline /> }],
+      },
+      {
+        name: 'ScaledText',
+        note: 'The Text under Typo, Button, Badge and Chip: it applies the app text size (ADR 0033). Following the system it is a plain Text; with a size chosen in the settings, it draws at that size in place of the system one.',
+        specimens: [
+          {
+            label: 'text-m, unstyled otherwise',
+            node: <ScaledText style={typography['text-m']}>ScaledText</ScaledText>,
+          },
+        ],
+      },
+      {
+        name: 'ScaledTextInput',
+        note: 'The same for a field: the four text fields render this rather than TextInput.',
+        specimens: [
+          {
+            label: 'text-m, empty',
+            node: <ScaledTextInput placeholder="ScaledTextInput" style={typography['text-m']} />,
+          },
+        ],
       },
       {
         name: 'Rail',

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { defineMessages, useIntl } from 'react-intl';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { Typo } from '@/components/ui';
+import { ScaledTextInput, Typo } from '@/components/ui';
 import type { CalloutComponent } from '@correctiv/app-core/data/callouts';
 import { typography, useColors } from '@/lib/theme';
 
@@ -96,7 +96,7 @@ export function FormField({
       )}
 
       {(component.type === 'textarea' || component.type === 'textfield') && (
-        <TextInput
+        <ScaledTextInput
           value={text}
           onChangeText={onText}
           placeholder={component.placeholder ?? intl.formatMessage(COPY.answerPlaceholder)}
