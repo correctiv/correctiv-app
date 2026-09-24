@@ -83,8 +83,10 @@ only need reporting:
 1. **The API does not know this URL.** `fetchWpArticle` returns `null` and
    `articles/load.ts` falls to the page rung. That signal exists and is already acted
    on; it only has to reach the screen.
-2. **The extraction dropped an iframe.** `sanitizeArticleHtml` knows this and discards
-   it. Make it report what it removed, and an article can say for itself that it was
+2. **The extraction dropped an iframe.** ~~`sanitizeArticleHtml` knows this and discards
+   it.~~ No cleaner discards a frame any more: each one is rendered or replaced by a visible
+   link to it, voided by [ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §2.
+   Make it report what it removed, and an article can say for itself that it was
    rendered incomplete.
 
 With both reported, the renderer follows from the article rather than from a judgement,

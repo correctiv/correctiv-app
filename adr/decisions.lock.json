@@ -641,5 +641,18 @@
       "3": ["Back on the door leaves the app"],
       "4": ["On the web, browser back is the browser's"]
     }
+  },
+  "0065": {
+    "slugs": ["embeds-inline-from-a-short-list-and-a-link-for-the-rest"],
+    "decisions": {
+      "1": ["A frame renders inline when its host is on one short list"],
+      "2": ["Every other embed is a visible link, and never nothing"],
+      "3": ["A frame is as tall as it says, or most of a screen"],
+      "4": ["On iOS, a frame's own load is not a link"],
+      "5": [
+        "The document runs no script, by policy, and so the web frame may carry `allow-scripts`"
+      ],
+      "6": ["The link's words are written when the document is built"]
+    }
   }
 }
