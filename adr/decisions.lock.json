@@ -642,6 +642,20 @@
       "4": ["On the web, browser back is the browser's"]
     }
   },
+  "0064": {
+    "slugs": ["ci-cd-for-a-public-repository"],
+    "decisions": {
+      "1": [
+        "GitHub Actions and Fastlane build every stage, and EAS stays out while the repository is public"
+      ],
+      "2": ["A pull request proves the build without a secret"],
+      "3": ["The review app is a second app, with its own name, icon and scheme"],
+      "4": ["The build number is the run number, and the newest `main` wins"],
+      "5": ["The review APK is a release asset, and the site links to it"],
+      "6": ["Signing stays with CORRECTIV, and only `main` and releases reach it"],
+      "7": ["No ad-hoc iOS distribution"]
+    }
+  },
   "0065": {
     "slugs": ["embeds-inline-from-a-short-list-and-a-link-for-the-rest"],
     "decisions": {
