@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
@@ -59,6 +59,7 @@ export default function SucheScreen() {
   const intl = useIntl();
   const colors = useColors();
   const actions = useCoreActions();
+  const scroller = useRef<ScrollView>(null);
   const [query, setQuery] = useState('');
   const trimmed = query.trim();
   const debounced = useDebounced(trimmed, DEBOUNCE_MS);
@@ -122,8 +123,9 @@ export default function SucheScreen() {
       {/* Results, not the field: the field sits in the bar above and does not
           move. What the keyboard would otherwise take is the list, and with it
           every hit below the first two. */}
-      <KeyboardAvoiding className="flex-1">
+      <KeyboardAvoiding className="flex-1" scrollerRef={scroller}>
         <ScrollView
+          ref={scroller}
           className="flex-1"
           contentContainerClassName="px-m pt-s pb-2xl"
           showsVerticalScrollIndicator={false}

@@ -1,5 +1,7 @@
-import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, TextInput, View } from 'react-native';
 import type { ReactTestInstance, ReactTestRenderer } from 'react-test-renderer';
+import { useContext, type RefObject } from 'react';
+import { act } from 'react-test-renderer';
 
 /**
  * The three screens that take text input, and the shape that keeps a keyboard off
@@ -50,7 +52,8 @@ import FormularScreen from '@/app/formular';
 import SucheScreen from '@/app/suche';
 import { LoginGate } from '@/components/gate/LoginGate';
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
-import { SafeAreaView } from '@/components/ui';
+import { scrollerContext } from '@/components/keyboard/KeyboardAvoiding';
+import { SafeAreaView, ScaledTextInput } from '@/components/ui';
 
 import { findPressable, render } from './support/rendering';
 
@@ -164,6 +167,66 @@ describe('the door', () => {
 
     expect(view.findAllByType(SafeAreaView)).toHaveLength(0);
     expect(tree.root.findByType(SafeAreaView).findAll((n) => n === view)).toHaveLength(1);
+  });
+
+  it('hands the scroller it was given to the fields below it', () => {
+    // The field and the scroller are never neighbours — search draws its field in the
+    // bar above the list, and the door's fields sit in a form the screen renders
+    // further down — so the screen registers the scroller here and the field reads
+    // it. A screen that forgot the `scrollerRef` would leave every field below it
+    // unreachable, and no assertion about the field would notice.
+    const scroller = { current: null };
+    const seen: unknown[] = [];
+    function Probe() {
+      seen.push(useContext(scrollerContext));
+      return null;
+    }
+
+    render(
+      <KeyboardAvoiding scrollerRef={scroller}>
+        <Probe />
+      </KeyboardAvoiding>,
+    );
+
+    expect(seen).toEqual([scroller]);
+  });
+
+  it('scrolls the focused field into the part the keyboard leaves free', async () => {
+    // The regression this pins: `KeyboardAvoiding` shrinks its box and nothing inside
+    // it moves, so a field low in that box stays under the keyboard while its caret
+    // is being typed into. React Native carries the call that fixes it and makes it
+    // nowhere, so the field asks for it itself.
+    //
+    // What this cannot say: whether the field ends up high enough on a phone. That
+    // needs a keyboard and a real scroller, and this is the wiring a device
+    // measurement then confirms or contradicts.
+    const scroll = jest.fn();
+    const stand_in = { current: { scrollResponderScrollNativeHandleToKeyboard: scroll } };
+    const tree = render(
+      <scrollerContext.Provider value={stand_in as unknown as RefObject<ScrollView | null>}>
+        <ScaledTextInput accessibilityLabel="Ein Feld" />
+      </scrollerContext.Provider>,
+    );
+    const [input] = tree.root.findAllByType(TextInput);
+
+    await act(async () => {
+      input.props.onFocus({ nativeEvent: {} });
+    });
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    // The field goes in as an instance rather than as a node handle: one of the two
+    // shapes the method takes, and the one a test tree can supply.
+    expect(scroll).toHaveBeenCalledWith(expect.anything(), 16);
+  });
+
+  it('does not scroll when there is no scroller to scroll', () => {
+    // A screen that never registered one, and the plain use of the field outside any
+    // avoiding view. Both must be silent rather than throw: the call is made from a
+    // focus handler, where a throw would take the keyboard down with it.
+    const tree = render(<ScaledTextInput accessibilityLabel="Ein Feld" />);
+    const [input] = tree.root.findAllByType(TextInput);
+
+    expect(() => input.props.onFocus({ nativeEvent: {} })).not.toThrow();
   });
 
   it('still hands the return key from the e-mail field to the password field', () => {

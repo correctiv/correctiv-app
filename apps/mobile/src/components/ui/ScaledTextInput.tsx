@@ -1,6 +1,8 @@
 import type { Ref } from 'react';
+import { useRef } from 'react';
 import { TextInput, type TextInputProps } from 'react-native';
 
+import { useFieldIntoView } from '@/components/keyboard/KeyboardAvoiding';
 import { useScaledTextStyle } from '@/lib/theme/textScaling';
 
 /**
@@ -11,8 +13,28 @@ import { useScaledTextStyle } from '@/lib/theme/textScaling';
  *
  * Its own element because React Native has two primitives that draw text and both
  * take the prop; the app's four fields render this rather than `TextInput`.
+ *
+ * Focusing scrolls the field out from behind the keyboard, which is why the
+ * behaviour lives here and not in the screen that owns the scroller.
  */
-export function ScaledTextInput({ style, ...rest }: TextInputProps & { ref?: Ref<TextInput> }) {
+export function ScaledTextInput({
+  style,
+  onFocus,
+  ...rest
+}: TextInputProps & { ref?: Ref<TextInput> }) {
   const scaled = useScaledTextStyle(style);
-  return <TextInput allowFontScaling={scaled.followsSystem} style={scaled.style} {...rest} />;
+  const input = useRef<TextInput>(null);
+  const intoView = useFieldIntoView();
+  return (
+    <TextInput
+      allowFontScaling={scaled.followsSystem}
+      ref={input}
+      style={scaled.style}
+      {...rest}
+      onFocus={(event) => {
+        intoView(input.current);
+        onFocus?.(event);
+      }}
+    />
+  );
 }

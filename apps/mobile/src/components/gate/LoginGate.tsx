@@ -181,13 +181,15 @@ export function LoginGate() {
   const intl = useIntl();
   const session = useSession();
   const shortfall = accessShortfall(session, Date.now());
+  const scroller = useRef<ScrollView>(null);
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-canvas">
       {/* Inside the safe area, so the bottom inset is not counted twice — the
           component says why. */}
-      <KeyboardAvoiding className="flex-1">
+      <KeyboardAvoiding className="flex-1" scrollerRef={scroller}>
         <ScrollView
+          ref={scroller}
           className="flex-1"
           contentContainerClassName="grow px-m pt-l pb-m"
           keyboardShouldPersistTaps="handled"

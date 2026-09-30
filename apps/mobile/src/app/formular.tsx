@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { ScrollView, View } from 'react-native';
 
@@ -83,6 +83,7 @@ export default function FormularScreen() {
   const { slug } = useLocalSearchParams<{ slug?: string }>();
   const callout = useMemo(() => callouts.find((c) => c.slug === slug) ?? null, [slug]);
 
+  const scroller = useRef<ScrollView>(null);
   const [step, setStep] = useState(0);
   const [choices, setChoices] = useState<Record<string, string[]>>({});
   const [texts, setTexts] = useState<Record<string, string>>({});
@@ -174,8 +175,9 @@ export default function FormularScreen() {
           to be a sibling of the `ScrollView`, which left the two to react to the
           keyboard separately — and `COPY.next` is the control a person reaches for
           while the keyboard is still up. */}
-      <KeyboardAvoiding className="flex-1">
+      <KeyboardAvoiding className="flex-1" scrollerRef={scroller}>
         <ScrollView
+          ref={scroller}
           className="flex-1"
           contentContainerClassName="px-m pt-s pb-l"
           showsVerticalScrollIndicator={false}

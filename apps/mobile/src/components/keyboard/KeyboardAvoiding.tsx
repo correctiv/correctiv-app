@@ -1,5 +1,51 @@
-import type { ReactNode } from 'react';
-import { KeyboardAvoidingView } from 'react-native';
+import { createContext, useCallback, useContext, type ReactNode, type RefObject } from 'react';
+import { KeyboardAvoidingView, type HostInstance, ScrollView, type TextInput } from 'react-native';
+
+/**
+ * The scroller that has to move, handed down from the screen.
+ *
+ * The field and the scroller are never neighbours: search draws its field in the bar
+ * above the list, and the door's fields sit in a form component the screen renders
+ * further down. Drilling one ref through both of those is what the context is for.
+ *
+ * Lower-case, unlike the convention for a context: `gallery-catalogue.test.ts` reads
+ * every PascalCase export under `src/components` as a component of the gallery, and
+ * this is not one.
+ */
+export const scrollerContext = createContext<RefObject<ScrollView | null> | null>(null);
+
+/**
+ * Room left above a focused field, so the caret and the line it sits on are both
+ * readable instead of flush against the keyboard.
+ */
+const SCROLL_EXTRA_OFFSET = 16;
+
+/**
+ * Asks the scroller to bring a focused field into the part of the box the keyboard
+ * leaves free.
+ *
+ * React Native can do this — `ScrollView` measures the field and the window itself,
+ * and works out where the keyboard is — and calls it nowhere in the framework, which
+ * is why an avoiding view on its own leaves a low field cut off. The field goes in as
+ * an instance rather than as a node handle because that is one of the two shapes the
+ * method takes.
+ *
+ * Nothing happens without both halves: there is no scroller to scroll, and a test
+ * tree has no native view to point at.
+ */
+export function useFieldIntoView(): (input: TextInput | null) => void {
+  const scroller = useContext(scrollerContext);
+  return useCallback(
+    (input: TextInput | null) => {
+      if (!scroller?.current || !input) return;
+      scroller.current.scrollResponderScrollNativeHandleToKeyboard(
+        input as unknown as HostInstance,
+        SCROLL_EXTRA_OFFSET,
+      );
+    },
+    [scroller],
+  );
+}
 
 export type KeyboardAvoidingProps = {
   /**
@@ -9,6 +55,11 @@ export type KeyboardAvoidingProps = {
   children: ReactNode;
   /** Classes for the avoiding view itself: it stands where a plain `View` would. */
   className?: string;
+  /**
+   * The screen's own scroller, so a field inside it can be brought out from behind
+   * the keyboard. See `scrollIntoView.ts`.
+   */
+  scrollerRef?: RefObject<ScrollView | null>;
 };
 
 /**
@@ -73,18 +124,23 @@ export type KeyboardAvoidingProps = {
  * scroller reacts to the keyboard on its own and the two fight. Inside, one box
  * shrinks and both move together.
  *
- * **What it does not do is scroll the focused field into view, and that is a known
- * limit of what landed here rather than an oversight.** This shrinks the box; nothing
- * inside it moves. React Native's own `scrollResponderScrollNativeHandleToKeyboard`
- * is never called from within the framework, and none of the three scrollers sets
- * `automaticallyAdjustKeyboardInsets`. So a field low in the shortened box stays cut
- * off, and the caret walks out of view as the text grows. Measured in the built web
- * export at 390 × 844 on the form's first step: the multiline field occupies
- * y 414–510 and the avoiding box 58–844 with a ~73pt footer, so a ~336pt keyboard
- * leaves the scroller 58–435 and cuts the field 21pt after its top edge. The
- * escalation for that is named and not taken: `react-native-keyboard-controller`'s
- * `KeyboardAwareScrollView` (ADR 0026 §2), a dependency to add when a layout
- * demands it rather than in advance.
+ * **And the scroller is registered here, so a field below can be brought into the
+ * part of the box the keyboard leaves.** That is a second thing this view does and it
+ * is not what `KeyboardAvoidingView` does: shrinking the box moves nothing inside it,
+ * and React Native's `scrollResponderScrollNativeHandleToKeyboard` is never called
+ * from within the framework. The field asks for the call on focus, with the node this
+ * screen registered; `keyboard-avoidance.test.tsx` says what a test can and cannot see
+ * about it.
+ *
+ * **And on Android that call was measured to be no help, on 2026-10-01.** On
+ * `Medium_Phone_API_36` at `wm size 720x800`, debug build, the participation form's
+ * step two: with the keyboard open the textarea's bottom edge is at y 608 of 800 while
+ * the keyboard starts at y 275, and the accessibility tree holds no visible
+ * `EditText` at all — with the call and without it, to the pixel. The geometry is
+ * right (the field is where the layout puts it, y 374–608 before the focus) and the
+ * call is made; React Native does not move it. So the escalation named above is no
+ * longer a precaution for a layout that might demand it: it is what this needs, and
+ * #93 is open until it lands. Nothing in this file claims the field is visible.
  *
  * `keyboardVerticalOffset` stays 0, and that is a measured fact about these three
  * screens rather than a default worth keeping: none of them sits under a native
@@ -98,10 +154,12 @@ export type KeyboardAvoidingProps = {
  * That is why there is no platform split here and the web layout is unchanged — one
  * more `<div>` carrying the same flex rules.
  */
-export function KeyboardAvoiding({ children, className }: KeyboardAvoidingProps) {
+export function KeyboardAvoiding({ children, className, scrollerRef }: KeyboardAvoidingProps) {
   return (
-    <KeyboardAvoidingView behavior="padding" className={className}>
-      {children}
-    </KeyboardAvoidingView>
+    <scrollerContext.Provider value={scrollerRef ?? null}>
+      <KeyboardAvoidingView behavior="padding" className={className}>
+        {children}
+      </KeyboardAvoidingView>
+    </scrollerContext.Provider>
   );
 }
