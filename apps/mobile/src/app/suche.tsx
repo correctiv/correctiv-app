@@ -11,7 +11,7 @@ import { MIN_SEARCH_QUERY, searchProjectHits } from '@correctiv/app-core/stores/
 import type { FeedItem } from '@correctiv/app-core/types/models';
 import { openArticle } from '@/lib/openArticle';
 import { useCoreActions } from '@/lib/store/core';
-import { typography, useColors } from '@/lib/theme';
+import { sizes, typography, useColors } from '@/lib/theme';
 import { useDebounced } from '@/lib/useDebounced';
 
 const DEBOUNCE_MS = 300;
@@ -115,7 +115,13 @@ export default function SucheScreen() {
           autoCorrect={false}
           returnKeyType="search"
           className="rounded-s bg-surface px-s py-xs"
-          style={[typography['text-m'], { color: colors['on-canvas'] }]}
+          // `minHeight` and no height, so the padding and the line decide the rest
+          // and the field keeps a 44 dp target while the type is small. Measured on
+          // `Medium_Phone_API_36` on 2026-09-30: 39.2 dp at 100 % system font,
+          // 51.8 dp at 200 % — it already grows, and the minimum is only about the
+          // 100 % case. The bar around it is 44 plus `py-2xs` from the back button
+          // beside it, so nothing on this row moves.
+          style={[typography['text-m'], { color: colors['on-canvas'], minHeight: sizes.tapTarget }]}
         />
       </ScreenHeader>
 
