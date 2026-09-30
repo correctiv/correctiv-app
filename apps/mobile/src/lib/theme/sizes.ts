@@ -31,6 +31,8 @@ export const sizes = {
    * keeps a new control from landing under it.
    */
   tapTarget: 44,
+  /** Widest a column of reading runs — draft: `--container-content: 38.75rem`. */
+  contentColumn: 620,
   /** Card in a horizontal rail — draft: `w-[240px]` (the fact-check rail on Home). */
   railCard: 240,
   /**
