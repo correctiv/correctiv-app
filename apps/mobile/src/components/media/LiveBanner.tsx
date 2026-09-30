@@ -104,7 +104,12 @@ export function LiveBanner({ subtitle }: { subtitle?: string }) {
         accessibilityLabel={intl.formatMessage(playing ? COPY.pauseRadio : COPY.playRadio)}
         onPress={onPlay}
         className="mr-s items-center justify-center rounded-full bg-accent active:opacity-80"
-        style={{ width: sizes.playButton, height: sizes.playButton }}
+        // `minWidth`/`minHeight` and not `width`/`height`: a fixed edge is a promise
+        // the box cannot keep once the reader enlarges the type, and `tapTarget`
+        // is a floor for that reason. Measured on `Medium_Phone_API_36` on
+        // 2026-09-30, 100 % and 200 % system font alike; `__tests__/tap-targets.test.ts`
+        // holds the word and not merely the number.
+        style={{ minWidth: sizes.playButton, minHeight: sizes.playButton }}
       >
         {busy ? (
           <ActivityIndicator color={colors['always-light']} />

@@ -73,7 +73,12 @@ export function MiniPlayer() {
           accessibilityLabel={intl.formatMessage(playing ? COPY.pause : COPY.play)}
           onPress={togglePlay}
           className="items-center justify-center rounded-full bg-accent active:opacity-80"
-          style={{ width: sizes.iconButton, height: sizes.iconButton }}
+          // `minWidth`/`minHeight` and not `width`/`height`: a fixed edge is a promise
+          // the box cannot keep once the reader enlarges the type, and `tapTarget`
+          // is a floor for that reason. Measured on `Medium_Phone_API_36` on
+          // 2026-09-30, 100 % and 200 % system font alike; `__tests__/tap-targets.test.ts`
+          // holds the word and not merely the number.
+          style={{ minWidth: sizes.iconButton, minHeight: sizes.iconButton }}
         >
           {/* On the button's brand surface, so fixed white rather than the page's. */}
           {status === 'loading' ? (
@@ -102,7 +107,12 @@ export function MiniPlayer() {
           accessibilityLabel={intl.formatMessage(COPY.stop)}
           onPress={stop}
           className="ml-2xs items-center justify-center active:opacity-70"
-          style={{ width: sizes.iconButton, height: sizes.iconButton }}
+          // `minWidth`/`minHeight` and not `width`/`height`: a fixed edge is a promise
+          // the box cannot keep once the reader enlarges the type, and `tapTarget`
+          // is a floor for that reason. Measured on `Medium_Phone_API_36` on
+          // 2026-09-30, 100 % and 200 % system font alike; `__tests__/tap-targets.test.ts`
+          // holds the word and not merely the number.
+          style={{ minWidth: sizes.iconButton, minHeight: sizes.iconButton }}
         >
           <Ionicons name="close" size={20} color={colors['on-canvas-muted']} />
         </Pressable>
