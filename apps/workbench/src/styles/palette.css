@@ -33,9 +33,26 @@
 /* The page sits one step below `canvas`, and the cards on it one step above, so
    that a card reads as raised in both schemes without either token moving. The
    percentage is the one number in this file that is a judgement rather than a
-   derivation, and it is the whole of the effect. */
-@theme {
+   derivation, and it is the whole of the effect.
+
+   **Written as a plain `:root` rule and not as `@theme`, and that is measured
+   rather than preferred.** `@theme` is where a Tailwind token is registered, and
+   this one is a `color-mix` over two other tokens. Tailwind v4 did not emit it:
+   `--color-page` computed empty in the light scheme, `bg-page` painted
+   `rgba(0,0,0,0)`, and the page fell back to the body's white — so the one
+   change this file exists for was invisible in the light scheme and working in
+   the dark one, because the dark value below is an ordinary rule and did emit.
+   A green build and a passing test said nothing; the browser did.
+
+   So the variable is declared here and the utility is written out by hand below,
+   the same way the elevation steps are. It costs a line and it is the only form
+   of this that provably reaches the screen. */
+:root {
   --color-page: color-mix(in oklab, var(--color-canvas) 93%, var(--color-on-canvas));
+}
+
+.bg-page {
+  background-color: var(--color-page);
 }
 
 :root.dark {
