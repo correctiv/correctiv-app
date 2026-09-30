@@ -43,6 +43,13 @@ const PAGE_SIZE = 20;
  */
 export type FeedStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
 
+/**
+ * What follows the loaded pages. `unknown` until a paged source has answered: a
+ * cache hit, the bundled snapshot and RSS all return rows without knowing whether
+ * the archive goes on, and none of them may claim it ends.
+ */
+export type FeedEnd = 'unknown' | 'more' | 'end';
+
 export interface FeedSlice {
   items: FeedItem[];
   status: FeedStatus;
@@ -50,23 +57,7 @@ export interface FeedSlice {
   lastFetched: number;
   /** Highest page number loaded. 1-based, as WordPress counts. */
   page: number;
-  /**
-   * Another page is worth asking for. False on the RSS and bundle paths, which
-   * answer with everything they have in one go and cannot be paged at all.
-   */
-  hasMore: boolean;
-  /**
-   * Whether `hasMore` is an ANSWER or merely its initial value.
-   *
-   * **The two are the same boolean and the difference is the whole point.** A cache
-   * hit and a bundled snapshot both return a list without ever asking, so `hasMore`
-   * stays `false` there — and a screen that printed "that is everything published so
-   * far" over a twenty-row page one would be stating something it never learned. A
-   * screen that offers a "load more" would be offering one that cannot work, because
-   * `loadMore` returns on `!hasMore`. So a foot needs this to tell "there is nothing
-   * more" from "nobody has asked yet", and it says nothing when the answer is absent.
-   */
-  paged: boolean;
+  end: FeedEnd;
   /** A `loadMore` is in flight — for a spinner under the list, not over it. */
   loadingMore: boolean;
 }
@@ -86,8 +77,7 @@ function emptySlices(): Record<FeedKey, FeedSlice> {
       status: 'idle',
       lastFetched: 0,
       page: 0,
-      hasMore: false,
-      paged: false,
+      end: 'unknown',
       loadingMore: false,
     };
   }
@@ -222,20 +212,8 @@ export const { patch } = slice.actions;
 /** One page off the network: REST, then RSS. */
 interface NetworkPage {
   items: FeedItem[];
-  hasMore: boolean;
-  /**
-   * Whether `hasMore` answers the question "is that everything", as opposed to
-   * "this is everything this source can serve".
-   *
-   * **The two are different and the RSS round is why.** REST serves a page of a
-   * count, so a short page means the archive ends there. RSS serves a fixed window
-   * of recent posts and cannot be paged at all, so its `hasMore: false` means the
-   * feed has no page two — not that CORRECTIV has published nothing older. A
-   * screen that says "Das ist alles, was bisher erschienen ist." over ten RSS
-   * entries would be wrong about the newsroom, and it is wrong in the one round
-   * that runs when the network is already unhappy.
-   */
-  exhaustive: boolean;
+  /** RSS is a fixed window of recent posts, so its end says nothing about the archive. */
+  end: FeedEnd;
 }
 
 /**
@@ -258,9 +236,9 @@ interface NetworkPage {
  * the label "CORRECTIV.Europe".
  *
  * **Throws rather than answering with an empty page**, and the difference is not
- * academic. Returning `{ items: [], hasMore: false }` for a page it cannot serve
+ * academic. Returning `{ items: [], end: 'end' }` for a page it cannot serve
  * reads to `loadMore` as "the list ends here": it would bank the page number,
- * clear `hasMore`, and leave "mehr laden" gone until the app restarts, over
+ * drop the button, and leave "mehr laden" gone until the app restarts, over
  * nothing worse than one timeout. A throw leaves the list exactly as it was. A
  * test asked for page 2 with both rounds failing and caught precisely that.
  */
@@ -284,7 +262,9 @@ async function readFromNetwork(key: FeedKey, page: number): Promise<NetworkPage>
      * could not see. On page 2 and beyond an empty page is the honest end of the
      * list, so it is only the first page that falls through.
      */
-    if (page > 1 || rest.items.length > 0) return { ...rest, exhaustive: true };
+    if (page > 1 || rest.items.length > 0) {
+      return { items: rest.items, end: rest.hasMore ? 'more' : 'end' };
+    }
     console.warn(`Feed '${key}': REST answered an empty first page, trying RSS`);
   } catch (err) {
     /**
@@ -303,19 +283,12 @@ async function readFromNetwork(key: FeedKey, page: number): Promise<NetworkPage>
 
   // Only page 1 can reach RSS. Asking it for a second page would re-serve the first.
   if (page > 1) throw new Error(`Feed '${key}': no page ${page}, RSS cannot paginate`);
-  return { items: await fetchFeed(key, config.url), hasMore: false, exhaustive: false };
+  return { items: await fetchFeed(key, config.url), end: 'unknown' };
 }
 
 /**
- * A cache entry is the array it has always been: items and nothing else.
- *
- * **Deliberately. An earlier version cached `page` and `hasMore`, and that was
- * wrong:** a cached `hasMore` is a claim frozen for the fifteen minutes the entry
- * is good for, so a category that emptied mid-window keeps offering a button that
- * fails, and a reader who paged to three comes back to a list that stops growing.
- * Silence costs one press of patience; a wrong answer cached costs the rest of the
- * list. So a warm start knows the rows and nothing about what follows them, which
- * is what `paged` records.
+ * Items only. A cached `end` would be a claim frozen for the entry's fifteen
+ * minutes, so a warm start knows the rows and nothing about what follows them.
  */
 type CachedFeed = FeedItem[];
 
@@ -330,9 +303,7 @@ export const fetchFeedKey =
   async (dispatch, getState) => {
     const cached = options.force ? null : asCachedFeed(await getCached(CACHE_NS, key, TTL_MS));
     if (cached) {
-      // `paged` is NOT set here, and the comment above says why: a cached entry
-      // knows the rows and nothing about what follows them.
-      dispatch(patch(key, { items: cached, status: 'ready', paged: false }));
+      dispatch(patch(key, { items: cached, status: 'ready', end: 'unknown' }));
       return;
     }
 
@@ -341,12 +312,15 @@ export const fetchFeedKey =
     if (current.items.length === 0) {
       const stale = asCachedFeed(await getStale(CACHE_NS, key));
       dispatch(
-        patch(key, stale ? { items: stale, status: 'ready', paged: false } : { status: 'loading' }),
+        patch(
+          key,
+          stale ? { items: stale, status: 'ready', end: 'unknown' } : { status: 'loading' },
+        ),
       );
     }
 
     try {
-      const { items, hasMore, exhaustive } = await readFromNetwork(key, 1);
+      const { items, end } = await readFromNetwork(key, 1);
       if (items.length === 0) throw new Error(`No items for '${key}'`);
       // Carry over images an earlier enrichment already resolved, so a refresh
       // does not blank every thumbnail for one more round of requests.
@@ -361,21 +335,10 @@ export const fetchFeedKey =
           status: 'ready',
           lastFetched: Date.now(),
           page: 1,
-          hasMore,
-          paged: exhaustive,
-          // `loadingMore` deliberately untouched. This slice is shared — Home reads
-          // `recherchen` and `faktencheck` from the same store a project page pages —
-          // so a refresh landing while a `loadMore` is in flight used to clear the
-          // flag, re-arm the button and let a second press ask for the same page.
-          // The URL dedup dropped the duplicates, so the cost was a wasted request,
-          // and it is one line to not spend it.
+          end,
+          // `loadingMore` untouched: a `loadMore` may be in flight on this shared slice.
         }),
       );
-      // The bare array, deliberately. A cached entry is a WARM START: it renders
-      // the list and goes no further, so it must not claim to know whether more
-      // exists — the foot would then say "that is everything published so far" about
-      // a page one, or offer a button that cannot work. `hasMore` belongs to the
-      // reader's own session, not to a value fifteen minutes old.
       await setCached(CACHE_NS, key, merged);
     } catch (err) {
       console.error(`Feed '${key}' failed:`, err instanceof Error ? err.message : err);
@@ -415,31 +378,17 @@ export const fetchMany =
  * Silent on failure by design. A failed "mehr laden" leaves the list exactly as
  * it was, which is the honest outcome; only `loadingMore` goes back to false so
  * the reader can try again.
- *
- * **No screen calls this yet, and that is a decision.** The one list it belongs on
- * is the project page, and [ADR 0012](../../../../adr/0012-a-list-virtualizer-for-the-unbounded-lists.md)
- * names that list as bounded by `data?.slice(0, 12)` and virtualizing it as
- * busywork. Both halves of that are true only while the list has a ceiling. Wiring
- * a "mehr laden" button there makes the list unbounded, which moves it into the
- * category the ADR virtualizes — so the UI change is a `FlatList` conversion plus
- * an amendment to that ADR, not a button. The capability sits here, tested, until
- * someone wants to spend that.
  */
 export const loadMore =
   (key: FeedKey): AppThunk<Promise<void>> =>
   async (dispatch, getState) => {
     const before = getState().feeds.byKey[key];
-    if (!before.hasMore || before.loadingMore) return;
+    if (before.end !== 'more' || before.loadingMore) return;
 
-    // The page number as a NUMBER. `before` is the slice object the store handed
-    // out, and a refresh replaces it with a fresh one rather than mutating it, so
-    // reading `before.page` after the await would see the refresh's value and the
-    // comparison below would compare the refresh against itself.
-    const from = before.page;
     dispatch(patch(key, { loadingMore: true }));
-    const next = from + 1;
+    const next = before.page + 1;
     try {
-      const { items, hasMore, exhaustive } = await readFromNetwork(key, next);
+      const { items, end } = await readFromNetwork(key, next);
       /**
        * The list is read again AFTER the await, never from the snapshot taken
        * before it. A pull-to-refresh dispatched while this page was in flight has
@@ -448,30 +397,15 @@ export const loadMore =
        * article would vanish again until the next forced refresh.
        */
       const live = getState().feeds.byKey[key];
-      /**
-       * **A refresh that landed while this page was in flight makes the page wrong,
-       * and the answer is to drop it.** `next` was `before.page + 1`, computed before
-       * the await; a refresh reset the slice to page 1, so appending a page 3 to a
-       * list that holds page 1 produces page 1 and page 3 with page 2 missing
-       * between them, and stores `page: 3` as if the reader had walked there. The
-       * dedup below cannot see it — a missing page and a duplicate are different
-       * problems.
-       *
-       * So the page number is compared against what is live now, and a page that no
-       * longer follows the list is discarded whole. `loadingMore` is cleared, so the
-       * reader can ask again, and the button comes back rather than leaving them
-       * with a list that silently skipped a page. Older than the "load more" this
-       * screen offers; it was unreachable until something called it.
-       */
-      if (live.page !== from) {
+      // A refresh landed meanwhile: this page no longer follows the list, so drop it
+      // whole rather than leave a gap the URL dedup cannot see.
+      if (live.page !== before.page) {
         dispatch(patch(key, { loadingMore: false }));
         return;
       }
       const seen = new Set(live.items.map((i) => i.url));
       const appended = [...live.items, ...items.filter((i) => !seen.has(i.url))];
-      dispatch(
-        patch(key, { items: appended, page: next, hasMore, paged: exhaustive, loadingMore: false }),
-      );
+      dispatch(patch(key, { items: appended, page: next, end, loadingMore: false }));
       await setCached(CACHE_NS, key, appended);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -479,14 +413,14 @@ export const loadMore =
       /**
        * A 400 from WordPress is the end of the list, not an outage.
        *
-       * `hasMore` is inferred from a full page, so a category whose post count is
+       * `more` is inferred from a full page, so a category whose post count is
        * an exact multiple of the page size reports one more page than it has, and
        * WP answers that page with `rest_post_invalid_page_number`. Leaving
-       * `hasMore` set would keep a "mehr laden" button that fails on every press
+       * `more` set would keep a "mehr laden" button that fails on every press
        * for the rest of the session.
        */
       const ended = message.includes('HTTP 400');
-      dispatch(patch(key, { loadingMore: false, ...(ended ? { hasMore: false } : {}) }));
+      dispatch(patch(key, { loadingMore: false, ...(ended ? { end: 'end' as const } : {}) }));
     }
   };
 

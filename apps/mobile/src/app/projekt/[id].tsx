@@ -14,6 +14,7 @@ import { Button, Card, Hairline, SectionHeader, Typo } from '@/components/ui';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { interests } from '@correctiv/app-core/data/interests';
 import { projectGroups, resolveProject, type Project } from '@correctiv/app-core/data/projects';
+import type { FeedEnd } from '@correctiv/app-core/stores/feeds';
 import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
@@ -279,44 +280,25 @@ function FeedFailed() {
  * page already there is a faster screen, and it is also a page fetched for a
  * reader who was looking at the last row rather than at the end of the list, with
  * no way to see that it happened or to stop it. The button costs one tap and says
- * what it will do. `hasMore` is inferred from a full page, so on a category whose
- * post count is an exact multiple of 20 the button appears once more than there is
- * anything behind it — which is why the sentence after it is not a permanent
- * fixture but the button's own absence.
+ * what it will do.
+ *
+ * Silent while `end` is `unknown`: a warm start or the offline snapshot has rows
+ * and no answer, and the sentence would state a fact the app never learned.
  */
 function FeedFoot({
-  hasMore,
-  paged,
+  end,
   loadingMore,
   items,
   onLoadMore,
 }: {
-  hasMore: boolean;
-  paged: boolean;
+  end: FeedEnd;
   loadingMore: boolean;
   items: number;
   onLoadMore: () => void;
 }) {
   const intl = useIntl();
-  if (items === 0) return null;
-  /**
-   * The sentence, and only when the store has an ANSWER.
-   *
-   * A warm start renders this list out of the cache and a reader without a network
-   * out of the bundled snapshot, and neither path ever asks whether more exists —
-   * so `hasMore` is `false` there because nobody filled it in, not because the list
-   * ended. Printing the sentence anyway would state a fact about the newsroom that
-   * the app never established, and a button instead would be one `loadMore` refuses,
-   * because it returns on `!hasMore`. Measured on `Medium_Phone_API_36` on
-   * 2026-09-30: the first version of this screen printed it over a twenty-row
-   * warm start.
-   *
-   * So the two states are not dressed alike. Silence is the honest answer to a
-   * question nobody has answered, and the reader gets the rows they do have.
-   */
-  if (!paged) return null;
-
-  if (!hasMore) {
+  if (items === 0 || end === 'unknown') return null;
+  if (end === 'end') {
     return (
       <Typo variant="text-s" color="on-canvas-muted" className="mt-s mb-2xs">
         {intl.formatMessage(COPY.endOfFeed)}
@@ -350,7 +332,7 @@ function ProjectFeed({
   project: Project;
   action: ScreenAction;
 }) {
-  const { data, loading, error, hasMore, paged, loadingMore, loadMore } = useFeed(feed);
+  const { data, loading, error, end, loadingMore, loadMore } = useFeed(feed);
   const items = useMemo(() => data ?? [], [data]);
 
   return (
@@ -372,8 +354,7 @@ function ProjectFeed({
       ListFooterComponent={
         <View>
           <FeedFoot
-            hasMore={hasMore}
-            paged={paged}
+            end={end}
             loadingMore={loadingMore}
             items={items.length}
             onLoadMore={loadMore}

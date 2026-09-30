@@ -75,7 +75,8 @@ acquire a line by not asking.
 
 Pagination is a property of one feed, not of a request. `AsyncState` describes the
 outcome of a single fetch and is also the return type of `useMergedFeeds`, where there
-is no page two — a merge of several feeds has nothing to page. So `hasMore`, `paged`,
+is no page two — a merge of several feeds has nothing to page. So ~~`hasMore`, `paged`,~~
+`end` (since [ADR 0067](0067-a-feeds-end-is-one-field-with-three-values.md), which folded the two booleans into it),
 `loadingMore` and `loadMore` live on `FeedState`, which extends `AsyncState` and is
 returned by `useFeed` alone. The five other call sites read `.data` or `.offline` off
 the result and none of them changed, which is the point of the shape having only ever
@@ -86,7 +87,8 @@ render a list without ever establishing that the list ends: a cache hit, the bun
 snapshot, and the RSS fallback. In all three `hasMore` is `false`, and in none of the
 three does that mean CORRECTIV has published nothing more. A screen reading it as a
 fact would tell a reader that twenty rows are everything the newsroom has, having
-learned nothing of the kind. So the slice records whether the answer was exhaustive —
+learned nothing of the kind. So the slice records ~~whether the answer was exhaustive~~
+whether an answer arrived at all (as `end: 'unknown'` since [ADR 0067](0067-a-feeds-end-is-one-field-with-three-values.md)) —
 `readFromNetwork` says so per source, because RSS is the sharp case: it has no page
 two, which is a fact about the feed, and not about the archive, which serves a fixed
 window of recent posts. The foot says nothing when the answer did not arrive.

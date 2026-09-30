@@ -7,6 +7,7 @@ import {
   loadMore as loadMoreItems,
   mergedFeedItems,
   mergedFeedStatus,
+  type FeedEnd,
   type FeedStatus,
 } from '@correctiv/app-core/stores/feeds';
 import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
@@ -33,14 +34,7 @@ import { useAppDispatch, useAppSelector, useLazyLoad } from '@/lib/store/core';
  * every caller would have to answer for a pagination that only one feed has.
  */
 export interface FeedState extends AsyncState<FeedItem[]> {
-  hasMore: boolean;
-  /**
-   * Whether `hasMore` is an answer rather than its initial value. A screen that
-   * says "that is everything" needs this: a cache hit and the bundled snapshot
-   * both return rows without ever asking, and reading their `hasMore` as a fact
-   * about the newsroom is the mistake this field exists to prevent.
-   */
-  paged: boolean;
+  end: FeedEnd;
   loadingMore: boolean;
   loadMore: () => void;
 }
@@ -95,8 +89,7 @@ export function useFeed(feed: FeedKey): FeedState {
       slice.status,
       () => void dispatch(fetchFeedKey(feed, { force: true })),
     ),
-    hasMore: slice.hasMore,
-    paged: slice.paged,
+    end: slice.end,
     loadingMore: slice.loadingMore,
     loadMore: () => void dispatch(loadMoreItems(feed)),
   };

@@ -206,14 +206,7 @@ interface Control {
   height: number;
   /** And its width, where the source names one. */
   width?: number;
-  /**
-   * The height as a FIXED edge rather than a floor, when the source wrote `height`.
-   *
-   * Carried beside `height` because the two are different promises and only one of
-   * them survives a reader who enlarges the type. A number here is the defect the
-   * `fixedEdges` ledger below names; the value itself is irrelevant, since a fixed
-   * 44 and a fixed 68 are equally unable to grow.
-   */
+  /** `height` as written, which unlike `minHeight` cannot grow. */
   fixedHeight?: number;
   /** The same for the width. */
   fixedWidth?: number;
@@ -316,45 +309,17 @@ const MEASURED_AND_LEFT: Record<string, string> = {};
 /**
  * A control that names its own box with a FIXED edge rather than a floor.
  *
- * **`underTheFloor` above cannot see this, and that is why it is here.** It asks
- * whether the declared size reaches 44, and `sizes.iconButton` is 44, so the answer
- * is yes and the control passes — while the number is a promise the box cannot keep
- * once the reader enlarges the type. Measured on `Medium_Phone_API_36` on
- * 2026-09-30: `player.tsx`'s close button read 43.8 x 43.8 dp at 100 % *and* at
- * 200 % system font, because it committed `width`/`height` where the back button
- * beside it in `ScreenHeaderBar` commits `minWidth`/`minHeight`. Nothing else in
- * the repository noticed: a screenshot at 100 % shows a correct-looking circle, and
- * the two shapes are the same four characters apart.
- *
- * So the rule is about the WORD, not the value. `sizes.tapTarget` in `minHeight` is
- * the answer this app already gives everywhere else, and the comment on
- * `sizes.ts` says so; what was missing was a check that a glyph-only control says
- * it the same way. A box whose content is a line of type is
- * `fixed-heights.test.ts`'s business, and it reads the same source for the other
- * half of the same fault.
+ * `underTheFloor` cannot see this: `sizes.iconButton` is 44 and passes, while a
+ * `height` of 44 is an edge the reader's text scale cannot raise. The rule is about
+ * the word, not the value.
  */
 const fixedEdges = app.controls.filter(
   (control) => control.fixedHeight !== undefined || control.fixedWidth !== undefined,
 );
 
-/**
- * Those of which each is left, and why.
- *
- * **`sizes.playButtonLarge` is here for a reason that is about the eye and not the
- * thumb.** A transport button drawn at 68 dp is a circle the reader can see at arm's
- * length on a phone held one-handed, and it is past 48 for the reason the comment on
- * `sizes.ts` gives for the three tokens of that group: it was drawn that size rather
- * than sized to a thumb. A fixed edge on it costs nothing a reader can feel, because
- * nothing in it is type and the glyph is centred either way.
- *
- * `MiniPlayer`'s two controls are NOT here. They hold a glyph, they commit
- * `width`/`height` where the player beside them commits `minWidth`/`minHeight`, and
- * they are the same defect the ledger exists to catch — the mini player is the one
- * place a reader touches the app with a thumb that is already reaching for something
- * else.
- */
+/** Fixed edges that are left, and why. */
 const DRAWN_THAT_WAY: Record<string, string> = {
-  'app/player.tsx:152':
+  'app/player.tsx:146':
     'The large transport button, drawn at 68 dp to be seen rather than hit. Past 48 already and holds a glyph, so a fixed edge costs a reader nothing a minHeight would fix.',
 };
 
@@ -420,11 +385,6 @@ describe('a control is big enough for a thumb', () => {
   );
 
   it('commits no control to an edge that cannot grow', () => {
-    // Not a size rule and not a minimum: `sizes.iconButton` is 44 and this file's
-    // other assertion already calls that big enough. What is wrong is the WORD. A
-    // fixed edge is a number the box promises and cannot keep, and on a phone it
-    // breaks the one way that matters — a reader who has asked for larger type and
-    // gets a control that stayed the size it was.
     expect(pinned.arrivals).toEqual([]);
   });
 

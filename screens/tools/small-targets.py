@@ -45,37 +45,25 @@ screen_w, screen_h = (
 px_per_dp = density / 160.0
 xml = sys.stdin.read()
 
-# The four tab labels of the native bar (ADR 0013), named rather than positioned:
-# a tab at a fixed offset would be a guess about a layout that moves with the font
-# scale, which is the mistake this whole addition exists to stop. German, because
-# that is what the app ships, and `SHIPPED_LOCALE` names only one.
-TAB_LABELS = re.compile(r"^(Entdecken|Mediathek|Mitmachen|Profil)$")
-
-# The bottom of the scroll area, which is the tab bar's top edge and NOT the
-# screen's. A node the scroller cuts is reported with its visible height, so a
-# content card that runs past the bottom reads as a short button.
-#
-# It comes out of the dump rather than out of a constant, because the value moves
-# with the font scale — measured on Medium_Phone_API_36 on 2026-09-30: the tab bar
-# started at y=2126 at 100 % system font and at y=2086 at 200 %. A hard-coded
-# number would have been right for one of the two and wrong for the other, which is
-# how two false findings got past a screenshot on 2026-09-03 (see the docstring).
-def scroll_bottom():
-    tops = []
-    for match in re.finditer(r'<node[^>]*>', xml):
+# A node a vertical scroller cuts is reported with its visible height, so a card
+# running under the tab bar reads as a short button. Horizontal rails are left out:
+# a chip flush with a rail's edge is not cut by it.
+def scroller_edges():
+    edges = set()
+    for match in re.finditer(r"<node[^>]*>", xml):
         tag = match.group(0)
-        desc = re.search(r'content-desc="([^"]*)"', tag)
-        if not desc or not TAB_LABELS.match(desc.group(1)):
+        if 'scrollable="true"' not in tag or "HorizontalScrollView" in tag:
             continue
-        bounds = re.search(r'bounds="\[(-?\d+),(-?\d+)\]', tag)
+        bounds = re.search(r'bounds="\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]"', tag)
         if bounds:
-            tops.append(int(bounds.group(2)))
-    return min(tops) if tops else 0
+            _, top, _, bottom = map(int, bounds.groups())
+            edges.update((top, bottom))
+    return edges
 
 
 seen = set()
 rows = []
-cut_bottom = scroll_bottom()
+cut_edges = scroller_edges()
 for match in re.finditer(r"<node[^>]*>", xml):
     tag = match.group(0)
     if 'clickable="true"' not in tag:
@@ -94,7 +82,9 @@ for match in re.finditer(r"<node[^>]*>", xml):
     # Cut off by the screen rather than built small — see the docstring.
     if width < minimum and screen_w and (x1 <= 0 or x2 >= screen_w):
         continue
-    if height < minimum and (y1 <= 0 or y2 >= screen_h or (cut_bottom and y2 >= cut_bottom)):
+    if height < minimum and (
+        (screen_h and (y1 <= 0 or y2 >= screen_h)) or y1 in cut_edges or y2 in cut_edges
+    ):
         continue
     label = ""
     for attribute in ("content-desc", "text"):
