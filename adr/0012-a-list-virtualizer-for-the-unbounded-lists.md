@@ -21,7 +21,7 @@ lot is cheaper than virtualizing it:
 | Where | Length | Bounded by |
 | --- | --- | --- |
 | `suche.tsx`, articles | ≤ 15 | `searchArticles(debounced, 15)`; the offline fallback caps at 12 |
-| `projekt/[id].tsx`, feed | **unbounded** | ~~`data?.slice(0, 12)`~~ nothing, since the "load more" that `loadMore` in the core had been waiting for — see [ADR 0066](0066-a-project-feed-has-a-load-more-and-its-own-list.md) |
+| `projekt/[id].tsx`, feed | ~~≤ 12~~ **unbounded** | ~~`data?.slice(0, 12)`~~ nothing, since the "load more" that `loadMore` in the core had been waiting for — see [ADR 0066](0066-a-project-feed-has-a-load-more-and-its-own-list.md) |
 | `(tabs)/index.tsx`, "Neueste Recherchen" | 5 | `recherchen.data?.slice(1, 6)` |
 | `(tabs)/index.tsx`, fact-check rail | ≤ 8 | `.slice(0, 8)` |
 | `(tabs)/mediathek.tsx`, videos | ≤ 6 | `videos.slice(0, 6)` |
@@ -43,8 +43,12 @@ episodes mounts two hundred store subscriptions to display about eight.
 
 ## 1. Decision
 
-`FlatList` on `gespeichert.tsx`, `serie/[id].tsx` and, since ADR 0066,
-`projekt/[id].tsx`. Every other list stays a mapped `ScrollView`.
+`FlatList` on `gespeichert.tsx` and `serie/[id].tsx`. ~~Every other list stays a
+mapped `ScrollView`.~~ That second half no longer holds whole, with
+[ADR 0066](0066-a-project-feed-has-a-load-more-and-its-own-list.md): the project
+feed's cap of `slice(0, 12)` came off, its length stopped being bounded by this
+repository, and it is a `FlatList` for the reason the first two are — with the
+difference that its scroller became the list rather than a list inside one.
 
 **`FlatList`, not `FlashList` or `LegendList`, and the reason is not performance.**
 For lists of this size the three are indistinguishable: FlashList's advantage is row

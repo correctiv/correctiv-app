@@ -55,6 +55,18 @@ export interface FeedSlice {
    * answer with everything they have in one go and cannot be paged at all.
    */
   hasMore: boolean;
+  /**
+   * Whether `hasMore` is an ANSWER or merely its initial value.
+   *
+   * **The two are the same boolean and the difference is the whole point.** A cache
+   * hit and a bundled snapshot both return a list without ever asking, so `hasMore`
+   * stays `false` there — and a screen that printed "that is everything published so
+   * far" over a twenty-row page one would be stating something it never learned. A
+   * screen that offers a "load more" would be offering one that cannot work, because
+   * `loadMore` returns on `!hasMore`. So a foot needs this to tell "there is nothing
+   * more" from "nobody has asked yet", and it says nothing when the answer is absent.
+   */
+  paged: boolean;
   /** A `loadMore` is in flight — for a spinner under the list, not over it. */
   loadingMore: boolean;
 }
@@ -75,6 +87,7 @@ function emptySlices(): Record<FeedKey, FeedSlice> {
       lastFetched: 0,
       page: 0,
       hasMore: false,
+      paged: false,
       loadingMore: false,
     };
   }
@@ -210,6 +223,19 @@ export const { patch } = slice.actions;
 interface NetworkPage {
   items: FeedItem[];
   hasMore: boolean;
+  /**
+   * Whether `hasMore` answers the question "is that everything", as opposed to
+   * "this is everything this source can serve".
+   *
+   * **The two are different and the RSS round is why.** REST serves a page of a
+   * count, so a short page means the archive ends there. RSS serves a fixed window
+   * of recent posts and cannot be paged at all, so its `hasMore: false` means the
+   * feed has no page two — not that CORRECTIV has published nothing older. A
+   * screen that says "Das ist alles, was bisher erschienen ist." over ten RSS
+   * entries would be wrong about the newsroom, and it is wrong in the one round
+   * that runs when the network is already unhappy.
+   */
+  exhaustive: boolean;
 }
 
 /**
@@ -258,7 +284,7 @@ async function readFromNetwork(key: FeedKey, page: number): Promise<NetworkPage>
      * could not see. On page 2 and beyond an empty page is the honest end of the
      * list, so it is only the first page that falls through.
      */
-    if (page > 1 || rest.items.length > 0) return rest;
+    if (page > 1 || rest.items.length > 0) return { ...rest, exhaustive: true };
     console.warn(`Feed '${key}': REST answered an empty first page, trying RSS`);
   } catch (err) {
     /**
@@ -277,30 +303,50 @@ async function readFromNetwork(key: FeedKey, page: number): Promise<NetworkPage>
 
   // Only page 1 can reach RSS. Asking it for a second page would re-serve the first.
   if (page > 1) throw new Error(`Feed '${key}': no page ${page}, RSS cannot paginate`);
-  return { items: await fetchFeed(key, config.url), hasMore: false };
+  return { items: await fetchFeed(key, config.url), hasMore: false, exhaustive: false };
+}
+
+/**
+ * A cache entry is the array it has always been: items and nothing else.
+ *
+ * **Deliberately. An earlier version cached `page` and `hasMore`, and that was
+ * wrong:** a cached `hasMore` is a claim frozen for the fifteen minutes the entry
+ * is good for, so a category that emptied mid-window keeps offering a button that
+ * fails, and a reader who paged to three comes back to a list that stops growing.
+ * Silence costs one press of patience; a wrong answer cached costs the rest of the
+ * list. So a warm start knows the rows and nothing about what follows them, which
+ * is what `paged` records.
+ */
+type CachedFeed = FeedItem[];
+
+/** A cache entry is the array; anything else is not one. */
+function asCachedFeed(value: unknown): CachedFeed | null {
+  return Array.isArray(value) ? (value as FeedItem[]) : null;
 }
 
 /** One feed: cache-first, stale-while-revalidate, bundled snapshot as the floor. */
 export const fetchFeedKey =
   (key: FeedKey, options: { force?: boolean } = {}): AppThunk<Promise<void>> =>
   async (dispatch, getState) => {
-    const cached = options.force ? null : await getCached<FeedItem[]>(CACHE_NS, key, TTL_MS);
+    const cached = options.force ? null : asCachedFeed(await getCached(CACHE_NS, key, TTL_MS));
     if (cached) {
-      dispatch(patch(key, { items: cached, status: 'ready' }));
+      // `paged` is NOT set here, and the comment above says why: a cached entry
+      // knows the rows and nothing about what follows them.
+      dispatch(patch(key, { items: cached, status: 'ready', paged: false }));
       return;
     }
 
     // Stale-while-revalidate: show what we have, then go to the network.
     const current = getState().feeds.byKey[key];
     if (current.items.length === 0) {
-      const stale = await getStale<FeedItem[]>(CACHE_NS, key);
+      const stale = asCachedFeed(await getStale(CACHE_NS, key));
       dispatch(
-        patch(key, stale?.length ? { items: stale, status: 'ready' } : { status: 'loading' }),
+        patch(key, stale ? { items: stale, status: 'ready', paged: false } : { status: 'loading' }),
       );
     }
 
     try {
-      const { items, hasMore } = await readFromNetwork(key, 1);
+      const { items, hasMore, exhaustive } = await readFromNetwork(key, 1);
       if (items.length === 0) throw new Error(`No items for '${key}'`);
       // Carry over images an earlier enrichment already resolved, so a refresh
       // does not blank every thumbnail for one more round of requests.
@@ -316,9 +362,20 @@ export const fetchFeedKey =
           lastFetched: Date.now(),
           page: 1,
           hasMore,
-          loadingMore: false,
+          paged: exhaustive,
+          // `loadingMore` deliberately untouched. This slice is shared — Home reads
+          // `recherchen` and `faktencheck` from the same store a project page pages —
+          // so a refresh landing while a `loadMore` is in flight used to clear the
+          // flag, re-arm the button and let a second press ask for the same page.
+          // The URL dedup dropped the duplicates, so the cost was a wasted request,
+          // and it is one line to not spend it.
         }),
       );
+      // The bare array, deliberately. A cached entry is a WARM START: it renders
+      // the list and goes no further, so it must not claim to know whether more
+      // exists — the foot would then say "that is everything published so far" about
+      // a page one, or offer a button that cannot work. `hasMore` belongs to the
+      // reader's own session, not to a value fifteen minutes old.
       await setCached(CACHE_NS, key, merged);
     } catch (err) {
       console.error(`Feed '${key}' failed:`, err instanceof Error ? err.message : err);
@@ -374,10 +431,15 @@ export const loadMore =
     const before = getState().feeds.byKey[key];
     if (!before.hasMore || before.loadingMore) return;
 
+    // The page number as a NUMBER. `before` is the slice object the store handed
+    // out, and a refresh replaces it with a fresh one rather than mutating it, so
+    // reading `before.page` after the await would see the refresh's value and the
+    // comparison below would compare the refresh against itself.
+    const from = before.page;
     dispatch(patch(key, { loadingMore: true }));
-    const next = before.page + 1;
+    const next = from + 1;
     try {
-      const { items, hasMore } = await readFromNetwork(key, next);
+      const { items, hasMore, exhaustive } = await readFromNetwork(key, next);
       /**
        * The list is read again AFTER the await, never from the snapshot taken
        * before it. A pull-to-refresh dispatched while this page was in flight has
@@ -385,10 +447,31 @@ export const loadMore =
        * would put the old page 1 back and persist it — so a newly published
        * article would vanish again until the next forced refresh.
        */
-      const current = getState().feeds.byKey[key].items;
-      const seen = new Set(current.map((i) => i.url));
-      const appended = [...current, ...items.filter((i) => !seen.has(i.url))];
-      dispatch(patch(key, { items: appended, page: next, hasMore, loadingMore: false }));
+      const live = getState().feeds.byKey[key];
+      /**
+       * **A refresh that landed while this page was in flight makes the page wrong,
+       * and the answer is to drop it.** `next` was `before.page + 1`, computed before
+       * the await; a refresh reset the slice to page 1, so appending a page 3 to a
+       * list that holds page 1 produces page 1 and page 3 with page 2 missing
+       * between them, and stores `page: 3` as if the reader had walked there. The
+       * dedup below cannot see it — a missing page and a duplicate are different
+       * problems.
+       *
+       * So the page number is compared against what is live now, and a page that no
+       * longer follows the list is discarded whole. `loadingMore` is cleared, so the
+       * reader can ask again, and the button comes back rather than leaving them
+       * with a list that silently skipped a page. Older than the "load more" this
+       * screen offers; it was unreachable until something called it.
+       */
+      if (live.page !== from) {
+        dispatch(patch(key, { loadingMore: false }));
+        return;
+      }
+      const seen = new Set(live.items.map((i) => i.url));
+      const appended = [...live.items, ...items.filter((i) => !seen.has(i.url))];
+      dispatch(
+        patch(key, { items: appended, page: next, hasMore, paged: exhaustive, loadingMore: false }),
+      );
       await setCached(CACHE_NS, key, appended);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

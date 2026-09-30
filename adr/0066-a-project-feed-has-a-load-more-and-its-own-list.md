@@ -71,15 +71,34 @@ each row, which meant every row carried a node for the row above it and the firs
 could grow one by forgetting. One component for the list, and the first row cannot
 acquire a line by not asking.
 
-### 3. `useFeed` grew three fields, and `AsyncState` did not
+### 3. `useFeed` grew four fields, and `AsyncState` did not
 
 Pagination is a property of one feed, not of a request. `AsyncState` describes the
 outcome of a single fetch and is also the return type of `useMergedFeeds`, where there
-is no page two — a merge of several feeds has nothing to page. So `hasMore`,
+is no page two — a merge of several feeds has nothing to page. So `hasMore`, `paged`,
 `loadingMore` and `loadMore` live on `FeedState`, which extends `AsyncState` and is
-returned by `useFeed` alone. The seven existing call sites destructure
-`{ data, loading, error }` and none of them changed, which is the point of the shape
-having only ever grown.
+returned by `useFeed` alone. The five other call sites read `.data` or `.offline` off
+the result and none of them changed, which is the point of the shape having only ever
+grown.
+
+**`paged` is there because `hasMore` alone cannot carry this decision.** Three paths
+render a list without ever establishing that the list ends: a cache hit, the bundled
+snapshot, and the RSS fallback. In all three `hasMore` is `false`, and in none of the
+three does that mean CORRECTIV has published nothing more. A screen reading it as a
+fact would tell a reader that twenty rows are everything the newsroom has, having
+learned nothing of the kind. So the slice records whether the answer was exhaustive —
+`readFromNetwork` says so per source, because RSS is the sharp case: it has no page
+two, which is a fact about the feed, and not about the archive, which serves a fixed
+window of recent posts. The foot says nothing when the answer did not arrive.
+Measured on `Medium_Phone_API_36` on 2026-09-30: the first version of this screen
+printed the sentence over a warm start, and two rounds of review after that found the
+RSS round and the missing page beneath it.
+
+**The cache still holds a bare array, and that was nearly got wrong.** A cached
+`hasMore` is a claim frozen for fifteen minutes: a category that filled a page at 14:00
+and emptied at 14:05 keeps offering a button that fails, and a reader who paged to
+three comes back to a list that stops growing. Silence costs a reader one press of
+patience; a wrong answer cached costs them the rest of the list.
 
 ## Consequences
 
@@ -94,12 +113,23 @@ to need one. The 12-to-20 count is measured, from the built web target against
 `correctiv.org`; the render cost of the extra rows is not, and the emulator work that
 would say so is issue #102's business.
 
-**The offline snapshot is a first page and now looks like one.** With no network the
-cascade serves the bundle's snapshot, `hasMore` is whatever the snapshot was written
-with, and a reader can press the button and get nothing. The loading and failed states
-say so where the list is empty; a reader who is already looking at rows is not told
-that the rest exists only online. Left as it is, because the alternative is a second
-status the core does not carry.
+**A warm start and a reader without a network get the rows and no foot.** Both paths
+return a list without ever asking whether more exists, so neither knows, and the foot
+now says nothing rather than guessing. That is a real cost and it is deliberate: the
+cache is good for fifteen minutes and the snapshot is the floor under a reader with no
+network at all, and for both of those a "load more" button would be one `loadMore`
+refuses on `!hasMore`. A second status — "there is more, but only online" — would say
+it honestly, and it is not carried today. The alternative taken was silence, which is
+the smaller claim of the two.
+
+**A page that a refresh overtook is dropped whole.** `loadMore` reads the page number
+before its await, so a refresh landing in between puts the slice back to page 1 while
+a page 3 is on its way. Appending it would hand the reader pages 1 and 3 with page 2
+missing and store `page: 3` as though they had walked there — and the URL dedup cannot
+see it, because a missing page and a duplicate are different problems. So the page
+number is compared against what is live afterwards and a page that no longer follows the
+list is discarded, with the button re-armed rather than left disabled. This is older
+than the button; nothing called `loadMore` until the screen did.
 
 ## What this retires
 

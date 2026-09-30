@@ -663,7 +663,10 @@
     "decisions": {
       "1": ["A load-more on the project feed, and no cap on what it has already fetched"],
       "2": ["The page's scroller is the list, not a `ScrollView` holding one"],
-      "3": ["`useFeed` grew three fields, and `AsyncState` did not"]
+      "3": [
+        "`useFeed` grew three fields, and `AsyncState` did not",
+        "`useFeed` grew four fields, and `AsyncState` did not"
+      ]
     }
   }
 }
