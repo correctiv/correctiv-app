@@ -832,6 +832,9 @@
     "defaultMessage": "{name} is just starting. The first pieces appear here as soon as they are published.",
     "description": "Shown on a project that has published nothing yet. {name} is the project's name."
   },
+  "project.endOfFeed": {
+    "defaultMessage": "That is everything published so far."
+  },
   "project.feedFailed": {
     "defaultMessage": "The pieces could not be loaded."
   },
@@ -843,6 +846,13 @@
   },
   "project.listenRadio": {
     "defaultMessage": "Listen to Salon5 Radio"
+  },
+  "project.loadMore": {
+    "defaultMessage": "Load more"
+  },
+  "project.loadMoreWhileLoading": {
+    "defaultMessage": "Loading more…",
+    "description": "The label of the button that loads the next page, while that page is on its way. Read instead of the button's own label, because a button that keeps saying \"Load more\" while it does nothing is a control that has stopped answering."
   },
   "project.noId": {
     "defaultMessage": "No identifier was passed.",

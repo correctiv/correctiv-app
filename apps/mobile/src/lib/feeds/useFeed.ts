@@ -4,6 +4,7 @@ import {
   fetchFeedKey,
   fetchMany,
   investigations,
+  loadMore as loadMoreItems,
   mergedFeedItems,
   mergedFeedStatus,
   type FeedStatus,
@@ -24,6 +25,18 @@ import { useAppDispatch, useAppSelector, useLazyLoad } from '@/lib/store/core';
  * `{ data, loading, error }`, so `offline` was added beside them rather than
  * folded into either.
  */
+
+/**
+ * A single feed, and the one thing `AsyncState` cannot express: whether more of it
+ * exists. `AsyncState` describes one request's outcome, and a merge of several feeds
+ * has no page two — so the three fields live here rather than on `AsyncState`, where
+ * every caller would have to answer for a pagination that only one feed has.
+ */
+export interface FeedState extends AsyncState<FeedItem[]> {
+  hasMore: boolean;
+  loadingMore: boolean;
+  loadMore: () => void;
+}
 
 export interface AsyncState<T> {
   data: T | null;
@@ -63,17 +76,22 @@ function toAsyncState<T>(items: T | null, status: FeedStatus, reload: () => void
  * `useVideoChannel` and `usePodcastLibrary` need, including the reason all three
  * dispatch through the Provider rather than the imported store.
  */
-export function useFeed(feed: FeedKey): AsyncState<FeedItem[]> {
+export function useFeed(feed: FeedKey): FeedState {
   const dispatch = useAppDispatch();
   const slice = useAppSelector((s) => s.feeds.byKey[feed]);
 
   useLazyLoad(slice.status, fetchFeedKey, feed);
 
-  return toAsyncState(
-    slice.items.length > 0 ? slice.items : null,
-    slice.status,
-    () => void dispatch(fetchFeedKey(feed, { force: true })),
-  );
+  return {
+    ...toAsyncState(
+      slice.items.length > 0 ? slice.items : null,
+      slice.status,
+      () => void dispatch(fetchFeedKey(feed, { force: true })),
+    ),
+    hasMore: slice.hasMore,
+    loadingMore: slice.loadingMore,
+    loadMore: () => void dispatch(loadMoreItems(feed)),
+  };
 }
 
 /**
