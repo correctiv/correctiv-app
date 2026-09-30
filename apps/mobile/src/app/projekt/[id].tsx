@@ -231,11 +231,19 @@ function ProjectBody({ project, action }: { project: Project; action: ScreenActi
   );
 }
 
-/** The section heading above the rows, and the first row's spacing. */
+/**
+ * The section heading above the rows.
+ *
+ * **`mb-2xs` and not the wrapper the old screen had.** The rows sat in
+ * `<View className="mt-2xs">`, and that wrapper went when the page's scroller became
+ * the list. The gap belongs to the heading now, because the heading is the last thing
+ * above the rows: put it on a row and the first row carries spacing it does not own,
+ * and a `ListEmptyComponent` would be a row with the heading's gap under it.
+ */
 function FeedHeading() {
   const intl = useIntl();
   return (
-    <View className="mt-l">
+    <View className="mt-l mb-2xs">
       <SectionHeader title={intl.formatMessage(COPY.latestPosts)} />
     </View>
   );
@@ -278,17 +286,36 @@ function FeedFailed() {
  */
 function FeedFoot({
   hasMore,
+  paged,
   loadingMore,
   items,
   onLoadMore,
 }: {
   hasMore: boolean;
+  paged: boolean;
   loadingMore: boolean;
   items: number;
   onLoadMore: () => void;
 }) {
   const intl = useIntl();
   if (items === 0) return null;
+  /**
+   * The sentence, and only when the store has an ANSWER.
+   *
+   * A warm start renders this list out of the cache and a reader without a network
+   * out of the bundled snapshot, and neither path ever asks whether more exists —
+   * so `hasMore` is `false` there because nobody filled it in, not because the list
+   * ended. Printing the sentence anyway would state a fact about the newsroom that
+   * the app never established, and a button instead would be one `loadMore` refuses,
+   * because it returns on `!hasMore`. Measured on `Medium_Phone_API_36` on
+   * 2026-09-30: the first version of this screen printed it over a twenty-row
+   * warm start.
+   *
+   * So the two states are not dressed alike. Silence is the honest answer to a
+   * question nobody has answered, and the reader gets the rows they do have.
+   */
+  if (!paged) return null;
+
   if (!hasMore) {
     return (
       <Typo variant="text-s" color="on-canvas-muted" className="mt-s mb-2xs">
@@ -310,15 +337,9 @@ function FeedFoot({
 }
 
 /**
- * A project's own feed, as the page's scroller.
- *
- * **A `FlatList` where the page used to hold a `ScrollView` with the rows mapped
- * into it.** The list was bounded by `data?.slice(0, 12)` while the core asked
- * WordPress for 20, so eight pieces a reader could have read were fetched and
- * dropped on the floor. Lifting the ceiling is what makes the list unbounded, and
- * an unbounded list is the category ADR 0012 virtualizes; a `FlatList` *inside* the
- * old `ScrollView` would have been the nesting the same record argues against, so
- * the page's scroller is the list and the head and the foot ride on it.
+ * A `FlatList` where the page used to hold a `ScrollView` with the rows mapped into
+ * it, because the cap came off and an unbounded list is what ADR 0012 virtualizes,
+ * and a list inside that scroller is the nesting it argues against.
  */
 function ProjectFeed({
   feed,
@@ -329,7 +350,7 @@ function ProjectFeed({
   project: Project;
   action: ScreenAction;
 }) {
-  const { data, loading, error, hasMore, loadingMore, loadMore } = useFeed(feed);
+  const { data, loading, error, hasMore, paged, loadingMore, loadMore } = useFeed(feed);
   const items = useMemo(() => data ?? [], [data]);
 
   return (
@@ -349,12 +370,20 @@ function ProjectFeed({
         </View>
       }
       ListFooterComponent={
-        <FeedFoot
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          items={items.length}
-          onLoadMore={loadMore}
-        />
+        <View>
+          <FeedFoot
+            hasMore={hasMore}
+            paged={paged}
+            loadingMore={loadingMore}
+            items={items.length}
+            onLoadMore={loadMore}
+          />
+          {/* Below the rows, where it always was on this page. No project sets
+              `feed` and `teaserOnly` together today, and the type still allows it,
+              so the two bodies cannot disagree about what a project with a feed
+              draws. */}
+          {project.teaserOnly && <TeaserCard project={project} />}
+        </View>
       }
       // A separator between rows rather than a hairline drawn by each row: one
       // fewer node per row, and the first row cannot grow one by forgetting.

@@ -34,6 +34,13 @@ import { useAppDispatch, useAppSelector, useLazyLoad } from '@/lib/store/core';
  */
 export interface FeedState extends AsyncState<FeedItem[]> {
   hasMore: boolean;
+  /**
+   * Whether `hasMore` is an answer rather than its initial value. A screen that
+   * says "that is everything" needs this: a cache hit and the bundled snapshot
+   * both return rows without ever asking, and reading their `hasMore` as a fact
+   * about the newsroom is the mistake this field exists to prevent.
+   */
+  paged: boolean;
   loadingMore: boolean;
   loadMore: () => void;
 }
@@ -89,6 +96,7 @@ export function useFeed(feed: FeedKey): FeedState {
       () => void dispatch(fetchFeedKey(feed, { force: true })),
     ),
     hasMore: slice.hasMore,
+    paged: slice.paged,
     loadingMore: slice.loadingMore,
     loadMore: () => void dispatch(loadMoreItems(feed)),
   };

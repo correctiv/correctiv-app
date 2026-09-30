@@ -557,3 +557,185 @@ describe('investigations', () => {
     expect(investigations(createAppStore().getState().feeds, 3)).toEqual([]);
   });
 });
+
+/**
+ * `hasMore` and `paged`, which are the same boolean read two ways.
+ *
+ * Every test above could pass with `hasMore` never set at all, because each of them
+ * asks the network. The three rungs that do not — the warm cache, the stale entry and
+ * the bundled snapshot — return a list and go no further, and in all three `hasMore`
+ * is `false` because nobody filled it in rather than because the list ended. A screen
+ * with a "load more" button and a "that is everything published so far" sentence
+ * standing on that field cannot tell those apart, and the sentence is the dangerous
+ * one: it is a claim about the newsroom.
+ *
+ * Found by reading the store after a reviewer asked whether a warm start could reach
+ * page 2, and measured the same day on `Medium_Phone_API_36` (ADR 0066 §3).
+ */
+describe('whether `hasMore` is an answer', () => {
+  /** A warm cache, written for one test at a time. */
+  async function warmCache() {
+    await setCached('feeds', 'faktencheck', [item('warm'), item('warmer')]);
+  }
+
+  it('marks a network read as answered, on the first page and on every later one', async () => {
+    restMock.mockResolvedValueOnce({
+      items: [item('a', '2026-08-31T10:00:00.000Z'), item('b', '2026-08-30T10:00:00.000Z')],
+      hasMore: true,
+    });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    expect(store.getState().feeds.byKey.faktencheck.paged).toBe(true);
+
+    restMock.mockResolvedValueOnce({ items: [item('c')], hasMore: false });
+    await store.dispatch(loadMore('faktencheck'));
+    expect(store.getState().feeds.byKey.faktencheck.paged).toBe(true);
+  });
+
+  it('leaves a warm start unanswered, so a screen says nothing about the end', async () => {
+    await warmCache();
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    // The rows are there — the cache did its job …
+    expect(slice.items.map((i) => i.id)).toEqual(['warm', 'warmer']);
+    // … and the store says it never asked whether more exists, rather than
+    // answering "no" with a boolean that started life as a default.
+    expect(slice.paged).toBe(false);
+    expect(slice.hasMore).toBe(false);
+    // The network was not touched at all, which is what makes this the warm path.
+    expect(restMock).not.toHaveBeenCalled();
+  });
+
+  it('leaves the bundled snapshot unanswered too', async () => {
+    configurePlatform({
+      ...createMemoryPlatform(),
+      content: {
+        ...createMemoryPlatform().content,
+        feed: (key: string) => (key === 'faktencheck' ? [item('bundled')] : []),
+      },
+    });
+    restMock.mockRejectedValue(new Error('offline'));
+
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.status).toBe('offline');
+    expect(slice.items.map((i) => i.id)).toEqual(['bundled']);
+    expect(slice.paged).toBe(false);
+  });
+
+  it('leaves the RSS fallback unanswered, because RSS is a window and not an archive', async () => {
+    restMock.mockRejectedValue(new Error('REST down'));
+    fetchMock.mockResolvedValueOnce([item('rss')]);
+
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.items.map((i) => i.id)).toEqual(['rss']);
+    // RSS has no page two — a fact about the SOURCE. That is not the same as a
+    // fact about the newsroom, which is what "that is everything published so far"
+    // claims, and the ten-odd entries an RSS feed serves are the latest of many
+    // more. An earlier version of this file asserted `paged: true` here and
+    // enshrined the wrong claim in the one place that was supposed to catch it.
+    expect(slice.paged).toBe(false);
+    expect(slice.hasMore).toBe(false);
+  });
+
+  it('marks a REST page one as answered, so the end of the list can be stated', async () => {
+    restMock.mockResolvedValueOnce({ items: [item('a'), item('b')], hasMore: false });
+
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.paged).toBe(true);
+    expect(slice.hasMore).toBe(false);
+  });
+
+  it('refuses to page an unanswered feed rather than asking once', async () => {
+    await warmCache();
+    await store.dispatch(fetchFeedKey('faktencheck'));
+    const before = restMock.mock.calls.length;
+
+    await store.dispatch(loadMore('faktencheck'));
+
+    expect(restMock.mock.calls.length).toBe(before);
+  });
+
+  it('does not let a refresh re-arm the button while a load is in flight', async () => {
+    restMock.mockResolvedValueOnce({
+      items: [item('a', '2026-08-31T10:00:00.000Z'), item('b', '2026-08-30T10:00:00.000Z')],
+      hasMore: true,
+    });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+
+    // A page two that is still on its way when a refresh lands. This slice is shared
+    // with Home, so that is a real ordering rather than a contrived one.
+    let releasePageTwo = () => {};
+    restMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releasePageTwo = () => resolve({ items: [item('c')], hasMore: false });
+        }),
+    );
+    const paging = store.dispatch(loadMore('faktencheck'));
+    expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(true);
+
+    restMock.mockResolvedValueOnce({
+      items: [item('fresh', '2026-09-02T10:00:00.000Z')],
+      hasMore: true,
+    });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    releasePageTwo();
+    await paging;
+
+    // The flag is the guard `loadMore` returns on; a refresh that cleared it would
+    // let a second press ask for the same page again.
+    expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(false);
+  });
+
+  /**
+   * The page that no longer follows the list.
+   *
+   * `next` is read before the await, so a refresh in between resets the slice to
+   * page 1 and the page that comes back is a page 3. Appending it would leave the
+   * reader with pages 1 and 3, `page: 3` stored as if they had walked there, and
+   * nothing in the dedup to notice: a missing page and a duplicate are different
+   * problems. Found by a reviewer reading the await; older than the button, and
+   * unreachable until something called `loadMore`.
+   */
+  it('discards a page that a refresh made the wrong page', async () => {
+    // Page one first, then a page two, so the reader is genuinely at page 2 and a
+    // refresh back to page 1 is a real jump backwards rather than a re-read.
+    restMock.mockResolvedValueOnce({ items: [item('a')], hasMore: true });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    restMock.mockResolvedValueOnce({ items: [item('b')], hasMore: true });
+    await store.dispatch(loadMore('faktencheck'));
+    expect(store.getState().feeds.byKey.faktencheck.page).toBe(2);
+
+    // Page three, held in flight.
+    let releasePageThree = () => {};
+    restMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releasePageThree = () => resolve({ items: [item('c')], hasMore: true });
+        }),
+    );
+    const paging = store.dispatch(loadMore('faktencheck'));
+
+    // A refresh puts the slice back to page one while page three is on its way.
+    restMock.mockResolvedValueOnce({ items: [item('a'), item('neu')], hasMore: true });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    releasePageThree();
+    await paging;
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    // Page three is not in the list, and `page` is the one the refresh left rather
+    // than the one the request asked for. Appending it would have given the reader
+    // pages 1 and 3 with page 2 missing and `page: 3` claiming they had walked there.
+    expect(slice.items.map((i) => i.id)).toEqual(['a', 'neu']);
+    expect(slice.page).toBe(1);
+    // And the reader can ask again: a list that silently skipped a page behind a
+    // button that stays disabled is worse than a wasted press.
+    expect(slice.loadingMore).toBe(false);
+  });
+});
