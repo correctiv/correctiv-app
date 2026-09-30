@@ -61,12 +61,6 @@ export default function PlayerScreen() {
           accessibilityLabel={intl.formatMessage(COPY.close)}
           onPress={goBack}
           className="items-center justify-center active:opacity-70"
-          // `minWidth`/`minHeight` and not `width`/`height`, for the reason
-          // `ScreenHeaderBar` gives for its own back button: a fixed edge is a
-          // promise the box cannot keep once the reader enlarges the type, and
-          // this one never did. Measured on `Medium_Phone_API_36` at 200 % system
-          // font on 2026-09-30: 43.8 x 43.8 dp, the same as at 100 %. The glyph
-          // does not scale, so the minimum is what the target needs to be.
           style={{ minWidth: sizes.tapTarget, minHeight: sizes.tapTarget }}
         >
           <Ionicons name="close" size={24} color={colors['on-canvas']} />

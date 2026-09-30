@@ -322,11 +322,6 @@ function HeaderButton({
        * whichever won: an invisible ambiguity between "share this article" and
        * "save it", on the one screen where both are one-tap actions.
        */
-      // `minWidth`/`minHeight` and not `width`/`height`: a fixed edge is a promise
-      // the box cannot keep once the reader enlarges the type, and `tapTarget`
-      // is a floor for that reason. Measured on `Medium_Phone_API_36` on
-      // 2026-09-30, 100 % and 200 % system font alike; `__tests__/tap-targets.test.ts`
-      // holds the word and not merely the number.
       style={{ minWidth: sizes.iconButton, minHeight: sizes.iconButton }}
     >
       <Ionicons name={icon} size={22} color={colors['on-canvas']} />

@@ -135,11 +135,6 @@ function SavedRow({ article }: { article: SavedArticle }) {
          * that opens the article, so an invisible rectangle around it is exactly
          * the overlap the issue warns about. 44 is drawn, so it cannot overlap.
          */
-        // `minWidth`/`minHeight` and not `width`/`height`: a fixed edge is a promise
-        // the box cannot keep once the reader enlarges the type, and `tapTarget`
-        // is a floor for that reason. Measured on `Medium_Phone_API_36` on
-        // 2026-09-30, 100 % and 200 % system font alike; `__tests__/tap-targets.test.ts`
-        // holds the word and not merely the number.
         style={{ minWidth: sizes.tapTarget, minHeight: sizes.tapTarget }}
       >
         <Ionicons name="close" size={18} color={colors['grey-500']} />
