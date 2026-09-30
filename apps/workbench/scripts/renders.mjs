@@ -69,6 +69,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isReloadNotice } from './reload-notice.mjs';
+
 const WORKBENCH = dirname(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = join(WORKBENCH, '../..');
 
@@ -391,27 +393,6 @@ async function attach(endpoint) {
 }
 
 const BLANK = { mounted: false, title: '', words: '', failed: null };
-
-/**
- * Vite's "your dependencies moved, load again", which is a request and not a
- * fault.
- *
- * The dev server answers a request it was already serving with `504` and the
- * body `Outdated Optimize Dep` when it discovers a new dependency while
- * compiling. Everything the page then does is correct; the browser reloads and
- * gets a good bundle. Collecting that as a console error turned a green page
- * into a failed check, and it is not a rare shape: any change that adds an
- * import can trigger the re-optimise, so the failure lands on whatever pull
- * request happened to add a file.
- *
- * Matched on both halves on purpose. The text alone would also swallow a real
- * "a request for that never arrived" if the server ever phrased it the same way,
- * and the status alone would swallow every 504 including a proxy timeout, which
- * is the failure this check exists to catch.
- */
-function isReloadNotice(text) {
-  return /Outdated Optimize Dep/i.test(text) && /\b504\b/.test(text);
-}
 
 /**
  * One console error, short enough to read.
