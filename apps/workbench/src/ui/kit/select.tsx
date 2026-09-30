@@ -110,7 +110,7 @@ export function Select({
           sideOffset={4}
           collisionPadding={12}
           className={cn(
-            'relative z-50 overflow-hidden rounded-md border border-stroke bg-canvas shadow-xl',
+            'relative z-50 overflow-hidden rounded-md border border-stroke bg-canvas shadow-e3',
             'min-w-[var(--radix-select-trigger-width)] max-w-[min(28rem,92vw)]',
             'max-h-[min(var(--radix-select-content-available-height),24rem)]',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',

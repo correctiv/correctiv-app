@@ -67,7 +67,7 @@ export function DialogContent({
       <DialogPrimitive.Content
         className={cn(
           'fixed left-1/2 top-1/2 z-50 w-[min(32rem,92vw)] -translate-x-1/2 -translate-y-1/2',
-          'max-h-[85vh] overflow-y-auto rounded-lg border border-stroke bg-canvas p-m shadow-2xl',
+          'max-h-[85vh] overflow-y-auto rounded-lg border border-stroke bg-canvas p-m shadow-e4',
           'duration-150',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',

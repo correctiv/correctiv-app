@@ -317,7 +317,10 @@ export function App() {
       <DocumentTitle route={route} kind={view.kind} name={params.name} document={doc?.title} />
       <TooltipProvider delayDuration={300}>
         <SlotProvider declared={slotsOf(view)}>
-          <div className="flex h-dvh flex-col bg-canvas text-on-canvas">
+          {/* `page`, not `canvas`: one step below, so a card on it reads as
+              raised in both schemes while the tokens the app also reads stay
+              where they are. `styles/palette.css` derives it. */}
+          <div className="flex h-dvh flex-col bg-page text-on-canvas">
             <SkipLink />
 
             {!full && (
