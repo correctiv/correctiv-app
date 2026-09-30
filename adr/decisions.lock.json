@@ -657,5 +657,13 @@
         "The body is gated for what acts without a script, and an embed that can do without an origin gets none"
       ]
     }
+  },
+  "0066": {
+    "slugs": ["a-project-feed-has-a-load-more-and-its-own-list"],
+    "decisions": {
+      "1": ["A load-more on the project feed, and no cap on what it has already fetched"],
+      "2": ["The page's scroller is the list, not a `ScrollView` holding one"],
+      "3": ["`useFeed` grew three fields, and `AsyncState` did not"]
+    }
   }
 }

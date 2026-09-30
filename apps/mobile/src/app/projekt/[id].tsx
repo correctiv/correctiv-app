@@ -1,13 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo } from 'react';
 import { defineMessages, useIntl, type MessageDescriptor } from 'react-intl';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  View,
+  type ListRenderItemInfo,
+} from 'react-native';
 
 import { ArticleRow } from '@/components/feed/ArticleRow';
 import { Button, Card, Hairline, SectionHeader, Typo } from '@/components/ui';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { interests } from '@correctiv/app-core/data/interests';
 import { projectGroups, resolveProject, type Project } from '@correctiv/app-core/data/projects';
-import type { FeedKey } from '@correctiv/app-core/types/models';
+import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
@@ -46,6 +53,17 @@ const COPY = defineMessages({
   },
   latestPosts: { id: 'project.latestPosts', defaultMessage: 'Latest pieces' },
   feedFailed: { id: 'project.feedFailed', defaultMessage: 'The pieces could not be loaded.' },
+  loadMore: { id: 'project.loadMore', defaultMessage: 'Load more' },
+  loadMoreWhileLoading: {
+    id: 'project.loadMoreWhileLoading',
+    defaultMessage: 'Loading more…',
+    description:
+      'The label of the button that loads the next page, while that page is on its way. Read instead of the button\'s own label, because a button that keeps saying "Load more" while it does nothing is a control that has stopped answering.',
+  },
+  endOfFeed: {
+    id: 'project.endOfFeed',
+    defaultMessage: 'That is everything published so far.',
+  },
   tipWhatsapp: { id: 'project.tipWhatsapp', defaultMessage: 'Send a tip on WhatsApp' },
   listenRadio: { id: 'project.listenRadio', defaultMessage: 'Listen to Salon5 Radio' },
   joinLocalNetwork: { id: 'project.joinLocalNetwork', defaultMessage: 'Join the local network' },
@@ -134,78 +152,219 @@ export default function ProjektScreen() {
           </Typo>
         </View>
       ) : (
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="px-m pt-m pb-2xl"
-          showsVerticalScrollIndicator={false}
-        >
-          <Typo variant="headline-l">{project.name}</Typo>
-          <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
-            {project.description}
-          </Typo>
-
-          {action && (
-            <Button
-              title={intl.formatMessage(action.label)}
-              variant="outline"
-              onPress={action.run}
-              className="mt-s"
-            />
-          )}
-
-          {project.feed ? <ProjectFeed feed={project.feed} /> : null}
-
-          {project.teaserOnly && (
-            <Card tone="surface" className="mt-m">
-              <Typo variant="headline-xs">{intl.formatMessage(COPY.comingSoon)}</Typo>
-              <Typo variant="text-s" color="on-canvas-muted" className="mt-4xs">
-                {intl.formatMessage(COPY.comingSoonBody, { name: project.name })}
-              </Typo>
-            </Card>
-          )}
-        </ScrollView>
+        <ProjectBody project={project} action={action} />
       )}
     </View>
   );
 }
 
 /**
- * Its own component, because `useFeed` is a hook: on a page without a feed it must
- * not be called conditionally.
+ * A project's head: name, description, its own action.
+ *
+ * Its own component so that both bodies below can hand the same element to their
+ * scroller — a `ListHeaderComponent` and a `ScrollView` child are two different
+ * positions, and the head is the one thing that does not care which it is in.
  */
-function ProjectFeed({ feed }: { feed: FeedKey }) {
+function ProjectHead({ project, action }: { project: Project; action: ScreenAction }) {
   const intl = useIntl();
-  const colors = useColors();
-  const { data, loading, error } = useFeed(feed);
-  const items = data?.slice(0, 12) ?? [];
+  return (
+    <View>
+      <Typo variant="headline-l">{project.name}</Typo>
+      <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
+        {project.description}
+      </Typo>
 
+      {action && (
+        <Button
+          title={intl.formatMessage(action.label)}
+          variant="outline"
+          onPress={action.run}
+          className="mt-s"
+        />
+      )}
+    </View>
+  );
+}
+
+type ScreenAction = { label: MessageDescriptor; run: () => void } | null;
+
+/**
+ * The teaser card, for a project that has published nothing yet.
+ *
+ * A component rather than an element in a constant, because its sentence is a
+ * message and formatting one needs a hook.
+ */
+function TeaserCard({ project }: { project: Project }) {
+  const intl = useIntl();
+  return (
+    <Card tone="surface" className="mt-m">
+      <Typo variant="headline-xs">{intl.formatMessage(COPY.comingSoon)}</Typo>
+      <Typo variant="text-s" color="on-canvas-muted" className="mt-4xs">
+        {intl.formatMessage(COPY.comingSoonBody, { name: project.name })}
+      </Typo>
+    </Card>
+  );
+}
+
+/**
+ * A project page: the head, the feed, and the teaser.
+ *
+ * **Two bodies, and the reason is a hook.** `useFeed` may not be called
+ * conditionally, and 19 of the 26 projects have no feed at all, so a page without
+ * one cannot ask. It also has nothing to virtualize — a head and a card fit on any
+ * screen — so it keeps a `ScrollView` and the page with a feed is the one that
+ * gets a list. Both draw the same head, so the two agree on the head by sharing
+ * it rather than by two copies that have to be kept in step.
+ */
+function ProjectBody({ project, action }: { project: Project; action: ScreenAction }) {
+  return project.feed ? (
+    <ProjectFeed feed={project.feed} project={project} action={action} />
+  ) : (
+    <ScrollView
+      className="flex-1"
+      contentContainerClassName="px-m pt-m pb-2xl"
+      showsVerticalScrollIndicator={false}
+    >
+      <ProjectHead project={project} action={action} />
+      {project.teaserOnly && <TeaserCard project={project} />}
+    </ScrollView>
+  );
+}
+
+/** The section heading above the rows, and the first row's spacing. */
+function FeedHeading() {
+  const intl = useIntl();
   return (
     <View className="mt-l">
       <SectionHeader title={intl.formatMessage(COPY.latestPosts)} />
-
-      {loading && items.length === 0 && (
-        <View className="py-l">
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      )}
-
-      {/* No silently endless spinner. With no network and no cache this says that
-          nothing could be loaded. It stopped being the web target's normal case with
-          ADR 0015: the REST API sends a CORS header, so a browser has a live path. */}
-      {error && items.length === 0 && !loading && (
-        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-          {intl.formatMessage(COPY.feedFailed)}
-        </Typo>
-      )}
-
-      <View className="mt-2xs">
-        {items.map((item, i) => (
-          <View key={item.id}>
-            {i > 0 && <Hairline />}
-            <ArticleRow item={item} onPress={openArticle} />
-          </View>
-        ))}
-      </View>
     </View>
   );
+}
+
+function FeedSpinner() {
+  const colors = useColors();
+  return (
+    <View className="py-l">
+      <ActivityIndicator color={colors.accent} />
+    </View>
+  );
+}
+
+/**
+ * No silently endless spinner. With no network and no cache this says that nothing
+ * could be loaded. It stopped being the web target's normal case with ADR 0015: the
+ * REST API sends a CORS header, so a browser has a live path.
+ */
+function FeedFailed() {
+  const intl = useIntl();
+  return (
+    <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+      {intl.formatMessage(COPY.feedFailed)}
+    </Typo>
+  );
+}
+
+/**
+ * The foot of the feed: the button, or the sentence that says there is nothing more.
+ *
+ * **A button and not `onEndReached`.** Scrolling to the end and finding the next
+ * page already there is a faster screen, and it is also a page fetched for a
+ * reader who was looking at the last row rather than at the end of the list, with
+ * no way to see that it happened or to stop it. The button costs one tap and says
+ * what it will do. `hasMore` is inferred from a full page, so on a category whose
+ * post count is an exact multiple of 20 the button appears once more than there is
+ * anything behind it — which is why the sentence after it is not a permanent
+ * fixture but the button's own absence.
+ */
+function FeedFoot({
+  hasMore,
+  loadingMore,
+  items,
+  onLoadMore,
+}: {
+  hasMore: boolean;
+  loadingMore: boolean;
+  items: number;
+  onLoadMore: () => void;
+}) {
+  const intl = useIntl();
+  if (items === 0) return null;
+  if (!hasMore) {
+    return (
+      <Typo variant="text-s" color="on-canvas-muted" className="mt-s mb-2xs">
+        {intl.formatMessage(COPY.endOfFeed)}
+      </Typo>
+    );
+  }
+  return (
+    <View className="mt-s">
+      <Button
+        title={intl.formatMessage(loadingMore ? COPY.loadMoreWhileLoading : COPY.loadMore)}
+        variant="outline"
+        onPress={onLoadMore}
+        disabled={loadingMore}
+        fullWidth
+      />
+    </View>
+  );
+}
+
+/**
+ * A project's own feed, as the page's scroller.
+ *
+ * **A `FlatList` where the page used to hold a `ScrollView` with the rows mapped
+ * into it.** The list was bounded by `data?.slice(0, 12)` while the core asked
+ * WordPress for 20, so eight pieces a reader could have read were fetched and
+ * dropped on the floor. Lifting the ceiling is what makes the list unbounded, and
+ * an unbounded list is the category ADR 0012 virtualizes; a `FlatList` *inside* the
+ * old `ScrollView` would have been the nesting the same record argues against, so
+ * the page's scroller is the list and the head and the foot ride on it.
+ */
+function ProjectFeed({
+  feed,
+  project,
+  action,
+}: {
+  feed: FeedKey;
+  project: Project;
+  action: ScreenAction;
+}) {
+  const { data, loading, error, hasMore, loadingMore, loadMore } = useFeed(feed);
+  const items = useMemo(() => data ?? [], [data]);
+
+  return (
+    <FlatList
+      className="flex-1"
+      data={items}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      contentContainerClassName="px-m pt-m pb-2xl"
+      showsVerticalScrollIndicator={false}
+      ListHeaderComponent={
+        <View>
+          <ProjectHead project={project} action={action} />
+          <FeedHeading />
+          {loading && items.length === 0 && <FeedSpinner />}
+          {error && items.length === 0 && !loading && <FeedFailed />}
+        </View>
+      }
+      ListFooterComponent={
+        <FeedFoot
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          items={items.length}
+          onLoadMore={loadMore}
+        />
+      }
+      // A separator between rows rather than a hairline drawn by each row: one
+      // fewer node per row, and the first row cannot grow one by forgetting.
+      ItemSeparatorComponent={Hairline}
+    />
+  );
+}
+
+const keyExtractor = (item: FeedItem) => item.id;
+
+function renderItem({ item }: ListRenderItemInfo<FeedItem>) {
+  return <ArticleRow item={item} onPress={openArticle} />;
 }
