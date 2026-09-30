@@ -668,5 +668,11 @@
         "`useFeed` grew four fields, and `AsyncState` did not"
       ]
     }
+  },
+  "0067": {
+    "slugs": ["a-feeds-end-is-one-field-with-three-values"],
+    "decisions": {
+      "1": ["`end: 'unknown' | 'more' | 'end'` replaces `hasMore`, `paged` and `exhaustive`"]
+    }
   }
 }

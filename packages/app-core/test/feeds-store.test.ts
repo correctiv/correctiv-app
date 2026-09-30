@@ -250,7 +250,7 @@ describe('the REST path', () => {
     expect(slice.items).toHaveLength(2);
     expect(slice.status).toBe('ready');
     expect(slice.page).toBe(1);
-    expect(slice.hasMore).toBe(true);
+    expect(slice.end).toBe('more');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -294,7 +294,7 @@ describe('the REST path', () => {
     expect(slice.items.map((i) => i.id)).toEqual(['a']);
     expect(slice.status).toBe('ready');
     // RSS cannot page, so nothing may offer a "mehr laden" button.
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('unknown');
   });
 
   /**
@@ -331,7 +331,7 @@ describe('loading more', () => {
     const slice = store.getState().feeds.byKey.faktencheck;
     expect(slice.items.map((i) => i.id)).toEqual(['a', 'b', 'c']);
     expect(slice.page).toBe(2);
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('end');
     expect(slice.loadingMore).toBe(false);
   });
 
@@ -368,7 +368,7 @@ describe('loading more', () => {
     await store.dispatch(loadMore('faktencheck'));
 
     const slice = store.getState().feeds.byKey.faktencheck;
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('end');
     expect(slice.items.map((i) => i.id)).toEqual(['a', 'b']);
     error.mockRestore();
   });
@@ -559,20 +559,10 @@ describe('investigations', () => {
 });
 
 /**
- * `hasMore` and `paged`, which are the same boolean read two ways.
- *
- * Every test above could pass with `hasMore` never set at all, because each of them
- * asks the network. The three rungs that do not — the warm cache, the stale entry and
- * the bundled snapshot — return a list and go no further, and in all three `hasMore`
- * is `false` because nobody filled it in rather than because the list ended. A screen
- * with a "load more" button and a "that is everything published so far" sentence
- * standing on that field cannot tell those apart, and the sentence is the dangerous
- * one: it is a claim about the newsroom.
- *
- * Found by reading the store after a reviewer asked whether a warm start could reach
- * page 2, and measured the same day on `Medium_Phone_API_36` (ADR 0066 §3).
+ * The warm cache, the stale entry, the snapshot and RSS return rows without asking
+ * whether more exists, and must leave `end` unknown rather than claim the list ends.
  */
-describe('whether `hasMore` is an answer', () => {
+describe('whether `end` is an answer', () => {
   /** A warm cache, written for one test at a time. */
   async function warmCache() {
     await setCached('feeds', 'faktencheck', [item('warm'), item('warmer')]);
@@ -584,11 +574,11 @@ describe('whether `hasMore` is an answer', () => {
       hasMore: true,
     });
     await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
-    expect(store.getState().feeds.byKey.faktencheck.paged).toBe(true);
+    expect(store.getState().feeds.byKey.faktencheck.end).toBe('more');
 
     restMock.mockResolvedValueOnce({ items: [item('c')], hasMore: false });
     await store.dispatch(loadMore('faktencheck'));
-    expect(store.getState().feeds.byKey.faktencheck.paged).toBe(true);
+    expect(store.getState().feeds.byKey.faktencheck.end).toBe('end');
   });
 
   it('leaves a warm start unanswered, so a screen says nothing about the end', async () => {
@@ -596,13 +586,8 @@ describe('whether `hasMore` is an answer', () => {
     await store.dispatch(fetchFeedKey('faktencheck'));
 
     const slice = store.getState().feeds.byKey.faktencheck;
-    // The rows are there — the cache did its job …
     expect(slice.items.map((i) => i.id)).toEqual(['warm', 'warmer']);
-    // … and the store says it never asked whether more exists, rather than
-    // answering "no" with a boolean that started life as a default.
-    expect(slice.paged).toBe(false);
-    expect(slice.hasMore).toBe(false);
-    // The network was not touched at all, which is what makes this the warm path.
+    expect(slice.end).toBe('unknown');
     expect(restMock).not.toHaveBeenCalled();
   });
 
@@ -621,7 +606,7 @@ describe('whether `hasMore` is an answer', () => {
     const slice = store.getState().feeds.byKey.faktencheck;
     expect(slice.status).toBe('offline');
     expect(slice.items.map((i) => i.id)).toEqual(['bundled']);
-    expect(slice.paged).toBe(false);
+    expect(slice.end).toBe('unknown');
   });
 
   it('leaves the RSS fallback unanswered, because RSS is a window and not an archive', async () => {
@@ -632,13 +617,7 @@ describe('whether `hasMore` is an answer', () => {
 
     const slice = store.getState().feeds.byKey.faktencheck;
     expect(slice.items.map((i) => i.id)).toEqual(['rss']);
-    // RSS has no page two — a fact about the SOURCE. That is not the same as a
-    // fact about the newsroom, which is what "that is everything published so far"
-    // claims, and the ten-odd entries an RSS feed serves are the latest of many
-    // more. An earlier version of this file asserted `paged: true` here and
-    // enshrined the wrong claim in the one place that was supposed to catch it.
-    expect(slice.paged).toBe(false);
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('unknown');
   });
 
   it('marks a REST page one as answered, so the end of the list can be stated', async () => {
@@ -647,8 +626,7 @@ describe('whether `hasMore` is an answer', () => {
     await store.dispatch(fetchFeedKey('faktencheck'));
 
     const slice = store.getState().feeds.byKey.faktencheck;
-    expect(slice.paged).toBe(true);
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('end');
   });
 
   it('refuses to page an unanswered feed rather than asking once', async () => {

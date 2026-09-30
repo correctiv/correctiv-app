@@ -1,3 +1,4 @@
+import type { FeedEnd } from '@correctiv/app-core/stores/feeds';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 
 import { render, renderedText } from './support/rendering';
@@ -7,23 +8,8 @@ import { useFeed } from '@/lib/feeds/useFeed';
 import ProjektScreen from '@/app/projekt/[id]';
 
 /**
- * The foot of a project feed, and the sentence it must not say too early.
- *
- * **The store's `hasMore` and the screen's claim about the newsroom are different
- * things, and only this file stands between them.** A warm cache and the bundled
- * snapshot both render a list without ever asking whether more exists, so `hasMore`
- * is `false` in both — not because the list ended, but because nobody filled the
- * field in. A screen that reads that boolean as an answer prints "Das ist alles, was
- * bisher erschienen ist." over page one and is wrong about CORRECTIV's own archive.
- *
- * The store side is tested in `packages/app-core/test/feeds-store.test.ts`, and it
- * passes whether or not the screen guards anything: the store holding an honest
- * `paged: false` and the screen ignoring it is the actual defect, and no assertion
- * in the core can see a screen. Found by a reviewer reading the store, and measured
- * the same day on `Medium_Phone_API_36` (ADR 0066 §3).
- *
- * So: rendered, not inspected. The four states below differ by one boolean in the
- * slice, and the last by which of the two booleans is set.
+ * Rendered, not inspected: the store can hold an honest `end: 'unknown'` and the
+ * screen still print the end-of-list sentence over it, and no core test sees that.
  */
 
 // expo-router is the only thing this screen does to the outside world, and
@@ -61,16 +47,14 @@ function item(id: string): FeedItem {
   };
 }
 
-/** The four shapes the slice can be in, named by what the store actually knows. */
-function feed(paged: boolean, hasMore: boolean) {
+function feed(end: FeedEnd) {
   feedMock.mockReturnValue({
     data: [item('a'), item('b')],
     loading: false,
     error: null,
     offline: false,
     reload: jest.fn(),
-    hasMore,
-    paged,
+    end,
     loadingMore: false,
     loadMore: jest.fn(),
   });
@@ -79,31 +63,21 @@ function feed(paged: boolean, hasMore: boolean) {
 
 describe('the foot of a project feed', () => {
   it('says nothing when nobody has asked whether more exists', () => {
-    // A warm start, or a reader with no network: rows, and no answer.
-    const text = feed(false, false);
+    const text = feed('unknown');
     expect(text).toContain('Beitrag a');
     expect(text).not.toContain('Das ist alles');
     expect(text).not.toContain('Mehr laden');
   });
 
   it('says the list is complete once the store has said it is', () => {
-    const text = feed(true, false);
+    const text = feed('end');
     expect(text).toContain('Das ist alles, was bisher erschienen ist.');
     expect(text).not.toContain('Mehr laden');
   });
 
   it('offers the button when there is another page, and not the sentence', () => {
-    const text = feed(true, true);
+    const text = feed('more');
     expect(text).toContain('Mehr laden');
     expect(text).not.toContain('Das ist alles');
-  });
-
-  it('answers an unanswered feed with neither sentence nor button', () => {
-    // The combination that could not happen before, and is the reason the two
-    // booleans are separate: a page one nobody has paged yet is not a full archive,
-    // and it is not a feed that can be paged either.
-    const text = feed(false, true);
-    expect(text).not.toContain('Das ist alles');
-    expect(text).not.toContain('Mehr laden');
   });
 });
