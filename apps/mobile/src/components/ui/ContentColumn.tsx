@@ -1,0 +1,35 @@
+import type { ReactNode } from 'react';
+import { useWindowDimensions, View } from 'react-native';
+
+import { sizes, spacingPx } from '@/lib/theme';
+
+/** Caps a screen's content at the reading width and centres it; a phone is narrower. */
+export function ContentColumn({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <View
+      className={['w-full self-center', className ?? ''].join(' ')}
+      style={{ maxWidth: sizes.contentColumn }}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
+ * How far the column's edge sits from the window's, for a padded `Screen`: its
+ * `px-m`, plus half of whatever the window has beyond the column.
+ */
+export function columnGutter(windowWidth: number): number {
+  const spare = windowWidth - 2 * spacingPx.m - sizes.contentColumn;
+  return spacingPx.m + Math.max(0, spare / 2);
+}
+
+export function useColumnGutter(): number {
+  return columnGutter(useWindowDimensions().width);
+}

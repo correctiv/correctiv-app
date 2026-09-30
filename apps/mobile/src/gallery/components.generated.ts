@@ -50,6 +50,7 @@ export type ComponentId =
   | 'ui/Button'
   | 'ui/Card'
   | 'ui/Chip'
+  | 'ui/ContentColumn'
   | 'ui/Hairline'
   | 'ui/Overline'
   | 'ui/Rail'

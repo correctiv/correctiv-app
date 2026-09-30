@@ -6,6 +6,7 @@ export { Card } from './Card';
 export type { CardProps } from './Card';
 export { Badge } from './Badge';
 export { Bleed } from './Bleed';
+export { ContentColumn } from './ContentColumn';
 export type { BadgeProps } from './Badge';
 export { Hairline } from './Hairline';
 export { Chip } from './Chip';

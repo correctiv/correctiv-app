@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
+import { ContentColumn } from './ContentColumn';
 import { SafeAreaView } from './SafeAreaView';
 
 export type ScreenProps = {
@@ -22,14 +23,16 @@ export function Screen({ children, scroll = true, noPadding = false, className }
           contentContainerClassName={[pad, 'pt-m pb-2xl', className ?? ''].join(' ')}
           showsVerticalScrollIndicator={false}
         >
-          {children}
+          <ContentColumn>{children}</ContentColumn>
         </ScrollView>
       </SafeAreaView>
     );
   }
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-canvas">
-      <View className={['flex-1', pad, className ?? ''].join(' ')}>{children}</View>
+      <ContentColumn className={['flex-1', pad, className ?? ''].join(' ')}>
+        {children}
+      </ContentColumn>
     </SafeAreaView>
   );
 }

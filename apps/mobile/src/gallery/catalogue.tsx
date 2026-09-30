@@ -59,6 +59,7 @@ import { ScreenHeaderBar } from '@/components/ui/ScreenHeaderBar';
 import {
   Badge,
   Bleed,
+  ContentColumn,
   Button,
   Card,
   Chip,
@@ -417,6 +418,13 @@ const LISTED = [
         name: 'Bleed',
         note: 'Escapes the screen padding. Here the red block runs wider than the label above it.',
         specimens: [{ label: 'default', node: <Bleed>{filler('edge to edge')}</Bleed> }],
+      },
+      {
+        name: 'ContentColumn',
+        note: 'Caps content at the reading width and centres it. On a phone it changes nothing.',
+        specimens: [
+          { label: 'default', node: <ContentColumn>{filler('reading width')}</ContentColumn> },
+        ],
       },
       {
         name: 'Thumbnail',
