@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { ROOT } from '../plugin/collect.ts';
+import { isReloadNotice } from '../scripts/reload-notice.mjs';
 import { code } from './source.ts';
 
 const WORKBENCH = join(ROOT, 'apps/workbench');
@@ -68,44 +69,30 @@ describe('the seam between the error boundary and the browser check', () => {
 });
 
 /**
- * The third assertion — "the browser logged no error" — and the one class of
- * error that is a request rather than a fault.
- *
- * Vite re-optimises its dependency graph when a module pulls in a package it has
- * not seen, and the request already in flight comes back `504 (Outdated Optimize
- * Dep)`. The browser reloads and gets a good bundle; nothing is broken. Collected
- * as a console error it failed a page that had rendered correctly, and the pull
- * request it failed was one whose only real change was a new stylesheet import —
- * which is exactly the kind of change that provokes the re-optimise. The re-run
- * passed on the same commit.
- *
- * So the notice is separated from the faults, and this holds both ends: it is
- * recognised, and it is recognised ONLY as the pair. A 504 on its own is a proxy
- * timeout or a dead upstream and must still fail, and so must any other wording
- * of "outdated optimize dep" without the status — the text alone would swallow a
- * real "that request never arrived" if the server ever phrased it the same way.
+ * A console error that is Vite re-optimising rather than a fault: recognised only
+ * as the pair of wording and status, kept apart from the faults, and reported.
  */
 describe('the dependency-reload notice, which is not a fault', () => {
-  it('separates it from the faults rather than dropping it', () => {
-    expect(RENDERS).toContain('isReloadNotice');
-    // Both lists, and the notice one is never read as a fault.
-    expect(RENDERS).toContain('const notices = []');
-    expect(RENDERS).toContain('if (isReloadNotice(text)) notices.push(text)');
-    expect(RENDERS).toContain('else faults.push(text)');
+  it('is the wording and the status together, and neither alone', () => {
+    const vite =
+      'Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)';
+    expect(isReloadNotice(vite)).toBe(true);
+    expect(
+      isReloadNotice(
+        'Failed to load resource: the server responded with a status of 504 (Gateway Timeout)',
+      ),
+    ).toBe(false);
+    expect(isReloadNotice('Outdated Optimize Dep')).toBe(false);
+    expect(isReloadNotice('status of 5040 (Outdated Optimize Dep)')).toBe(false);
   });
 
-  it('matches the wording AND the status, so a real 504 still fails', () => {
-    expect(RENDERS).toMatch(/Outdated Optimize Dep/i);
-    expect(RENDERS).toMatch(/\\b504\\b/);
-    // Every fault is written inside the one predicate that decides. A
-    // `faults.push` left anywhere else is the bug this assertion exists for, and
-    // it is the only direct `faults.push` in the file — `code()` strips comments,
-    // so the word inside this file's own prose cannot satisfy it either way.
+  it('is the only way out of the faults, and is reported when it happened', () => {
+    // The one direct `faults.push` sits in the `else` of that predicate; `code()`
+    // strips comments, so prose cannot satisfy it.
     expect(code(RENDERS).match(/faults\.push\(/g) ?? []).toHaveLength(1);
-    expect(code(RENDERS)).toMatch(/else faults\.push\(text\)/);
-  });
-
-  it('reports it when it happened instead of passing in silence', () => {
-    expect(RENDERS).toContain('notices.length > 0');
+    expect(code(RENDERS)).toMatch(
+      /if \(isReloadNotice\(text\)\) notices\.push\(text\);\s*else faults\.push\(text\)/,
+    );
+    expect(code(RENDERS)).toContain('notices.length > 0');
   });
 });
