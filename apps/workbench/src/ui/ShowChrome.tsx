@@ -48,7 +48,7 @@ export function ShowChrome({ onShow }: { onShow: () => void }) {
           size="icon"
           onClick={onShow}
           aria-label={intl.formatMessage(COPY.show)}
-          className="fixed right-s top-s z-40 size-[2.25rem] rounded-full border-stroke-strong bg-canvas shadow-lg"
+          className="fixed right-s top-s z-40 size-[2.25rem] rounded-full border-stroke-strong bg-canvas shadow-e3"
         >
           <PanelsTopLeft aria-hidden="true" />
         </Button>

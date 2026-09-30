@@ -1,0 +1,160 @@
+/*
+ * The workbench's own reading of the palette. It forks nothing.
+ *
+ * **Every colour below is derived from a token the app also reads.** The shared
+ * palette lives in `packages/design-tokens`, which is generated from
+ * `wp-design-tokens` and has two other consumers (the app and the CORRECTIV
+ * WordPress CMS), so a value written here as a literal would be a colour forked
+ * out of a package whose whole reason for existing is that nobody forks it —
+ * `test/styles.test.ts > writes no colour value of its own` is that rule in
+ * code, and this file passes it.
+ *
+ * What it does instead is name the relationships. `--color-page` is a step
+ * between `canvas` and `surface`, reached with `color-mix` on the tokens
+ * themselves, and the elevation scale is `color-black` at an alpha, which is the
+ * one place a primitive is right: a shadow must not follow the appearance
+ * setting, and the palette has no name for "black at low alpha" for the same
+ * reason it has none for "the dark canvas as a fixed value".
+ *
+ * **The block that is not here, and why.** The generated package has `surface`
+ * DARKER than `canvas` in light (#f8f8f8 on #ffffff) and LIGHTER in dark
+ * (#242424 on #1a1a1a) — the same two names, opposite relationships between the
+ * two schemes of one design system. So a card is a well cut into a white page in
+ * one and a panel resting on a black one in the other, and no shadow value
+ * repairs a direction that disagrees with itself. The app's own sign-in screen
+ * carries the same recessed box, which is what makes this a bug in a shared
+ * package rather than a preference about this site: it belongs in
+ * `wp-design-tokens`, where both halves would get it at once, and it is not
+ * fixed here because fixing it here would fork it. `--color-page` sidesteps the
+ * question for the workbench's own surfaces without touching the tokens the app
+ * reads.
+ */
+
+/* The page sits one step below `canvas`, and the cards on it one step above, so
+   that a card reads as raised in both schemes without either token moving. The
+   percentage is the one number in this file that is a judgement rather than a
+   derivation, and it is the whole of the effect. */
+@theme {
+  --color-page: color-mix(in oklab, var(--color-canvas) 93%, var(--color-on-canvas));
+}
+
+:root.dark {
+  --color-page: color-mix(in oklab, var(--color-canvas) 88%, var(--color-black));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    --color-page: color-mix(in oklab, var(--color-canvas) 88%, var(--color-black));
+  }
+}
+
+/*
+ * Elevation. The token package has no shadow scale at all, and the floating
+ * primitives reached for Tailwind's stock `shadow-2xl` — a black at 25%, which
+ * on the dark scheme's #1a1a1a canvas is nothing at all. Two shadows a step
+ * apart rather than one blur: the tight one is the contact a surface has with
+ * what it rests on, the soft one is the room around it, and a single value at
+ * either job reads as a smudge or as a sticker.
+ *
+ * The dark alphas are roughly twice the light ones, because a shadow on a
+ * near-black surface has no darkness left to spend; there the separation comes
+ * mostly from the border, which is why the dark end is not pushed further.
+ */
+:root {
+  --shadow-e1:
+    0 1px 2px color-mix(in srgb, var(--color-black) 5%, transparent),
+    0 1px 3px color-mix(in srgb, var(--color-black) 3%, transparent);
+  --shadow-e2:
+    0 2px 4px color-mix(in srgb, var(--color-black) 5%, transparent),
+    0 4px 8px color-mix(in srgb, var(--color-black) 4%, transparent);
+  --shadow-e3:
+    0 2px 6px color-mix(in srgb, var(--color-black) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--color-black) 9%, transparent);
+  --shadow-e4:
+    0 8px 16px -4px color-mix(in srgb, var(--color-black) 8%, transparent),
+    0 24px 48px -12px color-mix(in srgb, var(--color-black) 16%, transparent);
+}
+
+.shadow-e1 {
+  box-shadow: var(--shadow-e1);
+}
+.shadow-e2 {
+  box-shadow: var(--shadow-e2);
+}
+.shadow-e3 {
+  box-shadow: var(--shadow-e3);
+}
+.shadow-e4 {
+  box-shadow: var(--shadow-e4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    --shadow-e1: 0 1px 2px color-mix(in srgb, var(--color-black) 34%, transparent);
+    --shadow-e2:
+      0 2px 4px color-mix(in srgb, var(--color-black) 34%, transparent),
+      0 4px 8px color-mix(in srgb, var(--color-black) 26%, transparent);
+    --shadow-e3:
+      0 2px 6px color-mix(in srgb, var(--color-black) 38%, transparent),
+      0 10px 28px color-mix(in srgb, var(--color-black) 44%, transparent);
+    --shadow-e4:
+      0 8px 16px -4px color-mix(in srgb, var(--color-black) 42%, transparent),
+      0 28px 56px -16px color-mix(in srgb, var(--color-black) 60%, transparent);
+  }
+}
+
+:root.dark {
+  --shadow-e1: 0 1px 2px color-mix(in srgb, var(--color-black) 34%, transparent);
+  --shadow-e2:
+    0 2px 4px color-mix(in srgb, var(--color-black) 34%, transparent),
+    0 4px 8px color-mix(in srgb, var(--color-black) 26%, transparent);
+  --shadow-e3:
+    0 2px 6px color-mix(in srgb, var(--color-black) 38%, transparent),
+    0 10px 28px color-mix(in srgb, var(--color-black) 44%, transparent);
+  --shadow-e4:
+    0 8px 16px -4px color-mix(in srgb, var(--color-black) 42%, transparent),
+    0 28px 56px -16px color-mix(in srgb, var(--color-black) 60%, transparent);
+}
+
+/*
+ * Space and type, off editor density. `--spacing-s` was 12px and `CardGrid` put
+ * `gap-xs` between cards, so the content column was set at the density of a
+ * tool rather than of a reading surface.
+ *
+ * The two largest type steps are deliberately left where the package has them.
+ * They were raised first and it cost more than it bought: at 2.25rem the
+ * landing's H1 no longer fits `max-w-content` on two lines and breaks with one
+ * word alone on the third. The gain at the top of the scale came from the
+ * tracking and the leading, not from the size.
+ */
+:root {
+  --radius-xs: 0.25rem;
+  --radius-s: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --spacing-xs: 0.625rem;
+  --spacing-s: 0.875rem;
+  --spacing-sm: 1.125rem;
+  --spacing-m: 1.75rem;
+  --spacing-ml: 2.25rem;
+  --spacing-l: 2.75rem;
+  --spacing-xl: 3.5rem;
+  --spacing-2xl: 4.5rem;
+
+  --text-article: 1.0625rem;
+  --text-m: 1rem;
+  --text-headline-xs: 1.0625rem;
+  --text-headline-s: 1.125rem;
+  --text-headline-m: 1.25rem;
+  --text-headline-l: 1.5rem;
+
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+  --leading-loose: 1.7;
+
+  --tracking-tighter: -0.02em;
+  --tracking-tight: -0.011em;
+}

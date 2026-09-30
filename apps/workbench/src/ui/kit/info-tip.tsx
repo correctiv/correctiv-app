@@ -103,7 +103,7 @@ export function InfoTip({
           aria-label={name}
           className={clsx(
             'z-50 w-[min(24rem,92vw)] max-h-[min(28rem,70vh)] overflow-y-auto',
-            'rounded-md border border-stroke bg-canvas p-s shadow-xl',
+            'rounded-md border border-stroke bg-canvas p-s shadow-e3',
             'space-y-xs text-s font-normal normal-case leading-relaxed tracking-normal text-on-canvas',
             '[&_a]:underline [&_a]:underline-offset-2',
             'duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',

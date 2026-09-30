@@ -54,7 +54,7 @@ export function PopoverContent({
          */
         collisionPadding={collisionPadding}
         className={cn(
-          'z-50 w-[min(22rem,92vw)] rounded-md border border-stroke bg-canvas p-s shadow-2xl',
+          'z-50 w-[min(22rem,92vw)] rounded-md border border-stroke bg-canvas p-s shadow-e4',
           'max-h-[min(30rem,80vh)] overflow-y-auto',
           'duration-150',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',

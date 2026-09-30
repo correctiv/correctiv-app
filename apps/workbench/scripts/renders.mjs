@@ -41,6 +41,16 @@
  *    development as well, so this is a threshold the site meets rather than one it
  *    is being asked to climb to.
  *
+ *    **One class of error is not a fault, and it is the dev server talking.**
+ *    Vite re-optimises its dependency graph when a module pulls in a package it
+ *    has not seen, and the request already in flight comes back `504 (Outdated
+ *    Optimize Dep)`. The correct response is to reload, which is what the browser
+ *    does on its own; collecting it as a fault made this check fail a page that
+ *    had rendered correctly, and it did so on a pull request whose only real
+ *    change was a stylesheet, because a new import is exactly what triggers the
+ *    re-optimise. The re-run passed on the same commit, which is what makes this
+ *    a flake with a cause rather than a mystery — see `isReloadNotice()`.
+ *
  * **What it cannot see.** That the page is *right*: every colour and layout defect
  * passes, which is what `/preview` and a pair of eyes are for. It opens one
  * address, `/`, which is enough only because this is a single-page application whose
@@ -335,6 +345,12 @@ async function attach(endpoint) {
   let last = 0;
   const waiting = new Map();
   const faults = [];
+  /** Vite's reload notices, kept apart so the report can name them if they persist. */
+  const notices = [];
+  const record = (text) => {
+    if (isReloadNotice(text)) notices.push(text);
+    else faults.push(text);
+  };
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(event.data);
     if (message.id && waiting.has(message.id)) {
@@ -344,7 +360,7 @@ async function attach(endpoint) {
     }
     if (message.method === 'Runtime.exceptionThrown') {
       const detail = message.params.exceptionDetails;
-      faults.push(detail.exception?.description ?? detail.text);
+      record(detail.exception?.description ?? detail.text);
     }
     if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') {
       // React logs a format string and its substitutions as separate arguments,
@@ -354,7 +370,7 @@ async function attach(endpoint) {
       const args = message.params.args
         .map((a) => String(a.description ?? a.value ?? ''))
         .filter((text) => text.replaceAll(/%[a-zA-Z]/g, '').trim() !== '');
-      faults.push(args.join(' '));
+      record(args.join(' '));
     }
     // The browser's own log, which is where a request that never arrived shows
     // up. Without it a bundle served under a name nothing points at reads as "no
@@ -362,7 +378,7 @@ async function attach(endpoint) {
     // entry script — is the fact the report is missing.
     if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
       const { text, url } = message.params.entry;
-      faults.push(url ? `${text} — ${url}` : text);
+      record(url ? `${text} — ${url}` : text);
     }
   });
   const call = (method, params = {}, sessionId) =>
@@ -371,10 +387,31 @@ async function attach(endpoint) {
       waiting.set(id, resolve);
       socket.send(JSON.stringify({ id, method, params, sessionId }));
     });
-  return { call, faults };
+  return { call, faults, notices };
 }
 
 const BLANK = { mounted: false, title: '', words: '', failed: null };
+
+/**
+ * Vite's "your dependencies moved, load again", which is a request and not a
+ * fault.
+ *
+ * The dev server answers a request it was already serving with `504` and the
+ * body `Outdated Optimize Dep` when it discovers a new dependency while
+ * compiling. Everything the page then does is correct; the browser reloads and
+ * gets a good bundle. Collecting that as a console error turned a green page
+ * into a failed check, and it is not a rare shape: any change that adds an
+ * import can trigger the re-optimise, so the failure lands on whatever pull
+ * request happened to add a file.
+ *
+ * Matched on both halves on purpose. The text alone would also swallow a real
+ * "a request for that never arrived" if the server ever phrased it the same way,
+ * and the status alone would swallow every 504 including a proxy timeout, which
+ * is the failure this check exists to catch.
+ */
+function isReloadNotice(text) {
+  return /Outdated Optimize Dep/i.test(text) && /\b504\b/.test(text);
+}
 
 /**
  * One console error, short enough to read.
@@ -397,7 +434,7 @@ function brief(fault) {
 async function main() {
   const server = mode === 'dev' ? await devServer() : await distServer();
   const endpoint = await browser();
-  const { call, faults } = await attach(endpoint);
+  const { call, faults, notices } = await attach(endpoint);
 
   let verdict = BLANK;
   const { targetId } = await call('Target.createTarget', { url: 'about:blank' });
@@ -468,7 +505,14 @@ async function main() {
   }
 
   console.log(
-    `${mode}: the workbench renders — “${verdict.title}”, ${verdict.words.slice(0, 60)}…`,
+    `${mode}: the workbench renders — “${verdict.title}”, ${verdict.words.slice(0, 60)}…` +
+      // Said rather than swallowed. A reload notice on a page that rendered is
+      // not a failure, and it is not nothing either: a run that hit one has
+      // proved less than a run that hit none, because the reload happened after
+      // the assertions, not before them.
+      (notices.length > 0
+        ? `\n  note: ${notices.length} dependency-reload notice(s) from the dev server, ignored; the page had already mounted.`
+        : ''),
   );
 }
 

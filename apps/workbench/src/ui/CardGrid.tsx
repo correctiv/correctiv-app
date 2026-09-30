@@ -27,7 +27,7 @@ export function CardGrid({ cards, columns = 2 }: { cards: Card[]; columns?: 2 | 
   return (
     <ul
       className={cn(
-        'mt-m grid gap-xs',
+        'mt-m grid gap-s',
         columns === 3 ? 'sm:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-2',
       )}
     >
@@ -36,8 +36,8 @@ export function CardGrid({ cards, columns = 2 }: { cards: Card[]; columns?: 2 | 
           <a
             href={href(card.route)}
             className={cn(
-              'group flex h-full min-w-0 flex-col overflow-hidden rounded-md border border-stroke bg-surface',
-              'transition-colors hover:border-stroke-strong hover:bg-canvas',
+              'group flex h-full min-w-0 flex-col overflow-hidden rounded-md border border-stroke bg-canvas shadow-e1',
+              'transition-[color,background-color,box-shadow,border-color] duration-150 hover:border-stroke-strong hover:shadow-e2',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
             )}
           >
