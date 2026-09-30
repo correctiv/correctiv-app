@@ -130,48 +130,50 @@ export default function OnboardingScreen() {
       edges={['top', 'bottom']}
       className={mission ? 'flex-1 bg-accent' : 'flex-1 bg-canvas'}
     >
-      <ContentColumn>
-        <SplitRow className="px-m py-s">
-          <View className="flex-row gap-2xs">
-            {[0, 1, 2].map((i) => (
-              <View
-                key={i}
-                className="rounded-full"
-                style={{
-                  width: 7,
-                  height: 7,
-                  backgroundColor: mission
-                    ? i === step
-                      ? colors['always-light']
-                      : 'rgba(255,255,255,0.45)'
-                    : i === step
-                      ? colors.accent
-                      : colors['stroke'],
-                }}
-              />
-            ))}
-          </View>
-          {step > 0 && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={intl.formatMessage(COPY.skip)}
-              onPress={finish}
-              className="justify-center active:opacity-70"
-              /*
-               * "Überspringen" was one line of `text-s` — 21 dp — with an 8 dp slop
-               * around it (#102). It is the only way past this screen other than
-               * answering it, and the row it sits in holds nothing but three 7 dp
-               * dots at the far left, so the box can have the height.
-               */
-              style={{ minHeight: sizes.tapTarget }}
-            >
-              <Typo variant="text-s" color="on-canvas-muted">
-                {intl.formatMessage(COPY.skip)}
-              </Typo>
-            </Pressable>
-          )}
-        </SplitRow>
-      </ContentColumn>
+      <View className="px-m py-s">
+        <ContentColumn>
+          <SplitRow>
+            <View className="flex-row gap-2xs">
+              {[0, 1, 2].map((i) => (
+                <View
+                  key={i}
+                  className="rounded-full"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    backgroundColor: mission
+                      ? i === step
+                        ? colors['always-light']
+                        : 'rgba(255,255,255,0.45)'
+                      : i === step
+                        ? colors.accent
+                        : colors['stroke'],
+                  }}
+                />
+              ))}
+            </View>
+            {step > 0 && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={intl.formatMessage(COPY.skip)}
+                onPress={finish}
+                className="justify-center active:opacity-70"
+                /*
+                 * "Überspringen" was one line of `text-s` — 21 dp — with an 8 dp slop
+                 * around it (#102). It is the only way past this screen other than
+                 * answering it, and the row it sits in holds nothing but three 7 dp
+                 * dots at the far left, so the box can have the height.
+                 */
+                style={{ minHeight: sizes.tapTarget }}
+              >
+                <Typo variant="text-s" color="on-canvas-muted">
+                  {intl.formatMessage(COPY.skip)}
+                </Typo>
+              </Pressable>
+            )}
+          </SplitRow>
+        </ContentColumn>
+      </View>
 
       <ScrollView
         className="flex-1"
@@ -249,16 +251,16 @@ export default function OnboardingScreen() {
         </ContentColumn>
       </ScrollView>
 
-      <ContentColumn>
-        <View className="px-m pb-m">
+      <View className="px-m pb-m">
+        <ContentColumn>
           <Button
             title={intl.formatMessage(step === 0 ? COPY.start : step === 2 ? COPY.done : COPY.next)}
             variant={mission ? 'onEmphasis' : 'primary'}
             fullWidth
             onPress={() => (step === 2 ? finish() : setStep(step + 1))}
           />
-        </View>
-      </ContentColumn>
+        </ContentColumn>
+      </View>
     </SafeAreaView>
   );
 }

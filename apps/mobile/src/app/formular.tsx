@@ -160,17 +160,19 @@ export default function FormularScreen() {
       />
 
       {/* Step indicator: one bar per slide, filled up to the current one. */}
-      <ContentColumn>
-        <View className="flex-row gap-3xs px-m pt-2xs">
-          {slides.map((s, i) => (
-            <View
-              key={s.id}
-              className={['flex-1 rounded-s', i <= step ? 'bg-accent' : 'bg-stroke'].join(' ')}
-              style={{ height: sizes.progressBar }}
-            />
-          ))}
-        </View>
-      </ContentColumn>
+      <View className="px-m pt-2xs">
+        <ContentColumn>
+          <View className="flex-row gap-3xs">
+            {slides.map((s, i) => (
+              <View
+                key={s.id}
+                className={['flex-1 rounded-s', i <= step ? 'bg-accent' : 'bg-stroke'].join(' ')}
+                style={{ height: sizes.progressBar }}
+              />
+            ))}
+          </View>
+        </ContentColumn>
+      </View>
 
       {/* The scroller and the action footer in ONE avoiding view. The footer used
           to be a sibling of the `ScrollView`, which left the two to react to the
@@ -211,24 +213,26 @@ export default function FormularScreen() {
 
         <View className="bg-canvas">
           <Hairline />
-          <ContentColumn>
-            <View className="flex-row gap-s px-m py-s">
-              {step > 0 && (
+          <View className="px-m py-s">
+            <ContentColumn>
+              <View className="flex-row gap-s">
+                {step > 0 && (
+                  <Button
+                    title={intl.formatMessage(COPY.back)}
+                    variant="secondary"
+                    onPress={() => setStep(step - 1)}
+                    className="flex-1"
+                  />
+                )}
                 <Button
-                  title={intl.formatMessage(COPY.back)}
-                  variant="secondary"
-                  onPress={() => setStep(step - 1)}
+                  title={intl.formatMessage(isLast ? COPY.submit : COPY.next)}
+                  onPress={next}
+                  disabled={!stepValid}
                   className="flex-1"
                 />
-              )}
-              <Button
-                title={intl.formatMessage(isLast ? COPY.submit : COPY.next)}
-                onPress={next}
-                disabled={!stepValid}
-                className="flex-1"
-              />
-            </View>
-          </ContentColumn>
+              </View>
+            </ContentColumn>
+          </View>
         </View>
       </KeyboardAvoiding>
     </View>
@@ -255,15 +259,15 @@ function ThankYou({ callout }: { callout: Callout }) {
           {intl.formatMessage(COPY.contributors, { count: callout.responseCount + extra })}
         </Typo>
       </View>
-      <ContentColumn>
-        <View className="px-m pb-l">
+      <View className="px-m pb-l">
+        <ContentColumn>
           <Button
             title={intl.formatMessage(COPY.moreCallouts)}
             fullWidth
             onPress={backToOverview}
           />
-        </View>
-      </ContentColumn>
+        </ContentColumn>
+      </View>
     </View>
   );
 }

@@ -155,8 +155,8 @@ export default function AufrufScreen() {
 
           <View className="bg-canvas">
             <Hairline />
-            <ContentColumn>
-              <View className="px-m py-s">
+            <View className="px-m py-s">
+              <ContentColumn>
                 <Button
                   title={intl.formatMessage(submitted ? COPY.contributeAgain : COPY.cta)}
                   fullWidth
@@ -164,8 +164,8 @@ export default function AufrufScreen() {
                     router.push({ pathname: '/formular', params: { slug: callout.slug } })
                   }
                 />
-              </View>
-            </ContentColumn>
+              </ContentColumn>
+            </View>
           </View>
         </>
       )}
