@@ -3,7 +3,16 @@ import { router } from 'expo-router';
 import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { Badge, Button, Card, Overline, ScreenHeader, SectionCard, Typo } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  ContentColumn,
+  Overline,
+  ScreenHeader,
+  SectionCard,
+  Typo,
+} from '@/components/ui';
 import {
   clubNewsletter,
   diaries,
@@ -75,88 +84,90 @@ export default function BackstageScreen() {
         contentContainerClassName="px-m pt-m pb-2xl"
         showsVerticalScrollIndicator={false}
       >
-        <Badge label="Club" tone="club" />
-        <Typo variant="headline-xl" className="mt-s">
-          Backstage
-        </Typo>
-
-        <SectionCard
-          label={intl.formatMessage(COPY.earlyAccess)}
-          labelColor="accent"
-          className="mt-l"
-        >
-          <Typo variant="headline-xs">{earlyAccess.title}</Typo>
-          <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-            {earlyAccess.teaser}
+        <ContentColumn>
+          <Badge label="Club" tone="club" />
+          <Typo variant="headline-xl" className="mt-s">
+            Backstage
           </Typo>
-          <Typo variant="text-s" color="grey-500" className="mt-s">
-            {intl.formatMessage(COPY.publicFrom, { date: earlyAccess.publicFromLabel })}
-          </Typo>
-          <Button
-            title={intl.formatMessage(COPY.readNow)}
-            className="mt-s"
-            onPress={() => openArticle({ url: earlyAccess.articleUrl, title: earlyAccess.title })}
-          />
-        </SectionCard>
 
-        <View className="mt-m">
-          <Overline label={intl.formatMessage(COPY.diary)} />
-          <View className="mt-2xs">
-            {diaries.map((entry) => (
-              <DiaryRow key={entry.id} entry={entry} />
+          <SectionCard
+            label={intl.formatMessage(COPY.earlyAccess)}
+            labelColor="accent"
+            className="mt-l"
+          >
+            <Typo variant="headline-xs">{earlyAccess.title}</Typo>
+            <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+              {earlyAccess.teaser}
+            </Typo>
+            <Typo variant="text-s" color="grey-500" className="mt-s">
+              {intl.formatMessage(COPY.publicFrom, { date: earlyAccess.publicFromLabel })}
+            </Typo>
+            <Button
+              title={intl.formatMessage(COPY.readNow)}
+              className="mt-s"
+              onPress={() => openArticle({ url: earlyAccess.articleUrl, title: earlyAccess.title })}
+            />
+          </SectionCard>
+
+          <View className="mt-m">
+            <Overline label={intl.formatMessage(COPY.diary)} />
+            <View className="mt-2xs">
+              {diaries.map((entry) => (
+                <DiaryRow key={entry.id} entry={entry} />
+              ))}
+            </View>
+          </View>
+
+          <SectionCard label={intl.formatMessage(COPY.letter)} tone="surface" className="mt-m">
+            <Typo variant="headline-xs">{clubNewsletter.subject}</Typo>
+            <Typo variant="text-s" color="grey-500" className="mt-4xs">
+              {formatDateShort(clubNewsletter.date, locale)}
+            </Typo>
+            {clubNewsletter.paragraphs.map((paragraph) => (
+              <Typo key={paragraph.slice(0, 24)} variant="text-s" className="mt-s">
+                {paragraph}
+              </Typo>
+            ))}
+          </SectionCard>
+
+          <SectionCard label={intl.formatMessage(COPY.qa)} className="mt-m">
+            <Typo variant="headline-xs">{qa.title}</Typo>
+            <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+              {qa.description}
+            </Typo>
+            <Typo variant="text-s" color="accent" className="mt-s">
+              {qa.deadlineLabel}
+            </Typo>
+          </SectionCard>
+
+          <View className="mt-m">
+            <Overline label={intl.formatMessage(COPY.events)} />
+            {events.map((event) => (
+              <Card key={event.id} className="mt-2xs">
+                <Typo variant="headline-xs">{event.title}</Typo>
+                <Typo variant="text-s" color="grey-500" className="mt-4xs">
+                  {formatDateShort(event.date, locale)} · {event.location}
+                </Typo>
+                <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+                  {event.description}
+                </Typo>
+              </Card>
             ))}
           </View>
-        </View>
 
-        <SectionCard label={intl.formatMessage(COPY.letter)} tone="surface" className="mt-m">
-          <Typo variant="headline-xs">{clubNewsletter.subject}</Typo>
-          <Typo variant="text-s" color="grey-500" className="mt-4xs">
-            {formatDateShort(clubNewsletter.date, locale)}
-          </Typo>
-          {clubNewsletter.paragraphs.map((paragraph) => (
-            <Typo key={paragraph.slice(0, 24)} variant="text-s" className="mt-s">
-              {paragraph}
+          <SectionCard label={intl.formatMessage(COPY.publisher)} tone="surface" className="mt-m">
+            <Typo variant="headline-xs">{verlagPerk.title}</Typo>
+            <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+              {verlagPerk.description}
             </Typo>
-          ))}
-        </SectionCard>
-
-        <SectionCard label={intl.formatMessage(COPY.qa)} className="mt-m">
-          <Typo variant="headline-xs">{qa.title}</Typo>
-          <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-            {qa.description}
-          </Typo>
-          <Typo variant="text-s" color="accent" className="mt-s">
-            {qa.deadlineLabel}
-          </Typo>
-        </SectionCard>
-
-        <View className="mt-m">
-          <Overline label={intl.formatMessage(COPY.events)} />
-          {events.map((event) => (
-            <Card key={event.id} className="mt-2xs">
-              <Typo variant="headline-xs">{event.title}</Typo>
-              <Typo variant="text-s" color="grey-500" className="mt-4xs">
-                {formatDateShort(event.date, locale)} · {event.location}
-              </Typo>
-              <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-                {event.description}
-              </Typo>
-            </Card>
-          ))}
-        </View>
-
-        <SectionCard label={intl.formatMessage(COPY.publisher)} tone="surface" className="mt-m">
-          <Typo variant="headline-xs">{verlagPerk.title}</Typo>
-          <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-            {verlagPerk.description}
-          </Typo>
-          <Button
-            title={intl.formatMessage(COPY.shop)}
-            variant="outline"
-            className="mt-s"
-            onPress={() => openExternal(verlagPerk.shopUrl)}
-          />
-        </SectionCard>
+            <Button
+              title={intl.formatMessage(COPY.shop)}
+              variant="outline"
+              className="mt-s"
+              onPress={() => openExternal(verlagPerk.shopUrl)}
+            />
+          </SectionCard>
+        </ContentColumn>
       </ScrollView>
     </View>
   );

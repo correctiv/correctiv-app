@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { defineMessages, useIntl } from 'react-intl';
 import { ScrollView, View } from 'react-native';
 
-import { Button, Hairline, ScreenHeader, Typo } from '@/components/ui';
+import { Button, ContentColumn, Hairline, ScreenHeader, Typo } from '@/components/ui';
 import { atlasStats, demolitionEntries } from '@correctiv/app-core/data/abriss-atlas';
 import { openExternal } from '@/lib/openExternal';
 import { useColors } from '@/lib/theme';
@@ -48,56 +48,58 @@ export default function AtlasScreen() {
         contentContainerClassName="px-m pt-m pb-2xl"
         showsVerticalScrollIndicator={false}
       >
-        <Typo variant="headline-l">Abriss-Atlas</Typo>
+        <ContentColumn>
+          <Typo variant="headline-l">Abriss-Atlas</Typo>
 
-        {/* A placeholder rather than a map. A real one would be another native
+          {/* A placeholder rather than a map. A real one would be another native
             module for a feature the concept does not ask for. */}
-        <View
-          className="mt-s items-center justify-center rounded-md bg-surface"
-          style={{ height: 130 }}
-        >
-          <Ionicons name="location-outline" size={28} color={colors['grey-500']} />
-          <Typo variant="text-s" color="grey-500" className="mt-2xs">
-            {intl.formatMessage(COPY.mapPlaceholder)}
+          <View
+            className="mt-s items-center justify-center rounded-md bg-surface"
+            style={{ height: 130 }}
+          >
+            <Ionicons name="location-outline" size={28} color={colors['grey-500']} />
+            <Typo variant="text-s" color="grey-500" className="mt-2xs">
+              {intl.formatMessage(COPY.mapPlaceholder)}
+            </Typo>
+          </View>
+
+          <Typo variant="text-m" className="mt-s">
+            {intl.formatMessage(COPY.stats, {
+              reports: atlasStats.totalReports,
+              cities: atlasStats.citiesCovered,
+            })}
           </Typo>
-        </View>
 
-        <Typo variant="text-m" className="mt-s">
-          {intl.formatMessage(COPY.stats, {
-            reports: atlasStats.totalReports,
-            cities: atlasStats.citiesCovered,
-          })}
-        </Typo>
-
-        <Typo variant="headline-xs" className="mt-m">
-          {intl.formatMessage(COPY.recentHeading)}
-        </Typo>
-        <View className="mt-2xs">
-          {demolitionEntries.map((entry) => (
-            <View key={entry.id}>
-              <View className="flex-row items-center py-s">
-                <Ionicons name="location-outline" size={18} color={colors['grey-500']} />
-                <View className="ml-s flex-1">
-                  <Typo variant="text-m">{entry.building}</Typo>
-                  <Typo variant="text-s" color="grey-500" className="mt-4xs">
-                    {entry.place} · {entry.year}
+          <Typo variant="headline-xs" className="mt-m">
+            {intl.formatMessage(COPY.recentHeading)}
+          </Typo>
+          <View className="mt-2xs">
+            {demolitionEntries.map((entry) => (
+              <View key={entry.id}>
+                <View className="flex-row items-center py-s">
+                  <Ionicons name="location-outline" size={18} color={colors['grey-500']} />
+                  <View className="ml-s flex-1">
+                    <Typo variant="text-m">{entry.building}</Typo>
+                    <Typo variant="text-s" color="grey-500" className="mt-4xs">
+                      {entry.place} · {entry.year}
+                    </Typo>
+                  </View>
+                  <Typo variant="text-s" color="grey-500">
+                    {entry.status}
                   </Typo>
                 </View>
-                <Typo variant="text-s" color="grey-500">
-                  {entry.status}
-                </Typo>
+                <Hairline />
               </View>
-              <Hairline />
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
 
-        <Button
-          title={intl.formatMessage(COPY.report)}
-          className="mt-m"
-          fullWidth
-          onPress={() => openExternal(atlasStats.url)}
-        />
+          <Button
+            title={intl.formatMessage(COPY.report)}
+            className="mt-m"
+            fullWidth
+            onPress={() => openExternal(atlasStats.url)}
+          />
+        </ContentColumn>
       </ScrollView>
     </View>
   );

@@ -3,7 +3,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { VideoFrame } from '@/components/media/VideoFrame';
-import { Button, Overline, ScreenHeader, Typo } from '@/components/ui';
+import { Button, ContentColumn, Overline, ScreenHeader, Typo } from '@/components/ui';
 import { formatDate, minutesOf } from '@correctiv/app-core/lib/format';
 import type { Video } from '@correctiv/app-core/types/models';
 import { useLocale, useVideo } from '@/lib/store/core';
@@ -97,23 +97,25 @@ export default function VideoScreen() {
         </View>
       ) : (
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* The stage stays dark in both schemes. A video does not sit on a light
-              surface, not even in a light app. */}
-          <View className="bg-always-dark" style={{ aspectRatio: 16 / 9 }}>
-            {current.source === 'peertube' ? (
-              <PeertubeStage
-                video={current}
-                hlsUrl={hlsUrl}
-                loading={status === 'loading'}
-                failed={status === 'error'}
-              />
-            ) : (
-              <VideoFrame
-                uri={`https://www.youtube-nocookie.com/embed/${current.id}?playsinline=1&rel=0`}
-              />
-            )}
-          </View>
-          <VideoMeta video={current} />
+          <ContentColumn>
+            {/* The stage stays dark in both schemes. A video does not sit on a light
+                surface, not even in a light app. */}
+            <View className="bg-always-dark" style={{ aspectRatio: 16 / 9 }}>
+              {current.source === 'peertube' ? (
+                <PeertubeStage
+                  video={current}
+                  hlsUrl={hlsUrl}
+                  loading={status === 'loading'}
+                  failed={status === 'error'}
+                />
+              ) : (
+                <VideoFrame
+                  uri={`https://www.youtube-nocookie.com/embed/${current.id}?playsinline=1&rel=0`}
+                />
+              )}
+            </View>
+            <VideoMeta video={current} />
+          </ContentColumn>
         </ScrollView>
       )}
     </View>

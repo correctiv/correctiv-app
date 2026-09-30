@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import type { SpotlightIssue } from '@correctiv/app-core/data/spotlight';
 import { formatDateWeekday } from '@correctiv/app-core/lib/format';
 
-import { Hairline, ScreenHeader, Typo } from '@/components/ui';
+import { ContentColumn, Hairline, ScreenHeader, Typo } from '@/components/ui';
 import { openExternal } from '@/lib/openExternal';
 import { useLocale, useSpotlight } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
@@ -50,28 +50,30 @@ export default function SpotlightScreen() {
         contentContainerClassName="px-m pt-m pb-2xl"
         showsVerticalScrollIndicator={false}
       >
-        <Typo variant="headline-l">Spotlight</Typo>
-        <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
-          {intl.formatMessage(COPY.lead)}
-        </Typo>
-
-        {status === 'offline' && (
-          <Typo variant="text-s" color="grey-500" className="mt-2xs">
-            {intl.formatMessage(COPY.offlineArchive)}
+        <ContentColumn>
+          <Typo variant="headline-l">Spotlight</Typo>
+          <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
+            {intl.formatMessage(COPY.lead)}
           </Typo>
-        )}
 
-        {status === 'loading' && issues.length === 0 && (
-          <View className="py-2xl">
-            <ActivityIndicator color={colors.accent} />
+          {status === 'offline' && (
+            <Typo variant="text-s" color="grey-500" className="mt-2xs">
+              {intl.formatMessage(COPY.offlineArchive)}
+            </Typo>
+          )}
+
+          {status === 'loading' && issues.length === 0 && (
+            <View className="py-2xl">
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          )}
+
+          <View className="mt-s">
+            {issues.map((issue) => (
+              <IssueBlock key={issue.id} issue={issue} />
+            ))}
           </View>
-        )}
-
-        <View className="mt-s">
-          {issues.map((issue) => (
-            <IssueBlock key={issue.id} issue={issue} />
-          ))}
-        </View>
+        </ContentColumn>
       </ScrollView>
     </View>
   );

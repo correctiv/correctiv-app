@@ -6,7 +6,14 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SampleHitRow, sampleTarget } from '@/components/discover/SampleHitRow';
 import { ArticleRow } from '@/components/feed/ArticleRow';
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
-import { Hairline, Overline, ScreenHeader, ScaledTextInput, Typo } from '@/components/ui';
+import {
+  ContentColumn,
+  Hairline,
+  Overline,
+  ScreenHeader,
+  ScaledTextInput,
+  Typo,
+} from '@/components/ui';
 import { MIN_SEARCH_QUERY, searchProjectHits } from '@correctiv/app-core/stores/search';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 import { openArticle } from '@/lib/openArticle';
@@ -132,55 +139,57 @@ export default function SucheScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          {tooShort && (
-            <Typo variant="text-m" color="on-canvas-muted">
-              {intl.formatMessage(COPY.hint)}
-            </Typo>
-          )}
+          <ContentColumn>
+            {tooShort && (
+              <Typo variant="text-m" color="on-canvas-muted">
+                {intl.formatMessage(COPY.hint)}
+              </Typo>
+            )}
 
-          {searching && articles.length === 0 && (
-            <View className="py-l">
-              <ActivityIndicator color={colors.accent} />
-            </View>
-          )}
-
-          {articles.length > 0 && (
-            <View>
-              <Overline label={intl.formatMessage(COPY.articlesHeading)} />
-              <View className="mt-2xs">
-                {articles.map((item, i) => (
-                  <View key={item.id}>
-                    {i > 0 && <Hairline />}
-                    <ArticleRow item={item} onPress={openArticle} />
-                  </View>
-                ))}
+            {searching && articles.length === 0 && (
+              <View className="py-l">
+                <ActivityIndicator color={colors.accent} />
               </View>
-            </View>
-          )}
+            )}
 
-          {sampleHits.length > 0 && (
-            <View className="mt-m">
-              <Overline label={intl.formatMessage(COPY.projectsHeading)} />
-              <View className="mt-2xs">
-                {sampleHits.map((hit) => {
-                  const target = sampleTarget(hit.kind);
-                  return (
-                    <SampleHitRow
-                      key={hit.id}
-                      hit={hit}
-                      onPress={target ? () => router.push(target) : undefined}
-                    />
-                  );
-                })}
+            {articles.length > 0 && (
+              <View>
+                <Overline label={intl.formatMessage(COPY.articlesHeading)} />
+                <View className="mt-2xs">
+                  {articles.map((item, i) => (
+                    <View key={item.id}>
+                      {i > 0 && <Hairline />}
+                      <ArticleRow item={item} onPress={openArticle} />
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {nothingFound && (
-            <Typo variant="text-m" color="on-canvas-muted">
-              {intl.formatMessage(COPY.noResults, { query: debounced })}
-            </Typo>
-          )}
+            {sampleHits.length > 0 && (
+              <View className="mt-m">
+                <Overline label={intl.formatMessage(COPY.projectsHeading)} />
+                <View className="mt-2xs">
+                  {sampleHits.map((hit) => {
+                    const target = sampleTarget(hit.kind);
+                    return (
+                      <SampleHitRow
+                        key={hit.id}
+                        hit={hit}
+                        onPress={target ? () => router.push(target) : undefined}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {nothingFound && (
+              <Typo variant="text-m" color="on-canvas-muted">
+                {intl.formatMessage(COPY.noResults, { query: debounced })}
+              </Typo>
+            )}
+          </ContentColumn>
         </ScrollView>
       </KeyboardAvoiding>
     </View>

@@ -95,7 +95,8 @@ export default function GespeichertScreen() {
           </Typo>
         }
         ListEmptyComponent={Empty}
-        contentContainerClassName="px-m pt-m pb-2xl"
+        contentContainerClassName="w-full self-center px-m pt-m pb-2xl"
+        contentContainerStyle={{ maxWidth: sizes.contentColumn }}
         showsVerticalScrollIndicator={false}
       />
     </View>

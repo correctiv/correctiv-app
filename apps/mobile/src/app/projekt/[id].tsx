@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { ArticleRow } from '@/components/feed/ArticleRow';
-import { Button, Card, Hairline, SectionHeader, Typo } from '@/components/ui';
+import { Button, Card, ContentColumn, Hairline, SectionHeader, Typo } from '@/components/ui';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { interests } from '@correctiv/app-core/data/interests';
 import { projectGroups, resolveProject, type Project } from '@correctiv/app-core/data/projects';
@@ -19,7 +19,7 @@ import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
-import { useColors } from '@/lib/theme';
+import { sizes, useColors } from '@/lib/theme';
 
 /**
  * Everything this screen says, in ENGLISH; the German ships in
@@ -226,8 +226,10 @@ function ProjectBody({ project, action }: { project: Project; action: ScreenActi
       contentContainerClassName="px-m pt-m pb-2xl"
       showsVerticalScrollIndicator={false}
     >
-      <ProjectHead project={project} action={action} />
-      {project.teaserOnly && <TeaserCard project={project} />}
+      <ContentColumn>
+        <ProjectHead project={project} action={action} />
+        {project.teaserOnly && <TeaserCard project={project} />}
+      </ContentColumn>
     </ScrollView>
   );
 }
@@ -341,7 +343,8 @@ function ProjectFeed({
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
-      contentContainerClassName="px-m pt-m pb-2xl"
+      contentContainerClassName="w-full self-center px-m pt-m pb-2xl"
+      contentContainerStyle={{ maxWidth: sizes.contentColumn }}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <View>

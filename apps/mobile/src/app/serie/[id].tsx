@@ -10,7 +10,7 @@ import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { playEpisode, togglePlay } from '@/lib/audio/player';
 import { useEpisodeStatus } from '@/lib/audio/useAudio';
 import { useLocale, usePodcastSeries } from '@/lib/store/core';
-import { useColors } from '@/lib/theme';
+import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The seven curated shows are known, so the static web export can emit one file per
@@ -101,7 +101,8 @@ export default function SerieScreen() {
           renderItem={({ item }: ListRenderItemInfo<PodcastEpisode>) => (
             <SeriesEpisodeRow series={series} episode={item} />
           )}
-          contentContainerClassName="px-m pt-m pb-2xl"
+          contentContainerClassName="w-full self-center px-m pt-m pb-2xl"
+          contentContainerStyle={{ maxWidth: sizes.contentColumn }}
           ListHeaderComponentClassName="mb-m"
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={

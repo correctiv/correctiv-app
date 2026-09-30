@@ -3,7 +3,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { defineMessages, useIntl } from 'react-intl';
 import { ScrollView, View } from 'react-native';
 
-import { Button, Card, Hairline, Overline, ScreenHeader, Typo } from '@/components/ui';
+import {
+  Button,
+  Card,
+  ContentColumn,
+  Hairline,
+  Overline,
+  ScreenHeader,
+  Typo,
+} from '@/components/ui';
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { useExtraCount, useHasSubmitted } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
@@ -105,55 +113,59 @@ export default function AufrufScreen() {
             contentContainerClassName="px-m pt-m pb-l"
             showsVerticalScrollIndicator={false}
           >
-            <Overline label={CROWDNEWSROOM} color="accent" />
-            <Typo variant="headline-l" className="mt-2xs">
-              {callout.title}
-            </Typo>
+            <ContentColumn>
+              <Overline label={CROWDNEWSROOM} color="accent" />
+              <Typo variant="headline-l" className="mt-2xs">
+                {callout.title}
+              </Typo>
 
-            <View className="mt-s flex-row items-center">
-              <Ionicons name="people-outline" size={16} color={colors['grey-500']} />
-              <Typo variant="text-s" color="grey-500" className="ml-2xs">
-                {intl.formatMessage(COPY.responses, { count: callout.responseCount + extra })}
-              </Typo>
-            </View>
+              <View className="mt-s flex-row items-center">
+                <Ionicons name="people-outline" size={16} color={colors['grey-500']} />
+                <Typo variant="text-s" color="grey-500" className="ml-2xs">
+                  {intl.formatMessage(COPY.responses, { count: callout.responseCount + extra })}
+                </Typo>
+              </View>
 
-            {callout.intro.map((paragraph) => (
-              <Typo key={paragraph.slice(0, 24)} variant="text-m" className="mt-s">
-                {paragraph}
-              </Typo>
-            ))}
+              {callout.intro.map((paragraph) => (
+                <Typo key={paragraph.slice(0, 24)} variant="text-m" className="mt-s">
+                  {paragraph}
+                </Typo>
+              ))}
 
-            <Card tone="surface" className="mt-m">
-              <Typo variant="headline-xs">{intl.formatMessage(COPY.whoAsks)}</Typo>
-              <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-                {callout.whoAsks}
-              </Typo>
-              <Typo variant="headline-xs" className="mt-s">
-                {intl.formatMessage(COPY.dataUse)}
-              </Typo>
-              <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-                {callout.dataUse}
-              </Typo>
-            </Card>
+              <Card tone="surface" className="mt-m">
+                <Typo variant="headline-xs">{intl.formatMessage(COPY.whoAsks)}</Typo>
+                <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+                  {callout.whoAsks}
+                </Typo>
+                <Typo variant="headline-xs" className="mt-s">
+                  {intl.formatMessage(COPY.dataUse)}
+                </Typo>
+                <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+                  {callout.dataUse}
+                </Typo>
+              </Card>
 
-            {submitted && (
-              <Typo variant="text-s" color="accent" className="mt-s">
-                {intl.formatMessage(COPY.contributed)}
-              </Typo>
-            )}
+              {submitted && (
+                <Typo variant="text-s" color="accent" className="mt-s">
+                  {intl.formatMessage(COPY.contributed)}
+                </Typo>
+              )}
+            </ContentColumn>
           </ScrollView>
 
           <View className="bg-canvas">
             <Hairline />
-            <View className="px-m py-s">
-              <Button
-                title={intl.formatMessage(submitted ? COPY.contributeAgain : COPY.cta)}
-                fullWidth
-                onPress={() =>
-                  router.push({ pathname: '/formular', params: { slug: callout.slug } })
-                }
-              />
-            </View>
+            <ContentColumn>
+              <View className="px-m py-s">
+                <Button
+                  title={intl.formatMessage(submitted ? COPY.contributeAgain : COPY.cta)}
+                  fullWidth
+                  onPress={() =>
+                    router.push({ pathname: '/formular', params: { slug: callout.slug } })
+                  }
+                />
+              </View>
+            </ContentColumn>
           </View>
         </>
       )}
