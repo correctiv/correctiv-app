@@ -685,11 +685,10 @@ describe('whether `hasMore` is an answer', () => {
       hasMore: true,
     });
     await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(true);
     releasePageTwo();
     await paging;
 
-    // The flag is the guard `loadMore` returns on; a refresh that cleared it would
-    // let a second press ask for the same page again.
     expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(false);
   });
 
