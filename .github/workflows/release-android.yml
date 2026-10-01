@@ -149,10 +149,12 @@ jobs:
           fi
           APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
           mkdir -p dist
+          # A branch name may hold slashes, which would make the file name a path.
+          REF="${GITHUB_REF_NAME//\//-}"
           if [ "$CHANNEL" = "preview" ]; then
-            NAME="correctiv-app-preview-${GITHUB_REF_NAME}"
+            NAME="correctiv-app-preview-${REF}"
           else
-            NAME="correctiv-app-${GITHUB_REF_NAME}"
+            NAME="correctiv-app-${REF}"
           fi
           cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk "dist/${NAME}.apk"
           "$APKSIGNER" sign \
