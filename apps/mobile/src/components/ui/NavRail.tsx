@@ -4,7 +4,9 @@ import { Pressable, View } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { sizes, useColors } from '@/lib/theme';
+import { sizes, spacingPx, useColors } from '@/lib/theme';
+
+import { ScaledText } from './ScaledText';
 
 /**
  * The same five ids are declared in `_layout.tsx` and `_layout.web.tsx`.
@@ -42,11 +44,36 @@ const COPY = defineMessages({
  * and the app's icons are the consistent choice. See ADR 0070 §3.
  */
 const TABS = [
-  { name: 'index', icon: 'home', message: COPY.home },
-  { name: 'entdecken', icon: 'compass', message: COPY.discover },
-  { name: 'mediathek', icon: 'play-circle', message: COPY.mediathek },
-  { name: 'mitmachen', icon: 'people', message: COPY.participate },
-  { name: 'profil', icon: 'person', message: COPY.profile },
+  {
+    name: 'index',
+    icon: 'home',
+    inactiveIcon: 'home-outline',
+    message: COPY.home,
+  },
+  {
+    name: 'entdecken',
+    icon: 'compass',
+    inactiveIcon: 'compass-outline',
+    message: COPY.discover,
+  },
+  {
+    name: 'mediathek',
+    icon: 'play-circle',
+    inactiveIcon: 'play-circle-outline',
+    message: COPY.mediathek,
+  },
+  {
+    name: 'mitmachen',
+    icon: 'people',
+    inactiveIcon: 'people-outline',
+    message: COPY.participate,
+  },
+  {
+    name: 'profil',
+    icon: 'person',
+    inactiveIcon: 'person-outline',
+    message: COPY.profile,
+  },
 ] as const;
 
 export type NavRailProps = {
@@ -59,7 +86,18 @@ export type NavRailProps = {
 };
 
 /**
- * The tablet navigation rail: five tab triggers plus the mini player.
+ * The tablet navigation rail: five tab triggers, each an icon over its label as in
+ * the phone bar, plus the mini player.
+ *
+ * The label is the phone bar's: the same `tab.message`, `SourceSans3_600SemiBold` at 11,
+ * the accent colour and a filled glyph when active. It stays on one line and is not
+ * shortened: "Mitmachen", the widest, measures about 44 px at 1 and 51 px at the
+ * largest in-app step (1.15) of the 80 px a tab has. Only a system font scale near 1.8
+ * clips it, and then the icon and
+ * the `accessibilityLabel` still name the tab. The label text is hidden from
+ * accessibility because the pressable already carries it.
+ *
+ * The first tab starts `spacingPx.s` below the top inset, so it clears the status bar.
  *
  * Width is `sizes.railWidth` (88 px). `lib/navigation/railTabs` renders it as the tab bar of a
  * navigator, left of the screens.
@@ -72,27 +110,49 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
   return (
     <View
       className="border-r border-stroke bg-canvas"
-      style={{ width: sizes.railWidth, paddingTop: top, paddingBottom: bottom }}
+      style={{
+        width: sizes.railWidth,
+        paddingTop: top + spacingPx.s,
+        paddingBottom: bottom,
+      }}
     >
       <View className="flex-1 justify-between">
-        <View>
-          {TABS.map((tab) => (
-            <Pressable
-              key={tab.name}
-              onPress={() => onSelect(tab.name)}
-              className="items-center"
-              style={{ minHeight: sizes.tapTarget }}
-              accessibilityRole="tab"
-              accessibilityLabel={intl.formatMessage(tab.message)}
-              accessibilityState={{ selected: active === tab.name }}
-            >
-              <Ionicons
-                name={tab.icon}
-                size={24}
-                color={active === tab.name ? colors.accent : colors['on-canvas-muted']}
-              />
-            </Pressable>
-          ))}
+        <View style={{ gap: spacingPx['2xs'] }}>
+          {TABS.map((tab) => {
+            const selected = active === tab.name;
+            const tint = selected ? colors.accent : colors['on-canvas-muted'];
+            return (
+              <Pressable
+                key={tab.name}
+                onPress={() => onSelect(tab.name)}
+                className="items-center justify-center"
+                style={{
+                  minHeight: sizes.tapTarget,
+                  paddingVertical: spacingPx['3xs'],
+                  paddingHorizontal: spacingPx['3xs'],
+                }}
+                accessibilityRole="tab"
+                accessibilityLabel={intl.formatMessage(tab.message)}
+                accessibilityState={{ selected }}
+              >
+                <Ionicons name={selected ? tab.icon : tab.inactiveIcon} size={24} color={tint} />
+                <ScaledText
+                  numberOfLines={1}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  style={{
+                    color: tint,
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    fontSize: 11,
+                    marginTop: spacingPx['4xs'],
+                    textAlign: 'center',
+                  }}
+                >
+                  {intl.formatMessage(tab.message)}
+                </ScaledText>
+              </Pressable>
+            );
+          })}
         </View>
         <MiniPlayer />
       </View>

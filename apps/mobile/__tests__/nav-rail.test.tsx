@@ -157,6 +157,33 @@ describe('NavRail', () => {
     expect(selected).toHaveLength(1);
   });
 
+  it("draws each tab's label under its icon, and announces it once", () => {
+    const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
+    const labels = ['Home', 'Entdecken', 'Mediathek', 'Mitmachen', 'Profil'];
+    const tabs = findTabs(tree);
+    expect(tabs.map((t) => t.props.accessibilityLabel)).toEqual(labels);
+    for (const [i, label] of labels.entries()) {
+      const text = tabs[i]!.findAll(
+        (n) => (n.type as unknown) === 'Text' && n.props.children === label,
+      );
+      expect(text).toHaveLength(1);
+      expect(text[0]!.props.importantForAccessibility).toBe('no');
+      expect(text[0]!.props.accessibilityElementsHidden).toBe(true);
+      expect(text[0]!.props.numberOfLines).toBe(1);
+    }
+  });
+
+  it('starts the first tab below the status bar, by the inset plus a spacing token', () => {
+    const tree = render(
+      <NavRail active="index" onSelect={() => {}} insets={{ ...NO_INSETS, top: 32, bottom: 20 }} />,
+    );
+    const rail = tree.root.findAll(
+      (n) => n.props?.style?.width === sizes.railWidth && n.props.style.paddingTop !== undefined,
+    )[0]!;
+    expect(rail.props.style.paddingTop).toBe(32 + spacingPx.s);
+    expect(rail.props.style.paddingBottom).toBe(20);
+  });
+
   it('includes the mini player at its bottom', () => {
     const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
     expect(tree.root.findAllByType(MiniPlayer)).toHaveLength(1);
