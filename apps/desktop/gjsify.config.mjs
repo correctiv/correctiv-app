@@ -275,16 +275,17 @@ export default {
      * will eventually differ between them. `transform.define` is the only place
      * Rolldown reads (a top-level `bundler.define` is auto-mapped with a warning).
      *
-     * Both entries are load-bearing, not hygiene. `@reduxjs/toolkit`'s ESM build reads
-     * `process.env.NODE_ENV` in 57 places; undefined there re-enables `serializableCheck`,
-     * which the store deliberately narrows because the audio backend dispatches twice a
-     * second against a tree holding six feeds and seven podcast series.
+     * `__DEV__` is load-bearing, not hygiene, and it is still ours: gjsify does not
+     * default it. `process.env.NODE_ENV` is not here any more — every app build sets it
+     * to `"production"` since gjsify 0.53 — and `@reduxjs/toolkit`'s ESM build reads it
+     * in 57 places; undefined there re-enables `serializableCheck`, which the store
+     * deliberately narrows because the audio backend dispatches twice a second against
+     * a tree holding six feeds and seven podcast series. A `define` here would still win.
      *
      * The value side is a JS EXPRESSION, so a string needs its own quotes.
      */
     transform: {
       define: {
-        'process.env.NODE_ENV': '"production"',
         __DEV__: 'false',
       },
     },
