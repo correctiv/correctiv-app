@@ -19,6 +19,7 @@ import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
+import { useReachable } from '@/lib/store/core';
 import { sizes, useColors } from '@/lib/theme';
 
 /**
@@ -136,7 +137,11 @@ export function generateStaticParams(): { id: string }[] {
 export default function ProjektScreen() {
   const intl = useIntl();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const project = resolveProject(id ?? '');
+  const reachable = useReachable();
+  const resolved = resolveProject(id ?? '');
+  // An entry whose feature is not reachable is a project this build does not have.
+  const project =
+    resolved && (resolved.feature === undefined || reachable(resolved.feature)) ? resolved : null;
   const action = project?.action ? ACTIONS[project.action] : null;
 
   return (

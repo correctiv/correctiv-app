@@ -25,7 +25,7 @@ import {
 import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
-import { useLocale } from '@/lib/store/core';
+import { useLocale, useReachable } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -75,6 +75,7 @@ const COPY = defineMessages({
 export default function BackstageScreen() {
   const intl = useIntl();
   const locale = useLocale();
+  const reachable = useReachable();
 
   return (
     <View className="flex-1 bg-canvas">
@@ -90,33 +91,39 @@ export default function BackstageScreen() {
             Backstage
           </Typo>
 
-          <SectionCard
-            label={intl.formatMessage(COPY.earlyAccess)}
-            labelColor="accent"
-            className="mt-l"
-          >
-            <Typo variant="headline-xs">{earlyAccess.title}</Typo>
-            <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-              {earlyAccess.teaser}
-            </Typo>
-            <Typo variant="text-s" color="grey-500" className="mt-s">
-              {intl.formatMessage(COPY.publicFrom, { date: earlyAccess.publicFromLabel })}
-            </Typo>
-            <Button
-              title={intl.formatMessage(COPY.readNow)}
-              className="mt-s"
-              onPress={() => openArticle({ url: earlyAccess.articleUrl, title: earlyAccess.title })}
-            />
-          </SectionCard>
+          {reachable('early-access') && (
+            <SectionCard
+              label={intl.formatMessage(COPY.earlyAccess)}
+              labelColor="accent"
+              className="mt-l"
+            >
+              <Typo variant="headline-xs">{earlyAccess.title}</Typo>
+              <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+                {earlyAccess.teaser}
+              </Typo>
+              <Typo variant="text-s" color="grey-500" className="mt-s">
+                {intl.formatMessage(COPY.publicFrom, { date: earlyAccess.publicFromLabel })}
+              </Typo>
+              <Button
+                title={intl.formatMessage(COPY.readNow)}
+                className="mt-s"
+                onPress={() =>
+                  openArticle({ url: earlyAccess.articleUrl, title: earlyAccess.title })
+                }
+              />
+            </SectionCard>
+          )}
 
-          <View className="mt-m">
-            <Overline label={intl.formatMessage(COPY.diary)} />
-            <View className="mt-2xs">
-              {diaries.map((entry) => (
-                <DiaryRow key={entry.id} entry={entry} />
-              ))}
+          {reachable('diary') && (
+            <View className="mt-m">
+              <Overline label={intl.formatMessage(COPY.diary)} />
+              <View className="mt-2xs">
+                {diaries.map((entry) => (
+                  <DiaryRow key={entry.id} entry={entry} />
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           <SectionCard label={intl.formatMessage(COPY.letter)} tone="surface" className="mt-m">
             <Typo variant="headline-xs">{clubNewsletter.subject}</Typo>
@@ -140,20 +147,22 @@ export default function BackstageScreen() {
             </Typo>
           </SectionCard>
 
-          <View className="mt-m">
-            <Overline label={intl.formatMessage(COPY.events)} />
-            {events.map((event) => (
-              <Card key={event.id} className="mt-2xs">
-                <Typo variant="headline-xs">{event.title}</Typo>
-                <Typo variant="text-s" color="grey-500" className="mt-4xs">
-                  {formatDateShort(event.date, locale)} · {event.location}
-                </Typo>
-                <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-                  {event.description}
-                </Typo>
-              </Card>
-            ))}
-          </View>
+          {reachable('events') && (
+            <View className="mt-m">
+              <Overline label={intl.formatMessage(COPY.events)} />
+              {events.map((event) => (
+                <Card key={event.id} className="mt-2xs">
+                  <Typo variant="headline-xs">{event.title}</Typo>
+                  <Typo variant="text-s" color="grey-500" className="mt-4xs">
+                    {formatDateShort(event.date, locale)} · {event.location}
+                  </Typo>
+                  <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+                    {event.description}
+                  </Typo>
+                </Card>
+              ))}
+            </View>
+          )}
 
           <SectionCard label={intl.formatMessage(COPY.publisher)} tone="surface" className="mt-m">
             <Typo variant="headline-xs">{verlagPerk.title}</Typo>

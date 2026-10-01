@@ -53,12 +53,17 @@ export function searchLocalFeeds(state: FeedsState, query: string, limit = 12): 
  * one character and two; no entry in the catalogue can contain such a needle, so
  * this is the same answer over this corpus rather than the same code.
  */
-export function searchProjectHits(query: string): SearchSample[] {
+export function searchProjectHits(
+  query: string,
+  reachable: (feature: string) => boolean = () => true,
+): SearchSample[] {
   const needle = query.trim().toLowerCase();
   if (needle.length < MIN_SEARCH_QUERY) return [];
   return searchSamples.filter(
     (sample) =>
-      sample.title.toLowerCase().includes(needle) || sample.subtitle.toLowerCase().includes(needle),
+      (sample.feature === undefined || reachable(sample.feature)) &&
+      (sample.title.toLowerCase().includes(needle) ||
+        sample.subtitle.toLowerCase().includes(needle)),
   );
 }
 

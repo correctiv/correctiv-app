@@ -8,6 +8,7 @@ import { callouts, type Callout } from '@correctiv/app-core/data/callouts';
 import { atlasStats } from '@correctiv/app-core/data/abriss-atlas';
 import { claims } from '@correctiv/app-core/data/claims';
 import { openExternal } from '@/lib/openExternal';
+import { useReachable } from '@/lib/store/core';
 
 /** The fact-check desk's public tip line. */
 const WHATSAPP_TIP = 'https://wa.me/4915142647500';
@@ -83,6 +84,7 @@ const ABRISS_ATLAS = 'Abriss-Atlas';
  */
 export default function MitmachenScreen() {
   const intl = useIntl();
+  const reachable = useReachable();
 
   return (
     <Screen>
@@ -91,43 +93,49 @@ export default function MitmachenScreen() {
         {intl.formatMessage(COPY.lead)}
       </Typo>
 
-      <View className="mt-l">
-        <Overline label={intl.formatMessage(COPY.activeCallouts)} />
-        <View className="mt-2xs">
-          {callouts.map((callout) => (
-            <CalloutCard key={callout.slug} callout={callout} onPress={openCallout} />
-          ))}
+      {reachable('callouts') && (
+        <View className="mt-l">
+          <Overline label={intl.formatMessage(COPY.activeCallouts)} />
+          <View className="mt-2xs">
+            {callouts.map((callout) => (
+              <CalloutCard key={callout.slug} callout={callout} onPress={openCallout} />
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
-      <SectionCard label={FAKTENFORUM} tone="surface" className="mt-m">
-        <Typo variant="headline-xs">{intl.formatMessage(COPY.forumHeading)}</Typo>
-        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-          {intl.formatMessage(COPY.forumLead, { count: claims.length })}
-        </Typo>
-        <Button
-          title={intl.formatMessage(COPY.forumAction)}
-          variant="outline"
-          onPress={() => router.push('/faktenforum')}
-          className="mt-s"
-        />
-      </SectionCard>
+      {reachable('faktenforum') && (
+        <SectionCard label={FAKTENFORUM} tone="surface" className="mt-m">
+          <Typo variant="headline-xs">{intl.formatMessage(COPY.forumHeading)}</Typo>
+          <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+            {intl.formatMessage(COPY.forumLead, { count: claims.length })}
+          </Typo>
+          <Button
+            title={intl.formatMessage(COPY.forumAction)}
+            variant="outline"
+            onPress={() => router.push('/faktenforum')}
+            className="mt-s"
+          />
+        </SectionCard>
+      )}
 
-      <SectionCard label={ABRISS_ATLAS} className="mt-m">
-        <Typo variant="headline-xs">{intl.formatMessage(COPY.atlasHeading)}</Typo>
-        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-          {intl.formatMessage(COPY.atlasLead, {
-            reports: atlasStats.totalReports,
-            cities: atlasStats.citiesCovered,
-          })}
-        </Typo>
-        <Button
-          title={intl.formatMessage(COPY.atlasAction)}
-          variant="outline"
-          onPress={() => router.push('/atlas')}
-          className="mt-s"
-        />
-      </SectionCard>
+      {reachable('abriss-atlas') && (
+        <SectionCard label={ABRISS_ATLAS} className="mt-m">
+          <Typo variant="headline-xs">{intl.formatMessage(COPY.atlasHeading)}</Typo>
+          <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+            {intl.formatMessage(COPY.atlasLead, {
+              reports: atlasStats.totalReports,
+              cities: atlasStats.citiesCovered,
+            })}
+          </Typo>
+          <Button
+            title={intl.formatMessage(COPY.atlasAction)}
+            variant="outline"
+            onPress={() => router.push('/atlas')}
+            className="mt-s"
+          />
+        </SectionCard>
+      )}
 
       <SectionCard label={intl.formatMessage(COPY.tipLabel)} tone="surface" className="mt-m">
         <Typo variant="headline-xs">{intl.formatMessage(COPY.tipHeading)}</Typo>

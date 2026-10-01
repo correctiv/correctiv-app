@@ -39,6 +39,8 @@ jest.mock('expo-router', () => {
   const Stack = ({ children }: { children?: React.ReactNode }) =>
     react.createElement(View, null, children);
   Stack.Screen = () => null;
+  Stack.Protected = ({ children }: { children?: React.ReactNode }) =>
+    react.createElement(react.Fragment, null, children);
   return {
     router: { replace: jest.fn(), push: jest.fn(), back: jest.fn() },
     usePathname: jest.fn(() => '/'),

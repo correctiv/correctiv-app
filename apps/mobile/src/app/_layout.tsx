@@ -46,7 +46,8 @@ import { stop as stopAudio } from '@/lib/audio/player';
 // same component, which is the whole reason it is one (ADR 0028).
 import { AppEnvironment, useAppFonts } from '@/lib/env/AppEnvironment';
 import { expoPlatform } from '@/lib/platform/expo';
-import { coreStore, useAppStore, useIsAdmitted } from '@/lib/store/core';
+import { ROUTE_FEATURES } from '@/lib/features';
+import { coreStore, useAppStore, useIsAdmitted, useReachable } from '@/lib/store/core';
 import { useColors, useIsDark } from '@/lib/theme';
 
 // Hand the core its platform capabilities before anything reads a store. Storage,
@@ -269,6 +270,7 @@ function AppShell() {
    * gesture. Do not add a `BackHandler` here to "fix" it.
    */
   const admitted = useIsAdmitted();
+  const reachable = useReachable();
 
   /**
    * First start: into the onboarding once per session, as soon as the state is
@@ -352,7 +354,19 @@ function AppShell() {
               own — a modal, because it replaces nothing. */}
           <Stack.Screen name="player" options={{ presentation: 'modal' }} />
           {/* Both are flows over the app, not places in it. */}
-          <Stack.Screen name="onboarding" options={{ presentation: 'modal' }} />
+          <Stack.Protected guard={reachable('onboarding')}>
+            <Stack.Screen name="onboarding" options={{ presentation: 'modal' }} />
+          </Stack.Protected>
+          {/*
+            A route whose feature this build cannot reach is not registered, so a deep
+            link to it resolves to `+not-found` like any address that leads nowhere
+            (ADR 0072 §5). The table is `lib/features.ts`'s.
+          */}
+          {ROUTE_FEATURES.map(({ route, feature }) => (
+            <Stack.Protected key={route} guard={reachable(feature)}>
+              <Stack.Screen name={route} />
+            </Stack.Protected>
+          ))}
         </Stack>
       ) : (
         <LoginGate />

@@ -17,7 +17,7 @@ import {
 import { MIN_SEARCH_QUERY, searchProjectHits } from '@correctiv/app-core/stores/search';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 import { openArticle } from '@/lib/openArticle';
-import { useCoreActions } from '@/lib/store/core';
+import { useCoreActions, useReachable } from '@/lib/store/core';
 import { sizes, typography, useColors } from '@/lib/theme';
 import { useDebounced } from '@/lib/useDebounced';
 
@@ -66,6 +66,7 @@ export default function SucheScreen() {
   const intl = useIntl();
   const colors = useColors();
   const actions = useCoreActions();
+  const reachable = useReachable();
   const [query, setQuery] = useState('');
   const trimmed = query.trim();
   const debounced = useDebounced(trimmed, DEBOUNCE_MS);
@@ -101,7 +102,7 @@ export default function SucheScreen() {
 
   // Memoised because it builds a fresh array and the list below is keyed off it;
   // the match itself is the core's, tested there beside the feed search.
-  const sampleHits = useMemo(() => searchProjectHits(trimmed), [trimmed]);
+  const sampleHits = useMemo(() => searchProjectHits(trimmed, reachable), [trimmed, reachable]);
 
   const tooShort = debounced.length < MIN_SEARCH_QUERY;
   const nothingFound = !tooShort && !searching && articles.length === 0 && sampleHits.length === 0;

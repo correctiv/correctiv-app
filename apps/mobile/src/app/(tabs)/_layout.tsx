@@ -3,7 +3,9 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { tabReachable } from '@/lib/features';
 import { RailTabs } from '@/lib/navigation/railTabs';
+import { useReachable } from '@/lib/store/core';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, useColors } from '@/lib/theme';
 
@@ -138,6 +140,10 @@ export default function TabsLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, fontScale } = useWindowDimensions();
+  const reachable = useReachable();
+  // Hidden is how a native tab is withheld: the navigator treats it as protected, so its
+  // address resolves to not-found as well (ADR 0072 §5).
+  const hidden = (route: string) => !tabReachable(route, reachable);
 
   if (width >= sizes.railBreakpoint) {
     return <RailTabs />;
@@ -211,7 +217,7 @@ export default function TabsLayout() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="entdecken">
+      <NativeTabs.Trigger name="entdecken" hidden={hidden('entdecken')}>
         <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.discover)}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'safari', selected: 'safari.fill' }}
@@ -219,7 +225,7 @@ export default function TabsLayout() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="mediathek">
+      <NativeTabs.Trigger name="mediathek" hidden={hidden('mediathek')}>
         <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.mediathek)}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'play.circle', selected: 'play.circle.fill' }}
@@ -227,7 +233,7 @@ export default function TabsLayout() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="mitmachen">
+      <NativeTabs.Trigger name="mitmachen" hidden={hidden('mitmachen')}>
         <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.participate)}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'person.2', selected: 'person.2.fill' }}
