@@ -11,6 +11,7 @@ import {
   type ClaimStatus,
 } from '@correctiv/app-core/data/claims';
 import { openExternal } from '@/lib/openExternal';
+import { openLink } from '@/lib/openLink';
 
 const FORUM_URL = 'https://faktenforum.org';
 
@@ -149,7 +150,7 @@ export default function BehauptungScreen() {
                   key={source.url}
                   accessibilityRole="link"
                   accessibilityLabel={source.note ?? source.url}
-                  onPress={() => openExternal(source.url)}
+                  onPress={() => openLink(source.url)}
                   className="mt-s active:opacity-80"
                 >
                   <Card className="flex-row">

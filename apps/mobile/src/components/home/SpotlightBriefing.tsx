@@ -5,7 +5,7 @@ import type { SpotlightIssue } from '@correctiv/app-core/data/spotlight';
 import { formatDateShort } from '@correctiv/app-core/lib/format';
 
 import { Card, Hairline, Overline, SplitRow, Typo } from '@/components/ui';
-import { openExternal } from '@/lib/openExternal';
+import { openLink } from '@/lib/openLink';
 import { useLocale, useSpotlight } from '@/lib/store/core';
 import { sizes } from '@/lib/theme';
 
@@ -41,9 +41,8 @@ const COPY = defineMessages({
  * with a small bold label on the left, and the label is now a date instead of a
  * clock. Three real days beat five invented hours.
  *
- * Tapping opens the issue on correctiv.org rather than in the reader, because a
- * newsletter's body is the sent email, tables and masthead GIF included. See
- * `data/spotlight.ts`.
+ * Tapping opens the issue in the reader, from its page on correctiv.org rather than
+ * from the sent email. See `data/spotlight.ts`.
  */
 export function SpotlightBriefing({ onOpenArchive }: { onOpenArchive: () => void }) {
   const intl = useIntl();
@@ -96,7 +95,7 @@ function IssueRow({ issue }: { issue: SpotlightIssue }) {
           index from its own header, as in the draft. */}
       <Hairline className="mt-s" />
       <Pressable
-        onPress={() => openExternal(issue.url)}
+        onPress={() => openLink(issue.url)}
         accessibilityRole="link"
         accessibilityLabel={issue.subject}
         className="flex-row gap-s pt-s active:opacity-70"

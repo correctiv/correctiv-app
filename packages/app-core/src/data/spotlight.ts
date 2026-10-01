@@ -16,11 +16,16 @@
  * hour, which is a different card for the same purpose and the only one the data
  * supports.
  *
- * **Why an issue links out to the browser instead of into the reader.** Its
- * `content.rendered` is the sent email: 52,323 characters of table layout with a
- * GIF masthead on the measured issue. The reader builds its own document from an
- * article's body and has nothing to do with that. Rendering the newsletter
- * properly in-app would be a second reader, so the tap opens correctiv.org.
+ * **An issue opens in the reader.** This file used to say it could not: the archive's
+ * `content.rendered` was taken for "the sent email", table layout and a GIF masthead,
+ * and an issue linked out to the browser. Measured on 2026-10-01 it is nothing of the
+ * kind: no `<table>`, the same block markup as the issue's page, headed by the
+ * masthead as a plain figure. `wp/v2/posts?slug=` does not know the post type, so
+ * `fetchWpArticle` asks `newspack_nl_cpt` for a `/spotlight-newsletter/` link, which
+ * works in the browser build too; correctiv.org sends no CORS header for the page
+ * itself. When that fails, the page scrape still has a body, because the extractors
+ * fall back to `entry-content` for a page without `detail__content`. Without both,
+ * the reader showed its error state for every issue.
  */
 
 /** One issue of the newsletter, as the archive publishes it. */
@@ -46,9 +51,8 @@ export interface SpotlightIssue {
  * The last-resort seed: four real issues from 2026-08-27 to 2026-08-31.
  *
  * Real, so that a reader who never reaches the network still sees what Spotlight
- * is. Their links are real too, which means they need a browser and a connection
- * to open — unlike the article seed, an issue cannot be bundled, because its body
- * is not something this app can render.
+ * is. Their links are real too, which means they need a connection to open —
+ * unlike the article seed, an issue is not bundled.
  */
 export const spotlightIssues: SpotlightIssue[] = [
   {

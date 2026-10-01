@@ -5,7 +5,7 @@ import type { SpotlightIssue } from '@correctiv/app-core/data/spotlight';
 import { formatDateWeekday } from '@correctiv/app-core/lib/format';
 
 import { ContentColumn, Hairline, ScreenHeader, Typo } from '@/components/ui';
-import { openExternal } from '@/lib/openExternal';
+import { openLink } from '@/lib/openLink';
 import { useLocale, useSpotlight } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
@@ -85,7 +85,7 @@ function IssueBlock({ issue }: { issue: SpotlightIssue }) {
     <View>
       <Hairline className="mt-m" />
       <Pressable
-        onPress={() => openExternal(issue.url)}
+        onPress={() => openLink(issue.url)}
         accessibilityRole="link"
         accessibilityLabel={issue.subject}
         className="pt-m active:opacity-70"
