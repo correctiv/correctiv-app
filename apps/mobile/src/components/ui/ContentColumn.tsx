@@ -37,6 +37,14 @@ export function columnGutter(windowWidth: number): number {
   return spacingPx.m + Math.max(0, spare / 2);
 }
 
+/**
+ * How far the content must move right so the rail clears the column: between 768 and
+ * 795 px the centred column's gutter is narrower than the rail. Zero from there up.
+ */
+export function railShift(windowWidth: number): number {
+  return Math.max(0, 2 * (sizes.railWidth - columnGutter(windowWidth)));
+}
+
 export function useColumnGutter(): number {
   return columnGutter(useWindowDimensions().width);
 }

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { sizes } from '../src/lib/theme';
-import { columnGutter } from '../src/components/ui/ContentColumn';
+import { columnGutter, railShift } from '../src/components/ui/ContentColumn';
 import { NavRail } from '../src/components/ui/NavRail';
 import { render } from './support/rendering';
 
@@ -43,10 +43,6 @@ const NO_INSETS = { top: 0, bottom: 0, left: 0, right: 0 };
  *
  * A fourth assertion renders `NavRail` directly: five tab triggers, each a
  * pressable with `accessibilityRole="tab"`, the active one marked selected.
- *
- * A test that would still pass with the rail reverted is worthless. These are
- * not: removing `sizes.railBreakpoint`, `TabletLayout`, or `NavRail` from the
- * source makes them fail (see the revert verification in commit message).
  */
 const SRC = join(__dirname, '..', 'src');
 const LAYOUT_NATIVE = join(SRC, 'app', '(tabs)', '_layout.tsx');
@@ -57,6 +53,13 @@ describe('the breakpoint arithmetic', () => {
   it('fits the rail inside the gutter at 834 px', () => {
     const gutter = columnGutter(834);
     expect(sizes.railWidth).toBeLessThanOrEqual(gutter);
+  });
+
+  it('keeps the column clear of the rail at every width from the breakpoint up', () => {
+    for (let width = sizes.railBreakpoint; width <= 1194; width++) {
+      const shift = railShift(width);
+      expect(shift + columnGutter(width - shift)).toBeGreaterThanOrEqual(sizes.railWidth);
+    }
   });
 
   it('puts the column edge where the centred column starts on a wide window', () => {

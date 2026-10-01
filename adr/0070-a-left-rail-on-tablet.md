@@ -29,7 +29,11 @@ tabs on iOS and Android, the drawn bar on web.
 The rail holds the five tab triggers and the mini player at its bottom. It
 sits in the left gutter the centred reading column leaves. At 834 px the
 gutter is 107 px (`columnGutter(834) = 24 + (834 − 48 − 620) / 2 = 107`), so
-the rail is 88 px wide — it fits with 19 px to spare.
+the rail is 88 px wide — it fits with 19 px to spare. That holds from 796 px
+(620 + 2 × 88); between 768 and 795 px the gutter is 74 to 87 px and the rail would
+overlap the column, so there the screens move right by `railShift` and the column is
+centred in the space beside the rail, not in the window. Screens that run edge to edge
+(not in a `ContentColumn`) lie under the rail's 88 px at every width.
 
 The five tab screens stay mounted the way `NativeTabs` mounts them today:
 all five, eagerly. The rail drives which one is visible; the others are

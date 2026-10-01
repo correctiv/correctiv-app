@@ -7,13 +7,6 @@ import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, useColors } from '@/lib/theme';
 
 /**
- * The five tab labels, in ENGLISH; the German ships in
- * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
- *
- * The same five ids are declared in `_layout.tsx` and `_layout.web.tsx`.
- * `i18n:extract --throws` fails if one id carries two different English defaults.
- */
-/**
  * The same five ids are declared in `_layout.tsx` and `_layout.web.tsx`.
  * `i18n:extract --throws` fails on one id carrying two different
  * descriptions or defaults, so these are copied verbatim.
