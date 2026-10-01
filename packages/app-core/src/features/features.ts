@@ -22,18 +22,20 @@
  * document this file is never somebody else's, so a test asserts the bundled one parses
  * with no problems at all.
  *
- * ## Provenance, until the sources declare it
+ * ## Provenance
  *
- * Phase 6 puts `Provenance` on every data source in the core. Until it exists, each feature
- * carries a minimal `provenance` of its own here, which that phase replaces by deriving it
- * from the sources the feature reads.
+ * A feature names the data sources it reads (`sources`, ids from `./sources.ts`), and each
+ * source declares `live` or `sample` once. The data ceiling is derived from that, never
+ * typed per feature: see `dataCeiling`.
  */
 
 import featuresDocument from './features.json';
+import { DATA_SOURCES, isDataSourceId, type DataSourceId, type Provenance } from './sources';
+
+export type { Provenance };
 
 export type FeatureState = 'aus' | 'vorschau' | 'an';
 export type Channel = 'release' | 'preview';
-export type Provenance = 'live' | 'sample';
 
 export interface FeatureGroup {
   readonly id: string;
@@ -46,7 +48,8 @@ export interface Feature {
   readonly id: string;
   readonly group: string;
   readonly state: FeatureState;
-  readonly provenance: Provenance;
+  /** The data sources it reads. None means it reads no data, and the data caps nothing. */
+  readonly sources?: readonly DataSourceId[];
   /** Features this one is no more reachable than. */
   readonly requires?: readonly string[];
 }
@@ -74,7 +77,8 @@ export type FeatureProblemCode =
   | 'locked-invalid'
   | 'locked-not-an'
   | 'group-unknown'
-  | 'provenance-invalid'
+  | 'sources-invalid'
+  | 'sources-unknown'
   | 'requires-invalid'
   | 'requires-unknown'
   | 'requires-cycle';
@@ -90,14 +94,13 @@ export interface FeaturesParse {
 }
 
 const STATES: readonly FeatureState[] = ['aus', 'vorschau', 'an'];
-const PROVENANCES: readonly Provenance[] = ['live', 'sample'];
 
 const GROUP_KEYS: Record<keyof FeatureGroup, true> = { id: true, state: true, locked: true };
 const FEATURE_KEYS: Record<keyof Feature, true> = {
   id: true,
   group: true,
   state: true,
-  provenance: true,
+  sources: true,
   requires: true,
 };
 
@@ -109,6 +112,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function isFeatureState(value: unknown): value is FeatureState {
   return typeof value === 'string' && (STATES as readonly string[]).includes(value);
+}
+
+/**
+ * What the data lets a feature be: `vorschau` when it reads sources and every one is
+ * `sample`, otherwise `an`. A feature with no sources reads nothing a sample could stand in
+ * for, so the data caps nothing there.
+ */
+export function dataCeiling(feature: Pick<Feature, 'sources'>): FeatureState {
+  const sources = feature.sources ?? [];
+  return sources.length > 0 && sources.every((id) => DATA_SOURCES[id].provenance === 'sample')
+    ? 'vorschau'
+    : 'an';
 }
 
 function leastOf(...states: FeatureState[]): FeatureState {
@@ -208,12 +223,21 @@ export function parseFeatures(document: unknown): FeaturesParse {
         problems.push({ code: 'state-invalid', context: { where: 'feature', id: raw.id } });
         return;
       }
-      if (
-        typeof raw.provenance !== 'string' ||
-        !(PROVENANCES as readonly string[]).includes(raw.provenance)
-      ) {
-        problems.push({ code: 'provenance-invalid', context: { id: raw.id } });
-        return;
+      let sources: DataSourceId[] | undefined;
+      if (raw.sources !== undefined) {
+        if (!Array.isArray(raw.sources) || raw.sources.some((r) => typeof r !== 'string')) {
+          problems.push({ code: 'sources-invalid', context: { id: raw.id } });
+          return;
+        }
+        const unknownSource = (raw.sources as string[]).find((r) => !isDataSourceId(r));
+        if (unknownSource !== undefined) {
+          problems.push({
+            code: 'sources-unknown',
+            context: { id: raw.id, source: unknownSource },
+          });
+          return;
+        }
+        sources = raw.sources as DataSourceId[];
       }
       let requires: string[] | undefined;
       if (raw.requires !== undefined) {
@@ -228,7 +252,7 @@ export function parseFeatures(document: unknown): FeaturesParse {
         id: raw.id,
         group: raw.group,
         state: raw.state,
-        provenance: raw.provenance as Provenance,
+        ...(sources === undefined ? {} : { sources }),
         ...(requires === undefined ? {} : { requires }),
       });
     });
@@ -311,7 +335,7 @@ export function effectiveState(
 
   const groupState = group.locked ? group.state : (override?.groups?.[group.id] ?? group.state);
   const declared = group.locked ? feature.state : (override?.features?.[id] ?? feature.state);
-  const data: FeatureState = feature.provenance === 'sample' ? 'vorschau' : 'an';
+  const data = dataCeiling(feature);
   const seen = new Set(visiting).add(id);
   const required = (feature.requires ?? []).map((r) => effectiveState(registry, r, override, seen));
   return leastOf(declared, data, groupState, ...required);

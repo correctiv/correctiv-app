@@ -8,6 +8,8 @@ import {
   RADIO_MOUNTS,
   YOUTUBE_FEEDS,
 } from '@correctiv/app-core/data/feeds.config';
+import { SAMPLE_DOMAINS } from '@correctiv/app-core/data/samples/domains';
+import { DATA_SOURCES } from '@correctiv/app-core/features/sources';
 
 import { ROOT } from '../plugin/collect.ts';
 import {
@@ -102,6 +104,43 @@ describe('the source manifest against the code', () => {
   it('gives every live entry an endpoint', () => {
     const vague = SOURCES.filter((s) => s.status === 'live' && !s.endpoint);
     expect(vague.map((s) => s.id)).toEqual([]);
+  });
+});
+
+describe('the manifest against the core’s provenance', () => {
+  /**
+   * One fact, one test (ADR 0072 §4). `Provenance` is declared on every source in the
+   * core, where the app can read it; the manifest says the same thing in its own `status`
+   * and this is the only place the two are compared, because the app may not read the
+   * workbench (ADR 0040) and so cannot do it from its side.
+   */
+  const declared = SOURCES.filter((s) => s.status !== 'no-source');
+
+  it('gives every source the core declares the same status in the manifest', () => {
+    const parted = Object.entries(DATA_SOURCES)
+      .filter(([id, source]) => SOURCES.find((s) => s.id === id)?.status !== source.provenance)
+      .map(([id]) => id);
+    expect(parted).toEqual([]);
+  });
+
+  it('has no live or sample row the core does not declare', () => {
+    expect(declared.filter((s) => !Object.hasOwn(DATA_SOURCES, s.id)).map((s) => s.id)).toEqual([]);
+  });
+
+  it('names the same module where both name one', () => {
+    const parted = declared
+      .filter((s) => {
+        const source: { module?: string } | undefined = (
+          DATA_SOURCES as Record<string, { module?: string }>
+        )[s.id];
+        return source?.module !== undefined && source.module !== s.module;
+      })
+      .map((s) => s.id);
+    expect(parted).toEqual([]);
+  });
+
+  it('holds every sample domain to be a sample', () => {
+    expect(SAMPLE_DOMAINS.filter((d) => d.provenance !== 'sample').map((d) => d.id)).toEqual([]);
   });
 });
 
