@@ -42,7 +42,20 @@ afterEach(() => {
   mounted.length = 0;
 });
 
-export function render(element: React.ReactElement): ReactTestRenderer {
+/**
+ * `width` overrides the SafeAreaProvider's frame width, which drives
+ * `useSafeAreaInsets()`. It does NOT change `useWindowDimensions()` — that hook
+ * reads from the Dimensions module, which jest-expo leaves at the device default.
+ * Source-level checks on the layout files cover the breakpoint logic.
+ */
+export function render(
+  element: React.ReactElement,
+  width: number = METRICS.frame.width,
+): ReactTestRenderer {
+  const metrics: Metrics = {
+    ...METRICS,
+    frame: { ...METRICS.frame, width },
+  };
   let tree!: ReactTestRenderer;
   act(() => {
     tree = create(
@@ -53,7 +66,7 @@ export function render(element: React.ReactElement): ReactTestRenderer {
             root are what a device has and a test tree does not. */}
         <Localisation>
           <TextSizeProvider>
-            <SafeAreaProvider initialMetrics={METRICS}>{element}</SafeAreaProvider>
+            <SafeAreaProvider initialMetrics={metrics}>{element}</SafeAreaProvider>
           </TextSizeProvider>
         </Localisation>
       </Provider>,

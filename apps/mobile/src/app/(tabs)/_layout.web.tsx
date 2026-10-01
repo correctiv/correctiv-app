@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 import { defineMessages, useIntl } from 'react-intl';
-import { View, type ColorValue } from 'react-native';
+import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TabletLayout } from '@/components/ui/TabletLayout';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { spacingPx, useColors } from '@/lib/theme';
+import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 /**
  * The web tab bar, and the reason there are two of these files.
@@ -91,7 +92,12 @@ export default function TabsLayout() {
   const intl = useIntl();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
+
+  if (width >= sizes.railBreakpoint) {
+    return <TabletLayout />;
+  }
 
   return (
     <View className="flex-1">

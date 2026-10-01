@@ -3,8 +3,9 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { TabletLayout } from '@/components/ui/TabletLayout';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { useColors } from '@/lib/theme';
+import { sizes, useColors } from '@/lib/theme';
 
 /**
  * The tab bar on iOS and Android is the system's, not ours.
@@ -136,7 +137,11 @@ export default function TabsLayout() {
   const intl = useIntl();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { fontScale } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
+
+  if (width >= sizes.railBreakpoint) {
+    return <TabletLayout />;
+  }
 
   /**
    * **The tab bar's own answer to #158, because it is the platform's bar.**

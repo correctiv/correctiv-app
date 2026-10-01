@@ -52,6 +52,7 @@ export type ComponentId =
   | 'ui/Chip'
   | 'ui/ContentColumn'
   | 'ui/Hairline'
+  | 'ui/NavRail'
   | 'ui/Overline'
   | 'ui/Rail'
   | 'ui/SafeAreaView'
@@ -63,5 +64,6 @@ export type ComponentId =
   | 'ui/SectionCard'
   | 'ui/SectionHeader'
   | 'ui/SplitRow'
+  | 'ui/TabletLayout'
   | 'ui/Thumbnail'
   | 'ui/Typo';

@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Sixty-eight records shaped this repo. Read them when you want to know *why* something
+Sixty-nine records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -73,6 +73,7 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0067](0067-a-feeds-end-is-one-field-with-three-values.md) | A feed's end is one field with three values | accepted, built the same day; `hasMore`, `paged` and `exhaustive` allowed a fourth state a cache hit could reach, and `end: 'unknown' \| 'more' \| 'end'` cannot |
 | [0068](0068-the-keyboard-controller-measured-and-rejected.md) | The keyboard controller, measured and rejected | accepted; on a 1600 px window the library scrolled the field out of the viewport where the app's own `KeyboardAvoiding` kept it visible, and removing that box too was worse; withdraws the escalation 0026 §2 named; iOS, the two other screens and the cause are not established |
 | [0069](0069-a-redraw-waits-for-a-look.md) | A redraw waits for a look | accepted, built the same day, **not run against Figma**; three decisions, a board-versus-spec diff as a pure function with 43 tests over it and zero false differences across the kit page's real 558 nodes, gating the redraw on what a person changed since the last draw rather than on what the spec changed, which is reported and does not block; identity is the spec path stamped with `setPluginData`, since Figma ids do not survive the redraw that deletes and rebuilds the nodes they name; only `Bausteine`, never the hand-transcribed screens, because a difference there reports the app moving and a warning that fires on everything says nothing; the vocabulary is the ceiling and what the Plugin API cannot read back is invisible to the diff by construction — an instance's children, and `layoutSizing*` outside auto layout; every difference classified `expressible` or `off-scale`, both refusing the redraw, and colours compared as names so two names for one value do not compare equal; retires the unconditional redraw in the tool's README, in `code.js` and in 0021 §1, and does not retire 0021's hand-transcribed-screen claim, which §1 gives the reason it cannot |
+| [0070](0070-a-left-rail-on-tablet.md) | A left rail on tablet | accepted; amends 0013 §1 for tablets — the system tab bar's phone affordances are traded for a layout that matches the reading column |
 
 Ten notes for readers of the older ones:
 
