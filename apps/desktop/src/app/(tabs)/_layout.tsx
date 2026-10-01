@@ -48,30 +48,9 @@ import { Tabs } from 'expo-router';
 
 import { MiniPlayer } from '../../media/mini-player.js';
 
-/**
- * `<Tabs>`, with the one prop the PUBLISHED types do not have yet.
- *
- * `bottomBar` is the seam this strip sits in. It exists in the gjsify working copy
- * this host is developed against and not in 0.47.0, so `npm run check` passes here
- * and the same file fails on CI, which installs the published package. That is the
- * branch's structural gap, and README's "The branch is red on CI" says what to do
- * about it.
- *
- * A cast rather than a red branch, because a CI nobody can read is worse than a
- * typed hole somebody wrote down: the branch had gone six weeks with this error
- * unseen. **Delete it on the next gjsify release that carries `bottomBar`** — the
- * cast will then be redundant and nothing will say so, which is the failure mode
- * `shims/answered-props.ts` exists to prevent for props. There is no ledger for a
- * type hole yet, so this comment is it.
- */
-const TabsWithBottomBar = Tabs as (props: {
-  bottomBar?: React.ReactNode;
-  children?: React.ReactNode;
-}) => React.ReactElement;
-
 export default function TabsLayout() {
   return (
-    <TabsWithBottomBar bottomBar={<MiniPlayer />}>
+    <Tabs bottomBar={<MiniPlayer />}>
       <Tabs.Screen name="index" options={{ title: 'Home', iconName: 'go-home-symbolic' }} />
       <Tabs.Screen
         name="entdecken"
@@ -89,6 +68,6 @@ export default function TabsLayout() {
         name="profil"
         options={{ title: 'Profil', iconName: 'avatar-default-symbolic' }}
       />
-    </TabsWithBottomBar>
+    </Tabs>
   );
 }
