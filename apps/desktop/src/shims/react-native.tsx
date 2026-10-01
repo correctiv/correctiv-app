@@ -464,6 +464,19 @@ function normalizeStyle(style: unknown): Record<string, unknown> | undefined {
         );
         break;
 
+      // `maxWidth` is the reading column main's #294/#296 put on every screen
+      // (`ContentColumn`, `sizes.contentColumn`). Neither the partition nor GTK has a
+      // maximum — `width-request` is a minimum and a box gives its child the whole
+      // allocation — so the column is not drawn here and the content takes the window.
+      // DROPPED, loudly, rather than left to refuse: undropped it ended every one of
+      // the 25 routes. A real answer is an `Adw.Clamp`, which is a feature of its own.
+      case 'maxWidth':
+        reportStyle(
+          'maxWidth',
+          'GTK has no maximum width, so the reading column is not applied on this host and the content fills the window. Dropped.',
+        );
+        break;
+
       // The physical pair. `marginHorizontal` has no single GTK property, and the
       // partition refuses a physical and a logical margin together, so it becomes the
       // two physical edges.
@@ -773,6 +786,13 @@ function normalize(
     trackColor: _trackColor,
     thumbColor: _thumbColor,
     onLayout: _onLayout,
+    // Android-only; `Typo` passes it for every variant. See `answered-props.ts`.
+    android_hyphenationFrequency: _androidHyphenationFrequency,
+    // The two spellings of "hide this decorative glyph from assistive technology",
+    // iOS and Android, both passed by `NavRail` (#301). GTK has `hidden` as an
+    // accessible state, but the layer routes neither prop; the glyph is announced.
+    accessibilityElementsHidden: _accessibilityElementsHidden,
+    importantForAccessibility: _importantForAccessibility,
     // The placeholder's colour lives on a CSS SUBNODE (`entry > text > placeholder`),
     // not on a widget property, so there is nothing for L2 to route it to and it
     // refuses by name. Dropping it is the right answer here rather than a concession:
@@ -843,6 +863,12 @@ function normalize(
     );
     delete passthrough.multiline;
   }
+
+  // `allowFontScaling` is whether the OS text-size setting applies. `<Text>` accepts it
+  // and `<TextInput>` refuses it by name; `ScaledTextInput` passes it on every field, so
+  // it ended `/suche` and the gallery. Dropped on the input only, because the app's own
+  // scaling reaches the font size and line height through `style`.
+  if (displayName === 'TextInput') delete passthrough.allowFontScaling;
 
   // Every style-SHAPED prop, not just `style`. A `ScrollView`'s content box is a
   // second styleable node, and `components/ui/Rail.tsx` reaches it with

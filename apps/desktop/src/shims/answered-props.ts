@@ -72,6 +72,24 @@ export const ANSWERED_PROPS: readonly AnsweredProp[] = [
     why: 'allocation is vfunc_size_allocate, a subclass override the layer owns; nothing here may depend on a measured size',
   },
   {
+    prop: 'android_hyphenationFrequency',
+    primitive: 'Text',
+    disposition: 'dropped',
+    why: 'an Android-only line-breaking hint (`Typo` passes it per variant); GTK hyphenates through Pango, not through this prop',
+  },
+  {
+    prop: 'accessibilityElementsHidden',
+    primitive: 'Text',
+    disposition: 'dropped',
+    why: 'hides a decorative glyph from assistive technology; the layer routes no such prop, so the glyph is announced (NavRail)',
+  },
+  {
+    prop: 'importantForAccessibility',
+    primitive: 'Text',
+    disposition: 'dropped',
+    why: 'the Android spelling of the same hint, passed beside it',
+  },
+  {
     prop: 'trackColor',
     primitive: 'Switch',
     disposition: 'dropped',
