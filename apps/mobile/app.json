@@ -51,7 +51,18 @@
           "supportsBackgroundPlayback": true
         }
       ],
-      "expo-font",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Merriweather-Regular.ttf",
+            "./assets/fonts/Merriweather-Bold.ttf",
+            "./assets/fonts/SourceSans3-Regular.ttf",
+            "./assets/fonts/SourceSans3-SemiBold.ttf",
+            "./assets/fonts/SourceSans3-Bold.ttf"
+          ]
+        }
+      ],
       "expo-image",
       "expo-status-bar",
       "expo-web-browser"

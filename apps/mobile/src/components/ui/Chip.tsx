@@ -61,7 +61,7 @@ export function Chip({ label, selected = false, onPress, className }: ChipProps)
           {
             // Selected, the label sits on the brand surface; otherwise on the page.
             color: selected ? colors['always-light'] : colors['on-canvas'],
-            fontFamily: 'SourceSans3_600SemiBold',
+            fontFamily: 'SourceSans3-SemiBold',
             flexShrink: 0,
           },
         ]}

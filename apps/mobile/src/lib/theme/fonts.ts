@@ -12,11 +12,11 @@ export type FontFamily = 'serif' | 'sans';
 export type FontWeightName = 'normal' | 'semibold' | 'bold';
 
 const FAMILY_MAP: Record<FontFamily, Partial<Record<FontWeightName, string>>> = {
-  serif: { normal: 'Merriweather_400Regular', bold: 'Merriweather_700Bold' },
+  serif: { normal: 'Merriweather-Regular', bold: 'Merriweather-Bold' },
   sans: {
-    normal: 'SourceSans3_400Regular',
-    semibold: 'SourceSans3_600SemiBold',
-    bold: 'SourceSans3_700Bold',
+    normal: 'SourceSans3-Regular',
+    semibold: 'SourceSans3-SemiBold',
+    bold: 'SourceSans3-Bold',
   },
 };
 

@@ -116,7 +116,7 @@ export default function TabsLayout() {
             height: barHeight,
             paddingBottom: insets.bottom,
           },
-          tabBarLabelStyle: { fontFamily: 'SourceSans3_600SemiBold', fontSize: 11 },
+          tabBarLabelStyle: { fontFamily: 'SourceSans3-SemiBold', fontSize: 11 },
           /**
            * A minimum gap between two tabs, which is the same thing `ui/SplitRow`
            * gives every two-sided row this app draws

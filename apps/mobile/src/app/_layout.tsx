@@ -242,6 +242,30 @@ function AppShell() {
     if (fontsLoaded && storeReady) SplashScreen.hideAsync();
   }, [fontsLoaded, storeReady]);
 
+  /**
+   * Env-flagged device probe: when EXPO_PUBLIC_DEBUG_FONTS=1, logs font loading
+   * status to the console (logcat on Android) so a release build on
+   * Medium_Phone_API_36 can confirm embedded fonts resolve on the first render
+   * rather than after an async load.
+   *
+   * Build with the flag set, install on the emulator, then:
+   *   adb logcat | grep '[debug-fonts]'
+   *
+   * With embedding active the first log is "loaded on first render"; without it
+   * (or if the plugin config is missing a file) the first log is "async load in
+   * progress" followed by "loaded" on a later tick.
+   */
+  useEffect(() => {
+    if (process.env.EXPO_PUBLIC_DEBUG_FONTS !== '1') return;
+    if (fontError) {
+      console.log(`[debug-fonts] ERROR: ${fontError.message}`);
+    } else if (fontsLoaded) {
+      console.log('[debug-fonts] loaded on first render (embedded)');
+    } else {
+      console.log('[debug-fonts] async load in progress');
+    }
+  }, [fontsLoaded, fontError]);
+
   // At launch once the kept copy is back in the store, and on every return to the
   // foreground; `lib/home/layout.ts` says why not in development.
   useHomeLayoutRefresh(storeReady);

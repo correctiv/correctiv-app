@@ -16,6 +16,13 @@
  *
  * So this module is deliberately NOT in the barrel. `app/_layout.tsx` imports it
  * by path, and it is the only thing that should.
+ *
+ * The keys are the PostScript names (name ID 6 from the TTF `name` table), not
+ * the `@expo-google-fonts` export names. Android's config plugin registers an
+ * embedded family by file name and iOS by PostScript name; making both match
+ * means `useAppFonts()` can resolve on the first render instead of after an
+ * async load, and the two platforms never disagree about which font is in use.
+ * The files live in `assets/fonts/` under those same names (`scripts/copy-fonts.mjs`).
  */
 import { Merriweather_400Regular, Merriweather_700Bold } from '@expo-google-fonts/merriweather';
 import {
@@ -26,9 +33,9 @@ import {
 
 /** Passed to useFonts() — loads every cut before the first render. */
 export const fontAssets = {
-  Merriweather_400Regular,
-  Merriweather_700Bold,
-  SourceSans3_400Regular,
-  SourceSans3_600SemiBold,
-  SourceSans3_700Bold,
+  'Merriweather-Regular': Merriweather_400Regular,
+  'Merriweather-Bold': Merriweather_700Bold,
+  'SourceSans3-Regular': SourceSans3_400Regular,
+  'SourceSans3-SemiBold': SourceSans3_600SemiBold,
+  'SourceSans3-Bold': SourceSans3_700Bold,
 };

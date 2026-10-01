@@ -176,7 +176,7 @@ export default function TabsLayout() {
       tintColor={colors.accent}
       backgroundColor={colors['canvas']}
       iconColor={{ default: colors['grey-500'], selected: colors.accent }}
-      labelStyle={{ fontFamily: 'SourceSans3_600SemiBold', fontSize: 11 }}
+      labelStyle={{ fontFamily: 'SourceSans3-SemiBold', fontSize: 11 }}
       /*
        * Every destination keeps its label. Material's `auto` — the default — drops
        * the labels of the unselected items once there are four or more, which on
