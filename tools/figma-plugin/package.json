@@ -3,5 +3,8 @@
   "description": "Figma plugin for this app's design board \u2014 a design tool, not a host.",
   "version": "1.0.0",
   "license": "AGPL-3.0-or-later",
-  "private": true
+  "private": true,
+  "scripts": {
+    "test": "vitest run"
+  }
 }

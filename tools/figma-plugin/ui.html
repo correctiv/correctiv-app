@@ -31,9 +31,35 @@
     margin-top: 8px;
     line-height: 1.5;
   }
+  /* The refusal. It is the one thing here that stops a draw, so it is the one thing
+     that gets more than the status line: a count and the first few keys, because "12
+     changes" on its own sends somebody hunting. */
+  #wait {
+    display: none;
+    margin-top: 8px;
+    padding: 8px;
+    border: 1px solid #e5484d;
+    border-radius: 4px;
+    background: #fff5f5;
+    color: #8a1c1c;
+    line-height: 1.5;
+  }
+  #wait.on {
+    display: block;
+  }
+  #keys {
+    margin: 4px 0 0;
+    padding-left: 16px;
+    color: #a33;
+    word-break: break-all;
+  }
 </style>
 <div><span id="dot"></span><b>CORRECTIV Wireframes</b></div>
 <div id="log">connecting …</div>
+<div id="wait">
+  <b id="count"></b>
+  <ul id="keys"></ul>
+</div>
 <script>
   // Figma's plugin sandbox has the API but no network; this iframe has network but no
   // API. So the iframe watches the spec server and hands new documents over
@@ -43,8 +69,17 @@
   const BASE = 'http://localhost:8787';
   const dot = document.getElementById('dot');
   const log = document.getElementById('log');
+  const wait = document.getElementById('wait');
+  const count = document.getElementById('count');
+  const keys = document.getElementById('keys');
   let seen = -1;
   let drawing = false;
+  // How often a held redraw re-asks. The poll is 700 ms, and describing the whole kit
+  // page is ~85 kB of JSON plus a walk of 558 nodes, so doing it every tick would be a
+  // busy loop pointed at the editor. Three seconds is fast enough that resolving a
+  // difference and seeing the board move feels immediate.
+  const RECHECK_MS = 3000;
+  let askedAt = 0;
 
   /** An answer from the server, as opposed to never having reached it. */
   function fromServer(message) {
@@ -58,6 +93,68 @@
     log.textContent = text;
   }
 
+  /** Show what a redraw would destroy, or clear the notice when there is nothing. */
+  function hold(pending) {
+    if (!pending || pending.length === 0) {
+      wait.className = '';
+      return;
+    }
+    const noun = pending.length === 1 ? 'difference' : 'differences';
+    count.textContent =
+      'Not redrawing: ' + pending.length + ' ' + noun + ' on Bausteine since the last draw.';
+    keys.textContent = '';
+    // Three, because the point is to make the difference findable, not to reprint the
+    // diff in a 300-pixel panel. The server has all of them.
+    for (const d of pending.slice(0, 3)) {
+      const li = document.createElement('li');
+      li.textContent =
+        d.kind === 'changed'
+          ? d.key + ' · ' + d.property + ': ' + d.actual + ' (was ' + d.expected + ')'
+          : d.kind + ' · ' + (d.name || d.key);
+      keys.appendChild(li);
+    }
+    wait.className = 'on';
+  }
+
+  /**
+   * Ask the plugin to describe the board, and resolve with what it said.
+   *
+   * The one message in this file that waits for an answer rather than posting and
+   * moving on: the refusal cannot be decided without the board, and the board is only
+   * reachable through the sandbox. A `describe` that never answers would hang the
+   * redraw for ever, so the wait is bounded — and a timeout is treated as "ask again",
+   * not as "go ahead", because the safe answer to an unknown board is no draw.
+   */
+  let pendingDescribe = null;
+  let describeResolve = null;
+  function describe() {
+    if (pendingDescribe) return pendingDescribe;
+    pendingDescribe = new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        pendingDescribe = null;
+        describeResolve = null;
+        resolve({ board: null, error: 'describe timed out' });
+      }, 10000);
+      describeResolve = (m) => {
+        clearTimeout(timer);
+        pendingDescribe = null;
+        describeResolve = null;
+        resolve(m);
+      };
+      parent.postMessage({ pluginMessage: { type: 'describe' } }, '*');
+    });
+    return pendingDescribe;
+  }
+
+  /** Tell the server what the board says. The channel is the one that already exists. */
+  async function report(message) {
+    await fetch(BASE + '/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    });
+  }
+
   async function tick() {
     if (drawing) return;
     try {
@@ -67,19 +164,51 @@
       // JSON syntax error surfaced as "cannot read properties of undefined".
       if (!r.ok) throw fromServer('generation ' + r.status);
       const { generation } = await r.json();
+      if (generation !== seen && Date.now() - askedAt < RECHECK_MS) {
+        // A redraw is waiting on a look. Stay quiet and try again shortly rather than
+        // redrawing, and rather than describing the page 1.4 times a second.
+        return;
+      }
       if (generation !== seen) {
         drawing = true;
-        status('busy', 'drawing …');
+        askedAt = Date.now();
+        status('busy', 'looking at the board …');
+
+        // What the board says NOW, before anything is drawn over it. This is the half
+        // the redraw used to skip, and skipping it is what made a hand edit vanish.
+        const said = await describe();
+        if (said.error || said.board === null) {
+          throw fromServer('board: ' + (said.error || 'no Bausteine page'));
+        }
+        await report({ type: 'board', board: said.board });
+
         const s = await fetch(BASE + '/spec');
         if (!s.ok) throw fromServer('spec ' + s.status + ': ' + (await s.text()).slice(0, 120));
         const payload = await s.json();
+        const pending = payload.pending || [];
+
+        if (pending.length > 0) {
+          // The refusal. `seen` is deliberately NOT advanced: the difference is still
+          // unresolved, and the next attempt has to ask again.
+          drawing = false;
+          hold(pending);
+          const also = (payload.specChanges || []).length;
+          status(
+            'bad',
+            'spec has changed' + (also > 0 ? ' (' + also + ' nodes)' : '') + ', holding',
+          );
+          return;
+        }
+
+        hold([]);
         parent.postMessage({ pluginMessage: { type: 'spec', spec: payload.spec } }, '*');
         // Only once the document is on its way. Marking it seen before the fetch left
-        // the panel reporting "up to date" for ever after a 500, having posted
+        // the plugin reporting "up to date" for ever after a 500, having posted
         // nothing, while the board stayed on the last good draw.
         seen = generation;
         return; // the result handler resumes polling
       }
+      wait.className = '';
       status('on', 'up to date, generation ' + seen);
     } catch (e) {
       // Reset, or a server that restarts mid-fetch leaves `drawing` true for ever and
@@ -99,15 +228,19 @@
     const m = event.data.pluginMessage;
     if (!m) return;
 
+    // An answer to `describe`, which the redraw above is waiting on.
+    if (m.type === 'board') {
+      if (describeResolve) describeResolve(m);
+      return;
+    }
+
     if (m.type !== 'done') return;
     drawing = false;
+    hold([]);
     status(m.error ? 'bad' : 'on', m.error ? m.error : m.summary);
     try {
-      await fetch(BASE + '/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(m),
-      });
+      // Carries the board the draw left behind, which is the server's baseline.
+      await report(m);
     } catch (e) {
       // The server went away; the next tick reports it.
     }
