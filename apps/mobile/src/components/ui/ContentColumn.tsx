@@ -3,7 +3,14 @@ import { useWindowDimensions, View } from 'react-native';
 
 import { sizes, spacingPx } from '@/lib/theme';
 
-/** Caps a screen's content at the reading width and centres it; a phone is narrower. */
+/**
+ * Caps a screen's content at the reading width and centres it; a phone is narrower.
+ *
+ * A screen whose scroller IS the content — a `FlatList`, whose height belongs to the
+ * list — states the same cap on the scroller's own `contentContainerStyle` instead of
+ * wearing one of these, because a `View` around the list would take the height away
+ * from it. `content-column.test.ts` holds both spellings to every screen.
+ */
 export function ContentColumn({
   children,
   className,
