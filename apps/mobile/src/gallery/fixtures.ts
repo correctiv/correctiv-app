@@ -1,164 +1,76 @@
 /**
- * Specimen data for the component gallery, and nothing else reads it.
+ * Specimen data for the component gallery.
  *
- * Real data wherever the core already ships some: `callouts`, `claims`,
- * `podcastSeries`, `projectGroups` and `searchSamples` are the same constants the
- * screens render, so a card in the gallery is the card the app draws. Only the two
- * models that arrive over the network — `FeedItem` and `Video` — are written out
- * here, because there is no offline constant for them that a component may import
+ * **Where the data is, and why this file is still here.** The awkward cases — an
+ * article with no image, a title over three lines, one claim per status, one
+ * field per form type — now live in `packages/app-core/src/data/samples/`, beside
+ * the sample data they are variants of, and this file asks for them by name. That
+ * move is what lets the workbench's component page and a screen reach the same
+ * specimen: while the edge cases were written out here, ADR 0040's one-way
+ * dependency said the other two could not have them at all.
+ *
+ * Two models still have no offline constant that a component may import
  * (`__tests__/web-target.test.ts` keeps the bundled snapshots behind the platform
- * adapter, and this file is not it).
+ * adapter, and this file is not it) — the articles and the video, which are
+ * therefore variants in the core's `articles` and `videos` domains rather than
+ * constants here.
  *
- * The fixtures deliberately include the awkward cases: an item with no image, a
- * long headline, a missing reading time. A gallery of well-behaved data hides
- * exactly the layout faults it exists to show.
+ * What is left here is what is not a domain's data: a document for the reader to
+ * frame, a foreign embed address, and a minified stack trace. A component's own
+ * props, drawn once, are not sample data — naming them here would put three
+ * strings in the core that no source will ever answer.
+ *
+ * The specimens deliberately include the awkward cases. A gallery of
+ * well-behaved data hides exactly the layout faults it exists to show.
  */
-import { callouts, type CalloutComponent } from '@correctiv/app-core/data/callouts';
-import { claims, type Claim } from '@correctiv/app-core/data/claims';
-import { podcastSeries } from '@correctiv/app-core/data/podcasts';
+import { articleSamples } from '@correctiv/app-core/data/samples/articles';
+import { calloutFieldSamples } from '@correctiv/app-core/data/samples/callout-fields';
+import { calloutSamples } from '@correctiv/app-core/data/samples/callouts';
+import { claimSamples } from '@correctiv/app-core/data/samples/claims';
+import { podcastSamples } from '@correctiv/app-core/data/samples/podcasts';
+import { videoSamples } from '@correctiv/app-core/data/samples/videos';
 import { projectGroups } from '@correctiv/app-core/data/projects';
 import { searchSamples } from '@correctiv/app-core/data/search-samples';
-import type { FeedItem, Video } from '@correctiv/app-core/types/models';
 
 /** A lead article, with everything a hero can show. */
-export const ARTICLE: FeedItem = {
-  id: 'gallery-article-1',
-  feed: 'recherchen',
-  title: 'Wem gehört die Stadt? Was die Grundbücher über Eigentum verraten',
-  url: 'https://correctiv.org/aktuelles/2026/08/12/wem-gehoert-die-stadt/',
-  teaser:
-    'Zehntausende Wohnungen, wenige Eigentümer. Eine Recherche über Konzerne, Briefkastenfirmen und die Frage, wer eine Stadt eigentlich besitzt.',
-  author: 'Alex Beispiel',
-  publishedAt: '2026-08-12T07:30:00.000Z',
-  categories: ['Recherchen', 'Lokal'],
-  imageUrl: 'https://correctiv.org/wp-content/uploads/2026/08/stadt-1024x576.jpg',
-  readingMinutes: 9,
-};
+export const ARTICLE = articleSamples.of('lead');
 
 /** The same model with the two optional fields missing, which is the common case. */
-export const ARTICLE_BARE: FeedItem = {
-  id: 'gallery-article-2',
-  feed: 'klima',
-  title: 'Ohne Bild und ohne Lesezeit, weil der RSS-Weg beides nicht kennt',
-  url: 'https://correctiv.org/klima/2026/08/03/ohne-bild/',
-  teaser: 'Der Fallback-Pfad liefert nur Titel, Teaser und Datum.',
-  publishedAt: '2026-08-03T05:00:00.000Z',
-  categories: ['Klima'],
-  imageUrl: null,
-};
+export const ARTICLE_BARE = articleSamples.of('no-image');
 
-/** Fact checks for the rail, one per verdict the design shows. */
-export const FACTCHECKS: FeedItem[] = [
-  {
-    id: 'gallery-fc-1',
-    feed: 'faktencheck',
-    title: 'Roboter greift Menschen an: Video ist inszeniert',
-    url: 'https://correctiv.org/faktencheck/2026/07/29/roboter-greift-menschen-an/',
-    teaser: 'Die Aufnahme stammt aus einem Werbespot.',
-    publishedAt: '2026-07-29T09:00:00.000Z',
-    categories: ['Faktencheck'],
-    imageUrl: null,
-  },
-  {
-    id: 'gallery-fc-2',
-    feed: 'faktencheck',
-    title: 'Zahl der Windräder: Der Vergleich hinkt, die Zahl stimmt aber',
-    url: 'https://correctiv.org/faktencheck/2026/07/21/windraeder/',
-    teaser: 'Richtig gezählt, falsch verglichen.',
-    publishedAt: '2026-07-21T11:15:00.000Z',
-    categories: ['Faktencheck'],
-    imageUrl: null,
-  },
-  {
-    id: 'gallery-fc-3',
-    feed: 'faktencheck',
-    title: 'Ein sehr langer Titel, der über drei Zeilen läuft und deshalb hier steht',
-    url: 'https://correctiv.org/faktencheck/2026/07/02/langer-titel/',
-    teaser: 'Umbruchverhalten im Rail.',
-    publishedAt: '2026-07-02T08:00:00.000Z',
-    categories: ['Faktencheck'],
-    imageUrl: null,
-  },
-];
+/**
+ * Three fact checks for the rail, one per verdict the design shows, and the long
+ * title that runs over the lines a card gives it.
+ *
+ * Assembled from names rather than held as one array, which is the change the
+ * move into the core was for: the rail is a screen's choice about which
+ * specimens it shows, and it is now written in the gallery where a reader can see
+ * it rather than implied by the order of an array in here.
+ */
+export const FACTCHECKS = (['factcheck-verdict', 'factcheck-number', 'long-title'] as const).map(
+  (name) => articleSamples.of(name),
+);
 
-export const VIDEO: Video = {
-  id: 'gallery-video-1',
-  title: 'FunFacts, Folge 12: Was kostet ein Windrad wirklich?',
-  url: 'https://tube.funfacts.de/w/gallery-video-1',
-  thumbnailUrl: 'https://tube.funfacts.de/lazy-static/previews/gallery-video-1.jpg',
-  publishedAt: '2026-08-28T16:00:00.000Z',
-  channel: 'funfacts',
-  source: 'peertube',
-  durationSec: 512,
-  views: 4211,
-};
+/** A PeerTube video, which is what the media library draws. */
+export const VIDEO = videoSamples.of('peertube');
 
 export const PROJECT = projectGroups[0].projects[0];
-export const SERIES = podcastSeries[0];
-export const CROWDNEWSROOM = callouts.find((c) => c.kind === 'crowdnewsroom') ?? callouts[0];
-export const SURVEY = callouts.find((c) => c.kind === 'survey') ?? callouts[0];
+export const SERIES = podcastSamples.of('default');
+export const CROWDNEWSROOM = calloutSamples.of('open');
+export const SURVEY = calloutSamples.of('survey');
 
 /** One hit per `SearchSample['kind']`, so every icon in the row is exercised. */
 export const SAMPLE_HITS = (['podcast', 'callout', 'backstage', 'verlag', 'projekt'] as const)
   .map((kind) => searchSamples.find((s) => s.kind === kind))
   .filter((s): s is (typeof searchSamples)[number] => s !== undefined);
 
-/**
- * One claim per status. The shipped data does not carry all three, so the missing
- * ones are the real claim with its status changed — the tag reads only `status`
- * and `rating`, so nothing else about the object matters to it.
- */
-export const CLAIMS: Claim[] = (['submitted', 'checking', 'checked'] as const).map((status) =>
-  // `Object.assign` onto a fresh object rather than a spread, which oxlint's
-  // no-map-spread flags inside a `map`.
-  Object.assign({}, claims[0], { id: `gallery-claim-${status}`, status } satisfies Partial<Claim>),
+/** One claim per status, which is the row the Faktenforum shows for each. */
+export const CLAIMS = (['submitted', 'checking', 'checked'] as const).map((name) =>
+  claimSamples.of(name),
 );
 
 /** One field per component type the form schema allows. */
-export const FORM_FIELDS: CalloutComponent[] = [
-  {
-    key: 'gallery-radio',
-    type: 'radio',
-    label: 'Wie oft lesen Sie CORRECTIV?',
-    description: 'Eine Antwort.',
-    required: true,
-    values: [
-      { label: 'Täglich', value: 'taeglich' },
-      { label: 'Wöchentlich', value: 'woechentlich' },
-      { label: 'Seltener', value: 'seltener' },
-    ],
-  },
-  {
-    key: 'gallery-selectboxes',
-    type: 'selectboxes',
-    label: 'Welche Themen interessieren Sie?',
-    description: 'Mehrere Antworten möglich.',
-    values: [
-      { label: 'Klima', value: 'klima' },
-      { label: 'Lokal', value: 'lokal' },
-      { label: 'Faktenchecks', value: 'faktenchecks' },
-    ],
-  },
-  {
-    key: 'gallery-textfield',
-    type: 'textfield',
-    label: 'Ihre Stadt',
-    placeholder: 'Bottrop',
-  },
-  {
-    key: 'gallery-textarea',
-    type: 'textarea',
-    label: 'Was sollten wir recherchieren?',
-    description: 'So genau, wie Sie möchten.',
-    placeholder: 'Ihre Antwort …',
-  },
-  {
-    key: 'gallery-file',
-    type: 'file',
-    label: 'Dokument anhängen',
-    description: 'PDF oder Foto.',
-  },
-];
+export const FORM_FIELDS = calloutFieldSamples.variants.map((variant) => variant.data);
 
 /**
  * A self-contained article document for `ReaderView`.
@@ -174,7 +86,7 @@ export const READER_HTML = [
   'background:var(--var-color-canvas,#fff);color:var(--var-color-on-canvas,#333)}',
   'h1{font-size:22px;line-height:1.2}a{color:var(--var-color-accent,#ff5064)}</style>',
   '</head><body><h1>Ein kurzes Dokument</h1>',
-  '<p>Der Reader rendert ein vollständiges HTML-Dokument. Hier steht ein kurzes,',
+  '<p>Der Reader rendert ein vollständiges HTML-Dokument. Hier steht ein kurzer,',
   ' damit die Galerie den Rahmen zeigt und nicht den Text.</p>',
   '<p><a href="https://correctiv.org/">Ein Link</a>, den <code>onNavigate</code> abfängt.</p>',
   '</body></html>',
