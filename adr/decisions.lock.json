@@ -681,5 +681,13 @@
       "1": ["The app does not depend on `react-native-keyboard-controller`"],
       "2": ["ADR 0026 §2's escalation is withdrawn, and nothing replaces it"]
     }
+  },
+  "0069": {
+    "slugs": ["a-redraw-waits-for-a-look"],
+    "decisions": {
+      "1": ["The generated page `Bausteine` alone, never the hand-transcribed screens"],
+      "2": ["The vocabulary of the spec is the ceiling, and a node's path in the spec is its name"],
+      "3": ["In sync is not adoptable, so every difference carries a class"]
+    }
   }
 }
