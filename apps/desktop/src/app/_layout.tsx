@@ -68,6 +68,11 @@ import {
   sessionActions,
   type SessionState,
 } from '@correctiv/app-core/stores/session';
+import {
+  PERSISTED_KEYS as HOME_LAYOUT_KEYS,
+  homeLayoutActions,
+  type HomeLayoutState,
+} from '@correctiv/app-core/stores/homeLayout';
 import { interestsActions, type InterestsState } from '@correctiv/app-core/stores/interests';
 import {
   participationActions,
@@ -77,6 +82,7 @@ import { close as closeVideo } from '@correctiv/app-core/stores/video';
 
 import { LoginGate } from '@/components/gate/LoginGate';
 import { RecoveryScreen } from '@/components/recovery/RecoveryScreen';
+import { useHomeLayoutRefresh } from '@/lib/home/layout';
 import { AppEnvironment, useAppFonts } from '@/lib/env/AppEnvironment';
 import { stop as stopAudio } from '@/lib/audio/player';
 import { coreStore, useAppStore, useIsAdmitted } from '@/lib/store/core';
@@ -120,6 +126,9 @@ function registerPersistence(): Promise<void> {
     persisted<SavedArticlesState>('savedArticles', ['items'], savedArticlesActions.hydrate),
     persisted<InterestsState>('interests', ['selected'], interestsActions.hydrate),
     persisted<ParticipationState>('participation', ['submissions'], participationActions.hydrate),
+    // The kept copy of the published home document, hydrated before the refresh below
+    // so a fetch that lands first is not overwritten by the one the last session kept.
+    persisted<HomeLayoutState>('homeLayout', HOME_LAYOUT_KEYS, homeLayoutActions.hydrate),
   ]);
 }
 
@@ -305,6 +314,10 @@ function AppShell() {
       active = false;
     };
   }, []);
+
+  // The home document, at launch and whenever a window of the app is active again
+  // (`AppState`, answered from the windows in `src/platform/app-state.ts`).
+  useHomeLayoutRefresh(storeReady);
 
   useEffect(() => {
     if (fontsLoaded && storeReady) SplashScreen.hideAsync();
