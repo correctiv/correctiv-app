@@ -11,11 +11,15 @@ import { MODULE_AUDIENCES as AUDIENCE_ARTEFACT } from '@correctiv/app-core/lib/h
 import {
   APP,
   AUDIENCES_OUT,
+  SCREENS_OUT,
   OUT,
   REPO,
   render,
   renderAudiences,
+  renderScreens,
 } from '../scripts/generate-home-settings.mjs';
+import { MODULE_SCREENS as SCREENS } from '@/lib/home/screens';
+import { MODULE_SCREENS as SCREENS_ARTEFACT } from '@correctiv/app-core/lib/module-screens.generated';
 import { HOME_MODULE_AUDIENCES } from '@/lib/home/conditions';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 
@@ -247,5 +251,19 @@ describe('the audiences a module declares beside itself', () => {
     expect(() => renderAudiences({ "x': 'everyone', 'evil": 'everyone' })).toThrow(/plain one/);
     expect(() => renderAudiences({ quiz: "every'one" })).toThrow(/plain one/);
     expect(renderAudiences({})).toContain('= {};');
+  });
+});
+
+describe('the screens a module declares beside itself', () => {
+  it('keeps the generated table current', () => {
+    expect(readFileSync(SCREENS_OUT, 'utf8')).toBe(renderScreens(SCREENS));
+  });
+
+  it('is the table the parser reads, and carries the declared values', () => {
+    expect(SCREENS_ARTEFACT).toEqual(SCREENS);
+  });
+
+  it('refuses a name it cannot write into a source file as it stands', () => {
+    expect(() => renderScreens({ "x': 'home', 'evil": ['home'] })).toThrow(/plain one/);
   });
 });

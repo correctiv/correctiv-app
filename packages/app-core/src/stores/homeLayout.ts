@@ -11,7 +11,7 @@ import type { AppThunk } from './store';
  *
  * The app fetches its layout, keeps the last good copy and draws from that copy. Where
  * the copy comes from is ADR 0057 §4: the same file the core bundles,
- * `data/home.layout.json`, published beside the site by the Pages deploy, at an address
+ * `data/layout/screens/home.json`, published beside the site by the Pages deploy, at an address
  * the HOST holds. So the address is a parameter of the thunk below and is typed nowhere
  * in this package; the core knows how to fetch a layout, not where a given app keeps one.
  *

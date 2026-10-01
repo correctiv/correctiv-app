@@ -691,6 +691,30 @@ describe('parseHomeLayout, on a section it cannot use', () => {
     ]);
   });
 
+  /** ADR 0054 §5, the parser half: a block declared for other screens only is refused. */
+  it('refuses a block the app declares for a screen other than the one being read', async () => {
+    const { MODULE_SCREENS } = await import('../src/lib/module-screens.generated');
+    const original = MODULE_SCREENS['article-hero'];
+    (MODULE_SCREENS as Record<string, readonly string[]>)['article-hero'] = ['elsewhere'];
+    try {
+      const parse = parseHomeLayout(
+        document([
+          section({ id: 'hero', module: 'article-hero' }),
+          section({ id: 'rail', module: 'faktencheck-rail' }),
+        ]),
+      );
+      expect(parse.layout?.sections.map((s) => s.id)).toEqual(['rail']);
+      expect(parse.problems).toEqual([
+        {
+          code: 'section-module-not-on-screen',
+          context: { id: 'hero', module: 'article-hero', screen: 'home' },
+        },
+      ]);
+    } finally {
+      (MODULE_SCREENS as Record<string, readonly string[]>)['article-hero'] = original!;
+    }
+  });
+
   it('takes every module name as written when it is told nothing', () => {
     const parse = parseHomeLayout(document([section({ module: 'quiz' })]));
     expect(parse.problems).toEqual([]);

@@ -83,7 +83,7 @@ import { restorable } from '../../src/preview/home/write';
  * anywhere would say why.
  */
 
-const FILE = 'packages/app-core/src/data/home.layout.json';
+const FILE = 'packages/app-core/src/data/layout/screens/home.json';
 
 /** The order a layout puts its sections in, which is most of what an edit changes. */
 function ids(layout: HomeLayout): string[] {
@@ -851,7 +851,7 @@ describe('the three ends of the seam', () => {
    * And the parser it validates with is loaded through Vite rather than imported.
    *
    * A static import would be an exception thrown while `vite.config.ts` loads — Node
-   * refuses the core's `data/home.layout.json` without an import attribute — and the
+   * refuses the core's `data/layout/screens/home.json` without an import attribute — and the
    * whole site would fail to start with an error about a JSON file. Easy to "fix" by
    * writing a second validator in the plugin, which is the copy ADR 0036 §12 exists to
    * prevent, so the constraint is written down where it would be undone.

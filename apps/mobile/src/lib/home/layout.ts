@@ -69,7 +69,7 @@ function overrideText(): string | null {
 /**
  * Where the app fetches its home document from (ADR 0057 §4).
  *
- * The core's own `data/home.layout.json`, which `.github/workflows/pages.yml` copies
+ * The core's own `data/layout/screens/home.json`, which `.github/workflows/pages.yml` copies
  * beside the published site: the same file this build bundles, as `main` has it now.
  * A constant because ADR 0057 §4 says the app holds the address, and the core's thunk
  * takes it as a parameter so that no address is typed in the core.

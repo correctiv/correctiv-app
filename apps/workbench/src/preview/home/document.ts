@@ -85,7 +85,7 @@ import { say, wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 /**
  * The document the app compiles in, as the editor's starting point and its baseline.
  *
- * `DEFAULT_HOME_LAYOUT` is the core's own parse of `data/home.layout.json`, which is
+ * `DEFAULT_HOME_LAYOUT` is the core's own parse of `data/layout/screens/home.json`, which is
  * the same value the app draws from when nothing has been written over it. So "reset"
  * and "unchanged" are both measured against the file a reviewer will see in the diff,
  * and not against a copy of it kept here.
@@ -1771,7 +1771,7 @@ function printSettings(settings: ModuleSettings | undefined): string {
 // --- the file ------------------------------------------------------------------
 
 /**
- * The document as `packages/app-core/src/data/home.layout.json` should read.
+ * The document as `packages/app-core/src/data/layout/screens/home.json` should read.
  *
  * `JSON.stringify(…, 2)` is not this, and the difference is the whole point: it puts
  * every key of every section on a line of its own, so saving an unchanged document

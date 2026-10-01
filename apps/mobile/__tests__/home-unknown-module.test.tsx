@@ -12,7 +12,7 @@
  */
 
 /** Two places this app holds a renderer for, and one it has never heard of. */
-jest.mock('@correctiv/app-core/data/home.layout.json', () => ({
+jest.mock('@correctiv/app-core/data/layout/screens/home.json', () => ({
   version: 4,
   sections: [
     { id: 'header', module: 'home-header' },

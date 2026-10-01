@@ -58,7 +58,7 @@ export const HOME_LAYOUT_ENDPOINT = '/__workbench/home-layout';
  * of the file to be half done, and the half that went unnoticed would be the one that
  * writes a file nothing reads any more.
  */
-export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/home.layout.json';
+export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/layout/screens/home.json';
 
 /**
  * The address a section gets in the rendered tree, spelled a second time.

@@ -91,7 +91,9 @@ const DOCUMENT_PATH = join(
   'app-core',
   'src',
   'data',
-  'home.layout.json',
+  'layout',
+  'screens',
+  'home.json',
 );
 
 const shipped = JSON.parse(readFileSync(DOCUMENT_PATH, 'utf8')) as unknown;

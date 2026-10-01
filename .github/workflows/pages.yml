@@ -136,7 +136,7 @@ jobs:
       # so the `independence` job in ci.yml, which deletes apps/workbench and rebuilds
       # the app, removes nothing this path touches.
       - name: Publish the home document
-        run: cp packages/app-core/src/data/home.layout.json site/home.layout.json
+        run: cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json
 
       # Ways this deploy can be broken while both builds succeed, so each one
       # is read off the assembled files rather than assumed:

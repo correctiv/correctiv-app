@@ -1,0 +1,25 @@
+/**
+ * Which screens have an arrangement the newsroom edits, and where each one's document is.
+ *
+ * [ADR 0054](../../../../adr/0054-a-block-declares-where-it-may-appear.md) §5 left the
+ * parser half open while one screen existed. A screen's document is now keyed by this id,
+ * and `parseHomeLayout` takes the screen it is reading so that it can refuse a block the
+ * app declares for other screens only. Moments, conditions and audiences
+ * (ADR 0039, ADR 0060) are part of the document's grammar, so they apply to every screen.
+ *
+ * The type is the core's because the parser is; the declaration of which block belongs
+ * where stays in the app (`apps/mobile/src/lib/home/screens.ts`) and arrives through
+ * `module-screens.generated.ts`.
+ */
+
+import homeDocument from '../data/layout/screens/home.json';
+
+/** A screen whose arrangement is a document. A union, so a second one is a type error where unthought of. */
+export type ConfigurableScreen = 'home';
+
+export const CONFIGURABLE_SCREENS: readonly ConfigurableScreen[] = ['home'];
+
+/** The bundled document of each screen, as written. */
+export const SCREEN_DOCUMENTS = {
+  home: homeDocument,
+} satisfies Record<ConfigurableScreen, unknown>;
