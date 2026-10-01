@@ -8,7 +8,7 @@ It can. The core did not move. What follows is what runs, what does not, and wha
 does not prove.
 
 The host is [gjsify](https://github.com/gjsify/gjsify)'s React-Native-on-GTK4 layer
-(`@gjsify/react-native`; the manifest pins `^0.48.0` and a working copy is what this is
+(`@gjsify/react-native`; the manifest pins `^0.53.0` and a working copy is what this is
 developed against, see *Against a gjsify working copy*), which renders React Native's
 view vocabulary onto GTK4 and Adwaita. [ADR 0012](../../adr/0012-a-list-virtualizer-for-the-unbounded-lists.md)
 and [ADR 0013](../../adr/0013-native-tabs-and-a-web-tab-bar-of-its-own.md) already named
@@ -1168,14 +1168,15 @@ for weeks. Two failures, one cause:
   was right and the installed layer was old.
 - `src/app/(tabs)/_layout.tsx` could not typecheck `<Tabs bottomBar>`.
 
-The pin is `^0.48.0` now, and the check passes against BOTH the published package and
-the working copy, which is the pair that matters here.
+The pin was `^0.48.0` then and is `^0.53.0` now, and the check passes against BOTH the
+published package and the working copy, which is the pair that matters here.
 
-**`bottomBar` still needs a cast**, and this is where the release line actually falls.
-It is in the working copy (`0.48.0-48-g…`, forty-eight commits past the tag) and not
-in the 0.48.0 release, so the tab layout carries one cast with a note to delete it on
-the release that brings the prop. That is a typed hole somebody wrote down rather than
-a red branch, and the reason for preferring that is below.
+**`bottomBar` needed a cast, and does not any more.** It was in the working copy
+(`0.48.0-48-g…`, forty-eight commits past the tag) and not in the 0.48.0 release, so the
+tab layout carried one cast with a note to delete it on the release that brought the
+prop. 0.49.0 types `TabsProps.bottomBar`, and the cast went with the bump to 0.53. That
+was a typed hole somebody wrote down rather than a red branch, and the reason for
+preferring that is below.
 
 **WHAT IS WORTH RECORDING IS HOW LONG NOBODY SAW ANY OF IT.** The last CI run on this
 branch was 2026-08-31, at `fca1c59`. The mini player arrived after that, in `13bf905`,
@@ -1269,9 +1270,30 @@ and that turned out to be the most reliable sentence in the file.
 | Routes | **24 of 24** | **24 of 24** | ✓ Home and the reader; not swept |
 | **The reader** | ✓ WebKitGTK | ✓ **WKWebView shim** | ✓ **WebView2** |
 | Brand typefaces | ✓ | ✓ **inside a `.app`**, never outside one | ✓ |
-| Bundled episode | ✓ | ✓ | ✗ no mp3 decoder |
-| Live radio | ✓ | ✗ two GObject copies | ✗ no mp3 decoder |
+| Bundled episode | ✓ | ✓ | ✗ no mp3 decoder (0.47) |
+| Live radio | ✓ | ✗ two GObject copies (0.47) | ✗ no mp3 decoder (0.47) |
 | Accessibility labels | ✓ | ✓ | ✓ |
+
+**Since then gjsify moved to 0.53, and this table was not re-measured on the two other
+machines.** What its changelog says about the cells that were red or conditional, each
+verified against the source at `v0.53.0` and none of them re-run here:
+
+- **macOS floor: the 0.53 darwin prebuilds need macOS 15.0 or later**
+  (`@gjsify/node-runtime-darwin-*`, `@gjsify/gtk-runtime-darwin-*`; gjsify #1910 enforces
+  the floor and #1794 builds every darwin binary to it). That is a support-matrix fact
+  for this host and not a footnote: an older macOS gets no bundle that starts.
+- **Live radio on macOS** — the libsoup rpath is rewritten in the stager (#1634, 0.49.0),
+  so the two-GObject failure below should be gone; `id3demux` and `icydemux` also ship on
+  every target now, which is the `Internal data stream error` case.
+- **MP3 and AAC on Windows** — decoded through Media Foundation (`mfmp3dec`, #1783;
+  AAC #1799, 0.53.0), since gvsbuild has no `libmpg123` at any pin. The "no mp3 decoder"
+  cells should turn green; `npm run gst-probe` is what says so.
+- **Non-Latin text** was tofu in every `--app node` app on macOS and Windows until
+  `PANGOCAIRO_BACKEND=fc` (#1677, 0.52.0); the dev-run font fallback is #1790 (0.53.0).
+  A shipped `.app` still relies on `ATSApplicationFontsPath` alone, so the `.app`
+  paragraph below stands.
+- **Video** is unchanged: `GST_AUDIO_PLUGINS` still has no `gtk4paintablesink`,
+  `videoconvert` or `hls`/`adaptivedemux`, so the notice stays on both.
 
 **The reader works on all three, and the engine was never in the runtime bundle.** It
 comes from a package of its own — `@gjsify/webkit-native` on macOS,
@@ -1306,14 +1328,17 @@ nothing to do with each other:
   `libgstsoup.dylib` reaches libsoup through `g_module_open` **by leaf name**, and on a
   host with Homebrew glib that resolves to Homebrew's copy, which brings Homebrew's
   GObject with it. Two type systems in one process, so `g_type_name()` returns GObject's
-  internal qdata quark strings and the stream silently never loads. gjsify #1536.
+  internal qdata quark strings and the stream silently never loads. gjsify #1536 —
+  **fixed in 0.49.0** (#1634 rewrites `LC_RPATH` when it stages the bundle); not
+  re-measured on a Mac.
 - **Windows** — the runtime bundle ships **no mp3 decoder**: `mpg123`, `vorbis` and
   `flac` are all absent from the payload while the builder's own seed list names them,
   so `mpg123audiodec` is NULL. The bundled episode and the Icecast stream are both mp3,
   which is why nothing plays. `soup` and the TLS backend are both fine there — the
   `Internal data stream error` the stream reports is the string gjsify documents for a
   missing TLS backend, and it is not that. gjsify #1544; `npm run gst-probe` is the
-  probe that separates them.
+  probe that separates them. **Fixed in 0.53.0** (#1783 mp3, #1799 AAC, through Media
+  Foundation); not re-measured on Windows.
 
 **Brand typefaces need a `.app` on macOS, and now that is measured rather than
 inferred.** `pango_font_map_add_font_file()` is a vfunc the CoreText map does not
@@ -1491,6 +1516,11 @@ surface refuses, `initialWindowMetrics` is `null` against a real object, and the
 refuses the WHOLE package rather than five hand-listed names. Deleting each one GAINS a
 capability. It is not done here because each deletion is a behaviour change to verify on
 three targets, and the sweep is the only oracle.
+
+**Done on the bump to 0.53** (the dead-shim and router findings below): the two dead shim branches and the
+router shim's `hrefOf`/`pushed`/`canGoBack` are deleted, and `matchFamily` and
+`cssFontFamily` went with them to `matchFontFamily` and the style emitter. What follows
+is the finding as it was written.
 
 **Two dead shim branches, one of them harmful.** `flattenFragments` runs BEFORE
 `childNodes`, which expands fragments itself now — so the library's key composition never
