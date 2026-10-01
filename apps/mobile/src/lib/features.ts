@@ -40,6 +40,11 @@ export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string
   // The WhatsApp tip line was never gated; the always-on core feature keeps it so.
   'tip-card': { feature: 'reader' },
   'community-note': { feature: 'reader' },
+  'profile-club-card': { feature: 'reader' },
+  'profile-membership': { feature: 'reader' },
+  'profile-impact': { feature: 'reader' },
+  'profile-area': { feature: 'reader' },
+  'profile-newsletter': { feature: 'reader' },
 };
 
 /**

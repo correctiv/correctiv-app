@@ -350,6 +350,41 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'A short note about the community area.',
     }),
   },
+  'profile-club-card': {
+    label: wbMessage({ id: 'home.module.profileClubCard', defaultMessage: 'Profile card' }),
+    what: wbMessage({
+      id: 'home.module.profileClubCard.what',
+      defaultMessage: 'The membership card with the name and the tier.',
+    }),
+  },
+  'profile-membership': {
+    label: wbMessage({ id: 'home.module.profileMembership', defaultMessage: 'Membership' }),
+    what: wbMessage({
+      id: 'home.module.profileMembership.what',
+      defaultMessage: 'Tier, access, end date and the link to the account.',
+    }),
+  },
+  'profile-impact': {
+    label: wbMessage({ id: 'home.module.profileImpact', defaultMessage: 'Your impact' }),
+    what: wbMessage({
+      id: 'home.module.profileImpact.what',
+      defaultMessage: 'What the contribution made possible, with investigations.',
+    }),
+  },
+  'profile-area': {
+    label: wbMessage({ id: 'home.module.profileArea', defaultMessage: 'Your area' }),
+    what: wbMessage({
+      id: 'home.module.profileArea.what',
+      defaultMessage: 'Report, Backstage, saved articles and the settings, as a list.',
+    }),
+  },
+  'profile-newsletter': {
+    label: wbMessage({ id: 'home.module.profileNewsletter', defaultMessage: 'Newsletters' }),
+    what: wbMessage({
+      id: 'home.module.profileNewsletter.what',
+      defaultMessage: 'The newsletters to switch on or off.',
+    }),
+  },
 };
 
 /** What stands under a module this tool has never heard of, where the label is its id. */

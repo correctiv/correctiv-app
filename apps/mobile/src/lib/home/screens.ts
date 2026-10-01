@@ -84,6 +84,11 @@ export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen
   'atlas-card': ['mitmachen'],
   'tip-card': ['mitmachen'],
   'community-note': ['mitmachen'],
+  'profile-club-card': ['profil'],
+  'profile-membership': ['profil'],
+  'profile-impact': ['profil'],
+  'profile-area': ['profil'],
+  'profile-newsletter': ['profil'],
 };
 
 /** The blocks a screen's palette may offer, which is what the editor asks for. */

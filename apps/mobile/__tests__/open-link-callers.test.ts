@@ -25,8 +25,8 @@ const ALLOWED: Record<string, string> = {
     'the reader has classified the target already, and "im Browser öffnen" is explicit',
   'components/reader/ReaderView.tsx': 'hands mailto: and tel: to the system',
   'components/gate/LoginGate.tsx': 'correctiv.org/unterstuetzen/, one segment',
-  'app/(tabs)/profil.tsx': 'correctiv.org/unterstuetzen/, one segment',
-  'lib/home/modules.tsx': 'wa.me, a handoff to WhatsApp',
+  'lib/home/modules.tsx':
+    'wa.me, a handoff to WhatsApp, and correctiv.org/unterstuetzen/, one segment',
   'app/projekt/[id].tsx': 'wa.me and correctiv.org/lokal/, which is a landing page',
   'app/backstage.tsx': 'shop.correctiv.org, another host',
   'app/atlas.tsx': 'abriss-atlas.de, another host',

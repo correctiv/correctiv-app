@@ -47,6 +47,7 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@/lib/feeds/useFeed', () => ({
   useFeed: () => mockFeed,
+  useInvestigations: () => [],
 }));
 
 /**
@@ -80,6 +81,7 @@ import { render, renderedText, walkHostNodes } from './support/rendering';
 
 import EntdeckenScreen from '@/app/(tabs)/entdecken';
 import MitmachenScreen from '@/app/(tabs)/mitmachen';
+import ProfilScreen from '@/app/(tabs)/profil';
 import HomeScreen from '@/app/(tabs)/index';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { HOME_MODULES, LIFTED_CALLOUT, placeTestID } from '@/lib/home/modules';
@@ -432,6 +434,21 @@ describe('what Mitmachen draws', () => {
 
   it('is refused on Home, which is what makes it a document of its own', () => {
     const onHome = parseHomeLayout(SCREEN_DOCUMENTS.mitmachen, undefined, 'home');
+    expect(onHome.problems.map((problem) => problem.code)).toContain(
+      'section-module-not-on-screen',
+    );
+  });
+});
+
+describe('what Profil draws', () => {
+  it('draws the fixed heading and the sections of its document in order', () => {
+    const tree = render(<ProfilScreen />);
+    expect(renderedPlaces(tree)).toEqual(['club', 'membership', 'impact', 'area', 'newsletter']);
+    expect(renderedText(tree)).toContain('Profil');
+  });
+
+  it('is refused on Home, which is what makes it a document of its own', () => {
+    const onHome = parseHomeLayout(SCREEN_DOCUMENTS.profil, undefined, 'home');
     expect(onHome.problems.map((problem) => problem.code)).toContain(
       'section-module-not-on-screen',
     );
