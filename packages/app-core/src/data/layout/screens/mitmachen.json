@@ -1,0 +1,12 @@
+{
+  "version": 4,
+  "sections": [
+    { "id": "title", "module": "participate-header" },
+    { "id": "callouts", "module": "callout-list" },
+    { "id": "faktenforum", "module": "faktenforum-card" },
+    { "id": "atlas", "module": "atlas-card" },
+    { "id": "tip", "module": "tip-card" },
+    { "id": "community", "module": "community-note" }
+  ],
+  "moments": []
+}

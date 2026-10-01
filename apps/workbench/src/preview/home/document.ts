@@ -308,6 +308,48 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'The club’s bonus audio tracks, as a list.',
     }),
   },
+  'participate-header': {
+    label: wbMessage({ id: 'home.module.participateHeader', defaultMessage: 'Take part heading' }),
+    what: wbMessage({
+      id: 'home.module.participateHeader.what',
+      defaultMessage: 'The title of the Take part screen, with its introduction.',
+    }),
+  },
+  'callout-list': {
+    label: wbMessage({ id: 'home.module.calloutList', defaultMessage: 'Callout list' }),
+    what: wbMessage({
+      id: 'home.module.calloutList.what',
+      defaultMessage: 'Every open callout, as cards.',
+    }),
+  },
+  'faktenforum-card': {
+    label: wbMessage({ id: 'home.module.faktenforumCard', defaultMessage: 'Faktenforum card' }),
+    what: wbMessage({
+      id: 'home.module.faktenforumCard.what',
+      defaultMessage: 'The card that leads to the claims being checked together.',
+    }),
+  },
+  'atlas-card': {
+    label: wbMessage({ id: 'home.module.atlasCard', defaultMessage: 'Demolition atlas card' }),
+    what: wbMessage({
+      id: 'home.module.atlasCard.what',
+      defaultMessage: 'The card that leads to the demolition atlas.',
+    }),
+  },
+  'tip-card': {
+    label: wbMessage({ id: 'home.module.tipCard', defaultMessage: 'Tip card' }),
+    what: wbMessage({
+      id: 'home.module.tipCard.what',
+      defaultMessage: 'The WhatsApp tip line of the fact-checking desk.',
+    }),
+  },
+  'community-note': {
+    label: wbMessage({ id: 'home.module.communityNote', defaultMessage: 'Community note' }),
+    what: wbMessage({
+      id: 'home.module.communityNote.what',
+      defaultMessage: 'A short note about the community area.',
+    }),
+  },
 };
 
 /** What stands under a module this tool has never heard of, where the label is its id. */

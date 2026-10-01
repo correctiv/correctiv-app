@@ -33,6 +33,13 @@ export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string
   'gespraech-rail': { feature: 'video' },
   'funfacts-rail': { feature: 'video' },
   'bonus-audio-list': { feature: 'bonus-audio' },
+  'participate-header': { feature: 'reader' },
+  'callout-list': { feature: 'callouts' },
+  'faktenforum-card': { feature: 'faktenforum' },
+  'atlas-card': { feature: 'abriss-atlas' },
+  // The WhatsApp tip line was never gated; the always-on core feature keeps it so.
+  'tip-card': { feature: 'reader' },
+  'community-note': { feature: 'reader' },
 };
 
 /**

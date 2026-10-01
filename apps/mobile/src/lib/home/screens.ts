@@ -78,6 +78,12 @@ export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen
   'gespraech-rail': ['mediathek'],
   'funfacts-rail': ['mediathek'],
   'bonus-audio-list': ['mediathek'],
+  'participate-header': ['mitmachen'],
+  'callout-list': ['mitmachen'],
+  'faktenforum-card': ['mitmachen'],
+  'atlas-card': ['mitmachen'],
+  'tip-card': ['mitmachen'],
+  'community-note': ['mitmachen'],
 };
 
 /** The blocks a screen's palette may offer, which is what the editor asks for. */

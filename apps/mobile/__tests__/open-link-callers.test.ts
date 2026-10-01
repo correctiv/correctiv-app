@@ -26,7 +26,7 @@ const ALLOWED: Record<string, string> = {
   'components/reader/ReaderView.tsx': 'hands mailto: and tel: to the system',
   'components/gate/LoginGate.tsx': 'correctiv.org/unterstuetzen/, one segment',
   'app/(tabs)/profil.tsx': 'correctiv.org/unterstuetzen/, one segment',
-  'app/(tabs)/mitmachen.tsx': 'wa.me, a handoff to WhatsApp',
+  'lib/home/modules.tsx': 'wa.me, a handoff to WhatsApp',
   'app/projekt/[id].tsx': 'wa.me and correctiv.org/lokal/, which is a landing page',
   'app/backstage.tsx': 'shop.correctiv.org, another host',
   'app/atlas.tsx': 'abriss-atlas.de, another host',

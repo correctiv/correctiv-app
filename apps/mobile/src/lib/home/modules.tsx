@@ -8,6 +8,8 @@ import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 import { itemCount, pinnedItem } from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { pinnedArticle } from '@correctiv/app-core/data/home-pins';
+import { atlasStats } from '@correctiv/app-core/data/abriss-atlas';
+import { claims } from '@correctiv/app-core/data/claims';
 import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
 import { bonusMedia, type BonusMedia } from '@correctiv/app-core/data/backstage';
 import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
@@ -32,13 +34,23 @@ import { EpisodeRow } from '@/components/media/EpisodeRow';
 import { LiveBanner } from '@/components/media/LiveBanner';
 import { MediaCard } from '@/components/media/MediaCard';
 import { SeriesTile } from '@/components/media/SeriesTile';
-import { Hairline, Overline, Rail, SectionHeader, Typo } from '@/components/ui';
 import { playEpisode, togglePlay } from '@/lib/audio/player';
 import { useEpisodeStatus } from '@/lib/audio/useAudio';
+import { CalloutCard } from '@/components/participate/CalloutCard';
+import {
+  Button,
+  Hairline,
+  Overline,
+  Rail,
+  SectionCard,
+  SectionHeader,
+  Typo,
+} from '@/components/ui';
 import { FACT_CHECK_COUNT, HERO_PIN, RESEARCH_COUNT } from '@/lib/home/settings';
 import { projectTarget } from '@/lib/discover/target';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
+import { openExternal } from '@/lib/openExternal';
 import { openLink } from '@/lib/openLink';
 import { useCoreActions, usePodcastLibrary, useReachable, useVideoChannel } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
@@ -101,6 +113,67 @@ const COPY = defineMessages({
     defaultMessage: 'Videos cannot be reached at the moment.',
   },
 });
+
+/**
+ * The words of the participation tab, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/participate.ts`. The three counters are ICU plurals rather
+ * than a number glued to a noun, because both languages inflect the noun and the data
+ * can reach one ("1 Behauptungen").
+ */
+const PARTICIPATE_COPY = defineMessages({
+  screenTitle: {
+    id: 'participate.title',
+    defaultMessage: 'Take part',
+    description:
+      'The heading of the participation screen. ui.tabParticipate is the same word on the tab bar, where it has far less room, and three callout buttons say it too.',
+  },
+  lead: {
+    id: 'participate.lead',
+    defaultMessage:
+      'Investigations are made with you. Your tips, your observations and your checks are what make them possible.',
+  },
+  activeCallouts: { id: 'participate.activeCallouts', defaultMessage: 'Open callouts' },
+  forumHeading: { id: 'participate.forumHeading', defaultMessage: 'Checking claims together' },
+  forumLead: {
+    id: 'participate.forumLead',
+    defaultMessage:
+      'The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on.',
+    description:
+      'The paragraph about the Faktenforum on the participation tab. {count} is how many claims the Faktenforum holds altogether, the finished ones included, not only the ones still open.',
+  },
+  forumAction: { id: 'participate.forumAction', defaultMessage: 'See the claims' },
+  atlasHeading: { id: 'participate.atlasHeading', defaultMessage: 'Document demolitions' },
+  atlasLead: {
+    id: 'participate.atlasLead',
+    defaultMessage:
+      'Which buildings are disappearing? {reports, plural, one {One report} other {# reports}} from {cities, plural, one {one city} other {# cities}} in Germany and Switzerland.',
+    description:
+      'The paragraph about the demolition atlas on the participation tab. {reports} counts reports and {cities} the cities they come from.',
+  },
+  atlasAction: { id: 'participate.atlasAction', defaultMessage: 'See the atlas' },
+  tipLabel: { id: 'participate.tipLabel', defaultMessage: 'Send a tip' },
+  tipHeading: { id: 'participate.tipHeading', defaultMessage: 'Fact-check tip by WhatsApp' },
+  tipLead: {
+    id: 'participate.tipLead',
+    defaultMessage: 'Seen a suspicious claim? Send it straight to the fact-checking desk.',
+  },
+  tipAction: { id: 'participate.tipAction', defaultMessage: 'Open WhatsApp' },
+  communityNote: {
+    id: 'participate.communityNote',
+    defaultMessage:
+      'In the community area you discuss investigations with other members, and soon in the app as well.',
+  },
+});
+
+/** The fact-check desk's public tip line. */
+const WHATSAPP_TIP = 'https://wa.me/4915142647500';
+
+/**
+ * Two group labels that are marks rather than words: the Faktenforum and the
+ * Abriss-Atlas are named the same in every language, so they carry no id.
+ */
+const FAKTENFORUM = 'Faktenforum';
+const ABRISS_ATLAS = 'Abriss-Atlas';
 
 /** A mark, not a sentence: the shelf keeps its name in every language. */
 const MEDIATHEK = 'Mediathek';
@@ -406,6 +479,112 @@ const ProjectDirectoryModule: HomeModule = ({ section }) => {
   );
 };
 
+/*
+ * Mitmachen's blocks. Same move as Entdecken's: the margin each section carried moved from
+ * the element to its `Place`. Each gate that was an inline `reachable(...)` is the block's
+ * entry in `MODULE_FEATURES` now.
+ */
+
+const ParticipateHeaderModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section}>
+      <Typo variant="headline-xl">{intl.formatMessage(PARTICIPATE_COPY.screenTitle)}</Typo>
+      <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
+        {intl.formatMessage(PARTICIPATE_COPY.lead)}
+      </Typo>
+    </Place>
+  );
+};
+
+const CalloutListModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mt-l">
+      <Overline label={intl.formatMessage(PARTICIPATE_COPY.activeCallouts)} />
+      <View className="mt-2xs">
+        {callouts.map((callout) => (
+          <CalloutCard key={callout.slug} callout={callout} onPress={openCallout} />
+        ))}
+      </View>
+    </Place>
+  );
+};
+
+const FaktenforumCardModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mt-m">
+      <SectionCard label={FAKTENFORUM} tone="surface">
+        <Typo variant="headline-xs">{intl.formatMessage(PARTICIPATE_COPY.forumHeading)}</Typo>
+        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+          {intl.formatMessage(PARTICIPATE_COPY.forumLead, { count: claims.length })}
+        </Typo>
+        <Button
+          title={intl.formatMessage(PARTICIPATE_COPY.forumAction)}
+          variant="outline"
+          onPress={() => router.push('/faktenforum')}
+          className="mt-s"
+        />
+      </SectionCard>
+    </Place>
+  );
+};
+
+const AtlasCardModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mt-m">
+      <SectionCard label={ABRISS_ATLAS}>
+        <Typo variant="headline-xs">{intl.formatMessage(PARTICIPATE_COPY.atlasHeading)}</Typo>
+        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+          {intl.formatMessage(PARTICIPATE_COPY.atlasLead, {
+            reports: atlasStats.totalReports,
+            cities: atlasStats.citiesCovered,
+          })}
+        </Typo>
+        <Button
+          title={intl.formatMessage(PARTICIPATE_COPY.atlasAction)}
+          variant="outline"
+          onPress={() => router.push('/atlas')}
+          className="mt-s"
+        />
+      </SectionCard>
+    </Place>
+  );
+};
+
+const TipCardModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mt-m">
+      <SectionCard label={intl.formatMessage(PARTICIPATE_COPY.tipLabel)} tone="surface">
+        <Typo variant="headline-xs">{intl.formatMessage(PARTICIPATE_COPY.tipHeading)}</Typo>
+        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+          {intl.formatMessage(PARTICIPATE_COPY.tipLead)}
+        </Typo>
+        <Button
+          title={intl.formatMessage(PARTICIPATE_COPY.tipAction)}
+          variant="outline"
+          onPress={() => openExternal(WHATSAPP_TIP)}
+          className="mt-s"
+        />
+      </SectionCard>
+    </Place>
+  );
+};
+
+const CommunityNoteModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mt-l">
+      <Typo variant="text-s" color="grey-500">
+        {intl.formatMessage(PARTICIPATE_COPY.communityNote)}
+      </Typo>
+    </Place>
+  );
+};
+
 function openProject(id: string) {
   router.push({ pathname: '/projekt/[id]', params: { id } });
 }
@@ -589,4 +768,10 @@ export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'gespraech-rail': GespraechRailModule,
   'funfacts-rail': FunfactsRailModule,
   'bonus-audio-list': BonusAudioListModule,
+  'participate-header': ParticipateHeaderModule,
+  'callout-list': CalloutListModule,
+  'faktenforum-card': FaktenforumCardModule,
+  'atlas-card': AtlasCardModule,
+  'tip-card': TipCardModule,
+  'community-note': CommunityNoteModule,
 };
