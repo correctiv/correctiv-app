@@ -76,11 +76,14 @@ import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
-import { render, walkHostNodes } from './support/rendering';
+import { render, renderedText, walkHostNodes } from './support/rendering';
 
+import EntdeckenScreen from '@/app/(tabs)/entdecken';
 import HomeScreen from '@/app/(tabs)/index';
+import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { HOME_MODULES, LIFTED_CALLOUT, placeTestID } from '@/lib/home/modules';
 import { coreStore } from '@/lib/store/core';
+import { SCREEN_DOCUMENTS } from '@correctiv/app-core/lib/screen-layout';
 
 const DOCUMENT_PATH = join(
   __dirname,
@@ -348,5 +351,66 @@ describe('what Home draws', () => {
   it('draws every place exactly once', () => {
     const drawn = renderedPlaces(renderAt(12));
     expect([...new Set(drawn)]).toEqual(drawn);
+  });
+});
+
+/**
+ * The second screen that is a document (ADR 0071). Its default document is the screen as
+ * it was drawn before there was one, so the order below is that screen's, and the pixels
+ * are compared by hand in the pull request that made it (`screens/`).
+ */
+describe('the shipped Entdecken document', () => {
+  const entdecken = parseHomeLayout(SCREEN_DOCUMENTS.entdecken, undefined, 'entdecken');
+
+  it('reads cleanly on its own screen, and says something', () => {
+    expect(entdecken.problems).toEqual([]);
+    expect(entdecken.layout?.sections.length).toBeGreaterThan(0);
+  });
+
+  it('names a renderer this app holds for every section', () => {
+    const missing = entdecken.layout!.sections.filter((s) => !(s.module in HOME_MODULES));
+    expect(missing.map((section) => `${section.id} → ${section.module}`)).toEqual([]);
+  });
+
+  it('is refused on Home, which is what makes it a document of its own', () => {
+    const onHome = parseHomeLayout(SCREEN_DOCUMENTS.entdecken, undefined, 'home');
+    expect(onHome.problems.map((problem) => problem.code)).toContain(
+      'section-module-not-on-screen',
+    );
+  });
+});
+
+describe('what Entdecken draws', () => {
+  it('draws the sections of its document in order, and the whole directory', () => {
+    const tree = render(<EntdeckenScreen />);
+    expect(renderedPlaces(tree)).toEqual(['title', 'search', 'topics', 'projects']);
+    expect(renderedText(tree)).toContain('Entdecken');
+  });
+
+  /**
+   * One block on two screens, with the settings of the placement (ADR 0071 §3): the same
+   * fact-check rail, three cards on one screen and two on the other, and no "see all" on
+   * the screen it would lead to.
+   */
+  it('places the fact-check rail with its own count, and without a link to itself', () => {
+    const placed = (screen: 'home' | 'entdecken', count: number) =>
+      parseHomeLayout(
+        {
+          version: 4,
+          sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count } }],
+          moments: [],
+        },
+        undefined,
+        screen,
+      ).layout!;
+    const cards = (tree: ReturnType<typeof render>) => renderedText(tree).match(/Recherche \d/g);
+
+    const onEntdecken = render(<ScreenBlocks screen="entdecken" layout={placed('entdecken', 2)} />);
+    expect(cards(onEntdecken)).toHaveLength(2);
+    expect(renderedText(onEntdecken)).not.toContain('Alle ansehen');
+
+    const onHome = render(<ScreenBlocks screen="home" layout={placed('home', 3)} />);
+    expect(cards(onHome)).toHaveLength(3);
+    expect(renderedText(onHome)).toContain('Alle ansehen');
   });
 });

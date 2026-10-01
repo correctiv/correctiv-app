@@ -10,7 +10,7 @@
  * one day read must hold no React.
  */
 
-/** Home blocks, by the name the layout document uses. Core blocks name `reader`. */
+/** Blocks of every configurable screen, by the name the layout document uses. Core blocks name `reader`. */
 export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string }>> = {
   'home-header': { feature: 'reader' },
   'feed-status': { feature: 'reader' },
@@ -23,6 +23,10 @@ export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string
   'mediathek-reihe': { feature: 'video' },
   'backstage-teaser': { feature: 'diary' },
   'impact-footer': { feature: 'reader' },
+  'discover-header': { feature: 'discover' },
+  'search-entry': { feature: 'search' },
+  'topic-rail': { feature: 'discover' },
+  'project-directory': { feature: 'discover' },
 };
 
 /**

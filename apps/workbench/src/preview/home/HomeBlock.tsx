@@ -262,7 +262,7 @@ function Block({ section, deviceWidth, absent = false }: HomeBlockProps): ReactN
             {/* `Date.now()`, not the playhead: "What it is handed" above still holds — this
                 reads the clock once, at whatever moment something else causes a render,
                 the same as any other value here, rather than being wired to it. */}
-            <Module section={section} instant={Date.now()} />
+            <Module section={section} instant={Date.now()} screen="home" />
           </DrawnBoundary>
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
   reportLayoutProblems,
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
+import { SCREEN_DOCUMENTS, type ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 import { fetchedHomeLayout, refreshHomeLayout } from '@correctiv/app-core/stores/homeLayout';
 
 import { coreStore } from '@/lib/store/core';
@@ -155,6 +156,33 @@ export function homeLayout(): HomeLayout {
   reportLayoutProblems(problems);
   read = { text, layout: layout ?? DEFAULT_HOME_LAYOUT };
   return read.layout;
+}
+
+const bundledByScreen = new Map<ConfigurableScreen, HomeLayout>();
+
+/**
+ * The layout of a screen other than Home: the bundled document, read once.
+ *
+ * **Only the bundle, and that is the minimum rather than the decision.** Home's override,
+ * its fetched copy and its stored one are one text each in the core (`stores/homeLayout`)
+ * and one address on Pages, and they are Home's alone. A second screen that fetched would
+ * need the store to hold a text per screen and the Pages workflow to publish the joined
+ * document ADR 0071 §1 describes, which is a change to both and is made once, for every
+ * screen, rather than first for this one. Until then an edit to such a screen reaches a
+ * phone with the release, and Home's does not.
+ *
+ * Moments, conditions and audiences are in the document's grammar, so they work here
+ * unchanged. A module the document names and this host cannot draw is dropped and reported
+ * once, as Home's is.
+ */
+export function bundledScreenLayout(screen: ConfigurableScreen): HomeLayout {
+  const held = bundledByScreen.get(screen);
+  if (held) return held;
+  const { layout, problems } = parseHomeLayout(SCREEN_DOCUMENTS[screen], RENDERABLE, screen);
+  reportLayoutProblems(problems);
+  const read = layout ?? { version: 0, sections: [], moments: [], editions: [] };
+  bundledByScreen.set(screen, read);
+  return read;
 }
 
 /**
