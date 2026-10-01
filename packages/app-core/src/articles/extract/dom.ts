@@ -136,7 +136,7 @@ export const extractArticleFromDom: ArticleExtractor = (html: string): Extracted
   const rating =
     ratingFromPage(html) ?? ratingFromText(ratingEl ? textContent(ratingEl) : undefined);
 
-  const contentEl = one('.detail__content', doc);
+  const contentEl = one('.detail__content', doc) ?? one('.entry-content', doc);
   let bodyHtml = '';
   let bodyText = '';
   if (contentEl) {

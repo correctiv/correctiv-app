@@ -8,7 +8,7 @@ import { TopicRail } from '@/components/discover/TopicRail';
 import { Overline, Screen, Typo } from '@/components/ui';
 import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
 import { projectTarget } from '@/lib/discover/target';
-import { openExternal } from '@/lib/openExternal';
+import { openLink } from '@/lib/openLink';
 
 /**
  * The tab's own name, in ENGLISH; the German that ships is
@@ -71,7 +71,7 @@ function openProjectCard(project: Project) {
       router.push(target.path);
       return;
     case 'external':
-      openExternal(target.url);
+      openLink(target.url);
       return;
     default:
       openProject(target.id);

@@ -39,6 +39,12 @@ const AD_PAGE = fixture('ad-placements.html');
 const HEADER_POST_PAGE = fixture('header-post.html');
 
 /**
+ * A Spotlight issue's own page, cut down from correctiv.org on 2026-10-01. It is
+ * not an article template: no `detail__content`, the body sits in `entry-content`.
+ */
+const SPOTLIGHT_PAGE = fixture('spotlight-issue.html');
+
+/**
  * The same blocks as the REST API delivers them, from `wp/v2/posts` the same day:
  * post 281149 (the one of 300 whose `content.rendered` carries a placement),
  * 287636 (header-post and infobox) and 285784 (an interactive list).
@@ -108,6 +114,25 @@ describe.each(BACKENDS)('extract (%s backend)', (_name, extract) => {
   });
 });
 
+describe.each(BACKENDS)('a Spotlight issue page (%s)', (_name, extract) => {
+  const article = extract(SPOTLIGHT_PAGE);
+
+  it('has a body, read from entry-content', () => {
+    expect(article.title).toBe('Helfen Sanktionen?');
+    expect(stripTags(article.bodyHtml)).toContain('Es könnte ja so einfach sein');
+  });
+
+  it('carries no table layout from the sent email', () => {
+    expect(article.bodyHtml).not.toMatch(/<table/i);
+  });
+
+  it('still prefers detail__content when a page has both', () => {
+    const both =
+      '<div class="entry-content"><p>wrong</p></div><div class="detail__content"><p>right</p></div>';
+    expect(stripTags(extract(both).bodyHtml)).toBe('right');
+  });
+});
+
 /**
  * THE test that makes two extraction backends a choice rather than a fork.
  *
@@ -126,6 +151,7 @@ describe.each([
   ['faktencheck-1', ARTICLE],
   ['ad-placements', AD_PAGE],
   ['header-post', HEADER_POST_PAGE],
+  ['spotlight-issue', SPOTLIGHT_PAGE],
 ])('the two backends agree (%s)', (_page, html) => {
   const fromString = extractArticleFromString(html);
   const fromDom = extractArticleFromDom(html);

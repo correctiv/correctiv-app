@@ -11,11 +11,11 @@ import { fetchJson } from './http';
  * four fields below is 4.5 KB. No auth, and the same `Origin`-reflecting CORS
  * header as the rest of the API, so this works in the browser build too.
  *
- * `content` is deliberately not requested. It is the sent email, table layout and
- * all, and nothing in the app renders it — see `data/spotlight.ts` for why an
- * issue opens in the browser instead.
+ * `content` is deliberately not requested: it is tens of kilobytes per issue and the
+ * lists show none of it. The reader asks for one issue's body by slug
+ * (`fetchWpArticle`); see `data/spotlight.ts`.
  */
-const ENDPOINT = 'https://correctiv.org/wp-json/wp/v2/newspack_nl_cpt';
+export const SPOTLIGHT_ENDPOINT = 'https://correctiv.org/wp-json/wp/v2/newspack_nl_cpt';
 
 /**
  * `yoast_head_json.og_image` and not `cvui_featured_image`.
@@ -63,7 +63,7 @@ function toIssue(post: NewsletterPost): SpotlightIssue {
  */
 export async function fetchSpotlightIssues(count: number): Promise<SpotlightIssue[]> {
   const params = new URLSearchParams({ per_page: String(count), _fields: FIELDS });
-  const posts = await fetchJson<NewsletterPost[]>(`${ENDPOINT}?${params}`, {
+  const posts = await fetchJson<NewsletterPost[]>(`${SPOTLIGHT_ENDPOINT}?${params}`, {
     timeoutMs: TIMEOUT_MS,
   });
   return (Array.isArray(posts) ? posts : [])

@@ -43,6 +43,7 @@ import type { FeedPriority } from '../data/feeds.config';
 import { plainText, sanitizeArticleHtml, stripTags } from '../lib/html';
 import type { FeedItem, FeedKey } from '../types/models';
 import { fetchJson } from './http';
+import { SPOTLIGHT_ENDPOINT } from './spotlight.service';
 
 const API = 'https://correctiv.org/wp-json/wp/v2';
 
@@ -316,8 +317,12 @@ export function toArticle(post: WpPost): ExtractedArticle {
  * (`{ code, message }`) rather than a list, so a request that failed and still
  * parsed would otherwise be mapped over as if it were one.
  */
-async function fetchPosts(params: URLSearchParams, timeoutMs = LIST_TIMEOUT_MS): Promise<WpPost[]> {
-  const posts = await fetchJson<WpPost[]>(`${API}/posts?${params}`, { timeoutMs });
+async function fetchPosts(
+  params: URLSearchParams,
+  timeoutMs = LIST_TIMEOUT_MS,
+  endpoint = `${API}/posts`,
+): Promise<WpPost[]> {
+  const posts = await fetchJson<WpPost[]>(`${endpoint}?${params}`, { timeoutMs });
   return Array.isArray(posts) ? posts : [];
 }
 
@@ -428,10 +433,26 @@ function isSameArticle(link: string | undefined, requested: string): boolean {
   return bare(link) === bare(requested);
 }
 
+const NEWSLETTER_URL = /^https:\/\/correctiv\.org\/spotlight-newsletter\//;
+
+/**
+ * The masthead every issue opens with, a figure of the newsletter's standing GIF.
+ * The post has no featured image, so the reader would start with a headline under
+ * its own floating buttons; the masthead is the hero instead, and leaves the body.
+ */
+const MASTHEAD =
+  /^\s*<figure[^>]*\bimg-intro-header\b[^>]*>\s*<img[^>]*\bsrc="([^"]+)"[^>]*>\s*<\/figure>/;
+
 /**
  * One article, by its public URL. `null` when the API does not know the slug,
  * which is a normal answer and not an error: the caller then scrapes the page as
  * it always did.
+ *
+ * A Spotlight issue is not a `post` but a `newspack_nl_cpt`, so `?slug=` on
+ * `wp/v2/posts` never finds one. Its `content.rendered` is the same block markup
+ * the page carries (no tables, measured 2026-10-01), and asking the API matters on
+ * the web, where the browser refuses to read the page itself: correctiv.org sends
+ * no CORS header for HTML.
  */
 export async function fetchWpArticle(
   url: string,
@@ -440,8 +461,18 @@ export async function fetchWpArticle(
   const slug = slugFromUrl(url);
   if (!slug) return null;
   const params = new URLSearchParams({ slug, _fields: ARTICLE_FIELDS, per_page: '1' });
-  const [post] = await fetchPosts(params, timeoutMs);
+  const [post] = await fetchPosts(
+    params,
+    timeoutMs,
+    NEWSLETTER_URL.test(url) ? SPOTLIGHT_ENDPOINT : undefined,
+  );
   if (!post?.content?.rendered || !isSameArticle(post.link, url)) return null;
-  const article = toArticle(post);
+  const masthead = NEWSLETTER_URL.test(url) ? MASTHEAD.exec(post.content.rendered) : null;
+  const article = toArticle(
+    masthead
+      ? { ...post, content: { rendered: post.content.rendered.replace(MASTHEAD, '') } }
+      : post,
+  );
+  if (masthead) article.heroImageUrl = masthead[1];
   return article.bodyHtml ? article : null;
 }

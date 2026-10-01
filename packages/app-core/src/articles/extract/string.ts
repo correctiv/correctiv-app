@@ -58,7 +58,9 @@ export const extractArticleFromString: ArticleExtractor = (html: string): Extrac
   // prose next to it second.
   const rating = ratingFromPage(html) ?? ratingFromText(blockText(html, 'detail__rating-text'));
 
-  const bodyBlock = balancedBlock(html, /<div[^>]*class="[^"]*detail__content[^"]*"[^>]*>/);
+  const bodyBlock =
+    balancedBlock(html, /<div[^>]*class="[^"]*detail__content[^"]*"[^>]*>/) ??
+    balancedBlock(html, /<div[^>]*class="[^"]*\bentry-content\b[^"]*"[^>]*>/);
   // The blocks first, while the buttons an accordion keeps its titles in are still
   // there for them to read; see `articles/blocks.ts`. Then the embeds, before the
   // cleaner would drop their frames (`articles/embeds.ts`).
