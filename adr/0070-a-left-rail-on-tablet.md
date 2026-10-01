@@ -105,3 +105,12 @@ tests cover the tree and the press-to-route wiring, not the platform's back stac
 **Tabs mount lazily on tablet.** JS `Tabs` mounts a screen on first focus, so
 the eager mounting ADR 0013 accepted on phones does not apply here. It makes startup
 cheaper, and a screen that must warm up before it is opened would need `lazy: false`.
+
+## Addendum, 2026-10-01: labels and top spacing, a proposal
+
+Device photographs of the rail (`screens/evidence/301-device-*.webp`) showed two things
+this record did not decide: the five icons carried no visible label, and the first one sat
+against the status bar. The rail now draws each label under its icon, with the phone bar's
+copy, typeface and colours, and starts `spacingPx.s` below the top safe-area inset. No
+decision above changes. **This is a design proposal pending the project owner's review**
+and may be reverted or reshaped without a new record.
