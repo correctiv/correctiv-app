@@ -465,15 +465,15 @@ function normalizeStyle(style: unknown): Record<string, unknown> | undefined {
         break;
 
       // `maxWidth` is the reading column main's #294/#296 put on every screen
-      // (`ContentColumn`, `sizes.contentColumn`). Neither the partition nor GTK has a
-      // maximum — `width-request` is a minimum and a box gives its child the whole
-      // allocation — so the column is not drawn here and the content takes the window.
-      // DROPPED, loudly, rather than left to refuse: undropped it ended every one of
-      // the 25 routes. A real answer is an `Adw.Clamp`, which is a feature of its own.
+      // (`ContentColumn`, `sizes.contentColumn`). A `View` never gets here with one:
+      // `wrap` answers it with an `Adw.Clamp` (see `maxWidthOf`). What does arrive is
+      // a `maxWidth` on a node that is not a View — today the three list screens'
+      // `contentContainerStyle`, whose box the layer does not have. DROPPED, loudly,
+      // rather than left to refuse: undropped it ended every one of the 25 routes.
       case 'maxWidth':
         reportStyle(
           'maxWidth',
-          'GTK has no maximum width, so the reading column is not applied on this host and the content fills the window. Dropped.',
+          'only a View is clamped to its maximum width (Adw.Clamp); on any other node, a FlatList contentContainerStyle among them, the content fills the window. Dropped.',
         );
         break;
 
@@ -638,6 +638,31 @@ function aspectRatioOf(style: unknown): number | undefined {
   const flat = flattenStyle(style);
   const value = flat?.aspectRatio;
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+/**
+ * The `maxWidth` a `View` authored, as a positive number, or `undefined`.
+ *
+ * It is `ContentColumn`'s reading column (`sizes.contentColumn`, 620). Neither the style
+ * partition nor a `Gtk.Box` has a maximum, but libadwaita has exactly this widget:
+ * `Adw.Clamp` allocates its child at most `maximum-size` and centres it, which is what
+ * `maxWidth` + `self-center` mean on the phone. `wrap` puts a clamp around the view.
+ *
+ * Only a `View`, and only `style`: a `FlatList`'s `contentContainerStyle` names a box
+ * the layer does not have (see `normalize`), so the three list screens that state the
+ * column there still fill the window — reported once by `normalizeStyle`.
+ */
+function maxWidthOf(style: unknown): number | undefined {
+  const value = flattenStyle(style)?.maxWidth;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+/** The same style without `maxWidth`, so `normalizeStyle` does not report what the clamp answers. */
+function withoutMaxWidth(style: unknown): Record<string, unknown> | undefined {
+  const flat = flattenStyle(style);
+  if (flat === undefined) return undefined;
+  const { maxWidth: _consumed, ...rest } = flat;
+  return rest;
 }
 
 function applyAutoFocus(widget: unknown, autoFocus: boolean | undefined): void {
@@ -1061,7 +1086,13 @@ function wrap<P extends object>(
   // `VideoView` in `app/video.tsx` was where that surfaced.
   const Wrapped = (props: P): ReactElement => {
     const aspect = aspectRatioOf((props as { style?: unknown }).style);
-    const { passthrough, accessibility } = normalize(props as NormalizedProps, displayName);
+    const column =
+      displayName === 'View' ? maxWidthOf((props as { style?: unknown }).style) : undefined;
+    const source =
+      column === undefined
+        ? props
+        : { ...props, style: withoutMaxWidth((props as { style?: unknown }).style) };
+    const { passthrough, accessibility } = normalize(source as NormalizedProps, displayName);
 
     const bridged = bridgeClassName(passthrough.className);
     if (bridged.className === undefined) delete passthrough.className;
@@ -1132,7 +1163,18 @@ function wrap<P extends object>(
       [userRef, autoFocus],
     );
 
-    const element = createElement(Base as never, { ...passthrough, ref: mergedRef } as never);
+    const inner = createElement(Base as never, { ...passthrough, ref: mergedRef } as never);
+    const element =
+      column === undefined
+        ? inner
+        : createElement(
+            'adw-clamp' as never,
+            // The threshold is the maximum, so the child is full-width right up to
+            // the column and then stops: libadwaita's default of 600 would start
+            // easing the width in below it.
+            { maximumSize: column, tighteningThreshold: column, hexpand: true } as never,
+            inner,
+          );
     if (aspect === undefined) return element;
     /**
      * `aspectRatio` is a WIDGET here, not a property, so the element goes inside one.

@@ -109,6 +109,17 @@ const PREFIX = [
 ];
 
 /**
+ * Files this host answers with its own, found by what a specifier RESOLVES to rather
+ * than by what it says. `EXACT` cannot do this: `Rail` and `Screen` import their
+ * neighbour as `./ContentColumn`, and a relative specifier names no module on its own.
+ * The key is the shared file, the value the override; an override reaches the original
+ * by a relative path, and an importer that is itself an override is never redirected.
+ */
+const FILE_OVERRIDES = new Map([
+  [here('../mobile/src/components/ui/ContentColumn.tsx'), here('src/overrides/ContentColumn.tsx')],
+]);
+
+/**
  * The extension search, and why it is here rather than left to the resolver.
  *
  * `@correctiv/app-core`'s exports map is `"./*": "./src/*"` — extensionless on
@@ -186,6 +197,28 @@ function redirectPlugin() {
         }
         if (source === '@correctiv/catalogue') return here('../../packages/catalogue/src/index.ts');
         return null;
+      },
+    },
+  };
+}
+
+function fileOverridePlugin() {
+  const overrides = new Set(FILE_OVERRIDES.values());
+  const names = [...FILE_OVERRIDES.keys()].map((file) => file.slice(file.lastIndexOf('/') + 1));
+  return {
+    name: 'correctiv-desktop-file-overrides',
+    resolveId: {
+      order: 'pre',
+      async handler(source, importer, options) {
+        if (importer === undefined || overrides.has(importer)) return null;
+        // Cheap filter before the second resolution: only a specifier that could name
+        // one of the files is worth resolving twice.
+        if (!names.some((name) => source.includes(name.replace(/\.[^.]+$/, '')))) return null;
+        const resolved = await this.resolve(source, importer, {
+          ...options,
+          skipSelf: true,
+        });
+        return (resolved && FILE_OVERRIDES.get(resolved.id)) ?? null;
       },
     },
   };
@@ -299,6 +332,7 @@ export default {
       // does today — should still win over the pin.
       peerDedupePlugin(),
       redirectPlugin(),
+      fileOverridePlugin(),
       // expo-router discovers routes with Metro's `require.context`, which does not
       // exist in this chain. This walks `src/app` instead and emits one module that
       // statically imports every route file, which `@gjsify/react-native/router` turns
