@@ -29,7 +29,12 @@ import type { MprisHandle, MprisSource, MprisStatus, MprisTrack } from './mpris.
  * keeps `Position` out of `PropertiesChanged` on purpose, so listening to it would be
  * 4 Hz of bus traffic to publish nothing.
  */
-const WATCHED = ['notify::playing', 'notify::ended', 'notify::duration', 'notify::seekable'];
+const WATCHED = [
+  'notify::playing',
+  'notify::ended',
+  'notify::duration',
+  'notify::seekable',
+] as const;
 
 function statusOf(stream: VideoStream): MprisStatus {
   if (stream.playing) return 'Playing';
