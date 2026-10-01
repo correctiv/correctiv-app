@@ -1441,6 +1441,12 @@
   "home.module.callout.what": {
     "defaultMessage": "The open callout. It has two places: at midday it moves above the lead article."
   },
+  "home.module.discoverHeader": {
+    "defaultMessage": "Discover heading"
+  },
+  "home.module.discoverHeader.what": {
+    "defaultMessage": "The title of the Discover screen."
+  },
   "home.module.earlyAccess": {
     "defaultMessage": "Early access"
   },
@@ -1486,12 +1492,30 @@
   "home.module.mediathek.what": {
     "defaultMessage": "Video and audio, as a row."
   },
+  "home.module.projectDirectory": {
+    "defaultMessage": "Project directory"
+  },
+  "home.module.projectDirectory.what": {
+    "defaultMessage": "The projects and products of CORRECTIV, in their groups."
+  },
+  "home.module.searchEntry": {
+    "defaultMessage": "Search entry"
+  },
+  "home.module.searchEntry.what": {
+    "defaultMessage": "The field that opens the search."
+  },
   "home.module.spotlight": {
     "defaultMessage": "Spotlight briefing",
     "description": "Spotlight is the name of a CORRECTIV newsletter and stays as it is in every language; “briefing” is what this block draws of it."
   },
   "home.module.spotlight.what": {
     "defaultMessage": "The current issue, with a link to the archive."
+  },
+  "home.module.topicRail": {
+    "defaultMessage": "Topic rail"
+  },
+  "home.module.topicRail.what": {
+    "defaultMessage": "The topics that have a feed of their own, as a row of chips."
   },
   "home.module.unknown.what": {
     "defaultMessage": "No description for this block yet.",

@@ -12,14 +12,16 @@
  * `module-screens.generated.ts`.
  */
 
+import entdeckenDocument from '../data/layout/screens/entdecken.json';
 import homeDocument from '../data/layout/screens/home.json';
 
 /** A screen whose arrangement is a document. A union, so a second one is a type error where unthought of. */
-export type ConfigurableScreen = 'home';
+export type ConfigurableScreen = 'home' | 'entdecken';
 
-export const CONFIGURABLE_SCREENS: readonly ConfigurableScreen[] = ['home'];
+export const CONFIGURABLE_SCREENS: readonly ConfigurableScreen[] = ['home', 'entdecken'];
 
 /** The bundled document of each screen, as written. */
 export const SCREEN_DOCUMENTS = {
   home: homeDocument,
+  entdecken: entdeckenDocument,
 } satisfies Record<ConfigurableScreen, unknown>;

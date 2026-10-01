@@ -1,0 +1,10 @@
+{
+  "version": 4,
+  "sections": [
+    { "id": "title", "module": "discover-header" },
+    { "id": "search", "module": "search-entry" },
+    { "id": "topics", "module": "topic-rail" },
+    { "id": "projects", "module": "project-directory" }
+  ],
+  "moments": []
+}

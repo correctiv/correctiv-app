@@ -238,6 +238,34 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'What the reporting changed, and a thank-you.',
     }),
   },
+  'discover-header': {
+    label: wbMessage({ id: 'home.module.discoverHeader', defaultMessage: 'Discover heading' }),
+    what: wbMessage({
+      id: 'home.module.discoverHeader.what',
+      defaultMessage: 'The title of the Discover screen.',
+    }),
+  },
+  'search-entry': {
+    label: wbMessage({ id: 'home.module.searchEntry', defaultMessage: 'Search entry' }),
+    what: wbMessage({
+      id: 'home.module.searchEntry.what',
+      defaultMessage: 'The field that opens the search.',
+    }),
+  },
+  'topic-rail': {
+    label: wbMessage({ id: 'home.module.topicRail', defaultMessage: 'Topic rail' }),
+    what: wbMessage({
+      id: 'home.module.topicRail.what',
+      defaultMessage: 'The topics that have a feed of their own, as a row of chips.',
+    }),
+  },
+  'project-directory': {
+    label: wbMessage({ id: 'home.module.projectDirectory', defaultMessage: 'Project directory' }),
+    what: wbMessage({
+      id: 'home.module.projectDirectory.what',
+      defaultMessage: 'The projects and products of CORRECTIV, in their groups.',
+    }),
+  },
 };
 
 /** What stands under a module this tool has never heard of, where the label is its id. */

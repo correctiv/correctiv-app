@@ -8,6 +8,8 @@ import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 import { itemCount, pinnedItem } from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { pinnedArticle } from '@correctiv/app-core/data/home-pins';
+import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 import { ArticleHero } from '@/components/feed/ArticleHero';
 import { ArticleRow } from '@/components/feed/ArticleRow';
@@ -19,10 +21,16 @@ import { HomeHeader } from '@/components/home/HomeHeader';
 import { ImpactFooter } from '@/components/home/ImpactFooter';
 import { MediathekReihe } from '@/components/home/MediathekReihe';
 import { SpotlightBriefing } from '@/components/home/SpotlightBriefing';
-import { Hairline, SectionHeader, Typo } from '@/components/ui';
+import { ProjectRow } from '@/components/discover/ProjectRow';
+import { SearchEntry } from '@/components/discover/SearchEntry';
+import { TopicRail } from '@/components/discover/TopicRail';
+import { Hairline, Overline, SectionHeader, Typo } from '@/components/ui';
 import { FACT_CHECK_COUNT, HERO_PIN, RESEARCH_COUNT } from '@/lib/home/settings';
+import { projectTarget } from '@/lib/discover/target';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
+import { openLink } from '@/lib/openLink';
+import { useReachable } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -62,6 +70,12 @@ const COPY = defineMessages({
   factChecks: { id: 'home.factChecks', defaultMessage: 'Fact checks' },
   viewAll: { id: 'home.viewAll', defaultMessage: 'See all' },
   viewEverything: { id: 'home.viewEverything', defaultMessage: 'See everything' },
+  discoverTitle: {
+    id: 'discover.title',
+    defaultMessage: 'Discover',
+    description:
+      'The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room.',
+  },
 });
 
 /** A mark, not a sentence: the shelf keeps its name in every language. */
@@ -95,6 +109,13 @@ export const placeTestID = (id: string): string => `home-section-${id}`;
 
 export interface HomeModuleProps {
   readonly section: HomeSection;
+  /**
+   * The screen this placement is on. Most blocks draw the same everywhere; a block that
+   * is on two screens reads this where the second one differs (ADR 0071 §3), and the
+   * fact-check rail's "see all" is the case: it leads to Entdecken, so on Entdecken it
+   * would lead to itself.
+   */
+  readonly screen: ConfigurableScreen;
   /**
    * The instant the fold drew this render at — the screen's `useHomeInstant(layout)`,
    * passed down rather than re-read, so that a module reading the time agrees with the
@@ -232,7 +253,7 @@ const LatestResearchModule: HomeModule = ({ section }) => {
   );
 };
 
-const FaktencheckRailModule: HomeModule = ({ section }) => {
+const FaktencheckRailModule: HomeModule = ({ section, screen }) => {
   const intl = useIntl();
   const faktenchecks = useFeed('faktencheck');
   const items = faktenchecks.data ?? [];
@@ -242,8 +263,8 @@ const FaktencheckRailModule: HomeModule = ({ section }) => {
       <SectionHeader
         title={intl.formatMessage(COPY.factChecks)}
         className="mb-s"
-        actionLabel={intl.formatMessage(COPY.viewAll)}
-        onAction={() => router.push('/(tabs)/entdecken')}
+        actionLabel={screen === 'entdecken' ? undefined : intl.formatMessage(COPY.viewAll)}
+        onAction={screen === 'entdecken' ? undefined : () => router.push('/(tabs)/entdecken')}
       />
       <FaktencheckRail
         items={items.slice(0, itemCount(section.settings, FACT_CHECK_COUNT))}
@@ -293,6 +314,81 @@ const ImpactFooterModule: HomeModule = ({ section }) => (
   </Place>
 );
 
+/*
+ * Entdecken's blocks. The screen was one function; each section of it is a place now, and
+ * the margin each one carried moved from the element to its `Place`, so the page is the
+ * same one with names on it.
+ */
+
+const DiscoverHeaderModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mb-s">
+      <Typo variant="headline-xl">{intl.formatMessage(COPY.discoverTitle)}</Typo>
+    </Place>
+  );
+};
+
+const SearchEntryModule: HomeModule = ({ section }) => (
+  <Place section={section}>
+    <SearchEntry onPress={() => router.push('/suche')} />
+  </Place>
+);
+
+const TopicRailModule: HomeModule = ({ section }) => (
+  <Place section={section} className="mt-s">
+    <TopicRail onOpenTopic={openProject} />
+  </Place>
+);
+
+/**
+ * The seven groups of the ecosystem, as one block. A group is not a place of its own: the
+ * catalogue (`data/projects`) is content, its order and its grouping are the editors' of
+ * that file, and the layout document arranges screens, not catalogues.
+ */
+const ProjectDirectoryModule: HomeModule = ({ section }) => {
+  const reachable = useReachable();
+  return (
+    <Place section={section}>
+      {projectGroups.map((group) => {
+        const projects = group.projects.filter(
+          (project) => project.feature === undefined || reachable(project.feature),
+        );
+        if (projects.length === 0) return null;
+        return (
+          <View key={group.id} className="mt-m">
+            <Overline label={group.title} />
+            <View className="mt-2xs">
+              {projects.map((project) => (
+                <ProjectRow key={project.id} project={project} onPress={openProjectCard} />
+              ))}
+            </View>
+          </View>
+        );
+      })}
+    </Place>
+  );
+};
+
+function openProject(id: string) {
+  router.push({ pathname: '/projekt/[id]', params: { id } });
+}
+
+/** Carries out what `projectTarget` decided — the decision itself lives there. */
+function openProjectCard(project: Project) {
+  const target = projectTarget(project);
+  switch (target.kind) {
+    case 'tab':
+      router.push(target.path);
+      return;
+    case 'external':
+      openLink(target.url);
+      return;
+    default:
+      openProject(target.id);
+  }
+}
+
 /** Module name, as the document writes it, to the thing that draws it. */
 export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'home-header': HomeHeaderModule,
@@ -306,4 +402,8 @@ export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'mediathek-reihe': MediathekModule,
   'backstage-teaser': BackstageModule,
   'impact-footer': ImpactFooterModule,
+  'discover-header': DiscoverHeaderModule,
+  'search-entry': SearchEntryModule,
+  'topic-rail': TopicRailModule,
+  'project-directory': ProjectDirectoryModule,
 };

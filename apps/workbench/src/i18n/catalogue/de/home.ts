@@ -36,6 +36,14 @@ export const home: Record<string, string> = {
   'home.module.backstage.what': 'Das Redaktionstagebuch, mit einem Link dorthin.',
   'home.module.impact': 'Impact',
   'home.module.impact.what': 'Was die Recherchen verändert haben, und ein Dankeschön.',
+  'home.module.discoverHeader': 'Entdecken-Titel',
+  'home.module.discoverHeader.what': 'Die Überschrift des Entdecken-Bildschirms.',
+  'home.module.searchEntry': 'Sucheinstieg',
+  'home.module.searchEntry.what': 'Das Feld, das die Suche öffnet.',
+  'home.module.topicRail': 'Themenleiste',
+  'home.module.topicRail.what': 'Die Themen mit eigenem Feed, als Reihe von Chips.',
+  'home.module.projectDirectory': 'Projektverzeichnis',
+  'home.module.projectDirectory.what': 'Die Projekte und Produkte von CORRECTIV, nach Gruppen.',
   'home.module.unknown.what': 'Für diesen Block gibt es noch keine Beschreibung.',
 
   // --- the three settings under a block -----------------------------------------

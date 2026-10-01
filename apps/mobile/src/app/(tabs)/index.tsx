@@ -1,14 +1,6 @@
-import { useMemo } from 'react';
-
-import { readerOf } from '@correctiv/app-core/lib/home-audience';
-import { sectionsAtInstant } from '@correctiv/app-core/lib/home-layout';
-
 import { Screen } from '@/components/ui';
-import { useHomeInstant } from '@/lib/home/clock';
 import { useHomeLayout } from '@/lib/home/layout';
-import { HOME_MODULES } from '@/lib/home/modules';
-import { MODULE_FEATURES } from '@/lib/features';
-import { useReachable, useSession } from '@/lib/store/core';
+import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 
 /**
  * Home — a curated cross-section of the ecosystem, in the draft's order: lead research,
@@ -21,7 +13,8 @@ import { useReachable, useSession } from '@/lib/store/core';
  * ([ADR 0036](../../../../../adr/0036-the-home-screen-becomes-data.md)). What each module
  * renders is `lib/home/modules.tsx`; which of them appear right now is
  * `sectionsAtInstant`, which folds the document up to this instant and drops what is
- * hidden in it.
+ * hidden in it. The loop itself is `ScreenBlocks`, shared with every other screen that
+ * is a document.
  *
  * `useHomeLayout` rather than a read, because the document may be replaced while this
  * screen is on it: §4's stored copy is a key in the app's own storage, and the
@@ -51,23 +44,9 @@ import { useReachable, useSession } from '@/lib/store/core';
  */
 export default function HomeScreen() {
   const layout = useHomeLayout();
-  const { entitlement } = useSession();
-  const reader = useMemo(() => readerOf(entitlement), [entitlement]);
-  const instant = useHomeInstant(layout);
-  const reachable = useReachable();
-  // A block of a feature this build cannot reach is left out without a trace: the document
-  // stays valid, so the same file is right in the preview (ADR 0072 §5).
-  const sections = sectionsAtInstant(layout, instant, reader).filter((section) => {
-    const gate = MODULE_FEATURES[section.module];
-    return gate === undefined || reachable(gate.feature);
-  });
-
   return (
     <Screen>
-      {sections.map((section) => {
-        const Module = HOME_MODULES[section.module];
-        return Module ? <Module key={section.id} section={section} instant={instant} /> : null;
-      })}
+      <ScreenBlocks screen="home" layout={layout} />
     </Screen>
   );
 }

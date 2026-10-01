@@ -50,10 +50,11 @@ import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
  * Keyed by a string for the reason `settings.ts` gives: typing it against `HOME_MODULES`
  * would mean importing that file and the React Native tree under it.
  *
- * Every list here reads `['home']` and that is the whole of what there is to say today.
- * The list is a list rather than a value because the obvious second case is one block on
- * two screens — the fact-check rail is the same composition on Entdecken as it is here —
- * and two declarations for one block would be two things to keep in step.
+ * A list rather than a value because one block may sit on two screens, and two
+ * declarations for one block would be two things to keep in step. The fact-check rail is
+ * that block: the same composition on Entdecken as on Home, placed there by the newsroom
+ * and not by the default document, whose Entdecken is the screen as it was drawn before
+ * it was a document. Its settings are its placement's own (ADR 0071 §3).
  */
 export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen[]>> = {
   'home-header': ['home'],
@@ -62,11 +63,15 @@ export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen
   'spotlight-briefing': ['home'],
   'early-access-card': ['home'],
   'latest-research': ['home'],
-  'faktencheck-rail': ['home'],
+  'faktencheck-rail': ['home', 'entdecken'],
   'callout-teaser': ['home'],
   'mediathek-reihe': ['home'],
   'backstage-teaser': ['home'],
   'impact-footer': ['home'],
+  'discover-header': ['entdecken'],
+  'search-entry': ['entdecken'],
+  'topic-rail': ['entdecken'],
+  'project-directory': ['entdecken'],
 };
 
 /** The blocks a screen's palette may offer, which is what the editor asks for. */

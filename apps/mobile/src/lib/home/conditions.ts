@@ -71,6 +71,11 @@ export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | nul
   'mediathek-reihe': null,
   'backstage-teaser': null,
   'impact-footer': null,
+  // Entdecken's blocks are the catalogue and the app's own entry points: always there.
+  'discover-header': null,
+  'search-entry': null,
+  'topic-rail': null,
+  'project-directory': null,
 };
 
 /**

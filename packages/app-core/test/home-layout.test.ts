@@ -23,6 +23,7 @@ import {
 } from '../src/lib/home-layout';
 import * as v2 from './__fixtures__/home-layout-v2';
 import { readerOf } from '../src/lib/home-audience';
+import { CONFIGURABLE_SCREENS, SCREEN_DOCUMENTS } from '../src/lib/screen-layout';
 import type { ErrorReport } from '../src/ports';
 import { configurePlatform, createMemoryPlatform, resetPlatform } from '../src/ports';
 
@@ -691,28 +692,55 @@ describe('parseHomeLayout, on a section it cannot use', () => {
     ]);
   });
 
-  /** ADR 0054 §5, the parser half: a block declared for other screens only is refused. */
-  it('refuses a block the app declares for a screen other than the one being read', async () => {
-    const { MODULE_SCREENS } = await import('../src/lib/module-screens.generated');
-    const original = MODULE_SCREENS['article-hero'];
-    (MODULE_SCREENS as Record<string, readonly string[]>)['article-hero'] = ['elsewhere'];
-    try {
-      const parse = parseHomeLayout(
-        document([
-          section({ id: 'hero', module: 'article-hero' }),
-          section({ id: 'rail', module: 'faktencheck-rail' }),
-        ]),
-      );
-      expect(parse.layout?.sections.map((s) => s.id)).toEqual(['rail']);
-      expect(parse.problems).toEqual([
-        {
-          code: 'section-module-not-on-screen',
-          context: { id: 'hero', module: 'article-hero', screen: 'home' },
-        },
-      ]);
-    } finally {
-      (MODULE_SCREENS as Record<string, readonly string[]>)['article-hero'] = original!;
+  /**
+   * ADR 0054 §5, the parser half, against the real declarations: `article-hero` is Home's
+   * alone, `discover-header` is Entdecken's alone and `faktencheck-rail` is on both. No
+   * entry is rewritten for the test, which the first version of this had to do because
+   * there was only one screen to be wrong on.
+   */
+  it('refuses a block the app declares for a screen other than the one being read', () => {
+    const doc = document([
+      section({ id: 'hero', module: 'article-hero' }),
+      section({ id: 'title', module: 'discover-header' }),
+      section({ id: 'rail', module: 'faktencheck-rail' }),
+    ]);
+
+    const home = parseHomeLayout(doc, undefined, 'home');
+    expect(home.layout?.sections.map((s) => s.id)).toEqual(['hero', 'rail']);
+    expect(home.problems).toEqual([
+      {
+        code: 'section-module-not-on-screen',
+        context: { id: 'title', module: 'discover-header', screen: 'home' },
+      },
+    ]);
+
+    const discover = parseHomeLayout(doc, undefined, 'entdecken');
+    expect(discover.layout?.sections.map((s) => s.id)).toEqual(['title', 'rail']);
+    expect(discover.problems).toEqual([
+      {
+        code: 'section-module-not-on-screen',
+        context: { id: 'hero', module: 'article-hero', screen: 'entdecken' },
+      },
+    ]);
+  });
+
+  it('holds every bundled screen to its own declarations', () => {
+    for (const screen of CONFIGURABLE_SCREENS) {
+      const parse = parseHomeLayout(SCREEN_DOCUMENTS[screen], undefined, screen);
+      expect({ screen, problems: parse.problems }).toEqual({ screen, problems: [] });
+      expect(parse.layout?.sections.length).toBeGreaterThan(0);
     }
+  });
+
+  it('gives a block on two screens its own settings on each', () => {
+    const rail = (count: number) =>
+      document([section({ id: 'rail', module: 'faktencheck-rail', settings: { count } })]);
+    expect(parseHomeLayout(rail(3), undefined, 'home').layout?.sections[0]?.settings).toEqual({
+      count: 3,
+    });
+    expect(parseHomeLayout(rail(5), undefined, 'entdecken').layout?.sections[0]?.settings).toEqual({
+      count: 5,
+    });
   });
 
   it('takes every module name as written when it is told nothing', () => {
