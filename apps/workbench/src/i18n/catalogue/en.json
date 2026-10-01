@@ -1558,6 +1558,36 @@
   "home.module.podcastRail.what": {
     "defaultMessage": "The Salon5 podcast series, as a row of tiles."
   },
+  "home.module.profileArea": {
+    "defaultMessage": "Your area"
+  },
+  "home.module.profileArea.what": {
+    "defaultMessage": "Report, Backstage, saved articles and the settings, as a list."
+  },
+  "home.module.profileClubCard": {
+    "defaultMessage": "Profile card"
+  },
+  "home.module.profileClubCard.what": {
+    "defaultMessage": "The membership card with the name and the tier."
+  },
+  "home.module.profileImpact": {
+    "defaultMessage": "Your impact"
+  },
+  "home.module.profileImpact.what": {
+    "defaultMessage": "What the contribution made possible, with investigations."
+  },
+  "home.module.profileMembership": {
+    "defaultMessage": "Membership"
+  },
+  "home.module.profileMembership.what": {
+    "defaultMessage": "Tier, access, end date and the link to the account."
+  },
+  "home.module.profileNewsletter": {
+    "defaultMessage": "Newsletters"
+  },
+  "home.module.profileNewsletter.what": {
+    "defaultMessage": "The newsletters to switch on or off."
+  },
   "home.module.projectDirectory": {
     "defaultMessage": "Project directory"
   },

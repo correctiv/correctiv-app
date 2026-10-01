@@ -15,16 +15,18 @@
 import entdeckenDocument from '../data/layout/screens/entdecken.json';
 import mitmachenDocument from '../data/layout/screens/mitmachen.json';
 import homeDocument from '../data/layout/screens/home.json';
+import profilDocument from '../data/layout/screens/profil.json';
 import mediathekDocument from '../data/layout/screens/mediathek.json';
 
 /** A screen whose arrangement is a document. A union, so a second one is a type error where unthought of. */
-export type ConfigurableScreen = 'home' | 'entdecken' | 'mediathek' | 'mitmachen';
+export type ConfigurableScreen = 'home' | 'entdecken' | 'mediathek' | 'mitmachen' | 'profil';
 
 export const CONFIGURABLE_SCREENS: readonly ConfigurableScreen[] = [
   'home',
   'entdecken',
   'mediathek',
   'mitmachen',
+  'profil',
 ];
 
 /** The bundled document of each screen, as written. */
@@ -33,4 +35,5 @@ export const SCREEN_DOCUMENTS = {
   entdecken: entdeckenDocument,
   mediathek: mediathekDocument,
   mitmachen: mitmachenDocument,
+  profil: profilDocument,
 } satisfies Record<ConfigurableScreen, unknown>;

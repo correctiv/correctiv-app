@@ -69,6 +69,17 @@ export const home: Record<string, string> = {
   'home.module.tipCard.what': 'Die WhatsApp-Tippleitung der Faktencheck-Redaktion.',
   'home.module.communityNote': 'Community-Hinweis',
   'home.module.communityNote.what': 'Ein kurzer Hinweis auf den Community-Bereich.',
+  'home.module.profileClubCard': 'Profilkarte',
+  'home.module.profileClubCard.what': 'Die Mitgliedskarte mit Name und Stufe.',
+  'home.module.profileMembership': 'Mitgliedschaft',
+  'home.module.profileMembership.what': 'Stufe, Zugang, Laufzeit und der Link zum Konto.',
+  'home.module.profileImpact': 'Ihre Wirkung',
+  'home.module.profileImpact.what': 'Was der Beitrag möglich gemacht hat, mit Recherchen.',
+  'home.module.profileArea': 'Ihr Bereich',
+  'home.module.profileArea.what':
+    'Bericht, Backstage, Gespeichertes und die Einstellungen, als Liste.',
+  'home.module.profileNewsletter': 'Newsletter',
+  'home.module.profileNewsletter.what': 'Die Newsletter zum Ein- und Ausschalten.',
   'home.module.unknown.what': 'Für diesen Block gibt es noch keine Beschreibung.',
 
   // --- the three settings under a block -----------------------------------------

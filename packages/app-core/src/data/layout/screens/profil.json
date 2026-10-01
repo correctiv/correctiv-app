@@ -1,0 +1,11 @@
+{
+  "version": 4,
+  "sections": [
+    { "id": "club", "module": "profile-club-card" },
+    { "id": "membership", "module": "profile-membership" },
+    { "id": "impact", "module": "profile-impact" },
+    { "id": "area", "module": "profile-area" },
+    { "id": "newsletter", "module": "profile-newsletter" }
+  ],
+  "moments": []
+}

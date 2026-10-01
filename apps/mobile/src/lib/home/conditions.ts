@@ -90,6 +90,12 @@ export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | nul
   'atlas-card': null,
   'tip-card': null,
   'community-note': null,
+  // The profile's blocks read the session and always draw something.
+  'profile-club-card': null,
+  'profile-membership': null,
+  'profile-impact': null,
+  'profile-area': null,
+  'profile-newsletter': null,
 };
 
 /**
