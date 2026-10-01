@@ -56,7 +56,7 @@ jest.mock('expo-router', () => {
  * else, and read only at render time, so the temporal dead zone never applies.
  */
 let mockFontState: [boolean, Error | null] = [true, null];
-jest.mock('expo-font', () => ({ useFonts: () => mockFontState }));
+jest.mock('@/lib/env/fonts', () => ({ useAppFonts: () => mockFontState }));
 
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),

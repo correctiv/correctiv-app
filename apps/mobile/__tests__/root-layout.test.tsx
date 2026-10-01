@@ -48,7 +48,7 @@ jest.mock('expo-router', () => {
 
 // The fonts never resolve here, so the shell renders null — everything under test
 // is decided above that early return.
-jest.mock('expo-font', () => ({ useFonts: () => [false, null] }));
+jest.mock('@/lib/env/fonts', () => ({ useAppFonts: () => [false, null] }));
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),
   hideAsync: jest.fn(),

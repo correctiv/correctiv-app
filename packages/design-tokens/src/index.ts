@@ -14,11 +14,11 @@
  *
  * ## What is deliberately NOT here
  *
- * - **Font families.** The app loads `Merriweather_400Regular` and
- *   `SourceSans3_400Regular` from `@expo-google-fonts`; those are React Native asset
- *   names, meaningless to a CMS, which resolves the same two typefaces through the
+ * - **Font families.** The app embeds `Merriweather-Regular` and
+ *   `SourceSans3-Regular` (PostScript names); those are native font names,
+ *   meaningless to a CMS, which resolves the same two typefaces through the
  *   CSS stacks in theme.css. They stay in `apps/mobile/src/lib/theme/fonts.ts`,
- *   next to the weighted cuts and the `useFonts()` call that loads them.
+ *   next to the weighted cuts.
  * - **The Tailwind theme itself.** It is not TypeScript at all: `theme.css` in this
  *   package's root is plain Tailwind v4, which is what makes it shareable. It is not
  *   re-exported here because CSS is imported by a bundler, not by a module —

@@ -61,8 +61,9 @@ should stay sharp. Two guards also hang off that path: `.oxfmtrc.json` ignores
 repo — after an upward search once found a *foreign checkout* at a different commit
 and a developer and CI generated from different sources while agreeing.
 
-**Font families deliberately stay in the app.** `Merriweather_400Regular` and
-`SourceSans3_400Regular` are `@expo-google-fonts` asset names — a family name only
+**Font families deliberately stay in the app.** ~~`Merriweather_400Regular` and
+`SourceSans3_400Regular`~~ (renamed to the PostScript names `Merriweather-Regular` and
+`SourceSans3-Regular` when the files were embedded) are `@expo-google-fonts` asset names — a family name only
 means something to a runtime that has loaded that font, and the CMS resolves the same
 two typefaces through CSS stacks. They live in `apps/mobile-rn/src/lib/theme/fonts.ts`.
 

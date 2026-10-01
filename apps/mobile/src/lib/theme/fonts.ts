@@ -4,7 +4,7 @@
  * Source Sans 3 (UI) come from @expo-google-fonts.
  *
  * Names only. The files themselves are `./font-assets`, which is not in the
- * barrel and which nothing but `app/_layout.tsx` imports; see the comment there
+ * barrel and which nothing but `lib/env/fonts.web.ts` imports; see the comment there
  * for what importing them from here used to cost.
  */
 

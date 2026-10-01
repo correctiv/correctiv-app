@@ -252,7 +252,7 @@ describe('web target', () => {
     // package re-exports, which measured 19,828 kB against 424 kB for a single
     // `<Typo>` built outside Metro (ADR 0027). The families a component actually
     // wants are plain strings in `lib/theme/fonts.ts`; the files are in
-    // `font-assets.ts`, and `lib/env/fonts.ts` is the only module that has any use
+    // `font-assets.ts`, and `lib/env/fonts.web.ts` is the only module that has any use
     // for them — one importer, so that the second host loads the app's five cuts by
     // loading the app's environment rather than by transcribing a list of names
     // (ADR 0028).
@@ -268,7 +268,7 @@ describe('web target', () => {
 
     const importers = files.filter((file) => {
       const rel = relative(SRC, file).replaceAll('\\', '/');
-      if (rel === 'lib/env/fonts.ts') return false;
+      if (rel === 'lib/env/fonts.web.ts') return false;
       return /from\s+'[^']*theme\/font-assets'/.test(readFileSync(file, 'utf8'));
     });
     expect(importers.map((f) => relative(SRC, f))).toEqual([]);

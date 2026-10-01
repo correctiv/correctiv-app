@@ -428,7 +428,7 @@ Reading that off the app takes one more step than it looks. On web every cut
 computes as `font-weight: 400`, because `theme/fonts.ts` loads one file per weight
 and puts the weight in the family name — Android ignores `fontWeight` on a custom
 font, which is why. So the family is the only honest reading, and it says
-`SourceSans3_400Regular`. A measurement that trusted `font-weight` would have
+`SourceSans3-Regular`. A measurement that trusted `font-weight` would have
 called the whole app regular and been right by accident here.
 
 ### The output

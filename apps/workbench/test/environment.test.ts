@@ -33,7 +33,7 @@ const PREVIEW = code(
 );
 
 const ENVIRONMENT = readFileSync(join(APP, 'src/lib/env/AppEnvironment.tsx'), 'utf8');
-const ENV_FONTS = readFileSync(join(APP, 'src/lib/env/fonts.ts'), 'utf8');
+const ENV_FONTS = readFileSync(join(APP, 'src/lib/env/fonts.web.ts'), 'utf8');
 const LAYOUT = readFileSync(join(APP, 'src/app/_layout.tsx'), 'utf8');
 const APP_CSS = readFileSync(join(APP, 'src/global.css'), 'utf8');
 

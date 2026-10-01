@@ -205,6 +205,7 @@ describe('no stale export names survive as fontFamily values', () => {
     'src/app/(tabs)/_layout.tsx',
     'src/app/(tabs)/_layout.web.tsx',
     'src/lib/env/fonts.ts',
+    'src/lib/env/fonts.web.ts',
   ];
 
   for (const rel of sources) {

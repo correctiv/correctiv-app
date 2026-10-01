@@ -1,22 +1,9 @@
 #!/usr/bin/env node
 /**
- * Copies the five cut the app ships into native build assets, under names that
- * match each file's PostScript name.
- *
- * Why this script exists: the expo-font config plugin, given a string path, embeds
- * the file at build time. Android registers the family by FILE name; iOS by the
- * TTF's PostScript name (name ID 6). A mismatch between the two is a silent
- * fallback — React Native picks the system font, no warning, different glyphs.
- *
- * `useFonts` still keys by the names in `lib/theme/fonts.ts`, so the embedding
- * only makes the initial `isLoaded()` check return true on Android (file name
- * matches the key). On iOS the PostScript name is what the native side knows, so
- * `useFonts` still loads at runtime — but it still works, because the alias it
- * creates matches the style name. The risk of silent fallback exists only if
- * someone deletes `useFonts` AND relies on embedding alone; this script and the
- * test in `__tests__/embedded-fonts.test.ts` keep the two in agreement.
- *
- * Run before each prebuild: `npm run copy-fonts`
+ * Refreshes `assets/fonts/` from `@expo-google-fonts`, renamed to each file's
+ * PostScript name: Android registers an embedded family by file name, iOS by
+ * PostScript name, and a mismatch is a silent fallback to the system font. The
+ * TTFs are committed; run this only when a cut changes (`npm run copy-fonts`).
  */
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';

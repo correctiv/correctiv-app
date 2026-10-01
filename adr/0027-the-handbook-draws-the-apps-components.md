@@ -311,7 +311,7 @@ about the build it claims to be about.
 **Fonts.** The exploratory measurement stubbed `@expo-google-fonts/*` with the
 family-name strings, and breaking the chain out of the barrel has the same effect
 without a stub: the families are *applied* — `fontFamilyFor()` returns
-`Merriweather_400Regular` and `<Typo>` sets it — and no font file is loaded, because
+~~`Merriweather_400Regular`~~ (now `Merriweather-Regular`, the embedded PostScript name) and `<Typo>` sets it — and no font file is loaded, because
 loading one is `expo-font`'s job and there is no Expo here. ~~So a drawn component's
 sizes, weights and line heights are the app's and its typeface is the browser's
 fallback, which is visible in the handbook beside the framed app and looks like what
