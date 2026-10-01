@@ -10,23 +10,12 @@
 // import of `Link` or `Redirect` should fail at the build, where the support table can
 // say what the plan for it is; a stub would make it fail in the window.
 //
-// ## The one thing that is an adapter rather than a re-export
+// ## What is added to the layer's `router`, and why only two names
 //
-// `router.push` in `@gjsify/react-native/router` takes `(href: string)`. expo-router's
-// takes a `Href`, which is EITHER a string OR `{ pathname, params }` — and this app uses
-// both forms, at ten call sites across seven pathnames:
-//
-//   router.push({ pathname: '/artikel', params: { url } })          a query parameter
-//   router.push({ pathname: '/projekt/[id]', params: { id } })      a path parameter
-//
-// Handing the object straight through would not fail the build (nothing typechecks the
-// bundle) and would not throw at runtime either — it would be interpolated into a URL as
-// `[object Object]`, so every parameterised navigation in the app would quietly land on
-// the not-found route. That is exactly the silent-failure shape this port exists to
-// refuse, so the two forms are converted here.
-//
-// fixed upstream in gjsify: `router.push`/`replace`/`navigate` should accept
-// expo-router's object `Href` — remove `hrefOf` and the wrapper below on the next bump.
+// `router.push`/`replace`/`navigate` take expo-router's object `Href` and `canGoBack` reads
+// React Navigation's own ref, so none of those is wrapped here. The layer REFUSES `dismissTo`
+// and `setParams` by design (`router/navigation.ts`), and the app calls each once, so
+// those two are answered below with the argument for answering them.
 
 import { CommonActions } from '@react-navigation/core';
 import { Children, createElement, isValidElement, type ReactElement } from 'react';
@@ -38,6 +27,7 @@ import {
   Tabs,
   useLocalSearchParams,
   usePathname,
+  type Href,
 } from '@gjsify/react-native/router';
 
 export { Tabs, useLocalSearchParams, usePathname };
@@ -99,88 +89,18 @@ export function Stack({ children, ...rest }: Parameters<typeof gjsifyStack>[0]):
 }
 Stack.Screen = StackScreen;
 
+export type { Href };
+
 type Params = Record<string, string | number | undefined | null>;
 
-/** expo-router's `Href`, in the two shapes this app writes. */
-export type Href = string | { pathname: string; params?: Params };
-
 /**
- * `Href` -> the path string the router takes.
+ * The layer's `router`, plus the two names it refuses.
  *
- * A param named in the pathname (`[id]`, `[slug]`) is substituted into that segment; a
- * param that is not becomes a query parameter. That is expo-router's own rule, and it is
- * why one function covers both call shapes.
- *
- * Values are percent-encoded. The app pushes whole article URLs as a param
- * (`params: { url }`), so a value containing `/`, `?` and `:` is the ordinary case here
- * rather than an edge one.
- */
-export function hrefOf(href: Href): string {
-  if (typeof href === 'string') return href;
-
-  const params: Params = { ...href.params };
-  let pathname = href.pathname;
-
-  for (const [key, value] of Object.entries(params)) {
-    const placeholder = `[${key}]`;
-    if (!pathname.includes(placeholder)) continue;
-    pathname = pathname.replace(placeholder, encodeURIComponent(String(value ?? '')));
-    delete params[key];
-  }
-
-  const query = Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
-    .join('&');
-
-  return query === '' ? pathname : `${pathname}?${query}`;
-}
-
-/**
- * How many screens this shim has pushed since the last `replace`.
- *
- * The state behind `canGoBack()`, which `@gjsify/react-native/router` does not expose —
- * and NOT a nicety: `lib/navigation/goBack.ts` calls it unconditionally, so without it
- * the reader's back button dies with `router.canGoBack is not a function`. That is a
- * latent crash on the vertical slice, invisible until someone presses the one control
- * every pushed screen has.
- *
- * A COUNTER IS AN APPROXIMATION, and here is exactly how good it is. Every navigation
- * the application makes goes through this object, so the count is right for all of them.
- * What it cannot see is a pop from the GTK side — Escape, Alt+Left, the mouse back
- * button — which `Adw.NavigationView` performs and the router bridges to React Navigation
- * without telling this module. After one of those the count is too high by one, so
- * `canGoBack()` can answer true when the stack is already at its root; `back()` then
- * pops nothing and the screen simply does not change.
- *
- * fixed upstream in gjsify: the router should expose `canGoBack`, which React
- * Navigation's own navigation object already answers — remove the counter with it.
- */
-let pushed = 0;
-
-/**
- * The methods the app calls, each accepting expo-router's `Href`.
- *
- * Six rather than four: `canGoBack` and `dismissTo` are the two the app uses that the
- * router does not have.
+ * Spread rather than wrapped: the layer's methods use no `this`, and a method it adds
+ * later arrives here without anyone remembering to forward it.
  */
 export const router = {
-  push: (href: Href): void => {
-    pushed++;
-    gjsifyRouter.push(hrefOf(href));
-  },
-  replace: (href: Href): void => {
-    // `replace` swaps the current screen rather than stacking one, so the depth is
-    // whatever it was — except from the root, where the app uses it to enter the
-    // onboarding and there is still nothing behind.
-    gjsifyRouter.replace(hrefOf(href));
-  },
-  navigate: (href: Href): void => gjsifyRouter.navigate(hrefOf(href)),
-  back: (): void => {
-    if (pushed > 0) pushed--;
-    gjsifyRouter.back();
-  },
-  canGoBack: (): boolean => pushed > 0,
+  ...gjsifyRouter,
   /**
    * expo-router's `dismissTo`, mapped to `replace`.
    *
@@ -189,13 +109,13 @@ export const router = {
    * the user to the right SCREEN — which is what the one call site
    * (`app/formular.tsx`, after a form is submitted) is for. The difference is the
    * history left behind, so it is named rather than passed off as equivalent.
+   *
+   * Still refused at gjsify 0.53 (`router/navigation.ts`), so this stays.
    */
-  dismissTo: (href: Href): void => {
-    pushed = 0;
-    gjsifyRouter.replace(hrefOf(href));
-  },
+  dismissTo: (href: Href): void => gjsifyRouter.replace(href),
+
   /**
-   * `setParams`, which the router below REFUSES, answered here for the one screen
+   * `setParams`, which the layer's router REFUSES, answered here for the one screen
    * that calls it.
    *
    * `@gjsify/react-native/router` throws a `RouterError` on this name, and the
