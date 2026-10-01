@@ -31,11 +31,9 @@ import { describe, expect, it } from 'vitest';
 import {
   actualFamily,
   clearFamilyAliases,
-  cssFontFamily,
   FONT_CUTS,
   FONT_FAMILIES,
   fontCutFor,
-  matchFamily,
   setFamilyAlias,
 } from '../src/style/fonts.js';
 
@@ -119,61 +117,19 @@ describe('the brand faces', () => {
     );
   });
 
-  it('quotes a family GTK would otherwise refuse', () => {
-    // The measured failure: `font-family: Source Sans 3` in a generated rule is a
-    // sequence of identifiers, GTK refuses the WHOLE rule, and the uncaught
-    // `StyleSheetError` takes the screen. A one-word family is fine unquoted, which is
-    // why it is the case that hides this.
-    //
-    // Both directions are asserted because both are wrong in a way nothing reports: an
-    // unquoted multi-word family kills the screen, and a quoted keyword stops being a
-    // keyword.
-    expect(cssFontFamily('Source Sans 3')).toBe("'Source Sans 3'");
-    expect(cssFontFamily('Merriweather')).toBe('Merriweather');
-    // Every family this app registers must survive the round trip.
-    for (const family of FONT_FAMILIES) {
-      const value = cssFontFamily(family);
-      expect(value.includes(' ') ? value.startsWith("'") && value.endsWith("'") : true).toBe(true);
-    }
-  });
-
-  it('finds a family the map calls something else', () => {
-    // The measured Windows case. The same byte-identical Merriweather registers as
-    // "Merriweather" under fontconfig and "Merriweather 18pt" under gvsbuild, because
-    // Google Fonts ships it as an optical-size family and the two readers disagree
-    // about whether the size axis belongs in the family name. Both stacks reported the
-    // registration as successful.
-    expect(matchFamily('Merriweather', ['Merriweather 18pt', 'Tahoma'])).toBe('Merriweather 18pt');
-    // An exact name always wins, even when an optical variant is also present.
-    expect(matchFamily('Merriweather', ['Merriweather', 'Merriweather 18pt'])).toBe('Merriweather');
-  });
-
-  it('refuses to guess between several optical sizes', () => {
-    // Which optical size to use at which point size is a design decision. Answering
-    // `undefined` makes the caller report a substitution instead of picking one.
-    expect(matchFamily('Merriweather', ['Merriweather 8pt', 'Merriweather 18pt'])).toBeUndefined();
-    // And the shape is narrow on purpose: a different family that merely starts with
-    // the same letters is not a match.
-    expect(
-      matchFamily('Merriweather', ['Merriweathers Extra', 'Merriweather Sans']),
-    ).toBeUndefined();
-    expect(matchFamily('Merriweather', [])).toBeUndefined();
-  });
-
-  it('quotes an aliased family too, because the alias is the multi-word one', () => {
-    // Where the two platform findings meet. On Linux `Merriweather` needs no quoting;
-    // on Windows the map calls it `Merriweather 18pt`, which does — so the alias has to
-    // be resolved BEFORE the quoting decision, not after.
+  it('answers with the name the map uses once one has been recorded', () => {
+    // The Windows case: the map calls `Merriweather` `Merriweather 18pt`. Which family
+    // matches is `@gjsify/gtk-host/fonts`' to test; what this host owns is that the
+    // recorded name is the one the shim asks for.
     clearFamilyAliases();
     try {
-      expect(cssFontFamily('Merriweather')).toBe('Merriweather');
+      expect(actualFamily('Merriweather')).toBe('Merriweather');
       setFamilyAlias('Merriweather', 'Merriweather 18pt');
       expect(actualFamily('Merriweather')).toBe('Merriweather 18pt');
-      expect(cssFontFamily('Merriweather')).toBe("'Merriweather 18pt'");
     } finally {
       clearFamilyAliases();
     }
-    expect(cssFontFamily('Merriweather')).toBe('Merriweather');
+    expect(actualFamily('Merriweather')).toBe('Merriweather');
   });
 
   it('answers only for a name it carries', () => {

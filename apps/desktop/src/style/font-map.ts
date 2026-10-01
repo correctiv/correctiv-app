@@ -27,7 +27,9 @@
 
 import PangoCairo from 'gi://PangoCairo?version=1.0';
 
-import { FONT_FAMILIES, matchFamily, setFamilyAlias } from './fonts.js';
+import { matchFontFamily } from '@gjsify/gtk-host/fonts';
+
+import { FONT_FAMILIES, setFamilyAlias } from './fonts.js';
 
 /** What `alignFamilies()` found, so a caller can log or assert on it. */
 export interface AlignFamiliesResult {
@@ -44,10 +46,10 @@ export interface AlignFamiliesResult {
 /**
  * Ask the default font map what it calls each declared family, and record the answer.
  *
- * `missing` is the honest outcome rather than a guess: `matchFamily` accepts an exact
- * name or a single `<family> <n>pt` optical variant and nothing else, so a family with
- * several optical sizes — a real choice about which size to use at which point size —
- * lands here instead of being picked at random. Whatever ends up in `missing` will be
+ * `missing` is the honest outcome rather than a guess: `matchFontFamily` accepts an
+ * exact name or a single optical-size variant of it, so a family with several optical
+ * sizes — a real choice about which size to use at which point size — lands here
+ * instead of being picked at random. Whatever ends up in `missing` will be
  * substituted by Pango with no diagnostic, so the caller must say so.
  */
 export function alignFamilies(): AlignFamiliesResult {
@@ -60,7 +62,7 @@ export function alignFamilies(): AlignFamiliesResult {
   const missing: string[] = [];
 
   for (const declared of FONT_FAMILIES) {
-    const actual = matchFamily(declared, available);
+    const actual = matchFontFamily(declared, available).family;
     if (actual === undefined) {
       missing.push(declared);
       continue;

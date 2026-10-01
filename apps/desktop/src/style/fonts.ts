@@ -27,8 +27,8 @@
 // Note `Source Sans 3` carries spaces, and that is not a cosmetic detail. The first
 // version of this comment claimed the family reaches GTK as a widget property, so no
 // quoting question arose. It does not: it is written into a generated CSS rule, and
-// `font-family: Source Sans 3` makes GTK refuse the whole rule. The shim quotes it
-// until gjsify #1539 does so in the emitter. The family is stored as data here for
+// `font-family: Source Sans 3` makes GTK refuse the whole rule. The shim used to quote
+// it; gjsify's emitter does since 0.48 (#1543). The family is stored as data here for
 // the same reason — it cannot be reconstructed from the asset name.
 //
 // ## One table, three readers
@@ -99,37 +99,6 @@ export const FONT_FAMILIES: readonly string[] = [
 ];
 
 /**
- * A family name as it must appear in a generated GTK CSS rule.
- *
- * A WORKAROUND WITH A REMOVAL TRIGGER, and it lives here rather than inline in the
- * shim so that a test can hold it. `@gjsify/gtk-host`'s style layer writes the value
- * into the rule verbatim — so `font-family: Source Sans 3` makes GTK refuse the WHOLE
- * rule ("Junk at end of value for font-family"), the layer's own `assertContained`
- * guard throws `StyleSheetError`, and no React boundary catches it. The screen is gone.
- * Measured on GJS with both families verifiably on Pango's font map, so the fault is the
- * CSS and not the font.
- *
- * THE REASON IS NOT THE SPACE, and getting that wrong is worth recording because this
- * comment did. A bare sequence of identifiers IS legal CSS and GTK implements it, so
- * `Noto Sans`, `DejaVu Sans` and `Fira Code` all parse unquoted. What GTK refuses is a
- * component that is not a valid identifier — overwhelmingly one starting with a DIGIT.
- * `Source Sans 3` fails on the `3`, not on the spaces. Measured against GTK's own parser
- * while reviewing the upstream fix, which corrected the issue this file's author filed.
- *
- * Quoting on a space is therefore a superset of what is needed: right for this app's two
- * families, and it would still miss a one-word `8514oem`. That is acceptable only because
- * the set is closed and asserted — `FONT_FAMILIES` is two names and a test holds it.
- *
- * fixed upstream in gjsify: #1539 quotes it in the emitter, where it belongs, and
- * leaves an already-quoted value alone — so this stays harmless until the next bump
- * removes it and the test below with it.
- */
-export function cssFontFamily(family: string): string {
-  const actual = actualFamily(family);
-  return actual.includes(' ') ? `'${actual}'` : actual;
-}
-
-/**
  * The cut behind a loaded-family name, or `undefined` when the name is not one of
  * this app's.
  *
@@ -185,22 +154,4 @@ export function clearFamilyAliases(): void {
 /** What the running map calls this family, or the declared name when nothing said. */
 export function actualFamily(declared: string): string {
   return aliases.get(declared) ?? declared;
-}
-
-/**
- * Which of `available` is this declared family, if any?
- *
- * Deliberately narrow. An exact name wins. Otherwise the only accepted shape is the
- * optical-size one that was actually measured — `<declared> <n>pt` — and only when
- * exactly ONE candidate has it: a family with several optical sizes is a choice about
- * which size to use at which point size, which is a design decision rather than
- * something to guess at startup. Anything else answers `undefined`, so the caller can
- * report a substitution instead of quietly picking a neighbour.
- */
-export function matchFamily(declared: string, available: readonly string[]): string | undefined {
-  if (available.includes(declared)) return declared;
-  const escaped = declared.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-  const optical = new RegExp(String.raw`^${escaped} \d+(?:\.\d+)?pt$`);
-  const candidates = available.filter((name) => optical.test(name));
-  return candidates.length === 1 ? candidates[0] : undefined;
 }
