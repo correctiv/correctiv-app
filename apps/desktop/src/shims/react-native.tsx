@@ -108,8 +108,6 @@
 import {
   Children,
   createElement,
-  Fragment,
-  isValidElement,
   useCallback,
   useLayoutEffect,
   useRef,
@@ -132,7 +130,7 @@ import {
   View as BaseView,
 } from '@gjsify/react-native';
 
-import { cssFontFamily, fontCutFor } from '../style/fonts.js';
+import { actualFamily, fontCutFor } from '../style/fonts.js';
 
 // Everything this file does not touch — including every refusing export, which is what
 // keeps an unimplemented name a named error rather than `undefined`.
@@ -559,9 +557,9 @@ function normalizeStyle(style: unknown): Record<string, unknown> | undefined {
           out[key] = value;
           break;
         }
-        // Quoted where GTK needs it — see `cssFontFamily`, which carries the reason and
-        // the trigger that removes it (gjsify #1539).
-        out.fontFamily = cssFontFamily(cut.family);
+        // Unquoted on purpose: the style emitter quotes a family NAME and leaves a
+        // keyword bare (gjsify #1543), so `Source Sans 3` reaches GTK as a string.
+        out.fontFamily = actualFamily(cut.family);
         // The name is the app's canonical carrier of the weight, so it wins over an
         // explicit `fontWeight`: a style asking for `Merriweather_700Bold` at weight 400
         // is a contradiction, and the family name is the half the design system keeps.
@@ -929,82 +927,6 @@ function splitArrangement(className: string | undefined): { outer?: string; inne
 }
 
 /**
- * Flatten `<>…</>` out of a child list.
- *
- * THIS IS A WORKAROUND FOR A REAL gjsify DEFECT, and it is worth stating precisely
- * because the symptom points somewhere else entirely.
- *
- * A `View` becomes a `Gtk.Overlay` only if it can SEE that one of its children is
- * absolutely positioned. `childFacts` in @gjsify/react-native asks each child element
- * for its own props (`isAbsoluteChild` -> `declaresAbsolute(child.props)`), and a
- * `React.Fragment` answers for itself: it has no `className`, so it is not absolute,
- * and the fragment's CONTENTS are never examined.
- *
- * So a parent handed `<>{a}{absolute}</>` stays a `Gtk.Box`, and the failure surfaces
- * one level down, on the child, as
- *
- *   <View> absolute — positions this element on top of its parent, so the PARENT has
- *   to be a `Gtk.Overlay` — and it is not ... the parent here is either not a `View`
- *   (a `ScrollView`, a `Pressable`, a `Text`) or the element is a root
- *
- * — a message that lists three causes, none of which is the actual one. Measured on
- * `components/media/MediaCard.tsx`, which passes `overlay={<>…</>}` to
- * `components/ui/Thumbnail.tsx`; that is every video thumbnail on Home and in the
- * Mediathek, so it is the whole screen rather than an edge case.
- *
- * Flattening here restores the parent's view of its own children. It is a consumer-side
- * shim for a layer defect, so:
- *
- * fixed upstream in gjsify: childFacts should flatten Fragments before counting
- * absolute children — remove this function and its two call sites on the next bump.
- */
-function flattenFragments(children: ReactNode): ReactNode {
-  const list = Children.toArray(children);
-  if (!list.some((child) => isValidElement(child) && child.type === Fragment)) return children;
-  const out: ReactNode[] = [];
-  for (const child of list) {
-    if (isValidElement(child) && child.type === Fragment) {
-      const inner = (child.props as { children?: ReactNode }).children;
-      for (const nested of Children.toArray(flattenFragments(inner))) out.push(nested);
-    } else {
-      out.push(child);
-    }
-  }
-  return out;
-}
-
-/**
- * React Native left-aligns `<Text>`; a `Gtk.Label` centres it.
- *
- * A SYSTEMATIC visual defect, and the kind that is easy to look straight past: nothing
- * errors, every screen renders, and the whole app is subtly wrong. `Gtk.Label:xalign`
- * defaults to 0.5, so every paragraph, byline and teaser in the app came out centred —
- * visible on Home (the hero teaser and its byline) and on Spotlight (every item's
- * text). React Native's default is `textAlign: 'left'`.
- *
- * `textAlign` IS a routed layout property, so the fix is to supply the default React
- * Native would have: left, unless the author said otherwise. Both spellings count as
- * saying otherwise — the `text-center` / `text-right` / `text-justify` utilities and an
- * explicit `textAlign` in a style object — so `app/artikel.tsx`'s centred error message
- * and `components/ui/Typo`'s callers keep working exactly as written.
- *
- * fixed upstream in gjsify: Gtk.Label should default to xalign 0 so the React Native
- * default holds — the primitive already sets `wrap: true` for the same reason (React
- * Native wraps by default and a Gtk.Label does not), so this is the same argument for a
- * second property. Remove this function and its call site on the next bump.
- */
-const AUTHOR_SET_ALIGNMENT = /(^|\s)text-(center|right|left|justify)(\s|$)/;
-
-function withDefaultTextAlign(
-  className: unknown,
-  style: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-  if (style !== undefined && 'textAlign' in style) return style;
-  if (typeof className === 'string' && AUTHOR_SET_ALIGNMENT.test(className)) return style;
-  return { ...style, textAlign: 'left' };
-}
-
-/**
  * Whether any child is an ELEMENT rather than text.
  *
  * The gate on giving a `Pressable` an inner box: a string child belongs in
@@ -1106,8 +1028,6 @@ function wrap<P extends object>(
   displayName: string,
   /** True for a primitive that is NOT a box, so child-arrangement utilities need an inner one. */
   isButton = false,
-  /** True for a primitive backed by a `Gtk.Label`, which needs React Native's alignment default. */
-  isLabel = false,
 ) {
   // The return type is DECLARED, not inferred. `createElement(Base as never, …)`
   // resolves to an overload returning `never`, which makes every one of these
@@ -1116,18 +1036,6 @@ function wrap<P extends object>(
   const Wrapped = (props: P): ReactElement => {
     const aspect = aspectRatioOf((props as { style?: unknown }).style);
     const { passthrough, accessibility } = normalize(props as NormalizedProps, displayName);
-
-    if ('children' in passthrough) {
-      passthrough.children = flattenFragments(passthrough.children as ReactNode);
-    }
-
-    if (isLabel) {
-      const aligned = withDefaultTextAlign(
-        passthrough.className,
-        passthrough.style as Record<string, unknown> | undefined,
-      );
-      if (aligned !== undefined) passthrough.style = aligned;
-    }
 
     const bridged = bridgeClassName(passthrough.className);
     if (bridged.className === undefined) delete passthrough.className;
@@ -1256,7 +1164,7 @@ export const Platform = BasePlatform as Omit<typeof BasePlatform, 'OS'> & {
 // typechecked clean and would have accepted any misspelling of it.
 export const View = wrap<ViewProps>(BaseView, 'View');
 
-const TextBase = wrap<TextProps>(BaseText, 'Text', false, true);
+const TextBase = wrap<TextProps>(BaseText, 'Text');
 
 /** Just enough of `Gtk.Label` to measure it and pin its width, structurally. */
 type MeasurableLabel = {
