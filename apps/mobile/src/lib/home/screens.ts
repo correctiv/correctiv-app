@@ -32,18 +32,17 @@
  * block on the wrong screen would be refusing something nobody can express (ADR 0054 §5).
  *
  * The other reason is the one `settings.ts` gives about itself: a declaration a generator
- * may one day read by importing it must hold no React and import nothing at a path Node
- * cannot resolve. This file imports nothing at all, which is the cheapest way to keep
- * that door open.
+ * reads by importing it must hold no React and import nothing at a path Node cannot
+ * resolve. This file imports a type and nothing else, which is what keeps that door open.
  */
 
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+
 /**
- * A screen whose arrangement is a document the newsroom edits.
- *
- * One member today, and a union rather than a string so that the second one is a type
- * error everywhere it has not been thought about rather than a value that flows through.
+ * The type itself lives in the core, which owns the parser that refuses a block on a
+ * screen it does not declare (ADR 0054 §5); this file is the declaration that parser reads,
+ * carried across by `scripts/generate-home-settings.mjs` into `module-screens.generated.ts`.
  */
-export type ConfigurableScreen = 'home';
 
 /**
  * Block name, as the document writes it, to the screens it may be arranged on.

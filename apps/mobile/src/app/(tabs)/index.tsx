@@ -15,7 +15,7 @@ import { useSession } from '@/lib/store/core';
  * callout, the media row, backstage, and a quiet thank-you.
  *
  * **That order is no longer written here.** It is
- * `@correctiv/app-core/src/data/home.layout.json`, an ordered list of sections each
+ * `@correctiv/app-core/src/data/layout/screens/home.json`, an ordered list of sections each
  * naming a module, and this screen is the loop that draws them
  * ([ADR 0036](../../../../../adr/0036-the-home-screen-becomes-data.md)). What each module
  * renders is `lib/home/modules.tsx`; which of them appear right now is

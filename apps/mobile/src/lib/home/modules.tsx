@@ -31,7 +31,7 @@ import { useColors } from '@/lib/theme';
  * This is the host's half of ADR 0036: the document says which places exist and in what
  * order, and this file says what a place named `spotlight-briefing` actually renders.
  * The screen (`app/(tabs)/index.tsx`) is then a loop, and the source order that used to
- * BE the layout is `@correctiv/app-core/data/home.layout.json`.
+ * BE the layout is `@correctiv/app-core/data/layout/screens/home.json`.
  *
  * **The map is the app's vocabulary, so it is asserted in both directions.**
  * `__tests__/home-layout.test.tsx` fails if the document names a module with no entry

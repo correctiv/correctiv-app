@@ -20,7 +20,7 @@ import { wbMessage, type WorkbenchMessage } from '../i18n/messages';
  * `content/scenarios/<name>.json` is a home-layout document exactly as the core parses
  * it, byte for byte what `formatLayoutDocument` prints, and nothing else. §12 is the
  * reason: one validator and not two, and a scenario that can become the real thing by
- * copying one file over `packages/app-core/src/data/home.layout.json`. A wrapper with
+ * copying one file over `packages/app-core/src/data/layout/screens/home.json`. A wrapper with
  * the document under a key would be a second format, and promoting it would be an edit
  * somebody can get wrong.
  *

@@ -2,7 +2,7 @@
  * The home screen as a day, and what it takes to read one somebody else wrote.
  *
  * [ADR 0036](../../../../adr/0036-the-home-screen-becomes-data.md) turned the screen's
- * source order into `data/home.layout.json`: an ordered list of sections, each naming a
+ * source order into `data/layout/screens/home.json`: an ordered list of sections, each naming a
  * module the host can draw. [ADR 0039](../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md)
  * turns the rest of it — when a section appears, and what it is configured to show —
  * into a **sequence of moments**.
@@ -83,7 +83,6 @@
  * reader**. `home-audience.ts` is the one file that says what an audience means.
  */
 
-import homeLayoutDocument from '../data/home.layout.json';
 import { platform } from '../ports';
 import {
   addDays,
@@ -96,6 +95,8 @@ import {
 } from './berlin-time';
 import { audienceOf, isAudience, reaches, type Audience, type Reader } from './home-audience';
 import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
+import { MODULE_SCREENS } from './module-screens.generated';
+import { SCREEN_DOCUMENTS, type ConfigurableScreen } from './screen-layout';
 
 /**
  * The version this app was written against.
@@ -306,6 +307,7 @@ export type LayoutProblemCode =
   | 'section-id-invalid'
   | 'id-unsafe'
   | 'section-module-invalid'
+  | 'section-module-not-on-screen'
   | 'section-id-duplicate'
   | 'section-unknown-key'
   | 'section-hidden-invalid'
@@ -439,8 +441,16 @@ export function minuteOfDay(now: number | Date): MinuteOfDay {
  * document's grammar and the grammar is this package's (`home-settings.ts`), while which
  * modules a host can DRAW is the host's. The two are separate questions and the parser
  * asks them separately.
+ *
+ * `screen` is the screen the document arranges (ADR 0054 §5). A block the app declares
+ * for other screens only is refused here with `section-module-not-on-screen`; a module
+ * with no declaration at all is left to `renderable`, as the grammar tests rely on.
  */
-export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>): HomeLayoutParse {
+export function parseHomeLayout(
+  input: unknown,
+  renderable?: ReadonlySet<string>,
+  screen: ConfigurableScreen = 'home',
+): HomeLayoutParse {
   const problems: LayoutProblem[] = [];
 
   if (!isRecord(input)) {
@@ -466,7 +476,7 @@ export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>
   const parsed: HomeSection[] = [];
   const taken = new Set<string>();
   sections.forEach((raw, index) => {
-    const section = parseSection(raw, index, taken, renderable, problems);
+    const section = parseSection(raw, index, taken, renderable, screen, problems);
     if (!section) return;
     taken.add(section.id);
     parsed.push(section);
@@ -494,6 +504,7 @@ function parseSection(
   index: number,
   taken: ReadonlySet<string>,
   renderable: ReadonlySet<string> | undefined,
+  screen: ConfigurableScreen,
   problems: LayoutProblem[],
 ): HomeSection | null {
   if (!isRecord(raw)) {
@@ -534,6 +545,12 @@ function parseSection(
 
   if (hidden !== undefined && typeof hidden !== 'boolean') {
     problems.push({ code: 'section-hidden-invalid', context: { id, type: typeOf(hidden) } });
+    return null;
+  }
+
+  const declared = Object.hasOwn(MODULE_SCREENS, module) ? MODULE_SCREENS[module] : undefined;
+  if (declared && !declared.includes(screen)) {
+    problems.push({ code: 'section-module-not-on-screen', context: { id, module, screen } });
     return null;
   }
 
@@ -1391,6 +1408,7 @@ export function nextChangeAfter(layout: HomeLayout, instant: Instant): Instant |
   return later.length === 0 ? null : Math.min(...later);
 }
 
+const homeLayoutDocument = SCREEN_DOCUMENTS.home;
 const bundled = parseHomeLayout(homeLayoutDocument);
 
 /**

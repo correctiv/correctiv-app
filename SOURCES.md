@@ -105,7 +105,7 @@ Every item here is in the feature scope. None of them has anything to read.
 | Wanted | Marked MVP | Status |
 | --- | --- | --- |
 | Daily podcasts | yes | "Was zählt" has run since 2026-06-22, weekday evenings. It is **not** on the Salon5 Castopod, so its feed URL is unknown. A "Morgen-Podcast" is named with the note "(in konzeption)". |
-| Time-based modules: morning podcast, evening Spotlight + "Was zählt" | yes | The mechanism exists and grew: `packages/app-core/src/data/home.layout.json` is a day, a list of moments each carrying what changes at it, and `packages/app-core/src/lib/home-layout.ts` folds it up to a minute (ADR 0039). Both MVP slots still have no section at all because of the row above. |
+| Time-based modules: morning podcast, evening Spotlight + "Was zählt" | yes | The mechanism exists and grew: `packages/app-core/src/data/layout/screens/home.json` is a day, a list of moments each carrying what changes at it, and `packages/app-core/src/lib/home-layout.ts` folds it up to a minute (ADR 0039). Both MVP slots still have no section at all because of the row above. |
 | Vertical video | yes | No source named. CORRECTIV's PeerTube is running and the player exists. |
 | All events | yes | Nothing in the repo and no source named. One sample event sits in the Backstage screen. |
 | Local newsletter posts for subscribers | yes | The entitlement carries `localAreas`; the profile prints them, and nothing selects content by them. The five local Castopod shows are one candidate, the local Spotlight newsletters another; the requirements themselves ask "differences between local Spotlights and Lokal Redaktion?" |
