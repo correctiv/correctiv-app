@@ -72,6 +72,12 @@ export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen
   'search-entry': ['entdecken'],
   'topic-rail': ['entdecken'],
   'project-directory': ['entdecken'],
+  'mediathek-header': ['mediathek'],
+  'live-radio-banner': ['mediathek'],
+  'podcast-rail': ['mediathek'],
+  'gespraech-rail': ['mediathek'],
+  'funfacts-rail': ['mediathek'],
+  'bonus-audio-list': ['mediathek'],
 };
 
 /** The blocks a screen's palette may offer, which is what the editor asks for. */

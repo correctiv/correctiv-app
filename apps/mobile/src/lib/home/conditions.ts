@@ -76,6 +76,13 @@ export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | nul
   'search-entry': null,
   'topic-rail': null,
   'project-directory': null,
+  // Mediathek's blocks show their own empty and offline states, so none of them is conditional.
+  'mediathek-header': null,
+  'live-radio-banner': null,
+  'podcast-rail': null,
+  'gespraech-rail': null,
+  'funfacts-rail': null,
+  'bonus-audio-list': null,
 };
 
 /**
