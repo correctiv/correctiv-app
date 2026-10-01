@@ -86,7 +86,7 @@ export const READER_HTML = [
   'background:var(--var-color-canvas,#fff);color:var(--var-color-on-canvas,#333)}',
   'h1{font-size:22px;line-height:1.2}a{color:var(--var-color-accent,#ff5064)}</style>',
   '</head><body><h1>Ein kurzes Dokument</h1>',
-  '<p>Der Reader rendert ein vollständiges HTML-Dokument. Hier steht ein kurzer,',
+  '<p>Der Reader rendert ein vollständiges HTML-Dokument. Hier steht ein kurzes,',
   ' damit die Galerie den Rahmen zeigt und nicht den Text.</p>',
   '<p><a href="https://correctiv.org/">Ein Link</a>, den <code>onNavigate</code> abfängt.</p>',
   '</body></html>',

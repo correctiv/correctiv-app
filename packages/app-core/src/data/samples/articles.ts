@@ -88,8 +88,7 @@ const ARTICLE_VARIANTS = [
     {
       id: 'article-long-title',
       feed: 'faktencheck',
-      title:
-        'Ein sehr langer Titel, der in einer schmalen Rail-Karte über drei Zeilen läuft und deshalb hier steht',
+      title: 'Ein sehr langer Titel, der über drei Zeilen läuft und deshalb hier steht',
       url: 'https://correctiv.org/faktencheck/2026/07/02/langer-titel/',
       teaser: 'Umbruchverhalten im Rail.',
       publishedAt: '2026-07-02T08:00:00.000Z',

@@ -120,12 +120,12 @@ const CALLOUT_VARIANTS = [
     'long-text',
     'A title over three lines and an excerpt over five, against a card that clamps both.',
     {
-      slug: 'ausfuendliche-fragenstellung',
+      slug: 'ausfuehrliche-fragestellung',
       kind: 'crowdnewsroom',
       title:
-        'Ausführliche Fragenstellung: Wie viele Ihrer Mitgliederinnen arbeiten in Pflege, und was wäre der erste Schritt, der wirklich hilft?',
+        'Ausführliche Fragestellung: Wie viele Ihrer Kolleginnen und Kollegen arbeiten in der Pflege, und was wäre der erste Schritt, der wirklich hilft?',
       excerpt:
-        'Diese Fragenstellung ist bewässert lang, weil sie in der Kartenansicht auf zwei Zeilen gekürzt wird und der Rest über mehrere Zeilen läuft, bis die Zeile umbricht und die Karte ihre Höhe ändert.',
+        'Diese Fragestellung ist sehr lang, weil sie in der Kartenansicht auf zwei Zeilen gekürzt wird und der Rest über mehrere Zeilen läuft, bis die Zeile umbricht und die Karte ihre Höhe ändert.',
       intro: [
         'Der erste Absatz einer einleitenden Liste steht hier und läuft über mehrere Zeilen, damit die Karte etwas zu umbrechen hat, das nicht die Überschrift ist.',
         'Der zweite Absatz folgt ihm, weil eine Liste mit einem Eintrag kein Umbruchverhalten zeigt.',
@@ -146,7 +146,7 @@ const CALLOUT_VARIANTS = [
               {
                 key: 'bereich',
                 type: 'selectboxes',
-                label: 'Welche dieser Bereiche kommt für Sie in Frage?',
+                label: 'Welcher dieser Bereiche kommt für Sie in Frage?',
                 required: true,
                 values: [
                   { label: 'Pflege', value: 'pflege' },
