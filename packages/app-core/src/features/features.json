@@ -1,0 +1,41 @@
+{
+  "groups": [
+    { "id": "core", "state": "an", "locked": true },
+    { "id": "participate", "state": "an" },
+    { "id": "club", "state": "vorschau" },
+    { "id": "mediathek", "state": "an" },
+    { "id": "newsletter", "state": "an" },
+    { "id": "feeds", "state": "an" },
+    { "id": "discovery", "state": "an" },
+    { "id": "library", "state": "an" }
+  ],
+  "features": [
+    { "id": "reader", "group": "core", "state": "an", "provenance": "live" },
+    { "id": "search", "group": "core", "state": "an", "provenance": "live" },
+    { "id": "settings", "group": "core", "state": "an", "provenance": "live" },
+    { "id": "onboarding", "group": "core", "state": "an", "provenance": "live" },
+
+    { "id": "callouts", "group": "participate", "state": "vorschau", "provenance": "sample" },
+    { "id": "faktenforum", "group": "participate", "state": "vorschau", "provenance": "sample" },
+    { "id": "abriss-atlas", "group": "participate", "state": "vorschau", "provenance": "sample" },
+
+    { "id": "early-access", "group": "club", "state": "vorschau", "provenance": "sample" },
+    { "id": "diary", "group": "club", "state": "vorschau", "provenance": "sample" },
+    { "id": "bonus-audio", "group": "club", "state": "vorschau", "provenance": "sample" },
+    { "id": "events", "group": "club", "state": "vorschau", "provenance": "sample" },
+    { "id": "quarterly-report", "group": "club", "state": "vorschau", "provenance": "sample" },
+
+    { "id": "podcasts", "group": "mediathek", "state": "an", "provenance": "live" },
+    { "id": "live-radio", "group": "mediathek", "state": "an", "provenance": "live" },
+    { "id": "video", "group": "mediathek", "state": "an", "provenance": "live" },
+
+    { "id": "spotlight", "group": "newsletter", "state": "an", "provenance": "live" },
+
+    { "id": "feed-lokal", "group": "feeds", "state": "an", "provenance": "live" },
+    { "id": "feed-salon5", "group": "feeds", "state": "an", "provenance": "live" },
+    { "id": "feed-europe", "group": "feeds", "state": "vorschau", "provenance": "live" },
+
+    { "id": "discover", "group": "discovery", "state": "an", "provenance": "live" },
+    { "id": "saved", "group": "library", "state": "an", "provenance": "live" }
+  ]
+}

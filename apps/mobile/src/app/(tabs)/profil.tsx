@@ -16,6 +16,7 @@ import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
 import {
   useCoreActions,
+  useReachable,
   useLocale,
   useSavedArticles,
   useSession,
@@ -198,6 +199,7 @@ const IMPACT_COUNT = 3;
  */
 export default function ProfilScreen() {
   const actions = useCoreActions();
+  const reachable = useReachable();
   const session = useSession();
   const settings = useSettings();
   const saved = useSavedArticles();
@@ -309,26 +311,32 @@ export default function ProfilScreen() {
       <View className="mt-m">
         <Overline label={intl.formatMessage(COPY.areaSection)} />
         <View className="mt-2xs">
-          <NavCard
-            icon="document-text-outline"
-            title={quarterlyReport.quarter}
-            subtitle={intl.formatMessage(COPY.reportSubtitle)}
-            club
-            onPress={() => router.push('/bericht')}
-          />
-          <NavCard
-            icon="sparkles-outline"
-            title={intl.formatMessage(COPY.backstage)}
-            subtitle={intl.formatMessage(COPY.backstageSubtitle)}
-            club
-            onPress={() => router.push('/backstage')}
-          />
-          <NavCard
-            icon="bookmark-outline"
-            title={intl.formatMessage(COPY.saved)}
-            subtitle={intl.formatMessage(COPY.savedCount, { count: saved.length })}
-            onPress={() => router.push('/gespeichert')}
-          />
+          {reachable('quarterly-report') && (
+            <NavCard
+              icon="document-text-outline"
+              title={quarterlyReport.quarter}
+              subtitle={intl.formatMessage(COPY.reportSubtitle)}
+              club
+              onPress={() => router.push('/bericht')}
+            />
+          )}
+          {reachable('early-access') && (
+            <NavCard
+              icon="sparkles-outline"
+              title={intl.formatMessage(COPY.backstage)}
+              subtitle={intl.formatMessage(COPY.backstageSubtitle)}
+              club
+              onPress={() => router.push('/backstage')}
+            />
+          )}
+          {reachable('saved') && (
+            <NavCard
+              icon="bookmark-outline"
+              title={intl.formatMessage(COPY.saved)}
+              subtitle={intl.formatMessage(COPY.savedCount, { count: saved.length })}
+              onPress={() => router.push('/gespeichert')}
+            />
+          )}
           <NavCard
             icon="settings-outline"
             title={intl.formatMessage(COPY.settings)}

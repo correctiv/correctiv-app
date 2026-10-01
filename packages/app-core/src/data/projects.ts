@@ -19,6 +19,8 @@ export interface Project {
   teaserOnly?: boolean;
   /** in-app cross link */
   tab?: 'participate';
+  /** The feature that gates this entry (ADR 0072 §5). Absent means always reachable. */
+  feature?: string;
 }
 
 export interface ProjectGroup {
@@ -53,6 +55,7 @@ export const projectGroups: ProjectGroup[] = [
       },
       {
         id: 'lokal',
+        feature: 'feed-lokal',
         name: 'CORRECTIV.Lokal',
         description: 'Netzwerk für Lokaljournalismus in ganz Deutschland.',
         feed: 'lokal',
@@ -66,6 +69,7 @@ export const projectGroups: ProjectGroup[] = [
       },
       {
         id: 'europe',
+        feature: 'feed-europe',
         name: 'CORRECTIV.Europe',
         description: 'Grenzüberschreitende Recherchen in Europa, bald mit eigenem Feed.',
         teaserOnly: true,
@@ -78,6 +82,7 @@ export const projectGroups: ProjectGroup[] = [
     projects: [
       {
         id: 'salon5',
+        feature: 'feed-salon5',
         name: 'Salon5',
         description: 'Die Jugendredaktion: Radio, Podcasts und mehr aus Bottrop.',
         feed: 'salon5',
@@ -97,18 +102,21 @@ export const projectGroups: ProjectGroup[] = [
     projects: [
       {
         id: 'crowdnewsroom',
+        feature: 'callouts',
         name: 'CrowdNewsroom',
         description: 'Gemeinsam recherchieren, Ihre Hinweise zählen.',
         tab: 'participate',
       },
       {
         id: 'faktenforum',
+        feature: 'faktenforum',
         name: 'Faktenforum',
         description: 'Die Community prüft Behauptungen.',
         tab: 'participate',
       },
       {
         id: 'abriss-atlas',
+        feature: 'abriss-atlas',
         name: 'Abriss-Atlas',
         description: 'Abrisse dokumentieren in DE und CH.',
         tab: 'participate',

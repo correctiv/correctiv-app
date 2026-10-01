@@ -27,7 +27,8 @@ import { Platform, Pressable, ScrollView, View } from 'react-native';
 import type { ThemePreference } from '@correctiv/app-core/stores/settings';
 
 import { Hairline, Overline, SafeAreaView, Typo } from '@/components/ui';
-import { useCoreActions, useTheme } from '@/lib/store/core';
+import { featureState } from '@correctiv/app-core/features/features';
+import { useAppSelector, useCoreActions, useTheme } from '@/lib/store/core';
 import { useIsDark } from '@/lib/theme';
 
 import { CATALOGUE, componentId, type Folder, type Specimen } from './catalogue';
@@ -109,6 +110,22 @@ function Surface({
       </Typo>
       {children}
     </View>
+  );
+}
+
+/**
+ * What a release build would do with this component, when it would not draw it.
+ *
+ * Shown and labelled rather than hidden (ADR 0072 §5): hiding it here would repeat in the
+ * gallery the invisibility the feature registry exists to end.
+ */
+function FeatureMark({ feature }: { feature: string }) {
+  const state = useAppSelector((s) => featureState(s, feature));
+  if (state === 'an') return null;
+  return (
+    <Typo variant="text-s" color="accent" className="mt-4xs">
+      {`Feature "${feature}" is ${state}: ${state === 'vorschau' ? 'preview builds only' : 'in no build'}.`}
+    </Typo>
   );
 }
 
@@ -352,6 +369,7 @@ export function Gallery({ only, bare }: { only?: string; bare?: boolean }) {
                     them read as a mistake rather than as a boundary. */}
                 {i === 0 ? null : <Hairline className="mb-l" />}
                 {bare ? null : <Typo variant="headline-s">{entry.name}</Typo>}
+                {entry.feature ? <FeatureMark feature={entry.feature} /> : null}
                 {entry.note ? (
                   <Typo variant="text-s" color="on-canvas-muted" className="mt-4xs">
                     {entry.note}

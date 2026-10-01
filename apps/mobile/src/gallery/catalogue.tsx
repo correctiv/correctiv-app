@@ -125,6 +125,12 @@ export interface Entry {
   /** One line, only where the specimen alone would mislead. */
   note?: string;
   /**
+   * The feature this component belongs to (ADR 0072 §5). The entry stays in the gallery
+   * whatever the feature's state is, and the page marks it when a release build would not
+   * draw it, so a person can still look at what they cannot ship.
+   */
+  feature?: string;
+  /**
    * `readonly`, and so is `Folder['entries']`, because `LISTED` below is a
    * `const` assertion and a const-asserted array is a readonly tuple. That is
    * what keeps `'Typo'` a literal type instead of a `string`, which is the whole
@@ -608,11 +614,13 @@ const LISTED = [
       },
       {
         name: 'MediathekReihe',
+        feature: 'video',
         note: 'Loads a video channel on first render, so this entry makes a request.',
         specimens: [{ label: 'default', node: <MediathekReihe onOpenMediathek={noop} /> }],
       },
       {
         name: 'BackstageTeaser',
+        feature: 'diary',
         specimens: [
           {
             label: 'default',
@@ -622,6 +630,7 @@ const LISTED = [
       },
       {
         name: 'CalloutTeaser',
+        feature: 'callouts',
         specimens: [
           {
             label: 'kind="crowdnewsroom"',
@@ -632,6 +641,7 @@ const LISTED = [
       },
       {
         name: 'EarlyAccessCard',
+        feature: 'early-access',
         specimens: [
           { label: 'onPress', node: <EarlyAccessCard onPress={noop} /> },
           { label: 'without onPress', node: <EarlyAccessCard /> },
@@ -754,6 +764,7 @@ const LISTED = [
     entries: [
       {
         name: 'CalloutCard',
+        feature: 'callouts',
         specimens: [
           {
             label: 'kind="crowdnewsroom"',
@@ -764,6 +775,7 @@ const LISTED = [
       },
       {
         name: 'ClaimStatusTag',
+        feature: 'faktenforum',
         specimens: CLAIMS.map((claim) => ({
           label: `status="${claim.status}"`,
           node: <ClaimStatusTag claim={claim} />,

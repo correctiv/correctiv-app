@@ -4,7 +4,9 @@ import { defineMessages, useIntl } from 'react-intl';
 import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { tabReachable } from '@/lib/features';
 import { railScreenOptions, renderRailTabBar } from '@/lib/navigation/railTabs';
+import { useReachable } from '@/lib/store/core';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
@@ -93,6 +95,8 @@ export default function TabsLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const reachable = useReachable();
+  const tab = (route: string) => tabReachable(route, reachable);
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
 
   const rail = width >= sizes.railBreakpoint;
@@ -150,27 +154,33 @@ export default function TabsLayout() {
             tabBarIcon: tabIcon('home', 'home-outline'),
           }}
         />
-        <Tabs.Screen
-          name="entdecken"
-          options={{
-            title: intl.formatMessage(COPY.discover),
-            tabBarIcon: tabIcon('compass', 'compass-outline'),
-          }}
-        />
-        <Tabs.Screen
-          name="mediathek"
-          options={{
-            title: intl.formatMessage(COPY.mediathek),
-            tabBarIcon: tabIcon('play-circle', 'play-circle-outline'),
-          }}
-        />
-        <Tabs.Screen
-          name="mitmachen"
-          options={{
-            title: intl.formatMessage(COPY.participate),
-            tabBarIcon: tabIcon('people', 'people-outline'),
-          }}
-        />
+        <Tabs.Protected guard={tab('entdecken')}>
+          <Tabs.Screen
+            name="entdecken"
+            options={{
+              title: intl.formatMessage(COPY.discover),
+              tabBarIcon: tabIcon('compass', 'compass-outline'),
+            }}
+          />
+        </Tabs.Protected>
+        <Tabs.Protected guard={tab('mediathek')}>
+          <Tabs.Screen
+            name="mediathek"
+            options={{
+              title: intl.formatMessage(COPY.mediathek),
+              tabBarIcon: tabIcon('play-circle', 'play-circle-outline'),
+            }}
+          />
+        </Tabs.Protected>
+        <Tabs.Protected guard={tab('mitmachen')}>
+          <Tabs.Screen
+            name="mitmachen"
+            options={{
+              title: intl.formatMessage(COPY.participate),
+              tabBarIcon: tabIcon('people', 'people-outline'),
+            }}
+          />
+        </Tabs.Protected>
         <Tabs.Screen
           name="profil"
           options={{

@@ -7,6 +7,13 @@ import {
   type UnknownAction,
 } from '@reduxjs/toolkit';
 
+import {
+  featuresInitialState,
+  featuresReducer,
+  type Channel,
+  type FeatureOverride,
+  type FeaturesState,
+} from '../features/features';
 import { audioMiddleware, audioReducer } from './audio';
 import { feedsReducer } from './feeds';
 import { homeLayoutReducer } from './homeLayout';
@@ -46,6 +53,7 @@ const combined = combineReducers({
   audio: audioReducer,
   video: videoReducer,
   homeLayout: homeLayoutReducer,
+  features: featuresReducer,
 });
 
 /**
@@ -65,11 +73,15 @@ const combined = combineReducers({
  * language is something the host said and has not stopped saying. So the reset
  * restores every slice and then puts that one field back.
  */
-function reducerFor(locale: Locale | undefined): typeof combined {
+function reducerFor(locale: Locale | undefined, features: FeaturesState): typeof combined {
   return (state, action) => {
     const next = combined(resetStore.match(action) ? undefined : state, action);
-    if (locale === undefined || !resetStore.match(action)) return next;
-    return { ...next, settings: { ...next.settings, locale } };
+    if (!resetStore.match(action)) return next;
+    // The channel is construction state like the locale: a reset that dropped it would
+    // fall back to `release` under a frame that was asked for `preview`.
+    const kept = { ...next, features };
+    if (locale === undefined) return kept;
+    return { ...kept, settings: { ...kept.settings, locale } };
   };
 }
 
@@ -163,17 +175,40 @@ export interface AppStoreOptions {
    * itself.
    */
   locale?: Locale;
+  /**
+   * Which build this is, for the feature registry
+   * ([ADR 0072](../../../../adr/0072-features-are-released-by-a-commit-and-never-by-a-fetch.md) §1).
+   * Construction state for the reason the locale is: the host says it once and nothing
+   * dispatches it. **Omitted means `release`**, the fail-closed answer; only a host that
+   * knows it is a preview says so.
+   */
+  channel?: Channel;
+  /** The workbench's per-frame override of the feature states (ADR 0072 §6). Preview only. */
+  featureOverride?: FeatureOverride | null;
 }
 
-export function createAppStore({ enhancers = [], devTools, locale }: AppStoreOptions = {}) {
+export function createAppStore({
+  enhancers = [],
+  devTools,
+  locale,
+  channel = 'release',
+  featureOverride = null,
+}: AppStoreOptions = {}) {
+  const features: FeaturesState = {
+    ...featuresInitialState,
+    channel,
+    // An override is a way to look at `vorschau`; in a release it would be a way to ship it.
+    override: channel === 'preview' ? featureOverride : null,
+  };
   return configureStore({
-    reducer: reducerFor(locale),
+    reducer: reducerFor(locale, features),
     devTools,
     // Only when the host said so, so that a store built without options is byte for
     // byte the one every existing test already builds.
-    ...(locale === undefined
-      ? {}
-      : { preloadedState: { settings: { ...settingsInitialState, locale } } }),
+    preloadedState: {
+      features,
+      ...(locale === undefined ? {} : { settings: { ...settingsInitialState, locale } }),
+    },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         immutableCheck: false,

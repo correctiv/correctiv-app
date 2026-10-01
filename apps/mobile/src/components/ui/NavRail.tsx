@@ -4,6 +4,8 @@ import { Pressable, View } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { MiniPlayer } from '@/components/player/MiniPlayer';
+import { tabReachable } from '@/lib/features';
+import { useReachable } from '@/lib/store/core';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 import { ScaledText } from './ScaledText';
@@ -105,6 +107,7 @@ export type NavRailProps = {
 export function NavRail({ active, onSelect, insets }: NavRailProps) {
   const intl = useIntl();
   const colors = useColors();
+  const reachable = useReachable();
   const top = insets?.top ?? 0;
   const bottom = insets?.bottom ?? 0;
   return (
@@ -118,7 +121,7 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
     >
       <View className="flex-1 justify-between">
         <View style={{ gap: spacingPx['2xs'] }}>
-          {TABS.map((tab) => {
+          {TABS.filter((tab) => tabReachable(tab.name, reachable)).map((tab) => {
             const selected = active === tab.name;
             const tint = selected ? colors.accent : colors['on-canvas-muted'];
             return (

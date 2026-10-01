@@ -13,7 +13,7 @@ import type { YoutubeKey } from '@correctiv/app-core/stores/media';
 import type { Video } from '@correctiv/app-core/types/models';
 import { playEpisode, togglePlay } from '@/lib/audio/player';
 import { useEpisodeStatus } from '@/lib/audio/useAudio';
-import { useCoreActions, usePodcastLibrary, useVideoChannel } from '@/lib/store/core';
+import { useCoreActions, usePodcastLibrary, useReachable, useVideoChannel } from '@/lib/store/core';
 
 /**
  * Everything this screen says, in one place, in ENGLISH — the German that ships
@@ -74,6 +74,7 @@ const BONUS_SHELF = 'Backstage · Club';
 export default function MediathekScreen() {
   const intl = useIntl();
   const podcasts = usePodcastLibrary();
+  const reachable = useReachable();
 
   return (
     <Screen>
@@ -81,36 +82,44 @@ export default function MediathekScreen() {
         {MEDIATHEK}
       </Typo>
 
-      <LiveBanner subtitle={intl.formatMessage(COPY.liveSubtitle)} />
+      {reachable('live-radio') && <LiveBanner subtitle={intl.formatMessage(COPY.liveSubtitle)} />}
 
-      <View className="mt-l">
-        <SectionHeader title={intl.formatMessage(COPY.podcasts)} className="mb-s" />
-        {podcasts.status === 'offline' && (
-          <Typo variant="text-s" color="on-canvas-muted" className="mb-2xs">
-            {intl.formatMessage(COPY.offlineEpisodes)}
-          </Typo>
-        )}
-        <Rail>
-          {podcasts.series.map((series) => (
-            <SeriesTile key={series.id} series={series} onPress={openSeries} />
-          ))}
-        </Rail>
-      </View>
+      {reachable('podcasts') && (
+        <View className="mt-l">
+          <SectionHeader title={intl.formatMessage(COPY.podcasts)} className="mb-s" />
+          {podcasts.status === 'offline' && (
+            <Typo variant="text-s" color="on-canvas-muted" className="mb-2xs">
+              {intl.formatMessage(COPY.offlineEpisodes)}
+            </Typo>
+          )}
+          <Rail>
+            {podcasts.series.map((series) => (
+              <SeriesTile key={series.id} series={series} onPress={openSeries} />
+            ))}
+          </Rail>
+        </View>
+      )}
 
-      <VideoRail title={CHANNEL_GESPRAECH} channel="gespraech" />
-      <VideoRail title={CHANNEL_FUNFACTS} channel="funfacts" />
+      {reachable('video') && (
+        <>
+          <VideoRail title={CHANNEL_GESPRAECH} channel="gespraech" />
+          <VideoRail title={CHANNEL_FUNFACTS} channel="funfacts" />
+        </>
+      )}
 
-      <View className="mt-l">
-        <SectionHeader title={intl.formatMessage(COPY.fromBackstage)} />
-        {/* No club label here: every row already carries the yellow Club badge, and a
+      {reachable('bonus-audio') && (
+        <View className="mt-l">
+          <SectionHeader title={intl.formatMessage(COPY.fromBackstage)} />
+          {/* No club label here: every row already carries the yellow Club badge, and a
             coral one above them said the same word twice in the wrong colour — coral
             is the journalism CTA, yellow is the club (see ui/Button.tsx). */}
-        <View className="mt-2xs">
-          {bonusMedia.map((bonus) => (
-            <BonusRow key={bonus.id} bonus={bonus} />
-          ))}
+          <View className="mt-2xs">
+            {bonusMedia.map((bonus) => (
+              <BonusRow key={bonus.id} bonus={bonus} />
+            ))}
+          </View>
         </View>
-      </View>
+      )}
     </Screen>
   );
 }

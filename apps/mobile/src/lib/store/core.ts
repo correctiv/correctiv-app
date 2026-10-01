@@ -12,7 +12,7 @@
  */
 import { bindActionCreators, type StoreEnhancer } from '@reduxjs/toolkit';
 import type { router } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useDispatch, useSelector, useStore, type TypedUseSelectorHook } from 'react-redux';
 
@@ -70,6 +70,8 @@ import {
   settingsActions,
   textSizeFollowsSystem,
 } from '@correctiv/app-core/stores/settings';
+import { isReachable } from '@correctiv/app-core/features/features';
+import { CHANNEL, previewFeatureOverride } from '@/lib/channel';
 import { previewLocale, SHIPPED_LOCALE } from '@/lib/locale';
 import {
   fetchIssues,
@@ -174,6 +176,14 @@ export const coreStore = createAppStore({
    * `SHIPPED_LOCALE` everywhere the app actually ships.
    */
   locale: previewLocale() ?? SHIPPED_LOCALE,
+  /*
+   * Which build this is, for the feature registry (ADR 0072 §1). `lib/channel.ts` says
+   * why a native build without `__DEV__` is `release` and why only the dev server and the
+   * web export are `preview`. The override is read once, here, and the store drops it
+   * outside `preview`.
+   */
+  channel: CHANNEL,
+  featureOverride: previewFeatureOverride(),
 });
 
 /** Typed `useSelector`, so a selector's state argument is never `any`. */
@@ -189,6 +199,22 @@ export const useMedia = () => useAppSelector((s) => s.media);
 export const useVideo = () => useAppSelector((s) => s.video);
 
 // --- narrow selectors --------------------------------------------------------
+
+/**
+ * Whether a feature may be reached in this build (ADR 0072). For one id; for a list use
+ * `useReachable`, which is one subscription however many ids it is asked about.
+ */
+export const useFeatureReachable = (id: string) => useAppSelector((s) => isReachable(s, id));
+
+/**
+ * A function answering `isReachable` for any id, redrawn when the feature state changes.
+ * It subscribes to the `features` slice, which is construction state and so never changes
+ * after the store is built; the dependency is stated for the day it does.
+ */
+export const useReachable = () => {
+  const features = useAppSelector((s) => s.features);
+  return useCallback((id: string) => isReachable({ features }, id), [features]);
+};
 
 /**
  * The door's one question, read per render. It reads the entitlement and never the

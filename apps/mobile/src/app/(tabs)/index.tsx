@@ -7,7 +7,8 @@ import { Screen } from '@/components/ui';
 import { useHomeInstant } from '@/lib/home/clock';
 import { useHomeLayout } from '@/lib/home/layout';
 import { HOME_MODULES } from '@/lib/home/modules';
-import { useSession } from '@/lib/store/core';
+import { MODULE_FEATURES } from '@/lib/features';
+import { useReachable, useSession } from '@/lib/store/core';
 
 /**
  * Home — a curated cross-section of the ecosystem, in the draft's order: lead research,
@@ -53,7 +54,13 @@ export default function HomeScreen() {
   const { entitlement } = useSession();
   const reader = useMemo(() => readerOf(entitlement), [entitlement]);
   const instant = useHomeInstant(layout);
-  const sections = sectionsAtInstant(layout, instant, reader);
+  const reachable = useReachable();
+  // A block of a feature this build cannot reach is left out without a trace: the document
+  // stays valid, so the same file is right in the preview (ADR 0072 §5).
+  const sections = sectionsAtInstant(layout, instant, reader).filter((section) => {
+    const gate = MODULE_FEATURES[section.module];
+    return gate === undefined || reachable(gate.feature);
+  });
 
   return (
     <Screen>

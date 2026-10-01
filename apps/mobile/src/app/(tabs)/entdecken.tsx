@@ -9,6 +9,7 @@ import { Overline, Screen, Typo } from '@/components/ui';
 import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
 import { projectTarget } from '@/lib/discover/target';
 import { openLink } from '@/lib/openLink';
+import { useReachable } from '@/lib/store/core';
 
 /**
  * The tab's own name, in ENGLISH; the German that ships is
@@ -33,6 +34,7 @@ const COPY = defineMessages({
  */
 export default function EntdeckenScreen() {
   const intl = useIntl();
+  const reachable = useReachable();
   return (
     <Screen>
       <Typo variant="headline-xl" className="mb-s">
@@ -45,16 +47,22 @@ export default function EntdeckenScreen() {
         <TopicRail onOpenTopic={openProject} />
       </View>
 
-      {projectGroups.map((group) => (
-        <View key={group.id} className="mt-m">
-          <Overline label={group.title} />
-          <View className="mt-2xs">
-            {group.projects.map((project) => (
-              <ProjectRow key={project.id} project={project} onPress={openProjectCard} />
-            ))}
+      {projectGroups.map((group) => {
+        const projects = group.projects.filter(
+          (project) => project.feature === undefined || reachable(project.feature),
+        );
+        if (projects.length === 0) return null;
+        return (
+          <View key={group.id} className="mt-m">
+            <Overline label={group.title} />
+            <View className="mt-2xs">
+              {projects.map((project) => (
+                <ProjectRow key={project.id} project={project} onPress={openProjectCard} />
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </Screen>
   );
 }
