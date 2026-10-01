@@ -1368,30 +1368,18 @@ export function ScrollView(props: ScrollViewProps): ReactElement {
 export type ScrollView = unknown;
 
 /**
- * `AppState`, which this host does not have, said once rather than per caller.
+ * `AppState`, answered from the windows: `active` while one of the app's toplevels
+ * holds the compositor's focus (`notify::is-active`), `background` while none does.
  *
- * Tier P3 in the layer's support table, with `Gtk.Application` / `Gdk.Surface` named as
- * the route to a real one. Nothing is built on that here: Android's foreground
- * lifecycle and a window losing the compositor's focus are different events, and
- * reporting a focus change as `'background'` would be worse than reporting nothing —
- * `useHomeLayoutRefresh` would re-fetch the home document every time the user alt-tabbed
- * away and back.
+ * Tier P3 in the layer's support table, so the star export above would throw. Android's
+ * foreground lifecycle and a window losing focus are not the same event, and this does
+ * not pretend they are — it reports exactly what GTK knows. The one reader,
+ * `useHomeLayoutRefresh`, may be told more often than a phone would tell it, which is
+ * harmless: the core's thunk keeps a ten-minute floor between fetches.
  *
- * **What it costs, stated.** `lib/home/layout.ts` refreshes the home document on every
- * return to the foreground. On this host that never fires, so the document is whatever
- * the launch fetched until the app is restarted. The desktop host is a feasibility
- * demonstration that runs for minutes, so this is a real absence and not a real
- * problem; a host that ran for days would want `Gdk.Surface:state` wired to it.
- *
- * The subscription is a real object with a real `remove()`, because the caller stores
- * it and calls that on unmount — a `null` here would be a crash on the way out.
+ * `platform/app-state.ts` is the logic and `platform/foreground.ts` the GTK end.
  */
-export const AppState = {
-  currentState: 'active' as const,
-  addEventListener(_event: string, _handler: (state: string) => void) {
-    return { remove(): void {} };
-  },
-};
+export { appState as AppState } from '../platform/foreground.js';
 
 /**
  * `BackHandler`, which this host does not have either, and for a sharper reason.
