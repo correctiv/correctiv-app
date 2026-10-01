@@ -697,5 +697,29 @@
       "2": ["What this retires"],
       "3": ["Consequences"]
     }
+  },
+  "0071": {
+    "slugs": ["screens-become-documents-and-the-tab-bar-becomes-one-too"],
+    "decisions": {
+      "1": ["One document per screen, in one place"],
+      "2": ["The parser refuses a block on a screen it does not declare"],
+      "3": ["A setting belongs to a placement, not to a block"],
+      "4": ["The tab bar is a navigation document, and the fixed first entry is Home"],
+      "5": ["Two to five visible tabs, and a \"Mehr\" menu that is our own"],
+      "6": ["Fetched at runtime, with the bundled copy as the floor"],
+      "7": ["A live pin is a post ID, and the pin stays the exception"]
+    }
+  },
+  "0072": {
+    "slugs": ["features-are-released-by-a-commit-and-never-by-a-fetch"],
+    "decisions": {
+      "1": ["A build has a channel, and the app sets it itself"],
+      "2": ["Fail closed, and iOS needs no configuration of its own"],
+      "3": ["A feature has three states: aus, vorschau, an"],
+      "4": ["Data provenance is a ceiling"],
+      "5": ["What a feature gates"],
+      "6": ["The release file is a commit, is bundled, and is never fetched"],
+      "7": ["Release and layout are separate files with separate writers"]
+    }
   }
 }

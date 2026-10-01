@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Sixty-nine records shaped this repo. Read them when you want to know *why* something
+Seventy-one records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -74,6 +74,8 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0068](0068-the-keyboard-controller-measured-and-rejected.md) | The keyboard controller, measured and rejected | accepted; on a 1600 px window the library scrolled the field out of the viewport where the app's own `KeyboardAvoiding` kept it visible, and removing that box too was worse; withdraws the escalation 0026 §2 named; iOS, the two other screens and the cause are not established |
 | [0069](0069-a-redraw-waits-for-a-look.md) | A redraw waits for a look | accepted, built the same day, **not run against Figma**; three decisions, a board-versus-spec diff as a pure function with 43 tests over it and zero false differences across the kit page's real 558 nodes, gating the redraw on what a person changed since the last draw rather than on what the spec changed, which is reported and does not block; identity is the spec path stamped with `setPluginData`, since Figma ids do not survive the redraw that deletes and rebuilds the nodes they name; only `Bausteine`, never the hand-transcribed screens, because a difference there reports the app moving and a warning that fires on everything says nothing; the vocabulary is the ceiling and what the Plugin API cannot read back is invisible to the diff by construction — an instance's children, and `layoutSizing*` outside auto layout; every difference classified `expressible` or `off-scale`, both refusing the redraw, and colours compared as names so two names for one value do not compare equal; retires the unconditional redraw in the tool's README, in `code.js` and in 0021 §1, and does not retire 0021's hand-transcribed-screen claim, which §1 gives the reason it cannot |
 | [0070](0070-a-left-rail-on-tablet.md) | A left rail on tablet | accepted; amends 0013 §1 for tablets — the system tab bar's phone affordances are traded for a layout that matches the reading column |
+| [0071](0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md) | Screens become documents, and the tab bar becomes one too | accepted, not built; answers 0054 §5 and its open questions — one document per screen under `data/layout/screens/`, the parser refuses a block on an undeclared screen, settings belong to a placement, a navigation document with Home fixed first, two to five visible tabs and an own "Mehr" menu, fetched with the bundled copy as the floor; notes that a live pin stores the post ID and stays the exception to the rule of 0057 §2 |
+| [0072](0072-features-are-released-by-a-commit-and-never-by-a-fetch.md) | Features are released by a commit and never by a fetch | accepted, not built; channel `release`/`preview` set by the host and fail-closed on native, three states `aus`/`vorschau`/`an`, data provenance as a ceiling, gated blocks omitted silently and labelled in the tools, `features.json` bundled and never fetched, separate from layout |
 
 Ten notes for readers of the older ones:
 
