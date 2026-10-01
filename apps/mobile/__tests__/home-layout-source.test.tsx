@@ -39,8 +39,10 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import {
   BUILT_AT,
   HOME_LAYOUT_OVERRIDE_KEY,
-  HOME_LAYOUT_URL,
+  LAYOUTS_URL,
   homeLayout,
+  layoutOverrideKey,
+  screenLayout,
   useHomeLayout,
   useHomeLayoutRefresh,
 } from '@/lib/home/layout';
@@ -73,7 +75,13 @@ function documentWith(id: string, module: string): string {
   return JSON.stringify({ version: 2, sections: [{ id, module }], moments: [] });
 }
 
-const FETCHED = documentWith('fetched', 'home-header');
+/** The merged document the deploy publishes, holding the given screens (ADR 0071 §1). */
+function merged(screens: Record<string, string>): string {
+  const parsed = Object.fromEntries(Object.entries(screens).map(([k, v]) => [k, JSON.parse(v)]));
+  return JSON.stringify({ version: 1, screens: parsed });
+}
+
+const FETCHED = merged({ home: documentWith('fetched', 'home-header') });
 const OVERRIDE = documentWith('override', 'impact-footer');
 
 function ids(layout: HomeLayout): string[] {
@@ -85,6 +93,45 @@ function holdFetched(text: string, publishedAt = BUILT_AT + 60_000) {
     coreStore.dispatch(homeLayoutActions.received({ text, publishedAt }));
   });
 }
+
+describe('the document another screen draws', () => {
+  it('is the fetched copy of that screen, and the bundle for a screen the copy lacks', () => {
+    holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'participate-header') }));
+    expect(ids(screenLayout('mitmachen'))).toEqual(['fetched-mitmachen']);
+    expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
+    expect(screenLayout('entdecken').sections.length).toBeGreaterThan(0);
+  });
+
+  it('is the bundle when the fetched part of that screen draws nothing', () => {
+    const bundled = ids(screenLayout('mitmachen'));
+    holdFetched(
+      merged({
+        home: documentWith('fetched', 'home-header'),
+        mitmachen: JSON.stringify({ version: 2, sections: [], moments: [] }),
+      }),
+    );
+    expect(ids(screenLayout('mitmachen'))).toEqual(bundled);
+    expect(ids(screenLayout('home'))).toEqual(['fetched']);
+  });
+
+  it('is its own override over its fetched copy, under its own key', () => {
+    holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'participate-header') }));
+    storage.set(
+      layoutOverrideKey('mitmachen'),
+      documentWith('override-mitmachen', 'participate-header'),
+    );
+    expect(layoutOverrideKey('mitmachen')).toBe('workbench:layout:mitmachen');
+    expect(ids(screenLayout('mitmachen'))).toEqual(['override-mitmachen']);
+    expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
+  });
+
+  it('ignores a screen it does not declare', () => {
+    holdFetched(
+      merged({ game: documentWith('game', 'home-header'), home: documentWith('h', 'home-header') }),
+    );
+    expect(ids(screenLayout('home'))).toEqual(['h']);
+  });
+});
 
 describe('the document Home draws', () => {
   it('reads the build time the config stamps', () => {
@@ -178,7 +225,7 @@ describe('when the app fetches', () => {
 
     act(() => tree.update(<Refresher ready />));
     expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(fetchSpy.mock.calls[0][0]).toBe(HOME_LAYOUT_URL);
+    expect(fetchSpy.mock.calls[0][0]).toBe(LAYOUTS_URL);
   });
 
   it('fetches again on a return to the foreground, and not on going to the background', () => {

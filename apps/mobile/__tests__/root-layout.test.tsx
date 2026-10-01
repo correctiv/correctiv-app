@@ -143,7 +143,7 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import type { Entitlement } from '@correctiv/app-core/types/models';
 
 import RootLayout from '@/app/_layout';
-import { HOME_LAYOUT_URL } from '@/lib/home/layout';
+import { LAYOUTS_URL } from '@/lib/home/layout';
 import { expoPlatform } from '@/lib/platform/expo';
 import { coreActions, coreStore } from '@/lib/store/core';
 
@@ -373,6 +373,6 @@ describe('the home document', () => {
     await mount();
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(fetchSpy.mock.calls[0]?.[0]).toBe(HOME_LAYOUT_URL);
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(LAYOUTS_URL);
   });
 });

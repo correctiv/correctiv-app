@@ -15,8 +15,8 @@ import { useReachable, useSession } from '@/lib/store/core';
  *
  * It was the body of `app/(tabs)/index.tsx`. A screen that is a document is this and
  * nothing else (ADR 0071 §1), so it lives once; the screen decides WHICH document, since
- * Home's can be replaced while it is on screen and the others' cannot yet
- * (`bundledScreenLayout`), and wraps the result in its `Screen`.
+ * a screen's can be replaced while it is on screen
+ * (`useScreenLayout`), and wraps the result in its `Screen`.
  *
  * `reachable` drops a block of a feature this build cannot reach without a trace: the
  * document stays valid, so the same file is right in the preview (ADR 0072 §5).

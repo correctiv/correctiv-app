@@ -1,18 +1,24 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { parseHomeLayout, reportLayoutProblems } from '../lib/home-layout';
+import { parseHomeLayout, reportLayoutProblems, type LayoutProblem } from '../lib/home-layout';
+import { CONFIGURABLE_SCREENS, screenDocumentOf } from '../lib/screen-layout';
 import { platform } from '../ports';
 import { fetchTextResponse } from '../services/http';
 import type { AppThunk } from './store';
 
 /**
- * The home document as the app last fetched it
- * ([ADR 0036](../../../../adr/0036-the-home-screen-becomes-data.md) §4, §5, §9, §10).
+ * The screen documents as the app last fetched them
+ * ([ADR 0036](../../../../adr/0036-the-home-screen-becomes-data.md) §4, §5, §9, §10;
+ * [ADR 0071](../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md) §1, §6).
  *
  * The app fetches its layout, keeps the last good copy and draws from that copy. Where
- * the copy comes from is ADR 0057 §4: the same file the core bundles,
- * `data/layout/screens/home.json`, published beside the site by the Pages deploy, at an address
- * the HOST holds. So the address is a parameter of the thunk below and is typed nowhere
+ * the copy comes from is ADR 0057 §4: the files under `data/layout/screens/` joined into
+ * ONE document by the Pages deploy (`{ version, screens: { <screen>: <document> } }`, with
+ * room beside `screens` for the navigation), at an address the HOST holds. One address, so
+ * every screen arrives in the same state. The slice keeps its name and its storage key
+ * from when the document was Home's alone: renaming either would drop every phone's copy.
+ *
+ * The address is a parameter of the thunk below and is typed nowhere
  * in this package; the core knows how to fetch a layout, not where a given app keeps one.
  *
  * What this slice holds is TEXT, not a parsed layout. The text is what says whether the
@@ -20,7 +26,7 @@ import type { AppThunk } from './store';
  * decides to parse again, and a parsed layout would be a second copy of the same fact
  * that could disagree with the first. The host parses what it draws, with its own set of
  * renderable modules, and reports what it drew past; this slice decides whether a
- * document is good enough to keep, and `fetchedHomeLayout` whether it is new enough to
+ * document is good enough to keep, and `fetchedLayouts` whether it is new enough to
  * draw.
  */
 export interface HomeLayoutState {
@@ -28,7 +34,7 @@ export interface HomeLayoutState {
   text: string | null;
   /**
    * When that document was published, in ms since the epoch: its `last-modified`.
-   * See `fetchedHomeLayout` for what it is compared with.
+   * See `fetchedLayouts` for what it is compared with.
    */
   publishedAt: number | null;
   /**
@@ -100,8 +106,11 @@ export const HOME_LAYOUT_MAX_CHARS = 256 * 1024;
  * an older `main` would lose to that deploy. Releases are built from `main`.
  *
  * A copy with no date is not drawn, because nothing says which is newer.
+ *
+ * The answer is the whole merged document as text; `screenDocumentOf` picks a screen out
+ * of it, and a screen it lacks is drawn from the bundle.
  */
-export function fetchedHomeLayout(state: HomeLayoutState, builtAt: number): string | null {
+export function fetchedLayouts(state: HomeLayoutState, builtAt: number): string | null {
   if (state.text === null || state.publishedAt === null) return null;
   return state.publishedAt >= builtAt ? state.text : null;
 }
@@ -160,7 +169,7 @@ export const homeLayoutActions = slice.actions;
  * - `document-undated`: no readable `last-modified`, so nothing says whether it is
  *   newer than the build. A host serving the document without one is misconfigured.
  * - `document-not-json`: a body that is not JSON at all.
- * - `document-draws-nothing`: a document this app would draw as an empty screen.
+ * - `document-draws-nothing`: a document in which this app would draw no screen at all.
  */
 export type HomeLayoutFetchCode =
   | 'document-too-large'
@@ -169,7 +178,7 @@ export type HomeLayoutFetchCode =
   | 'document-draws-nothing';
 
 /** What one call did, for a caller or a test that wants to know without reading state. */
-export type HomeLayoutRefresh =
+export type LayoutsRefresh =
   | 'too-soon'
   | 'unreachable'
   | 'older-than-bundle'
@@ -177,7 +186,7 @@ export type HomeLayoutRefresh =
   | 'unchanged'
   | 'stored';
 
-export interface RefreshHomeLayoutOptions {
+export interface RefreshLayoutsOptions {
   /** When the host's bundle was built, in ms since the epoch. */
   builtAt: number;
   /** The module names the host holds a renderer for (ADR 0036 §14). */
@@ -189,7 +198,7 @@ function report(code: HomeLayoutFetchCode, context: Record<string, number>): voi
 }
 
 /**
- * Fetch the home document and keep it if it is a layout this app can draw.
+ * Fetch the merged screen document and keep it if this app can draw a screen from it.
  *
  * In order, and each step is a decision:
  *
@@ -205,10 +214,15 @@ function report(code: HomeLayoutFetchCode, context: Record<string, number>): voi
  * 3. **Too large, then undated, then older than the build.** The first two are
  *    reported. The third is not: it is what every phone sees between an app update and
  *    the next deploy, and it is kept out of storage rather than drawn past, because a
- *    copy older than the bundle is never drawn anyway (`fetchedHomeLayout`).
+ *    copy older than the bundle is never drawn anyway (`fetchedLayouts`).
  * 4. **A body that arrived and is not a layout, or that draws nothing, IS a report**,
  *    because the newsroom believes it filled the screen and a reader is looking at an
  *    older one. Both ends validate (§9), and this is the app's end. The old copy stays.
+ *
+ *    The unit is the document, not the screen: it is kept when at least one screen it
+ *    carries draws something. A screen of it that draws nothing, or that it lacks, is
+ *    drawn from the bundle by the host, one screen at a time (ADR 0071 §6), and a screen
+ *    this app does not declare is never looked at.
  *
  *    "Draws nothing" is judged against the host's `renderable` set and not only the
  *    grammar: a document of sections that all name modules this app has never heard of
@@ -229,11 +243,11 @@ function report(code: HomeLayoutFetchCode, context: Record<string, number>): voi
  * The request carries no browser user agent, for the reason `fetchText` gives for a
  * JSON API: a header a page cannot set only invites a preflight.
  */
-export const refreshHomeLayout =
+export const refreshLayouts =
   (
     url: string,
-    { builtAt, renderable }: RefreshHomeLayoutOptions,
-  ): AppThunk<Promise<HomeLayoutRefresh>> =>
+    { builtAt, renderable }: RefreshLayoutsOptions,
+  ): AppThunk<Promise<LayoutsRefresh>> =>
   async (dispatch, getState) => {
     const now = Date.now();
     if (withinFloor(getState().homeLayout, now)) return 'too-soon';
@@ -270,8 +284,16 @@ export const refreshHomeLayout =
       return 'rejected';
     }
 
-    const { layout, problems } = parseHomeLayout(body, renderable);
-    if (!layout || layout.sections.length === 0) {
+    const problems: LayoutProblem[] = [];
+    let draws = false;
+    for (const screen of CONFIGURABLE_SCREENS) {
+      const document = screenDocumentOf(body, screen);
+      if (document === undefined) continue;
+      const parsed = parseHomeLayout(document, renderable, screen);
+      problems.push(...parsed.problems);
+      if (parsed.layout && parsed.layout.sections.length > 0) draws = true;
+    }
+    if (!draws) {
       reportLayoutProblems(problems);
       report('document-draws-nothing', { problems: problems.length });
       return 'rejected';

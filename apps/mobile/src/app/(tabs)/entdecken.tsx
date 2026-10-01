@@ -1,5 +1,5 @@
 import { Screen } from '@/components/ui';
-import { bundledScreenLayout } from '@/lib/home/layout';
+import { useScreenLayout } from '@/lib/home/layout';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 
 /**
@@ -13,9 +13,10 @@ import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
  * wholly from `@correctiv/app-core/data/projects`, which is content.
  */
 export default function EntdeckenScreen() {
+  const layout = useScreenLayout('entdecken');
   return (
     <Screen>
-      <ScreenBlocks screen="entdecken" layout={bundledScreenLayout('entdecken')} />
+      <ScreenBlocks screen="entdecken" layout={layout} />
     </Screen>
   );
 }

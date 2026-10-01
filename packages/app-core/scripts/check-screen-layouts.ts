@@ -1,0 +1,47 @@
+/**
+ * Refuses a joined screen document that the app would refuse, or draw past.
+ *
+ *     npx tsx packages/app-core/scripts/check-screen-layouts.ts site/layout.json
+ *
+ * The counterpart of `check-home-layout.ts` for the document ADR 0071 §1 publishes: every
+ * screen the app declares has to be in it and has to parse with no problem, judged by the
+ * app's own parser and stricter than the app, for the reason that script gives.
+ */
+import { readFileSync } from 'node:fs';
+
+import { parseHomeLayout } from '../src/lib/home-layout';
+import { CONFIGURABLE_SCREENS, screenDocumentOf } from '../src/lib/screen-layout';
+
+const path = process.argv[2];
+if (!path) {
+  console.error('usage: check-screen-layouts.ts <layout.json>');
+  process.exit(2);
+}
+
+let body: unknown;
+try {
+  body = JSON.parse(readFileSync(path, 'utf8'));
+} catch (err) {
+  console.error(`${path}: not a JSON file: ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(1);
+}
+
+let failed = false;
+for (const screen of CONFIGURABLE_SCREENS) {
+  const document = screenDocumentOf(body, screen);
+  if (document === undefined) {
+    console.error(`${path}: ${screen}: missing`);
+    failed = true;
+    continue;
+  }
+  const { layout, problems } = parseHomeLayout(document, undefined, screen);
+  for (const problem of problems)
+    console.error(`${path}: ${screen}: ${problem.code} ${JSON.stringify(problem.context)}`);
+  if (!layout || layout.sections.length === 0 || problems.length > 0) {
+    console.error(`${path}: ${screen}: refused`);
+    failed = true;
+  } else {
+    console.log(`${path}: ${screen}: ${layout.sections.length} sections, no problems`);
+  }
+}
+process.exit(failed ? 1 : 0);
