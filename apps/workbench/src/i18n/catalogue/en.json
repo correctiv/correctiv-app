@@ -1428,6 +1428,12 @@
   "home.module.articleHero.what": {
     "defaultMessage": "The newest investigation, full width."
   },
+  "home.module.atlasCard": {
+    "defaultMessage": "Demolition atlas card"
+  },
+  "home.module.atlasCard.what": {
+    "defaultMessage": "The card that leads to the demolition atlas."
+  },
   "home.module.backstage": {
     "defaultMessage": "Backstage",
     "description": "Backstage is the name of a CORRECTIV product and is the same word in every language. home.module.mediathek, home.module.impact and home.module.spotlight are the other three left as they are, each for the reason on its own descriptor."
@@ -1447,6 +1453,18 @@
   "home.module.callout.what": {
     "defaultMessage": "The open callout. It has two places: at midday it moves above the lead article."
   },
+  "home.module.calloutList": {
+    "defaultMessage": "Callout list"
+  },
+  "home.module.calloutList.what": {
+    "defaultMessage": "Every open callout, as cards."
+  },
+  "home.module.communityNote": {
+    "defaultMessage": "Community note"
+  },
+  "home.module.communityNote.what": {
+    "defaultMessage": "A short note about the community area."
+  },
   "home.module.discoverHeader": {
     "defaultMessage": "Discover heading"
   },
@@ -1464,6 +1482,12 @@
   },
   "home.module.faktencheck.what": {
     "defaultMessage": "The newest fact checks, as a row that scrolls sideways."
+  },
+  "home.module.faktenforumCard": {
+    "defaultMessage": "Faktenforum card"
+  },
+  "home.module.faktenforumCard.what": {
+    "defaultMessage": "The card that leads to the claims being checked together."
   },
   "home.module.feedStatus": {
     "defaultMessage": "Loading and offline notice"
@@ -1522,6 +1546,12 @@
   "home.module.mediathekHeader.what": {
     "defaultMessage": "The title of the Mediathek screen."
   },
+  "home.module.participateHeader": {
+    "defaultMessage": "Take part heading"
+  },
+  "home.module.participateHeader.what": {
+    "defaultMessage": "The title of the Take part screen, with its introduction."
+  },
   "home.module.podcastRail": {
     "defaultMessage": "Podcast rail"
   },
@@ -1546,6 +1576,12 @@
   },
   "home.module.spotlight.what": {
     "defaultMessage": "The current issue, with a link to the archive."
+  },
+  "home.module.tipCard": {
+    "defaultMessage": "Tip card"
+  },
+  "home.module.tipCard.what": {
+    "defaultMessage": "The WhatsApp tip line of the fact-checking desk."
   },
   "home.module.topicRail": {
     "defaultMessage": "Topic rail"

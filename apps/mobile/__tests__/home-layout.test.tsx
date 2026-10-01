@@ -79,6 +79,7 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import { render, renderedText, walkHostNodes } from './support/rendering';
 
 import EntdeckenScreen from '@/app/(tabs)/entdecken';
+import MitmachenScreen from '@/app/(tabs)/mitmachen';
 import HomeScreen from '@/app/(tabs)/index';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { HOME_MODULES, LIFTED_CALLOUT, placeTestID } from '@/lib/home/modules';
@@ -412,5 +413,27 @@ describe('what Entdecken draws', () => {
     const onHome = render(<ScreenBlocks screen="home" layout={placed('home', 3)} />);
     expect(cards(onHome)).toHaveLength(3);
     expect(renderedText(onHome)).toContain('Alle ansehen');
+  });
+});
+
+describe('what Mitmachen draws', () => {
+  it('draws the sections of its document in order', () => {
+    const tree = render(<MitmachenScreen />);
+    expect(renderedPlaces(tree)).toEqual([
+      'title',
+      'callouts',
+      'faktenforum',
+      'atlas',
+      'tip',
+      'community',
+    ]);
+    expect(renderedText(tree)).toContain('Mitmachen');
+  });
+
+  it('is refused on Home, which is what makes it a document of its own', () => {
+    const onHome = parseHomeLayout(SCREEN_DOCUMENTS.mitmachen, undefined, 'home');
+    expect(onHome.problems.map((problem) => problem.code)).toContain(
+      'section-module-not-on-screen',
+    );
   });
 });

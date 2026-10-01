@@ -56,6 +56,19 @@ export const home: Record<string, string> = {
   'home.module.funfactsRail.what': 'Die neuesten FunFacts-Videos.',
   'home.module.bonusAudioList': 'Backstage-Audio',
   'home.module.bonusAudioList.what': 'Die Bonus-Tonspuren des Clubs, als Liste.',
+  'home.module.participateHeader': 'Mitmachen-Titel',
+  'home.module.participateHeader.what':
+    'Die Überschrift des Mitmachen-Bildschirms, mit Einleitung.',
+  'home.module.calloutList': 'Aufrufe',
+  'home.module.calloutList.what': 'Alle offenen Aufrufe, als Karten.',
+  'home.module.faktenforumCard': 'Faktenforum-Karte',
+  'home.module.faktenforumCard.what': 'Die Karte zu den gemeinsam geprüften Behauptungen.',
+  'home.module.atlasCard': 'Abriss-Atlas-Karte',
+  'home.module.atlasCard.what': 'Die Karte zum Abriss-Atlas.',
+  'home.module.tipCard': 'Tipp-Karte',
+  'home.module.tipCard.what': 'Die WhatsApp-Tippleitung der Faktencheck-Redaktion.',
+  'home.module.communityNote': 'Community-Hinweis',
+  'home.module.communityNote.what': 'Ein kurzer Hinweis auf den Community-Bereich.',
   'home.module.unknown.what': 'Für diesen Block gibt es noch keine Beschreibung.',
 
   // --- the three settings under a block -----------------------------------------

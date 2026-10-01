@@ -83,6 +83,13 @@ export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | nul
   'gespraech-rail': null,
   'funfacts-rail': null,
   'bonus-audio-list': null,
+  // Mitmachen's blocks are fixed entry points and the sample catalogue: always there.
+  'participate-header': null,
+  'callout-list': null,
+  'faktenforum-card': null,
+  'atlas-card': null,
+  'tip-card': null,
+  'community-note': null,
 };
 
 /**

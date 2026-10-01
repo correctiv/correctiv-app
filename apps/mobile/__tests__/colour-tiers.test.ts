@@ -214,7 +214,6 @@ const NO_SUCCESSOR: Record<string, string> = {
 const STILL_ON_THE_V1_TIER: Record<string, number> = {
   'app/(tabs)/_layout.tsx: grey-500': 1,
   'app/(tabs)/_layout.web.tsx: grey-500': 1,
-  'app/(tabs)/mitmachen.tsx: grey-500': 1,
   'app/atlas.tsx: grey-500': 5,
   'app/aufruf/[slug].tsx: grey-500': 2,
   'app/backstage.tsx: grey-500': 4,
@@ -247,6 +246,7 @@ const STILL_ON_THE_V1_TIER: Record<string, number> = {
   'components/profile/SettingRow.tsx: grey-500': 1,
   'components/ui/Badge.tsx: grey-250': 1,
   'components/ui/Thumbnail.tsx: grey-300': 1,
+  'lib/home/modules.tsx: grey-500': 1,
 };
 
 describe('the deprecated v1 tier only leaves', () => {
