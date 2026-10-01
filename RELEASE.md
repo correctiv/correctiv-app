@@ -145,6 +145,30 @@ Run the **Release Android** workflow manually (Actions tab → Run workflow, or
 `gh workflow run release-android.yml`). It builds the APK and uploads it to the run
 as an artifact, without creating a release. No secrets required, because it uses the test key.
 
+### A tester build in the preview channel
+
+The manual run has one input, **preview**, off by default
+([ADR 0072](adr/0072-features-are-released-by-a-commit-and-never-by-a-fetch.md) §2).
+Ticked, the build is a `preview` build: it reaches the features `features.json` marks
+`vorschau`, which is where the unfinished things live. Untick it, or push a tag, and
+the build is a `release` build as before.
+
+```bash
+gh workflow run release-android.yml -f preview=true
+```
+
+The input sets `EXPO_PUBLIC_CORRECTIV_CHANNEL=preview` for the Gradle step, which is
+where the JS bundle is made. `apps/mobile/src/lib/channel.ts` reads it as a build
+flag: the exact value `preview` is a preview build and **anything else, including a
+missing variable, is `release`**. Nothing else sets it, so iOS and the web export are
+unaffected, and a store build cannot become a preview build by a forgotten step.
+
+Two things keep a tester build off a store track. The artifact is uploaded as
+`preview-android` rather than `release-android`, with `correctiv-app-preview-…` as the
+file name, so the two are told apart by name. And a tagged run that asks for `preview`
+fails: a tag run is attached to a GitHub Release, and a release page is exactly where
+a preview APK must not be.
+
 Done once on 2026-08-06 from `9842b27`
 ([run 31105467974](https://github.com/correctiv/correctiv-app/actions/runs/31105467974)).
 The build job green, the artifact on the run, the test-key fallback taken because no

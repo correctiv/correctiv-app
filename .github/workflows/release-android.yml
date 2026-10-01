@@ -8,6 +8,13 @@
 # Manual runs (workflow_dispatch) build the artifact and upload it to the run only —
 # no release is created. That is how to test this pipeline.
 #
+# Channel: a manual run may ask for a tester build in the `preview` channel
+# (EXPO_PUBLIC_CORRECTIV_CHANNEL=preview), which reaches the features `features.json`
+# marks `vorschau` — ADR 0072 §2's explicit manual input. It defaults to `release`,
+# every tag build is `release`, and the release job only runs on a tag, so a preview
+# APK never reaches a store track. The artifact name carries the channel so the two
+# are told apart in the run's file list.
+#
 # Signing:
 #   - If the ANDROID_KEYSTORE_* secrets are set (see RELEASE.md), the APK is signed
 #     with the real upload key.
@@ -25,6 +32,12 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      preview:
+        description: 'Tester build: reach the features marked `vorschau` (ADR 0072 §2)'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write # required to create the release and upload assets
@@ -79,20 +92,42 @@ jobs:
             console.log(`versionName=${j.expo.version} versionCode=${j.expo.android.versionCode}`);
           '
 
+      # A tag and a preview build cannot be the same artifact: the release job below
+      # attaches whatever this job built to the GitHub Release of that tag, and a
+      # tester APK on a release page reaches anybody who finds it. Refused here,
+      # where the reason is visible, rather than by skipping the attach afterwards.
+      - name: Refuse a preview build on a tag
+        if: startsWith(github.ref, 'refs/tags/') && inputs.preview
+        run: |
+          echo "::error::A tagged run is a release. Run the workflow manually from a branch to get a preview build."
+          exit 1
+
       # android/ is gitignored: it is generated from app.json. --no-install because
       # npm ci already ran at the ROOT.
       - name: Prebuild the native project
         working-directory: apps/mobile
         run: npx expo prebuild --platform android --no-install
 
+      # EXPO_PUBLIC_ is inlined into the JS bundle by Metro, and the bundle is built
+      # here rather than by `expo export`, so the variable has to be in THIS step's
+      # environment. `apps/mobile/src/lib/channel.ts` reads it and nothing else does:
+      # anything but the exact value `preview` is `release`, which is what a tag build
+      # and any workflow_dispatch without the box ticked both get.
       - name: Build release APK
         working-directory: apps/mobile/android
+        env:
+          EXPO_PUBLIC_CORRECTIV_CHANNEL: ${{ inputs.preview && 'preview' || 'release' }}
         run: ./gradlew assembleRelease
 
       # Gradle signs the release variant with the template's debug key, which is
       # generated per machine — two builds of the same commit would carry two
       # identities and testers could not update in place. apksigner replaces the
       # signature with a stable one; the APK is already zipaligned by Gradle.
+      #
+      # The file and the artifact carry the channel, so a tester build is
+      # distinguishable in the run's file list by its name and not by reading the
+      # bundle. The release name is unchanged, because the asset name on a GitHub
+      # Release is a published URL.
       - name: Sign with the release key
         id: sign
         env:
@@ -100,6 +135,7 @@ jobs:
           KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'correctiv-test' }}
           KS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'correctiv-test' }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          CHANNEL: ${{ inputs.preview && 'preview' || 'release' }}
         run: |
           set -euo pipefail
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
@@ -113,7 +149,13 @@ jobs:
           fi
           APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
           mkdir -p dist
-          NAME="correctiv-app-${GITHUB_REF_NAME}"
+          # A branch name may hold slashes, which would make the file name a path.
+          REF="${GITHUB_REF_NAME//\//-}"
+          if [ "$CHANNEL" = "preview" ]; then
+            NAME="correctiv-app-preview-${REF}"
+          else
+            NAME="correctiv-app-${REF}"
+          fi
           cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk "dist/${NAME}.apk"
           "$APKSIGNER" sign \
             --ks "$KS_PATH" --ks-pass "pass:${KS_PASSWORD}" \
@@ -122,10 +164,14 @@ jobs:
           "$APKSIGNER" verify --print-certs "dist/${NAME}.apk"
           ls -lh dist
 
+      # A preview build lands in its own artifact, so the two are told apart by name
+      # in the run's file list. The release job downloads `release-android` by name,
+      # and a tagged run is refused above if it is a preview build, so nothing that is
+      # not a release can reach a GitHub Release through this name.
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: release-android
+          name: ${{ inputs.preview && 'preview-android' || 'release-android' }}
           path: dist/*
           if-no-files-found: error
           retention-days: 30
@@ -138,9 +184,12 @@ jobs:
     # the run itself.
     if: startsWith(github.ref, 'refs/tags/')
     steps:
+      # Named, so the artifact a preview build would upload under a different name
+      # cannot be picked up here by the default of "every artifact in the run".
       - name: Download the build
         uses: actions/download-artifact@v4
         with:
+          name: release-android
           path: dist
           merge-multiple: true
 
