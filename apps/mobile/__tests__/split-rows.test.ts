@@ -62,6 +62,8 @@ const NOT_A_TWO_SIDED_ROW: Record<string, string> = {
     'The floating header over an article: a back button on one side, share and bookmark on the other, all of them fixed-size icons that do not grow with the type. Wrapping is the wrong answer for a bar that is positioned absolutely over the article — it would grow downwards into the text it floats over.',
   'components/home/MediathekReihe.tsx':
     'A column, not a row: `flex-1 justify-between` pushes the meta line to the bottom of a tile of fixed height. The defect this check is about is horizontal, and there is no second side here to collide with.',
+  'components/ui/NavRail.tsx':
+    'A vertical column, not a horizontal row: `flex-1 justify-between` pins the tab list to the top of the rail and the mini player to its bottom. The rail is 88 px wide and full-height; the tabs grow downward from the top, the mini player is fixed-height and pinned to the bottom, and the two cannot collide even at 200 % font scale. The defect this check is about — horizontal text overlap when space runs out — does not apply to a vertical stack whose children do not share an axis.',
 };
 
 const FILES = filesUnder(SRC, /\.tsx?$/).filter((path) => !DEVELOPER_ONLY.test(under(SRC, path)));

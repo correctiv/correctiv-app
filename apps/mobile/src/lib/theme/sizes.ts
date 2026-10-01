@@ -33,6 +33,20 @@ export const sizes = {
   tapTarget: 44,
   /** Widest a column of reading runs — draft: `--container-content: 38.75rem`. */
   contentColumn: 620,
+  /**
+   * Window width at which navigation becomes a left rail.
+   *
+   * The phone layout is a bottom bar; the tablet layout is a rail on the left edge.
+   * This is the one number both layouts read so they cannot disagree.
+   */
+  railBreakpoint: 768,
+  /**
+   * Width of the navigation rail on tablet.
+   *
+   * The rail is laid out beside the screens, not over them, so they get the window
+   * minus this and the reading column centres in what is left.
+   */
+  railWidth: 88,
   /** Card in a horizontal rail — draft: `w-[240px]` (the fact-check rail on Home). */
   railCard: 240,
   /**

@@ -64,6 +64,7 @@ import {
   Card,
   Chip,
   Hairline,
+  NavRail,
   Overline,
   Rail,
   SafeAreaView,
@@ -524,6 +525,36 @@ const LISTED = [
                   Inside the safe area
                 </Typo>
               </SafeAreaView>
+            ),
+          },
+        ],
+      },
+      {
+        name: 'NavRail',
+        note: 'The five tab triggers for the tablet rail, plus the mini player pinned to its bottom. Width is 88 px — justified in sizes.ts.',
+        specimens: [
+          {
+            label: 'active="index"',
+            height: 480,
+            ownSurface: true,
+            node: (
+              <NavRail
+                active="index"
+                onSelect={noop}
+                insets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+              />
+            ),
+          },
+          {
+            label: 'active="profil"',
+            height: 480,
+            ownSurface: true,
+            node: (
+              <NavRail
+                active="profil"
+                onSelect={noop}
+                insets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+              />
             ),
           },
         ],

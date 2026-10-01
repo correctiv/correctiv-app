@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 import { defineMessages, useIntl } from 'react-intl';
-import { View, type ColorValue } from 'react-native';
+import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { railScreenOptions, renderRailTabBar } from '@/lib/navigation/railTabs';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { spacingPx, useColors } from '@/lib/theme';
+import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 /**
  * The web tab bar, and the reason there are two of these files.
@@ -91,11 +92,15 @@ export default function TabsLayout() {
   const intl = useIntl();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
+
+  const rail = width >= sizes.railBreakpoint;
 
   return (
     <View className="flex-1">
       <Tabs
+        tabBar={rail ? renderRailTabBar : undefined}
         screenOptions={{
           headerShown: false,
           /**
@@ -105,6 +110,7 @@ export default function TabsLayout() {
            * other in the direction of the tab order, so a switch looks like one.
            */
           animation: 'shift',
+          ...(rail ? railScreenOptions : null),
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors['grey-500'],
           // Page surface, hairline on top, no shadow — as the design draft has it.
@@ -187,13 +193,15 @@ export default function TabsLayout() {
         `box-none` lets taps through while nothing is playing, when MiniPlayer
         renders null and this is an empty, invisible row.
       */}
-      <View
-        pointerEvents="box-none"
-        className="absolute left-0 right-0"
-        style={{ bottom: barHeight }}
-      >
-        <MiniPlayer />
-      </View>
+      {rail ? null : (
+        <View
+          pointerEvents="box-none"
+          className="absolute left-0 right-0"
+          style={{ bottom: barHeight }}
+        >
+          <MiniPlayer />
+        </View>
+      )}
     </View>
   );
 }

@@ -37,6 +37,11 @@ export function columnGutter(windowWidth: number): number {
   return spacingPx.m + Math.max(0, spare / 2);
 }
 
+/**
+ * The gutter of the space the screens are given: from `sizes.railBreakpoint` up the
+ * left rail takes `sizes.railWidth` of the window beside them.
+ */
 export function useColumnGutter(): number {
-  return columnGutter(useWindowDimensions().width);
+  const { width } = useWindowDimensions();
+  return columnGutter(width >= sizes.railBreakpoint ? width - sizes.railWidth : width);
 }

@@ -689,5 +689,13 @@
       "2": ["The vocabulary of the spec is the ceiling, and a node's path in the spec is its name"],
       "3": ["In sync is not adoptable, so every difference carries a class"]
     }
+  },
+  "0070": {
+    "slugs": ["a-left-rail-on-tablet"],
+    "decisions": {
+      "1": ["Decision"],
+      "2": ["What this retires"],
+      "3": ["Consequences"]
+    }
   }
 }
