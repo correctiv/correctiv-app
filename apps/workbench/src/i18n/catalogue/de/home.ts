@@ -44,6 +44,18 @@ export const home: Record<string, string> = {
   'home.module.topicRail.what': 'Die Themen mit eigenem Feed, als Reihe von Chips.',
   'home.module.projectDirectory': 'Projektverzeichnis',
   'home.module.projectDirectory.what': 'Die Projekte und Produkte von CORRECTIV, nach Gruppen.',
+  'home.module.mediathekHeader': 'Mediathek-Titel',
+  'home.module.mediathekHeader.what': 'Die Überschrift des Mediathek-Bildschirms.',
+  'home.module.liveRadioBanner': 'Live-Radio',
+  'home.module.liveRadioBanner.what': 'Das Salon5-Radio mit dem, was gerade läuft.',
+  'home.module.podcastRail': 'Podcast-Reihe',
+  'home.module.podcastRail.what': 'Die Salon5-Podcasts, als Reihe von Kacheln.',
+  'home.module.gespraechRail': 'Gesprächs-Videos',
+  'home.module.gespraechRail.what': 'Die neuesten Videos des Kanals CORRECTIV im Gespräch.',
+  'home.module.funfactsRail': 'FunFacts-Videos',
+  'home.module.funfactsRail.what': 'Die neuesten FunFacts-Videos.',
+  'home.module.bonusAudioList': 'Backstage-Audio',
+  'home.module.bonusAudioList.what': 'Die Bonus-Tonspuren des Clubs, als Liste.',
   'home.module.unknown.what': 'Für diesen Block gibt es noch keine Beschreibung.',
 
   // --- the three settings under a block -----------------------------------------

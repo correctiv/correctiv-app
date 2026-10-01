@@ -154,7 +154,7 @@ const GERMAN_OUTSIDE_THE_CATALOGUE: Record<string, string[]> = {
   // BE the German spelling and would sit in this file all the same. The ways out
   // are a display name in the feed configuration or a line-level exception here,
   // and neither is worth doing before a second channel needs one.
-  'app/(tabs)/mediathek.tsx': ['CORRECTIV im Gespräch'],
+  'lib/home/modules.tsx': ['CORRECTIV im Gespräch'],
   // `useIntl()` throws here. The recovery screen is rendered BY the error
   // boundary, and expo-router's `Try` wraps the root route's default export — so
   // the boundary sits above `RootLayout`, and the `IntlProvider` that

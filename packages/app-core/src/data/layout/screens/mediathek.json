@@ -1,0 +1,12 @@
+{
+  "version": 4,
+  "sections": [
+    { "id": "title", "module": "mediathek-header" },
+    { "id": "live", "module": "live-radio-banner" },
+    { "id": "podcasts", "module": "podcast-rail" },
+    { "id": "gespraech", "module": "gespraech-rail" },
+    { "id": "funfacts", "module": "funfacts-rail" },
+    { "id": "bonus", "module": "bonus-audio-list" }
+  ],
+  "moments": []
+}

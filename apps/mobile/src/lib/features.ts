@@ -27,6 +27,12 @@ export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string
   'search-entry': { feature: 'search' },
   'topic-rail': { feature: 'discover' },
   'project-directory': { feature: 'discover' },
+  'mediathek-header': { feature: 'reader' },
+  'live-radio-banner': { feature: 'live-radio' },
+  'podcast-rail': { feature: 'podcasts' },
+  'gespraech-rail': { feature: 'video' },
+  'funfacts-rail': { feature: 'video' },
+  'bonus-audio-list': { feature: 'bonus-audio' },
 };
 
 /**

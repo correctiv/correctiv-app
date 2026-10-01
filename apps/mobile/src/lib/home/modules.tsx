@@ -9,6 +9,10 @@ import { itemCount, pinnedItem } from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { pinnedArticle } from '@correctiv/app-core/data/home-pins';
 import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
+import { bonusMedia, type BonusMedia } from '@correctiv/app-core/data/backstage';
+import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
+import type { YoutubeKey } from '@correctiv/app-core/stores/media';
+import type { Video } from '@correctiv/app-core/types/models';
 import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 import { ArticleHero } from '@/components/feed/ArticleHero';
@@ -24,13 +28,19 @@ import { SpotlightBriefing } from '@/components/home/SpotlightBriefing';
 import { ProjectRow } from '@/components/discover/ProjectRow';
 import { SearchEntry } from '@/components/discover/SearchEntry';
 import { TopicRail } from '@/components/discover/TopicRail';
-import { Hairline, Overline, SectionHeader, Typo } from '@/components/ui';
+import { EpisodeRow } from '@/components/media/EpisodeRow';
+import { LiveBanner } from '@/components/media/LiveBanner';
+import { MediaCard } from '@/components/media/MediaCard';
+import { SeriesTile } from '@/components/media/SeriesTile';
+import { Hairline, Overline, Rail, SectionHeader, Typo } from '@/components/ui';
+import { playEpisode, togglePlay } from '@/lib/audio/player';
+import { useEpisodeStatus } from '@/lib/audio/useAudio';
 import { FACT_CHECK_COUNT, HERO_PIN, RESEARCH_COUNT } from '@/lib/home/settings';
 import { projectTarget } from '@/lib/discover/target';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
 import { openLink } from '@/lib/openLink';
-import { useReachable } from '@/lib/store/core';
+import { useCoreActions, usePodcastLibrary, useReachable, useVideoChannel } from '@/lib/store/core';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -76,10 +86,36 @@ const COPY = defineMessages({
     description:
       'The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room.',
   },
+  liveSubtitle: {
+    id: 'mediathek.liveSubtitle',
+    defaultMessage: '24/7 from Bottrop, by young people for young people',
+  },
+  podcasts: { id: 'mediathek.podcasts', defaultMessage: 'Podcasts' },
+  offlineEpisodes: {
+    id: 'mediathek.offlineEpisodes',
+    defaultMessage: 'No connection. You are seeing sample episodes.',
+  },
+  fromBackstage: { id: 'mediathek.fromBackstage', defaultMessage: 'From Backstage' },
+  videosUnavailable: {
+    id: 'mediathek.videosUnavailable',
+    defaultMessage: 'Videos cannot be reached at the moment.',
+  },
 });
 
 /** A mark, not a sentence: the shelf keeps its name in every language. */
 const MEDIATHEK = 'Mediathek';
+
+/**
+ * More marks, for the Mediathek screen: the two video channels and the club shelf a bonus
+ * track is filed under on the lock screen. A catalogue entry mapping FunFacts to FunFacts
+ * is a line for a translator to wonder about.
+ *
+ * `CHANNEL_GESPRAECH` is the one string `__tests__/localisation-seam.test.ts` excuses by
+ * name: a name gets no id, and it carries an umlaut.
+ */
+const CHANNEL_GESPRAECH = 'CORRECTIV im Gespräch';
+const CHANNEL_FUNFACTS = 'FunFacts';
+const BONUS_SHELF = 'Backstage · Club';
 
 /**
  * The lifted position of the callout, by the id the document gives it.
@@ -389,6 +425,147 @@ function openProjectCard(project: Project) {
   }
 }
 
+/*
+ * Mediathek's blocks. The screen was one function; each section of it is a place now, and
+ * the margin each one carried moved from the element to its `Place`. The `reachable(...)`
+ * test each section made is `MODULE_FEATURES` now, applied by `ScreenBlocks`.
+ */
+
+const MediathekHeaderModule: HomeModule = ({ section }) => (
+  <Place section={section} className="mb-s">
+    <Typo variant="headline-xl">{MEDIATHEK}</Typo>
+  </Place>
+);
+
+const LiveRadioBannerModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section}>
+      <LiveBanner subtitle={intl.formatMessage(COPY.liveSubtitle)} />
+    </Place>
+  );
+};
+
+const PodcastRailModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  const podcasts = usePodcastLibrary();
+  return (
+    <Place section={section} className="mt-l">
+      <SectionHeader title={intl.formatMessage(COPY.podcasts)} className="mb-s" />
+      {podcasts.status === 'offline' && (
+        <Typo variant="text-s" color="on-canvas-muted" className="mb-2xs">
+          {intl.formatMessage(COPY.offlineEpisodes)}
+        </Typo>
+      )}
+      <Rail>
+        {podcasts.series.map((series) => (
+          <SeriesTile key={series.id} series={series} onPress={openSeries} />
+        ))}
+      </Rail>
+    </Place>
+  );
+};
+
+function VideoRail({
+  section,
+  title,
+  channel,
+}: {
+  section: HomeSection;
+  title: string;
+  channel: YoutubeKey;
+}) {
+  const intl = useIntl();
+  const { videos, status } = useVideoChannel(channel);
+  const actions = useCoreActions();
+
+  const openVideo = (video: Video) => {
+    // The core store owns the HLS resolution; the route reads it.
+    void actions.video.play(video);
+    router.push('/video');
+  };
+
+  return (
+    <Place section={section} className="mt-l">
+      <SectionHeader title={title} className="mb-s" />
+      {status === 'error' && videos.length === 0 ? (
+        <Typo variant="text-s" color="on-canvas-muted">
+          {intl.formatMessage(COPY.videosUnavailable)}
+        </Typo>
+      ) : (
+        <Rail>
+          {videos.slice(0, 6).map((video) => (
+            <MediaCard key={video.id} video={video} onPress={openVideo} />
+          ))}
+        </Rail>
+      )}
+    </Place>
+  );
+}
+
+const GespraechRailModule: HomeModule = ({ section }) => (
+  <VideoRail section={section} title={CHANNEL_GESPRAECH} channel="gespraech" />
+);
+
+const FunfactsRailModule: HomeModule = ({ section }) => (
+  <VideoRail section={section} title={CHANNEL_FUNFACTS} channel="funfacts" />
+);
+
+const BonusAudioListModule: HomeModule = ({ section }) => {
+  const intl = useIntl();
+  return (
+    <Place section={section} className="mt-l">
+      <SectionHeader title={intl.formatMessage(COPY.fromBackstage)} />
+      {/* No club label here: every row already carries the yellow Club badge, and a
+        coral one above them said the same word twice in the wrong colour — coral
+        is the journalism CTA, yellow is the club (see ui/Button.tsx). */}
+      <View className="mt-2xs">
+        {bonusMedia.map((bonus) => (
+          <BonusRow key={bonus.id} bonus={bonus} />
+        ))}
+      </View>
+    </Place>
+  );
+};
+
+/**
+ * The club's bonus audio, played in full. The 60-second preview this comment used to
+ * describe was dropped on 2026-08-06 (ADR 0006), and the note that named the
+ * distinction went with ADR 0018, since behind the door there is nobody on the other
+ * side of it. The CLUB badge stays as a label.
+ */
+function BonusRow({ bonus }: { bonus: BonusMedia }) {
+  const status = useEpisodeStatus(bonus.id);
+
+  const track = {
+    title: bonus.title,
+    subtitle: BONUS_SHELF,
+    url: bonus.source,
+    episodeId: bonus.id,
+  };
+
+  return (
+    <EpisodeRow
+      episodeId={bonus.id}
+      title={bonus.title}
+      meta={bonus.durationLabel}
+      club={bonus.club}
+      onPress={() => {
+        // If this episode is already loaded, the tap is play/pause, not a restart.
+        if (status !== 'off') {
+          togglePlay();
+          return;
+        }
+        void playEpisode(track);
+      }}
+    />
+  );
+}
+
+function openSeries(series: PodcastSeries) {
+  router.push({ pathname: '/serie/[id]', params: { id: series.id } });
+}
+
 /** Module name, as the document writes it, to the thing that draws it. */
 export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'home-header': HomeHeaderModule,
@@ -406,4 +583,10 @@ export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'search-entry': SearchEntryModule,
   'topic-rail': TopicRailModule,
   'project-directory': ProjectDirectoryModule,
+  'mediathek-header': MediathekHeaderModule,
+  'live-radio-banner': LiveRadioBannerModule,
+  'podcast-rail': PodcastRailModule,
+  'gespraech-rail': GespraechRailModule,
+  'funfacts-rail': FunfactsRailModule,
+  'bonus-audio-list': BonusAudioListModule,
 };

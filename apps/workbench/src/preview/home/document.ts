@@ -266,6 +266,48 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'The projects and products of CORRECTIV, in their groups.',
     }),
   },
+  'mediathek-header': {
+    label: wbMessage({ id: 'home.module.mediathekHeader', defaultMessage: 'Mediathek heading' }),
+    what: wbMessage({
+      id: 'home.module.mediathekHeader.what',
+      defaultMessage: 'The title of the Mediathek screen.',
+    }),
+  },
+  'live-radio-banner': {
+    label: wbMessage({ id: 'home.module.liveRadioBanner', defaultMessage: 'Live radio banner' }),
+    what: wbMessage({
+      id: 'home.module.liveRadioBanner.what',
+      defaultMessage: 'The Salon5 live radio, with what is on air.',
+    }),
+  },
+  'podcast-rail': {
+    label: wbMessage({ id: 'home.module.podcastRail', defaultMessage: 'Podcast rail' }),
+    what: wbMessage({
+      id: 'home.module.podcastRail.what',
+      defaultMessage: 'The Salon5 podcast series, as a row of tiles.',
+    }),
+  },
+  'gespraech-rail': {
+    label: wbMessage({ id: 'home.module.gespraechRail', defaultMessage: 'Interview videos' }),
+    what: wbMessage({
+      id: 'home.module.gespraechRail.what',
+      defaultMessage: 'The latest videos of the channel CORRECTIV im Gespräch.',
+    }),
+  },
+  'funfacts-rail': {
+    label: wbMessage({ id: 'home.module.funfactsRail', defaultMessage: 'FunFacts videos' }),
+    what: wbMessage({
+      id: 'home.module.funfactsRail.what',
+      defaultMessage: 'The latest FunFacts videos.',
+    }),
+  },
+  'bonus-audio-list': {
+    label: wbMessage({ id: 'home.module.bonusAudioList', defaultMessage: 'Backstage audio' }),
+    what: wbMessage({
+      id: 'home.module.bonusAudioList.what',
+      defaultMessage: 'The club’s bonus audio tracks, as a list.',
+    }),
+  },
 };
 
 /** What stands under a module this tool has never heard of, where the label is its id. */
