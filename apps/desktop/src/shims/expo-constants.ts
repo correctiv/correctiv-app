@@ -7,23 +7,25 @@
 // when it was published at or after the build that is reading it, because a build with
 // no moment of its own cannot tell an older published document from a newer one.
 //
-// There is no Expo build here and so no stamp, and the caller's own docblock names what
-// that means: `Date.parse(String(undefined))` is `NaN`, and "NaN draws none and fetches
-// none … the bundle is the safe answer". So this host renders the home screen the
-// bundle ships, which is the screen it rendered before main's home-as-data work existed.
-// That is the behaviour this merge was asked to keep, reached by the caller's own safe
-// branch rather than by anything written here.
+// There is no Expo build here, so `gjsify.config.mjs` stamps the moment itself: it
+// defines `__BUILT_AT__` as the ISO time of the build, the same shape and the same
+// meaning as `app.config.js`'s `extra.builtAt`. With it the core draws a home document
+// fetched from the published site whenever that was published at or after this build,
+// and the bundled one otherwise.
 //
-// Giving it a moment is the obvious next step and is deliberately not taken: it would
-// turn on a network fetch of a published document against a clock nobody has verified
-// on this host, which is a feature with a measurement attached rather than a line in a
-// shim. `src/shims/react-native.tsx`'s `AppState` is the other half of the same absence
-// and says the same thing from the other side.
+// A build without the define (vitest, a bundle made by another config) answers `null`
+// for `expoConfig`, which the caller's own docblock names as the safe branch:
+// `Date.parse(String(undefined))` is `NaN`, and "NaN draws none and fetches none".
+//
+// fixed upstream in gjsify: #1975 - the layer refuses `expo-constants` outright, so this
+// shim stays until it answers `expoConfig.extra` from the build.
 //
 // The rest of the surface is `null` rather than absent. `expoConfig` is declared
 // nullable by expo-constants itself, so a reader that reaches further is already
 // obliged to cope; a thrown "not implemented" would be a louder answer to a question
 // the package's own types say may be answered with nothing.
+
+declare const __BUILT_AT__: string | undefined;
 
 export interface ExpoConfig {
   extra?: Record<string, unknown>;
@@ -33,6 +35,8 @@ export interface Constants {
   expoConfig: ExpoConfig | null;
 }
 
-const constants: Constants = { expoConfig: null };
+const constants: Constants = {
+  expoConfig: typeof __BUILT_AT__ === 'string' ? { extra: { builtAt: __BUILT_AT__ } } : null,
+};
 
 export default constants;

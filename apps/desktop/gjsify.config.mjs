@@ -282,11 +282,16 @@ export default {
      * deliberately narrows because the audio backend dispatches twice a second against
      * a tree holding six feeds and seven podcast series. A `define` here would still win.
      *
+     * `__BUILT_AT__` is `extra.builtAt` of the phone's `app.config.js`, read by
+     * `src/shims/expo-constants.ts`: the clock a fetched home document is judged
+     * against. Evaluated each time this file is loaded, so every build gets its own; `CORRECTIV_BUILT_AT` pins it (a reproducible build, or a test of the fetch).
+     *
      * The value side is a JS EXPRESSION, so a string needs its own quotes.
      */
     transform: {
       define: {
         __DEV__: 'false',
+        __BUILT_AT__: JSON.stringify(process.env.CORRECTIV_BUILT_AT ?? new Date().toISOString()),
       },
     },
     plugins: [
