@@ -3,7 +3,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { ClaimStatusTag } from '@/components/participate/ClaimStatusTag';
-import { Card, ScreenHeader, Typo } from '@/components/ui';
+import { Card, ContentColumn, ScreenHeader, Typo } from '@/components/ui';
 import { claims, type Claim } from '@correctiv/app-core/data/claims';
 import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { useLocale } from '@/lib/store/core';
@@ -52,16 +52,18 @@ export default function FaktenforumScreen() {
         contentContainerClassName="px-m pt-m pb-2xl"
         showsVerticalScrollIndicator={false}
       >
-        <Typo variant="headline-l">Faktenforum</Typo>
-        <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
-          {intl.formatMessage(COPY.lead)}
-        </Typo>
+        <ContentColumn>
+          <Typo variant="headline-l">Faktenforum</Typo>
+          <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
+            {intl.formatMessage(COPY.lead)}
+          </Typo>
 
-        <View className="mt-m">
-          {claims.map((claim) => (
-            <ClaimRow key={claim.id} claim={claim as Claim} />
-          ))}
-        </View>
+          <View className="mt-m">
+            {claims.map((claim) => (
+              <ClaimRow key={claim.id} claim={claim as Claim} />
+            ))}
+          </View>
+        </ContentColumn>
       </ScrollView>
     </View>
   );

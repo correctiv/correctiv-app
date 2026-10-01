@@ -3,7 +3,7 @@ import { defineMessages, useIntl, type MessageDescriptor } from 'react-intl';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { ClaimStatusTag } from '@/components/participate/ClaimStatusTag';
-import { Button, Card, ScreenHeader, Typo } from '@/components/ui';
+import { Button, Card, ContentColumn, ScreenHeader, Typo } from '@/components/ui';
 import {
   claims,
   type Claim,
@@ -123,53 +123,55 @@ export default function BehauptungScreen() {
           contentContainerClassName="px-m pt-m pb-2xl"
           showsVerticalScrollIndicator={false}
         >
-          <ClaimStatusTag claim={claim} />
-          <Typo variant="headline-m" className="mt-s">
-            {intl.formatMessage(COPY.quote, { quote: claim.quote })}
-          </Typo>
-          <Typo variant="text-m" color="on-canvas-muted" className="mt-s">
-            {claim.synopsis}
-          </Typo>
+          <ContentColumn>
+            <ClaimStatusTag claim={claim} />
+            <Typo variant="headline-m" className="mt-s">
+              {intl.formatMessage(COPY.quote, { quote: claim.quote })}
+            </Typo>
+            <Typo variant="text-m" color="on-canvas-muted" className="mt-s">
+              {claim.synopsis}
+            </Typo>
 
-          <ReviewProgress stage={stageOf(claim)} />
+            <ReviewProgress stage={stageOf(claim)} />
 
-          <Typo variant="headline-xs" className="mt-m">
-            {intl.formatMessage(COPY.sourcesHeading)}
-          </Typo>
-          {claim.sources.length === 0 ? (
-            <Card tone="surface" className="mt-s">
-              <Typo variant="text-s" color="on-canvas-muted">
-                {intl.formatMessage(COPY.noSources)}
-              </Typo>
-            </Card>
-          ) : (
-            claim.sources.map((source) => (
-              <Pressable
-                key={source.url}
-                accessibilityRole="link"
-                accessibilityLabel={source.note ?? source.url}
-                onPress={() => openExternal(source.url)}
-                className="mt-s active:opacity-80"
-              >
-                <Card className="flex-row">
-                  <Typo variant="text-m">{credibilityDot(source.credibility)}</Typo>
-                  <View className="ml-s flex-1">
-                    <Typo variant="text-m">{source.note ?? source.url}</Typo>
-                    <Typo variant="text-s" color="grey-500" className="mt-4xs">
-                      {intl.formatMessage(COPY.credibility, { level: source.credibility })}
-                    </Typo>
-                  </View>
-                </Card>
-              </Pressable>
-            ))
-          )}
+            <Typo variant="headline-xs" className="mt-m">
+              {intl.formatMessage(COPY.sourcesHeading)}
+            </Typo>
+            {claim.sources.length === 0 ? (
+              <Card tone="surface" className="mt-s">
+                <Typo variant="text-s" color="on-canvas-muted">
+                  {intl.formatMessage(COPY.noSources)}
+                </Typo>
+              </Card>
+            ) : (
+              claim.sources.map((source) => (
+                <Pressable
+                  key={source.url}
+                  accessibilityRole="link"
+                  accessibilityLabel={source.note ?? source.url}
+                  onPress={() => openExternal(source.url)}
+                  className="mt-s active:opacity-80"
+                >
+                  <Card className="flex-row">
+                    <Typo variant="text-m">{credibilityDot(source.credibility)}</Typo>
+                    <View className="ml-s flex-1">
+                      <Typo variant="text-m">{source.note ?? source.url}</Typo>
+                      <Typo variant="text-s" color="grey-500" className="mt-4xs">
+                        {intl.formatMessage(COPY.credibility, { level: source.credibility })}
+                      </Typo>
+                    </View>
+                  </Card>
+                </Pressable>
+              ))
+            )}
 
-          <Button
-            title={intl.formatMessage(COPY.submitOwn)}
-            variant="outline"
-            className="mt-m"
-            onPress={() => openExternal(FORUM_URL)}
-          />
+            <Button
+              title={intl.formatMessage(COPY.submitOwn)}
+              variant="outline"
+              className="mt-m"
+              onPress={() => openExternal(FORUM_URL)}
+            />
+          </ContentColumn>
         </ScrollView>
       )}
     </View>

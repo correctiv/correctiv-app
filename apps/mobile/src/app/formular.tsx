@@ -6,7 +6,7 @@ import { ScrollView, View } from 'react-native';
 
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
 import { FormField } from '@/components/participate/FormField';
-import { Button, Hairline, ScreenHeader, Typo } from '@/components/ui';
+import { Button, ContentColumn, Hairline, ScreenHeader, Typo } from '@/components/ui';
 import { callouts, type CalloutComponent, type Callout } from '@correctiv/app-core/data/callouts';
 import { useCoreActions, useExtraCount } from '@/lib/store/core';
 import { sizes, useColors } from '@/lib/theme';
@@ -160,14 +160,18 @@ export default function FormularScreen() {
       />
 
       {/* Step indicator: one bar per slide, filled up to the current one. */}
-      <View className="flex-row gap-3xs px-m pt-2xs">
-        {slides.map((s, i) => (
-          <View
-            key={s.id}
-            className={['flex-1 rounded-s', i <= step ? 'bg-accent' : 'bg-stroke'].join(' ')}
-            style={{ height: sizes.progressBar }}
-          />
-        ))}
+      <View className="px-m pt-2xs">
+        <ContentColumn>
+          <View className="flex-row gap-3xs">
+            {slides.map((s, i) => (
+              <View
+                key={s.id}
+                className={['flex-1 rounded-s', i <= step ? 'bg-accent' : 'bg-stroke'].join(' ')}
+                style={{ height: sizes.progressBar }}
+              />
+            ))}
+          </View>
+        </ContentColumn>
       </View>
 
       {/* The scroller and the action footer in ONE avoiding view. The footer used
@@ -182,46 +186,52 @@ export default function FormularScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          <Typo variant="text-s" color="grey-500">
-            {intl.formatMessage(COPY.step, { current: step + 1, total: slides.length })}
-          </Typo>
-          <Typo variant="headline-l" className="mt-2xs">
-            {slide.title}
-          </Typo>
+          <ContentColumn>
+            <Typo variant="text-s" color="grey-500">
+              {intl.formatMessage(COPY.step, { current: step + 1, total: slides.length })}
+            </Typo>
+            <Typo variant="headline-l" className="mt-2xs">
+              {slide.title}
+            </Typo>
 
-          {slide.components.map((component) => (
-            <FormField
-              key={component.key}
-              component={component}
-              choice={choices[component.key] ?? []}
-              text={texts[component.key] ?? ''}
-              fileAttached={files[component.key] ?? false}
-              onSelect={(value) => select(component, value)}
-              onText={(value) => setTexts((prev) => ({ ...prev, [component.key]: value }))}
-              onToggleFile={() =>
-                setFiles((prev) => ({ ...prev, [component.key]: !prev[component.key] }))
-              }
-            />
-          ))}
+            {slide.components.map((component) => (
+              <FormField
+                key={component.key}
+                component={component}
+                choice={choices[component.key] ?? []}
+                text={texts[component.key] ?? ''}
+                fileAttached={files[component.key] ?? false}
+                onSelect={(value) => select(component, value)}
+                onText={(value) => setTexts((prev) => ({ ...prev, [component.key]: value }))}
+                onToggleFile={() =>
+                  setFiles((prev) => ({ ...prev, [component.key]: !prev[component.key] }))
+                }
+              />
+            ))}
+          </ContentColumn>
         </ScrollView>
 
         <View className="bg-canvas">
           <Hairline />
-          <View className="flex-row gap-s px-m py-s">
-            {step > 0 && (
-              <Button
-                title={intl.formatMessage(COPY.back)}
-                variant="secondary"
-                onPress={() => setStep(step - 1)}
-                className="flex-1"
-              />
-            )}
-            <Button
-              title={intl.formatMessage(isLast ? COPY.submit : COPY.next)}
-              onPress={next}
-              disabled={!stepValid}
-              className="flex-1"
-            />
+          <View className="px-m py-s">
+            <ContentColumn>
+              <View className="flex-row gap-s">
+                {step > 0 && (
+                  <Button
+                    title={intl.formatMessage(COPY.back)}
+                    variant="secondary"
+                    onPress={() => setStep(step - 1)}
+                    className="flex-1"
+                  />
+                )}
+                <Button
+                  title={intl.formatMessage(isLast ? COPY.submit : COPY.next)}
+                  onPress={next}
+                  disabled={!stepValid}
+                  className="flex-1"
+                />
+              </View>
+            </ContentColumn>
           </View>
         </View>
       </KeyboardAvoiding>
@@ -250,7 +260,13 @@ function ThankYou({ callout }: { callout: Callout }) {
         </Typo>
       </View>
       <View className="px-m pb-l">
-        <Button title={intl.formatMessage(COPY.moreCallouts)} fullWidth onPress={backToOverview} />
+        <ContentColumn>
+          <Button
+            title={intl.formatMessage(COPY.moreCallouts)}
+            fullWidth
+            onPress={backToOverview}
+          />
+        </ContentColumn>
       </View>
     </View>
   );

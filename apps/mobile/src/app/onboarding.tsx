@@ -4,7 +4,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { SettingRow } from '@/components/profile/SettingRow';
-import { Button, Card, Chip, SafeAreaView, SplitRow, Typo } from '@/components/ui';
+import { Button, Card, Chip, ContentColumn, SafeAreaView, SplitRow, Typo } from '@/components/ui';
 import { interests } from '@correctiv/app-core/data/interests';
 import { onboardingBack } from '@correctiv/app-core/lib/back';
 import { useCoreActions, useSelectedInterests, useSettings } from '@/lib/store/core';
@@ -130,46 +130,50 @@ export default function OnboardingScreen() {
       edges={['top', 'bottom']}
       className={mission ? 'flex-1 bg-accent' : 'flex-1 bg-canvas'}
     >
-      <SplitRow className="px-m py-s">
-        <View className="flex-row gap-2xs">
-          {[0, 1, 2].map((i) => (
-            <View
-              key={i}
-              className="rounded-full"
-              style={{
-                width: 7,
-                height: 7,
-                backgroundColor: mission
-                  ? i === step
-                    ? colors['always-light']
-                    : 'rgba(255,255,255,0.45)'
-                  : i === step
-                    ? colors.accent
-                    : colors['stroke'],
-              }}
-            />
-          ))}
-        </View>
-        {step > 0 && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={intl.formatMessage(COPY.skip)}
-            onPress={finish}
-            className="justify-center active:opacity-70"
-            /*
-             * "Überspringen" was one line of `text-s` — 21 dp — with an 8 dp slop
-             * around it (#102). It is the only way past this screen other than
-             * answering it, and the row it sits in holds nothing but three 7 dp
-             * dots at the far left, so the box can have the height.
-             */
-            style={{ minHeight: sizes.tapTarget }}
-          >
-            <Typo variant="text-s" color="on-canvas-muted">
-              {intl.formatMessage(COPY.skip)}
-            </Typo>
-          </Pressable>
-        )}
-      </SplitRow>
+      <View className="px-m py-s">
+        <ContentColumn>
+          <SplitRow>
+            <View className="flex-row gap-2xs">
+              {[0, 1, 2].map((i) => (
+                <View
+                  key={i}
+                  className="rounded-full"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    backgroundColor: mission
+                      ? i === step
+                        ? colors['always-light']
+                        : 'rgba(255,255,255,0.45)'
+                      : i === step
+                        ? colors.accent
+                        : colors['stroke'],
+                  }}
+                />
+              ))}
+            </View>
+            {step > 0 && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={intl.formatMessage(COPY.skip)}
+                onPress={finish}
+                className="justify-center active:opacity-70"
+                /*
+                 * "Überspringen" was one line of `text-s` — 21 dp — with an 8 dp slop
+                 * around it (#102). It is the only way past this screen other than
+                 * answering it, and the row it sits in holds nothing but three 7 dp
+                 * dots at the far left, so the box can have the height.
+                 */
+                style={{ minHeight: sizes.tapTarget }}
+              >
+                <Typo variant="text-s" color="on-canvas-muted">
+                  {intl.formatMessage(COPY.skip)}
+                </Typo>
+              </Pressable>
+            )}
+          </SplitRow>
+        </ContentColumn>
+      </View>
 
       <ScrollView
         className="flex-1"
@@ -179,79 +183,83 @@ export default function OnboardingScreen() {
         contentContainerClassName={mission ? 'px-m pb-l grow justify-end' : 'px-m pt-m pb-l'}
         showsVerticalScrollIndicator={false}
       >
-        {mission && (
-          <View>
-            <Typo variant="headline-m" color="always-light" style={{ letterSpacing: 2 }}>
-              {WORDMARK}
-            </Typo>
-            {/* Merriweather, like the reader's h1: this is an editorial promise, not
+        <ContentColumn>
+          {mission && (
+            <View>
+              <Typo variant="headline-m" color="always-light" style={{ letterSpacing: 2 }}>
+                {WORDMARK}
+              </Typo>
+              {/* Merriweather, like the reader's h1: this is an editorial promise, not
                 a UI label. Sans here was an Expo-only divergence. */}
-            <Typo variant="headline-xxl" family="serif" color="always-light" className="mt-s">
-              {intl.formatMessage(COPY.missionHeadline)}
-            </Typo>
-            <View className="mt-2xl">
-              {MISSION.map((line) => (
-                <View key={line.id} className="mt-s flex-row items-start">
-                  {/* White, like the text beside it. The draft had these yellow,
+              <Typo variant="headline-xxl" family="serif" color="always-light" className="mt-s">
+                {intl.formatMessage(COPY.missionHeadline)}
+              </Typo>
+              <View className="mt-2xl">
+                {MISSION.map((line) => (
+                  <View key={line.id} className="mt-s flex-row items-start">
+                    {/* White, like the text beside it. The draft had these yellow,
                       but yellow is the club's colour and on the brand red it reads
                       as a colour accident rather than as a list marker. */}
-                  <View
-                    className="rounded-full bg-always-light"
-                    style={{ width: 8, height: 8, marginTop: 7 }}
+                    <View
+                      className="rounded-full bg-always-light"
+                      style={{ width: 8, height: 8, marginTop: 7 }}
+                    />
+                    <Typo variant="text-l" color="always-light" className="ml-s flex-1">
+                      {intl.formatMessage(line)}
+                    </Typo>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {step === 1 && (
+            <>
+              <Typo variant="headline-xl">{intl.formatMessage(COPY.interestsHeadline)}</Typo>
+              <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
+                {intl.formatMessage(COPY.interestsLead)}
+              </Typo>
+              <View className="mt-m flex-row flex-wrap gap-2xs">
+                {interests.map((interest) => (
+                  <Chip
+                    key={interest.id}
+                    label={interest.label}
+                    selected={selectedIds.has(interest.id)}
+                    onPress={() => actions.interests.toggle(interest.id)}
                   />
-                  <Typo variant="text-l" color="always-light" className="ml-s flex-1">
-                    {intl.formatMessage(line)}
-                  </Typo>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
+                ))}
+              </View>
+            </>
+          )}
 
-        {step === 1 && (
-          <>
-            <Typo variant="headline-xl">{intl.formatMessage(COPY.interestsHeadline)}</Typo>
-            <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
-              {intl.formatMessage(COPY.interestsLead)}
-            </Typo>
-            <View className="mt-m flex-row flex-wrap gap-2xs">
-              {interests.map((interest) => (
-                <Chip
-                  key={interest.id}
-                  label={interest.label}
-                  selected={selectedIds.has(interest.id)}
-                  onPress={() => actions.interests.toggle(interest.id)}
+          {step === 2 && (
+            <>
+              <Typo variant="headline-xl">{intl.formatMessage(COPY.participateHeadline)}</Typo>
+              <Typo variant="text-m" color="on-canvas-muted" className="mt-s">
+                {intl.formatMessage(COPY.participateLead)}
+              </Typo>
+              <Card className="mt-m">
+                <SettingRow
+                  label={intl.formatMessage(COPY.pushLabel)}
+                  description={intl.formatMessage(COPY.pushDescription)}
+                  value={settings.pushOptIn}
+                  onValueChange={(value) => actions.settings.setPushOptIn(value)}
                 />
-              ))}
-            </View>
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <Typo variant="headline-xl">{intl.formatMessage(COPY.participateHeadline)}</Typo>
-            <Typo variant="text-m" color="on-canvas-muted" className="mt-s">
-              {intl.formatMessage(COPY.participateLead)}
-            </Typo>
-            <Card className="mt-m">
-              <SettingRow
-                label={intl.formatMessage(COPY.pushLabel)}
-                description={intl.formatMessage(COPY.pushDescription)}
-                value={settings.pushOptIn}
-                onValueChange={(value) => actions.settings.setPushOptIn(value)}
-              />
-            </Card>
-          </>
-        )}
+              </Card>
+            </>
+          )}
+        </ContentColumn>
       </ScrollView>
 
       <View className="px-m pb-m">
-        <Button
-          title={intl.formatMessage(step === 0 ? COPY.start : step === 2 ? COPY.done : COPY.next)}
-          variant={mission ? 'onEmphasis' : 'primary'}
-          fullWidth
-          onPress={() => (step === 2 ? finish() : setStep(step + 1))}
-        />
+        <ContentColumn>
+          <Button
+            title={intl.formatMessage(step === 0 ? COPY.start : step === 2 ? COPY.done : COPY.next)}
+            variant={mission ? 'onEmphasis' : 'primary'}
+            fullWidth
+            onPress={() => (step === 2 ? finish() : setStep(step + 1))}
+          />
+        </ContentColumn>
       </View>
     </SafeAreaView>
   );
