@@ -113,4 +113,5 @@ this record did not decide: the five icons carried no visible label, and the fir
 against the status bar. The rail now draws each label under its icon, with the phone bar's
 copy, typeface and colours, and starts `spacingPx.s` below the top safe-area inset. No
 decision above changes. **This is a design proposal pending the project owner's review**
-and may be reverted or reshaped without a new record.
+and may be reverted or reshaped without a new record. The owner accepted it on 2026-10-01
+as the rail's design to build on.
