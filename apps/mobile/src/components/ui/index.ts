@@ -32,4 +32,3 @@ export { NavRail } from './NavRail';
 export type { NavRailProps } from './NavRail';
 export { ScaledText } from './ScaledText';
 export { ScaledTextInput } from './ScaledTextInput';
-export { TabletLayout } from './TabletLayout';

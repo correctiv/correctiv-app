@@ -26,19 +26,18 @@ breakpoint is a `sizes.*` token (`railBreakpoint: 768`) so phone, tablet and
 web read the same number. Below it, the phone layout is unchanged: native
 tabs on iOS and Android, the drawn bar on web.
 
-The rail holds the five tab triggers and the mini player at its bottom. It
-sits in the left gutter the centred reading column leaves. At 834 px the
-gutter is 107 px (`columnGutter(834) = 24 + (834 − 48 − 620) / 2 = 107`), so
-the rail is 88 px wide — it fits with 19 px to spare. That holds from 796 px
-(620 + 2 × 88); between 768 and 795 px the gutter is 74 to 87 px and the rail would
-overlap the column, so there the screens move right by `railShift` and the column is
-centred in the space beside the rail, not in the window. Screens that run edge to edge
-(not in a `ContentColumn`) lie under the rail's 88 px at every width.
+The rail holds the five tab triggers and the mini player at its bottom. It is the
+tab bar of a real navigator, not a layout drawn beside one: expo-router's JS `Tabs`
+(`expo-router/js-tabs`) with `tabBarPosition: 'left'` and a custom `tabBar` that
+renders `NavRail` (`lib/navigation/railTabs.tsx`). The navigator owns the five
+screens, their history, the Android back button, web history and deep links; the
+rail only reports a press, emitting `tabPress` and navigating the way react-navigation's
+own bar does. The screens are laid out beside the rail's 88 px, so the reading
+column centres in the space that is left and no width needs a special case.
 
-The five tab screens stay mounted the way `NativeTabs` mounts them today:
-all five, eagerly. The rail drives which one is visible; the others are
-hidden with `display: 'none'`. This is the same navigation model, only the
-chrome moves.
+Which tabs mount and when is the navigator's: JS `Tabs` mounts a screen the first
+time it is focused (`lazy`, the default), where `NativeTabs` mounts all five. That
+difference is real and is the one thing this trades away on tablet.
 
 ## 2. What this retires
 
@@ -69,18 +68,19 @@ not a phone tab bar, and the app's icons are the consistent choice.
 tab bar; on tablet it sits at the bottom of the rail, above the safe area.
 Its component is unchanged.
 
-**Fixed bars anchor to the screen bottom on tablet.** The form action
-footer, the search bar and the mini player are positioned from the tab bar
-height on phone. On tablet there is no bottom bar; they anchor to the screen
-bottom instead. The measured Android bar height (80 dp) stays as it is for
-phones.
+**No fixed bar needed changing.** An earlier draft of this record promised that the
+form footer, the search bar and the mini player would re-anchor from the tab bar's
+height on tablet. None of them is positioned from it: both navigators lay the screens
+out above or beside their bar. The only bar-height arithmetic in the app is the
+mini player's overlay on phones (`ANDROID_TAB_BAR_HEIGHT = 80` on Android, the drawn
+bar's 56 on web), and on tablet that overlay is not rendered because the mini player
+lives in the rail.
 
-**The web target shares the rail at tablet widths.** `_layout.web.tsx` keeps its
-drawn bottom bar below 768 px; at and above the breakpoint both layouts delegate to
-`TabletLayout`, so web and native render the same rail at the same width. The web
-drawn bar is still the right answer for a narrow window; the two targets agree
-because the project owner's decision is platform-agnostic and both read
-`sizes.railBreakpoint`.
+**The web target shares the rail at tablet widths, in one navigator.**
+`_layout.web.tsx` has one JS `Tabs`; from `sizes.railBreakpoint` up it sets
+`tabBar` and spreads `railScreenOptions` into `screenOptions`, so crossing 768 px changes options and
+remounts no screen. `_layout.tsx` (native) returns `RailTabs` from the same width.
+Both read the token, so they cannot disagree on when the rail appears.
 
 ## What this has not delivered
 
@@ -89,6 +89,19 @@ from the gutter, not a photograph. A tablet screenshot is the check that
 sees whether the rail's targets are reachable and the mini player does not
 clip.
 
-**The eager-mount cost is unchanged.** Five screens mount at startup on
-tablet as they do on phone. `useIsFocused()` remains the documented
-mitigation if startup gets slower.
+**Crossing 768 px on native still swaps the navigator.** Below it the layout is
+`NativeTabs`, above it JS `Tabs`; they are different components, so a rotation or a
+window resize across the breakpoint unmounts one and mounts the other, and the
+screens' local state (scroll position, an open search) is lost. It is avoidable only
+by giving up one side of the decision: JS `Tabs` on phones loses the system tab bar
+ADR 0013 chose it for, and `NativeTabs` draws the system's bar, which has no prop that
+puts our rail in its place. How often a tablet crosses 768 px has not been measured.
+The web has no such swap.
+
+**Not verified on a device:** the Android back button from a non-initial tab, a deep
+link into a tab while the rail is showing, and a rotation across the breakpoint. The
+tests cover the tree and the press-to-route wiring, not the platform's back stack.
+
+**Tabs mount lazily on tablet.** JS `Tabs` mounts a screen on first focus, so
+the eager mounting ADR 0013 accepted on phones does not apply here. It makes startup
+cheaper, and a screen that must warm up before it is opened would need `lazy: false`.

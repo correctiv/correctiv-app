@@ -43,9 +43,8 @@ export const sizes = {
   /**
    * Width of the navigation rail on tablet.
    *
-   * At 834 px the gutter is 107 px (`columnGutter(834) = 24 + (834 − 48 − 620) / 2`),
-   * so 88 px fits with 19 px to spare. The rail sits inside the gutter the centred
-   * reading column leaves.
+   * The rail is laid out beside the screens, not over them, so they get the window
+   * minus this and the reading column centres in what is left.
    */
   railWidth: 88,
   /** Card in a horizontal rail — draft: `w-[240px]` (the fact-check rail on Home). */

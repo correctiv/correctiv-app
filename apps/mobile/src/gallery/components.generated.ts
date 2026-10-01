@@ -64,6 +64,5 @@ export type ComponentId =
   | 'ui/SectionCard'
   | 'ui/SectionHeader'
   | 'ui/SplitRow'
-  | 'ui/TabletLayout'
   | 'ui/Thumbnail'
   | 'ui/Typo';

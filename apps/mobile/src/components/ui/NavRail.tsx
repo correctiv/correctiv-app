@@ -61,8 +61,8 @@ export type NavRailProps = {
 /**
  * The tablet navigation rail: five tab triggers plus the mini player.
  *
- * Width is `sizes.railWidth` (88 px) — justified in that token's doc: at 834 px
- * the centred column's gutter is 107 px, and 88 fits with 19 px to spare.
+ * Width is `sizes.railWidth` (88 px). `lib/navigation/railTabs` renders it as the tab bar of a
+ * navigator, left of the screens.
  */
 export function NavRail({ active, onSelect, insets }: NavRailProps) {
   const intl = useIntl();

@@ -4,7 +4,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TabletLayout } from '@/components/ui/TabletLayout';
+import { railScreenOptions, renderRailTabBar } from '@/lib/navigation/railTabs';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
@@ -95,13 +95,12 @@ export default function TabsLayout() {
   const { width } = useWindowDimensions();
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
 
-  if (width >= sizes.railBreakpoint) {
-    return <TabletLayout />;
-  }
+  const rail = width >= sizes.railBreakpoint;
 
   return (
     <View className="flex-1">
       <Tabs
+        tabBar={rail ? renderRailTabBar : undefined}
         screenOptions={{
           headerShown: false,
           /**
@@ -111,6 +110,7 @@ export default function TabsLayout() {
            * other in the direction of the tab order, so a switch looks like one.
            */
           animation: 'shift',
+          ...(rail ? railScreenOptions : null),
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors['grey-500'],
           // Page surface, hairline on top, no shadow — as the design draft has it.
@@ -193,13 +193,15 @@ export default function TabsLayout() {
         `box-none` lets taps through while nothing is playing, when MiniPlayer
         renders null and this is an empty, invisible row.
       */}
-      <View
-        pointerEvents="box-none"
-        className="absolute left-0 right-0"
-        style={{ bottom: barHeight }}
-      >
-        <MiniPlayer />
-      </View>
+      {rail ? null : (
+        <View
+          pointerEvents="box-none"
+          className="absolute left-0 right-0"
+          style={{ bottom: barHeight }}
+        >
+          <MiniPlayer />
+        </View>
+      )}
     </View>
   );
 }

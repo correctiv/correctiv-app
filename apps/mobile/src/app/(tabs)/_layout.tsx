@@ -3,7 +3,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TabletLayout } from '@/components/ui/TabletLayout';
+import { RailTabs } from '@/lib/navigation/railTabs';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, useColors } from '@/lib/theme';
 
@@ -140,7 +140,7 @@ export default function TabsLayout() {
   const { width, fontScale } = useWindowDimensions();
 
   if (width >= sizes.railBreakpoint) {
-    return <TabletLayout />;
+    return <RailTabs />;
   }
 
   /**

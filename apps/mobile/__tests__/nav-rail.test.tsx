@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { Dimensions } from 'react-native';
+import { act } from 'react-test-renderer';
 
-import { sizes } from '../src/lib/theme';
-import { columnGutter, railShift } from '../src/components/ui/ContentColumn';
+import { sizes, spacingPx } from '../src/lib/theme';
+import { columnGutter } from '../src/components/ui/ContentColumn';
+import { MiniPlayer } from '../src/components/player/MiniPlayer';
 import { NavRail } from '../src/components/ui/NavRail';
 import { render } from './support/rendering';
 
@@ -14,6 +15,48 @@ import { render } from './support/rendering';
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), navigate: jest.fn() },
 }));
+
+const mockNavigate = jest.fn();
+const mockEmit = jest.fn(() => ({ defaultPrevented: false }));
+const mockRoutes = ['index', 'entdecken', 'mediathek', 'mitmachen', 'profil'].map((name) => ({
+  key: `${name}-key`,
+  name,
+}));
+
+/**
+ * A navigator double that does what the real one does for this test's purposes:
+ * hand its `tabBar` prop the state and navigation object, or draw a bottom bar
+ * marker when it has none. The rail code under test is the real one.
+ */
+jest.mock('expo-router/js-tabs', () => {
+  const react = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const Tabs = ({ tabBar }: { tabBar?: (p: unknown) => React.ReactNode }) =>
+    tabBar
+      ? react.createElement(
+          View,
+          { testID: 'js-tabs-rail' },
+          tabBar({
+            state: { index: 1, routes: mockRoutes },
+            navigation: { emit: mockEmit, navigate: mockNavigate },
+            descriptors: {},
+            insets: { top: 0, bottom: 0, left: 0, right: 0 },
+          }),
+        )
+      : react.createElement(View, { testID: 'js-tabs-bottom-bar' });
+  Tabs.Screen = () => null;
+  return { Tabs };
+});
+
+jest.mock('expo-router/unstable-native-tabs', () => {
+  const react = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const Part = () => null;
+  const NativeTabs = () => react.createElement(View, { testID: 'native-tabs' });
+  NativeTabs.Trigger = Object.assign(Part, { Label: Part, Icon: Part });
+  NativeTabs.BottomAccessory = Part;
+  return { NativeTabs };
+});
 /**
  * `useColors()` calls `useUniwind()` from uniwind; without a provider it throws
  * in the test tree. This mock mirrors `appearance.test.tsx`.
@@ -26,66 +69,72 @@ jest.mock('uniwind', () => ({
 
 const NO_INSETS = { top: 0, bottom: 0, left: 0, right: 0 };
 
-/**
- * The tablet navigation rail: three questions, each with its own assertion.
- *
- * 1. A phone width never renders the rail — the layout files guard
- *    `TabletLayout` behind `width >= sizes.railBreakpoint`, so at phone widths
- *    both layouts fall through to their bottom bars. Source-level check.
- *
- * 2. 768 px and above always does — both layouts import and reference
- *    `TabletLayout`, so the guard resolves to true at or above the breakpoint.
- *    Source-level check.
- *
- * 3. The rail and the reading column cannot disagree — both layouts read the
- *    same `sizes.railBreakpoint` token, and the rail width (88) fits the gutter
- *    the centred column leaves at 834 px (107). Arithmetic + source check.
- *
- * A fourth assertion renders `NavRail` directly: five tab triggers, each a
- * pressable with `accessibilityRole="tab"`, the active one marked selected.
- */
-const SRC = join(__dirname, '..', 'src');
-const LAYOUT_NATIVE = join(SRC, 'app', '(tabs)', '_layout.tsx');
-const LAYOUT_WEB = join(SRC, 'app', '(tabs)', '_layout.web.tsx');
-const NAV_RAIL_SRC = join(SRC, 'components', 'ui', 'NavRail.tsx');
-
-describe('the breakpoint arithmetic', () => {
-  it('fits the rail inside the gutter at 834 px', () => {
-    const gutter = columnGutter(834);
-    expect(sizes.railWidth).toBeLessThanOrEqual(gutter);
-  });
-
-  it('keeps the column clear of the rail at every width from the breakpoint up', () => {
+describe('the space beside the rail', () => {
+  it('keeps the reading column inside what the rail leaves, from the breakpoint up', () => {
     for (let width = sizes.railBreakpoint; width <= 1194; width++) {
-      const shift = railShift(width);
-      expect(shift + columnGutter(width - shift)).toBeGreaterThanOrEqual(sizes.railWidth);
-    }
-  });
-
-  it('puts the column edge where the centred column starts on a wide window', () => {
-    for (const width of [768, 834, 1194]) {
-      expect(2 * columnGutter(width) + sizes.contentColumn).toBe(width);
+      const beside = width - sizes.railWidth;
+      expect(columnGutter(beside)).toBeGreaterThanOrEqual(spacingPx.m);
+      expect(
+        2 * columnGutter(beside) + Math.min(sizes.contentColumn, beside - 2 * spacingPx.m),
+      ).toBe(beside);
     }
   });
 });
 
-describe('the layout guard', () => {
-  const native = readFileSync(LAYOUT_NATIVE, 'utf-8');
-  const web = readFileSync(LAYOUT_WEB, 'utf-8');
+/**
+ * Both layouts, rendered at a phone width and a tablet width.
+ *
+ * At tablet width the navigator's `tabBar` is the rail, and a press on a rail item
+ * reaches the navigator's `navigate` — not a router call from the layout. At phone
+ * width there is no rail: native shows the system tabs, web its drawn bar.
+ */
+const LAYOUTS = [
+  ['native', () => require('../src/app/(tabs)/_layout').default],
+  ['web', () => require('../src/app/(tabs)/_layout.web').default],
+] as const;
 
-  it('both layouts read the same breakpoint token so they cannot disagree', () => {
-    expect(native).toContain('sizes.railBreakpoint');
-    expect(web).toContain('sizes.railBreakpoint');
+function at(width: number, Layout: React.ComponentType) {
+  Dimensions.set({
+    window: { width, height: 1024, scale: 2, fontScale: 1 },
+    screen: { width, height: 1024, scale: 2, fontScale: 1 },
+  });
+  return render(<Layout />);
+}
+
+describe.each(LAYOUTS)('the %s tab layout', (kind, load) => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    mockEmit.mockClear();
   });
 
-  it('guards TabletLayout behind the width check', () => {
-    expect(native).toMatch(/width >= sizes\.railBreakpoint/);
-    expect(web).toMatch(/width >= sizes\.railBreakpoint/);
+  it('draws no rail below the breakpoint', () => {
+    const tree = at(sizes.railBreakpoint - 1, load());
+    expect(findTabs(tree)).toHaveLength(0);
+    expect(tree.root.findAllByProps({ testID: 'js-tabs-rail' })).toHaveLength(0);
   });
 
-  it('references TabletLayout so it renders at or above the breakpoint', () => {
-    expect(native).toContain('TabletLayout');
-    expect(web).toContain('TabletLayout');
+  it('draws the rail from the breakpoint up', () => {
+    const tree = at(sizes.railBreakpoint, load());
+    expect(findTabs(tree)).toHaveLength(5);
+    expect(tree.root.findAllByProps({ testID: 'native-tabs' })).toHaveLength(0);
+  });
+
+  it('marks the focused route and routes a press through the navigator', () => {
+    const tree = at(834, load());
+    const tabs = findTabs(tree);
+    const selected = tabs.filter((t) => t.props.accessibilityState?.selected === true);
+    expect(selected).toHaveLength(1);
+    expect(selected[0]!.props.accessibilityLabel).toBe('Entdecken');
+
+    act(() => tabs[2]!.props.onPress());
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'tabPress', target: 'mediathek-key' }),
+    );
+    expect(mockNavigate).toHaveBeenCalledWith('mediathek', undefined);
+
+    mockNavigate.mockClear();
+    act(() => tabs[1]!.props.onPress());
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
 
@@ -109,7 +158,7 @@ describe('NavRail', () => {
   });
 
   it('includes the mini player at its bottom', () => {
-    const source = readFileSync(NAV_RAIL_SRC, 'utf-8');
-    expect(source).toContain('MiniPlayer');
+    const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
+    expect(tree.root.findAllByType(MiniPlayer)).toHaveLength(1);
   });
 });

@@ -74,7 +74,6 @@ import {
   Screen,
   SectionCard,
   SectionHeader,
-  TabletLayout,
   Thumbnail,
   Typo,
 } from '@/components/ui';
@@ -557,18 +556,6 @@ const LISTED = [
                 insets={{ top: 0, bottom: 0, left: 0, right: 0 }}
               />
             ),
-          },
-        ],
-      },
-      {
-        name: 'TabletLayout',
-        note: 'The tablet navigation: NavRail beside the active tab screen. Both layouts guard it behind width >= sizes.railBreakpoint, so it is never rendered on a phone.',
-        specimens: [
-          {
-            label: 'default (renders the home tab)',
-            height: 600,
-            ownSurface: true,
-            node: <TabletLayout />,
           },
         ],
       },
