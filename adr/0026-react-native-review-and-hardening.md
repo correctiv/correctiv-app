@@ -160,9 +160,11 @@ Android window resizing may rescue a particular screen and establishes nothing a
 the other platform.
 
 `KeyboardAvoidingView` is the default answer for sign-in and participation, with
-search in the same pass. If a layout needs more,
+search in the same pass. ~~If a layout needs more,
 [React Native Keyboard Controller](https://kirillzyusko.github.io/react-native-keyboard-controller/)
-is the escalation and not a dependency to add first. Coordinate the footer with the
+is the escalation and not a dependency to add first.~~ Void since
+[ADR 0068](0068-the-keyboard-controller-measured-and-rejected.md): measured on a 1600 px
+window, it lost the field. Coordinate the footer with the
 scroller, do not double-apply insets, and keep the web layout.
 
 Done means the focused field, the caret, errors and the next/submit control stay
