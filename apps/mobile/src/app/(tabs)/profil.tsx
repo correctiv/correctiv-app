@@ -1,7 +1,7 @@
 import { useIntl, defineMessages } from 'react-intl';
 
 import { Screen, Typo } from '@/components/ui';
-import { bundledScreenLayout } from '@/lib/home/layout';
+import { useScreenLayout } from '@/lib/home/layout';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 
 /** The heading of the fixed frame, in ENGLISH; the German that ships is `packages/catalogue/src/de/profile.ts`. */
@@ -30,10 +30,11 @@ const COPY = defineMessages({
  */
 export default function ProfilScreen() {
   const intl = useIntl();
+  const layout = useScreenLayout('profil');
   return (
     <Screen>
       <Typo variant="headline-xl">{intl.formatMessage(COPY.screenTitle)}</Typo>
-      <ScreenBlocks screen="profil" layout={bundledScreenLayout('profil')} />
+      <ScreenBlocks screen="profil" layout={layout} />
     </Screen>
   );
 }
