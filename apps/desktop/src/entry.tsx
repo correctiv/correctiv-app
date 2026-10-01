@@ -49,6 +49,7 @@
 // safe; only the display-dependent READ below must stay inside its guard.
 import Adw from 'gi://Adw?version=1';
 import Gdk from 'gi://Gdk?version=4.0';
+import GLib from 'gi://GLib?version=2.0';
 import Gtk from 'gi://Gtk?version=4.0';
 
 import { registerBuiltinWidgets } from '@gjsify/gtk-host';
@@ -267,6 +268,19 @@ function App() {
   return <RouterRoot manifest={manifest} />;
 }
 
+/**
+ * `CORRECTIV_DESKTOP_SIZE=420x800` opens the window at that size instead of the default,
+ * so a capture can show a narrow and a wide layout from the same bundle. A development
+ * aid beside the screenshot variables: anything that does not parse is the default.
+ */
+function requestedSize(): { width: number; height: number } {
+  const match = /^(\d+)x(\d+)$/.exec(GLib.getenv('CORRECTIV_DESKTOP_SIZE') ?? '');
+  return match === null
+    ? { width: 1100, height: 820 }
+    : { width: Number(match[1]), height: Number(match[2]) };
+}
+const size = requestedSize();
+
 await registerRootComponent(App, {
   // Experimental by name. This build is a feasibility demonstration and must not be
   // mistaken for a shipped CORRECTIV application by a desktop that indexes it —
@@ -277,6 +291,6 @@ await registerRootComponent(App, {
   // accepted by JavaScript and ignored, and the window stayed at the documented
   // 900x700 default — which is exactly the kind of silently-dropped option that a
   // typecheck catches and a screenshot does not.
-  defaultWidth: 1100,
-  defaultHeight: 820,
+  defaultWidth: size.width,
+  defaultHeight: size.height,
 });

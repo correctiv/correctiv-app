@@ -37,6 +37,43 @@ base64-subsetted fonts and that mechanism works unchanged inside WebKit.
 
 ![Reader](screens/reader.png)
 
+### The home screen is the document, and the column is a clamp
+
+Home is drawn from the home configurator's JSON exactly as on the phone: `app/(tabs)/index.tsx`
+is re-exported, and `lib/home/layout.ts` picks the bundled `home.layout.json` or the copy
+fetched from the published site. The host adds the three things the phone's root layout and
+Expo give it for free:
+
+- **The build stamp.** A fetched copy is drawn only if it was published at or after the
+  build (`extra.builtAt`). `gjsify.config.mjs` defines `__BUILT_AT__` (the build's ISO time;
+  `CORRECTIV_BUILT_AT` pins it) and `src/shims/expo-constants.ts` answers it. Measured with
+  `CORRECTIV_BUILT_AT=2020-01-01…`: the launch fetch stores the published document and its
+  `publishedAt` under `store.homeLayout` in `settings.ini`. With the default stamp the copy
+  is kept only once the site publishes something newer than the build.
+- **The refresh.** `_layout.tsx` persists `homeLayout` and calls `useHomeLayoutRefresh`.
+  gjsify does not route `AppState` (tier P3, #1343), so `src/platform/app-state.ts` answers
+  it from the windows: `active` while any toplevel has `notify::is-active`. Alt-tabbing back
+  re-fires the refresh, which the core's ten-minute floor keeps cheap. Unit-tested on fakes
+  (`test/app-state.test.ts`); not driven from a compositor here.
+- **The reading column.** A `View` with `style={{ maxWidth }}` is wrapped in an `Adw.Clamp`
+  (`maximum-size` and `tightening-threshold` both the width), so `ContentColumn`'s 620 px is
+  drawn and centred. The phone's `useColumnGutter` takes 88 px off the window from 768 px up
+  for a rail beside the screens; there is no rail here (the switcher is in the header, or
+  the bar at the foot), so `src/overrides/ContentColumn.tsx` answers it with the whole
+  window, redirected by resolved file in `gjsify.config.mjs` because `Rail` and `Screen`
+  import it as `./ContentColumn`. **Not covered:** the three list screens that state the
+  column on a `FlatList`'s `contentContainerStyle` (`gespeichert`, `serie/[id]`,
+  `projekt/[id]`) still fill the window, since that box does not exist here.
+
+Navigation stays Adwaita's: `railTabs.tsx` needs `expo-router/js-tabs`, which has no GTK
+counterpart, and the switcher's breakpoint is libadwaita's measurement of its own width
+(about 650 px), not the phone's 768.
+
+`CORRECTIV_DESKTOP_SIZE=420x800` opens the window at that size, which is how these were taken.
+
+![Home, narrow window](screens/home-narrow.png)
+![Home, wide window](screens/home-wide.png)
+
 ### Audio, measured rather than screenshotted
 
 A screenshot of the player proves a screen rendered, not that audio decoded. `npm run
@@ -1438,15 +1475,15 @@ actually holds the focus before clearing the root's, and `isFocused()` reads
 compositor's active one. Neither distinction was in the local handle, and both are the
 kind a port gets wrong.
 
-Four shims the brief expected are **absent on purpose**: `expo-linking`,
-`expo-web-browser`, `expo-constants` and `expo-system-ui` are declared in the app's
+Three shims the brief expected are **absent on purpose**: `expo-linking`,
+`expo-web-browser` and `expo-system-ui` are declared in the app's
 `package.json` and imported nowhere, so shimming them would be dead code pretending to
 be coverage.
 
 ## Checks
 
 `npm run check` at the repo root covers this workspace: the typecheck, the lint, and
-eight suites, 57 tests, in under a second. They are the guards a green build does not
+ten suites, 65 tests, in under a second. They are the guards a green build does not
 give you.
 
 - **`test/support-gate.test.ts`** reproduces the build-time support gate that
