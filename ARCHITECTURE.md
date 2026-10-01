@@ -184,7 +184,9 @@ See `apps/mobile/src/lib/articles/reader.ts`.
 In the core, `ports/` and `types/` hold the contracts, `articles/` the Article model
 and its load cascade, `services/` the HTTP, cache, WordPress REST, RSS, search,
 podcast, PeerTube, Spotlight and radio clients, `stores/` the Redux slices, `data/`
-the typed content, `lib/` the
+the typed content, `data/samples/` its NAMED variants (the edge cases of a model,
+one name each, shared by the screens, the component gallery and the workbench),
+`lib/` the
 dependency-free string and date helpers, and `media/` the rule that only one medium
 plays at a time. `articles/extract/` holds two backends, string and DOM, behind one
 `ArticleExtractor` type.
