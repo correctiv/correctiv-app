@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { defineMessages, useIntl } from 'react-intl';
 import { View } from 'react-native';
 
 import { EpisodeRow } from '@/components/media/EpisodeRow';
@@ -15,6 +16,55 @@ import { useEpisodeStatus } from '@/lib/audio/useAudio';
 import { useCoreActions, usePodcastLibrary, useVideoChannel } from '@/lib/store/core';
 
 /**
+ * Everything this screen says, in one place, in ENGLISH — the German that ships
+ * is `packages/catalogue/src/de/mediathek.ts` (ADR 0026 §6).
+ *
+ * `offlineEpisodes` is declared here AND in `app/serie/[id].tsx`, under the same
+ * id and with the same default: it is one sentence shown in two places, and the
+ * series page's comment says so. Declaring it twice rather than importing keeps
+ * each screen readable on its own, and it cannot drift — `npm run i18n:extract`
+ * runs with `--throws`, which fails on one id carrying two different defaults.
+ */
+const COPY = defineMessages({
+  liveSubtitle: {
+    id: 'mediathek.liveSubtitle',
+    defaultMessage: '24/7 from Bottrop, by young people for young people',
+  },
+  podcasts: { id: 'mediathek.podcasts', defaultMessage: 'Podcasts' },
+  offlineEpisodes: {
+    id: 'mediathek.offlineEpisodes',
+    defaultMessage: 'No connection. You are seeing sample episodes.',
+  },
+  fromBackstage: { id: 'mediathek.fromBackstage', defaultMessage: 'From Backstage' },
+  videosUnavailable: {
+    id: 'mediathek.videosUnavailable',
+    defaultMessage: 'Videos cannot be reached at the moment.',
+  },
+});
+
+/**
+ * The names that are marks rather than sentences, so they carry no id: the
+ * screen's own product name, the two video channels, and the club shelf a bonus
+ * track is filed under on the lock screen. A catalogue entry mapping FunFacts to
+ * FunFacts is a line for a translator to wonder about (the same call
+ * `components/gate/LoginGate.tsx` makes for the wordmark).
+ *
+ * **`CHANNEL_GESPRAECH` is why this file is still on the not-yet-migrated list in
+ * `__tests__/localisation-seam.test.ts`, and it is the only reason.** It is a
+ * name, so it gets no id; it carries an umlaut, so the check — which reads
+ * characters and cannot tell a name from a sentence — sees German in a screen.
+ * An id would not help either, because a mark's `defaultMessage` IS the German
+ * spelling and would sit in this file all the same. The two real ways out are a
+ * line-level exception in that check, or a display name for each channel in
+ * `@correctiv/app-core/data/feeds.config`, where `FEEDS` already keeps a badge
+ * per feed and where nothing under `apps/mobile/src` is being checked.
+ */
+const MEDIATHEK = 'Mediathek';
+const CHANNEL_GESPRAECH = 'CORRECTIV im Gespräch';
+const CHANNEL_FUNFACTS = 'FunFacts';
+const BONUS_SHELF = 'Backstage · Club';
+
+/**
  * Mediathek — everything audible and watchable: live radio, the Salon5 podcasts
  * (Castopod), two video channels and the club's Backstage bonus track.
  *
@@ -22,21 +72,22 @@ import { useCoreActions, usePodcastLibrary, useVideoChannel } from '@/lib/store/
  * audio, because it exists to show the club preview flow.
  */
 export default function MediathekScreen() {
+  const intl = useIntl();
   const podcasts = usePodcastLibrary();
 
   return (
     <Screen>
       <Typo variant="headline-xl" className="mb-s">
-        Mediathek
+        {MEDIATHEK}
       </Typo>
 
-      <LiveBanner subtitle="24/7 aus Bottrop, von Jugendlichen für Jugendliche" />
+      <LiveBanner subtitle={intl.formatMessage(COPY.liveSubtitle)} />
 
       <View className="mt-l">
-        <SectionHeader title="Podcasts" className="mb-s" />
+        <SectionHeader title={intl.formatMessage(COPY.podcasts)} className="mb-s" />
         {podcasts.status === 'offline' && (
           <Typo variant="text-s" color="on-canvas-muted" className="mb-2xs">
-            Ohne Verbindung. Sie sehen Beispielfolgen.
+            {intl.formatMessage(COPY.offlineEpisodes)}
           </Typo>
         )}
         <Rail>
@@ -46,11 +97,11 @@ export default function MediathekScreen() {
         </Rail>
       </View>
 
-      <VideoRail title="CORRECTIV im Gespräch" channel="gespraech" />
-      <VideoRail title="FunFacts" channel="funfacts" />
+      <VideoRail title={CHANNEL_GESPRAECH} channel="gespraech" />
+      <VideoRail title={CHANNEL_FUNFACTS} channel="funfacts" />
 
       <View className="mt-l">
-        <SectionHeader title="Aus dem Backstage" />
+        <SectionHeader title={intl.formatMessage(COPY.fromBackstage)} />
         {/* No club label here: every row already carries the yellow Club badge, and a
             coral one above them said the same word twice in the wrong colour — coral
             is the journalism CTA, yellow is the club (see ui/Button.tsx). */}
@@ -65,6 +116,7 @@ export default function MediathekScreen() {
 }
 
 function VideoRail({ title, channel }: { title: string; channel: YoutubeKey }) {
+  const intl = useIntl();
   const { videos, status } = useVideoChannel(channel);
   const actions = useCoreActions();
 
@@ -79,7 +131,7 @@ function VideoRail({ title, channel }: { title: string; channel: YoutubeKey }) {
       <SectionHeader title={title} className="mb-s" />
       {status === 'error' && videos.length === 0 ? (
         <Typo variant="text-s" color="on-canvas-muted">
-          Videos derzeit nicht erreichbar.
+          {intl.formatMessage(COPY.videosUnavailable)}
         </Typo>
       ) : (
         <Rail>
@@ -103,7 +155,7 @@ function BonusRow({ bonus }: { bonus: BonusMedia }) {
 
   const track = {
     title: bonus.title,
-    subtitle: 'Backstage · Club',
+    subtitle: BONUS_SHELF,
     url: bonus.source,
     episodeId: bonus.id,
   };

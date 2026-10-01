@@ -1,0 +1,709 @@
+{
+  "0001": {
+    "slugs": ["monorepo-and-platform-free-core"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0002": {
+    "slugs": ["vite-8-rolldown-evaluation"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0003": {
+    "slugs": ["audio-capability-spike"],
+    "decisions": {
+      "1": ["Consequence for the stack decision"]
+    }
+  },
+  "0004": {
+    "slugs": ["react-native-pivot"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0005": {
+    "slugs": ["react-native-over-nativescript"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0006": {
+    "slugs": ["one-core-two-hosts"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0007": {
+    "slugs": ["removing-the-nativescript-host"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0008": {
+    "slugs": ["uniwind-over-nativewind"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0009": {
+    "slugs": ["redux-toolkit-for-the-cores-state"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0010": {
+    "slugs": ["design-tokens-as-a-shared-package"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0011": {
+    "slugs": ["naming-the-app-for-release"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0012": {
+    "slugs": ["a-list-virtualizer-for-the-unbounded-lists"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0013": {
+    "slugs": ["native-tabs-and-a-web-tab-bar-of-its-own"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0014": {
+    "slugs": ["the-preview-shell-as-a-package"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0015": {
+    "slugs": ["reading-correctiv-org-through-its-rest-api"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0016": {
+    "slugs": ["a-door-at-the-root-and-an-entitlement-not-an-amount"],
+    "decisions": {
+      "1": ["A render branch, not a redirect"],
+      "2": ["An entitlement, never an amount"],
+      "3": ["A `session` slice beside `membership`, not a field on it"],
+      "4": ["Simulated, and said so on the screen"],
+      "5": ["Four states on one surface"],
+      "6": ["Sign-out lives in Einstellungen"]
+    }
+  },
+  "0017": {
+    "slugs": ["native-rendering-as-the-rule-a-webview-for-the-exception"],
+    "decisions": {
+      "1": ["Native rendering stays the rule, and the webview is the exception"],
+      "2": ["The exception is detected, not judged"]
+    }
+  },
+  "0018": {
+    "slugs": ["removing-the-guest"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0019": {
+    "slugs": ["identity-lives-in-the-session"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0020": {
+    "slugs": ["no-contribution-in-the-app"],
+    "decisions": {
+      "1": ["The app sets no contribution"],
+      "2": ["The label is the part with a rule behind it"]
+    }
+  },
+  "0021": {
+    "slugs": ["the-board-is-a-plugin-and-the-screens-are-data"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0022": {
+    "slugs": ["three-tiers-of-colour-and-a-dark-scheme-that-names-roles"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0023": {
+    "slugs": ["the-host-constructs-the-store"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0024": {
+    "slugs": ["the-handbook-owns-the-root"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0025": {
+    "slugs": ["the-published-app-is-a-production-bundle"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0026": {
+    "slugs": ["react-native-review-and-hardening"],
+    "decisions": {
+      "1": ["Rozenite, which replaces the Redux debugger rather than joining it"],
+      "2": ["Keyboard-aware inputs, as a usability requirement"],
+      "3": ["Notification delivery stays deferred until it is decided how they are sent"],
+      "4": ["MMKV as the single storage engine, with a bounded cache"],
+      "5": ["An error boundary, and an error report whose provider is not chosen yet"],
+      "6": ["German and English from the first string, and German is the only one that ships"],
+      "7": ["Tablet is in scope, and accessibility is the work beside it"],
+      "8": ["Commit hooks, which format rather than complain"],
+      "9": ["Navigation headers: the platform's on iOS and Android, ours on web"]
+    }
+  },
+  "0027": {
+    "slugs": ["the-handbook-draws-the-apps-components"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0028": {
+    "slugs": ["one-shell-and-a-route-that-declares-its-context"],
+    "decisions": {
+      "1": ["The route declares, and the page fills"],
+      "2": ["The address, on every route"],
+      "3": ["Two defaults that look inconsistent and are not"],
+      "4": ["Below 1024, the context is the page"],
+      "5": ["The frame moves to the component's own page"],
+      "6": ["Every card draws, and there is nothing to press"],
+      "7": ["The square is the column, and a crop says it is one"],
+      "8": ["The registry's roster is the app's own catalogue"],
+      "9": ["The environment is the app's, and it was short by five things"],
+      "10": ["One environment, exported once"],
+      "11": ["The card's link is over the drawing, not on it"],
+      "12": ["A visible way past the app's door (issue #112)"]
+    }
+  },
+  "0029": {
+    "slugs": ["the-handbook-keeps-its-own-primitives"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0030": {
+    "slugs": ["the-platforms-header-and-ours-on-web"],
+    "decisions": {
+      "1": ["Decision"],
+      "2": ["The two exceptions, named so they are a decision"]
+    }
+  },
+  "0031": {
+    "slugs": ["four-mechanisms-for-this-must-not-be-forgotten"],
+    "decisions": {
+      "1": ["Mechanism 1 — make it a type error"],
+      "2": ["Mechanism 2 — generate the type from the world"],
+      "3": ["Mechanism 3 — take the primitive away"],
+      "4": ["Mechanism 4 — read the source, and only for what no type can see"]
+    }
+  },
+  "0032": {
+    "slugs": ["a-port-for-the-error-report-before-a-provider-for-it"],
+    "decisions": {
+      "1": ["A fifth port, with a no-op default"],
+      "2": ["What a report carries: a code, not a sentence"],
+      "3": ["Where reporting is allowed to happen"]
+    }
+  },
+  "0033": {
+    "slugs": ["one-text-size-for-the-whole-app-the-systems-by-default"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0034": {
+    "slugs": ["one-component-for-the-two-sided-row"],
+    "decisions": {
+      "1": ["A two-sided row is a component, and the class is banned"],
+      "2": ["The tab bar drops four labels above 130 %, and the threshold is measured"],
+      "3": ["One line for the word break, and it stops at the headlines"]
+    }
+  },
+  "0035": {
+    "slugs": ["a-check-that-opens-the-page"],
+    "decisions": {
+      "1": ["Decision"]
+    }
+  },
+  "0036": {
+    "slugs": ["the-home-screen-becomes-data"],
+    "decisions": {
+      "1": ["The configurator is built for us, and the document is designed for the newsroom"],
+      "2": [
+        "Fixed places that get filled, not blocks that get arranged",
+        "Fixed places that get filled, ~~not blocks that get arranged~~, voided by [ADR 0045](0045-the-home-editor-arranges-the-blocks-it-draws.md) §4"
+      ],
+      "3": ["A place carries either a pinned item or a rule, and the rule is what runs unattended"],
+      "4": ["A small document the app fetches and stores"],
+      "5": ["Fetched at launch and on every return to the foreground, with a floor between tries"],
+      "6": [
+        "No version number in the document",
+        "~~No version number in the document~~",
+        "~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md) §1",
+        "~~No version number in the document~~, voided by [ADR 0039](0039-the-home-screen-is-a-day-not-a-timetable.md)'s \"What this retires\""
+      ],
+      "7": ["An unknown place is drawn past, and reported"],
+      "8": ["A pinned item that has vanished falls back to the place's rule"],
+      "9": ["Both ends validate, and the app keeps the last good copy"],
+      "10": ["The first launch with no network gets a default layout shipped in the bundle"],
+      "11": ["Scenarios are named, live in the repository, and the name goes in the address"],
+      "12": ["A scenario is the same file as a real configuration, only named"],
+      "13": ["A scenario declares whether it pulls live content or uses fixed sample data"],
+      "14": ["One definition of the places, and everything else derived from it"],
+      "15": ["The configurator writes a file into the repository, as a pull request"],
+      "16": ["Offline media downloads are a later decision"]
+    }
+  },
+  "0037": {
+    "slugs": ["the-whole-site-is-the-workbench"],
+    "decisions": {
+      "1": ["The site is the workbench, and the directory is `apps/workbench`"],
+      "2": ["The device frame is `/preview`, and \"handbook\" keeps the documents"],
+      "3": ["Both moved addresses are answered by the site, and by no stub file"],
+      "4": ["The ADRs keep the names they were written with"]
+    }
+  },
+  "0038": {
+    "slugs": ["one-tool-at-a-time-in-a-rail"],
+    "decisions": {
+      "1": ["One tool at a time, opened from a rail on the right edge"],
+      "2": ["The rail is the only switch, and nothing is open by default"],
+      "3": ["`tool=` in the address, and what an old `open=` link does"],
+      "4": ["Below 1024 the rail lies along the bottom, and the panel stands on it"],
+      "5": ["A badge only where it reports a number to act on"],
+      "6": ["Every view with a panel gets the rail, and a table of contents is not a tool"]
+    }
+  },
+  "0039": {
+    "slugs": ["the-home-screen-is-a-day-not-a-timetable"],
+    "decisions": {
+      "1": ["The document is a day: the places as they start, and a list of what changes"],
+      "2": ["The day's start is the document, not a moment"],
+      "3": ["A moment changes state, not arrangement"],
+      "4": ["A place carries settings, and which keys exist is the core's"],
+      "5": ["`dayparts` goes, and `lib/daypart.ts` with it"],
+      "6": ["A fault costs the smallest thing that carries the rule the app cannot apply"],
+      "7": ["The moments are a set, and only a duplicate time is refused"],
+      "8": ["The simulated clock is a parameter of the selector, and the host has one door"],
+      "9": ["The simulated time lives in the address, so it cannot be left behind"],
+      "10": ["The editor is a timeline, and an edit lands on the point in effect"],
+      "11": [
+        "The choices a block offers are sample data, and the interface says so from the inventory"
+      ]
+    }
+  },
+  "0040": {
+    "slugs": ["the-app-does-not-depend-on-the-workbench"],
+    "decisions": {
+      "1": ["One direction, and it is not symmetric"],
+      "2": [
+        "What the check has to assert, and why building without the directory is not the whole of it"
+      ],
+      "3": ["A shared spelling is not a dependency, and the check must not report one"],
+      "4": ["No app server, unless that is decided on its own"]
+    }
+  },
+  "0041": {
+    "slugs": ["a-change-may-name-an-audience"],
+    "decisions": {
+      "1": ["The audience sits on the change, and the fold gains one clause"],
+      "2": ["The audiences are names the newsroom recognises, and the list is not in this record"],
+      "3": ["Exactly one file turns an audience into an entitlement question"],
+      "4": ["The audience is a parameter of the selector, exactly as the minute is"],
+      "5": ["An audience is an editorial filter and never a lock"]
+    }
+  },
+  "0042": {
+    "slugs": ["the-timeline-belongs-to-the-stage"],
+    "decisions": {
+      "1": ["The timeline sits below the framed app, in the stage"],
+      "2": ["Drawn where the document governs the route, and nowhere else"],
+      "3": ["Looking never changes anything"],
+      "4": [
+        "Below 1024 it folds onto one line, and the order down the screen never changes",
+        "Below 1024 it ~~folds onto one line~~, voided by [ADR 0059](0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §2, and the order down the screen never changes"
+      ],
+      "5": [
+        "`full` keeps the timeline above 1024 and gives it up below, on the line that already exists"
+      ]
+    }
+  },
+  "0043": {
+    "slugs": ["two-concepts-become-packages-and-the-shell-stays"],
+    "decisions": {
+      "1": ["Two packages, in `packages/`, used from here first"],
+      "2": ["Published when a second project actually needs them, not before"],
+      "3": [
+        "Apache-2.0, which is a constraint on the dependency graph and not a line in a manifest"
+      ],
+      "4": [
+        "The record package builds on our form and reads MADR as well, and the model travels while the drawing does not"
+      ],
+      "5": ["The checks package ships the patterns, not our assertions"],
+      "6": ["Two things deliberately not extracted, with the reason, so nobody re-derives it"],
+      "7": ["Our own shell stays"]
+    }
+  },
+  "0044": {
+    "slugs": ["the-workbench-drives-a-real-device"],
+    "decisions": {
+      "1": ["The same view, synchronised with a device — not a device mode"],
+      "2": ["Setting a state and seeing a screen, not replaying taps"],
+      "3": ["A tool that cannot reach the device is visibly disabled and says why"],
+      "4": ["A native-reachable seam for the two overrides, fenced the way Rozenite is"],
+      "5": ["The first experiment, and what it settles"]
+    }
+  },
+  "0045": {
+    "slugs": ["the-home-editor-arranges-the-blocks-it-draws"],
+    "decisions": {
+      "1": ["The list is the day, the frame is the moment"],
+      "2": [
+        "A block that is not on screen at the playhead collapses to its row",
+        "A block that is not on screen at the playhead ~~collapses to its row~~ is drawn greyed"
+      ],
+      "3": ["The blocks are drawn, not described"],
+      "4": ["The arrangement is the document's, and the editor writes it: add, remove, reorder"],
+      "5": ["`hidden` stays in the document and leaves the interface"],
+      "6": ["An insertion mark between two blocks, offering the modules drawn the same way"],
+      "7": [
+        "One handle, two ways, and the arrow buttons go",
+        "One handle, two ways, ~~and the arrow buttons go~~ and the arrow buttons stay"
+      ],
+      "8": [
+        "Settings expand under their block, and a count is a slider",
+        "Settings ~~expand under their block~~ open beside it, and a count is a slider"
+      ],
+      "9": [
+        "A module declares its settings beside itself, and a generator carries them into the core"
+      ],
+      "10": [
+        "The gallery gets a module's settings with the declaration",
+        "~~The gallery gets a module's settings with the declaration~~ The editor has them, and the gallery points at it"
+      ]
+    }
+  },
+  "0046": {
+    "slugs": ["what-the-editor-may-add-and-what-a-block-is-called"],
+    "decisions": {
+      "1": ["The palette is the registry, and the shipped document stops being the roster"],
+      "2": [
+        "A new block's id is minted from its module, and the editor does not offer to change it"
+      ],
+      "3": ["A removed id may come back, and the editing model is why that is safe"],
+      "4": ["The insertion mark offers every module, and says nothing about where one belongs"],
+      "5": ["A drawn block re-renders on its section, not on the clock"],
+      "6": ["Offline, the list draws less than the frame, and that is accepted"]
+    }
+  },
+  "0047": {
+    "slugs": ["the-handle-is-the-pointers-and-the-arrows-are-the-keyboards"],
+    "decisions": {
+      "1": ["The drag handle is the pointer's route, and it has no keyboard mode"],
+      "2": ["The arrow buttons stay, and they are the keyboard's route"],
+      "3": ["Two controls, one operation, and the document never learns there were two"],
+      "4": ["The keyboard drag is refused now and named as a thing that could be earned"]
+    }
+  },
+  "0048": {
+    "slugs": ["the-gallery-points-at-the-editor-rather-than-copying-it"],
+    "decisions": {
+      "1": ["The modules stay out of the gallery, and out of `src/components`"],
+      "2": ["A module's settings are worked in the editor, and that is the one place"],
+      "3": ["The gallery says where the modules are, and links to it"],
+      "4": ["`?c=` is left alone"]
+    }
+  },
+  "0049": {
+    "slugs": ["the-catalogue-is-a-package"],
+    "decisions": {
+      "1": ["The catalogues are a package of their own, `@correctiv/catalogue`"],
+      "2": ["Four things do not move, and each would have been the tempting mistake"],
+      "3": ["English becomes a locale the app can actually render"],
+      "4": ["The locale is supplied by the host, not written into the core"],
+      "5": ["The checks split along the same line"],
+      "6": ["`Locale` stays in the core, and the catalogue answers to it"]
+    }
+  },
+  "0050": {
+    "slugs": ["the-workbench-gets-a-second-audience"],
+    "decisions": {
+      "1": ["The workbench has a second audience, and it is named"],
+      "2": [
+        "What is translated is what that audience touches, and nothing else",
+        "The chrome follows the setting, the content does not",
+        "The shell and the tools follow the setting, a published page's body does not"
+      ],
+      "3": ["Two catalogues, one per audience, and neither reaches into the other"],
+      "4": ["The setting is the reader's, so it lives where the appearance does"],
+      "5": ["`document.ts`'s module labels are a decision this record does not make"]
+    }
+  },
+  "0051": {
+    "slugs": ["the-workbench-starts-in-the-browsers-language"],
+    "decisions": {
+      "1": ["The default is the language the browser asks for"],
+      "2": ["\"System\" is a third value of the setting, not a hidden default"],
+      "3": [
+        "The picker's third row is the only one that is translated",
+        "One row of the picker is translated, and it is the only one"
+      ],
+      "4": ["The constant that meant both things is split"]
+    }
+  },
+  "0052": {
+    "slugs": ["the-sites-own-words-follow-the-setting"],
+    "decisions": {
+      "1": ["The line is the site's own words against the repository's"],
+      "2": ["One check holds it, and it is the one the app already has"],
+      "3": ["The mechanism is shared, the argument is not"],
+      "4": ["`content/` is a record and is printed as written"],
+      "5": ["`plugin/registry.ts` is in scope by §1 and out of reach of the extraction"],
+      "6": ["Three of the six drawings keep their labels in English"],
+      "7": [
+        "The home configurator's blocks say what they are in German, and the module takes a formatter"
+      ]
+    }
+  },
+  "0053": {
+    "slugs": ["the-editor-is-the-screen-and-the-drag-is-the-answer"],
+    "decisions": {
+      "1": ["The list is the screen, and a block that is off is drawn greyed"],
+      "2": ["A drag is shown by moving the block, not by marking a gap"],
+      "3": ["A block's name, its sentence, its id and its settings move into a popover beside it"],
+      "4": [
+        "The controls are revealed over the block, and the keyboard's route is not conditional"
+      ],
+      "5": ["A gutter down the left, which is the one thing the list has that the app has not"]
+    }
+  },
+  "0054": {
+    "slugs": ["a-block-declares-where-it-may-appear"],
+    "decisions": {
+      "1": ["The declaration belongs to the block, not to the component"],
+      "2": ["A block names the screens it may appear on, and it may name more than one"],
+      "3": ["The structure stays in the app, the words stay in the workbench"],
+      "4": ["What stays out of the app's bundle is decided by the import, not by the bundler"],
+      "5": ["The field is written before the second screen, and the screen is not"]
+    }
+  },
+  "0055": {
+    "slugs": ["the-rail-takes-a-mouse-and-the-app-owns-the-affordance"],
+    "decisions": {
+      "1": ["The affordance goes into the app's web target, and the workbench gets nothing"],
+      "2": ["One component, one platform pair, and the arithmetic in a module a test can run"],
+      "3": ["A press becomes a drag at six pixels, and that click is swallowed"],
+      "4": ["The vertical wheel keeps scrolling the page"]
+    }
+  },
+  "0056": {
+    "slugs": ["a-string-is-picked-where-it-renders"],
+    "decisions": {
+      "1": [
+        "The picker resolves a rendering to an id by its text, and the owner chain breaks the tie"
+      ],
+      "2": ["The match is on the text node, not on the element's text"],
+      "3": ["A pattern too loose to match on does not take part, and says so"],
+      "4": ["The list is the other half of the tool, not a convenience beside it"],
+      "5": ["\"No id\" is an answer, and one existing check is what makes it a true one"],
+      "6": ["What is edited is the German, and the `defaultMessage` is left alone"],
+      "7": [
+        "The preview writes `workbench:strings`, and it may only replace a wording the catalogue already carries"
+      ],
+      "8": ["Saving edits the file through its syntax tree, and the validator is the placeholders"]
+    }
+  },
+  "0057": {
+    "slugs": ["the-structure-comes-from-the-workbench-the-selection-from-wordpress"],
+    "decisions": {
+      "1": ["The workbench stays the editor, and the condition to leave it is named"],
+      "2": ["The document holds structure; it never holds an article"],
+      "3": ["A flag has to be answerable by a query, not merely present"],
+      "4": ["The document is published as a file beside the app, and the app fetches one constant"],
+      "5": [
+        "If the editor becomes a WordPress plugin, the document goes with it and the rest stays"
+      ]
+    }
+  },
+  "0058": {
+    "slugs": ["the-workbench-holds-no-power-and-github-is-who-you-are"],
+    "decisions": {
+      "1": ["The workbench holds no credential and performs no authorised write"],
+      "2": [
+        "\"Submit changes\" copies the document and opens GitHub's editor for the file",
+        "\"Submit changes\" ~~copies the document and opens GitHub's editor for the file~~, voided by [ADR 0061](0061-a-submission-is-an-issue-and-ci-makes-the-pull-request.md) §1"
+      ],
+      "3": [
+        "GitHub is the identity and permission system, and an account per person is the price of running none"
+      ],
+      "4": ["The open repository is complete, and the private companion is optional"],
+      "5": ["What may go into the companion, and what never"],
+      "6": ["The open repository reaches the companion by a fetch in CI, not by a submodule"]
+    }
+  },
+  "0059": {
+    "slugs": ["the-day-gets-a-date-and-the-newsroom-plans-in-editions"],
+    "decisions": {
+      "1": ["The newsroom's unit is the edition"],
+      "2": ["One axis, one playhead, and the playhead is an instant"],
+      "3": ["The model: editions beside the day, in the grammar the day already has"],
+      "4": ["The fold at an instant, and the narrower window wins"],
+      "5": ["The day is always a complete home screen on its own"],
+      "6": ["The document speaks Berlin time, for everything"],
+      "7": ["The plan is private, and what is public is a projection with a horizon"],
+      "8": ["The first slice: the day gets a date"],
+      "9": ["What is not built, and why"]
+    }
+  },
+  "0060": {
+    "slugs": ["a-block-says-when-it-appears-and-an-editor-says-for-whom"],
+    "decisions": {
+      "1": ["Two kinds of condition, one vocabulary in the editor"],
+      "2": ["A module may declare the audience it is for, and the document may override it"],
+      "3": ["Three audiences, in the club's words, and one file that says what each means"],
+      "4": [
+        "The reader is the fold's third parameter, beside the instant, and the preview is the fixtures"
+      ],
+      "5": [
+        "The editor writes one change per block and point, and checks a repetition against every reader"
+      ],
+      "6": ["What an older app does with it"],
+      "7": ["A filter, and nothing inside the door becomes locked"]
+    }
+  },
+  "0061": {
+    "slugs": ["a-submission-is-an-issue-and-ci-makes-the-pull-request"],
+    "decisions": {
+      "1": [
+        "\"Submit changes\" opens a prefilled GitHub issue, and a workflow turns the issue into a pull request"
+      ],
+      "2": [
+        "The first kind is the home layout, judged by the core and written by the workbench's printer"
+      ],
+      "3": [
+        "A submission's kind is its title prefix, and the kinds are a registry; strings are the second kind, named and not built"
+      ],
+      "4": [
+        "It runs by itself for the organisation and its collaborators, and a maintainer starts it for anybody else"
+      ],
+      "5": ["The pull request gets CI with a token held by CI, and says so when it does not"],
+      "6": ["The address has a limit, and past it the change goes by the clipboard"],
+      "7": [
+        "Nothing the issue says reaches a shell or a script as code, or GitHub as an instruction"
+      ]
+    }
+  },
+  "0062": {
+    "slugs": ["the-texts-submission-may-change-wordings-and-nothing-else"],
+    "decisions": {
+      "1": ["The texts kind is the dev server's save made again, and shares every part of it"],
+      "2": ["What a kind may change is an allow-list, and the one-file assertion becomes a proof"],
+      "3": ["The tree is proven by a second reader, after the formatter and before the commit"],
+      "4": [
+        "The validator refuses what a reviewer cannot see, and a wording without end",
+        "The validator refuses what a reviewer cannot see, a wording without end, and a placeholder of another kind"
+      ],
+      "5": [
+        "A submission is refused whole, and an issue with an HTML comment is refused for every kind",
+        "A submission is refused whole, and an issue is read only in the shape the workbench writes"
+      ],
+      "6": ["The wordings travel one per line, in id order"],
+      "7": ["A maintainer approves the text the automation quoted, and the run takes that text"],
+      "8": ["Running by itself needs an account that can write here"],
+      "9": [
+        "The job that holds the token runs only this repository's code, and the split is deferred"
+      ]
+    }
+  },
+  "0063": {
+    "slugs": ["android-back-is-the-navigators-and-the-onboarding-answers-its-own"],
+    "decisions": {
+      "1": ["The navigator answers back, and a screen answers only for what is not a route"],
+      "2": ["Predictive back stays off, because turned on it draws nothing"],
+      "3": ["Back on the door leaves the app"],
+      "4": ["On the web, browser back is the browser's"]
+    }
+  },
+  "0065": {
+    "slugs": ["embeds-inline-from-a-short-list-and-a-link-for-the-rest"],
+    "decisions": {
+      "1": ["A frame renders inline when its host is on one short list"],
+      "2": ["Every other embed is a visible link, and never nothing"],
+      "3": ["A frame is as tall as it says, or most of a screen"],
+      "4": ["On iOS, a frame's own load is not a link"],
+      "5": [
+        "The document runs no script, by policy, and so the web frame may carry `allow-scripts`"
+      ],
+      "6": ["The link's words are written when the document is built"],
+      "7": [
+        "The body is gated for what acts without a script, and an embed that can do without an origin gets none"
+      ]
+    }
+  },
+  "0066": {
+    "slugs": ["a-project-feed-has-a-load-more-and-its-own-list"],
+    "decisions": {
+      "1": ["A load-more on the project feed, and no cap on what it has already fetched"],
+      "2": ["The page's scroller is the list, not a `ScrollView` holding one"],
+      "3": [
+        "`useFeed` grew three fields, and `AsyncState` did not",
+        "`useFeed` grew four fields, and `AsyncState` did not"
+      ]
+    }
+  },
+  "0067": {
+    "slugs": ["a-feeds-end-is-one-field-with-three-values"],
+    "decisions": {
+      "1": ["`end: 'unknown' | 'more' | 'end'` replaces `hasMore`, `paged` and `exhaustive`"]
+    }
+  },
+  "0068": {
+    "slugs": ["the-keyboard-controller-measured-and-rejected"],
+    "decisions": {
+      "1": ["The app does not depend on `react-native-keyboard-controller`"],
+      "2": ["ADR 0026 §2's escalation is withdrawn, and nothing replaces it"]
+    }
+  },
+  "0069": {
+    "slugs": ["a-redraw-waits-for-a-look"],
+    "decisions": {
+      "1": ["The generated page `Bausteine` alone, never the hand-transcribed screens"],
+      "2": ["The vocabulary of the spec is the ceiling, and a node's path in the spec is its name"],
+      "3": ["In sync is not adoptable, so every difference carries a class"]
+    }
+  },
+  "0070": {
+    "slugs": ["a-left-rail-on-tablet"],
+    "decisions": {
+      "1": ["Decision"],
+      "2": ["What this retires"],
+      "3": ["Consequences"]
+    }
+  },
+  "0071": {
+    "slugs": ["re-exported-screens-and-a-variant-where-the-host-refuses"],
+    "decisions": {
+      "1": ["Decision"],
+      "2": ["Consequences of a second reader for every phone screen"],
+      "3": ["What this retires in ADR 0012"]
+    }
+  }
+}

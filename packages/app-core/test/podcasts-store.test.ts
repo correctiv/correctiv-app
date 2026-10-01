@@ -5,7 +5,13 @@ vi.mock('../src/services/podcast.service', () => ({ fetchPodcastSeries: vi.fn() 
 
 import { PODCAST_CHANNELS } from '../src/data/feeds.config';
 import { podcastSeries as sampleSeries, type PodcastSeries } from '../src/data/podcasts';
-import { resetPlatform } from '../src/ports';
+import {
+  configurePlatform,
+  createEmptyContentBundle,
+  createMemoryPlatform,
+  resetPlatform,
+  type ErrorReport,
+} from '../src/ports';
 import { clearMemoryCache, setCached } from '../src/services/cache.service';
 import { fetchPodcastSeries } from '../src/services/podcast.service';
 import { fetchAll, findSeries } from '../src/stores/podcasts';
@@ -123,6 +129,89 @@ describe('podcasts store', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(store.getState().podcasts.status).toBe('ready');
+  });
+
+  /**
+   * The fault this store swallows, and the port it now leaves through.
+   *
+   * A single show that will not answer is the one thing in this cascade nobody
+   * hears about: the `catch` replaces it with the bundle or with nothing, the
+   * status becomes `partial`, and no screen in the app reads `partial`. What a
+   * listener sees is six tiles where there were seven.
+   *
+   * Made to fail: delete the `report` call in `stores/podcasts.ts` and the first
+   * of these reddens on an empty array; swap the port's default back in for the
+   * host's reporter and it reddens the same way, which is the half that proves the
+   * wiring rather than the intent.
+   */
+  describe('reports a show it cannot reach', () => {
+    let reports: ErrorReport[] = [];
+
+    function withReporter(content = createEmptyContentBundle()) {
+      reports = [];
+      configurePlatform({
+        ...createMemoryPlatform(),
+        content,
+        errors: {
+          report: (report) => {
+            reports.push(report);
+          },
+        },
+      });
+    }
+
+    it('names the show, the code and the cause, once per failed show', async () => {
+      withReporter();
+      const boom = new Error('HTTP 502');
+      fetchMock.mockImplementation((handle: string) =>
+        handle === PODCAST_CHANNELS[0] ? Promise.reject(boom) : Promise.resolve(series(handle)),
+      );
+
+      await store.dispatch(fetchAll());
+
+      expect(reports).toEqual([
+        {
+          domain: 'podcasts',
+          code: 'series-unreachable',
+          context: { handle: PODCAST_CHANNELS[0], replacedBy: 'nothing' },
+          cause: boom,
+        },
+      ]);
+      // The report is beside the fallback, not instead of it: the other six shows
+      // are on screen and nothing was rethrown.
+      expect(store.getState().podcasts.series).toHaveLength(PODCAST_CHANNELS.length - 1);
+    });
+
+    it('says when the bundle took the failed show’s place', async () => {
+      // The distinction the handle alone cannot carry: a reader looking at last
+      // week's episodes is a different fault from a show missing altogether.
+      const bundled = series(PODCAST_CHANNELS[0], 3);
+      withReporter({
+        ...createEmptyContentBundle(),
+        podcastSeries: (id) => (id === PODCAST_CHANNELS[0] ? bundled : null),
+      });
+      fetchMock.mockImplementation((handle: string) =>
+        handle === PODCAST_CHANNELS[0]
+          ? Promise.reject(new Error('HTTP 502'))
+          : Promise.resolve(series(handle)),
+      );
+
+      await store.dispatch(fetchAll());
+
+      expect(reports.map((r) => r.context)).toEqual([
+        { handle: PODCAST_CHANNELS[0], replacedBy: 'bundle' },
+      ]);
+      expect(store.getState().podcasts.status).toBe('ready');
+    });
+
+    it('reports nothing when every show answers', async () => {
+      withReporter();
+      fetchMock.mockImplementation((handle: string) => Promise.resolve(series(handle)));
+
+      await store.dispatch(fetchAll());
+
+      expect(reports).toEqual([]);
+    });
   });
 
   it('force refetches even with a fresh cache', async () => {

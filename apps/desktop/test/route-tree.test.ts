@@ -26,8 +26,14 @@ const DESKTOP_ROUTES = resolve(__dirname, '..', 'src', 'app');
  * the GTK platform-resolution chain (ADR 0032 section 9 — it "looks like the right
  * choice for a desktop target and carries exactly the DOM assumptions this design
  * rules out").
+ *
+ * `+html.tsx` is not a route either, and it is the clearer case of the two: it is the
+ * `<html>` shell expo-router renders the static web export INTO, so what it holds is a
+ * document — the own-document mark, the viewport meta, the `lang` attribute. There is no
+ * document on this host at all, and a re-export of it would be a file that can never be
+ * reached.
  */
-const NOT_A_DESKTOP_ROUTE = ['(tabs)/_layout.web.tsx'];
+const NOT_A_DESKTOP_ROUTE = ['(tabs)/_layout.web.tsx', '+html.tsx'];
 
 function routeFiles(dir: string, prefix = ''): string[] {
   return readdirSync(dir).flatMap((entry) => {

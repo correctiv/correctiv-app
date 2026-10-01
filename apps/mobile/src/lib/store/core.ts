@@ -13,6 +13,7 @@
 import { bindActionCreators, type StoreEnhancer } from '@reduxjs/toolkit';
 import type { router } from 'expo-router';
 import { useEffect, useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useDispatch, useSelector, useStore, type TypedUseSelectorHook } from 'react-redux';
 
 import {
@@ -63,7 +64,13 @@ import {
   sessionActions,
   signIn,
 } from '@correctiv/app-core/stores/session';
-import { settingsActions } from '@correctiv/app-core/stores/settings';
+import {
+  appTextScale,
+  locale as selectLocale,
+  settingsActions,
+  textSizeFollowsSystem,
+} from '@correctiv/app-core/stores/settings';
+import { previewLocale, SHIPPED_LOCALE } from '@/lib/locale';
 import {
   fetchIssues,
   recentIssues as selectRecentIssues,
@@ -81,33 +88,63 @@ import { videoActions } from '@correctiv/app-core/stores/video';
 /**
  * Redux DevTools, in development only.
  *
- * `redux-devtools-expo-dev-plugin` is an Expo dev plugin: the full DevTools from
- * the Chrome extension, reachable from the Expo dev menu, with the action list,
- * the state diff, and rewind. On a state tree that takes an audio position tick
- * twice a second and runs four network cascades, a named action history is the
- * difference between reading logs and seeing what happened.
+ * `@rozenite/redux-devtools-plugin` is a Rozenite plugin: the full DevTools from
+ * the Chrome extension, a panel in React Native DevTools, with the action list,
+ * the state diff and rewind — and, unlike the Expo dev plugin it replaced, the
+ * same history readable by an agent over Rozenite's tool bridge (see
+ * `lib/devtools/AgentTools.tsx`). On a state tree that takes an audio position
+ * tick twice a second and runs four network cascades, a named action history is
+ * the difference between reading logs and seeing what happened, and that argument
+ * does not stop applying because the reader is an agent.
  *
- * `require` inside the `__DEV__` branch rather than a top-level import, so a
- * release build never runs the enhancer. It does still BUNDLE it: Metro collects
- * a `require` from the syntax tree whatever condition stands around it, and only
- * a module-scope guard folds one away, measured on 2026-09-10 in
- * [ADR 0025](../../../../../adr/0025-the-published-app-is-a-production-bundle.md).
- * What keeps the debugger itself out of the export is the package's own such
- * guard: its entry resolves `./devtools` only when `NODE_ENV` is not production,
- * so what arrives in the export is the no-op branch. RTK's own `devTools`
- * integration is switched off in the same breath — the plugin replaces it, and
- * two of them fight over one connection.
+ * **A swap, not an addition.** This seat held `redux-devtools-expo-dev-plugin`,
+ * and two debuggers fight over one connection, so one of them had to go
+ * ([ADR 0026](../../../../../adr/0026-react-native-review-and-hardening.md) §1).
+ * RTK's own `devTools` integration is switched off in the same breath, for the
+ * same reason. Only one debugger connection exists at a time on the platform at
+ * all: React Native DevTools disconnects when an agent session begins, so plan
+ * for alternating rather than for both at once.
+ *
+ * **Selected at MODULE scope, which is a change from how this used to be written.**
+ * The predecessor's `require` sat inside the function below, on the belief that a
+ * `__DEV__` branch around the call keeps the module out of a release bundle. It
+ * does not: Metro collects a `require` from the syntax tree however unreachable
+ * the call is, and only a module-scope guard folds one away, measured on
+ * 2026-09-10 in
+ * [ADR 0025](../../../../../adr/0025-the-published-app-is-a-production-bundle.md)
+ * and again in ADR 0026 §1. Both packages guard themselves as well, so the
+ * function-scope shape would still ship no debugger — but it ships the package's
+ * NO-OP module, and a no-op still carries its export names. Measured here on
+ * 2026-09-15: written that way, `rozeniteDevToolsEnhancer`,
+ * `composeWithRozeniteDevTools` and `useReduxDevToolsAgentTools` all survived
+ * minification into the web export, which is enough to trip any grep for
+ * "rozenite" over the published bundle. The check `pages.yml` runs is only worth
+ * having if a hit means something is wrong, so the require moved up here and the
+ * bundle now carries no Rozenite at all.
+ *
+ * The enhancer still arrives through `devToolsEnhancers()`, which is the seam
+ * [ADR 0023](../../../../../adr/0023-the-host-constructs-the-store.md) built and
+ * where the store expects to find it. Only the `require` moved.
  */
-function devToolsEnhancers(): StoreEnhancer[] {
+const rozeniteDevToolsEnhancer: (() => StoreEnhancer) | null =
   // `__DEV__` is true under jest too, and the plugin ships ESM the test transform
   // does not cover — so a bare `__DEV__` check fails every suite that imports this
   // file with "Unexpected token 'export'". Excluding the test runner is also just
   // true: there is no dev client for it to talk to, and a debugger has no business
-  // being loaded 15 times per `npm run check`.
-  if (!__DEV__ || process.env.NODE_ENV === 'test') return [];
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const devToolsEnhancer = require('redux-devtools-expo-dev-plugin').default as () => StoreEnhancer;
-  return [devToolsEnhancer()];
+  // being loaded 15 times per `npm run check`. Both operands fold to constants at
+  // build time, so the require goes with them.
+  // `__DEV__` is the operand that does the work. `NODE_ENV !== 'test'` is TRUE in a
+  // release build, so it must never be left standing alone here — it excludes the
+  // test runner and nothing else.
+  __DEV__ && process.env.NODE_ENV !== 'test'
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      (
+        require('@rozenite/redux-devtools-plugin') as typeof import('@rozenite/redux-devtools-plugin')
+      ).rozeniteDevToolsEnhancer
+    : null;
+
+function devToolsEnhancers(): StoreEnhancer[] {
+  return rozeniteDevToolsEnhancer ? [rozeniteDevToolsEnhancer()] : [];
 }
 
 /**
@@ -121,6 +158,22 @@ function devToolsEnhancers(): StoreEnhancer[] {
 export const coreStore = createAppStore({
   enhancers: devToolsEnhancers(),
   devTools: false,
+  /*
+   * The language this host ships, named by this host (ADR 0049 §4). A phone set to
+   * English must not get an app half in English, so the app that ships to phones
+   * says which language that is, and the core stops carrying a constant about
+   * somebody else's product.
+   *
+   * `lib/locale.ts` and not a literal, because the static export's `<html lang>`
+   * needs the same answer and cannot reach a store to ask for it.
+   *
+   * Read here and only here, which is what makes a language a restart rather than
+   * a setting: the slice has no `setLocale` and this line runs once, when the store
+   * is built. On a phone `previewLocale()` is `null` before it touches anything —
+   * there is no `localStorage` to hold a key — so the expression below is
+   * `SHIPPED_LOCALE` everywhere the app actually ships.
+   */
+  locale: previewLocale() ?? SHIPPED_LOCALE,
 });
 
 /** Typed `useSelector`, so a selector's state argument is never `any`. */
@@ -144,8 +197,24 @@ export const useVideo = () => useAppSelector((s) => s.video);
  */
 export const useIsAdmitted = () => useAppSelector((s) => selectIsAdmitted(s.session, Date.now()));
 export const useActiveTab = () => useAppSelector((s) => s.settings.activeTab);
-export const useTextScale = () => useAppSelector((s) => s.settings.textScale);
+/**
+ * The factor every text in the app is drawn at, articles included (ADR 0033): the
+ * system's font scale, or the step the reader chose in its place. The system's value
+ * is measured here and handed to the core's selector, because it changes while the
+ * app runs and only the host can read it.
+ */
+export const useAppTextScale = () => {
+  const { fontScale } = useWindowDimensions();
+  return useAppSelector((s) => appTextScale(s.settings, fontScale));
+};
+/** The stored text size, a primitive; `lib/theme/textScaling`'s provider is its one text-drawing reader. */
+export const useTextSize = () => useAppSelector((s) => s.settings.textSize);
+/** Whether the text follows the system, which is the default (ADR 0033). */
+export const useTextSizeFollowsSystem = () =>
+  useAppSelector((s) => textSizeFollowsSystem(s.settings));
 export const useTheme = () => useAppSelector((s) => s.settings.theme);
+/** The language to render in, named by this host above; `i18n/Localisation` is its one reader. */
+export const useLocale = () => useAppSelector((s) => selectLocale(s.settings));
 
 export const useVideoIsActive = () => useAppSelector((s) => s.video.current !== null);
 
@@ -431,11 +500,11 @@ export interface DevHandle {
    * and renders `+not-found`. Measured 2026-09-10: every framed route did, `/app/`
    * included. The published export has no such trouble and no handle either, so
    * the shell falls back to the address there — see `driveRoute` in the
-   * handbook's `workbench/frame/handle.ts` for the pair.
+   * workbench's `preview/frame/handle.ts` for the pair.
    *
    * Navigating this way leaves the address behind: the router writes `/gespeichert`,
-   * which is a path on the HANDBOOK's origin, and a reload of the frame would then
-   * land on the handbook's own 404. The shell puts the address back from its poll,
+   * which is a path on the WORKBENCH's origin, and a reload of the frame would then
+   * land on the workbench's own 404. The shell puts the address back from its poll,
    * because it is the one that knows what the frame's address is supposed to be.
    */
   router: typeof router;

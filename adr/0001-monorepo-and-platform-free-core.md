@@ -11,15 +11,15 @@ in `src/`. Three requirements break that:
    redeploy 41.5 s, an emulator cold start 21 s, HMR broken in this repo. The largest
    lever available is making the platform-free half of the code testable headlessly —
    milliseconds instead of seconds, without a device.
-2. **A web reference target.** NativeScript has no web renderer (see `APP-STRATEGIE.md`
-   §2). A web build is therefore only reachable through a shared core plus a separately
-   implemented web UI — and the core has to exist for that.
+2. **A web reference target.** NativeScript has no web renderer (see
+   `APP-STRATEGIE.md` §2). A web build is therefore only reachable through a shared
+   core plus a separately implemented web UI — and the core has to exist for that.
 3. **Forks as workspace packages.** `nativescript-vue` has one maintainer and no commit
    since 2025-10-17. At 1,538 lines of shipped JS the package is small enough to
    maintain ourselves if it comes to that. That option should be prepared before it is
    needed.
 
-## Decision
+## 1. Decision
 
 npm workspaces, two packages:
 

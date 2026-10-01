@@ -100,7 +100,8 @@ function switchState(fill) {
 }
 
 /**
- * `claimStatusTag` picks the words; the surface says which of the four states.
+ * The surface says which of the four states; the words are the app's own
+ * (`components/participate/ClaimStatusTag.tsx`) and are not read here.
  *
  * Null on anything else, for the same reason as `badgeTone`: the old `return 'offen'`
  * default made every tag on an untokenised spec read as unchecked.

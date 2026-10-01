@@ -40,7 +40,7 @@ site root with base `/correctiv-app` and a production bundle, and rendered Entde
 correctly. So this is not about the depth of the base path and not about Pages. It is
 `--dev`.
 
-## Decision
+## 1. Decision
 
 `build:web` exports production. `pages.yml` fails the deploy when the bundle carries
 `__correctiv`, because the handle is the tell for a `--dev` export and the assertion is

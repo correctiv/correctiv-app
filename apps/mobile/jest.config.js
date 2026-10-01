@@ -53,6 +53,14 @@ const TRANSFORMED_PACKAGES = [
   'react-redux',
   'reselect',
 
+  // --- Localisation ---------------------------------------------------------
+  // react-intl 10 and the whole @formatjs stack under it are ESM-only — no
+  // "main", no CommonJS build — so every suite that renders a screen fails to RUN
+  // without these three lines.
+  'react-intl',
+  '@formatjs/.*',
+  'intl-messageformat',
+
   // --- The HTML parser stack ------------------------------------------------
   // htmlparser2 is the article extractor's DOM backend
   // (packages/app-core/src/articles/extract/dom.ts) and the RSS parser's reader.

@@ -14,6 +14,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "allowJs": true
+    "allowJs": true,
+    // The home screen's layout is a JSON document the core imports and parses
+    // (ADR 0036). `apps/mobile` already has this from expo/tsconfig.base.
+    "resolveJsonModule": true
   }
 }

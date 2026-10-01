@@ -15,7 +15,7 @@ import { fetchFeed } from '../src/services/rss.service';
 import { fetchWpFeed } from '../src/services/wp.service';
 import { searchArticles } from '../src/services/search.service';
 import { patch, type FeedSlice } from '../src/stores/feeds';
-import { searchLocalFeeds, searchWithFallback } from '../src/stores/search';
+import { searchLocalFeeds, searchProjectHits, searchWithFallback } from '../src/stores/search';
 import { createAppStore, type AppStore } from '../src/stores/store';
 import type { FeedItem, FeedKey } from '../src/types/models';
 
@@ -162,5 +162,44 @@ describe('searchLocalFeeds', () => {
     // A selector takes state. The app's version read the singleton directly, which
     // is what made it untestable without mocking the whole module.
     expect(searchLocalFeeds(createAppStore().getState().feeds, 'klima')).toEqual([]);
+  });
+});
+
+/**
+ * The other half of what this app can find, which was a `useMemo` in
+ * `app/suche.tsx` until issue #107: the podcasts, callouts, backstage entries and
+ * publishing pages that are not articles and so never reach a feed.
+ *
+ * The titles below are the real ones out of `data/search-samples.ts` rather than
+ * invented, because what is worth pinning is that this matches the *subtitle* too
+ * — a reader typing "Salon5" is looking for the podcasts and none of them says so
+ * in its title.
+ */
+describe('searchProjectHits', () => {
+  it('matches the title', () => {
+    expect(searchProjectHits('deeptalk').map((s) => s.id)).toEqual(['ss-deeptalk']);
+  });
+
+  it('matches the subtitle, which is where the source is named', () => {
+    const hits = searchProjectHits('salon5');
+
+    expect(hits.length).toBeGreaterThan(1);
+    expect(hits.every((s) => s.kind === 'podcast')).toBe(true);
+  });
+
+  it('ignores case and surrounding whitespace', () => {
+    expect(searchProjectHits('  DEEPTALK ').map((s) => s.id)).toEqual(['ss-deeptalk']);
+  });
+
+  it('answers with nothing below the minimum query length', () => {
+    // The screen used to make this check itself, which is why it is asserted here:
+    // a second caller must not have to remember it.
+    expect(searchProjectHits('d')).toEqual([]);
+    expect(searchProjectHits('')).toEqual([]);
+    expect(searchProjectHits('   ')).toEqual([]);
+  });
+
+  it('answers with nothing when nothing matches', () => {
+    expect(searchProjectHits('zzzz')).toEqual([]);
   });
 });

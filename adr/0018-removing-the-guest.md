@@ -27,7 +27,7 @@ The last one is not stale copy, it is wrong on its face, and the cause is struct
 rather than editorial: the door reads `session.entitlement`, the profile read
 `membership.isMember`, and the join flow that sets the second had not run.
 
-## Decision
+## 1. Decision
 
 **Remove the guest.** Every branch that rendered a second version of a screen for
 someone who had not paid is deleted rather than reworded, because behind the door it

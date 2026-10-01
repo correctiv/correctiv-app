@@ -103,5 +103,3 @@ export const fetchChannel =
       else dispatch(patch(key, { status: 'error' }));
     }
   };
-
-export const mediaActions = { ...slice.actions, fetch: fetchChannel };

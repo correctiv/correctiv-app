@@ -30,7 +30,7 @@
 // state machine would jump the article by the strip's own height on every change of
 // direction.
 //
-// That is cause 2 in [ADR 0027](../../../adr/0027-re-exported-screens-and-a-variant-where-the-host-refuses.md),
+// That is cause 2 in [ADR 0071](../../../adr/0071-re-exported-screens-and-a-variant-where-the-host-refuses.md),
 // a platform idiom an ADR already argues for, not cause 3, an import the support table
 // refuses. Cause 3 is struck through there.
 //
@@ -42,21 +42,47 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Linking, Pressable, View } from 'react-native';
+import { defineMessages, useIntl } from 'react-intl';
+import { ActivityIndicator, Animated, Pressable, View } from 'react-native';
 
 import { ReaderView } from '@/components/reader/ReaderView';
 import { Button, SafeAreaView, Typo } from '@/components/ui';
-import { isInternalArticleUrl } from '@/lib/articles/articleUrl';
+import { HEADER_COPY } from '@/components/ui/ScreenHeaderBar';
 import { type HeaderState, nextHeaderState } from '@/lib/articles/readerChrome';
+import { classifyReaderLink } from '@/lib/articles/readerNavigation';
 import { loadArticle } from '@correctiv/app-core/articles/load';
 import type { Article } from '@correctiv/app-core/articles/types';
 import { readerHtml } from '@/lib/articles/reader';
 import { goBack } from '@/lib/navigation/goBack';
+import { openExternal } from '@/lib/openExternal';
 import { shareArticle } from '@/lib/shareArticle';
-import { useCoreActions, useIsSaved, useTextScale } from '@/lib/store/core';
+import { useAppTextScale, useCoreActions, useIsSaved, useLocale } from '@/lib/store/core';
 import { sizes, useColors, useIsDark } from '@/lib/theme';
 
 import { webViewIsOsOverlay } from '../platform/webview.js';
+
+/**
+ * This screen's own chrome, in ENGLISH, with the German in `packages/catalogue`.
+ *
+ * Imported from the phone's file rather than re-declared would be better, and it is
+ * not possible: `app/artikel.tsx` holds these inside its module and exports only the
+ * screen. Re-declaring them means the SAME IDS, which is what makes the duplication
+ * harmless — both files resolve to the one catalogue entry, so there is one German
+ * sentence and `localisation-seam.test.ts` still sees one id. A divergent id here
+ * would be a missing translation, which throws in development.
+ *
+ * `screenTitle` is absent: it names the browser tab on the web target, through
+ * `useDocumentTitle`, and this host has no tab to name.
+ */
+const COPY = defineMessages({
+  loadFailed: { id: 'article.loadFailed', defaultMessage: 'The article could not be loaded' },
+  retryHint: { id: 'article.retryHint', defaultMessage: 'A second attempt may help.' },
+  retry: { id: 'article.retry', defaultMessage: 'Try again' },
+  openInBrowser: { id: 'article.openInBrowser', defaultMessage: 'Open in the browser' },
+  share: { id: 'article.share', defaultMessage: 'Share the article' },
+  save: { id: 'article.save', defaultMessage: 'Save the article' },
+  removeSaved: { id: 'article.removeSaved', defaultMessage: 'Saved, remove' },
+});
 
 /**
  * Article reader: full-page WebKitGTK view over cleaned-up article HTML (token CSS and
@@ -68,6 +94,7 @@ import { webViewIsOsOverlay } from '../platform/webview.js';
  * core now asserts the scheme never reaches a document again.
  */
 export default function ArtikelScreen() {
+  const intl = useIntl();
   const colors = useColors();
   const actions = useCoreActions();
   const { url, title, badge } = useLocalSearchParams<{
@@ -80,7 +107,10 @@ export default function ArtikelScreen() {
   /** Bumped to retry: the effect depends on it, so a tap re-runs the load. */
   const [attempt, setAttempt] = useState(0);
   const saved = useIsSaved(url ?? '');
-  const textScale = useTextScale();
+  // The app's text scale, not one of the article's own (ADR 0033), and the locale the
+  // document's own words are written in. Both read per render, as the phone reads them.
+  const textScale = useAppTextScale();
+  const locale = useLocale();
   const isDark = useIsDark();
 
   /**
@@ -137,19 +167,23 @@ export default function ArtikelScreen() {
     };
   }, [url, badge, attempt]);
 
+  // The three cases, and the rule behind them is `lib/articles/readerNavigation.ts` —
+  // shared with the phone, where this screen used to carry its own copy of the same
+  // four tests. Nothing about them is platform-specific, so following the move deletes
+  // a divergence rather than creating one.
   const onNavigate = (target: string): boolean => {
-    if (target === 'about:blank' || target.startsWith('data:') || target.startsWith('file:'))
-      return true;
-    if (isInternalArticleUrl(target)) {
-      router.push({ pathname: '/artikel', params: { url: target } });
-      return false;
+    switch (classifyReaderLink(target)) {
+      case 'internal': {
+        router.push({ pathname: '/artikel', params: { url: target } });
+        return false;
+      }
+      case 'external': {
+        openExternal(target);
+        return false;
+      }
+      default:
+        return true;
     }
-    // Everything else external → system browser.
-    if (/^https?:/.test(target)) {
-      Linking.openURL(target);
-      return false;
-    }
-    return true;
   };
 
   // Ordered rather than positioned, because on one platform the web view cannot be
@@ -188,17 +222,21 @@ export default function ArtikelScreen() {
         }
       >
         <View className="flex-row items-center justify-between px-s py-2xs">
-          <HeaderButton icon="chevron-back" label="Zurück" onPress={goBack} />
+          <HeaderButton
+            icon="chevron-back"
+            label={intl.formatMessage(HEADER_COPY.back)}
+            onPress={goBack}
+          />
           {url ? (
             <View className="flex-row gap-2xs">
               <HeaderButton
                 icon="share-outline"
-                label="Artikel teilen"
+                label={intl.formatMessage(COPY.share)}
                 onPress={() => shareArticle(url, title ?? article?.title)}
               />
               <HeaderButton
                 icon={saved ? 'bookmark' : 'bookmark-outline'}
-                label={saved ? 'Gespeichert, entfernen' : 'Artikel speichern'}
+                label={intl.formatMessage(saved ? COPY.removeSaved : COPY.save)}
                 onPress={() =>
                   actions.savedArticles.toggle({
                     url,
@@ -221,7 +259,7 @@ export default function ArtikelScreen() {
       {overlayHeader ? null : headerStrip}
       {article ? (
         <ReaderView
-          html={readerHtml(article, { textScale, isDark })}
+          html={readerHtml(article, intl, { textScale, isDark, locale })}
           onNavigate={onNavigate}
           onScroll={onReaderScroll}
         />
@@ -230,18 +268,21 @@ export default function ArtikelScreen() {
           {error ? (
             <>
               <Typo variant="headline-s" className="text-center">
-                Artikel konnte nicht geladen werden
+                {intl.formatMessage(COPY.loadFailed)}
               </Typo>
               <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs text-center">
-                {title ?? 'Vielleicht hilft ein zweiter Versuch.'}
+                {title ?? intl.formatMessage(COPY.retryHint)}
               </Typo>
               <View className="mt-m flex-row gap-s">
-                <Button title="Erneut versuchen" onPress={() => setAttempt((n) => n + 1)} />
+                <Button
+                  title={intl.formatMessage(COPY.retry)}
+                  onPress={() => setAttempt((n) => n + 1)}
+                />
                 {url ? (
                   <Button
-                    title="Im Browser öffnen"
+                    title={intl.formatMessage(COPY.openInBrowser)}
                     variant="outline"
-                    onPress={() => Linking.openURL(url)}
+                    onPress={() => openExternal(url)}
                   />
                 ) : null}
               </View>

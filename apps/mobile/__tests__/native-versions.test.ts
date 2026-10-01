@@ -55,4 +55,24 @@ describe('native version pins', () => {
     // react forward past the renderer in the first place.
     expect(installedVersion('react-dom')).toBe(installedVersion('react'));
   });
+
+  /**
+   * The storage pair, which fails the same way: on a device, and nowhere else.
+   *
+   * `react-native-mmkv` ships C++, Kotlin and Swift that nitrogen generated, and
+   * the generated code and the Nitro runtime are one ABI. 4.3.2 was generated
+   * against nitrogen 0.35.9 — its own devDependency — and this app runs it against
+   * `react-native-nitro-modules` 0.37.1, which is the exact pair ADR 0026 §4
+   * measured on a release-mode Android 15 emulator. Its peer range is `*`, so npm
+   * will accept any two versions and say nothing.
+   *
+   * Nothing else in this repository can see that combination. The web build is
+   * localStorage and loads no native module at all, and jest gets MMKV's own
+   * in-memory mock. So what is pinned here is the pair somebody actually ran, and
+   * moving either half becomes a decision rather than an npm update.
+   */
+  it('keeps the MMKV and Nitro pair that was measured on a device', () => {
+    expect(installedVersion('react-native-mmkv')).toBe('4.3.2');
+    expect(installedVersion('react-native-nitro-modules')).toBe('0.37.1');
+  });
 });

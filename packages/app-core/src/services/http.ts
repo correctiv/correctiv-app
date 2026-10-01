@@ -51,6 +51,13 @@ function canAbort(): boolean {
   return typeof AbortController !== 'undefined';
 }
 
+/** A body and the response headers it came with, for a caller that needs one of them. */
+export interface TextResponse {
+  body: string;
+  /** A response header by name, or null. Case-insensitive, as `Headers.get` is. */
+  header(name: string): string | null;
+}
+
 /**
  * GET a text resource with a timeout. Throws on a non-2xx status, so every caller
  * can treat a resolved promise as a body.
@@ -61,28 +68,44 @@ function canAbort(): boolean {
  * jest refusing to exit after a suite that fetched once.
  */
 export async function fetchText(url: string, options: FetchTextOptions = {}): Promise<string> {
+  return (await fetchTextResponse(url, options)).body;
+}
+
+/**
+ * The same fetch, with the headers kept.
+ *
+ * One caller wants a header today: the home document is judged by its
+ * `last-modified` (`stores/homeLayout.ts`). A browser lets a page read that one across
+ * origins without the server naming it, because it is on the CORS-safelisted list of
+ * response headers, which is what makes it usable on the web target at all.
+ */
+export async function fetchTextResponse(
+  url: string,
+  options: FetchTextOptions = {},
+): Promise<TextResponse> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, headers, browserAgent = true } = options;
   const merged = browserAgent
     ? { ...DEFAULT_HEADERS, ...headers }
     : { Accept: DEFAULT_HEADERS.Accept, ...headers };
 
+  const read = async (res: Response): Promise<TextResponse> => {
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    const body = await res.text();
+    return { body, header: (name) => res.headers?.get?.(name) ?? null };
+  };
+
   if (canAbort()) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(url, { headers: merged, signal: controller.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-      return await res.text();
+      return await read(await fetch(url, { headers: merged, signal: controller.signal }));
     } finally {
       clearTimeout(timer);
     }
   }
 
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const request = fetch(url, { headers: merged }).then((res) => {
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return res.text();
-  });
+  const request = fetch(url, { headers: merged }).then(read);
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(`Timeout after ${timeoutMs} ms: ${url}`)), timeoutMs);
   });

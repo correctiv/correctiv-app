@@ -66,6 +66,18 @@ import { View } from 'react-native';
 /** Matches the subset of `WebViewNavigation` the app reads. */
 export interface WebViewNavigation {
   url: string;
+  /**
+   * Whether the request is the document's own, rather than a frame inside it.
+   *
+   * `ReaderView` branches on `isTopFrame === false` to hold an embedded frame to the
+   * core's host list, and reads `undefined` as "top frame" because Android does not
+   * report a frame's first load. **This host never sets it**, so every request takes
+   * the top-frame branch and a frame's load is decided by the document's own Content
+   * Security Policy instead — which is where the same host list already ends up.
+   * Optional rather than absent, because the app's `=== false` is what makes the gap
+   * a widening rather than a wrong answer.
+   */
+  isTopFrame?: boolean;
 }
 
 export interface WebViewSource {
@@ -81,6 +93,14 @@ export interface WebViewProps {
   onScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
   showsVerticalScrollIndicator?: boolean;
   contentInsetAdjustmentBehavior?: string;
+  /**
+   * Android's own font-scale multiplier, which the app pins to 100 so the article is
+   * not scaled twice (ADR 0033). Accepted and ignored: WebKitGTK applies no system
+   * text scale of its own, so there is no second multiplication to switch off. The
+   * document's root font size still carries the app's whole scale, which is the half
+   * that does the work on every host.
+   */
+  textZoom?: number;
   className?: string;
   // VideoFrame's props, accepted so the type matches. That component is replaced
   // wholesale on this host (see src/overrides/VideoFrame.tsx), so they never arrive.

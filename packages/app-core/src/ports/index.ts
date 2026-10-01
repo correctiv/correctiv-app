@@ -9,7 +9,8 @@
  * Each port has a session-only or empty default, so an unconfigured core (tests,
  * a script) degrades instead of throwing. Persistence is best-effort everywhere:
  * the blob cache is a nicety, and a lost write costs the last few hundred
- * milliseconds of settings, never correctness.
+ * milliseconds of settings, never correctness. `ErrorReporter` is the same rule
+ * for a port that holds nothing: its default reports nowhere.
  *
  * Read `blobs` and `content` as the two halves of "where does content come
  * from": `blobs` is what the app cached from the network, `content` is what the
@@ -53,10 +54,25 @@ export interface KeyValueStore {
  * port was sync while a synchronous file API was the only implementation, and that
  * shape forced this host to hydrate its entire cache into memory before the first
  * frame just to answer a read.
+ *
+ * ## Why this port can delete and `KeyValueStore` cannot be reached from the cache
+ *
+ * `services/cache.service.ts` evicts, and eviction needs a way to say "drop this".
+ * The port was `read` and `write` until then, which made an unbounded cache not
+ * merely unbounded but impossible to bound.
+ *
+ * `delete` is the whole of the cache's destructive reach, and it points here.
+ * Bookmarks, settings and session state are `KeyValueStore`, a different port, and
+ * the cache module imports no name from it — so no key the reader chose is
+ * addressable by the policy that evicts. The host doubles that: this store and the
+ * key/value store are two separate backends, so even a name passed to the wrong
+ * port would find nothing.
  */
 export interface BlobStore {
   read(namespace: string, name: string): Promise<string | null>;
   write(namespace: string, name: string, contents: string): Promise<void>;
+  /** Drop one entry. Deleting what is not there is not an error. */
+  delete(namespace: string, name: string): Promise<void>;
 }
 
 // --- bundled content ----------------------------------------------------------
@@ -154,6 +170,88 @@ export interface AudioBackend {
   onStatus(listener: (status: PlaybackStatus) => void): void;
 }
 
+// --- error reporting ----------------------------------------------------------
+
+/**
+ * Which part of the app a report came from.
+ *
+ * A closed union, and the reason it is closed is not type safety. Reporting is
+ * allowed from two places and from nowhere else
+ * ([ADR 0032](../../../../adr/0032-a-port-for-the-error-report-before-a-provider-for-it.md)):
+ * the host's error boundary, which is the only thing that sees a render fault,
+ * and the core, for the faults no host can see. A screen is deliberately not
+ * among them — a screen that catches something and reports it has decided the
+ * fault is worth a stranger's attention, and that habit grows quietly. Adding a
+ * third member is one line here and an argument in the pull request, which is the
+ * ratio this union exists to set.
+ *
+ * Codes are unique WITHIN a domain, never across it. That is what lets each union
+ * of codes live beside the code that dispatches it, the way `AudioError` does,
+ * instead of in one central list here that nobody owns and everybody appends to.
+ *
+ * `layout` is the second member from the core and the argument ADR 0036 §7 made for
+ * it: the home screen's document is fetched, so a section the app cannot read is a
+ * fault nobody but the core can see, and it means a reader is looking at a screen
+ * the newsroom believes it filled. `lib/home-layout.ts` dispatches it.
+ */
+export type ErrorDomain = 'render' | 'podcasts' | 'layout';
+
+/**
+ * One fault, in the shape a machine wants it rather than a reader.
+ *
+ * **A code, not a sentence**, for the reasons `AudioError` carries a code: it is
+ * the smallest thing that is true, the caller knows what failed and not what to
+ * say about it, and it survives translation because it is not language. What is
+ * different here is who reads it, so there is no `Record<Code, …>` of wording
+ * beside it and there should not be one.
+ *
+ * `code` is `string` at the port and closed at the call site. The unions belong
+ * next to what dispatches them, and this file cannot import them anyway without
+ * making `ports` depend on `stores` — the cycle the port exists to prevent. A
+ * `const code: PodcastsErrorCode` at the call site is what makes a typo fail to
+ * compile; see `stores/podcasts.ts`.
+ *
+ * `context` is what the caller ALREADY HELD, as values: a handle, a feed key, an
+ * HTTP status, a count. That is the line "without inventing it" draws. Prose
+ * composed for the occasion is not context, and neither is a rendering of the
+ * fault. Primitives only, so the one thing that cannot be done here is paste in a
+ * response body and call it detail.
+ *
+ * `cause` is the thrown thing, passed on unchanged. Not `String(err)`: every sink
+ * worth choosing takes an `Error` and knows more about serialising one than this
+ * file does, and stringifying here throws the stack away before anybody can ask
+ * for it — which would be inventing a rendering after all.
+ */
+export interface ErrorReport {
+  domain: ErrorDomain;
+  code: string;
+  context?: Record<string, string | number | boolean | null>;
+  cause?: unknown;
+}
+
+/**
+ * Where a fault goes when the screen it happened on is not going to mention it.
+ *
+ * **Returns `void`, and that is a contract rather than a convenience.** A report
+ * must not change what the caller does next: the podcast library still falls back
+ * to its bundle, the boundary still shows the recovery screen. A promise here
+ * would invite an `await` in front of exactly those lines — and a promise nobody
+ * awaits becomes an unhandled rejection the first time a provider's endpoint is
+ * down, which turns a reporting outage into a crash. A host that sends something
+ * over a network does it behind this call and keeps its own failures.
+ *
+ * Never throws, for the same reason: a reporter that throws takes down the code
+ * path that was already having a bad day.
+ *
+ * What a host does with a report is the host's, and today it is one log line.
+ * Choosing a provider is a change to that one implementation
+ * (`apps/mobile/src/lib/platform/expo.ts`) and to nothing else, which is the
+ * whole point of declaring this before anybody has chosen one.
+ */
+export interface ErrorReporter {
+  report(report: ErrorReport): void;
+}
+
 // --- the platform -------------------------------------------------------------
 
 export interface CorePlatform {
@@ -162,6 +260,8 @@ export interface CorePlatform {
   content: ContentBundle;
   /** Absent on a host without audio — the audio store then stays idle. */
   audio?: AudioBackend;
+  /** Required, because the default already answers: it reports nowhere. */
+  errors: ErrorReporter;
 }
 
 /** Bundles nothing. The default, and what a browser host without a snapshot has. */
@@ -172,6 +272,22 @@ export function createEmptyContentBundle(): ContentBundle {
     image: () => null,
     podcastSeries: () => null,
   };
+}
+
+/**
+ * Reports nowhere. The default, and what tests and scripts want: a suite that
+ * shipped its failures to a crash reporter would be reporting the failures it was
+ * written to cause.
+ *
+ * It is the `createEmptyContentBundle()` move for a port with no data in it — the
+ * unconfigured core degrades rather than throws — and it is the one default in
+ * this file whose correctness cannot be seen by reading it, because silence is
+ * also what a broken implementation looks like. `test/ports.test.ts` asserts that
+ * it stays silent and `test/podcasts-store.test.ts` asserts that a configured one
+ * is reached, and neither passes without the other meaning something.
+ */
+export function createNoOpErrorReporter(): ErrorReporter {
+  return { report: () => {} };
 }
 
 /** Session-only storage. Used by tests and by any host that has not registered yet. */
@@ -196,8 +312,13 @@ export function createMemoryPlatform(): CorePlatform {
         blobs.set(`${namespace}/${name}`, contents);
         return Promise.resolve();
       },
+      delete: (namespace, name) => {
+        blobs.delete(`${namespace}/${name}`);
+        return Promise.resolve();
+      },
     },
     content: createEmptyContentBundle(),
+    errors: createNoOpErrorReporter(),
   };
 }
 

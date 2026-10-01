@@ -97,5 +97,3 @@ export const fetchStatus =
       dispatch(statusChanged('unknown'));
     }
   };
-
-export const radioActions = { ...slice.actions, fetchStatus };

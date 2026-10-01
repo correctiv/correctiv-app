@@ -6,13 +6,13 @@
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/faktenforum/correctiv-app.git"
+    "url": "git+https://github.com/correctiv/correctiv-app.git"
   },
   "bugs": {
-    "url": "https://github.com/faktenforum/correctiv-app/issues"
+    "url": "https://github.com/correctiv/correctiv-app/issues"
   },
   "engines": {
-    "node": ">=20.19"
+    "node": ">=24"
   },
   "workspaces": [
     "apps/*",
@@ -21,12 +21,15 @@
   ],
   "devDependencies": {
     "@types/node": "^20.19.43",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tsx": "^4.22.4",
     "typescript": "~6.0.3",
+    "vite": "^8.2.2",
     "vitest": "^3.2.4"
   },
   "scripts": {
@@ -41,15 +44,31 @@
     "web": "npm run web -w @correctiv/mobile",
     "web:root": "npm run web:root -w @correctiv/mobile",
     "start": "npm start -w @correctiv/mobile",
+    "start:rozenite": "npm run start:rozenite -w @correctiv/mobile",
     "android": "npm run android -w @correctiv/mobile",
     "ios": "npm run ios -w @correctiv/mobile",
     "build:web": "npm run build:web -w @correctiv/mobile",
     "tokens": "npm run tokens -w @correctiv/design-tokens",
     "fonts": "npm run fonts -w @correctiv/mobile",
+    "component-ids": "npm run component-ids -w @correctiv/mobile",
+    "home-settings": "npm run home-settings -w @correctiv/mobile",
     "offline-articles": "npm run offline-articles -w @correctiv/mobile",
     "offline-podcasts": "npm run offline-podcasts -w @correctiv/mobile",
-    "handbook": "npm run dev -w @correctiv/handbook",
-    "build:handbook": "npm run build -w @correctiv/handbook",
-    "app": "npm run web -w @correctiv/mobile"
+    "i18n:extract": "npm run i18n:extract -w @correctiv/mobile",
+    "adr:new": "node scripts/adr.mjs new",
+    "adr:lock": "node scripts/adr.mjs lock",
+    "workbench": "npm run dev -w @correctiv/workbench",
+    "build:workbench": "npm run build -w @correctiv/workbench",
+    "workbench:renders": "npm run renders -w @correctiv/workbench",
+    "workbench:renders:dist": "npm run renders:dist -w @correctiv/workbench",
+    "workbench:home-live": "npm run home-live -w @correctiv/workbench",
+    "workbench:i18n:extract": "npm run i18n:extract -w @correctiv/workbench",
+    "workbench:strings": "npm run strings -w @correctiv/workbench",
+    "app": "npm run web -w @correctiv/mobile",
+    "prepare": "husky || true"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs,json}": "oxfmt",
+    "*.{ts,tsx,js,mjs,cjs}": "oxlint"
   }
 }

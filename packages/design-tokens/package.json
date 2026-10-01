@@ -11,6 +11,9 @@
     "./theme.standalone.css": "./theme.standalone.css",
     "./*": "./src/*.ts"
   },
+  "devDependencies": {
+    "@correctiv/prose-and-code": "*"
+  },
   "scripts": {
     "tokens": "node scripts/generate.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",

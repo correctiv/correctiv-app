@@ -33,8 +33,12 @@ export type OverlineProps = {
  * affected" — true of the wrapping, and wrong about the remedy, because it was
  * written from a measurement that only looked at the two-word case.
  *
- * `flexShrink: 0` does not save it: that `Spotlight` sits in a `justify-between` row
- * beside a link and is still the label that gives. The real remedy is the pixel the
+ * `flexShrink: 0` does not save it: that `Spotlight` sits in a two-sided row beside a
+ * link and is still the label that gives. (That row is a `SplitRow` since
+ * [#158](https://github.com/correctiv/correctiv-app/issues/158), so on this host the
+ * link now takes a second line rather than squeezing the mark — which removes the
+ * squeeze and not the shortfall, because the shortfall is what the mark measures at
+ * its own natural width.) The real remedy is the pixel the
  * natural width is short by, which is the layout engine's and not this component's.
  * What is kept here is the trade, chosen deliberately: on the phone and in the
  * browser one line is what this mark already was, and on a host that clips, a

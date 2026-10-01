@@ -4,7 +4,8 @@ Status: accepted, 2026-08-06. Amends [ADR 0005](0005-react-native-over-nativescr
 the stack decision stands, the removal schedule does not.
 
 > **Superseded in part by [ADR 0007](0007-removing-the-nativescript-host.md)
-> (2026-08-12):** the second host is gone; the core, its four ports and the two
+> (2026-08-12):** the second host is gone; the core, ~~its four ports~~ its ports (five
+> since [ADR 0032](0032-a-port-for-the-error-report-before-a-provider-for-it.md)) and the two
 > extraction backends are not. Everything below about *what the core holds and why*
 > still applies — that argument is the reason the removal cost one adapter and a
 > screen folder. Everything about *two apps* is now history, and this file has not
@@ -44,7 +45,7 @@ and an error state that flipped back to a spinner. The NativeScript feed store d
 stale-while-revalidate and borrowed bundled cover images offline; the Expo one did
 neither. Neither app knew what the other had learned.
 
-## Decision
+## 1. Decision
 
 **`packages/app-core` holds the behaviour; the two apps hold their view layer and
 their platform adapters. Both stay, `apps/mobile-rn` is still the app going
@@ -56,12 +57,16 @@ machine, one cached fetch, and the collection half of the offline-bundle scripts
 What is left in each app is its screens, its bindings, and one file that implements
 the ports.
 
-Four ports, all declared in `packages/app-core/src/ports/index.ts`:
+~~Four ports~~, all declared in `packages/app-core/src/ports/index.ts`. A fifth,
+`ErrorReporter`, was added by
+[ADR 0032](0032-a-port-for-the-error-report-before-a-provider-for-it.md) and is not in
+the table below; the argument for what a port IS, which is what this section is for,
+is unchanged by it:
 
 | Port | What the host answers | NativeScript | Expo |
 | --- | --- | --- | --- |
-| `KeyValueStore` | small settings, ~~synchronously~~ asynchronously since [0009](0009-redux-toolkit-for-the-cores-state.md) | `ApplicationSettings` | ~~AsyncStorage + a hydrated mirror~~ AsyncStorage |
-| `BlobStore` | the HTTP cache, asynchronously | `File` in `documents/cache/` | AsyncStorage |
+| `KeyValueStore` | small settings, ~~synchronously~~ asynchronously since [0009](0009-redux-toolkit-for-the-cores-state.md) | `ApplicationSettings` | ~~AsyncStorage + a hydrated mirror~~ ~~AsyncStorage~~ MMKV, in a store of its own, since [0026](0026-react-native-review-and-hardening.md) |
+| `BlobStore` | the HTTP cache, asynchronously | `File` in `documents/cache/` | ~~AsyncStorage~~ a second MMKV store, bounded and evictable, since [0026](0026-react-native-review-and-hardening.md) |
 | `ContentBundle` | what shipped inside the app | JSON in the app folder | a generated TS module |
 | `AudioBackend` | playback, as status ticks | `TNSPlayer` + a polling timer | expo-audio's status events |
 

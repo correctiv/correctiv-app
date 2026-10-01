@@ -50,7 +50,25 @@ export function SafeAreaView({ edges: _edges, ...rest }: SafeAreaViewProps) {
 }
 
 /** The provider is a passthrough: there is no inset to provide. */
-export function SafeAreaProvider({ children }: { children?: unknown }) {
+/**
+ * What a host states when it has no router to measure the insets for it.
+ *
+ * `lib/env/AppEnvironment.tsx` declares an optional `insets?: Metrics` so the workbench
+ * can hand a page zero, and the app leaves it out. Typed here because the type is part
+ * of that component's signature and this host compiles it; nothing on this host passes
+ * one, so `SafeAreaProvider` below is as inert as it ever was.
+ */
+export interface Metrics {
+  insets: EdgeInsets;
+  frame: { x: number; y: number; width: number; height: number };
+}
+
+export function SafeAreaProvider({
+  children,
+}: {
+  children?: unknown;
+  initialMetrics?: Metrics | null;
+}) {
   return <View className="flex-1">{children as never}</View>;
 }
 

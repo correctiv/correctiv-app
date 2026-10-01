@@ -1,0 +1,18 @@
+# The built site. CI builds it; nothing here is committed.
+dist/
+
+# Extracted by `npm run api` from packages/app-core and apps/mobile/src/components,
+# which the build runs first. Not committed: it is 238 KB of derived JSON, and
+# regenerating it is one command rather than a merge conflict on every rename in
+# either.
+content/api.generated.json
+
+# Joined by `npm run strings` out of the extraction and the catalogues, which the
+# build runs too. Not committed for the same reason and one more: it carries a
+# source line per id, so it would be a diff on every line anybody moves.
+content/strings.generated.json
+
+# The measurement scratch (`scripts/measure-direct.mjs`): one throwaway entry and
+# one build output per component, removed when the run ends and worth nothing if a
+# run is interrupted.
+.measure/

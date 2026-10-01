@@ -7,14 +7,34 @@
 // gate, the modal presentations — is the phone's, unchanged, because none of it is
 // platform-specific. That is ADR 0006's split paying out for the third time.
 //
-// THE TWO DIFFERENCES, both of them here rather than spread out:
+// THE DIFFERENCES, all of them here rather than spread out:
 //
-//   1. No `import '@/global.css'`. That import is the CSS entry Uniwind's Metro
-//      transform reads, and there is no Metro here. The class vocabulary reaches GTK
-//      through `configureStyle` in `../entry.tsx` instead (ADR 0032 section 3).
-//   2. `gtkPlatform` + `gstAudio` instead of `expoPlatform` + `expoAudio`.
+//   1. `gtkPlatform` + `gstAudio` instead of `expoPlatform` + `expoAudio`.
+//   2. No `<AgentTools />`, which is the phone's web-only debug handle. This host's
+//      equivalents are `debug/route.ts` and `debug/gallery-action.ts`, wired below.
 //   3. Nothing else. Kept in the same order as the phone's file on purpose, so a
 //      `diff` between the two is short enough to read.
+//
+// The global stylesheet used to be difference 1, and it is not a difference any more:
+// the phone moved `import '@/global.css'` into `lib/env/AppEnvironment.tsx` — "the first
+// thing a second host needs and the easiest to forget" — and this host now mounts that
+// same component, so the import arrives with it. There is still no Metro here to read
+// the file; `gjsify.config.mjs` resolves it to an empty module and the class vocabulary
+// reaches GTK through `configureStyle` in `../entry.tsx` (ADR 0032 section 3).
+//
+// MOUNTING `AppEnvironment` IS WHY THE LIST SHRANK RATHER THAN GREW. This file used to
+// write out its own `Provider`, appearance hook and `GestureHandlerRootView`, which was
+// one provider list per host — and the phone learned the cost of that on its second
+// host: the workbench's copy drifted, no check saw it, and 45 components drew in the
+// browser's default serif (ADR 0028). Since then the list is one component, and the
+// third host is the first one that got to simply use it. The parts that are routing or
+// this app's own lifecycle stay here, which is the boundary that component's own
+// docblock draws: the splash screen, the hydration, the onboarding redirect, the error
+// boundary, the status bar, the door and the `Stack`.
+//
+// It also brings the react-intl provider, and that is the part this host could not do
+// without. Every screen it re-exports formats its German through `useIntl` since
+// ADR 0026 §6, so without a provider above them each one throws on its first string.
 //
 // The door used to be a third difference, and it was the one that was NOT
 // platform-specific: this host mounted the navigator unconditionally and so showed
@@ -25,12 +45,9 @@
 
 import { router, Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Provider } from 'react-redux';
 
 import { configurePlatform } from '@correctiv/app-core';
 import { extractArticleFromDom } from '@correctiv/app-core/articles/extract/dom';
@@ -60,9 +77,10 @@ import { close as closeVideo } from '@correctiv/app-core/stores/video';
 
 import { LoginGate } from '@/components/gate/LoginGate';
 import { RecoveryScreen } from '@/components/recovery/RecoveryScreen';
+import { AppEnvironment, useAppFonts } from '@/lib/env/AppEnvironment';
 import { stop as stopAudio } from '@/lib/audio/player';
 import { coreStore, useAppStore, useIsAdmitted } from '@/lib/store/core';
-import { fontAssets, useAppearance, useIsDark } from '@/lib/theme';
+import { useIsDark } from '@/lib/theme';
 
 import { installGalleryAction } from '../debug/gallery-action.js';
 import { applyDebugRoute, debugRouteRequested, noteCurrentPath } from '../debug/route.js';
@@ -255,22 +273,21 @@ const RecoveryBoundary = RecoveryBoundaryClass as unknown as (props: {
 export default function RootLayout() {
   return (
     <RecoveryBoundary>
-      <Provider store={coreStore}>
+      <AppEnvironment>
         <AppShell />
-      </Provider>
+      </AppEnvironment>
     </RecoveryBoundary>
   );
 }
 
 /**
- * Everything that reads state lives below the Provider — `useAppearance()` selects
- * the appearance setting, so it cannot run in the component that renders the
- * Provider.
+ * Everything that reads state lives below the Provider, which `AppEnvironment`
+ * renders — `useAppearance()` selects the appearance setting, so it cannot run in
+ * the component that renders the Provider.
  */
 function AppShell() {
-  const [fontsLoaded] = useFonts(fontAssets);
+  const [fontsLoaded] = useAppFonts();
   const [storeReady, setStoreReady] = useState(false);
-  useAppearance();
   const isDark = useIsDark();
 
   useEffect(() => {
@@ -348,8 +365,11 @@ function AppShell() {
 
   if (!fontsLoaded || !storeReady) return null;
 
+  // A fragment, where this file used to open a `GestureHandlerRootView`: that wrapper
+  // is `AppEnvironment`'s now, on both hosts, and two of them nested would be one
+  // `Gtk.Box` with nothing in it.
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       {admitted ? (
         /*
@@ -399,6 +419,6 @@ function AppShell() {
         */
         <LoginGate />
       )}
-    </GestureHandlerRootView>
+    </>
   );
 }

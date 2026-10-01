@@ -1,0 +1,98 @@
+/**
+ * German for the `components.*` ids: the gallery of the app's components and a
+ * single component's own page.
+ *
+ * One namespace for two files, because it is one area. `pages/Components.tsx`
+ * holds the ids without `detail.` and `pages/ComponentDetail.tsx` the ones with.
+ *
+ * **What is NOT here is most of the words on those pages.** The sentence under a
+ * component's name, the prose under a props type and the prose under each prop are
+ * JSDoc comments out of `apps/mobile/src/components`, read through `virtual:api`,
+ * and they stay English because a developer wrote them for a developer
+ * ([ADR 0052](../../../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1).
+ * So a German reader gets a German page around English component documentation,
+ * and that seam is the decision rather than an unfinished translation.
+ *
+ * **The line "Gezeichnet von" is never drawn.** `ui/kit/segmented.tsx` draws a
+ * legend only with `showLegend`, which that page does not pass, so it is read
+ * aloud and nothing else. The two answers under it therefore have to be nominative
+ * and stand on their own. They were written as datives agreeing with it, "Dieser
+ * Site" and "Dem Bundle der App", which left a sighted reader two fragments with
+ * nothing governing them. A cold review found it in this change's own evidence
+ * shot.
+ *
+ * `Props`, `Barrel` and the names of the components themselves are left in their
+ * own spelling. They are what the code calls these things, and a reader of this
+ * page has the code open.
+ */
+export const components: Record<string, string> = {
+  'components.title': 'Komponenten',
+  'components.lede':
+    'Jede Komponente, aus der die App ihre Ansichten baut, aus <code>{root}</code> gelesen, mit ihren Props, deren Typen und dem Prosatext, den die Quelle mitbringt.',
+  'components.lede.more':
+    'Jede Karte zeichnet ihre Komponente aus dem Quelltext der App, innerhalb dieser Site. Ist eine Karte zu klein für die ganze Komponente, steht das an ihrer Unterkante. Die eigene Seite einer Komponente zeigt jedes Exemplar vollständig, daneben die Darstellung der App und eine Gerätegröße. Die Exporte des Core haben einen eigenen Bereich: <reference>Referenz</reference>.',
+
+  'components.prose':
+    'Der Satz unter jedem Namen ist der Doc-Kommentar der Komponente aus dem Quelltext der App. Er bleibt englisch, denn Kommentare sind für die geschrieben, die den Code lesen.',
+
+  // The link carries the tool's own name, `shell.section.home`. A second name for
+  // one surface would read, to somebody following the link, as a second surface.
+  'components.modules':
+    'Die Blöcke der Startseite stehen nicht hier. Sie gehören zu einem Bildschirm und sind keine Komponenten der App. Sie finden jeden davon mit seinen Einstellungen im <editor>Startseiten-Layout</editor> neben der laufenden App.',
+
+  'components.filter': 'Ordner, Komponenten und Props filtern',
+  'components.filter.placeholder': 'Filtern, zum Beispiel Typo, onPress oder reader',
+  'components.filter.summary':
+    '{folders} Ordner, {components} Komponenten, davon {drawn} hier gezeichnet',
+
+  'components.drawn.legend': 'Welche Komponenten',
+  'components.drawn.all': 'Alle',
+  'components.drawn.here': 'Hier gezeichnet',
+
+  'components.empty': 'Dazu passt nichts.',
+  'components.barrel':
+    'Dieser Ordner hat ein Barrel, ein Aufrufer nennt also den Ordner und nicht die Datei.',
+  'components.alsoExported': 'Hier ebenfalls exportiert',
+
+  'components.card.bundle': 'Im Bundle der App gezeichnet',
+  'components.card.bundleNote': 'Ihre Seite zeichnet sie in der ausgelieferten App.',
+  'components.card.clipped': 'Beschnitten · {height} px hoch',
+  'components.card.specimens': 'Alle Exemplare von {name}',
+  'components.card.specimens.clipped':
+    'Alle Exemplare von {name}; diese Karte beschneidet die Komponente bei {height} px',
+  'components.card.noDoc': 'Kein Doc-Kommentar.',
+  'components.card.props': '{count, plural, one {# Prop} other {# Props}}',
+
+  'components.detail.breadcrumb': 'Navigationspfad',
+  'components.detail.crumb': 'Komponenten',
+
+  'components.detail.tooNarrow':
+    'Die App zeichnet das in einem Geräterahmen, und der braucht mehr Breite, als hier Platz ist.',
+  'components.detail.full': 'Im Vollbild öffnen',
+  'components.detail.frameTitle': '{name}, in der App gezeichnet',
+  'components.detail.gallery': 'Die Galerie in der Vorschau',
+  'components.detail.reload': 'Den Rahmen neu laden',
+
+  'components.detail.drawnBy': 'Gezeichnet von',
+  'components.detail.drawnBy.site': 'Diese Site',
+  'components.detail.drawnBy.bundle': 'Das Bundle der App',
+  'components.detail.notDrawn': 'Hier nicht gezeichnet: {reason} Das Bundle zeichnet sie.',
+  'components.detail.notDrawn.reason': 'der Katalog der App hat kein Exemplar dafür.',
+  'components.detail.twoRenderings':
+    'Zwei Darstellungen derselben Komponente. Weichen sie voneinander ab, ist das ein Befund und kein Makel. Mit Absicht vergleicht nichts sie automatisch.',
+  'components.detail.frameHolds': 'Im Rahmen läuft <strong>{build}</strong>.',
+  'components.detail.frameHolds.dev': 'der Dev-Server über den Proxy',
+  'components.detail.frameHolds.dist': 'der veröffentlichte Export',
+
+  'components.detail.device': 'Gerät',
+  'components.detail.size.auto': 'Der Platz, den diese Seite ihr gibt, so groß er eben ist.',
+  'components.detail.size.frame': '{width} × {height} bei {percent}%',
+  'components.detail.size.column':
+    'Spalte auf {width} px begrenzt. Die Höhe ist die der Komponente selbst.',
+
+  'components.detail.props.none': 'Keine.',
+  'components.detail.prop.optional': 'optional',
+  'components.detail.prop.noProse': 'Kein Prosatext.',
+  'components.detail.inherits':
+    'Dazu alles aus {types}. Das gehört nicht zu diesem Repository und wird hier nur genannt, nicht aufgelistet.',
+};

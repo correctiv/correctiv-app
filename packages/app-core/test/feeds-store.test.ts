@@ -19,6 +19,7 @@ import {
   enrichImage,
   fetchFeedKey,
   fetchMany,
+  investigations,
   loadMore,
   mergedFeedItems,
   mergedFeedStatus,
@@ -249,7 +250,7 @@ describe('the REST path', () => {
     expect(slice.items).toHaveLength(2);
     expect(slice.status).toBe('ready');
     expect(slice.page).toBe(1);
-    expect(slice.hasMore).toBe(true);
+    expect(slice.end).toBe('more');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -293,7 +294,7 @@ describe('the REST path', () => {
     expect(slice.items.map((i) => i.id)).toEqual(['a']);
     expect(slice.status).toBe('ready');
     // RSS cannot page, so nothing may offer a "mehr laden" button.
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('unknown');
   });
 
   /**
@@ -330,7 +331,7 @@ describe('loading more', () => {
     const slice = store.getState().feeds.byKey.faktencheck;
     expect(slice.items.map((i) => i.id)).toEqual(['a', 'b', 'c']);
     expect(slice.page).toBe(2);
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('end');
     expect(slice.loadingMore).toBe(false);
   });
 
@@ -367,7 +368,7 @@ describe('loading more', () => {
     await store.dispatch(loadMore('faktencheck'));
 
     const slice = store.getState().feeds.byKey.faktencheck;
-    expect(slice.hasMore).toBe(false);
+    expect(slice.end).toBe('end');
     expect(slice.items.map((i) => i.id)).toEqual(['a', 'b']);
     error.mockRestore();
   });
@@ -499,5 +500,219 @@ describe('image enrichment', () => {
     await store.dispatch(enrichImage('recherchen', 'a'));
 
     expect(store.getState().feeds.byKey.recherchen.items[0].imageUrl).toBe('https://x/keep.jpg');
+  });
+});
+
+/**
+ * The impact card's list, which was three lines inside `app/(tabs)/profil.tsx` and
+ * therefore untested: the screen that must not name a fact check among CORRECTIV's
+ * investigations was also the only place that knew the site-wide stream contains
+ * them.
+ *
+ * The permalinks are the shapes `test/article-url.test.ts` reads off the live feed,
+ * cut down to what this selector needs — the point here is the filter and the
+ * limit, not the URL rule, which has its own suite.
+ */
+describe('investigations', () => {
+  const at = (id: string, path: string): FeedItem => ({
+    ...item(id),
+    url: `https://correctiv.org${path}`,
+  });
+
+  const CHECK = at('c', '/faktencheck/2026/08/11/keine-ki-foto-von-voigt/');
+  const SUB_CHECK = at('s', '/faktencheck/hintergrund/2026/06/30/deutschland-strom-import/');
+  const STORY = at('r', '/russland/2026/08/11/russisches-haus/');
+  const LOCAL = at('l', '/in-eigener-sache/2026/08/07/jugendliche-erleben-wald/');
+
+  it('drops the fact checks the site-wide stream carries', () => {
+    const state = slices({ recherchen: { items: [CHECK, STORY, SUB_CHECK, LOCAL] } });
+
+    expect(investigations(state).map((i) => i.id)).toEqual(['r', 'l']);
+  });
+
+  it('honours the limit the caller asks for', () => {
+    const state = slices({ recherchen: { items: [CHECK, STORY, LOCAL] } });
+
+    expect(investigations(state, 1).map((i) => i.id)).toEqual(['r']);
+  });
+
+  it('answers with everything when no limit is given', () => {
+    const state = slices({ recherchen: { items: [STORY, LOCAL] } });
+
+    expect(investigations(state)).toHaveLength(2);
+  });
+
+  it('reads `recherchen` and nothing else', () => {
+    // The card is about CORRECTIV's own investigations, so a story that only ever
+    // arrived through another feed is not one of them.
+    const state = slices({
+      recherchen: { items: [STORY] },
+      faktencheck: { items: [at('x', '/klima/2026/08/11/etwas/')] },
+    });
+
+    expect(investigations(state).map((i) => i.id)).toEqual(['r']);
+  });
+
+  it('reaches no store of its own', () => {
+    expect(investigations(createAppStore().getState().feeds, 3)).toEqual([]);
+  });
+});
+
+/**
+ * The warm cache, the stale entry, the snapshot and RSS return rows without asking
+ * whether more exists, and must leave `end` unknown rather than claim the list ends.
+ */
+describe('whether `end` is an answer', () => {
+  /** A warm cache, written for one test at a time. */
+  async function warmCache() {
+    await setCached('feeds', 'faktencheck', [item('warm'), item('warmer')]);
+  }
+
+  it('marks a network read as answered, on the first page and on every later one', async () => {
+    restMock.mockResolvedValueOnce({
+      items: [item('a', '2026-08-31T10:00:00.000Z'), item('b', '2026-08-30T10:00:00.000Z')],
+      hasMore: true,
+    });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    expect(store.getState().feeds.byKey.faktencheck.end).toBe('more');
+
+    restMock.mockResolvedValueOnce({ items: [item('c')], hasMore: false });
+    await store.dispatch(loadMore('faktencheck'));
+    expect(store.getState().feeds.byKey.faktencheck.end).toBe('end');
+  });
+
+  it('leaves a warm start unanswered, so a screen says nothing about the end', async () => {
+    await warmCache();
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.items.map((i) => i.id)).toEqual(['warm', 'warmer']);
+    expect(slice.end).toBe('unknown');
+    expect(restMock).not.toHaveBeenCalled();
+  });
+
+  it('leaves the bundled snapshot unanswered too', async () => {
+    configurePlatform({
+      ...createMemoryPlatform(),
+      content: {
+        ...createMemoryPlatform().content,
+        feed: (key: string) => (key === 'faktencheck' ? [item('bundled')] : []),
+      },
+    });
+    restMock.mockRejectedValue(new Error('offline'));
+
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.status).toBe('offline');
+    expect(slice.items.map((i) => i.id)).toEqual(['bundled']);
+    expect(slice.end).toBe('unknown');
+  });
+
+  it('leaves the RSS fallback unanswered, because RSS is a window and not an archive', async () => {
+    restMock.mockRejectedValue(new Error('REST down'));
+    fetchMock.mockResolvedValueOnce([item('rss')]);
+
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.items.map((i) => i.id)).toEqual(['rss']);
+    expect(slice.end).toBe('unknown');
+  });
+
+  it('marks a REST page one as answered, so the end of the list can be stated', async () => {
+    restMock.mockResolvedValueOnce({ items: [item('a'), item('b')], hasMore: false });
+
+    await store.dispatch(fetchFeedKey('faktencheck'));
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    expect(slice.end).toBe('end');
+  });
+
+  it('refuses to page an unanswered feed rather than asking once', async () => {
+    await warmCache();
+    await store.dispatch(fetchFeedKey('faktencheck'));
+    const before = restMock.mock.calls.length;
+
+    await store.dispatch(loadMore('faktencheck'));
+
+    expect(restMock.mock.calls.length).toBe(before);
+  });
+
+  it('does not let a refresh re-arm the button while a load is in flight', async () => {
+    restMock.mockResolvedValueOnce({
+      items: [item('a', '2026-08-31T10:00:00.000Z'), item('b', '2026-08-30T10:00:00.000Z')],
+      hasMore: true,
+    });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+
+    // A page two that is still on its way when a refresh lands. This slice is shared
+    // with Home, so that is a real ordering rather than a contrived one.
+    let releasePageTwo = () => {};
+    restMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releasePageTwo = () => resolve({ items: [item('c')], hasMore: false });
+        }),
+    );
+    const paging = store.dispatch(loadMore('faktencheck'));
+    expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(true);
+
+    restMock.mockResolvedValueOnce({
+      items: [item('fresh', '2026-09-02T10:00:00.000Z')],
+      hasMore: true,
+    });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(true);
+    releasePageTwo();
+    await paging;
+
+    expect(store.getState().feeds.byKey.faktencheck.loadingMore).toBe(false);
+  });
+
+  /**
+   * The page that no longer follows the list.
+   *
+   * `next` is read before the await, so a refresh in between resets the slice to
+   * page 1 and the page that comes back is a page 3. Appending it would leave the
+   * reader with pages 1 and 3, `page: 3` stored as if they had walked there, and
+   * nothing in the dedup to notice: a missing page and a duplicate are different
+   * problems. Found by a reviewer reading the await; older than the button, and
+   * unreachable until something called `loadMore`.
+   */
+  it('discards a page that a refresh made the wrong page', async () => {
+    // Page one first, then a page two, so the reader is genuinely at page 2 and a
+    // refresh back to page 1 is a real jump backwards rather than a re-read.
+    restMock.mockResolvedValueOnce({ items: [item('a')], hasMore: true });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    restMock.mockResolvedValueOnce({ items: [item('b')], hasMore: true });
+    await store.dispatch(loadMore('faktencheck'));
+    expect(store.getState().feeds.byKey.faktencheck.page).toBe(2);
+
+    // Page three, held in flight.
+    let releasePageThree = () => {};
+    restMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releasePageThree = () => resolve({ items: [item('c')], hasMore: true });
+        }),
+    );
+    const paging = store.dispatch(loadMore('faktencheck'));
+
+    // A refresh puts the slice back to page one while page three is on its way.
+    restMock.mockResolvedValueOnce({ items: [item('a'), item('neu')], hasMore: true });
+    await store.dispatch(fetchFeedKey('faktencheck', { force: true }));
+    releasePageThree();
+    await paging;
+
+    const slice = store.getState().feeds.byKey.faktencheck;
+    // Page three is not in the list, and `page` is the one the refresh left rather
+    // than the one the request asked for. Appending it would have given the reader
+    // pages 1 and 3 with page 2 missing and `page: 3` claiming they had walked there.
+    expect(slice.items.map((i) => i.id)).toEqual(['a', 'neu']);
+    expect(slice.page).toBe(1);
+    // And the reader can ask again: a list that silently skipped a page behind a
+    // button that stays disabled is worse than a wasted press.
+    expect(slice.loadingMore).toBe(false);
   });
 });

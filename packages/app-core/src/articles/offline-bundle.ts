@@ -112,16 +112,3 @@ export async function collectOfflineBundle(options: CollectOptions): Promise<Off
 
   return { snapshots, articles };
 }
-
-/** A file-safe name for an article, derived from its URL slug. */
-export function articleSlug(url: string): string {
-  return (
-    url
-      .replace(/\/$/, '')
-      .split('/')
-      .pop()
-      ?.toLowerCase()
-      .replace(/[^a-z0-9-]/g, '-')
-      .slice(0, 80) || 'artikel'
-  );
-}

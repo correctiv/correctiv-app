@@ -29,17 +29,75 @@
 // expo-router's object `Href` — remove `hrefOf` and the wrapper below on the next bump.
 
 import { CommonActions } from '@react-navigation/core';
+import { Children, createElement, isValidElement, type ReactElement } from 'react';
 
 import {
   navigationRef,
   router as gjsifyRouter,
-  Stack,
+  Stack as gjsifyStack,
   Tabs,
   useLocalSearchParams,
   usePathname,
 } from '@gjsify/react-native/router';
 
-export { Stack, Tabs, useLocalSearchParams, usePathname };
+export { Tabs, useLocalSearchParams, usePathname };
+
+/**
+ * A `<Stack.Screen>` that may also be rendered from inside a screen, because on
+ * expo-router that is half of what it is for.
+ *
+ * The layer reads `<Stack.Screen>` as DATA — `<Stack>` collects its `name` and
+ * `options` and never renders it — and `StackScreen` therefore THROWS a
+ * `RouterError` if React ever calls it, on the sound argument that a declaration
+ * nobody read would otherwise vanish silently. expo-router has a second meaning for
+ * the same element: rendered inside a route's own body with no `name`, it sets the
+ * CURRENT screen's options. `components/ui/ScreenHeader.tsx` does exactly that on
+ * every one of the twelve screens that take a header (ADR 0030), so on this host the
+ * layer's refusal fired per screen rather than catching a mistake.
+ *
+ * **THE OPTIONS ARE DROPPED, and they could not be anything else.** `<Stack>`'s own
+ * option vocabulary here is `title`, `headerShown` and `animation`; four of the six
+ * the phone sets — `headerTitle`, `headerBackTitle`, `headerStyle`, `headerTintColor`
+ * — configure a native stack header that does not exist on this host, and the layer
+ * refuses each by name. There is no version of forwarding these that is not an error.
+ * What is actually lost is `title`: an `Adw.NavigationPage` falls back to the route's
+ * name, so a pushed page's title in the window's header bar reads `artikel` rather
+ * than „Artikel“. Named here because it is the one of the six that had a counterpart.
+ *
+ * **What this host shows instead** is the reason the trade is tolerable: `<Stack>`
+ * renders an `Adw.NavigationView`, whose chrome is the window's own header bar with
+ * its own back control — the platform's header, which is precisely what ADR 0030 asks
+ * a host to prefer. So the twelve screens lose a configuration call and keep a header.
+ * `app/formular.tsx` is the one screen that asks for the app's drawn bar instead, and
+ * it still gets it: that half of `ScreenHeader` is ordinary markup.
+ *
+ * `test/expo-router-shim.test.ts` holds both halves — that a declaration still reaches
+ * the layer, and that a render is inert rather than a throw.
+ */
+function StackScreen(_props: { name?: string; options?: Record<string, unknown> }): null {
+  return null;
+}
+StackScreen.displayName = 'Stack.Screen';
+
+/**
+ * `<Stack>`, with the declarations above translated back into the layer's own.
+ *
+ * `screenOptionsFrom` compares each child against the marker component it was handed
+ * and refuses anything else by name, so a tolerant `Screen` cannot simply be swapped
+ * in beside the layer's `<Stack>` — the route declarations in `app/_layout.tsx` and
+ * `app/(tabs)/_layout.tsx` would be the refused children instead. Re-creating each one
+ * as the layer's marker is the whole of the adapter, and it keeps the refusal intact
+ * for every child that is neither.
+ */
+export function Stack({ children, ...rest }: Parameters<typeof gjsifyStack>[0]): ReactElement {
+  const declared = Children.map(children, (child) =>
+    isValidElement(child) && child.type === StackScreen
+      ? createElement(gjsifyStack.Screen, child.props as { name: string })
+      : child,
+  );
+  return createElement(gjsifyStack, rest, declared);
+}
+Stack.Screen = StackScreen;
 
 type Params = Record<string, string | number | undefined | null>;
 

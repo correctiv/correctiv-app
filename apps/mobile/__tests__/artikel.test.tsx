@@ -5,8 +5,9 @@ import { act } from 'react-test-renderer';
  *
  * ARCHITECTURE.md calls the article path "the one worth tracing, because it crosses
  * every layer", and this was the only major screen with zero render coverage. Its
- * pure rules already live next door with suites of their own (`readerChrome`,
- * `articleUrl`, `readerNavigation`); what is left here is the part that only exists
+ * pure rules already live elsewhere with suites of their own (`readerChrome` and
+ * `readerNavigation` next door, the URL rules in the core); what is left here is the
+ * part that only exists
  * while the screen is mounted — the three load states, the retry, and what the
  * bookmark actually writes.
  *

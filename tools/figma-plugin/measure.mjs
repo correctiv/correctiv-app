@@ -29,7 +29,7 @@ const APP = process.env.APP ?? 'http://localhost:8081';
  * What the app finds in storage before it boots.
  *
  * The gallery is behind the app's door like every other route, and this origin is
- * the app's own rather than the handbook's, so the workbench's fixtures are not
+ * the app's own rather than the workbench's, so the preview's fixtures are not
  * here. Only the entitlement, and only enough of it to open the door.
  */
 const SESSION = {

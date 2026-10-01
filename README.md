@@ -1,4 +1,4 @@
-![The CORRECTIV app in the handbook's workbench](docs/readme-header.png)
+![The app in the workbench's device frame, beside the tool that orders its home screen](docs/readme-header.png)
 
 # CORRECTIV app
 
@@ -7,21 +7,21 @@ fact checks, Salon5 radio, CrowdNewsroom callouts, the Faktenforum and the membe
 club. This repository holds the app, the platform-free core it is built on, the design
 tokens they are drawn with, and the site that publishes all of it.
 
-## Start with the handbook
+## Start with the workbench
 
-**[faktenforum.github.io/correctiv-app](https://faktenforum.github.io/correctiv-app/)**
+**[correctiv.github.io/correctiv-app](https://correctiv.github.io/correctiv-app/)**
 is the front door, and the app is a link inside it. One site carries the repository's
 documentation, the inventory of what the app reads, the architecture diagrams, a
 reference generated from the core, and the running app in a device frame. It renders
 this repository's Markdown in place, keeps no copy of it, and is rebuilt on every push
-to `main`. Four addresses worth going to directly:
+to `main`. Addresses worth going to directly:
 
 | | |
 | --- | --- |
-| [`/workbench`](https://faktenforum.github.io/correctiv-app/workbench) | The app itself in a phone or tablet frame, with an inspector for its state, its console, its palette and its layout. No install, no emulator. |
-| [`/sources`](https://faktenforum.github.io/correctiv-app/sources) | What each part of the app reads: a live source, sample data standing in for an API that does not exist yet, or nothing at all. |
-| [`/decisions`](https://faktenforum.github.io/correctiv-app/decisions) | Every architecture record, and which of their claims a later one has made false. |
-| [`/architecture`](https://faktenforum.github.io/correctiv-app/architecture) | One core, four ports, and the article path end to end. |
+| [`/preview`](https://correctiv.github.io/correctiv-app/preview) | The app itself in a phone or tablet frame, with an inspector for its state, its console, its palette and its layout. No install, no emulator. |
+| [`/sources`](https://correctiv.github.io/correctiv-app/sources) | What each part of the app reads: a live source, sample data standing in for an API that does not exist yet, or nothing at all. |
+| [`/decisions`](https://correctiv.github.io/correctiv-app/decisions) | Every architecture record, and which of their claims a later one has made false. |
+| [`/architecture`](https://correctiv.github.io/correctiv-app/architecture) | One core, its ports, and the article path end to end. |
 
 The screens work end to end and the backends behind them do not exist yet. Sign-in,
 the club join, the callouts and the Faktenforum claims run on typed sample data shaped
@@ -35,16 +35,16 @@ work and deciding what lands. What keeps it honest is checkable. Every architect
 choice is recorded in [`adr/`](adr/README.md), and a claim that a later decision made
 false is struck through where it stands, with a link to the record that voided it,
 instead of being quietly rewritten. Every source the app reads is inventoried in
-[SOURCES.md](SOURCES.md), measured by hand against the live source on a day the file
-states, with that date typed a second time into the site's manifest and a test that
-fails when the two part. `npm run check` at the root runs typecheck, lint, format and
+[SOURCES.md](SOURCES.md), and a weekly job measures all of them against the live
+sources and opens a pull request with what moved, so the figures and the day they were
+taken are generated rather than typed. `npm run check` at the root runs typecheck, lint, format and
 tests in seconds, and [TROUBLESHOOTING.md](TROUBLESHOOTING.md) collects the
 defects that passed exactly that, which is why a green check is not treated as
 evidence here.
 
 ## Getting started
 
-Node 20.19 or newer.
+Node 24, the current LTS. `.nvmrc` names it, so `nvm use` in this directory picks it up.
 
 ```bash
 npm install
@@ -57,11 +57,11 @@ npm run build:web   # static export to apps/mobile/dist/
 Only `npm run android` needs the Android toolchain, JDK 17 and an Android SDK with
 `ANDROID_HOME` set. iOS is maintained in code and has not been built.
 
-The handbook and its workbench are two servers locally, and the site's dev server
+The workbench and the app are two servers locally, and the site's dev server
 proxies the app under itself so that the frame and the app stay one origin:
 
 ```bash
-npm run handbook    # the site, at localhost:5173
+npm run workbench   # the site, at localhost:5173
 npm run app         # the app it frames, at localhost:8081/app/
 ```
 
@@ -82,16 +82,26 @@ before you want the demo to show recent articles.
   no UI framework and no platform SDK.
 - [`apps/mobile`](apps/mobile) is the app, on Expo and React Native, for iOS, Android
   and web.
-- [`apps/handbook`](apps/handbook) is the published site, including `/workbench`.
+- [`apps/workbench`](apps/workbench) is the published site, including `/preview`.
 - [`packages/design-tokens`](packages/design-tokens) and [`tokens/`](tokens/README.md)
   are the colours, spacing and type scale, vendored from CORRECTIV's design tokens.
+- [`packages/prose-and-code`](packages/prose-and-code) is the helpers the checks in
+  here are written with: a walk that cannot pass on nothing, an excuse list that can
+  only shrink, a number in a sentence held to what the code counts. Apache-2.0 and
+  framework-free, so another project can take it.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) is how they fit together, [AGENTS.md](AGENTS.md) is
 how to work in here, and [RELEASE.md](RELEASE.md) is how a build reaches a device.
 
 ## Licence
 
-AGPL-3.0-or-later, see [`LICENSE`](LICENSE). The MIT notice for the parts scaffolded
+AGPL-3.0-or-later, see [`LICENSE`](LICENSE), with one exception that has a `LICENSE`
+of its own: [`packages/prose-and-code`](packages/prose-and-code) is **Apache-2.0**,
+because it is meant to be taken by projects that cannot take AGPL
+([ADR 0043](adr/0043-two-concepts-become-packages-and-the-shell-stays.md) §3). That
+is a rule about imports rather than a field in a manifest — nothing in that directory
+may import anything else in here — and `packages/prose-and-code/test/licence-boundary.test.ts`
+is the check under it. The MIT notice for the parts scaffolded
 by `create-expo-app` and for the bundled fonts is kept in
 [`apps/mobile/NOTICE.md`](apps/mobile/NOTICE.md); the design tokens are vendored from
 [correctiv/wp-design-tokens](https://github.com/correctiv/wp-design-tokens)

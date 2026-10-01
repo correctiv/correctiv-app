@@ -1,19 +1,54 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
+import { defineMessages, useIntl } from 'react-intl';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { SampleHitRow, sampleTarget } from '@/components/discover/SampleHitRow';
 import { ArticleRow } from '@/components/feed/ArticleRow';
-import { Hairline, Overline, ScreenHeader, Typo } from '@/components/ui';
-import { searchSamples } from '@correctiv/app-core/data/search-samples';
-import { MIN_SEARCH_QUERY } from '@correctiv/app-core/stores/search';
+import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
+import {
+  ContentColumn,
+  Hairline,
+  Overline,
+  ScreenHeader,
+  ScaledTextInput,
+  Typo,
+} from '@/components/ui';
+import { MIN_SEARCH_QUERY, searchProjectHits } from '@correctiv/app-core/stores/search';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 import { openArticle } from '@/lib/openArticle';
 import { useCoreActions } from '@/lib/store/core';
-import { typography, useColors } from '@/lib/theme';
+import { sizes, typography, useColors } from '@/lib/theme';
 import { useDebounced } from '@/lib/useDebounced';
 
 const DEBOUNCE_MS = 300;
+
+/**
+ * Everything a person reads on this screen, in ENGLISH; the German that ships is
+ * `packages/catalogue/src/de/search.ts`.
+ *
+ * `noResults` carries its own quotation marks. German sets them low-then-high and
+ * English does not, so the marks are part of the sentence and belong with the
+ * language rather than in the markup.
+ */
+const COPY = defineMessages({
+  screenTitle: { id: 'search.screenTitle', defaultMessage: 'Search' },
+  placeholder: { id: 'search.placeholder', defaultMessage: 'Search …' },
+  fieldLabel: { id: 'search.fieldLabel', defaultMessage: 'Search term' },
+  hint: {
+    id: 'search.hint',
+    defaultMessage:
+      'Search across investigations, fact checks, projects, podcasts and ways to take part.',
+  },
+  articlesHeading: { id: 'search.articlesHeading', defaultMessage: 'Articles' },
+  projectsHeading: { id: 'search.projectsHeading', defaultMessage: 'From the projects' },
+  noResults: {
+    id: 'search.noResults',
+    defaultMessage: 'No hits for "{query}".',
+    description:
+      'Shown when a search finds nothing. {query} is what was typed, unchanged, in quotation marks.',
+  },
+});
 
 /**
  * Full-text search over correctiv.org, with a local fallback.
@@ -24,9 +59,11 @@ const DEBOUNCE_MS = 300;
  * three empty states to show.
  *
  * The project hits (podcasts, callouts, backstage, publishing) are not in the feeds
- * and are filtered locally — without a debounce, because that costs nothing.
+ * and are matched locally by `searchProjectHits`, in the same module — without a
+ * debounce, because that costs nothing.
  */
 export default function SucheScreen() {
+  const intl = useIntl();
   const colors = useColors();
   const actions = useCoreActions();
   const [query, setQuery] = useState('');
@@ -62,93 +99,99 @@ export default function SucheScreen() {
     };
   }, [debounced, actions]);
 
-  const sampleHits = useMemo(() => {
-    if (trimmed.length < MIN_SEARCH_QUERY) return [];
-    const needle = trimmed.toLowerCase();
-    return searchSamples.filter(
-      (s) => s.title.toLowerCase().includes(needle) || s.subtitle.toLowerCase().includes(needle),
-    );
-  }, [trimmed]);
+  // Memoised because it builds a fresh array and the list below is keyed off it;
+  // the match itself is the core's, tested there beside the feed search.
+  const sampleHits = useMemo(() => searchProjectHits(trimmed), [trimmed]);
 
   const tooShort = debounced.length < MIN_SEARCH_QUERY;
   const nothingFound = !tooShort && !searching && articles.length === 0 && sampleHits.length === 0;
 
   return (
     <View className="flex-1 bg-canvas">
-      <ScreenHeader>
-        <TextInput
+      {/* A named exception in ADR 0030: the drawn bar on every platform, because
+          the platform's own search field is a different interaction on each of
+          them and this screen's three empty states are bound to this one. */}
+      <ScreenHeader title={intl.formatMessage(COPY.screenTitle)} drawnBar>
+        <ScaledTextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Suchen …"
+          placeholder={intl.formatMessage(COPY.placeholder)}
           placeholderTextColor={colors['grey-500']}
-          accessibilityLabel="Suchbegriff"
+          accessibilityLabel={intl.formatMessage(COPY.fieldLabel)}
           autoFocus
           autoCorrect={false}
           returnKeyType="search"
           className="rounded-s bg-surface px-s py-xs"
-          style={[typography['text-m'], { color: colors['on-canvas'] }]}
+          style={[typography['text-m'], { color: colors['on-canvas'], minHeight: sizes.tapTarget }]}
         />
       </ScreenHeader>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="px-m pt-s pb-2xl"
-        showsVerticalScrollIndicator={false}
-        // Without "handled", the first tap on a result only swallows the keyboard
-        // instead of opening the article.
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        {tooShort && (
-          <Typo variant="text-m" color="on-canvas-muted">
-            Suchen Sie über Recherchen, Faktenchecks, Projekte, Podcasts und Mitmach-Aktionen.
-          </Typo>
-        )}
+      {/* Results, not the field: the field sits in the bar above and does not
+          move. What the keyboard would otherwise take is the list, and with it
+          every hit below the first two. */}
+      <KeyboardAvoiding className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="px-m pt-s pb-2xl"
+          showsVerticalScrollIndicator={false}
+          // Without "handled", the first tap on a result only swallows the keyboard
+          // instead of opening the article.
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <ContentColumn>
+            {tooShort && (
+              <Typo variant="text-m" color="on-canvas-muted">
+                {intl.formatMessage(COPY.hint)}
+              </Typo>
+            )}
 
-        {searching && articles.length === 0 && (
-          <View className="py-l">
-            <ActivityIndicator color={colors.accent} />
-          </View>
-        )}
+            {searching && articles.length === 0 && (
+              <View className="py-l">
+                <ActivityIndicator color={colors.accent} />
+              </View>
+            )}
 
-        {articles.length > 0 && (
-          <View>
-            <Overline label="Artikel" />
-            <View className="mt-2xs">
-              {articles.map((item, i) => (
-                <View key={item.id}>
-                  {i > 0 && <Hairline />}
-                  <ArticleRow item={item} onPress={openArticle} />
+            {articles.length > 0 && (
+              <View>
+                <Overline label={intl.formatMessage(COPY.articlesHeading)} />
+                <View className="mt-2xs">
+                  {articles.map((item, i) => (
+                    <View key={item.id}>
+                      {i > 0 && <Hairline />}
+                      <ArticleRow item={item} onPress={openArticle} />
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          </View>
-        )}
+              </View>
+            )}
 
-        {sampleHits.length > 0 && (
-          <View className="mt-m">
-            <Overline label="Aus den Projekten" />
-            <View className="mt-2xs">
-              {sampleHits.map((hit) => {
-                const target = sampleTarget(hit.kind);
-                return (
-                  <SampleHitRow
-                    key={hit.id}
-                    hit={hit}
-                    onPress={target ? () => router.push(target) : undefined}
-                  />
-                );
-              })}
-            </View>
-          </View>
-        )}
+            {sampleHits.length > 0 && (
+              <View className="mt-m">
+                <Overline label={intl.formatMessage(COPY.projectsHeading)} />
+                <View className="mt-2xs">
+                  {sampleHits.map((hit) => {
+                    const target = sampleTarget(hit.kind);
+                    return (
+                      <SampleHitRow
+                        key={hit.id}
+                        hit={hit}
+                        onPress={target ? () => router.push(target) : undefined}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            )}
 
-        {nothingFound && (
-          <Typo variant="text-m" color="on-canvas-muted">
-            Keine Treffer für „{debounced}“.
-          </Typo>
-        )}
-      </ScrollView>
+            {nothingFound && (
+              <Typo variant="text-m" color="on-canvas-muted">
+                {intl.formatMessage(COPY.noResults, { query: debounced })}
+              </Typo>
+            )}
+          </ContentColumn>
+        </ScrollView>
+      </KeyboardAvoiding>
     </View>
   );
 }

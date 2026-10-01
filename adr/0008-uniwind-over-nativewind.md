@@ -31,7 +31,7 @@ passing it through left the JavaScript following the device while the CSS waited
 a class nothing added. That shipped, on the default setting, past a green build and a
 browser walk. The rule survived as a test and three paragraphs of comment.
 
-## Decision
+## 1. Decision
 
 Move to **Uniwind 1.11** and **Tailwind v4**.
 

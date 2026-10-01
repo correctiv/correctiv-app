@@ -23,8 +23,13 @@ const PUBLISHER = 'Salon5';
  *
  * The screen that shows these is a `FlatList` (ADR 0012), so the number of rows
  * costs nothing to render — the ceiling is the cache, not the list.
+ *
+ * Exported because it is now half of a limit somewhere else: `podcasts/all` is the
+ * largest entry the cache holds, and `MAX_ENTRY_BYTES` in `services/cache.service.ts`
+ * is argued from `shows × MAX_EPISODES × the cost of an episode`. Raising either
+ * factor without raising that cap is caught by `test/cache-bound.test.ts`.
  */
-const MAX_EPISODES = 100;
+export const MAX_EPISODES = 100;
 const MAX_DESCRIPTION = 240;
 
 function feedUrl(handle: string): string {

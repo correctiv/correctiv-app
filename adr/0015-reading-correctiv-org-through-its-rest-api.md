@@ -48,7 +48,7 @@ whatever `Origin` it is given — `localhost:8081`, `localhost:8099`,
 `OPTIONS` preflight. The RSS feeds still send no header. It was the format, not the
 server.
 
-## Decision
+## 1. Decision
 
 **The REST API is the network path. RSS is the round behind it.**
 

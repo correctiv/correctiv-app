@@ -31,7 +31,7 @@ jest.mock('@/lib/audio/useAudio', () => ({
     positionSec: 0,
     durationSec: 0,
     speed: 1,
-    errorMessage: null,
+    error: null,
   }),
   useEpisodeStatus: () => 'off',
   useRadioState: () => 'off',

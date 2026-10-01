@@ -68,8 +68,9 @@ jest.mock('expo-splash-screen', () => ({
  * `_RNGestureHandlerModule.default.install is not a function` on mount. Worth
  * recording rather than just silencing, because writing this suite is how it came to
  * light: the boundary caught THAT error rather than the one the test threw, which is
- * the boundary working and the test measuring the wrong thing. Every other suite
- * misses it by never getting past the shell's early return.
+ * the boundary working and the test measuring the wrong thing. Suites that never get
+ * past the shell's early return used to miss it; `root-layout.test.tsx` no longer
+ * does, because the gesture root moved up into `lib/env/AppEnvironment`.
  */
 jest.mock('react-native-gesture-handler', () => {
   const react = jest.requireActual<typeof import('react')>('react');
@@ -89,12 +90,36 @@ jest.mock('uniwind', () => ({
 }));
 
 /**
- * The real adapter reaches for AsyncStorage's native module. The core's in-memory
+ * The real adapter reaches for MMKV's native module. The core's in-memory
  * platform answers the same ports, so hydration runs for real against it.
+ *
+ * Its `ErrorReporter` is replaced, because that port is what the boundary below
+ * reports through and the memory platform's default is deliberately a no-op.
+ * Collected rather than spied on: what is asserted is the report itself, which is
+ * the part a provider will receive, and not the shape of a log line that only the
+ * host's current implementation happens to write.
  */
+const mockReports: ErrorReport[] = [];
+
+/**
+ * Outside the factory and `mock`-prefixed, for the reason `mockAudioBackend` gives
+ * below: an annotation inside a factory trips Babel's out-of-scope check, and a
+ * function declaration hoists so the factory can still call it. Typed against the
+ * port, so a rename on the other side fails this file's typecheck.
+ */
+function mockErrorReporter(): ErrorReporter {
+  return {
+    report: (report) => {
+      mockReports.push(report);
+    },
+  };
+}
+
 jest.mock('@/lib/platform/expo', () => {
   const core = jest.requireActual<typeof import('@correctiv/app-core')>('@correctiv/app-core');
-  return { expoPlatform: core.createMemoryPlatform() };
+  return {
+    expoPlatform: { ...core.createMemoryPlatform(), errors: mockErrorReporter() },
+  };
 });
 
 /**
@@ -137,7 +162,7 @@ jest.mock('@/components/gate/LoginGate', () => {
 import * as SplashScreen from 'expo-splash-screen';
 import { Try } from 'expo-router/build/views/Try';
 
-import type { AudioBackend } from '@correctiv/app-core';
+import type { AudioBackend, ErrorReport, ErrorReporter } from '@correctiv/app-core';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import RootLayout, { ErrorBoundary } from '@/app/_layout';
@@ -160,9 +185,10 @@ beforeEach(() => {
   act(() => {
     coreStore.dispatch(resetStore());
   });
-  // React logs every error it hands to a boundary, and so does the reporting line
-  // under test. Silenced so the suite's output is readable, and kept as a spy
-  // because that reporting line is itself an assertion below.
+  mockReports.length = 0;
+  // React logs every error it hands to a boundary. Silenced so the suite's output
+  // is readable. The report the boundary makes is NOT in here any more: it goes
+  // through the port, and `mockReports` is what holds it.
   logged = jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -228,15 +254,16 @@ describe('a screen that throws', () => {
     expect(text).not.toContain(HEADLINE);
   });
 
-  it('reports the error once, in the one place issue #95 has to change', async () => {
+  it('reports the error once, through the port issue #95 has to reimplement', async () => {
     await mount();
 
-    const reported = logged.mock.calls.filter(
-      (call) => typeof call[0] === 'string' && call[0].includes('recovery screen'),
-    );
-    expect(reported).toHaveLength(1);
-    // The error itself is passed along, which is what the report will need.
-    expect(reported[0][1]).toBe(mockGateError);
+    // A code and the thrown thing, and no context: the boundary knows that a
+    // render failed and nothing else, and the port's contract is that it may not
+    // invent the rest. The message a person reads is on the screen above, not in
+    // here (ADR 0032).
+    expect(mockReports).toEqual([
+      { domain: 'render', code: 'render-failed', cause: mockGateError },
+    ]);
   });
 
   it('writes its German with German typography, so no em dash reaches the screen', async () => {

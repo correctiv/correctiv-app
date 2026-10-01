@@ -12,8 +12,8 @@ No `react`, `react-native`, `expo`, `vue`, `zustand` or `node:*` import, ever. `
 and names the offender.
 
 If something needs a platform, it becomes a **port**: an interface in
-`src/ports/index.ts` that the host implements. There are four, and that file is the
-whole cost of adding a host. See [ARCHITECTURE.md](../../ARCHITECTURE.md#the-four-ports).
+`src/ports/index.ts` that the host implements. There are five, and that file is the
+whole cost of adding a host. See [ARCHITECTURE.md](../../ARCHITECTURE.md#the-five-ports).
 
 ## Layout
 
@@ -23,16 +23,17 @@ Subpath imports mirror the source tree; there is no barrel:
 import { configurePlatform } from '@correctiv/app-core';            // ports only
 import { loadArticle } from '@correctiv/app-core/articles/load';
 import { feedsStore } from '@correctiv/app-core/stores/feeds';
-import { formatDateDe } from '@correctiv/app-core/lib/format';
+import { formatDate } from '@correctiv/app-core/lib/format';
 import type { Article } from '@correctiv/app-core/articles/types';
 ```
 
 ```
-src/ports/       KeyValueStore · BlobStore · ContentBundle · AudioBackend
+src/ports/       KeyValueStore · BlobStore · ContentBundle · AudioBackend · ErrorReporter
 src/types/       FeedItem, Video, AudioTrack, MediaChannel
 src/articles/    the Article model, the fact-check vocabulary, page meta,
                  the reader document, the load cascade, the offline collector
-  extract/       string.ts (no dependencies) and dom.ts (htmlparser2)
+  extract/       string.ts (no dependencies) and dom.ts (htmlparser2);
+                 the reader document's gate, body-allowlist.ts, parses too
 src/services/    http · cache (network-first / cache-first) · rss · search ·
                  podcast · peertube
 src/stores/      feeds · audio · podcasts · media · video · session · interests ·
@@ -45,7 +46,7 @@ src/media/       exclusive-playback, only one medium plays at a time
 ## Two things that will surprise you
 
 **The store is the core's, not the host's.** `stores/` is one Redux Toolkit store
-with twelve slices, constructed here rather than by the host, because modules that are
+with several slices, constructed here rather than by the host, because modules that are
 not components need to read the same instance the screens are subscribed to
 (`media/exclusive-playback.ts`, the audio watchdog). The host still supplies the
 binding (react-redux). `zustand` stays on the boundary test's forbidden list not
@@ -71,7 +72,7 @@ npm test -w @correctiv/app-core        # vitest, ~0.5 s
 npm run test:watch                     # from the repo root
 ```
 
-197 tests against real captured correctiv.org pages and feeds, plus two
-architectural guards: the platform boundary, and the agreement between the two
-extraction backends (they must produce the same article from the same page, or the
-choice of backend has become a fork).
+Tests run against real captured correctiv.org pages and feeds, plus architectural
+guards: the platform boundary, and the agreement between the two extraction
+backends (they must produce the same article from the same page, or the choice of
+backend has become a fork).

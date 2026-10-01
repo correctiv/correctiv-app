@@ -1,4 +1,4 @@
-import { Text, type TextProps } from 'react-native';
+import type { TextProps } from 'react-native';
 
 import {
   typography,
@@ -11,6 +11,8 @@ import {
   type TypoVariant,
   type ColorToken,
 } from '@/lib/theme';
+
+import { ScaledText } from './ScaledText';
 
 export type TypoProps = TextProps & {
   /** Composite variant from typography.css: typeface, size, tracking, line height. */
@@ -44,9 +46,47 @@ export type TypoProps = TextProps & {
 };
 
 /**
- * The canonical text component. The variant decides typeface, size and line
- * height, `color` the colour token, `className` the layout. That keeps typography
- * true to the tokens and independent of Android's fontWeight behaviour.
+ * Where Android may divide a word too long for its line, one answer per variant.
+ *
+ * A `Record` rather than `variant.startsWith('headline')`, which is what this was
+ * and is ADR 0031's own example of mechanism 1 standing where a string test was.
+ * The prefix classified `button` by accident — it is neither prose nor a headline
+ * and nobody had decided about it — and it would have classified the twelfth
+ * variant the same way, silently. As a record, a variant added to
+ * `typography.generated.ts` stops this file compiling until somebody answers.
+ *
+ * `none` on the headlines is measured and the reason is at the call site below.
+ * `none` on `button` is a decision: a control's label is a name rather than a
+ * sentence, and a name divided across two lines reads as a fault in the control.
+ * It is `Typo variant="button"` this governs, not `ui/Button`, which sets
+ * `typography.button` on a `ScaledText` of its own.
+ */
+const HYPHENATION: Record<TypoVariant, 'none' | 'normal'> = {
+  'text-article': 'normal',
+  'text-s': 'normal',
+  'text-m': 'normal',
+  'text-l': 'normal',
+  'headline-xs': 'none',
+  'headline-s': 'none',
+  'headline-m': 'none',
+  'headline-l': 'none',
+  'headline-xl': 'none',
+  'headline-xxl': 'none',
+  button: 'none',
+};
+
+/**
+ * The app's text component: the variant decides typeface, size and line height,
+ * `color` the colour token, `className` the layout. That keeps typography true to
+ * the tokens and independent of Android's fontWeight behaviour.
+ *
+ * **Not every line of text in the app, and the exceptions are worth knowing**
+ * because what this component declares does not reach them. `ui/Button`,
+ * `ui/Badge` and `ui/Chip` each render a `ScaledText` of their own with a
+ * `typography[...]` style, so none of them is hyphenated whatever the table above
+ * says. That is right for all three — they draw one short label in a box sized
+ * for it — and it is the reason a rule that belongs to every line of text has to
+ * be stated somewhere other than here.
  */
 export function Typo({
   variant = 'text-m',
@@ -66,8 +106,37 @@ export function Typo({
         }
       : null;
   return (
-    <Text
+    <ScaledText
       className={className}
+      /*
+       * German compounds are longer than the lines a phone draws, and a word that
+       * does not fit is broken somewhere whatever we say. Off — which is Android's
+       * default — it is broken wherever the line happens to end and no hyphen is
+       * printed, which is how Home's teaser read "Gebäud / emodernisierungsgesetz"
+       * at 200 % system font (#158). `normal` hands the break to Android's own
+       * hyphenator, which knows where a German word may be divided and marks it.
+       *
+       * **Not on a headline**, and that line was measured rather than preferred.
+       * Hyphenation does not know about the font scale, so switching it on for
+       * everything changes 100 % as well. Shot on the emulator before and after:
+       * every screen whose words are the app's own came back identical — the gate,
+       * both onboarding steps, Entdecken, the settings — at 0.7 % RMSE, which is
+       * the clock in the status bar. The one thing that moved was a live headline,
+       * which divided as "Abgeord-netenhaus" where it had wrapped whole. German
+       * headlines are not hyphenated, and #158 asks for the 200 % defect to be
+       * fixed without changing 100 %, so the rule stops at the display sizes.
+       *
+       * What that leaves standing: a headline holding a single word longer than the
+       * line still breaks without a hyphen at 200 %. There is no such headline in
+       * the app's own copy, and a feed could carry one.
+       *
+       * Android only — the prop's own name says so, and there is no iOS or web
+       * equivalent to keep in step.
+       *
+       * Before `{...rest}`, so a caller can still turn it off for a line that must
+       * not be divided.
+       */
+      android_hyphenationFrequency={HYPHENATION[variant]}
       style={[typography[variant], override, { color: colors[color] }, style]}
       {...rest}
     />

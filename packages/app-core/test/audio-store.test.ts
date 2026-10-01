@@ -93,6 +93,14 @@ function createFakeBackend(): Fake {
 let backend: Fake;
 let store: AppStore;
 
+/**
+ * The station's words, which a host formats and this thunk no longer holds. In
+ * ENGLISH here for the reason the reader document's fixture is: what the core
+ * still decides is that the stream is live and which URL it loads, not what it is
+ * called.
+ */
+const RADIO = { title: 'Salon5 Radio', subtitle: '● LIVE · 24/7 from Bottrop' };
+
 const EPISODE = {
   title: 'Bonusfolge',
   subtitle: 'Backstage · Club',
@@ -112,10 +120,13 @@ beforeEach(() => {
 
 describe('starting playback', () => {
   it('loads the track and marks the radio live', async () => {
-    await store.dispatch(playRadio());
+    await store.dispatch(playRadio(RADIO));
     expect(backend.calls).toEqual(['load:https://icecast.correctiv.net/salon5low', 'play']);
     expect(isLive(store.getState().audio)).toBe(true);
     expect(store.getState().audio.status).toBe('loading');
+    // The URL is the core's and the words are the caller's — the track is where
+    // the two meet, and where the finished German used to be typed.
+    expect(store.getState().audio.track).toMatchObject(RADIO);
   });
 
   it('follows the ticks through to playing', async () => {
@@ -138,7 +149,7 @@ describe('starting playback', () => {
    * every tick — which is a decision no adapter has been asked to make.
    */
   it('attaches the backend status listener exactly once, however often it starts', async () => {
-    await store.dispatch(playRadio());
+    await store.dispatch(playRadio(RADIO));
     await store.dispatch(playEpisode(EPISODE));
     expect(backend.attachments).toBe(1);
   });
@@ -147,9 +158,9 @@ describe('starting playback', () => {
     configurePlatform(createMemoryPlatform());
     resetAudioController();
     store = createAppStore();
-    await store.dispatch(playRadio());
+    await store.dispatch(playRadio(RADIO));
     expect(store.getState().audio.status).toBe('error');
-    expect(store.getState().audio.errorMessage).toMatch(/keine Wiedergabe/);
+    expect(store.getState().audio.error).toBe('unsupported-platform');
   });
 });
 
@@ -179,20 +190,21 @@ describe('failures', () => {
     warn.mockRestore();
   });
 
-  it('surfaces a playback error with a hint, and stops', async () => {
+  it('surfaces a playback error as its own code, and stops', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await store.dispatch(playEpisode(EPISODE));
     backend.tick({ error: 'Source unavailable' });
 
     expect(backend.calls).toContain('pause');
     expect(store.getState().audio.status).toBe('error');
-    expect(store.getState().audio.errorMessage).toMatch(/Internetverbindung/);
+    // Its own code, and the only one of the three that says playback had begun.
+    expect(store.getState().audio.error).toBe('interrupted');
     warn.mockRestore();
   });
 
   it('keeps the error visible when the next tick looks merely unloaded', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await store.dispatch(playRadio());
+    await store.dispatch(playRadio(RADIO));
     backend.tick({ error: 'Source error' });
     expect(store.getState().audio.status).toBe('error');
 
@@ -206,22 +218,31 @@ describe('failures', () => {
   });
 
   it('gives up on a stream that never loads', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.useFakeTimers();
     try {
-      await store.dispatch(playRadio());
+      await store.dispatch(playRadio(RADIO));
       expect(store.getState().audio.status).toBe('loading');
       vi.advanceTimersByTime(12000);
       expect(store.getState().audio.status).toBe('error');
-      expect(store.getState().audio.errorMessage).toMatch(/Keine Verbindung/);
+      // The same code a rejected `load()` sets: to a listener, neither started.
+      // What tells the two apart is the warning, not the state.
+      expect(store.getState().audio.error).toBe('start-failed');
+      expect(warn).toHaveBeenCalledWith(
+        '[audio] stream did not load within',
+        expect.any(Number),
+        'ms',
+      );
     } finally {
       vi.useRealTimers();
+      warn.mockRestore();
     }
   });
 
   it('does not fire the watchdog once the source is loaded', async () => {
     vi.useFakeTimers();
     try {
-      await store.dispatch(playRadio());
+      await store.dispatch(playRadio(RADIO));
       backend.tick({ playing: true, loaded: true, live: true });
       vi.advanceTimersByTime(12000);
       expect(store.getState().audio.status).toBe('playing');
@@ -240,14 +261,14 @@ describe('failures', () => {
   it('stands down once the source has loaded, even while it is still buffering', async () => {
     vi.useFakeTimers();
     try {
-      await store.dispatch(playRadio());
+      await store.dispatch(playRadio(RADIO));
       backend.tick({ loaded: true, buffering: true, playing: false });
       expect(store.getState().audio.status).toBe('loading');
 
       vi.advanceTimersByTime(12000);
 
       expect(store.getState().audio.status).toBe('loading');
-      expect(store.getState().audio.errorMessage).toBeNull();
+      expect(store.getState().audio.error).toBeNull();
     } finally {
       vi.useRealTimers();
     }
@@ -256,7 +277,7 @@ describe('failures', () => {
 
 describe('stopping and coordinating', () => {
   it('releases the source and the state', async () => {
-    await store.dispatch(playRadio());
+    await store.dispatch(playRadio(RADIO));
     store.dispatch(stop());
 
     expect(backend.calls).toContain('release');
@@ -281,7 +302,7 @@ describe('stopping and coordinating', () => {
   });
 
   it('does not seek a live stream', async () => {
-    await store.dispatch(playRadio());
+    await store.dispatch(playRadio(RADIO));
     await store.dispatch(seekTo(30));
     expect(backend.calls.some((c) => c.startsWith('seek:'))).toBe(false);
   });

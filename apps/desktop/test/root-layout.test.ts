@@ -138,16 +138,35 @@ describe('the recovery screen', () => {
     expect(desktop).toContain("from '@/components/recovery/RecoveryScreen'");
   });
 
-  it('wraps the Provider, not just the screens under it', () => {
-    // ABOVE the Provider, so a throw from `Provider`'s own render and from everything
-    // in `AppShell` — the hydration effect, `useAppearance`, the door — reaches it.
+  it('wraps the environment, not just the screens under it', () => {
+    // ABOVE the providers, so a throw from the Redux `Provider`'s own render, from the
+    // `IntlProvider` beside it and from everything in `AppShell` — the hydration
+    // effect, the appearance, the door — reaches it.
+    //
     // NOT the store's construction: `coreStore` is a module-scope `export const`, so
     // that throws during module evaluation and no boundary catches it. This assertion
     // used to carry that wrong reason, which is the kind of thing a reader acts on.
+    //
+    // `<AppEnvironment>` where this read `<Provider store={coreStore}>` until the merge
+    // of main after #301: the phone moved its provider list into one component so its
+    // second host could not keep a divergent copy, and this host mounts the same one
+    // rather than writing a third. The property being asserted did not change.
     const boundary = desktop.indexOf('<RecoveryBoundary>');
-    const provider = desktop.indexOf('<Provider store={coreStore}>');
+    const environment = desktop.indexOf('<AppEnvironment>');
     expect(boundary).toBeGreaterThan(-1);
-    expect(provider).toBeGreaterThan(boundary);
+    expect(environment).toBeGreaterThan(boundary);
+  });
+
+  it("mounts the phone's environment rather than a provider list of its own", () => {
+    // The drift this guards against is the one ADR 0028 measured on the phone's second
+    // host: the workbench held its own `Provider` and `SafeAreaProvider`, loaded no
+    // font at all, and every component drew in the browser's default serif with no
+    // check saying so. A third host writing the list out again is the same defect
+    // waiting for a different symptom, and the react-intl provider makes it louder —
+    // a screen with no `IntlProvider` above it throws on its first German word.
+    expect(desktop).toContain("from '@/lib/env/AppEnvironment'");
+    expect(desktop).not.toContain('<Provider store={coreStore}>');
+    expect(mobile).toContain('<AppEnvironment>');
   });
 
   it("draws the phone's screen rather than a second copy of its German", () => {

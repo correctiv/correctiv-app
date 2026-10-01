@@ -29,7 +29,7 @@ itself, and the same reason a third host costs one file rather than a rewrite.
 `packages/app-core/test/boundary.test.ts` fails the build if a platform import ever
 appears in the core.
 
-## The four ports
+## The five ports
 
 Everything the core cannot do on its own is declared in
 `packages/app-core/src/ports/index.ts` and supplied at startup with
@@ -37,10 +37,11 @@ Everything the core cannot do on its own is declared in
 
 | Port | What the host answers | How this host answers it |
 | --- | --- | --- |
-| `KeyValueStore` | small settings, asynchronously | AsyncStorage, one prefixed key per setting |
-| `BlobStore` | the HTTP cache, asynchronously | AsyncStorage |
+| `KeyValueStore` | small settings, asynchronously | MMKV, the store holding what the reader chose |
+| `BlobStore` | the HTTP cache, asynchronously | a second MMKV store, bounded and evictable |
 | `ContentBundle` | what shipped inside the app | generated TS modules |
 | `AudioBackend` | playback, as status ticks | expo-audio's status events |
+| `ErrorReporter` | where a fault goes | a log line, and nothing else yet |
 
 Both storage ports are asynchronous, and what separates them is what they hold: a
 settings string against a megabyte of cached feeds. `KeyValueStore` was synchronous
@@ -49,15 +50,45 @@ this host to keep an in-memory mirror, hydrate it before the first render, and c
 a data-loss trap in two file headers. Redux moved store construction to module load
 and made `persist()` a later call the host already awaits, so there was nothing left
 to be earlier than. [ADR 0009](adr/0009-redux-toolkit-for-the-cores-state.md) records
-the change and the 45 lines it deleted.
+the change and what it deleted.
+
+**They stay asynchronous under MMKV, which can answer without a promise.** Making
+them synchronous again would buy back exactly that mirror and that trap, because a
+port is synchronous for every host or for none, and MMKV's web build behind
+localStorage is no more able to answer before the first frame than AsyncStorage was.
+A synchronous backend under an asynchronous port simply resolves a value.
+[ADR 0026](adr/0026-react-native-review-and-hardening.md) §4 has the swap and its
+measurements.
+
+`ErrorReporter` is the fifth and the newest, and it is declared before anybody has
+chosen what receives a report. The expensive half of reporting is the shape — where
+a fault is reported from, what it carries, and whether the core may report at all —
+and none of that depends on the service. So the port exists, its default reports
+nowhere, and choosing a provider is a change to
+`apps/mobile/src/lib/platform/expo.ts` and to nothing else. A report carries a code,
+a domain and whatever context the caller already held, never a sentence; two places
+report, the host's error boundary and the core, and a screen is deliberately not one
+of them. [ADR 0032](adr/0032-a-port-for-the-error-report-before-a-provider-for-it.md)
+argues all of it, and [#95](https://github.com/correctiv/correctiv-app/issues/95)
+still holds the question it does not answer.
+
+**Two stores, not one, and that is the eviction policy's fence.** The cache has a
+count limit, a byte budget, a maximum entry size and least-recently-used eviction
+(`packages/app-core/src/services/cache.service.ts`, where the limits carry the
+measurements they were derived from). Eviction speaks only to `BlobStore`, and
+`BlobStore` is a different MMKV instance from the one holding bookmarks, settings and
+the session — two files on device, two key prefixes in localStorage. So a bookmark is
+not merely not evicted; it is not addressable by the code that evicts.
 
 The adapter is `apps/mobile/src/lib/platform/expo.ts`, and it is small on purpose.
 While the repo had a second host, one file per host knew the platform SDK, so
-dropping a host meant dropping that file plus its screens.
+dropping a host meant dropping that file plus its screens. It is one file on all
+three platforms: `react-native-mmkv` 4.3.2 ships a web build backed by localStorage,
+so there is no platform split here to keep in step.
 
 ## Three conventions in the core
 
-1. **State is framework-neutral.** `stores/` is one Redux Toolkit store with twelve
+1. **State is framework-neutral.** `stores/` is one Redux Toolkit store with several
    slices. The core owns the slices and exports `createAppStore()`; the **host**
    constructs the instance, which is what lets it pass the DevTools enhancer
    ([ADR 0023](adr/0023-the-host-constructs-the-store.md), and `stores/store.ts` for
@@ -101,9 +132,12 @@ simulated in `services/auth.service.ts` against a directory of rules the screen
 prints, and that file is the seam to beabee.
 [ADR 0016](adr/0016-a-door-at-the-root-and-an-entitlement-not-an-amount.md).
 
-The web demo's fixtures carry a session for the same reason: `/workbench#/?s=signed-in`
+The web demo's fixtures carry a session for the same reason: `/preview#/?s=signed-in`
 is a member's first start, `s=no-access` is the door's fourth state, and every fixture
-that shows a screen signs in first.
+that shows a screen signs in first. `s=free-member` is the one reader inside the door the
+home screen's audiences tell apart from the ordinary sign-in, a 0 € member whose local
+newsletter includes the app, which is how the configurator previews an audience
+([ADR 0060](adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md) §4).
 
 **Why the directory is `packages/app-core` and not `packages/core`:** the original
 reason was a build trap in the previous host's bundler, which mistook a directory
@@ -116,7 +150,7 @@ the repo, and a rename would be churn for nothing.
 
 The one worth tracing, because it crosses every layer.
 
-```
+```text diagram=article-path
 a tap on a card
   → loadArticle(url)                    articles/load.ts
       1. platform().content.article()    the host's bundle, no network
@@ -124,7 +158,7 @@ a tap on a card
       3. fetchWpArticle(url)             the REST API: one request, everything
       4. fetchText() → extract(html)     the page, for what the API cannot answer
       5. getStale()                      expired beats absent
-  → buildReaderHtml(article, { css })   articles/reader-html.ts
+  → buildReaderHtml(article, copy)      articles/reader-html.ts
   → ReaderView                          WebView on native, iframe on web
 ```
 
@@ -134,11 +168,15 @@ and answers everything rung 4 used to scrape for, the fact-check verdict include
 rung that works on a URL the API does not know — every page in the app that is not a
 post.
 
-`buildReaderHtml` owns the document: structure, class names, German copy, the verdict
-plaque. The host supplies only the CSS, which here means the token variables and the
-fonts base64-embedded in a `<style>`, because the WebView is a browser context of its
-own and cannot use the fonts React Native loaded. Dark mode costs one appended
-variable block, since `READER_LAYOUT_CSS` takes every colour from `--var-color-*`.
+`buildReaderHtml` owns the document: structure, class names, which words it prints and
+the verdict plaque. It does not own the WORDS. A document built as a string for a
+WebView can reach no provider, so `ReaderCopy` is a required second parameter and
+`READER_COPY` names the descriptors the host has to format
+([ADR 0026](adr/0026-react-native-review-and-hardening.md) §6). The host supplies
+those and the CSS, which here means the token variables and the fonts base64-embedded
+in a `<style>`, because the WebView is a browser context of its own and cannot use the
+fonts React Native loaded. Dark mode costs one appended variable block, since
+`READER_LAYOUT_CSS` takes every colour from `--var-color-*`.
 See `apps/mobile/src/lib/articles/reader.ts`.
 
 ## Where things are
@@ -154,13 +192,13 @@ plays at a time. `articles/extract/` holds two backends, string and DOM, behind 
 In the app, `src/app/` is expo-router's route tree, `src/components/ui/` the design
 system, `src/components/gate/` the door, and `src/lib/` the wiring: `platform/` implements the ports, `audio/` wraps
 expo-audio, `feeds/` puts React hooks over the core's feed store, `theme/` re-exports
-the tokens with the palette hook. `src/components/reader/` and
-`src/components/media/` are the two platform splits, each a `.tsx`, a `.web.tsx` and
-a shared props type.
+the tokens with the palette hook. `src/components/reader/`,
+`src/components/media/` and `src/components/ui/ScreenHeader` are the three platform
+splits, each a `.tsx`, a `.web.tsx` and a shared props type.
 
-Outside both, `apps/handbook` is the published site: the repository's own documents,
+Outside both, `apps/workbench` is the published site: the repository's own documents,
 the source inventory, the diagrams, a reference generated from the core, and the app
-itself in a device frame at `/workbench`. It is a second host in the sense that
+itself in a device frame at `/preview`. It is a second host in the sense that
 matters here, a thing with screens, but it hosts the documentation rather than the
 core, and it implements no port.
 
@@ -168,9 +206,10 @@ The device frame was its own workspace, `tools/preview`, and built into
 `apps/mobile/public/` so that it stayed on the app's origin
 ([ADR 0014](adr/0014-the-preview-shell-as-a-package.md)). Same-origin is still what
 lets it reach the frame at all, and it is now reached differently: the Pages deploy
-uploads the handbook and the app's export as one artifact, so `/` and `/app/` are the
-same origin, and in development the handbook's Vite server proxies `/app` to the
-app's dev server ([ADR 0024](adr/0024-the-handbook-owns-the-root.md)).
+uploads the workbench and the app's export as one artifact, so `/` and `/app/` are the
+same origin, and in development the workbench's Vite server proxies `/app` to the
+app's dev server ([ADR 0024](adr/0024-the-handbook-owns-the-root.md),
+[ADR 0037](adr/0037-the-whole-site-is-the-workbench.md)).
 
 ## Generated artefacts
 
@@ -251,12 +290,16 @@ or if the dark palette silently becomes the light one again.
 
 `apps/mobile` exports to static HTML, and that export is the published demo, best
 opened through the device frame at
-<https://faktenforum.github.io/correctiv-app/workbench>. Same routes, screens and
+<https://correctiv.github.io/correctiv-app/preview>. Same routes, screens and
 core as the native builds, with two host-level differences.
 
-- **The two platform splits.** `ReaderView` and `VideoFrame` each have a `.web.tsx`
-  sibling, an `<iframe>` where native uses a WebView. `__tests__/web-target.test.ts`
-  fails if a component without a web implementation reaches the bundle.
+- **The three platform splits.** `ReaderView` and `VideoFrame` each have a `.web.tsx`
+  sibling, an `<iframe>` where native uses a WebView. So does `ScreenHeader`, since
+  [ADR 0030](adr/0030-the-platforms-header-and-ours-on-web.md): iOS and Android
+  configure the platform's stack header, and web keeps the app's drawn bar, because
+  `react-native-screens` makes every part of that header a bare `View` on web.
+  `__tests__/web-target.test.ts` fails if a component without a web implementation
+  reaches the bundle.
 - **Feeds are live here too, since [ADR 0015](adr/0015-reading-correctiv-org-through-its-rest-api.md).**
   This entry used to read "no feed is ever live", because a browser blocks every
   CORRECTIV *RSS* request. It still does. The REST API is the app's network path now
@@ -276,12 +319,25 @@ fixtures, the console, the palette and the checks need neither and hold on Pages
 ## Checks
 
 `npm run check` at the root is the fast inner loop: typecheck, oxlint, oxfmt, tests,
-in about ten seconds without a device. It covers the parsers, the German formatters,
-every cascade, the platform adapter and the architectural guards.
+in about twenty-one seconds without a device — 21.3 s, 21.3 s and 21.4 s over three
+warm runs on 2026-09-17. This line said ten for months, then nineteen for two days,
+which is what a duration typed into prose does: it is taken once, the suite only
+grows, and nothing reads the sentence back. Re-take it rather than trust it, and read
+it as wall clock on one machine. It covers the parsers, the German formatters, every
+cascade, the platform adapter and the architectural guards.
 
 Linter and formatter are [oxlint](https://oxc.rs) and oxfmt rather than
 ESLint/Prettier, so there is no plugin or parser config to maintain. Markdown and
 `.github/` are deliberately excluded from formatting, see `.oxfmtrc.json`.
+
+The checks that read this repository as text — the colour tiers, the localisation
+seams, the fixed heights, the tap targets, the drawings' figures — are written with
+[`packages/prose-and-code`](packages/prose-and-code): the walk, the floor under it,
+the two-sided excuse list, the drift check and the number read out of a sentence.
+Its README says what each one catches and is the only place that says it; a check
+here carries the argument for the rule it is about, not the argument for the
+mechanism. The package is Apache-2.0 inside an AGPL repository, so nothing in it may
+import anything else in here ([ADR 0043](adr/0043-two-concepts-become-packages-and-the-shell-stays.md) §3).
 
 **A green check is not evidence.** Read the first section of
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md) before trusting one.

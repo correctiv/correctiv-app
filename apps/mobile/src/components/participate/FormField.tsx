@@ -1,9 +1,32 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, TextInput, View } from 'react-native';
+import { defineMessages, useIntl } from 'react-intl';
+import { Pressable, View } from 'react-native';
 
-import { Typo } from '@/components/ui';
+import { ScaledTextInput, Typo } from '@/components/ui';
 import type { CalloutComponent } from '@correctiv/app-core/data/callouts';
 import { typography, useColors } from '@/lib/theme';
+
+/**
+ * The three words a field says for itself, in ENGLISH; the German that ships is
+ * `packages/catalogue/src/de/form.ts`. Everything else on a field — its label, its
+ * description, its options — comes from the callout's schema and is content.
+ */
+const COPY = defineMessages({
+  answerPlaceholder: { id: 'form.answerPlaceholder', defaultMessage: 'Your answer …' },
+  fileAttached: {
+    id: 'form.fileAttached',
+    defaultMessage: '{file} attached ✓',
+    description:
+      "The file picker's own label in the participation form once something is attached, replacing `form.filePick` in the same control. {file} is the file's name. The tick is part of the message.",
+  },
+  filePick: { id: 'form.filePick', defaultMessage: 'Choose a photo or document (simulated)' },
+});
+
+/**
+ * The file the dummy picker pretends to have taken. Data, not vocabulary: it is a
+ * filename, the same in every language, and only the word around it is a message.
+ */
+const FAKE_FILE = 'foto_2026-06-12.jpg';
 
 /**
  * One field of a callout form. The schema arrives from the core in Beabee/Formio
@@ -31,6 +54,7 @@ export function FormField({
   onText: (value: string) => void;
   onToggleFile: () => void;
 }) {
+  const intl = useIntl();
   const colors = useColors();
   return (
     <View className="mt-m">
@@ -72,10 +96,10 @@ export function FormField({
       )}
 
       {(component.type === 'textarea' || component.type === 'textfield') && (
-        <TextInput
+        <ScaledTextInput
           value={text}
           onChangeText={onText}
-          placeholder={component.placeholder ?? 'Ihre Antwort …'}
+          placeholder={component.placeholder ?? intl.formatMessage(COPY.answerPlaceholder)}
           placeholderTextColor={colors['grey-500']}
           accessibilityLabel={component.label}
           multiline={component.type === 'textarea'}
@@ -101,8 +125,8 @@ export function FormField({
           <Ionicons name="camera-outline" size={20} color={colors['on-canvas-muted']} />
           <Typo variant="text-s" color="on-canvas-muted" className="ml-s flex-1">
             {fileAttached
-              ? 'foto_2026-06-12.jpg angehängt ✓'
-              : 'Foto oder Dokument auswählen (simuliert)'}
+              ? intl.formatMessage(COPY.fileAttached, { file: FAKE_FILE })
+              : intl.formatMessage(COPY.filePick)}
           </Typo>
         </Pressable>
       )}

@@ -93,3 +93,79 @@ describe('appearance', () => {
     expect(setThemeSpy).toHaveBeenCalledWith('dark');
   });
 });
+
+/**
+ * The device scheme moving under a `'system'` setting.
+ *
+ * The docblock above says Uniwind keeps following the device while it holds
+ * `'system'`, and on the web that turned out to be half true: `setTheme('system')`
+ * reads `prefers-color-scheme` once and stamps the answer on the root element, and
+ * nothing re-reads it. Measured on the built workbench on 2026-09-11 with the
+ * setting on System and the machine switched to dark with the page open: the
+ * site's own chrome followed, because its CSS sits behind a media query, while
+ * everything Uniwind had painted stayed light. So the setting still arrives
+ * verbatim, and `'system'` is asked again whenever the device answer changes.
+ *
+ * Only where there is a `matchMedia` to ask. On a phone there is none, and what an
+ * adaptive theme does there is Uniwind's own business; this is the web half.
+ */
+describe('a device that changes its mind', () => {
+  let listeners: (() => void)[] = [];
+
+  beforeEach(() => {
+    listeners = [];
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        matchMedia: () => ({
+          addEventListener: (_: string, fn: () => void) => listeners.push(fn),
+          removeEventListener: (_: string, fn: () => void) => {
+            listeners = listeners.filter((entry) => entry !== fn);
+          },
+        }),
+      },
+    });
+  });
+
+  afterEach(() => {
+    delete (globalThis as { window?: unknown }).window;
+  });
+
+  it('asks "system" again when the device scheme moves', () => {
+    mount();
+    setThemeSpy.mockClear();
+
+    act(() => {
+      for (const fire of listeners) fire();
+    });
+
+    expect(setThemeSpy).toHaveBeenCalledWith('system');
+  });
+
+  it('does not listen on an explicit setting, which means what it says', () => {
+    act(() => {
+      coreStore.dispatch(setTheme('dark'));
+    });
+    mount();
+
+    expect(listeners).toHaveLength(0);
+  });
+
+  it('lets go of the listener when the host goes away', () => {
+    let tree: ReturnType<typeof create> | undefined;
+    act(() => {
+      tree = create(
+        <Provider store={coreStore}>
+          <Probe />
+        </Provider>,
+      );
+    });
+    expect(listeners).toHaveLength(1);
+
+    act(() => {
+      tree?.unmount();
+    });
+
+    expect(listeners).toHaveLength(0);
+  });
+});

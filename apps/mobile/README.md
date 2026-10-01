@@ -10,8 +10,10 @@ layer plus one adapter ([ADR 0006](../../adr/0006-one-core-two-hosts.md)).
 
 - **Expo SDK 57** (React Native 0.86, New Architecture), TypeScript,
   **expo-router** (tabs and stack), **Uniwind** (Tailwind v4 for React Native)
-- **react-redux** binds the core's Redux store. **AsyncStorage** backs the core's two
-  storage ports, unchanged on web, where it is localStorage
+- **react-redux** binds the core's Redux store. **react-native-mmkv** (on
+  **react-native-nitro-modules**) backs the core's two storage ports, in two separate
+  instances so the bounded cache cannot evict what the reader chose; unchanged on
+  web, where MMKV's own build is localStorage
 - **expo-audio** behind the core's `AudioBackend` port. Not react-native-track-player:
   it needs a Kotlin patch to compile under RN 0.85 and then crashes at runtime under
   the New Architecture, and RN 0.85 offers no old-architecture option. expo-audio
@@ -40,7 +42,7 @@ is produced by `expo prebuild`.
 
 ### The static export
 
-`dist/` is what gets published to <https://faktenforum.github.io/correctiv-app/> on
+`dist/` is what gets published to <https://correctiv.github.io/correctiv-app/> on
 every push to `main` (`.github/workflows/pages.yml`). Serve it with the repo's own
 server, never a plain one.
 
@@ -107,10 +109,10 @@ Under NativeWind the rule was the exact opposite, and getting it wrong shipped.
 
 | Command | Produces |
 | --- | --- |
-| `npm run tokens` (repo root) | nothing here. All four artefacts belong to [`@correctiv/design-tokens`](../../packages/design-tokens/README.md) |
+| `npm run tokens` (repo root) | nothing here. All the artefacts belong to [`@correctiv/design-tokens`](../../packages/design-tokens/README.md) |
 | `npm run fonts` | `src/lib/theme/readerFonts.generated.ts`, base64-subsetted reader fonts (needs `pyftsubset`) |
-| `npm run offline-articles` | `src/lib/articles/offlineBundle.generated.ts`, a snapshot of every content feed plus ~15 pre-extracted articles, and `offlineCovers.generated.ts`, their covers inlined as data URIs (needs ImageMagick). On web the snapshots are the floor rather than the ceiling since [ADR 0015](../../adr/0015-reading-correctiv-org-through-its-rest-api.md): the REST API sends a CORS header, the RSS feeds do not |
-| `npm run offline-podcasts` | `src/lib/podcasts/offlineBundle.generated.ts`, the seven curated Salon5 shows. Without it the Mediathek falls back to the core's four-show sample seed, which is what a browser always gets otherwise, because Castopod still sends no CORS header |
+| `npm run offline-articles` | `src/lib/articles/offlineBundle.generated.ts`, a snapshot of every content feed plus pre-extracted articles, and `offlineCovers.generated.ts`, their covers inlined as data URIs (needs ImageMagick). On web the snapshots are the floor rather than the ceiling since [ADR 0015](../../adr/0015-reading-correctiv-org-through-its-rest-api.md): the REST API sends a CORS header, the RSS feeds do not |
+| `npm run offline-podcasts` | `src/lib/podcasts/offlineBundle.generated.ts`, the curated Salon5 shows. Without it the Mediathek falls back to the core's sample seed, which is what a browser always gets otherwise, because Castopod still sends no CORS header |
 
 ## Checks
 

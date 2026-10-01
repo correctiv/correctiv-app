@@ -358,7 +358,7 @@ facts a parent reads), and `Animated.View` renders through the `View` primitive,
 declares `overlayOnAbsoluteChild`. Measured here on 2026-09-05: the phone's header
 markup renders with no `PrimitiveError` and the 160 ms fade is restored on Linux and
 macOS. `src/app/artikel.tsx` is still a variant, for the Windows reason below and for
-nothing else — see [ADR 0027](../../adr/0027-re-exported-screens-and-a-variant-where-the-host-refuses.md).
+nothing else — see [ADR 0071](../../adr/0071-re-exported-screens-and-a-variant-where-the-host-refuses.md).
 
 **A colour-scheme change needs a restart.** Adwaita's chrome follows the setting
 immediately, but the app's own token colours are resolved when their CSS class is
@@ -1365,7 +1365,7 @@ line. The three that differ — `_layout`, `(tabs)/_layout`, `artikel` — each 
 header saying why, and `test/route-tree.test.ts` fails if the phone grows a screen this
 host does not.
 
-[ADR 0027](../../adr/0027-re-exported-screens-and-a-variant-where-the-host-refuses.md)
+[ADR 0071](../../adr/0071-re-exported-screens-and-a-variant-where-the-host-refuses.md)
 is the rule behind that, and the part worth reading before adding a fourth variant: a
 file may differ for the ports, for a platform idiom an ADR already argues for, or for an
 import the support table refuses — and **never for a refused prop**. A prop is answered
@@ -1436,7 +1436,7 @@ give you.
   publishes the per-import ones. This test already reads the app's source; with that
   table beside it, a `<Typo onPress>` fails in a second instead of in a screenshot.
 - **`test/route-tree.test.ts`** fails when the two trees drift, in either direction
-  ([ADR 0027](../../adr/0027-re-exported-screens-and-a-variant-where-the-host-refuses.md)).
+  ([ADR 0071](../../adr/0071-re-exported-screens-and-a-variant-where-the-host-refuses.md)).
 - **`test/root-layout.test.ts`** fails if this host stops rendering `LoginGate` instead
   of the navigator. It went ten commits with the navigator mounted unconditionally,
   because a missing door has no symptom on the machine of whoever is already admitted —

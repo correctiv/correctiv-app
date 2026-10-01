@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import { View, type ColorValue } from 'react-native';
+import { defineMessages, useIntl } from 'react-intl';
+import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { railScreenOptions, renderRailTabBar } from '@/lib/navigation/railTabs';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { useColors } from '@/lib/theme';
+import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 /**
  * The web tab bar, and the reason there are two of these files.
@@ -26,6 +28,41 @@ import { useColors } from '@/lib/theme';
  */
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
+
+/**
+ * The five tab labels, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
+ *
+ * **The same five ids are declared in `_layout.tsx`, with the same defaults.** The two
+ * files draw the bar differently and share nothing they could import a constant
+ * through, so the agreement is enforced instead of arranged: `npm run
+ * i18n:extract` runs with `--throws`, which fails on one id carrying two
+ * different English defaults, and `__tests__/localisation-seam.test.ts` fails if
+ * an id loses its German. One set of ids, one German word per tab, on both
+ * targets.
+ */
+const COPY = defineMessages({
+  home: { id: 'ui.tabHome', defaultMessage: 'Home' },
+  discover: {
+    id: 'ui.tabDiscover',
+    defaultMessage: 'Discover',
+    description:
+      'A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens.',
+  },
+  mediathek: { id: 'ui.tabMediathek', defaultMessage: 'Mediathek' },
+  participate: {
+    id: 'ui.tabParticipate',
+    defaultMessage: 'Take part',
+    description:
+      'A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens.',
+  },
+  profile: {
+    id: 'ui.tabProfile',
+    defaultMessage: 'Profile',
+    description:
+      'A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens.',
+  },
+});
 
 /**
  * An explicit height, because the mini player has to sit exactly on top of the tab
@@ -52,13 +89,18 @@ function tabIcon(active: IoniconName, inactive: IoniconName) {
 }
 
 export default function TabsLayout() {
+  const intl = useIntl();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
+
+  const rail = width >= sizes.railBreakpoint;
 
   return (
     <View className="flex-1">
       <Tabs
+        tabBar={rail ? renderRailTabBar : undefined}
         screenOptions={{
           headerShown: false,
           /**
@@ -68,6 +110,7 @@ export default function TabsLayout() {
            * other in the direction of the tab order, so a switch looks like one.
            */
           animation: 'shift',
+          ...(rail ? railScreenOptions : null),
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors['grey-500'],
           // Page surface, hairline on top, no shadow — as the design draft has it.
@@ -80,30 +123,60 @@ export default function TabsLayout() {
             paddingBottom: insets.bottom,
           },
           tabBarLabelStyle: { fontFamily: 'SourceSans3_600SemiBold', fontSize: 11 },
+          /**
+           * A minimum gap between two tabs, which is the same thing `ui/SplitRow`
+           * gives every two-sided row this app draws
+           * ([#158](https://github.com/correctiv/correctiv-app/issues/158)). On
+           * the native bar five German labels run into each other above 130 %
+           * system font; here they cannot, because **the web has no system font
+           * scale**. React Native Web draws in px and a browser's zoom scales the
+           * whole page, text and layout together, so the ratio that breaks the
+           * Material bar never changes. This is therefore a guard rather than a
+           * fix for something photographed, and it is cheap: the labels have room
+           * to spare at every size the demo is looked at.
+           *
+           * **Not the native file's font-scale rule.** React Native Web's
+           * `Dimensions` hard-codes `fontScale: 1`, so the condition that hides
+           * the labels over there could never fire here — it would be a branch
+           * that reads as a decision and is dead.
+           */
+          tabBarItemStyle: { paddingHorizontal: spacingPx['3xs'] },
         }}
       >
         <Tabs.Screen
           name="index"
-          options={{ title: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}
+          options={{
+            title: intl.formatMessage(COPY.home),
+            tabBarIcon: tabIcon('home', 'home-outline'),
+          }}
         />
         <Tabs.Screen
           name="entdecken"
-          options={{ title: 'Entdecken', tabBarIcon: tabIcon('compass', 'compass-outline') }}
+          options={{
+            title: intl.formatMessage(COPY.discover),
+            tabBarIcon: tabIcon('compass', 'compass-outline'),
+          }}
         />
         <Tabs.Screen
           name="mediathek"
           options={{
-            title: 'Mediathek',
+            title: intl.formatMessage(COPY.mediathek),
             tabBarIcon: tabIcon('play-circle', 'play-circle-outline'),
           }}
         />
         <Tabs.Screen
           name="mitmachen"
-          options={{ title: 'Mitmachen', tabBarIcon: tabIcon('people', 'people-outline') }}
+          options={{
+            title: intl.formatMessage(COPY.participate),
+            tabBarIcon: tabIcon('people', 'people-outline'),
+          }}
         />
         <Tabs.Screen
           name="profil"
-          options={{ title: 'Profil', tabBarIcon: tabIcon('person', 'person-outline') }}
+          options={{
+            title: intl.formatMessage(COPY.profile),
+            tabBarIcon: tabIcon('person', 'person-outline'),
+          }}
         />
       </Tabs>
 
@@ -120,13 +193,15 @@ export default function TabsLayout() {
         `box-none` lets taps through while nothing is playing, when MiniPlayer
         renders null and this is an empty, invisible row.
       */}
-      <View
-        pointerEvents="box-none"
-        className="absolute left-0 right-0"
-        style={{ bottom: barHeight }}
-      >
-        <MiniPlayer />
-      </View>
+      {rail ? null : (
+        <View
+          pointerEvents="box-none"
+          className="absolute left-0 right-0"
+          style={{ bottom: barHeight }}
+        >
+          <MiniPlayer />
+        </View>
+      )}
     </View>
   );
 }

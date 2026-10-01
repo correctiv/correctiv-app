@@ -1,23 +1,12 @@
 /**
- * Font families. One loaded family per cut, which works around Android ignoring
- * fontWeight on custom fonts. Merriweather (articles and headlines) and Source
- * Sans 3 (UI) come from @expo-google-fonts.
+ * Font family names. One loaded family per cut, which works around Android
+ * ignoring fontWeight on custom fonts. Merriweather (articles and headlines) and
+ * Source Sans 3 (UI) come from @expo-google-fonts.
+ *
+ * Names only. The files themselves are `./font-assets`, which is not in the
+ * barrel and which nothing but `app/_layout.tsx` imports; see the comment there
+ * for what importing them from here used to cost.
  */
-import { Merriweather_400Regular, Merriweather_700Bold } from '@expo-google-fonts/merriweather';
-import {
-  SourceSans3_400Regular,
-  SourceSans3_600SemiBold,
-  SourceSans3_700Bold,
-} from '@expo-google-fonts/source-sans-3';
-
-/** Passed to useFonts() — loads every cut before the first render. */
-export const fontAssets = {
-  Merriweather_400Regular,
-  Merriweather_700Bold,
-  SourceSans3_400Regular,
-  SourceSans3_600SemiBold,
-  SourceSans3_700Bold,
-};
 
 export type FontFamily = 'serif' | 'sans';
 export type FontWeightName = 'normal' | 'semibold' | 'bold';

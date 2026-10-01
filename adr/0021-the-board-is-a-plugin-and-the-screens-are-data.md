@@ -30,7 +30,7 @@ screens that run to hundreds of nodes each.
 Its **read** side has neither problem and is still the right way to check a result.
 That is how these screens were compared against `screens/android/`.
 
-## Decision
+## 1. Decision
 
 A Figma plugin, because a plugin is the only channel with the whole Plugin API and no
 quota. It lives in `tools/`, which is where something that is neither a host nor

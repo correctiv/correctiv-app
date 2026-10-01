@@ -17,6 +17,8 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { diff } from './diff.mjs';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SPEC = join(HERE, 'spec.json');
 const PORT = Number(process.env.FIGMA_SPEC_PORT ?? 8787);
@@ -77,6 +79,16 @@ async function generation() {
   return Math.round(info.mtimeMs);
 }
 
+// What the last draw produced, and what the board says right now.
+//
+// The redraw is gated on the difference between the two: a person's manual
+// changes since the last draw. The spec's own changes are a separate diff, so a
+// regeneration alone does not block a redraw — only a person's edit does. Both
+// live in memory, so a server that restarts has neither, and the first redraw
+// after a restart proceeds unguarded (ADR 0069).
+let baseline = null;
+let current = null;
+
 const server = createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS);
@@ -92,8 +104,26 @@ const server = createServer(async (req, res) => {
 
     if (req.url === '/spec') {
       const text = await readFile(SPEC, 'utf8');
-      JSON.parse(text); // fail here rather than in the plugin
-      send(res, 200, JSON.stringify({ generation: await generation(), spec: JSON.parse(text) }));
+      const spec = JSON.parse(text); // fail here rather than in the plugin
+      const tokens = spec.tokens || {};
+      // What a redraw would destroy: the person's changes since the last draw.
+      const pending =
+        baseline && current ? diff(baseline, current, tokens, { generatedIsBoard: true }) : [];
+      // What the spec itself changed since the last draw. Informational — it does
+      // not block the redraw, but the person is told the board is about to move.
+      const page = (spec.pages || []).find((p) => p.name === 'Bausteine');
+      const screens = page ? page.screens || spec.screens || [] : [];
+      const specChanges = baseline ? diff(screens, baseline, tokens) : [];
+      send(
+        res,
+        200,
+        JSON.stringify({
+          generation: await generation(),
+          spec: spec,
+          pending: pending,
+          specChanges: specChanges,
+        }),
+      );
       return;
     }
 
@@ -104,6 +134,22 @@ const server = createServer(async (req, res) => {
       // The plugin's own account of what it drew. This is the only feedback channel
       // that does not need a screenshot, so it is worth printing in full.
       console.log(new Date().toISOString().slice(11, 19), body);
+      try {
+        const msg = JSON.parse(body);
+        if (msg.type === 'done' && msg.board) {
+          // A draw just completed: the board now matches the spec, so this is the
+          // baseline the next board is diffed against.
+          baseline = msg.board;
+          current = msg.board;
+        } else if (msg.type === 'board' && msg.board) {
+          // A description of the board as it is right now, posted before a redraw
+          // is allowed to proceed. Not the baseline — the person may have changed
+          // something since the last draw.
+          current = msg.board;
+        }
+      } catch {
+        // A malformed report is logged above and otherwise ignored.
+      }
       send(res, 200, '{"ok":true}');
       return;
     }

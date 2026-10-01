@@ -10,7 +10,7 @@ looking at a picture.
 
 ## The set
 
-[`android/`](android/) holds 30 shots, one per step, from `apps/mobile`. Shot on
+[`android/`](android/) holds one shot per step, from `apps/mobile`. Shot on
 2026-09-03 from the release APK of the colour-tier round on `Medium_Phone_API_36` at
 1080x2400, night mode off. Both tours ran clean, with no `MISS`.
 
@@ -76,16 +76,16 @@ The **native tab bar** ([ADR 0013](../adr/0013-native-tabs-and-a-web-tab-bar-of-
 arrived with the previous set and is unchanged here: Material Symbols instead of
 Ionicons, and Material 3's pill behind the selected item.
 
-[`web/`](web/) holds the five tab screens at the same step names plus the reader on a
+[`web/`](web/) holds the tab screens at the same step names plus the reader on a
 fact check, from the static export, shot at a 540x1200 viewport. The reader is there
 because it is where the verdict plaque shows, and the plaque is what
 [ADR 0015](../adr/0015-reading-correctiv-org-through-its-rest-api.md) corrected: this
 article was labelled "Falsch" until it read "Teilweise falsch". It exists because the tab bar
 is now the one part of the app that is deliberately **not** the same on both, and a
 claim like that should be checkable by looking rather than by reading the ADR. It is
-five shots, not 29: the rest of the web build differs from Android only in the ways
-the note at the end of this file already lists, and a second full set would be 24
-pictures nobody compares.
+a small set, not a second full one: the rest of the web build differs from Android
+only in the ways the note at the end of this file already lists, and a full second
+set would be pictures nobody compares.
 
 The AVD matters. Earlier sets used `Medium_Phone`, which is API 24. Dark mode does not
 exist below API 29, so that device cannot show the app's default appearance at all and
@@ -119,6 +119,37 @@ for p in out/android/*.png; do
   magick "$p" -resize 540x -strip -quality 82 "screens/android/$(basename "$p" .png).webp"
 done
 ```
+
+## The third tour, which is not a set
+
+```bash
+OUT=out/a11y bash screens/tools/tour-a11y.sh    # #102: the largest font, both schemes
+```
+
+`tour-a11y.sh` walks the same screens with the accessibility settings turned up:
+the system font at 200 %, the device in light and in dark, and a walk at 100 % in
+front of them so that a large app can be told from a broken one. The
+step name carries its condition last — `10-home-top-s100-light`,
+`10-home-top-s200-light`, `10-home-top-s200-dark` — so the three sort next to each
+other and the comparison anybody makes is one screen across three settings.
+
+Its output does not join `android/`. That set is a layout record of the app as it
+ships, one picture per screen, and 33 more of the same screens under other settings
+would be a directory nobody diffs. What comes out of this tour goes to `evidence/`
+if it decided something and nowhere if it did not.
+
+It also prints, beside each shot it takes one for, every clickable node under 48 dp
+(`small-targets.py`). That number cannot be computed from the source — a target's
+height is its label's line box plus padding, times the reader's font scale — and
+`apps/mobile/__tests__/accessibility.test.ts` says so where it declines to check it.
+Read the script's header before treating a line as a defect: `hitSlop` is invisible
+to it, and some sites use one.
+
+Two things it changes on the device, `settings system font_scale` and
+`cmd uimode night`, are saved before the first walk and restored from a `trap` on
+exit rather than from a line at the end — an emulator left at 200 % in dark mode is
+a bug handed to whoever opens it next, and the walk failing is exactly when that
+happens.
 
 Look at the web export in the same pass. It is the only place where
 back-without-history and a directly opened route can be tested at all.
@@ -214,6 +245,43 @@ Each of these cost a wrong conclusion or a worthless committed picture.
   article is that morning's. The `android/` set is older and still shows the state
   before it.
 
+## evidence/, the pictures a pull request or an issue points at
+
+[`evidence/`](evidence/) is not a set. It holds the individual shots that a pull
+request or an issue argues from, named for the number they belong to, and it exists
+because of the same rule as the rest of this directory turned outwards: a finding that
+was only visible in a picture has to reach the person reading about it as a picture.
+Describing it in prose asks them to take the writer's word for what a screenshot
+showed.
+
+They are committed rather than attached because a body that 404s in a year is worse
+than a few hundred kilobytes. A crop is one to three KB and a full phone shot around
+thirty, so the whole `android/` set above is a megabyte.
+
+Two rules keep it from becoming a dump:
+
+- **One picture per claim, and reuse it.** The shot that made an issue is the shot the
+  pull request closing it shows, at the same address. If both show the same thing,
+  both link the same file.
+- **Crop to the claim.** A finding about one button is a crop of that button, not a
+  phone. `140-zurueck-und-weite.webp` is 2 KB and shows the whole argument: the same
+  row, the same type, one label whole and one a letter short.
+
+Naming is `<number>-<what>.webp`, where the number is the issue or pull request. A
+before-and-after pair is two files ending `-before` and `-after`, because a slider is
+not available and two images in sequence read fine.
+
+Referencing one from a body needs the raw address, since GitHub renders no repository
+path:
+
+```
+https://raw.githubusercontent.com/correctiv/correctiv-app/<commit>/screens/evidence/<name>.webp
+```
+
+Pin the **commit**, not `main`. A branch address shows whatever that file became; the
+picture an argument rests on has to keep showing what it showed when the argument was
+made.
+
 ## Where the comparison history went
 
 Five rounds compared this app against the design draft and the NativeScript build,
@@ -223,8 +291,8 @@ removed on 2026-08-12
 ([ADR 0007](../adr/0007-removing-the-nativescript-host.md)).
 
 What the rounds found is fixed and shipped, in
-[#30](https://github.com/faktenforum/correctiv-app/pull/30),
-[#31](https://github.com/faktenforum/correctiv-app/pull/31) and
-[#32](https://github.com/faktenforum/correctiv-app/pull/32). The lessons that outlived
+[#30](https://github.com/correctiv/correctiv-app/pull/30),
+[#31](https://github.com/correctiv/correctiv-app/pull/31) and
+[#32](https://github.com/correctiv/correctiv-app/pull/32). The lessons that outlived
 the findings are the rules above. The tables themselves are in the git history of this
 file, which is where a record of a deleted app belongs.

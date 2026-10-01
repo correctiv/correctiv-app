@@ -36,8 +36,9 @@ narrower case than the one that was originally made.
 
 ## Decision
 
-**Native rendering stays the rule. The webview is the exception, and it is built
-early rather than kept as a fallback.**
+### 1. Native rendering stays the rule, and the webview is the exception
+
+It is built early rather than kept as a fallback.
 
 ### Why native stays the rule
 
@@ -73,7 +74,7 @@ The seam is already there: on native the reader *is* a WebView, given
 header-hiding query parameter the scope describes is the same component in a new state,
 not a new renderer.
 
-### The exception is detected, not judged
+### 2. The exception is detected, not judged
 
 "Where native does not work" grows silently if it is decided per article, and nobody
 finds out how often it was decided. Both conditions are already visible in the code and
@@ -82,8 +83,10 @@ only need reporting:
 1. **The API does not know this URL.** `fetchWpArticle` returns `null` and
    `articles/load.ts` falls to the page rung. That signal exists and is already acted
    on; it only has to reach the screen.
-2. **The extraction dropped an iframe.** `sanitizeArticleHtml` knows this and discards
-   it. Make it report what it removed, and an article can say for itself that it was
+2. **The extraction dropped an iframe.** ~~`sanitizeArticleHtml` knows this and discards
+   it.~~ No cleaner discards a frame any more: each one is rendered or replaced by a visible
+   link to it, voided by [ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §2.
+   Make it report what it removed, and an article can say for itself that it was
    rendered incomplete.
 
 With both reported, the renderer follows from the article rather than from a judgement,

@@ -1,4 +1,21 @@
+import { defineMessages, useIntl } from 'react-intl';
+
 import type { VideoFrameProps } from './videoFrameTypes';
+
+/**
+ * The frame's name, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/video.ts` (ADR 0026 §6). An iframe's `title` is what a
+ * screen reader reads for the whole embed, which makes it user-facing even
+ * though the word was already English.
+ */
+const COPY = defineMessages({
+  frameTitle: {
+    id: 'video.frameTitle',
+    defaultMessage: 'Video',
+    description:
+      "The accessible name of the frame the video is embedded in, read aloud and never seen. `video.screenTitle` is the same word as the route's name and `video.kicker` the one above the title.",
+  },
+});
 
 /**
  * The web branch: the same embed as a real `<iframe>`. react-native-webview has no
@@ -9,11 +26,12 @@ import type { VideoFrameProps } from './videoFrameTypes';
  * JSX on purpose. Metro resolves it on web only.
  */
 export function VideoFrame({ uri, className }: VideoFrameProps) {
+  const intl = useIntl();
   return (
     <iframe
       src={uri}
       className={className}
-      title="Video"
+      title={intl.formatMessage(COPY.frameTitle)}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       allowFullScreen
       // The player needs scripts, its own origin (cross-origin, so that stays

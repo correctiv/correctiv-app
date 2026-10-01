@@ -1,8 +1,9 @@
 import { Pressable, View } from 'react-native';
 
 import { Typo } from '@/components/ui';
-import { formatDateDe } from '@correctiv/app-core/lib/format';
+import { formatDate } from '@correctiv/app-core/lib/format';
 import type { FeedItem } from '@correctiv/app-core/types/models';
+import { useLocale } from '@/lib/store/core';
 
 /** Compact list row for "Neueste Recherchen": title plus meta, no image. */
 export function ArticleRow({
@@ -12,8 +13,24 @@ export function ArticleRow({
   item: FeedItem;
   onPress: (item: FeedItem) => void;
 }) {
+  const locale = useLocale();
   return (
-    <Pressable onPress={() => onPress(item)} className="py-s active:opacity-70">
+    <Pressable
+      onPress={() => onPress(item)}
+      /*
+       * A LINK, and named by its headline. Without the role TalkBack reads the
+       * three lines of this row as text and offers no "double tap to activate",
+       * and the rotor does not list it at all — a whole section of Home that a
+       * screen reader passes over on its way down (#102).
+       *
+       * The name is the headline alone: the author and the date below it are
+       * spoken after it as the row's own content, and folding them into the name
+       * would say them twice.
+       */
+      accessibilityRole="link"
+      accessibilityLabel={item.title}
+      className="py-s active:opacity-70"
+    >
       <Typo variant="headline-s" numberOfLines={3}>
         {item.title}
       </Typo>
@@ -31,7 +48,7 @@ export function ArticleRow({
         {item.publishedAt ? (
           <Typo variant="text-s" color="grey-500">
             {item.author ? ' · ' : ''}
-            {formatDateDe(item.publishedAt)}
+            {formatDate(item.publishedAt, locale)}
           </Typo>
         ) : null}
       </View>

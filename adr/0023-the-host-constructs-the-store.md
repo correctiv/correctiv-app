@@ -21,7 +21,7 @@ enhancer, and `configureStore` takes its enhancers at construction. A module tha
 builds its store while it is being evaluated leaves no moment between "this file is
 imported" and "the store exists" for anyone to hand one in.
 
-## Decision
+## 1. Decision
 
 **`@correctiv/app-core/stores/store` exports `createAppStore()` and no instance.**
 

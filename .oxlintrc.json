@@ -89,7 +89,16 @@
       // wired up: `import 'expo-router/entry'` registers the root component,
       // `import '@/global.css'` is the CSS entry Uniwind's Metro transform reads.
       // There is nothing to assign.
-      "files": ["apps/mobile/index.js", "apps/mobile/src/app/_layout.tsx"],
+      //
+      // The last two are the same thing for `Intl`: a polyfill's whole job is the
+      // global it installs, and the `require` spelling is what makes it
+      // conditional — the file says why it must be.
+      "files": [
+        "apps/mobile/index.js",
+        "apps/mobile/src/app/_layout.tsx",
+        "apps/mobile/src/i18n/Localisation.tsx",
+        "apps/mobile/src/i18n/polyfills.ts"
+      ],
       "rules": {
         "import/no-unassigned-import": "off"
       }
@@ -121,7 +130,7 @@
       // purpose: in this pattern they are never focused, the input keeps focus
       // and the arrows move `aria-activedescendant`, so a per-option handler
       // would be unreachable code that only satisfies a rule.
-      "files": ["apps/handbook/src/ui/Search.tsx"],
+      "files": ["apps/workbench/src/ui/Search.tsx"],
       "rules": {
         "jsx-a11y/click-events-have-key-events": "off",
         "jsx-a11y/prefer-tag-over-role": "off",
@@ -139,7 +148,7 @@
       // than a lint exception with a reason attached. Every figure is a component
       // in `src/diagrams/` now, and takes its scroll box with it, so that is the
       // one place this markup sits.
-      "files": ["apps/handbook/src/diagrams/*.tsx"],
+      "files": ["apps/workbench/src/diagrams/*.tsx"],
       "rules": {
         "jsx-a11y/no-noninteractive-tabindex": "off"
       }
@@ -150,7 +159,7 @@
       // explicit click and exists for nothing but typing a page name, so focusing
       // the field is what the click asked for. Only this one rule, because unlike
       // the palette this list needs no role of its own — `cmdk` owns the options.
-      "files": ["apps/handbook/src/workbench/ui/Pages.tsx"],
+      "files": ["apps/workbench/src/preview/ui/Pages.tsx"],
       "rules": {
         "jsx-a11y/no-autofocus": "off"
       }

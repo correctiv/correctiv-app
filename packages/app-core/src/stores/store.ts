@@ -9,6 +9,7 @@ import {
 
 import { audioMiddleware, audioReducer } from './audio';
 import { feedsReducer } from './feeds';
+import { homeLayoutReducer } from './homeLayout';
 import { interestsReducer } from './interests';
 import { mediaReducer } from './media';
 import { participationReducer } from './participation';
@@ -16,7 +17,7 @@ import { podcastsReducer } from './podcasts';
 import { radioReducer } from './radio';
 import { savedArticlesReducer } from './savedArticles';
 import { sessionReducer } from './session';
-import { settingsReducer } from './settings';
+import { settingsInitialState, settingsReducer, type Locale } from './settings';
 import { spotlightReducer } from './spotlight';
 import { videoReducer } from './video';
 
@@ -44,16 +45,39 @@ const combined = combineReducers({
   radio: radioReducer,
   audio: audioReducer,
   video: videoReducer,
+  homeLayout: homeLayoutReducer,
 });
 
-const rootReducer: typeof combined = (state, action) =>
-  combined(resetStore.match(action) ? undefined : state, action);
+/**
+ * The reducer a store is built with, and the one thing a reset must not throw away.
+ *
+ * `combined(undefined, …)` asks every slice for its OWN initial state, which is the
+ * whole point of a reset — and `preloadedState` is not consulted, so a host's locale
+ * went back to the slice's default. Measured by a cold review on 2026-09-18:
+ * `createAppStore({ locale: 'en' })` then one `resetStore()` gave `'de'`.
+ *
+ * That is not a test-only path. `resetStore` is on the preview frame's dev handle,
+ * so it is a control somebody presses; reset the frame and the app would flip
+ * language while the address still said the other one, with nothing reporting it.
+ *
+ * A locale is **construction** state and not user state, which is the whole of §4:
+ * everything else in this tree is something a person did and a reset undoes, and the
+ * language is something the host said and has not stopped saying. So the reset
+ * restores every slice and then puts that one field back.
+ */
+function reducerFor(locale: Locale | undefined): typeof combined {
+  return (state, action) => {
+    const next = combined(resetStore.match(action) ? undefined : state, action);
+    if (locale === undefined || !resetStore.match(action)) return next;
+    return { ...next, settings: { ...next.settings, locale } };
+  };
+}
 
 /**
  * One Redux store for the whole core.
  *
- * What used to be ten independent observable stores is twelve slices of one state
- * tree. The slice files kept their names and their public shape — the state
+ * What used to be ten independent observable stores is one state tree of
+ * slices. The slice files kept their names and their public shape — the state
  * interfaces, the pure selectors and the German copy are unchanged — so the only
  * thing that moved is who owns the transition: a reducer now, not a closure over
  * `set`.
@@ -118,12 +142,38 @@ export interface AppStoreOptions {
    * Expo plugin requires it, because two of them fight over the same connection.
    */
   devTools?: boolean;
+  /**
+   * The language this host renders in
+   * ([ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4).
+   *
+   * **The first piece of state a host may hand in, and deliberately the only one.**
+   * [ADR 0023](../../../../adr/0023-the-host-constructs-the-store.md) says the host
+   * constructs the store and passes enhancers, and its argument is about
+   * construction-time things that cannot be handed over afterwards. A locale is one:
+   * dispatched after construction it is right one render late, and one render of the
+   * wrong language is a screen somebody sees.
+   *
+   * Not a port. `CorePlatform` is what the core cannot do for itself — storage,
+   * blobs, audio, reporting. A language is not a capability, it is state, and it has
+   * a slice already.
+   *
+   * Omitted leaves the slice's own default, which is German. That is not a second
+   * place the product decision is written: it is what a store built by a test or by
+   * `createMemoryPlatform`'s neighbours gets, and every host that ships says so
+   * itself.
+   */
+  locale?: Locale;
 }
 
-export function createAppStore({ enhancers = [], devTools }: AppStoreOptions = {}) {
+export function createAppStore({ enhancers = [], devTools, locale }: AppStoreOptions = {}) {
   return configureStore({
-    reducer: rootReducer,
+    reducer: reducerFor(locale),
     devTools,
+    // Only when the host said so, so that a store built without options is byte for
+    // byte the one every existing test already builds.
+    ...(locale === undefined
+      ? {}
+      : { preloadedState: { settings: { ...settingsInitialState, locale } } }),
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         immutableCheck: false,

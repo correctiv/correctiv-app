@@ -41,11 +41,20 @@ carries an HTML parser for its DOM extraction backend.
 @import '@correctiv/design-tokens/theme.standalone.css';
 ```
 
-The class half of the switch reads `:where(.dark, .dark *)`, which compiles against
-`:scope`, the **root element**. A `dark` class on `<body>` does nothing; it has to
-be on `<html>`. Worth knowing before reaching for `body_class()`, because the
-`prefers-color-scheme` half keeps working either way, so a toggle would fail while
-the automatic path looked fine.
+The class half of the switch reads `:where(.dark, .dark *)` on `:root`, the **root
+element**. A `dark` class on `<body>` does nothing; it has to be on `<html>`. Worth
+knowing before reaching for `body_class()`, because the `prefers-color-scheme` half
+keeps working either way, so a toggle would fail while the automatic path looked
+fine.
+
+**Your own `--color-*` overrides belong in a layer.** The dark block sits inside
+`@layer theme`, and unlayered CSS beats every layer whatever its specificity — so a
+plain `:root { --color-canvas: … }` in your stylesheet wins in *both* schemes and
+silently takes that variable out of dark mode. Either put the override in a layer of
+your own, or give it a dark value too. This changed on 2026-09-15: the dark block
+used to be unlayered, and an unlayered override lost to it. It moved because the
+native side of this repo cannot read it otherwise, and `apps/mobile/__tests__/design-tokens-standalone.test.ts`
+now pins the position.
 
 That the standalone file actually works for a consumer with no Uniwind is checked
 on every PR: `apps/mobile/__tests__/design-tokens-standalone.test.ts` compiles it
@@ -99,7 +108,7 @@ silently staying light. Read it before adding a colour.
 npm run tokens          # from the repo root
 ```
 
-That writes all four artefacts in one pass over `theme.css`, so the two colour
+That writes the artefacts in one pass over `theme.css`, so the two colour
 schemes cannot be parsed twice and disagree. Nothing is written outside this
 package.
 

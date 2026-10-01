@@ -30,7 +30,7 @@ A second defect came out of the same seam. `signOut` reset the session and left
 `membership` on disk, so the next person to sign in on that device saw their own name
 and tier over somebody else's contribution and join date.
 
-## Decision
+## 1. Decision
 
 **`membership` holds the simulated contribution and nothing about the person.**
 

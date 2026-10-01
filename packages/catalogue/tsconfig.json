@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": [],
+    "resolveJsonModule": true,
+    // The core ships TypeScript rather than a build and its exports map carries no
+    // extensions, so tsc cannot follow the subpath without this. The same line
+    // `apps/workbench/tsconfig.json` carries, for the same reason. Vite, Metro and
+    // vitest all resolve it through the workspace symlink either way.
+    "paths": {
+      "@correctiv/app-core/*": ["../app-core/src/*"]
+    }
+  },
+  "include": ["src"]
+}

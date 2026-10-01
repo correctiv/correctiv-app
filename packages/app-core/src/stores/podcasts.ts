@@ -23,6 +23,21 @@ const TTL_MS = 60 * 60 * 1000;
  */
 export type PodcastsStatus = 'idle' | 'loading' | 'ready' | 'partial' | 'offline';
 
+/**
+ * What this store reports to the host, as a code rather than a sentence.
+ *
+ * The `AudioError` convention pointed at a machine instead of at a person
+ * ([ADR 0032](../../../../adr/0032-a-port-for-the-error-report-before-a-provider-for-it.md)).
+ * One member, and the union is here for the second one: `ErrorReport.code` is
+ * typed `string` at the port, so without a named union at the call site a code is
+ * a free-text string somebody types twice with two spellings.
+ *
+ * Nothing renders it and nothing should, which is why there is no labels record
+ * beside it. A listener is told nothing about a show that did not come back; they
+ * are shown the six that did.
+ */
+type PodcastsErrorCode = 'series-unreachable';
+
 export interface PodcastsState {
   series: PodcastSeries[];
   status: PodcastsStatus;
@@ -80,8 +95,33 @@ export const fetchAll =
           const series = await fetchPodcastSeries(handle);
           liveCount += 1;
           return series;
-        } catch {
-          return platform().content.podcastSeries(handle);
+        } catch (err) {
+          const bundled = platform().content.podcastSeries(handle);
+          /**
+           * The one fault in this cascade that nobody hears about, which is why
+           * it is the core's first call through `ErrorReporter`.
+           *
+           * Everything else here is visible somewhere: an unreachable library
+           * shows `offline` and the Mediathek prints a line about it. A single
+           * show that 502s shows nothing. It is swallowed by this `catch`, the
+           * bundled snapshot takes its place or the tile disappears, and the
+           * status goes to `partial` — which no screen in the app reads. There
+           * was no log either, so Castopod could drop a show for a week and the
+           * only trace would be one missing tile on a grid of seven.
+           *
+           * The context is the two things already in hand: which show, and
+           * whether anything took its place. `replacedBy` is what separates
+           * "somebody is looking at last week's episodes" from "the show is
+           * simply gone from the app", and neither is legible from the handle.
+           */
+          const code: PodcastsErrorCode = 'series-unreachable';
+          platform().errors.report({
+            domain: 'podcasts',
+            code,
+            context: { handle, replacedBy: bundled ? 'bundle' : 'nothing' },
+            cause: err,
+          });
+          return bundled;
         }
       }),
     );
@@ -112,5 +152,3 @@ export const fetchAll =
       }),
     );
   };
-
-export const podcastsActions = { ...slice.actions, fetchAll };

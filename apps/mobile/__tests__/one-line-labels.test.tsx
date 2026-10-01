@@ -46,7 +46,7 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import { render, walkHostNodes } from './support/rendering';
 
 import { LiveBanner } from '@/components/media/LiveBanner';
-import { Badge, Chip, Overline } from '@/components/ui';
+import { Badge, Button, Chip, Overline } from '@/components/ui';
 import { coreStore } from '@/lib/store/core';
 
 /**
@@ -75,6 +75,7 @@ interface Label {
   chars: string;
   numberOfLines: number | undefined;
   flexShrink: number | undefined;
+  textAlign: string | undefined;
 }
 
 /**
@@ -90,12 +91,13 @@ function firstLabelContaining(element: ReactElement, chars: string): Label {
     onEnter: (node) => {
       if (found || node.type !== 'Text' || !node.text.includes(chars)) return;
       const style = StyleSheet.flatten(node.props.style as never) as
-        | { flexShrink?: number }
+        | { flexShrink?: number; textAlign?: string }
         | undefined;
       found = {
         chars: node.text,
         numberOfLines: node.props.numberOfLines as number | undefined,
         flexShrink: style?.flexShrink,
+        textAlign: style?.textAlign,
       };
     },
   });
@@ -143,6 +145,43 @@ describe('the labels that may not wrap', () => {
     const banner = <LiveBanner subtitle="20260901_Gamescom_Laberpocast_Sophie_Amelie" />;
     const label = firstLabelContaining(banner, '20260901_Gamescom');
     expect(label.numberOfLines).toBe(1);
+  });
+
+  /**
+   * A button's label is not sized to its own measurement, which is the opposite
+   * problem to the four above: those may not wrap, this one may — it just must not
+   * be given exactly the width it measured.
+   *
+   * `Weiter` rendered as `Weite` on an Android emulator. The text node was 124px,
+   * the right width for six characters, and about 106px of glyphs were painted with
+   * one glyph of dead space after them: a line break inside the word, its second
+   * line outside the measured height. `items-center` on the Pressable gave the
+   * label its own content width to the pixel, so a sub-pixel disagreement between
+   * what the measure returned and what the line breaker computed had nowhere to go.
+   * Stretching the label to the button's inner width and centring the glyphs with
+   * `textAlign` removes the disagreement's only consequence.
+   *
+   * WHAT THIS DOES NOT PROVE, and it matters: the fix reaches a button that is
+   * wider than its text, which is `fullWidth` and `flex-1`. A `self-start` button
+   * shrink-wraps to the label, so stretching hands the label the same number and
+   * the exposure remains. None of the app's twelve is affected today — measured on
+   * a device, right-hand gaps of 1 to 3px, which is the side bearing — and the
+   * underlying cause is the `button` variant's 0.2px tracking, which is #145.
+   */
+  it('gives a button label the width of the button, not of the label', () => {
+    let classes = '';
+    walkHostNodes(render(<Button title="Weiter" />), {
+      onEnter: (node) => {
+        if (node.type === 'View' && typeof node.props.className === 'string' && !classes) {
+          classes = node.props.className;
+        }
+      },
+    });
+    expect(classes).not.toBe('');
+    // `items-center` is what sized the label to itself. Named rather than asserted
+    // away, so a regression reads as the thing that came back.
+    expect(classes).not.toContain('items-center');
+    expect(firstLabelContaining(<Button title="Weiter" />, 'Weiter').textAlign).toBe('center');
   });
 
   it('leaves the banner’s station name alone, so the assertions above mean something', () => {

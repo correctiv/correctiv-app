@@ -30,6 +30,9 @@
       "@correctiv/app-core/*": ["../../packages/app-core/src/*"],
       "@correctiv/design-tokens": ["../../packages/design-tokens/src/index.ts"],
       "@correctiv/design-tokens/*": ["../../packages/design-tokens/src/*"],
+      // The string catalogue, which `@/i18n/Localisation` hands its provider.
+      "@correctiv/catalogue": ["../../packages/catalogue/src/index.ts"],
+      "@correctiv/catalogue/*": ["../../packages/catalogue/src/*"],
       // Every specifier this host answers itself. The bundler is told the same
       // thing in gjsify.config.mjs; this half is what makes `tsc` agree with it.
       // The SHIM, not @gjsify/react-native — the same target gjsify.config.mjs
@@ -40,6 +43,7 @@
       "expo-router": ["./src/shims/expo-router.ts"],
       "uniwind": ["./src/shims/uniwind.ts"],
       "@expo/vector-icons": ["./src/shims/vector-icons.tsx"],
+      "expo-constants": ["./src/shims/expo-constants.ts"],
       "expo-image": ["./src/shims/expo-image.tsx"],
       "expo-font": ["./src/shims/expo-font.ts"],
       "expo-status-bar": ["./src/shims/expo-status-bar.tsx"],
@@ -50,6 +54,14 @@
       "react-native-safe-area-context": ["./src/shims/react-native-safe-area-context.tsx"],
       "react-native-gesture-handler": ["./src/shims/react-native-gesture-handler.tsx"],
       "react-native-webview": ["./src/shims/react-native-webview.tsx"],
+      "react-intl": ["./src/shims/react-intl.ts"],
+      // The real package, under the one name that is not redirected above. Only
+      // `src/shims/react-intl.ts` may say it, and its header says why it has to.
+      "react-intl-upstream": ["../../node_modules/react-intl"],
+      // Uniwind's CSS entry, which `lib/env/AppEnvironment.tsx` imports for its side
+      // effect. There is no Metro here to read it; the bundler resolves it to the same
+      // empty module and this is what makes `tsc` agree.
+      "@/global.css": ["./src/shims/empty.ts"],
       "@react-native-async-storage/async-storage": ["./src/shims/async-storage.ts"]
     }
   },

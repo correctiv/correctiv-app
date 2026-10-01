@@ -32,7 +32,7 @@ components that `support.js` resolves at runtime via `<dc-import>`. It is the **
 draft**. Merging here means: the draft stays the design source, and the Pages slot gets
 the real Expo web build.
 
-## Decision
+## 1. Decision
 
 Move to `apps/mobile-rn` (Expo SDK 56, RN 0.85.3, React 19.2.3), **build the Expo
 prototype out rather than starting over**, and delete `apps/mobile` once it reaches
@@ -85,12 +85,16 @@ That is why the reader is a platform pair behind a shared props type
 (`__tests__/web-target.test.ts`), not a comment.
 
 The iframe is the honest equivalent here, because `buildReaderHtml()` builds the
-document locally — nothing foreign is framed. It carries `sandbox="allow-same-origin"`
+document locally — nothing foreign is framed. ~~It carries `sandbox="allow-same-origin"`
 and nothing else: `extract.ts` strips `script`/`style`/`iframe`/`form` anyway, so the
-reader needs no JS, and leaving out `allow-scripts` costs nothing. `allow-same-origin` is
+reader needs no JS, and leaving out `allow-scripts` costs nothing.~~ It carries
+`allow-scripts` as well since embeds from a short list of hosts render in the reader and
+inherit the frame's sandbox, voided by [ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §5.
+`allow-same-origin` is
 needed so clicks inside the iframe run through the same `onNavigate` as in the native
-WebView. The two must never be set together — the frame could then remove its own
-sandbox.
+WebView. ~~The two must never be set together~~ (they are, on purpose, voided by
+[ADR 0065](0065-embeds-inline-from-a-short-list-and-a-link-for-the-rest.md) §5) — the
+frame could then remove its own sandbox.
 
 ## Verified
 
@@ -227,9 +231,14 @@ every chip and thereby overwrote real descriptions with "Alle Beiträge zum Them
 Klima." — deliberately changed.
 
 *A native header search bar would be the wrong route.* `Stack.SearchBar` /
-`headerSearchBarOptions` is Expo's recommendation, but this app sets `headerShown: false`
-throughout and builds its own header rows, so that iOS, Android and web show the same
-brand. A native bar looks different on every platform and does not appear at all on web.
+`headerSearchBarOptions` is Expo's recommendation, but ~~this app sets
+`headerShown: false` throughout and builds its own header rows, so that iOS, Android and
+web show the same brand~~ — that premise is voided by
+[ADR 0030](0030-the-platforms-header-and-ours-on-web.md), which gives thirteen routes
+the platform's stack header and keeps the drawn bar on web and on two named screens.
+The conclusion stands, and 0030 is what confirms it: `/suche` is one of those two
+exceptions, for the reason the next sentence gives.
+A native bar looks different on every platform and does not appear at all on web.
 Hence `ScreenHeader` + `TextInput`. The `autoFocus` there is a deliberate exception to
 `jsx-a11y/no-autofocus`, argued in `.oxlintrc.json`: the screen exists for nothing else
 and is only reached by an explicit tap on the search entry.

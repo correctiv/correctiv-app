@@ -2,6 +2,8 @@
 
 Status: accepted, 2026-08-28. Verified on an Android emulator 2026-08-29, which found
 two faults in the first version of it; iOS remains unrun. See the last two sections.
+§1 amended by [ADR 0070](0070-a-left-rail-on-tablet.md): native tabs are the phone
+answer; tablets take a left rail.
 
 ## Context
 
@@ -23,9 +25,9 @@ Expo is moving off regardless. And `NativeTabs.BottomAccessory` exists in the
 installed version — the system slot for the bar Apple Music puts a track in, which is
 the mini player's problem solved by the platform instead of by us.
 
-## Decision
+## 1. Decision
 
-**Native tabs on iOS and Android.** `expo-router/unstable-native-tabs`, with the
+**~~Native tabs on iOS and Android.~~ On iOS and Android phones, tablets excepted — [ADR 0070](0070-a-left-rail-on-tablet.md).** `expo-router/unstable-native-tabs`, with the
 colours still from the token palette so the bar follows the appearance setting.
 Only its shape is the platform's.
 
@@ -35,13 +37,16 @@ Ionicons stays what the rest of the app draws with. The tab bar is the part user
 read as belonging to their phone rather than to us, and it is the only part that
 defers.
 
-**Web keeps the drawn tab bar, as its own layout** — `_layout.web.tsx`, holding what
-`_layout.tsx` held before. This is the part worth being explicit about: expo-router's
+~~**Web keeps the drawn tab bar, as its own layout — `_layout.web.tsx`, holding what
+`_layout.tsx` held before.~~ At phone widths web keeps its drawn tab bar, its own layout
+— `_layout.web.tsx`, holding what `_layout.tsx` held before; from 768 px upward both
+targets take the left rail — [ADR 0070](0070-a-left-rail-on-tablet.md). This is the
+part worth being explicit about: expo-router's
 web implementation of native tabs is 74 lines that render labels and **no icons**.
 Sharing one layout would have meant the web inheriting a worse tab bar so that the
 code could be the same. Web is published on every push to `main` and is how most
 people will ever see this app, so it is a target in its own right, and the right
-answer there is the drawn bar rather than a borrowed one it cannot borrow.
+answer there is the drawn bar rather than a borrowed one it cannot borrow — below the breakpoint.
 
 The pattern is the repo's existing one (`ReaderView.web.tsx`, `VideoFrame.web.tsx`,
 `shareArticle.web.ts`), applied for the first time to a route rather than a
@@ -91,7 +96,15 @@ slower. Measuring that needs a device.
 the app has exactly five. A sixth is a redesign, not an edit. The triggers are
 written out rather than mapped so that this is visible where someone would add one.
 
-**Every destination keeps its label, which took saying so.** Material's default `auto`
+**~~Every destination keeps its label, which took saying so.~~** True up to a system
+font scale of 1.3 and false above it, where only the selected tab is labelled and the
+other four are glyphs: voided by
+[ADR 0034](0034-one-component-for-the-two-sided-row.md), which measured the scale at
+which five German labels stop fitting. The argument below is untouched, because
+Material's `auto` drops labels by tab COUNT at every size and is still the wrong
+answer.
+
+Material's default `auto`
 drops the labels of unselected items once there are four or more — with five tabs that
 left four of five destinations as an icon and nothing else, and `Entdecken` (a compass)
 and `Mitmachen` (three figures) are the two nobody can name from the glyph.

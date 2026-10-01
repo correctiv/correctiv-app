@@ -18,7 +18,9 @@
  * app's jest workers. The header there says the rest.
  */
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+
+import { filesUnder, numberInProse, withoutComments } from '@correctiv/prose-and-code';
 
 import {
   colors,
@@ -195,7 +197,13 @@ describe('two-scheme palette', () => {
   it('keeps a stroke distinguishable from the surfaces it divides', () => {
     /**
      * `stroke` carries every border, divider, input outline, progress track and
-     * `<Hairline>` in the app since ADR 0022, and nothing else here constrains it: a
+     * `<Hairline>` in the app since ADR 0022. That sentence was written here as a
+     * comment and was false from the day it was written: `participate/CalloutCard`
+     * drew its progress track on `bg-grey-250`, because the migration edited the
+     * fill on the line beneath it and left the track alone. A comment cannot notice
+     * that, so the `describe` below is the half that can.
+     *
+     * Nothing else here constrains `stroke` itself: a
      * dark value equal to `canvas` passes the primitive check, the semantic check,
      * the alias table and the foreground check, and makes every line in dark mode
      * invisible behind a green run. That was verified, not imagined.
@@ -315,6 +323,121 @@ describe('two-scheme palette', () => {
         ]);
       }
     }
+  });
+});
+
+/**
+ * The deprecated tier, in the app rather than in the palette.
+ *
+ * Every check above reads a generated artefact. This one reads `src/`, because the
+ * failure it is for leaves the artefacts perfectly correct: an alias that survived
+ * ADR 0022's migration pass still resolves, still follows the scheme, and still
+ * draws — one step off whatever its neighbours draw, on a screen nobody diffed.
+ * That is how `CalloutCard`'s progress track kept `bg-grey-250` while every other
+ * track moved to `stroke`, and why the claim above it had to become this.
+ *
+ * Only fills and lines written as a CLASS are scanned. The two remaining uses that
+ * reach the token through TypeScript — `ClaimStatusTag`'s `colors['grey-250']` and
+ * `SettingRow`'s `palette['grey-300']` — are in ADR 0022's table for the same
+ * reason as the two below and are not the shape this catches. Foreground uses of
+ * `grey-500` are deliberately out of scope: the ADR's table says the semantic tier
+ * has no foreground that faint, so there are dozens of them and they are correct.
+ */
+/**
+ * `@correctiv/prose-and-code` is where the walk and the comment stripper live now.
+ * Prose about a token is not a use of one; the two files kept below explain
+ * themselves at length, and `Typo` and `LiveBanner` name the tiers in theirs.
+ */
+const SOURCE = /\.tsx?$/;
+
+describe('the deprecated aliases', () => {
+  /**
+   * Where ADR 0022 says nothing in the semantic tier replaces the alias yet. Each
+   * entry is a claim upstream still owes an answer to, so the list shrinking is the
+   * signal, and a name arriving in it needs a row in that ADR's table first.
+   */
+  const KEPT: Record<string, string> = {
+    'components/ui/Badge.tsx': 'bg-grey-250',
+    'components/ui/Thumbnail.tsx': 'bg-grey-300',
+  };
+
+  const SRC = join(APP, 'src');
+
+  it('draws no fill or line on one, outside the uses ADR 0022 names', () => {
+    // Built here rather than beside `KEPT`: the tier lists are declared below this
+    // block, and a `describe` body runs while the module is still evaluating.
+    const FILL = new RegExp(
+      String.raw`\b(?:bg|border|divide|fill|ring|outline)-(?:${DEPRECATED_V1.join('|')})\b`,
+      'g',
+    );
+
+    const offenders: string[] = [];
+    for (const file of filesUnder(SRC, SOURCE)) {
+      const relative = file.slice(SRC.length + 1);
+      const lines = withoutComments(readFileSync(file, 'utf8')).split('\n');
+      for (const [index, line] of lines.entries()) {
+        for (const hit of line.match(FILL) ?? []) {
+          if (KEPT[relative] === hit) continue;
+          offenders.push(`${relative}:${index + 1} → ${hit}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('still has every use it keeps, so the list cannot outlive them', () => {
+    // The other direction. An entry above whose file has migrated is a row in ADR
+    // 0022's table that upstream no longer owes anything for, and leaving it here
+    // would let the next real one in unnoticed.
+    const stale = Object.entries(KEPT).filter(
+      ([relative, hit]) => !readFileSync(join(SRC, relative), 'utf8').includes(hit),
+    );
+    expect(stale.map(([relative]) => relative)).toEqual([]);
+  });
+});
+
+/**
+ * The count AGENTS.md quotes, taken rather than remembered.
+ *
+ * `always-light` / `always-dark` are this app's own names for `white` and
+ * `neutral-700`, and ADR 0022 retires them. Both that record and AGENTS.md size the
+ * rename by a number of call sites, and a number typed into prose about code is the
+ * thing this repository calls a fact that expires: it was 45, nobody touched it, and
+ * four more arrived with the gallery. Nothing about the sentence looked wrong.
+ *
+ * So the number lives in one living document and is checked here. ADR 0022 keeps its
+ * own, struck and corrected in place, because a record says what was true when it was
+ * written and is not rewritten to agree with today.
+ */
+describe("the app's two role colours", () => {
+  it('is written in as many places as AGENTS.md says', () => {
+    // A call site is a line of `src/` outside a comment that writes one of the two
+    // names. Prose about them is not one — three comments mention them and they
+    // would survive the rename as history. The gallery's `label:` caption IS one: it
+    // prints `color="always-light"` beside the specimen using it, so a rename has to
+    // edit it like any other. Every such line writes exactly one name, which is why
+    // lines and occurrences agree and the count needs no tie-break.
+    const sites = filesUnder(join(APP, 'src'), SOURCE).flatMap((file) =>
+      withoutComments(readFileSync(file, 'utf8'))
+        .split('\n')
+        .flatMap((line) => line.match(/always-light|always-dark/g) ?? []),
+    );
+
+    // The sentence is quoted rather than derived, and it stays here rather than in
+    // the helper: the phrasing is what makes it findable, and a pattern loose
+    // enough to fit whatever AGENTS.md says next would match something that is not
+    // this claim. What the helper adds is the other failure — a rewritten sentence
+    // that this stops matching, which used to compare `undefined` and said so in a
+    // way nobody could read.
+    const agents = resolve(APP, '../../AGENTS.md');
+    expect(
+      numberInProse({
+        documents: [{ name: 'AGENTS.md', text: readFileSync(agents, 'utf8') }],
+        pattern: /all (\d+) existing call sites/,
+        value: sites.length,
+        what: 'apps/mobile/src writes the two names on',
+      }),
+    ).toEqual([]);
   });
 });
 

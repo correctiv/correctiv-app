@@ -46,6 +46,21 @@ export interface ImageProps {
   onError?: () => void;
   className?: string;
   accessibilityLabel?: string;
+  /**
+   * expo-image's own spelling of the accessible name, and `Thumbnail` passes `alt=""`
+   * to say the cover is decorative. Read below as the same thing `accessibilityLabel`
+   * is read as — `Gtk.Picture:alternative-text` — because GTK has one property for
+   * both and an empty string there is the same "nothing to announce".
+   */
+  alt?: string;
+  /**
+   * `accessible={false}`, which keeps the picture off the accessibility tree
+   * altogether. Accepted and not acted on: `Gtk.Picture`'s counterpart is
+   * `Gtk.Accessible:accessible-role: none`, which the layer does not expose on an
+   * element this shim renders directly. The cost is an unnamed image node beside a
+   * `Pressable` that already carries the name — a duplicate rather than a wrong label.
+   */
+  accessible?: boolean;
 }
 
 /** expo-image's `contentFit` values are `Gtk.ContentFit`'s nicks, bar one. */

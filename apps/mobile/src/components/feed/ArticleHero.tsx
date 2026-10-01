@@ -1,11 +1,33 @@
+import { defineMessages, useIntl } from 'react-intl';
 import { Pressable } from 'react-native';
 
 import { Bleed, Overline, Thumbnail, Typo } from '@/components/ui';
 import { FEEDS } from '@correctiv/app-core/data/feeds.config';
-import { formatDateShortDe } from '@correctiv/app-core/lib/format';
+import { formatDateShort } from '@correctiv/app-core/lib/format';
 import type { FeedItem } from '@correctiv/app-core/types/models';
 
 import { useArticleMeta } from '@/lib/articles/useArticleMeta';
+import { useLocale } from '@/lib/store/core';
+
+/**
+ * The two words the hero adds to a feed item, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/article.ts` (ADR 0026 §6). Everything else on this card
+ * is the article's own.
+ *
+ * `readingTime` is an ICU plural whose two German forms happen to be identical,
+ * and it is written out anyway: the unit is invariant in German and is not in
+ * English, and a plural spelled as one string is the kind of thing that only
+ * looks fine until the second language.
+ */
+const COPY = defineMessages({
+  kickerFallback: { id: 'article.kickerFallback', defaultMessage: 'Investigation' },
+  readingTime: {
+    id: 'article.readingTime',
+    defaultMessage: '{count, plural, one {# min read} other {# min read}}',
+    description:
+      'Under a headline in the feed. {count} is a number of minutes, and both branches read the same in English because English has no separate singular here; a language that has one needs both.',
+  },
+});
 
 /**
  * The lead research item on Home: edge-to-edge image, kicker, headline, teaser,
@@ -30,16 +52,18 @@ export function ArticleHero({
   item: FeedItem;
   onPress: (item: FeedItem) => void;
 }) {
+  const intl = useIntl();
+  const locale = useLocale();
   const { heroImageUrl: imageUrl, readingMinutes } = useArticleMeta(
     item.url,
     item.imageUrl ?? undefined,
     item.readingMinutes,
   );
-  const kicker = FEEDS[item.feed]?.badge ?? 'Recherche';
+  const kicker = FEEDS[item.feed]?.badge ?? intl.formatMessage(COPY.kickerFallback);
   const byline = [
     item.author,
-    formatDateShortDe(item.publishedAt),
-    readingMinutes ? `${readingMinutes} Min. Lesezeit` : undefined,
+    formatDateShort(item.publishedAt, locale),
+    readingMinutes ? intl.formatMessage(COPY.readingTime, { count: readingMinutes }) : undefined,
   ]
     .filter(Boolean)
     .join(' · ');

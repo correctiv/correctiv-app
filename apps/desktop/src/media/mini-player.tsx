@@ -40,6 +40,7 @@
 import { router } from 'expo-router';
 
 import { formatTimeHm } from '@correctiv/app-core/lib/format';
+import type { AudioError } from '@correctiv/app-core/stores/audio';
 import { stop, togglePlay } from '@/lib/audio/player';
 import { useAudio } from '@/lib/audio/useAudio';
 
@@ -52,8 +53,29 @@ import { useAudio } from '@/lib/audio/useAudio';
 const PLAY_ICON = 'media-playback-start-symbolic';
 const PAUSE_ICON = 'media-playback-pause-symbolic';
 
+/**
+ * The core's three audio codes, in German, because this bar is drawn here.
+ *
+ * The core stopped carrying a formatted `errorMessage` and now carries the CODE plus
+ * `AUDIO_ERROR_LABELS`, which are react-intl descriptors the phone renders through its
+ * `IntlProvider`. Those descriptors are the place the sentences live, and their
+ * `defaultMessage` is English — so reading one here would put an English sentence in
+ * front of a German-speaking listener, which is the one thing `AGENTS.md` is explicit
+ * about. This host has no provider, so it keeps the three sentences itself.
+ *
+ * `Record<AudioError, string>` and not a lookup with a fallback: a fourth code added
+ * to the core fails to compile here until somebody writes what it says, which is the
+ * property the core's own comment claims for `AUDIO_ERROR_LABELS` and the reason not
+ * to replace this with `?? 'Fehler'`.
+ */
+const AUDIO_ERRORS: Record<AudioError, string> = {
+  'unsupported-platform': 'Wiedergabe ist auf dieser Plattform nicht verfügbar.',
+  'start-failed': 'Wiedergabe konnte nicht gestartet werden. Bitte prüfen Sie Ihre Verbindung.',
+  interrupted: 'Wiedergabe wurde unterbrochen. Bitte prüfen Sie Ihre Verbindung.',
+};
+
 export function MiniPlayer() {
-  const { track, status, positionSec, durationSec, errorMessage } = useAudio();
+  const { track, status, positionSec, durationSec, error } = useAudio();
   if (track === null) return null;
 
   const live = track.kind === 'radio';
@@ -63,7 +85,7 @@ export function MiniPlayer() {
   /** The second line: the state while it is not yet playing, the clock once it is. */
   const subtitle = (): string => {
     if (loading) return 'Lädt …';
-    if (status === 'error') return errorMessage ?? 'Fehler';
+    if (status === 'error') return error === null ? 'Fehler' : AUDIO_ERRORS[error];
     if (live) return track.subtitle ?? '● LIVE';
     const total = durationSec > 0 ? ` / ${formatTimeHm(durationSec)}` : '';
     return `${formatTimeHm(positionSec)}${total}`;

@@ -1,0 +1,8 @@
+# The whole check, at the moment the work leaves this machine.
+#
+# Under twenty seconds, of which the typecheck is ten and cannot be narrowed —
+# TypeScript needs the whole project, so there is nothing to stage-scope here.
+#
+# CI remains the authority. This hook exists only for whoever ran `npm install`,
+# and `git push --no-verify` skips it, so it is a convenience and never a gate.
+npm run check

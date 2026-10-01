@@ -44,7 +44,8 @@ out/
 .agents/
 .claude/skills/
 skills-lock.json
-# The assembled Pages artifact: the handbook's build with the app's export copied
+
+# The assembled Pages artifact: the workbench's build with the app's export copied
 # under /app. Built in CI, and locally when checking the deploy shape.
 site/
 

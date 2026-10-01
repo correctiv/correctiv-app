@@ -53,6 +53,24 @@ async function buildAsAnOutsideConsumerWould(): Promise<string> {
   return compiler.build(CANDIDATES);
 }
 
+/**
+ * The name of the `@layer` a rule sits in, or undefined outside any.
+ *
+ * Written rather than regexed because the distinction is the point: `:root` in
+ * `@layer base` compiles identically and is still discarded, so an assertion that
+ * only looked at the selector would pass the one mistake worth catching.
+ */
+function layerAround(css: string, needle: string): string | undefined {
+  const at = css.indexOf(needle);
+  if (at === -1) return undefined;
+  const stack: (string | undefined)[] = [];
+  for (const m of css.slice(0, at).matchAll(/@layer\s+([\w-]+)\s*\{|\{|\}/g)) {
+    if (m[0] === '}') stack.pop();
+    else stack.push(m[1]);
+  }
+  return stack.findLast((name) => name !== undefined);
+}
+
 describe('the standalone theme, as a consumer outside this repo sees it', () => {
   let css: string;
 
@@ -80,6 +98,44 @@ describe('the standalone theme, as a consumer outside this repo sees it', () => 
     // #1a1a1a is grey-100's dark value — present means the palette, not just the
     // selectors, made it through.
     expect(css).toContain('#1a1a1a');
+  });
+
+  /**
+   * The shape the native side needs, checked on the artefact rather than in prose.
+   *
+   * Uniwind's native CSS processor reads a theme's dark values only out of a rule
+   * that satisfies BOTH conditions at once, hard-coded in
+   * `uniwind/dist/module/bundler/css-visitor/rule-visitor.js:14`: the enclosing
+   * layer must be named `theme`, and the rule's first selector must be `:root`.
+   * Anything else falls through to `processor.ts`'s `unsupported` branch and the
+   * rule is discarded whole — no dark variable table is built at all, and every
+   * `bg-*` class renders its light value on a dark phone while `useColors()`
+   * switches correctly.
+   *
+   * So `@variant dark { … }` written at the top level is not merely untidy. Tailwind
+   * has no element to anchor it to and compiles it against `:scope`, outside any
+   * layer; a browser reads that as `:root` and is right, which is why this was
+   * invisible on the web target for as long as it shipped.
+   *
+   * Asserted here because this is the only place with a Tailwind compiler, and it
+   * is the compiled output that the native processor actually reads. Red before the
+   * nesting landed.
+   *
+   * The nesting costs the CMS consumer something, and it is worth knowing rather
+   * than asserting: unlayered CSS beats every layer whatever the specificity, so a
+   * consumer that sets one of our `--color-*` in its own unlayered `:root` now wins
+   * in the dark scheme too, where before the dark block was unlayered and won.
+   * There is no test for that here on purpose — one was written and it passed
+   * against the broken file as well, because the light values were always layered
+   * and a stylesheet's text cannot say who wins. The README's consumer section
+   * carries the sentence instead, where the consumer reads.
+   */
+  it('puts the dark values where the native processor can find them', () => {
+    expect(css).toMatch(/:root:where\(\s*\.dark/);
+    // The failing spelling, named rather than left to a negated match nobody can
+    // read: this is what the top-level form compiled to, and what was shipped.
+    expect(css).not.toMatch(/:scope/);
+    expect(layerAround(css, ':root:where(.dark')).toBe('theme');
   });
 
   /**

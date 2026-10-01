@@ -37,8 +37,9 @@ without measurement:
 
 ## Decision
 
-**The app sets no contribution. The profile reads what the membership system answered
-and offers one link out.**
+### 1. The app sets no contribution
+
+The profile reads what the membership system answered and offers one link out.
 
 - `apps/mobile/src/app/beitreten.tsx` is deleted, with its route in
   `apps/mobile/src/app/_layout.tsx`, `tools/preview/src/routes.ts` and the
@@ -66,7 +67,7 @@ and offers one link out.**
   local newsletters. Below them one button, **"Konto verwalten"**, opening the system
   browser.
 
-### The label is the part with a rule behind it
+### 2. The label is the part with a rule behind it
 
 Outside the US, a link from the app to CORRECTIV's own site needs the External Link
 Account Entitlement. Its conditions, read off Apple's page on 2026-09-03 rather than

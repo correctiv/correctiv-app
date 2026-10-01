@@ -44,7 +44,7 @@ All of that was true, and none of it is ours to argue any more. A page surface i
 `canvas`; white on a red button is the primitive `white`. They are different tokens
 now and can move independently, which is exactly what the essay wished for.
 
-## Decision
+## 1. Decision
 
 **Adopt all three tiers, and express the dark scheme at the semantic one.**
 
@@ -153,10 +153,25 @@ nothing left to disagree with it.
 primitives no longer follow the scheme, `always-light` is exactly `white` and
 `always-dark` is exactly `neutral-700`, in both schemes.
 
-They are kept because removing them is 45 call sites in `apps/mobile/src` and 14 more
-in `tools/figma-plugin`, which is a rename pass and not this decision — and #72 is
-already doing that pass over the other ten aliases, so it takes these two with it
+They are kept because removing them is a rename pass and not this decision — and #72
+is already doing that pass over the other ten aliases, so it takes these two with it
 rather than two PRs editing the same lines.
+
+~~That pass is 45 call sites in `apps/mobile/src` and 14 more in
+`tools/figma-plugin`.~~ Struck on 2026-09-15: **49** in `apps/mobile/src`. Nothing
+voided the figure — it was exact on the day, and the app grew under it. The component
+gallery landed on 2026-09-10 and writes the other four (`gallery/Gallery.tsx`,
+`gallery/catalogue.tsx`). `tools/figma-plugin` is still 14, re-counted the same way,
+and its `spec.json` and `measured.json` are generated rather than edited. Only the
+size of the pass moved; the scheduling argument above is untouched.
+
+> A call site is a line of `apps/mobile/src` outside a comment that writes one of the
+> two names, which is what a rename would have to edit — the gallery's caption
+> printing `color="always-light"` beside its specimen included, prose about the
+> tokens excluded. `AGENTS.md` carries the live number and
+> `apps/mobile/__tests__/tokens.test.ts` takes it on every run, so this paragraph is
+> the last copy that can go stale, deliberately: a record says what was true when it
+> was written.
 
 An earlier draft gave a different reason: that `tools/figma-plugin`'s `bind()` fails
 silently on a token that has gone, so the board would keep drawing with the last synced
@@ -174,7 +189,7 @@ naming, because they are the feedback upstream needs before it drops the v1 tier
 |---|---|---|
 | `Badge` neutral fill, `ClaimStatusTag` | `grey-250` #f0f0f0 | upstream dropped it from the ramp with "no replacement" |
 | `Thumbnail` placeholder, the reader's neutral verdict plaque, `SettingRow`'s switch track | `grey-300` #e6e6e6 | `neutral-200` as a **fill**; the semantic tier has no surface there |
-| faint text: placeholders, chevrons, inactive tabs (45 uses) | `grey-500` #b3b3b3 | no foreground token that faint; `stroke-strong` shares the value but names a line |
+| faint text: placeholders, chevrons, inactive tabs (45 uses of `grey-500`, a different 45 from the struck call-site count above) | `grey-500` #b3b3b3 | no foreground token that faint; `stroke-strong` shares the value but names a line |
 
 **And one that is not an alias at all, which is the bigger gap.**
 `ClaimStatusTag.CHECKED_TRUE_GREEN` is a raw `#2e7d4f`, carried since the first
@@ -193,13 +208,26 @@ comments — react-native-web's Material teal default, named to explain why `thu
 is set at all, and a contrast figure in the reader's CSS.~~
 
 > Struck on 2026-09-04: it was a miscount on the day, not a claim a later decision
-> voided. Two raw colour values are in source rather than in comments —
+> voided. Someone auditing the app's raw colours off that paragraph would have
+> stopped at one site and missed two.
+>
+> ~~Two raw colour values are in source rather than in comments —
 > `apps/mobile/src/app/onboarding.tsx` (`'rgba(255,255,255,0.45)'`, the inactive
 > onboarding dot) and `apps/mobile/src/components/media/VideoFrame.tsx`
-> (`background:#000` in the embed page's HTML). Someone auditing the app's raw
-> colours off this paragraph would have stopped at one site and missed both. The
-> point the paragraph is making — that the semantic tier has no colour for
-> "confirmed" and the app fills the hole with a hex — is unaffected.
+> (`background:#000` in the embed page's HTML).~~ Struck again on 2026-09-15, six
+> days after that correction and by the same failure: **five**, not two. The
+> component gallery's reader fixture added three on 2026-09-10 —
+> `apps/mobile/src/gallery/fixtures.ts` lines 174 and 175 carry `#fff`, `#333` and
+> `#ff5064` as `var()` fallbacks in a hand-built HTML document, and a fallback is a
+> hex the palette does not own: repaint `canvas` and it stays where it is. The two
+> sites named above are still two of the five.
+>
+> Six literals in `src/` counting `CHECKED_TRUE_GREEN` itself; every other `#`
+> sequence there is prose in a comment or an issue number. The point the paragraph is
+> making — that the semantic tier has no colour for "confirmed" and the app fills the
+> hole with a hex — is unaffected by either strike. What the two strikes say between
+> them is about the count and not the argument: a figure taken against the source
+> expires, and this one has now done it twice.
 
 The last is the real gap, and it is not a counting one: the semantic tier has three
 neutral foregrounds (`on-canvas` #333333, `on-background` #4a4a4a, `on-canvas-muted`

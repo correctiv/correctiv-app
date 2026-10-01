@@ -34,7 +34,7 @@ NativeScript column any more, the montages bake a deleted app into their pixels,
 `screens/draft/` duplicates a design that lives in the `design-entwurf` checkout and
 moves when the design does, not when this repo does.
 
-## Decision
+## 1. Decision
 
 **The app is `apps/mobile`, the package is `@correctiv/mobile`, and the identity on
 both stores is `org.correctiv.app`.** The Expo slug follows the repo name rather than

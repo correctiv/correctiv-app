@@ -22,6 +22,17 @@ const WEB_THUMB = Platform.OS === 'web' ? { activeThumbColor: colors['always-lig
  * `Switch` from react-native rather than the one from `@expo/ui`: that one is native
  * (SwiftUI/Compose) and would disappear on web — the same trade-off as the player's
  * progress bar.
+ *
+ * **The switch is the smallest control in the app and is left that way.** The web
+ * export draws it 40 x 20, which #102 measured on all five of them; a `style` is no
+ * answer, because react-native's `Switch` renders the platform's own control and
+ * sizing the container moves the track without resizing it. The two ways out are
+ * both worse than the defect: a wrapper `Pressable` over the whole row puts a second
+ * control in the accessibility tree saying the same thing, and hiding the real one
+ * behind it takes the switch away from a keyboard. On the phone the platform's
+ * control carries the platform's own touch area, so this is a web-target finding and
+ * not a layout the app chose. `__tests__/tap-targets.test.ts` says the same thing
+ * where it lists what it cannot read.
  */
 export function SettingRow({
   label,

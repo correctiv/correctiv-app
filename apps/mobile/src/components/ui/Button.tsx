@@ -1,6 +1,7 @@
-import { Pressable, Text, type PressableProps } from 'react-native';
+import { Pressable, type PressableProps } from 'react-native';
 
 import { typography, useColors, type ColorToken } from '@/lib/theme';
+import { ScaledText } from './ScaledText';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'club' | 'onEmphasis';
 
@@ -52,7 +53,7 @@ export function Button({
       accessibilityState={{ disabled: Boolean(disabled) }}
       disabled={disabled}
       className={[
-        'rounded-md px-m py-s items-center justify-center active:opacity-80',
+        'rounded-md px-m py-s justify-center active:opacity-80',
         SURFACE[variant],
         fullWidth ? 'self-stretch' : 'self-start',
         disabled ? 'opacity-40' : '',
@@ -60,7 +61,11 @@ export function Button({
       ].join(' ')}
       {...rest}
     >
-      <Text style={[typography.button, { color: colors[LABEL_COLOR[variant]] }]}>{title}</Text>
+      <ScaledText
+        style={[typography.button, { color: colors[LABEL_COLOR[variant]], textAlign: 'center' }]}
+      >
+        {title}
+      </ScaledText>
     </Pressable>
   );
 }

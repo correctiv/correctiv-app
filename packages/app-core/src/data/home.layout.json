@@ -1,0 +1,33 @@
+{
+  "version": 4,
+  "sections": [
+    { "id": "header", "module": "home-header" },
+    { "id": "feed-status", "module": "feed-status" },
+    { "id": "callout-lifted", "module": "callout-teaser", "hidden": true },
+    { "id": "hero", "module": "article-hero" },
+    { "id": "briefing", "module": "spotlight-briefing" },
+    { "id": "early-access", "module": "early-access-card" },
+    { "id": "latest-research", "module": "latest-research" },
+    { "id": "fact-checks", "module": "faktencheck-rail" },
+    { "id": "callout", "module": "callout-teaser" },
+    { "id": "mediathek", "module": "mediathek-reihe" },
+    { "id": "backstage", "module": "backstage-teaser" },
+    { "id": "impact", "module": "impact-footer" }
+  ],
+  "moments": [
+    {
+      "at": "11:00",
+      "changes": [
+        { "id": "callout-lifted", "hidden": false },
+        { "id": "callout", "hidden": true }
+      ]
+    },
+    {
+      "at": "14:00",
+      "changes": [
+        { "id": "callout-lifted", "hidden": true },
+        { "id": "callout", "hidden": false }
+      ]
+    }
+  ]
+}

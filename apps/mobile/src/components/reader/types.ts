@@ -23,8 +23,9 @@ export interface ReaderViewProps {
    *
    * Neither platform injects script into the article to produce it: native takes
    * the WebView's own scroll event, web listens on the `srcDoc` document from the
-   * parent. That is what keeps the web iframe's sandbox at `allow-same-origin`
-   * with no `allow-scripts`.
+   * parent. That is what lets the document's policy be `script-src 'none'`: the
+   * `allow-scripts` the web frame carries is for the embeds inside it (ADR 0065 §5),
+   * and the article itself runs nothing.
    */
   onScroll: (offsetY: number) => void;
 }

@@ -1,20 +1,48 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, Animated, Pressable, View } from 'react-native';
 
 import { ReaderView } from '@/components/reader/ReaderView';
 import { Button, SafeAreaView, Typo } from '@/components/ui';
+import { HEADER_COPY } from '@/components/ui/ScreenHeaderBar';
 import { type HeaderState, nextHeaderState } from '@/lib/articles/readerChrome';
 import { classifyReaderLink } from '@/lib/articles/readerNavigation';
 import { loadArticle } from '@correctiv/app-core/articles/load';
 import type { Article } from '@correctiv/app-core/articles/types';
 import { readerHtml } from '@/lib/articles/reader';
 import { goBack } from '@/lib/navigation/goBack';
+import { useDocumentTitle } from '@/lib/navigation/documentTitle';
 import { openExternal } from '@/lib/openExternal';
 import { shareArticle } from '@/lib/shareArticle';
-import { useCoreActions, useIsSaved, useTextScale } from '@/lib/store/core';
+import { useAppTextScale, useCoreActions, useIsSaved, useLocale } from '@/lib/store/core';
 import { sizes, useColors, useIsDark } from '@/lib/theme';
+
+/**
+ * Everything the reader's own chrome says, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/article.ts` (ADR 0026 §6). The article itself is not in
+ * here: it is CORRECTIV's journalism, rendered as it was published.
+ *
+ * The back control says `ui.back`, imported rather than declared, because it is
+ * the same word the drawn bar and the platform's header use — this screen only
+ * draws its own chevron because the chrome floats over the hero image.
+ */
+const COPY = defineMessages({
+  screenTitle: {
+    id: 'article.documentTitle',
+    defaultMessage: 'Article',
+    description:
+      "The browser tab's title while an article is open on the web target. Never seen inside the app.",
+  },
+  loadFailed: { id: 'article.loadFailed', defaultMessage: 'The article could not be loaded' },
+  retryHint: { id: 'article.retryHint', defaultMessage: 'A second attempt may help.' },
+  retry: { id: 'article.retry', defaultMessage: 'Try again' },
+  openInBrowser: { id: 'article.openInBrowser', defaultMessage: 'Open in the browser' },
+  share: { id: 'article.share', defaultMessage: 'Share the article' },
+  save: { id: 'article.save', defaultMessage: 'Save the article' },
+  removeSaved: { id: 'article.removeSaved', defaultMessage: 'Saved, remove' },
+});
 
 /**
  * Article reader: full-page webview over cleaned-up article HTML (token CSS and
@@ -36,6 +64,12 @@ import { sizes, useColors, useIsDark } from '@/lib/theme';
  * would be done, for every screen at once rather than for this one.
  */
 export default function ArtikelScreen() {
+  const intl = useIntl();
+  // The reader draws its own floating chrome rather than a `ScreenHeader`, so the
+  // browser tab is named here. A fixed word and not the headline: the tab would
+  // otherwise read the screen it was opened from, which is the defect, and the
+  // article's own title is a separate change (ADR 0030).
+  useDocumentTitle(intl.formatMessage(COPY.screenTitle));
   const colors = useColors();
   const actions = useCoreActions();
   const { url, title, badge } = useLocalSearchParams<{
@@ -66,8 +100,10 @@ export default function ArtikelScreen() {
    */
   const canSave = Boolean(title ?? article?.title);
   // Both are read per render, never snapshotted: the appearance has to reach the
-  // reader's colour block, and the text-size setting its root font size.
-  const textScale = useTextScale();
+  // reader's colour block, and the app's text scale its root font size. The same
+  // scale every other screen is drawn at, not one of the article's own (ADR 0033).
+  const textScale = useAppTextScale();
+  const locale = useLocale();
   const isDark = useIsDark();
 
   /**
@@ -128,7 +164,7 @@ export default function ArtikelScreen() {
     <View className="flex-1 bg-canvas">
       {article ? (
         <ReaderView
-          html={readerHtml(article, { textScale, isDark })}
+          html={readerHtml(article, intl, { textScale, isDark, locale })}
           onNavigate={onNavigate}
           onScroll={onReaderScroll}
         />
@@ -137,16 +173,19 @@ export default function ArtikelScreen() {
           {error ? (
             <>
               <Typo variant="headline-s" className="text-center">
-                Artikel konnte nicht geladen werden
+                {intl.formatMessage(COPY.loadFailed)}
               </Typo>
               <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs text-center">
-                {title ?? 'Vielleicht hilft ein zweiter Versuch.'}
+                {title ?? intl.formatMessage(COPY.retryHint)}
               </Typo>
               <View className="mt-m flex-row gap-s">
-                <Button title="Erneut versuchen" onPress={() => setAttempt((n) => n + 1)} />
+                <Button
+                  title={intl.formatMessage(COPY.retry)}
+                  onPress={() => setAttempt((n) => n + 1)}
+                />
                 {url ? (
                   <Button
-                    title="Im Browser öffnen"
+                    title={intl.formatMessage(COPY.openInBrowser)}
                     variant="outline"
                     onPress={() => openExternal(url)}
                   />
@@ -175,19 +214,23 @@ export default function ArtikelScreen() {
           className={header === 'onSurface' ? 'bg-canvas border-b border-stroke' : ''}
         >
           <View className="flex-row items-center justify-between px-s py-2xs">
-            <HeaderButton icon="chevron-back" label="Zurück" onPress={goBack} />
+            <HeaderButton
+              icon="chevron-back"
+              label={intl.formatMessage(HEADER_COPY.back)}
+              onPress={goBack}
+            />
             {url ? (
               <View className="flex-row gap-2xs">
                 {/* Sharing a piece of journalism is the point of publishing it — the
                   one action here that works on the article rather than on the app. */}
                 <HeaderButton
                   icon="share-outline"
-                  label="Artikel teilen"
+                  label={intl.formatMessage(COPY.share)}
                   onPress={() => shareArticle(url, title ?? article?.title)}
                 />
                 <HeaderButton
                   icon={saved ? 'bookmark' : 'bookmark-outline'}
-                  label={saved ? 'Gespeichert, entfernen' : 'Artikel speichern'}
+                  label={intl.formatMessage(saved ? COPY.removeSaved : COPY.save)}
                   disabled={!saved && !canSave}
                   onPress={() =>
                     actions.savedArticles.toggle({
@@ -264,7 +307,6 @@ function HeaderButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={label}
       // Spoken as well as shown: a dimmed circle says nothing to a screen reader.
@@ -272,7 +314,15 @@ function HeaderButton({
       className={`items-center justify-center rounded-full border border-stroke bg-canvas ${
         disabled ? 'opacity-40' : 'active:opacity-70'
       }`}
-      style={{ width: sizes.iconButton, height: sizes.iconButton }}
+      /*
+       * 44 drawn, where this was 40 with `hitSlop={8}` — and here the slop was the
+       * second thing #102 asks to be checked at every one of the twelve sites, not
+       * just the first. Share and bookmark sit in a `gap-2xs` row, 6 dp apart, so
+       * their slop rectangles overlapped by 10 dp and a tap in that strip went to
+       * whichever won: an invisible ambiguity between "share this article" and
+       * "save it", on the one screen where both are one-tap actions.
+       */
+      style={{ minWidth: sizes.iconButton, minHeight: sizes.iconButton }}
     >
       <Ionicons name={icon} size={22} color={colors['on-canvas']} />
     </Pressable>

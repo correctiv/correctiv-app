@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { loadPageMeta } from '../articles/load';
+import { isFactCheckUrl } from '../articles/url';
 import { FEEDS } from '../data/feeds.config';
 import { byPublishedAt } from '../lib/sort';
 import { platform } from '../ports';
@@ -42,6 +43,13 @@ const PAGE_SIZE = 20;
  */
 export type FeedStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
 
+/**
+ * What follows the loaded pages. `unknown` until a paged source has answered: a
+ * cache hit, the bundled snapshot and RSS all return rows without knowing whether
+ * the archive goes on, and none of them may claim it ends.
+ */
+export type FeedEnd = 'unknown' | 'more' | 'end';
+
 export interface FeedSlice {
   items: FeedItem[];
   status: FeedStatus;
@@ -49,11 +57,7 @@ export interface FeedSlice {
   lastFetched: number;
   /** Highest page number loaded. 1-based, as WordPress counts. */
   page: number;
-  /**
-   * Another page is worth asking for. False on the RSS and bundle paths, which
-   * answer with everything they have in one go and cannot be paged at all.
-   */
-  hasMore: boolean;
+  end: FeedEnd;
   /** A `loadMore` is in flight — for a spinner under the list, not over it. */
   loadingMore: boolean;
 }
@@ -73,7 +77,7 @@ function emptySlices(): Record<FeedKey, FeedSlice> {
       status: 'idle',
       lastFetched: 0,
       page: 0,
-      hasMore: false,
+      end: 'unknown',
       loadingMore: false,
     };
   }
@@ -83,10 +87,6 @@ function emptySlices(): Record<FeedKey, FeedSlice> {
 const initialState: FeedsState = { byKey: emptySlices() };
 
 // --- pure selectors (see stores/interests.ts for why not part of the slice) ---
-
-export function feedItems(state: FeedsState, key: FeedKey): FeedItem[] {
-  return state.byKey[key].items;
-}
 
 /**
  * Newest first, by the item's own timestamp.
@@ -120,6 +120,40 @@ export function mergedFeedItems(state: FeedsState, keys: FeedKey[]): FeedItem[] 
     }
   }
   return sortNewestFirst(items);
+}
+
+/** The one slice `investigations` reads, so a caller can subscribe to that alone. */
+export type RecherchenFeed = { byKey: Pick<FeedsState['byKey'], 'recherchen'> };
+
+/**
+ * The investigations in the site-wide stream: `recherchen` without its fact checks.
+ *
+ * `recherchen` is `correctiv.org/feed/`, which carries both and stamps every item
+ * `feed: 'recherchen'` on purpose, so that Home's "Neueste Recherchen" does not
+ * sprout Faktencheck badges (`services/wp.service.ts` → `fetchWpFeed`). The price
+ * of that is that "an investigation" is not a field anywhere and has to be read off
+ * the permalink — `articles/url.ts`, where the reasons the other two candidate
+ * fields cannot answer it are written down.
+ *
+ * Which is why this is here and not in the screen that wants it. The profile's
+ * impact card did the filter itself, so the one screen that must not list a fact
+ * check was also the only place that knew the stream contains them; a second reader
+ * of the same feed would have had to learn it again from the same paragraph.
+ *
+ * `limit` is the caller's, like `recentIssues` in `stores/spotlight.ts`: how many
+ * a card has room for is a layout decision and this slice has no business knowing
+ * it.
+ *
+ * It takes the ONE slice it reads rather than `FeedsState`, and that is a fact
+ * about the host rather than a tidiness: a binding that has to hand over the whole
+ * `feeds` object has to subscribe to the whole `feeds` object, and Immer gives it a
+ * new identity whenever any feed lands. `byKey.recherchen` keeps its identity while
+ * its siblings change, so this signature is what lets `useInvestigations` re-render
+ * the profile for its own feed and no other. A full `FeedsState` still satisfies it.
+ */
+export function investigations(state: RecherchenFeed, limit?: number): FeedItem[] {
+  const items = state.byKey.recherchen.items.filter((item) => !isFactCheckUrl(item.url));
+  return limit === undefined ? items : items.slice(0, limit);
 }
 
 /** The worst status among `keys` — what a merged list should show. */
@@ -178,7 +212,8 @@ export const { patch } = slice.actions;
 /** One page off the network: REST, then RSS. */
 interface NetworkPage {
   items: FeedItem[];
-  hasMore: boolean;
+  /** RSS is a fixed window of recent posts, so its end says nothing about the archive. */
+  end: FeedEnd;
 }
 
 /**
@@ -201,9 +236,9 @@ interface NetworkPage {
  * the label "CORRECTIV.Europe".
  *
  * **Throws rather than answering with an empty page**, and the difference is not
- * academic. Returning `{ items: [], hasMore: false }` for a page it cannot serve
+ * academic. Returning `{ items: [], end: 'end' }` for a page it cannot serve
  * reads to `loadMore` as "the list ends here": it would bank the page number,
- * clear `hasMore`, and leave "mehr laden" gone until the app restarts, over
+ * drop the button, and leave "mehr laden" gone until the app restarts, over
  * nothing worse than one timeout. A throw leaves the list exactly as it was. A
  * test asked for page 2 with both rounds failing and caught precisely that.
  */
@@ -227,7 +262,9 @@ async function readFromNetwork(key: FeedKey, page: number): Promise<NetworkPage>
      * could not see. On page 2 and beyond an empty page is the honest end of the
      * list, so it is only the first page that falls through.
      */
-    if (page > 1 || rest.items.length > 0) return rest;
+    if (page > 1 || rest.items.length > 0) {
+      return { items: rest.items, end: rest.hasMore ? 'more' : 'end' };
+    }
     console.warn(`Feed '${key}': REST answered an empty first page, trying RSS`);
   } catch (err) {
     /**
@@ -246,30 +283,44 @@ async function readFromNetwork(key: FeedKey, page: number): Promise<NetworkPage>
 
   // Only page 1 can reach RSS. Asking it for a second page would re-serve the first.
   if (page > 1) throw new Error(`Feed '${key}': no page ${page}, RSS cannot paginate`);
-  return { items: await fetchFeed(key, config.url), hasMore: false };
+  return { items: await fetchFeed(key, config.url), end: 'unknown' };
+}
+
+/**
+ * Items only. A cached `end` would be a claim frozen for the entry's fifteen
+ * minutes, so a warm start knows the rows and nothing about what follows them.
+ */
+type CachedFeed = FeedItem[];
+
+/** A cache entry is the array; anything else is not one. */
+function asCachedFeed(value: unknown): CachedFeed | null {
+  return Array.isArray(value) ? (value as FeedItem[]) : null;
 }
 
 /** One feed: cache-first, stale-while-revalidate, bundled snapshot as the floor. */
 export const fetchFeedKey =
   (key: FeedKey, options: { force?: boolean } = {}): AppThunk<Promise<void>> =>
   async (dispatch, getState) => {
-    const cached = options.force ? null : await getCached<FeedItem[]>(CACHE_NS, key, TTL_MS);
+    const cached = options.force ? null : asCachedFeed(await getCached(CACHE_NS, key, TTL_MS));
     if (cached) {
-      dispatch(patch(key, { items: cached, status: 'ready' }));
+      dispatch(patch(key, { items: cached, status: 'ready', end: 'unknown' }));
       return;
     }
 
     // Stale-while-revalidate: show what we have, then go to the network.
     const current = getState().feeds.byKey[key];
     if (current.items.length === 0) {
-      const stale = await getStale<FeedItem[]>(CACHE_NS, key);
+      const stale = asCachedFeed(await getStale(CACHE_NS, key));
       dispatch(
-        patch(key, stale?.length ? { items: stale, status: 'ready' } : { status: 'loading' }),
+        patch(
+          key,
+          stale ? { items: stale, status: 'ready', end: 'unknown' } : { status: 'loading' },
+        ),
       );
     }
 
     try {
-      const { items, hasMore } = await readFromNetwork(key, 1);
+      const { items, end } = await readFromNetwork(key, 1);
       if (items.length === 0) throw new Error(`No items for '${key}'`);
       // Carry over images an earlier enrichment already resolved, so a refresh
       // does not blank every thumbnail for one more round of requests.
@@ -284,8 +335,8 @@ export const fetchFeedKey =
           status: 'ready',
           lastFetched: Date.now(),
           page: 1,
-          hasMore,
-          loadingMore: false,
+          end,
+          // `loadingMore` untouched: a `loadMore` may be in flight on this shared slice.
         }),
       );
       await setCached(CACHE_NS, key, merged);
@@ -327,26 +378,17 @@ export const fetchMany =
  * Silent on failure by design. A failed "mehr laden" leaves the list exactly as
  * it was, which is the honest outcome; only `loadingMore` goes back to false so
  * the reader can try again.
- *
- * **No screen calls this yet, and that is a decision.** The one list it belongs on
- * is the project page, and [ADR 0012](../../../../adr/0012-a-list-virtualizer-for-the-unbounded-lists.md)
- * names that list as bounded by `data?.slice(0, 12)` and virtualizing it as
- * busywork. Both halves of that are true only while the list has a ceiling. Wiring
- * a "mehr laden" button there makes the list unbounded, which moves it into the
- * category the ADR virtualizes — so the UI change is a `FlatList` conversion plus
- * an amendment to that ADR, not a button. The capability sits here, tested, until
- * someone wants to spend that.
  */
 export const loadMore =
   (key: FeedKey): AppThunk<Promise<void>> =>
   async (dispatch, getState) => {
     const before = getState().feeds.byKey[key];
-    if (!before.hasMore || before.loadingMore) return;
+    if (before.end !== 'more' || before.loadingMore) return;
 
     dispatch(patch(key, { loadingMore: true }));
     const next = before.page + 1;
     try {
-      const { items, hasMore } = await readFromNetwork(key, next);
+      const { items, end } = await readFromNetwork(key, next);
       /**
        * The list is read again AFTER the await, never from the snapshot taken
        * before it. A pull-to-refresh dispatched while this page was in flight has
@@ -354,10 +396,16 @@ export const loadMore =
        * would put the old page 1 back and persist it — so a newly published
        * article would vanish again until the next forced refresh.
        */
-      const current = getState().feeds.byKey[key].items;
-      const seen = new Set(current.map((i) => i.url));
-      const appended = [...current, ...items.filter((i) => !seen.has(i.url))];
-      dispatch(patch(key, { items: appended, page: next, hasMore, loadingMore: false }));
+      const live = getState().feeds.byKey[key];
+      // A refresh landed meanwhile: this page no longer follows the list, so drop it
+      // whole rather than leave a gap the URL dedup cannot see.
+      if (live.page !== before.page) {
+        dispatch(patch(key, { loadingMore: false }));
+        return;
+      }
+      const seen = new Set(live.items.map((i) => i.url));
+      const appended = [...live.items, ...items.filter((i) => !seen.has(i.url))];
+      dispatch(patch(key, { items: appended, page: next, end, loadingMore: false }));
       await setCached(CACHE_NS, key, appended);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -365,14 +413,14 @@ export const loadMore =
       /**
        * A 400 from WordPress is the end of the list, not an outage.
        *
-       * `hasMore` is inferred from a full page, so a category whose post count is
+       * `more` is inferred from a full page, so a category whose post count is
        * an exact multiple of the page size reports one more page than it has, and
        * WP answers that page with `rest_post_invalid_page_number`. Leaving
-       * `hasMore` set would keep a "mehr laden" button that fails on every press
+       * `more` set would keep a "mehr laden" button that fails on every press
        * for the rest of the session.
        */
       const ended = message.includes('HTTP 400');
-      dispatch(patch(key, { loadingMore: false, ...(ended ? { hasMore: false } : {}) }));
+      dispatch(patch(key, { loadingMore: false, ...(ended ? { end: 'end' as const } : {}) }));
     }
   };
 
@@ -390,11 +438,3 @@ export const enrichImage =
     dispatch(patch(key, { items }));
     await setCached(CACHE_NS, key, items);
   };
-
-export const feedsActions = {
-  ...slice.actions,
-  fetch: fetchFeedKey,
-  fetchMany,
-  loadMore,
-  enrichImage,
-};

@@ -26,6 +26,9 @@ export type {
   ContentBundle,
   CorePlatform,
   BlobStore,
+  ErrorDomain,
+  ErrorReport,
+  ErrorReporter,
   KeyValueStore,
   NowPlaying,
   PlaybackStatus,
@@ -34,6 +37,7 @@ export {
   configurePlatform,
   createEmptyContentBundle,
   createMemoryPlatform,
+  createNoOpErrorReporter,
   platform,
   resetPlatform,
 } from './ports';

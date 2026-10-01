@@ -206,7 +206,12 @@ const BADGE_TONES = [
   ['live', null, '@color-accent'],
 ];
 
-/** `claimStatusTag` decides the words; this file only carries the four surfaces. */
+/**
+ * The four claim surfaces. The words are not here and are not the core's either
+ * any more: `apps/mobile/src/components/participate/ClaimStatusTag.tsx` formats
+ * them out of its own `STATUS_LABELS` and the core's `RATING_LABELS`. The German
+ * below is the SPEC's label, which is what a spec shows.
+ */
 const CLAIM_TONES = [
   ['richtig', '#2e7d4f', '@color-always-light', null, 'RICHTIG'],
   ['falsch', '@color-accent', '@color-always-light', null, 'FALSCH'],

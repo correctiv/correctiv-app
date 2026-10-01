@@ -5,7 +5,7 @@ looked like and what to do instead. They are grouped by where they bite.
 
 ## A green build is not evidence
 
-Five defects reached a branch past a green build, typecheck and test run: a webview
+Defects reached a branch past a green build, typecheck and test run: a webview
 that does not exist on web, a dev bundle that died before rendering, a 404 on every
 dynamic route, a startup crash from a duplicated React, an empty article list. Each
 was found by opening the app in a browser. None by CI.
@@ -26,6 +26,14 @@ you judge, and on a route whose content is an `<iframe>` (the reader on web) scr
 **the frame**. Scrolling the page moves nothing and every shot comes out identical,
 which reads as "checked" and is not.
 
+A shot can also be of the wrong screen altogether, and look like a defect.
+`npm run dev -w @correctiv/workbench -- --port 5180` passes the number to Vite as its
+**root directory**, not as its port: the server starts, says nothing, and answers every
+address with a bodyless 404. Headless Chrome then saves Chrome's own error page, which
+is a picture of a working tool that appears to be broken. Write `--port 5180
+--strictPort`, and open the shot before you report anything from it. Nothing in this
+repository can tell the two pictures apart; only looking can.
+
 Extracting text is the weak version of this. `uiautomator dump` and
 `document.body.innerText` prove the right words are on screen and nothing about how
 it looks. Nine further defects hid behind exactly that, among them a video card
@@ -44,6 +52,58 @@ that owns it, not the UI tree. For audio that is
 `adb shell dumpsys audio | grep "u/pid:<uid>"`, which reports `state:started` /
 `state:stopped` per player. `adb shell dumpsys window`, `pidof` and logcat are the
 equivalents for focus, liveness and errors.
+
+**The workbench has two build paths and they do not agree.** `npm run build:workbench`
+ran green while `npm run workbench` served an empty `#root` on every route, and the
+green one is the only one CI had. The cause was one file compiled twice:
+`apps/mobile/src/i18n/polyfills.ts` calls `require()` inside a runtime condition, the
+production build hoisted that to a namespace import and printed a warning the file
+itself documented as expected, and the dev server hoisted it to a **default** import
+of a module that exports nothing — a link-time `SyntaxError`, which kills the whole
+graph before a line of it evaluates. It stood for a day, in which two agents built
+themselves ways around the blank page instead of reporting it: one served `dist`
+statically, the other wrote an entry point importing a single page. Both worked, which
+is the part worth noticing. → After anything that touches `vite.app.mjs`,
+`vite.config.ts`, or a module `apps/workbench` compiles out of `apps/mobile`, open
+both:
+
+```bash
+npm run workbench:renders        # starts the dev server, asserts the page rendered
+npm run build:workbench && npm run workbench:renders:dist
+```
+
+`apps/workbench/scripts/renders.mjs` is what those run. Three things have to hold, and
+the second is the one that is not obvious: the shell mounted, what mounted is not the
+error boundary standing in for a route that threw — it wraps the main area only, so a
+broken route still leaves a header, a rail and a page full of words — and the browser
+logged no error. The second command is in that order on purpose: `renders:dist` reads
+`dist/` and refuses to judge one older than the working tree. It says in its own header
+what it cannot see, which is everything about how the page looks — and one thing it
+cannot see at all is inside the app frame, because it serves `apps/workbench/dist`
+alone and `/app/` is not under it. `apps/workbench/scripts/home-live.mjs` is the second
+check that opens a browser, for exactly that gap.
+
+**A first visit to `/preview` with the home tool open opened on the sign-in door, and
+every edit was silently lost to it.** `/preview` with no `s=` — the plain link
+`RELEASE.md` hands out — leaves storage exactly as a first-time visitor's browser has
+it: nothing. The root layout renders the door instead of the router until a session is
+admitted, so the app frame showed the sign-in form, and the Home layout tool's every
+edit reached `localStorage` (`preview/home/write.ts` never stopped working) with no
+screen behind the door to redraw. That read as "moving a block does not redraw the
+app" and was reported as one, from the published site. `AppFrame.tsx` already calls
+`holdTheDoorOpen` for every `/components/<group>/<name>` page and says why: "a frame
+that draws the door is worse than one that draws a component" — but nothing called it
+for `/preview`'s own frame, which is the gap. Holding the door open alone still left
+the frame on "Los geht's": the root layout also redirects an admitted-but-unonboarded
+session to onboarding, which `AppFrame.tsx` never meets because none of its routes are
+`/`, and `/preview`'s frame starts there. → `preview/Preview.tsx` now calls both
+`holdTheDoorOpen` and `preview/frame/seed.ts`'s new `ensureOnboarded` when no fixture is
+named, gated on the same `SEEDED_KEY` marker so a real visitor's own session or
+progress is never touched, and `s=fresh` / `s=no-access` — which choose the door on
+purpose — take a different branch entirely.
+`apps/workbench/scripts/home-live.mjs` assembles the workbench and the app the way
+`pages.yml` does, opens `/preview#/?tool=home` with no fixture, and fails if the frame
+is still on the door or if moving a block does not change what it draws.
 
 ## Expo / React Native
 
@@ -86,6 +146,30 @@ equivalents for focus, liveness and errors.
   everything green. → List every package that has a config plugin in `app.json`
   `plugins`, then **read** the generated `android/app/src/main/AndroidManifest.xml`
   and `ios/*/Info.plist` to check what it actually wrote.
+- **`options.title` does not reach the browser tab.** expo-router 57 hands its
+  `NavigationContainer` a hard-coded `documentTitle: { enabled: false }`
+  (`build/ExpoRoot.js`), so react-navigation's own title bridge is off. Setting the
+  option looks right in code and changes nothing anybody can see. → The app writes
+  `document.title` itself, in `lib/navigation/documentTitle.web.ts`, which keeps a list
+  of the mounted screens naming themselves rather than a saved string, because two
+  screens can leave in one commit
+  ([ADR 0030](adr/0030-the-platforms-header-and-ours-on-web.md)).
+- **`expo-router/head` works here; the provider is already mounted.** This entry used
+  to say the opposite, and it was wrong: `expo-router/entry` → `entry-classic.js` →
+  `build/qualified-entry.js` renders `<Head.Provider>`, which is `HelmetProvider` in
+  `build/head/ExpoHead.js`, the unsuffixed file web resolves. The `data-rh="true"` on
+  the empty `<title>` every exported page ships is that provider's own marker. Measured
+  on 2026-09-15: a `<Head><title>` in a route did write the browser tab. → **This is
+  the path for `<meta property="og:…">` on shared article links**, not a second
+  provider. What it will not do is reach the static export, for the reason below, so a
+  crawler that does not run JavaScript still sees nothing.
+- **The static export contains no screen at all.** The root shell renders `null` until
+  the fonts are loaded and the store is hydrated, so `expo export` pre-renders the shell
+  and stops: `grep -c "Abriss-Atlas" dist/atlas.html` is 0, and every page ships
+  `<title data-rh="true"></title>`. Nothing a route renders — a title, a meta tag, a
+  headline — is in the HTML, and the page looks perfect in a browser, because the
+  browser runs the bundle. → Judge anything meant for a crawler or an unfurler with
+  `curl` or `grep` over `dist/`, never in a browser.
 - **Typed routes are generated by `expo start`, not by `expo export`**, and
   `.expo/` is gitignored. A new route therefore fails `tsc` locally until Metro has
   run once, while CI (no `.expo/types`) typechecks every href permissively and cannot
@@ -140,8 +224,30 @@ equivalents for focus, liveness and errors.
 
 ## The web target
 
+- **A link into `/preview` loses its frame parameters on the DEV SERVER, and only
+  there.** Open `#/?d=iphone-15-pro&s=onboarded&tm=18:30` cold on `npm run workbench`
+  and the address comes back as `#/?d=iphone-15-pro`: the fixture and the simulated
+  clock are gone, `d` survives only because the default happens to agree, and nothing
+  reports anything. It reads exactly like a broken link, and the conclusion to avoid is
+  "the parameter is not implemented".
+
+  It is React's StrictMode, which `src/main.tsx` turns on and which mounts every
+  component twice in development. The first mount's `start()` reads the hash correctly;
+  the passive effect in `pages/Preview.tsx` then writes the state it read during
+  *render*, which is still the defaults, over the hash; the strict remount's `start()`
+  reads what is left. Measured on 2026-09-17 by wrapping `history.replaceState`: one
+  write, from `shell/address.ts` under `pages/Preview.tsx`, and it lands between the two
+  mounts.
+
+  → **Check a link against the built site, not the dev server.** `npm run
+  build:workbench` and then `node screens/tools/serve-clean.mjs apps/workbench/dist
+  <port>`; StrictMode is inert in a production React build and every parameter
+  survives, which is what the same URL measured that day. Inside the page nothing is
+  affected: a control that writes the address writes it correctly on both, so only the
+  cold load of a link is worth checking this way.
+
 - **A development bundle ignores the base path when it matches routes, and the
-  door hides it.** The handbook publishes the app one directory below itself, at
+  door hides it.** The workbench publishes the app one directory below itself, at
   `/app/`, and `experiments.baseUrl` is what tells Expo Router to strip that
   prefix. A `--dev` bundle applies it to asset URLs and not to route matching, so
   every route under the base falls through to the app's own 404. What makes this
@@ -156,7 +262,7 @@ equivalents for focus, liveness and errors.
 
   → `build:web` exports production, and `pages.yml` fails the deploy if the
   handle is present, which is the tell for a `--dev` bundle. The published
-  workbench therefore has no store handle, and it says so on the panels that
+  preview therefore has no store handle, and it says so on the panels that
   need one. The same limit applies to the dev server, which is a `--dev` bundle
   by definition, ~~so locally the route field reaches the app's first screen and no
   further~~. Driving the app's own router instead of its address bar was tried on
@@ -167,10 +273,10 @@ equivalents for focus, liveness and errors.
   It is the fix, with a second half the 2026-09-05 attempt did not have.
   Re-measured on 2026-09-10 against both servers: the route field walks the whole
   app, and a reload inside the frame stays in it. `driveRoute` in
-  `apps/handbook/src/workbench/frame/handle.ts` sends the frame through the app's
+  `apps/workbench/src/preview/frame/handle.ts` sends the frame through the app's
   router; `keepFramePath` puts the base back on the address afterwards, because the
   **same fork skips `appendBaseUrl` in development too** — so every navigation, the
-  shell's and a tap in the app alike, writes a path on the *handbook's* origin, and
+  shell's and a tap in the app alike, writes a path on the *workbench's* origin, and
   a reload from there leaves the app entirely. That base-less address stands for at
   most one poll tick: sampled every 50 ms, the base was back within 50 ms of a driven
   route and within 250 ms of a tap. Nothing closes that window from the app side,
@@ -180,14 +286,14 @@ equivalents for focus, liveness and errors.
 
   What still has no way in is a route opened in its own tab: `/app/entdecken` typed
   into the address bar renders the app's own 404 against the dev server, which is
-  what the workbench's "open in a new tab" button does and what the Build panel now
+  what the preview's "open in a new tab" button does and what the Build panel now
   says. For that, open the app's own dev server directly at `localhost:8081/` and
   give up the inspector while you do, or serve a static export with
   `screens/tools/serve-clean.mjs`.
 
   **Any other frame has to do the same, and `about:blank` answers every question
-  wrongly on the way.** `/components` draws each component in its own frame
-  (`workbench/AppFrame.tsx`), so the mechanism above is shared rather than copied, and
+  wrongly on the way.** `/components/<group>/<name>` draws its component in a frame
+  (`preview/AppFrame.tsx`), so the mechanism above is shared rather than copied, and
   getting there cost three measurements on 2026-09-10. A frame whose `src` is set by
   script fires `about:blank`'s `load` before the app's, and even on the app's the
   handle can be on the window while the router is not mounted yet: that first
@@ -221,7 +327,7 @@ equivalents for focus, liveness and errors.
   GitHub Pages does.
 - **A default export writes URLs absolute from the domain root** (`/_expo/…`,
   `/assets/…`), and a GitHub Pages *project* site is served from
-  `faktenforum.github.io/correctiv-app/`. Every asset then resolves one directory
+  `correctiv.github.io/correctiv-app/`. Every asset then resolves one directory
   too high and 404s: a blank page from a build that exported cleanly, passed every
   assertion in `ci.yml` and looks perfect on `localhost:8099/`. → `experiments.baseUrl`,
   set from `EXPO_BASE_URL` in `apps/mobile/app.config.js` so only the Pages build
@@ -233,6 +339,23 @@ equivalents for focus, liveness and errors.
   ```
   `pages.yml` greps the built `index.html` for the prefix, because this failure has
   no other symptom before it is public.
+- **Two Vites in one tree, and a plugin reading the wrong one.** `apps/workbench`
+  builds with Vite 8 and Rolldown. `vitest` has `vite` as a regular dependency,
+  range `^5 || ^6 || ^7`, so npm used to hoist **7.3.6** to `node_modules/vite` and
+  leave the workbench's 8 in `apps/workbench/node_modules/vite`. A *plugin* resolves
+  `vite` from where the plugin is installed, which is the root — so `uniwind/vite`'s
+  own `require('vite/package.json')` reported 7 and it configured a Vite 8 build for
+  esbuild. Everything still built; it was simply the wrong half of the plugin.
+  → The tell is a warning that names a plugin: `` `optimizeDeps.esbuildOptions`
+  option was specified by "uniwind" plugin ``. A `resolve.alias` `customResolver`
+  deprecation is **not** the tell, because Uniwind emits that on both code paths.
+  The check is `npm ls vite` from the repository root, and what it must show is
+  8 at the top and vitest's 7 nested under `node_modules/vitest/node_modules/vite`.
+  → The fix is `vite` in the **root** `package.json`'s devDependencies, which is
+  what makes npm hoist the right one. Not `overrides`: that would force vitest onto
+  a major it does not declare. `apps/workbench/test/toolchain.test.ts` fails if the
+  root ever hands out a 7 again.
+  ([ADR 0027](adr/0027-the-handbook-draws-the-apps-components.md))
 - **`react-native-web`'s `Switch` reads a different prop for the ON thumb.** Its
   `thumbColor` covers the OFF state only; ON comes from `activeThumbColor`, whose
   default is Material teal `#009688` (`exports/Switch/index.js`). So every enabled
@@ -245,7 +368,7 @@ equivalents for focus, liveness and errors.
 - **`correctiv.org`'s RSS feeds send no `Access-Control-Allow-Origin`,** so a browser
   blocks every RSS request. **The header is a property of the format, not of the
   server**, which took until 2026-09-01 to notice: `wp/v2/posts` reflects whatever
-  `Origin` it is given (`localhost:8081`, `localhost:8099`, `faktenforum.github.io`,
+  `Origin` it is given (`localhost:8081`, `localhost:8099`, `correctiv.github.io`,
   an arbitrary host, even `null`) and answers the `OPTIONS` preflight, while the feeds
   under `/feed/` send nothing. This entry read "no feed is ever live on web" for
   months on the strength of testing one of the two.
@@ -308,6 +431,19 @@ equivalents for focus, liveness and errors.
   same crash keeps appearing after the fix. → Delete
   `android/app/build/generated/assets/react` (and `intermediates/assets`) before
   rebuilding.
+- **A debuggable build on an emulator does not go through `adb reverse`.** React
+  Native asks `AndroidInfoHelpers` for the dev server, and on an emulator that is
+  `10.0.2.2:8081` — the host, directly — so `adb reverse tcp:8081 tcp:8090` redirects
+  nothing. With a second checkout's Metro already holding 8081, the app keeps loading
+  *that* checkout while your own Metro logs nothing, and a tour then photographs
+  somebody else's branch under your branch's name. It looks exactly like a change
+  that had no effect. → Point the app at your own server instead of the port:
+  force-stop it, then
+  `adb shell run-as org.correctiv.app cp /data/local/tmp/prefs.xml shared_prefs/org.correctiv.app_preferences.xml`
+  with a `<string name="debug_http_host">10.0.2.2:8090</string>` in it, and delete
+  that file when you are done or the next person's emulator points at a server that
+  has gone. **Your Metro printing `Android Bundled … apps/mobile/index.js` is the
+  proof**, and it is the only one: the app on screen looks the same either way.
 - **On Fedora the AVD dies with SIGSEGV before boot.** SwiftShader JITs shaders onto
   the heap and SELinux denies `execheap` (`AVC denied { execheap }
   comm="RenderThread"`). `-gpu off` does not help, because that only affects the *guest*
@@ -315,6 +451,17 @@ equivalents for focus, liveness and errors.
   **with a window**: real Mesa renders, SwiftShader is never loaded, boots in ten
   seconds. Headless would need `setsebool -P selinuxuser_execheap 1`, i.e. relaxing
   a hardening default.
+- **An emulator with animations off asks for reduced motion.** The WebView reads
+  `animator_duration_scale` 0, which is also what "Remove animations" in the
+  accessibility settings sets, as `prefers-reduced-motion: reduce`. The reader's
+  header video is then swapped for its still on purpose, and it looks exactly like a
+  video that fails to autoplay. Issue #271 reported it as that: on the API 36 emulator
+  on 2026-09-24 the same build and article showed a frozen hero at scale 0 and a
+  moving one at scale 1. A plain test page without the media query plays either way,
+  so it does not tell the two apart. → Check
+  `adb shell settings get global animator_duration_scale` before calling the video
+  broken. The tours set it to 1 and put it back afterwards (`quiet_system_ui` in
+  `screens/tools/lib.sh`), so an emulator left at 0 is a normal state.
 
 ## Design tokens and styling
 
@@ -380,7 +527,7 @@ equivalents for focus, liveness and errors.
   everything crosses (ADR 0014), and this is the exception: the scheme travels as a
   class on the *document's* root element, and the framed app has a root element of its
   own. Both sides default to `'system'`, so they agree until a reader picks light or
-  dark on one of them — and then `/components` drew a black phone on a white page,
+  dark on one of them — and then the reference drew a black phone on a white page,
   which is the app's own default against a dark device and the combination this file
   already calls the one that ships broken. There is no handle to dispatch through in
   the published export, and seeding `settings` would clobber whatever the reader had
@@ -388,7 +535,7 @@ equivalents for focus, liveness and errors.
   `prefers-color-scheme` resolves to inside the embedded document. Measured on
   2026-09-10: setting that one property on the `<iframe>` moved the framed app's own
   `light` / `dark` class within a tick, no reload, no handle, so it works in the export
-  too. `workbench/AppFrame.tsx` carries it as `scheme-light dark:scheme-dark`, which
+  too. `preview/AppFrame.tsx` carries it as `scheme-light dark:scheme-dark`, which
   puts the site's own three states behind it. The app stays the authority when its
   setting is explicit, because Uniwind then writes the class from the setting and never
   consults the query.
@@ -400,6 +547,21 @@ equivalents for focus, liveness and errors.
   class appeared to do nothing; with the machine's own scheme left alone and only the
   site switched, the framed app followed the site in all three of its settings. Set the
   site's appearance and use the real device scheme.
+- **Persisting a setting from the effect that applies it is a delete on every page
+  that opens.** The workbench's `useAppearance` wrote the reader's choice to
+  `localStorage` in the same effect that stamps the class, so the write ran on mount
+  as well as on a change — and because "system" is the key being *absent*, a document
+  that had read "system" wrote it by calling `removeItem` on somebody else's choice.
+  One document would be harmless; this site runs more than one on the origin, because
+  `preview/AppFrame.tsx` frames `<base>/app<route>` and a static host answers every
+  path the app's export does not contain with the site's own `404.html`, which is a
+  second copy of the site. Issue #131: the setting came back on the device scheme and
+  the key was gone, with nothing in the bundle that names the key except the site's own
+  hook. Typecheck, lint and 137 workbench tests were green throughout, and so was every
+  single-tab browser walk. → **A read is not a fact about what the reader wants**, only
+  about what the store said when that document started, so only a click may write.
+  `theme.ts` keeps one writer, `rememberAppearance`, reached from the setter alone, and
+  `test/theme.test.ts` fails if a write finds its way back into the effect.
 - **`userInterfaceStyle` in `app.json` is a promise to the OS, and on iOS it is
   binding.** It was `"light"`, which `expo prebuild` writes into
   `ios/<name>/Info.plist` as `UIUserInterfaceStyle = Light`. iOS then reports light
@@ -413,7 +575,7 @@ equivalents for focus, liveness and errors.
 
 - **`t=dark` in a preview URL does nothing on a static export, and says nothing while
   it does nothing.** `expo export` sets `__DEV__` false, so the export carries no dev
-  handle: `/workbench`'s appearance panel disables itself, and the shell accepts
+  handle: `/preview`'s appearance panel disables itself, and the shell accepts
   `t=dark` in the hash and ignores it. A screenshot round driven that way produces
   "dark" images that are all light. → Drive the scheme from the browser instead —
   `emulateMedia({colorScheme:'dark'})`, or DevTools — with the app's own setting left

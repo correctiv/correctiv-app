@@ -28,7 +28,7 @@ every React developer already knows is worth more here than any property of the
 implementation**, and this ADR should say so rather than dress the choice up as a
 measurement.
 
-## Decision
+## 1. Decision
 
 Redux Toolkit, one store, ten slices. The host binds with `react-redux`.
 

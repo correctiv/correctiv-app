@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { CONTENT_FEEDS, FEEDS, PODCAST_CHANNELS } from '@correctiv/app-core/data/feeds.config';
+import type { CorePlatform } from '@correctiv/app-core';
 import type { FeedKey } from '@correctiv/app-core/types/models';
 
 import { OFFLINE_COVERS } from '../src/lib/articles/covers';
@@ -8,66 +7,106 @@ import { expoPlatform } from '../src/lib/platform/expo';
 
 /**
  * Both storage ports are asynchronous by contract, so this adapter is a thin
- * passthrough over AsyncStorage and these tests pin what a passthrough can still
- * get wrong: the key namespace, and what a storage fault turns into.
+ * passthrough over MMKV and these tests pin what a passthrough can still get
+ * wrong: which store each port writes to, and what a storage fault turns into.
  *
  * It used to be more than that. `KeyValueStore` was synchronous, which forced an
  * in-memory mirror hydrated once at startup — and the tests here existed mostly to
  * pin the two ways that bridge could fail: a read before hydration (which started
  * the app on empty state and then overwrote the real state on the first write) and
- * a write that never reached AsyncStorage. The port went async, the mirror went
- * with it, and so did the first of those failure modes.
+ * a write that never reached storage. The port went async, the mirror went with
+ * it, and so did the first of those failure modes.
+ *
+ * The double is MMKV's own shape rather than the package's test mock, because the
+ * thing worth asserting is invisible from a single instance: the reader's own data
+ * and the evictable cache go into two DIFFERENT stores, which is what makes "the
+ * cache cannot evict a bookmark" a fact about the storage layout.
  */
+interface MmkvDouble {
+  id: string;
+  contains: jest.Mock<boolean, [string]>;
+  getString: jest.Mock<string | undefined, [string]>;
+  set: jest.Mock<void, [string, string]>;
+  remove: jest.Mock<boolean, [string]>;
+}
 
-jest.mock('@react-native-async-storage/async-storage', () => {
-  const store = new Map<string, string>();
+interface MmkvModule {
+  __stores: Map<string, { data: Map<string, string>; instance: MmkvDouble }>;
+  __control: { failOnProbe: boolean };
+  createMMKV: jest.Mock<MmkvDouble, [{ id: string }]>;
+}
+
+jest.mock('react-native-mmkv', () => {
+  const stores = new Map<string, { data: Map<string, string>; instance: unknown }>();
+  const control = { failOnProbe: false };
   return {
-    __store: store,
-    getAllKeys: jest.fn(async () => [...store.keys()]),
-    multiGet: jest.fn(async (keys: string[]) => keys.map((k) => [k, store.get(k) ?? null])),
-    getItem: jest.fn(async (k: string) => store.get(k) ?? null),
-    setItem: jest.fn(async (k: string, v: string) => void store.set(k, v)),
-    removeItem: jest.fn(async (k: string) => void store.delete(k)),
+    __stores: stores,
+    __control: control,
+    createMMKV: jest.fn(({ id }: { id: string }) => {
+      const data = stores.get(id)?.data ?? new Map<string, string>();
+      const instance = {
+        id,
+        // The adapter probes with this on the way in. MMKV's web build fails here
+        // rather than at creation, so the double has to be able to as well.
+        contains: jest.fn((key: string) => {
+          if (control.failOnProbe) throw new Error('no window to hold localStorage');
+          return data.has(key);
+        }),
+        getString: jest.fn((key: string) => data.get(key)),
+        set: jest.fn((key: string, value: string) => {
+          data.set(key, String(value));
+        }),
+        remove: jest.fn((key: string) => data.delete(key)),
+      };
+      stores.set(id, { data, instance });
+      return instance;
+    }),
   };
 });
 
-const backing = (AsyncStorage as unknown as { __store: Map<string, string> }).__store;
+const mmkv = jest.requireMock<MmkvModule>('react-native-mmkv');
+
+/** The store behind `KeyValueStore`: bookmarks, settings, the session. */
+const stateStore = () => mmkv.__stores.get('correctiv.state');
+/** The store behind `BlobStore`: everything the cache may evict. */
+const cacheStore = () => mmkv.__stores.get('correctiv.cache');
 
 beforeEach(() => {
-  backing.clear();
+  for (const store of mmkv.__stores.values()) store.data.clear();
+  // The two `jest.isolateModules` suites below each open a store under their own
+  // conditions, and this flag reaches them: without the reset, whichever runs
+  // second inherits the first one's backend.
+  mmkv.__control.failOnProbe = false;
   jest.clearAllMocks();
 });
 
 describe('keyValue port', () => {
-  it('round-trips under a namespaced key', async () => {
+  it('round-trips through the state store, under the key it was given', async () => {
     await expoPlatform.keyValue.setString('store.membership', '{"isMember":true}');
 
-    // The prefix is what keeps this adapter's keys out of everybody else's.
-    expect(backing.get('kv:store.membership')).toBe('{"isMember":true}');
+    // No prefix of its own: a store of its own is what keeps these keys out of
+    // everybody else's, and the cache is a different store entirely.
+    expect(stateStore()?.data.get('store.membership')).toBe('{"isMember":true}');
     expect(await expoPlatform.keyValue.getString('store.membership')).toBe('{"isMember":true}');
   });
 
-  it('does not surface keys this adapter does not own', async () => {
-    backing.set('saved-articles', 'some other library');
-    backing.set('kv:mine', 'mine');
-
-    expect(await expoPlatform.keyValue.getString('mine')).toBe('mine');
-    // Not prefixed, so it is somebody else's — reading it as ours would hand
-    // persist() a payload it never wrote.
-    expect(await expoPlatform.keyValue.getString('saved-articles')).toBeNull();
+  it('answers null for a key it never wrote', async () => {
+    expect(await expoPlatform.keyValue.getString('store.nothing')).toBeNull();
   });
 
   it('removes from storage', async () => {
-    backing.set('kv:gone', 'x');
+    stateStore()?.data.set('gone', 'x');
 
     await expoPlatform.keyValue.remove('gone');
 
-    expect(backing.has('kv:gone')).toBe(false);
+    expect(stateStore()?.data.has('gone')).toBe(false);
     expect(await expoPlatform.keyValue.getString('gone')).toBeNull();
   });
 
   it('treats a failed read as an absent key, and says so', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('disk gone'));
+    stateStore()?.instance.getString.mockImplementationOnce(() => {
+      throw new Error('disk gone');
+    });
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     // A read that fails and a key that is absent mean the same thing to persist():
@@ -79,12 +118,15 @@ describe('keyValue port', () => {
   });
 
   it('lets a failed write reject, so the caller can retry it', async () => {
-    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('disk full'));
+    stateStore()?.instance.set.mockImplementationOnce(() => {
+      throw new Error('quota exceeded');
+    });
 
     // Deliberately not swallowed here: persist() keeps its "last written" pointer
     // unchanged when a write rejects, so the next change to that slice tries
-    // again. Swallowing it at this level would make that impossible.
-    await expect(expoPlatform.keyValue.setString('k', 'v')).rejects.toThrow('disk full');
+    // again. Swallowing it at this level would make that impossible — and on web
+    // this is the localStorage quota, which is the one a demo can actually hit.
+    await expect(expoPlatform.keyValue.setString('k', 'v')).rejects.toThrow('quota exceeded');
   });
 });
 
@@ -96,7 +138,7 @@ describe('blobs port', () => {
 
     expect(await expoPlatform.blobs.read('rss', 'faktencheck')).toBe('A');
     expect(await expoPlatform.blobs.read('peertube', 'faktencheck')).toBe('B');
-    expect(backing.get('blob:rss/faktencheck')).toBe('A');
+    expect(cacheStore()?.data.get('rss/faktencheck')).toBe('A');
   });
 
   it('returns null for an unknown blob', async () => {
@@ -104,15 +146,197 @@ describe('blobs port', () => {
   });
 
   it('reads what an earlier session cached', async () => {
-    backing.set('blob:rss/klima', 'cached xml');
+    cacheStore()?.data.set('rss/klima', 'cached xml');
     expect(await expoPlatform.blobs.read('rss', 'klima')).toBe('cached xml');
   });
 
+  it('deletes, which is what makes the cache evictable at all', async () => {
+    await expoPlatform.blobs.write('feeds', 'klima.json', 'cached');
+
+    await expoPlatform.blobs.delete('feeds', 'klima.json');
+
+    expect(cacheStore()?.data.has('feeds/klima.json')).toBe(false);
+    expect(await expoPlatform.blobs.read('feeds', 'klima.json')).toBeNull();
+  });
+
+  it('shrugs at deleting what is not there', async () => {
+    await expect(expoPlatform.blobs.delete('feeds', 'never-written')).resolves.toBeUndefined();
+  });
+
   it('treats a storage fault as a cache miss rather than an error', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('disk gone'));
+    cacheStore()?.instance.getString.mockImplementationOnce(() => {
+      throw new Error('disk gone');
+    });
     expect(await expoPlatform.blobs.read('rss', 'klima')).toBeNull();
   });
+
+  it('warns about a failed write but does not reject — the cache is best-effort', async () => {
+    cacheStore()?.instance.set.mockImplementationOnce(() => {
+      throw new Error('quota exceeded');
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await expect(expoPlatform.blobs.write('feeds', 'klima.json', 'x')).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });
+
+/**
+ * The structural half of "never evict what the reader chose". The core's half is
+ * that its cache imports no name from `KeyValueStore`; this is the half that holds
+ * even if that ever stopped being true.
+ */
+describe('the two stores are two stores', () => {
+  it('writes the reader state and the cache to different MMKV instances', async () => {
+    await expoPlatform.keyValue.setString('store.savedArticles', '{"items":[1]}');
+    await expoPlatform.blobs.write('feeds', 'klima.json', 'cached');
+
+    expect([...(stateStore()?.data.keys() ?? [])]).toEqual(['store.savedArticles']);
+    expect([...(cacheStore()?.data.keys() ?? [])]).toEqual(['feeds/klima.json']);
+    // Two stores and no third: a new one appearing here is a new place state can
+    // hide, and the point of this adapter is that there is exactly one of each.
+    expect([...mmkv.__stores.keys()].sort()).toEqual(['correctiv.cache', 'correctiv.state']);
+  });
+
+  it('cannot reach a settings key through the blob port', async () => {
+    await expoPlatform.keyValue.setString('store.savedArticles', '{"items":[1]}');
+
+    // The same string, handed to the other port. It finds nothing and deletes
+    // nothing, because the two ports do not share a store.
+    expect(await expoPlatform.blobs.read('store', 'savedArticles')).toBeNull();
+    await expoPlatform.blobs.delete('store', 'savedArticles');
+
+    expect(await expoPlatform.keyValue.getString('store.savedArticles')).toBe('{"items":[1]}');
+  });
+});
+
+/**
+ * The prerender case, and the missing-native-module case, are the same case here:
+ * MMKV answers the first call with a throw instead of a value. `expo export
+ * --platform web` renders every route in Node, where there is no `window` to hold
+ * localStorage, so this path runs on every build of the published demo.
+ */
+describe('a storage backend that is not there at all', () => {
+  it('says so once, then degrades to misses and rejected writes', async () => {
+    let isolated!: CorePlatform;
+    jest.isolateModules(() => {
+      jest.requireMock<MmkvModule>('react-native-mmkv').__control.failOnProbe = true;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      isolated = (require('../src/lib/platform/expo') as { expoPlatform: CorePlatform })
+        .expoPlatform;
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(await isolated.keyValue.getString('store.settings')).toBeNull();
+    expect(await isolated.blobs.read('feeds', 'klima.json')).toBeNull();
+    await expect(isolated.keyValue.setString('store.settings', '{}')).rejects.toThrow(
+      'unavailable',
+    );
+
+    // Once per store, not once per key: the export prerenders every route, and a
+    // line per read per route buries the build log it is meant to warn in.
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+});
+
+/**
+ * The third failure, and the only one that looks like success.
+ *
+ * A browser with site data switched off throws on `window.localStorage`, and MMKV's
+ * web build catches that itself and falls back to a module-global `Map`. The probe
+ * above therefore passes, writes resolve, reads in the same session answer, and
+ * nothing survives a reload. Issue #96 asks for unavailable storage to be surfaced,
+ * and this is the half of it no throw ever reaches.
+ */
+describe('a browser that refuses localStorage', () => {
+  const realWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+
+  afterEach(() => {
+    if (realWindow) Object.defineProperty(globalThis, 'window', realWindow);
+  });
+
+  it('says the store will not outlive the session, once per store', async () => {
+    // jest-expo points `window` at `global` and gives it no document, which is the
+    // native shape. A browser is a document plus an accessor that throws.
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        document: { createElement: () => ({}) },
+        get localStorage(): unknown {
+          throw new Error('The operation is insecure.');
+        },
+      },
+    });
+
+    let isolated!: CorePlatform;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      isolated = (require('../src/lib/platform/expo') as { expoPlatform: CorePlatform })
+        .expoPlatform;
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // The session still works, deliberately: an in-memory store carries it, and
+    // rejecting every write would turn a browser setting into an unusable app.
+    await expoPlatformWrite(isolated);
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('survive a reload');
+    warn.mockRestore();
+  });
+});
+
+/**
+ * The fifth port, and the one file issue #95 changes.
+ *
+ * Asserted here rather than left to the boundary's own suite, because what that
+ * suite can show is that the boundary reports; what this one shows is that the
+ * port this app registers is not the core's no-op. Those are different claims and
+ * the second is the one that makes reporting real: the core reports through
+ * `platform().errors`, and until this adapter answers it, every report the core
+ * makes goes nowhere and looks exactly as it does today.
+ */
+describe('the error reporter', () => {
+  it('logs the domain, the code, the context and the cause itself', () => {
+    const logged = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const cause = new Error('HTTP 502');
+
+    expoPlatform.errors.report({
+      domain: 'podcasts',
+      code: 'series-unreachable',
+      context: { handle: 'klima', replacedBy: 'nothing' },
+      cause,
+    });
+
+    expect(logged).toHaveBeenCalledTimes(1);
+    expect(logged.mock.calls[0]?.[0]).toBe('[podcasts] series-unreachable');
+    expect(logged.mock.calls[0]?.[1]).toEqual({ handle: 'klima', replacedBy: 'nothing' });
+    // The thrown object, not a string of it. A sink wants the stack, and this file
+    // is not the place that decides how an Error is serialised.
+    expect(logged.mock.calls[0]?.[2]).toBe(cause);
+    logged.mockRestore();
+  });
+
+  it('reports one line per report, with no queue in front of it', () => {
+    // Retry, batching and offline queueing are policy about a service nobody has
+    // chosen (ADR 0032), so the absence of them is the behaviour, not an omission.
+    const logged = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    expoPlatform.errors.report({ domain: 'render', code: 'render-failed' });
+    expoPlatform.errors.report({ domain: 'render', code: 'render-failed' });
+
+    expect(logged).toHaveBeenCalledTimes(2);
+    logged.mockRestore();
+  });
+});
+
+/** One write through each port, which is what opens both stores. */
+async function expoPlatformWrite(host: CorePlatform): Promise<void> {
+  await host.keyValue.setString('store.settings', '{}');
+  await host.blobs.write('feeds', 'klima.json', 'x');
+}
 
 /**
  * The bundle is this host's offline promise: the reader has to open without a

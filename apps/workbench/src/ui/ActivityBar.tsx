@@ -1,0 +1,257 @@
+import {
+  BookText,
+  Braces,
+  Component,
+  GitBranch,
+  House,
+  Languages,
+  ListTree,
+  PenTool,
+  Smartphone,
+} from 'lucide-react';
+
+import { defineMessages } from 'react-intl';
+
+import { useWorkbenchIntl } from '../i18n/Localisation';
+import type { WorkbenchMessage } from '../i18n/messages';
+import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
+import { cn } from '../lib/cn';
+import { href } from '../router';
+
+/**
+ * What the left rail says, in ENGLISH; the German that ships is
+ * `src/i18n/catalogue/de/shell.ts`.
+ *
+ * `shell.activity.*` rather than `nav.*`: these are the rail's own short words for
+ * a section, and `nav.*` is what a PAGE is called in the tab and in the palette.
+ * `Handbook` is both, one word in two places doing two jobs, which is why each of
+ * the two ids carries a description saying which.
+ */
+const COPY = defineMessages({
+  rail: {
+    id: 'shell.activity.label',
+    defaultMessage: 'Sections',
+    description:
+      'The accessible name of the rail down the left edge, which reaches every section of this site from every other. Read aloud and never drawn.',
+  },
+  overview: { id: 'shell.activity.overview', defaultMessage: 'Overview' },
+  app: {
+    id: 'shell.activity.app',
+    defaultMessage: 'The app',
+    description:
+      'The rail’s entry for /preview, where the app itself runs in a device frame. Second on the rail and before everything written down.',
+  },
+  handbook: {
+    id: 'shell.activity.handbook',
+    defaultMessage: 'Handbook',
+    description:
+      'The rail’s entry for the documents area, and the word a document’s breadcrumb uses for it. nav.handbook is the same word as the page’s own name in the browser tab, and handbook.title is that page’s own heading.',
+  },
+  decisions: {
+    id: 'shell.activity.decisions',
+    defaultMessage: 'Decisions',
+    description:
+      'The rail’s entry for the board of records. landing.door.decisions.title is the same word on the front page’s card for it; nav.decisions is the longer name the browser tab carries, and decisions.title the page’s own heading.',
+  },
+  sources: {
+    id: 'shell.activity.sources',
+    defaultMessage: 'Sources',
+    description:
+      'The rail’s entry for the sources board. landing.door.sources.title is the same word on the front page’s card for it; nav.sources is the longer name the browser tab carries, and sources.title the page’s own heading.',
+  },
+  design: {
+    id: 'shell.activity.design',
+    defaultMessage: 'Design',
+    description:
+      'The rail’s entry for the design page. landing.door.design.title is the same word on the front page’s card for it and design.title is that page’s own heading; nav.design is the longer name the browser tab carries.',
+  },
+  reference: {
+    id: 'shell.activity.reference',
+    defaultMessage: 'Reference',
+    description:
+      'The rail’s entry for the core’s generated reference. shell.search.group.reference is the palette’s group of symbols and reference.title is that page’s own heading; both read the same in English.',
+  },
+  components: {
+    id: 'shell.activity.components',
+    defaultMessage: 'Components',
+    description:
+      'The rail’s entry for the app’s own components. shell.search.group.components is the palette’s group of them and reads the same in English.',
+  },
+  strings: {
+    id: 'shell.activity.strings',
+    defaultMessage: 'Strings',
+    description:
+      'The rail’s entry for the board of every string with a descriptor, the app’s and this site’s own, in both languages. strings.title is that page’s own heading and reads the same in English; nav.strings is the longer name the browser tab carries.',
+  },
+});
+
+interface Props {
+  route: string;
+}
+
+/**
+ * The narrow rail that makes everything reachable from everywhere.
+ *
+ * This is the piece that turns a set of pages into one application: whatever is
+ * open, the app, a record, the board, the reference, the next thing is one click
+ * away and always in the same place. It is also the only chrome left when both
+ * sidebars are shut, which is what a link handed to somebody who just wants to
+ * see the app opens into.
+ */
+export const ITEMS = [
+  { route: '/', label: COPY.overview, Icon: House, match: (r: string) => r === '/' },
+  /*
+   * Second, and before everything written down. This site is the app's
+   * development environment before it is its documentation, and the address
+   * people are handed is the one that shows the app running.
+   */
+  {
+    route: '/preview',
+    label: COPY.app,
+    Icon: Smartphone,
+    match: (r: string) => r === '/preview',
+  },
+  {
+    route: '/handbook',
+    label: COPY.handbook,
+    Icon: BookText,
+    // The documents and the drawings of them. `/architecture` and `/diagrams`
+    // are inside this section, which is what every document's breadcrumb has
+    // claimed since the site was built.
+    match: (r: string) =>
+      [
+        '/handbook',
+        '/architecture',
+        '/conventions',
+        '/provenance',
+        '/traps',
+        '/readme',
+        '/release',
+      ].includes(r) || r.startsWith('/diagrams'),
+  },
+  {
+    route: '/decisions',
+    label: COPY.decisions,
+    Icon: GitBranch,
+    match: (r: string) => r.startsWith('/decisions'),
+  },
+  {
+    route: '/sources',
+    label: COPY.sources,
+    Icon: ListTree,
+    match: (r: string) => r.startsWith('/sources'),
+  },
+  {
+    route: '/design',
+    label: COPY.design,
+    Icon: PenTool,
+    // `startsWith`, because the plugin's own documentation is published at
+    // `/design/plugin` and a rail that lit nothing there would say the reader had
+    // left the section they are still in.
+    match: (r: string) => r.startsWith('/design'),
+  },
+  {
+    route: '/reference',
+    label: COPY.reference,
+    Icon: Braces,
+    match: (r: string) => r === '/reference',
+  },
+  /*
+   * Its own place on the rail, beside the core's reference and not inside it.
+   * The two are generated by one script and read the same way, but a reader who
+   * takes them for one section will look for `ui/Button` under
+   * `@correctiv/app-core`, which is a package that has never had a component in
+   * it. One rail item covering both routes would also leave the second
+   * unreachable from the rail, which is the only chrome a narrow window keeps.
+   */
+  {
+    route: '/components',
+    label: COPY.components,
+    Icon: Component,
+    // And again for `/components/<group>/<name>`, one page per component.
+    match: (r: string) => r.startsWith('/components'),
+  },
+  /*
+   * Last, and on the rail rather than only in the palette: it is the one page of
+   * this site the second audience ADR 0050 §1 names would arrive for, and the
+   * rail is the only chrome a narrow window keeps.
+   */
+  {
+    route: '/strings',
+    label: COPY.strings,
+    Icon: Languages,
+    match: (r: string) => r === '/strings',
+  },
+];
+
+/**
+ * Which section a route is in, in the rail's own words, **in English**.
+ *
+ * `pages/Document.tsx` used to hard-code "Handbook" in its breadcrumb, which was
+ * true while every document was one. `/design/plugin` is a document of the design
+ * section, so the breadcrumb asks the rail rather than asserting.
+ *
+ * **The descriptor, not the English**, and the reason is what the two would look
+ * like side by side. The breadcrumb sits over a document this site prints as the
+ * repository wrote it, so the first version of this returned `defaultMessage` —
+ * one word, one source, nothing to keep in step. What that produces on screen is
+ * a rail reading „Handbuch“ and a breadcrumb two centimetres away reading
+ * "Handbook", which is not a boundary a reader can see the sense of; it reads as
+ * a bug.
+ *
+ * A breadcrumb is navigation rather than prose, so it is the shell reaching into a
+ * page rather than the page speaking, and it follows the setting. What stays in
+ * its own language under it is the DOCUMENT
+ * ([ADR 0052](../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1);
+ * an earlier version of this paragraph said "the page's body below it does not",
+ * which was ADR 0050 §2's line and is no longer true of a page's own words.
+ */
+export function sectionOf(route: string): WorkbenchMessage {
+  const item = ITEMS.find((held) => held.route !== '/' && held.match(route));
+  return item?.label ?? COPY.handbook;
+}
+
+export function ActivityBar({ route }: Props) {
+  const intl = useWorkbenchIntl();
+
+  return (
+    <nav
+      aria-label={intl.formatMessage(COPY.rail)}
+      className="flex w-[3rem] shrink-0 flex-col items-center gap-3xs border-r border-stroke bg-surface py-xs"
+    >
+      {ITEMS.map((item) => {
+        const active = item.match(route);
+        const label = intl.formatMessage(item.label);
+        return (
+          <Tooltip key={item.route}>
+            <TooltipTrigger asChild>
+              <a
+                href={href(item.route)}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'relative flex size-[2.25rem] items-center justify-center rounded-md transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                  active
+                    ? 'bg-canvas text-on-canvas'
+                    : 'text-on-canvas-muted hover:bg-canvas hover:text-on-canvas',
+                )}
+              >
+                {/* The active mark is a bar rather than a fill alone, so the
+                    current section is legible without relying on colour. */}
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -left-xs top-2xs bottom-2xs w-[2px] rounded-full bg-accent"
+                  />
+                )}
+                <item.Icon aria-hidden="true" className="size-[1.125rem]" />
+                <span className="sr-only">{label}</span>
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="right">{label}</TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </nav>
+  );
+}

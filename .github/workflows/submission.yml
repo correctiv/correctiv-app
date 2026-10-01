@@ -1,0 +1,475 @@
+# Turns a submission issue into a pull request (ADR 0061).
+#
+# The workbench's "Änderungen einreichen" and "Texte einreichen" open
+# github.com/…/issues/new with the title and the body filled in. The person clicks
+# GitHub's own "Create", and this workflow does the rest: it reads the one fenced JSON
+# block out of the issue, checks it with the validator the workbench uses, writes the
+# files the kind may write, proves that nothing else changed, commits them as the person
+# who opened the issue, pushes a branch of its own and opens a pull request that closes
+# the issue. The issue is told where the pull request is, or why there is none.
+#
+# THE KINDS. The title's prefix is the kind (ADR 0061 §3). `[startseite]` writes the home
+# document, one file. `[texte]` rewords the German catalogue (ADR 0062): only files in
+# packages/catalogue/src/de/, only the string literal of an id the catalogue already
+# carries, no id added and none removed. "Prove the tree" holds the working tree to that
+# before anything is committed, and the commit adds only the files it proved.
+#
+# The workbench holds no credential (ADR 0058 §1), and this is why that still ends in a
+# pull request: the credential is here, in CI, and the only thing the page does is
+# navigate.
+#
+# INJECTION. The issue's title and body are text anybody on the internet can write, so
+# neither may ever reach a shell or a script as an expression. `${{ … }}` in a `run:` or a
+# `script:` is pasted in before the shell or the JavaScript is parsed, and a title such as
+# `"; curl … | sh; "` would then be code. So:
+#   - the title and the body are fetched with the API and written to FILES, and only the
+#     Node script reads those files, as data;
+#   - every value a step needs arrives through `env:`, which the shell expands at run
+#     time as a value and never as code;
+#   - no `run:` and no `script:` in this file contains `${{` at all.
+# What the document or the wordings say reaches the pull request's body only through
+# `apps/workbench/scripts/submission.ts`' `plain`, because GitHub reads a body for
+# instructions too (ADR 0061 §7). `apps/workbench/test/submission.test.ts` reads this file
+# and holds all of it.
+#
+# THE TOKEN. `npm ci` runs with `--ignore-scripts`, and the checkout keeps no credential
+# (`persist-credentials: false`), so no package's install script ever runs next to a
+# token that can push. The push and the pull request are the only two steps that get one.
+# Every action is pinned by commit, with its version beside it.
+#
+# WHO MAY SUBMIT. The repository is public, so anybody can open an issue with the
+# prefix. It runs by itself only for an issue opened by an OWNER, MEMBER or
+# COLLABORATOR, which the job's `if:` decides before a runner is spent, and whose
+# account can write to this repository, which the first step asks the API, because
+# COLLABORATOR includes somebody given read access only (ADR 0062 §8). Anybody else's
+# issue gets one comment, once, that QUOTES its title and body and prints the SHA-256
+# of that quote. A maintainer reads the comment, not the issue, and starts the run by
+# hand with the issue's number and that value; the run takes the title and the body out
+# of the bot's comment with that quote, so an issue edited after the comment changes
+# nothing about what runs (ADR 0062 §7, `apps/workbench/scripts/submission-quote.mjs`).
+#
+# CI ON THE PULL REQUEST. A pull request opened with GITHUB_TOKEN starts no workflow,
+# so ci.yml would never see it. With the secret SUBMISSIONS_TOKEN set (ADR 0061's open
+# items say exactly which permissions), the push and the pull request are made with it
+# and ci.yml runs as on any other pull request. Without it the workflow falls back to
+# its own token, runs the two checks this file can break itself, and says in the pull
+# request's body that CI has not run and how to start it.
+name: Submission
+
+on:
+  issues:
+    types: [opened, reopened]
+  # How a maintainer starts a submission from somebody outside the organisation, for the
+  # text the automation quoted. A submission from inside that failed is retried by
+  # closing and reopening its issue, which is a person's event and starts it again.
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Number of the submission issue to turn into a pull request'
+        required: true
+        # A number, so that "5" and "05" are one issue to the concurrency group too.
+        type: number
+      text_sha256:
+        description: 'text_sha256 from the automation''s comment on the issue, whose quoted text you read'
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: submission-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  # Somebody outside the organisation. One comment quoting the issue and saying how it
+  # can go on, and nothing else: this job may write comments and read the repository, and
+  # it checks out one file, the one that writes the quote.
+  outsider:
+    name: Tell an outside submission how it goes on
+    # The same prefixes as the job below; `test/submission.test.ts` holds both lists.
+    if: >-
+      github.event_name == 'issues'
+      && (startsWith(github.event.issue.title, '[startseite]')
+      || startsWith(github.event.issue.title, '[texte]'))
+      && !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out the quote
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: apps/workbench/scripts/submission-quote.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Comment once
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const { pathToFileURL } = require('node:url');
+            const quote = await import(
+              pathToFileURL(`${process.env.GITHUB_WORKSPACE}/apps/workbench/scripts/submission-quote.mjs`).href
+            );
+            const issue = context.payload.issue;
+            // Once per issue. `reopened` fires again, and a stranger closing and reopening
+            // their own issue must not be a way to make this repository talk.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo,
+              issue_number: issue.number,
+              per_page: 100,
+            });
+            if (comments.some((comment) => comment.user?.login === quote.BOT_LOGIN && comment.body?.startsWith(quote.MARK))) {
+              core.notice(`#${issue.number} was told already`);
+              return;
+            }
+            // The issue as it is now, from the API rather than the event's payload.
+            const { data: current } = await github.rest.issues.get({ ...context.repo, issue_number: issue.number });
+            const body = quote.quoteComment({ title: current.title ?? '', body: current.body ?? '' }) ?? quote.tooLongComment();
+            await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body });
+
+  pull-request:
+    name: Turn the issue into a pull request
+    # Only the built kinds' prefixes, and only the organisation and its collaborators.
+    # `test/submission.test.ts` holds the prefixes to SUBMISSION_KINDS in
+    # apps/workbench/src/preview/submission.ts. An expression in `if:` is evaluated by
+    # GitHub and never reaches a shell, so the title is safe here. startsWith ignores
+    # case and trims nothing, and so does kindOfTitle.
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || ((startsWith(github.event.issue.title, '[startseite]')
+      || startsWith(github.event.issue.title, '[texte]'))
+      && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: main
+          # No credential is left in .git/config for the install below to find. The push
+          # hands its token to git itself, in its own step.
+          persist-credentials: false
+
+      # Works for both triggers, and decides which text runs. On an issue event it is the
+      # issue as it is, once the author's account is shown to be able to write here; on a
+      # manual dispatch it is the title and the body the automation quoted in its comment,
+      # the one whose quote has the value the maintainer gave. The title and the body go
+      # to files for the reason in the header. Everything that can refuse without the
+      # install refuses here.
+      - name: Read the issue
+        id: issue
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          EVENT: ${{ github.event_name }}
+          FROM_INPUT: ${{ inputs.issue }}
+          EXPECTED_SHA: ${{ inputs.text_sha256 }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { pathToFileURL } = require('node:url');
+            const quote = await import(
+              pathToFileURL(`${process.env.GITHUB_WORKSPACE}/apps/workbench/scripts/submission-quote.mjs`).href
+            );
+            const PREFIXES = ['[startseite]', '[texte]'];
+            const temp = process.env.RUNNER_TEMP;
+            const refuse = (reason, log) => {
+              fs.writeFileSync(`${temp}/submission-error.txt`, reason);
+              core.setFailed(log);
+            };
+            const dispatched = process.env.EVENT === 'workflow_dispatch';
+            const raw = dispatched ? process.env.FROM_INPUT : String(context.payload.issue.number);
+            const number = Number(raw);
+            if (!Number.isInteger(number) || number <= 0) {
+              core.setFailed(`Not an issue number: ${raw}`);
+              return;
+            }
+            const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: number });
+            if (issue.pull_request) {
+              core.setFailed(`#${number} is a pull request, not an issue`);
+              return;
+            }
+            core.setOutput('number', String(number));
+
+            let text;
+            if (dispatched) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...context.repo,
+                issue_number: number,
+                per_page: 100,
+              });
+              text = quote.approved(comments, process.env.EXPECTED_SHA);
+              if (!text) {
+                refuse(
+                  'Zu diesem Wert gibt es in diesem Issue keinen Kommentar der Automatik, der den Text zitiert. Gestartet wird nur ein Text, den die Automatik zitiert hat, mit dem Wert aus genau diesem Kommentar.',
+                  'text_sha256 matches no quote the automation wrote on this issue',
+                );
+                return;
+              }
+            } else {
+              // COLLABORATOR includes read access. Writing is what makes an account's issue
+              // run by itself; anybody else's waits for a maintainer, as an outsider's does.
+              let permission = 'none';
+              try {
+                const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  ...context.repo,
+                  username: issue.user.login,
+                });
+                permission = data.permission;
+              } catch (error) {
+                core.info(`permission lookup failed: ${error.message}`);
+              }
+              if (permission !== 'admin' && permission !== 'write') {
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                  ...context.repo,
+                  issue_number: number,
+                  per_page: 100,
+                });
+                if (!comments.some((comment) => comment.user?.login === quote.BOT_LOGIN && comment.body?.startsWith(quote.MARK)))
+                  await github.rest.issues.createComment({
+                    ...context.repo,
+                    issue_number: number,
+                    body: quote.quoteComment({ title: issue.title ?? '', body: issue.body ?? '' }) ?? quote.tooLongComment(),
+                  });
+                refuse(
+                  'Ihr Konto kann in dieses Repository nicht schreiben, deshalb startet die Automatik nicht von selbst. Der Kommentar oben sagt, wie ein Maintainer sie startet.',
+                  `${issue.user.login} has ${permission} access, not write`,
+                );
+                return;
+              }
+              text = quote.normalise({ title: issue.title ?? '', body: issue.body ?? '' });
+            }
+
+            // A dispatch names any issue; this is the gate the job's `if:` could not be.
+            if (!PREFIXES.some((prefix) => text.title.toLowerCase().startsWith(prefix))) {
+              core.setFailed(`#${number} is not a submission: its title has no known prefix`);
+              return;
+            }
+            fs.writeFileSync(`${temp}/issue-title.txt`, text.title);
+            fs.writeFileSync(`${temp}/issue-body.md`, text.body);
+            core.setOutput('login', issue.user.login);
+            core.setOutput('user_id', String(issue.user.id));
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      # tsx, oxfmt, typescript and react-intl come from here, and the script imports the
+      # core and the workbench as the repository has them on main. `--ignore-scripts`, because an
+      # install script is code from the registry, and nothing this job runs needs one:
+      # measured on 2026-09-23, tsx, oxfmt and the core's check all run on an install
+      # made without them.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # Reads the issue's text as files, and writes the kind's files. The strings kind is
+      # formatted by the script itself, with the repository's oxfmt and no shell.
+      - name: Write the files from the issue
+        id: apply
+        run: |
+          export SUBMISSION_ERROR_FILE="$RUNNER_TEMP/submission-error.txt"
+          export SUBMISSION_SUMMARY_FILE="$RUNNER_TEMP/submission-summary.md"
+          npx tsx apps/workbench/scripts/submission-from-issue.ts \
+            "$RUNNER_TEMP/issue-title.txt" "$RUNNER_TEMP/issue-body.md"
+
+      # The allow-list, and the proof. It reads the issue again rather than trusting the
+      # step above, asks git what changed, and fails unless every changed path is one the
+      # kind may write: for the home kind exactly its one file, for the strings kind only
+      # modified files in packages/catalogue/src/de/, each differing from main in nothing
+      # but the submitted ids' string literals (ADR 0062 §3). Only on success does it
+      # write the list the commit adds, so a commit cannot carry a file nobody proved.
+      - name: Prove the tree
+        run: |
+          npx tsx apps/workbench/scripts/submission-verify.ts \
+            "$RUNNER_TEMP/issue-title.txt" "$RUNNER_TEMP/issue-body.md" \
+            "$RUNNER_TEMP/submission-files.txt"
+
+      # The checks each kind's files can break, run here because without the secret
+      # nothing else runs them before a reviewer looks. The script already judged the
+      # document with the same parser; this is the deploy's own command over the file as
+      # written.
+      - name: Check the written file
+        if: steps.apply.outputs.kind == 'home'
+        run: |
+          set -euo pipefail
+          xargs -0 -a "$RUNNER_TEMP/submission-files.txt" \
+            npx tsx packages/app-core/scripts/check-home-layout.ts
+          xargs -0 -a "$RUNNER_TEMP/submission-files.txt" npx oxfmt --check
+
+      # The catalogue's own test formats every message in every language and holds the
+      # German's arguments to the English's, which is more than the validator asks.
+      - name: Check the written texts
+        if: steps.apply.outputs.kind == 'strings'
+        run: |
+          set -euo pipefail
+          xargs -0 -a "$RUNNER_TEMP/submission-files.txt" npx oxfmt --check
+          npm test -w @correctiv/catalogue
+
+      # Only the files the proof listed, never `git add -A`: the install leaves files
+      # around, and only the proven files belong in the commit. Literal pathspecs, so no
+      # path is read as a pattern. Authored by the person who opened the issue, at the
+      # noreply address GitHub gives every account, so the history says who made the
+      # change and publishes no mail address.
+      - name: Commit as the person who opened the issue
+        env:
+          KIND: ${{ steps.apply.outputs.kind }}
+          ISSUE: ${{ steps.issue.outputs.number }}
+          AUTHOR_NAME: ${{ steps.issue.outputs.login }}
+          AUTHOR_ID: ${{ steps.issue.outputs.user_id }}
+        run: |
+          set -euo pipefail
+          BRANCH="submissions/issue-${ISSUE}"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+          case "$KIND" in
+            home) MESSAGE="Home layout: submitted in #${ISSUE}" ;;
+            strings) MESSAGE="German strings: submitted in #${ISSUE}" ;;
+            *) echo "::error::unknown kind"; exit 1 ;;
+          esac
+          git switch -c "$BRANCH"
+          git --literal-pathspecs add \
+            --pathspec-from-file="$RUNNER_TEMP/submission-files.txt" --pathspec-file-nul
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit --author="${AUTHOR_NAME} <${AUTHOR_ID}+${AUTHOR_NAME}@users.noreply.github.com>" \
+              -m "$MESSAGE"
+
+      # The branch is this workflow's alone and a retry rebuilds it from the issue, so
+      # overwriting it is intended. Review fixes belong on the pull request. With the
+      # secret, the push counts as that account's, so a retry's force-push onto an open
+      # pull request starts ci.yml; without it, the workflow's own token starts nothing.
+      - name: Push the branch
+        env:
+          TOKEN: ${{ secrets.SUBMISSIONS_TOKEN || github.token }}
+        # The token travels as an HTTP header in git's environment, never in the URL
+        # or on git's command line, where the process list and an error message would
+        # show it. The encoded form is masked as well as the secret itself.
+        run: |
+          set -euo pipefail
+          BASIC=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          echo "::add-mask::$BASIC"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $BASIC"
+          git push --force "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+
+      # German, because a pull request is argued in German (AGENTS.md). `Closes` stays
+      # English on its own line, because a German word closes nothing.
+      - name: Open or update the pull request
+        id: pr
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          KIND: ${{ steps.apply.outputs.kind }}
+          ISSUE: ${{ steps.issue.outputs.number }}
+          LOGIN: ${{ steps.issue.outputs.login }}
+          HAS_TOKEN: ${{ secrets.SUBMISSIONS_TOKEN != '' }}
+        with:
+          github-token: ${{ secrets.SUBMISSIONS_TOKEN || github.token }}
+          script: |
+            const fs = require('node:fs');
+            const { BRANCH, KIND, ISSUE, LOGIN, HAS_TOKEN } = process.env;
+            const summary = fs.readFileSync(`${process.env.RUNNER_TEMP}/submission-summary.md`, 'utf8').trim();
+            // Per kind: what the pull request is called, and what was checked without CI.
+            const KINDS = {
+              home: {
+                title: 'Startseite',
+                checked: 'Die App liest das Dokument ohne Probleme, und die Datei ist so formatiert, wie `oxfmt` sie schreibt.',
+              },
+              strings: {
+                title: 'Texte',
+                checked: 'Jeder Wortlaut hat die Platzhalter des Englischen, die Dateien unterscheiden sich von `main` nur in den eingereichten Wortlauten, der Test des Katalogs ist grün, und die Dateien sind so formatiert, wie `oxfmt` sie schreibt.',
+              },
+            };
+            const kind = KINDS[KIND];
+            if (!kind) throw new Error(`unknown kind: ${KIND}`);
+            const title = `${kind.title}: Änderung aus Issue #${ISSUE}`;
+            const ci = HAS_TOKEN === 'true'
+              ? []
+              : [
+                  '> **Die CI ist für diesen Pull Request nicht gelaufen.** GitHub startet sie nicht für einen Pull Request, den ein Workflow mit seinem eigenen Token öffnet.',
+                  `> Geprüft ist nur: ${kind.checked}`,
+                  '> Die volle CI startet, wenn jemand diesen Pull Request schließt und wieder öffnet.',
+                  '',
+                ];
+            const body = [
+              ...ci,
+              `Eingereicht von @${LOGIN} in #${ISSUE}, aus der Workbench.`,
+              '',
+              summary,
+              '',
+              'Erst nach dem Merge erscheint die Änderung in der App.',
+              '',
+              `Closes #${ISSUE}`,
+            ].join('\n');
+
+            const { data: open } = await github.rest.pulls.list({
+              ...context.repo,
+              head: `${context.repo.owner}:${BRANCH}`,
+              state: 'open',
+            });
+            const pr = open.length
+              ? (await github.rest.pulls.update({ ...context.repo, pull_number: open[0].number, title, body })).data
+              : (await github.rest.pulls.create({ ...context.repo, title, head: BRANCH, base: 'main', body })).data;
+            core.setOutput('number', String(pr.number));
+            core.setOutput('url', pr.html_url);
+            core.notice(`Pull request: ${pr.html_url}`);
+
+      - name: Say where the pull request is
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          ISSUE: ${{ steps.issue.outputs.number }}
+          PR: ${{ steps.pr.outputs.number }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: Number(process.env.ISSUE),
+              body: [
+                `Daraus ist der Pull Request #${process.env.PR} geworden.`,
+                '',
+                'Jemand aus dem Team prüft ihn. Nach dem Merge erscheint die Änderung in der App, und dieses Issue schließt sich von selbst.',
+              ].join('\n'),
+            });
+
+      # Without this a refused submission is silent and the person never learns what to
+      # fix. Only the scripts write the reason file, and only for input they refused;
+      # anything else that fails is this workflow's fault, and telling the person to fix
+      # their submission would send them looking for a mistake that is not theirs. No
+      # SHA-256 goes along: the value that starts a run is the one in the automation's
+      # quoting comment, for the text quoted there, and a value for the issue as it is
+      # now would invite starting a run for a text nobody read (ADR 0062 §7).
+      - name: Say why there is no pull request
+        if: failure() && steps.issue.outputs.number != ''
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          ISSUE: ${{ steps.issue.outputs.number }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const temp = process.env.RUNNER_TEMP;
+            const run = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const reasonFile = `${temp}/submission-error.txt`;
+            const body = fs.existsSync(reasonFile)
+              ? [
+                  'Aus dieser Einreichung ist kein Pull Request geworden.',
+                  '',
+                  fs.readFileSync(reasonFile, 'utf8').trim(),
+                ].join('\n')
+              : [
+                  'Aus dieser Einreichung ist noch kein Pull Request geworden, weil die Automatik einen Fehler hatte.',
+                  '',
+                  `An Ihrer Änderung liegt das nicht. Ein Maintainer schaut sich den [Lauf](${run}) an und startet ihn neu.`,
+                ].join('\n');
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: Number(process.env.ISSUE),
+              body,
+            });

@@ -60,6 +60,25 @@ export function Thumbnail({
         <Image
           source={{ uri }}
           style={FILL}
+          /*
+           * DECORATIVE, which is the decision #102 left open here: the frame is a
+           * cover beside a headline on a feed card and the only content of a rail
+           * tile, and the same component renders both — so the question looked
+           * unanswerable from inside it.
+           *
+           * It is answerable from outside. Every call site wraps this in a control
+           * that carries `accessibilityRole` and an `accessibilityLabel` naming
+           * the thing the picture is OF (`ArticleHero`, `MediaCard`, `SeriesTile`,
+           * `MediathekReihe`), so a name here would be that name said twice. And
+           * the picture is a cover: when it fails to load the frame draws a glyph
+           * and nothing is lost, which is the test for decorative.
+           *
+           * `alt=""` is expo-image's own spelling and the one the browser reads;
+           * `accessible={false}` is what keeps it off the native accessibility
+           * tree, where an empty name would otherwise leave a focusable "image".
+           */
+          alt=""
+          accessible={false}
           contentFit="cover"
           transition={200}
           // Thumbnails come back into view constantly — the rails scroll sideways

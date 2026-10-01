@@ -1,8 +1,0 @@
-# The built site. CI builds it; nothing here is committed.
-dist/
-
-# Extracted by `npm run api` from packages/app-core and apps/mobile/src/components,
-# which the build runs first. Not committed: it is 238 KB of derived JSON, and
-# regenerating it is one command rather than a merge conflict on every rename in
-# either.
-content/api.generated.json

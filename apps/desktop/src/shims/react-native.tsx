@@ -113,6 +113,7 @@ import {
   useCallback,
   useLayoutEffect,
   useRef,
+  type ComponentType,
   type ReactElement,
   type ReactNode,
   type Ref,
@@ -287,7 +288,15 @@ export interface FlatListProps extends AccessibilityProps {
   keyExtractor?: (item: never, index: number) => string;
   ListHeaderComponent?: ReactNode;
   ListFooterComponent?: ReactNode;
-  ListEmptyComponent?: ReactNode;
+  /**
+   * An element OR a component, which is React Native's own type for all three of
+   * these and the one `gespeichert.tsx` relies on: it passes `ListEmptyComponent={Empty}`,
+   * the function itself, so the notice is only built when the list has nothing in it.
+   * A `ReactNode` here typed that call as an object that happens to be callable, and
+   * the error names the symptom rather than the cause (`() => Element` is not a
+   * `ReactNode`). The layer renders either, so only the type was ever too narrow.
+   */
+  ListEmptyComponent?: ReactNode | ComponentType;
   contentContainerClassName?: string;
   ListHeaderComponentClassName?: string;
   ListFooterComponentClassName?: string;
@@ -1406,6 +1415,69 @@ export function ScrollView(props: ScrollViewProps): ReactElement {
     : { ...props, showsVerticalScrollIndicator: true };
   return createElement(ScrollViewBase, shown);
 }
+
+/**
+ * The same name as a TYPE, because React Native declares `ScrollView` as a class and
+ * an app written against it spells a ref `Ref<ScrollView>`.
+ *
+ * `lib/rail/useRailDrag.ts` is the one caller: it returns `Ref<ScrollView> | undefined`
+ * and, off the web, always `undefined` — so this host never receives a handle through
+ * it at all, and what is needed here is a name in the type space rather than a
+ * description of anything. `unknown` is therefore the honest width: the layer hands a
+ * ref the author's own `Gtk.Widget` (see `widgetOf`), which has no `ScrollView` members
+ * to promise, and a richer type here would be a promise nothing keeps.
+ *
+ * A function declaration and an interface of the same name cannot merge, so this is an
+ * alias rather than the `TextInput` pattern below, where the layer publishes a handle
+ * type to point at.
+ */
+export type ScrollView = unknown;
+
+/**
+ * `AppState`, which this host does not have, said once rather than per caller.
+ *
+ * Tier P3 in the layer's support table, with `Gtk.Application` / `Gdk.Surface` named as
+ * the route to a real one. Nothing is built on that here: Android's foreground
+ * lifecycle and a window losing the compositor's focus are different events, and
+ * reporting a focus change as `'background'` would be worse than reporting nothing —
+ * `useHomeLayoutRefresh` would re-fetch the home document every time the user alt-tabbed
+ * away and back.
+ *
+ * **What it costs, stated.** `lib/home/layout.ts` refreshes the home document on every
+ * return to the foreground. On this host that never fires, so the document is whatever
+ * the launch fetched until the app is restarted. The desktop host is a feasibility
+ * demonstration that runs for minutes, so this is a real absence and not a real
+ * problem; a host that ran for days would want `Gdk.Surface:state` wired to it.
+ *
+ * The subscription is a real object with a real `remove()`, because the caller stores
+ * it and calls that on unmount — a `null` here would be a crash on the way out.
+ */
+export const AppState = {
+  currentState: 'active' as const,
+  addEventListener(_event: string, _handler: (state: string) => void) {
+    return { remove(): void {} };
+  },
+};
+
+/**
+ * `BackHandler`, which this host does not have either, and for a sharper reason.
+ *
+ * The layer's table measured it: `Adw.NavigationView` emits `popped` AFTER the fact and
+ * has no vetoable "about to pop" signal, so there is nothing for a handler that
+ * INTERCEPTS a back press to intercept. `useSystemBack` is Android's hardware button,
+ * which no desktop has.
+ *
+ * **What it costs.** `app/onboarding.tsx` uses it to keep the back button inside the
+ * three onboarding steps instead of leaving the flow. Here the window has no back
+ * button at that point — the onboarding is a pushed page with the navigation view's own
+ * chrome — so the behaviour the phone is protecting against is one this host does not
+ * offer in the first place.
+ */
+export const BackHandler = {
+  addEventListener(_event: string, _handler: () => boolean) {
+    return { remove(): void {} };
+  },
+};
 
 export const ActivityIndicator = wrap<ActivityIndicatorProps>(
   BaseActivityIndicator,

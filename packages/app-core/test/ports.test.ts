@@ -51,6 +51,49 @@ describe('platform ports', () => {
     expect(await kv.getString('store.settings')).toBeNull();
   });
 
+  /**
+   * The default reporter, which is the one default in `ports/index.ts` whose
+   * correctness cannot be seen by reading the code it runs: a reporter that is
+   * broken and a reporter that is a no-op both do nothing.
+   *
+   * So "no-op" is asserted as the two things it has to be — it does not throw, and
+   * it reaches no sink an unconfigured core could plausibly have. The console is
+   * the only sink there is here, and it is the exact mistake this guards against:
+   * a default that logs turns every test suite that exercises a failure path into
+   * a suite that prints one.
+   *
+   * Made to fail: give `createNoOpErrorReporter` a `console.error` body and the
+   * second half reddens; make it throw and the first does.
+   */
+  it('reports nowhere until a host wires a reporter up', () => {
+    const silenced = (['error', 'warn', 'log', 'info', 'debug'] as const).map((level) =>
+      vi.spyOn(console, level).mockImplementation(() => {}),
+    );
+    try {
+      expect(() =>
+        platform().errors.report({
+          domain: 'podcasts',
+          code: 'series-unreachable',
+          context: { handle: 'klima', replacedBy: 'nothing' },
+          cause: new Error('HTTP 502'),
+        }),
+      ).not.toThrow();
+      for (const spy of silenced) expect(spy).not.toHaveBeenCalled();
+    } finally {
+      for (const spy of silenced) spy.mockRestore();
+    }
+  });
+
+  it('hands a report to the reporter the host registered, unchanged', () => {
+    const report = vi.fn();
+    configurePlatform({ ...createMemoryPlatform(), errors: { report } });
+
+    platform().errors.report({ domain: 'render', code: 'render-failed' });
+
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith({ domain: 'render', code: 'render-failed' });
+  });
+
   it('answers every ContentBundle question with null when the host bundles nothing', () => {
     const empty = createEmptyContentBundle();
     expect(empty.feed('recherchen')).toBeNull();
@@ -106,12 +149,20 @@ describe('cache.service', () => {
       blobs: {
         read: () => Promise.reject(new Error('disk gone')),
         write: () => Promise.reject(new Error('disk full')),
+        delete: () => Promise.reject(new Error('disk gone')),
       },
     });
+    // The ledger's own write is the one this file reports rather than swallows, and
+    // that is asserted in `cache-bound.test.ts`. Here it is noise around the point,
+    // which is that none of these rejections reaches the caller.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
     await expect(setCached('feeds', 'x', 'a')).resolves.toBeUndefined();
     expect(await getCached('feeds', 'x', 60_000)).toBe('a'); // session layer still answers
     clearMemoryCache();
     expect(await getStale('feeds', 'x')).toBeNull();
+
+    warn.mockRestore();
   });
 
   it('ignores corrupt persisted payloads instead of throwing', async () => {

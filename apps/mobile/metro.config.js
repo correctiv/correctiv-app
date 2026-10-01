@@ -1,6 +1,7 @@
 const path = require('node:path');
 
 const { getDefaultConfig } = require('expo/metro-config');
+const { withRozenite } = require('@rozenite/metro');
 const { withUniwindConfig } = require('uniwind/metro');
 
 // This app lives in an npm workspace (apps/mobile). Metro defaults to a
@@ -31,12 +32,14 @@ config.resolver.nodeModulesPaths = [
   // disableHierarchicalLookup below, Metro cannot walk up from the core's source
   // to find them either, so the path has to be named.
   path.resolve(workspaceRoot, 'packages/app-core/node_modules'),
-  // @correctiv/design-tokens gets no entry here, and that is not an oversight: it
-  // declares no dependencies at all, so it has no node_modules of its own for
-  // Metro to miss. The package itself is found as the workspace symlink in the
-  // root node_modules above. Add a line here the day it grows a dependency —
-  // going by the paragraph above, the day it does, the bundle will build anyway
-  // until npm stops hoisting.
+  // @correctiv/design-tokens and @correctiv/catalogue get no entry here, and that
+  // is not an oversight: neither declares a runtime dependency, so neither has a
+  // node_modules of its own for Metro to miss. The catalogue's two workspace
+  // devDependencies are a test helper and a type it imports with `import type`,
+  // which is erased before Metro sees the file. Both packages are found as the
+  // workspace symlink in the root node_modules above. Add a line here the day one
+  // of them grows a dependency — going by the paragraph above, the day it does,
+  // the bundle will build anyway until npm stops hoisting.
 ];
 // Resolve each dependency once. Without this a package hoisted to the root and
 // also present locally can be loaded twice, which breaks React and any module
@@ -113,8 +116,31 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
  * Uniwind goes on LAST, and that is a requirement rather than a preference: it
  * has to be the outermost wrapper. It replaces `transformerPath` and wraps
  * `resolveRequest`, taking whatever is already there as its base — which is what
- * keeps the two resolver workarounds above intact — and it rewrites every
- * `react-native` import to `uniwind/components` so that `className` reaches the
- * core components.
+ * keeps the two resolver workarounds above and Rozenite's own resolver intact —
+ * and it rewrites every `react-native` import to `uniwind/components` so that
+ * `className` reaches the core components.
+ *
+ * ## Rozenite, and why it is an environment variable rather than a default
+ *
+ * `enabled` is passed EXPLICITLY, and it has to be. `@rozenite/metro` 2.4.0 does
+ * not hold itself back: with the option left undefined it logs that being on by
+ * default is going away, and then switches itself on anyway unless its own
+ * `isBundling()` recognises the command in `process.argv` as `expo export` or
+ * `react-native bundle`. Passing `enabled` skips that check entirely, so `true`
+ * would reach an `expo export` exactly as it reaches `expo start`. What keeps
+ * `npm run build:web` clean is therefore this variable, which nothing in CI sets,
+ * and NOT the bundler — which is why `.github/workflows/pages.yml` greps the
+ * published bundle for it rather than trusting the promise.
+ * [ADR 0026](../../adr/0026-react-native-review-and-hardening.md) §1.
+ *
+ * `npm run start:rozenite` is the way to turn it on; a plain `npm start` is the
+ * app without a debugger attached.
+ *
+ * One shape changes here: `withRozenite` returns `() => Promise<config>`, so this
+ * file exports an async function instead of the object it used to. Metro accepts
+ * either.
  */
-module.exports = withUniwindConfig(config, { cssEntryFile: './src/global.css' });
+module.exports = async () =>
+  withUniwindConfig(await withRozenite(config, { enabled: !!process.env.ROZENITE })(), {
+    cssEntryFile: './src/global.css',
+  });

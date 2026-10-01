@@ -53,6 +53,10 @@ jest.mock('@/components/media/VideoFrame', () => ({ VideoFrame: () => null }));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
   useLocalSearchParams: jest.fn(() => ({})),
+  // `Stack.Screen` because `ScreenHeader` configures the platform's header through
+  // it on native, and a screen with a header therefore reaches expo-router for more
+  // than `router` now (ADR 0030).
+  Stack: { Screen: () => null },
 }));
 
 const VIDEO: Video = {

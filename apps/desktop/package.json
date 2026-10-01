@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@correctiv/app-core": "*",
+    "@correctiv/catalogue": "*",
     "@correctiv/design-tokens": "*",
     "@gjsify/gtk-host": "^0.48.0",
     "@gjsify/node-gi": "^0.48.0",
@@ -46,6 +47,7 @@
     "@react-navigation/core": "^7.21.13",
     "@react-navigation/routers": "^7.6.4",
     "react": "19.2.3",
+    "react-intl": "^10.2.2",
     "react-reconciler": "^0.33.0"
   },
   "optionalDependencies": {
@@ -84,7 +86,7 @@
       "license": {
         "project": "AGPL-3.0-or-later"
       },
-      "homepageUrl": "https://github.com/faktenforum/correctiv-app",
+      "homepageUrl": "https://github.com/correctiv/correctiv-app",
       "app": {
         "darwin": "node",
         "win32": "node"

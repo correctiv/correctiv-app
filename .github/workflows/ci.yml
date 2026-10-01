@@ -1,15 +1,19 @@
 # Quality gate for every PR and every push to main.
 #
-# Three jobs, cheapest first:
+# Four jobs, cheapest first:
 #   check         — typecheck every package, oxlint, oxfmt --check, headless tests
 #                   (~1 min incl. install; no Android SDK, no emulator)
 #   web           — static web export of apps/mobile, plus assertions that it is
 #                   not silently broken (see the job for why). Built for a domain
 #                   root; pages.yml rebuilds the same export under the Pages base
 #                   path and publishes it.
+#   independence  — the same export again with apps/workbench REALLY GONE, and the
+#                   two compared by module list and shape (ADR 0040). Runs beside
+#                   `web` rather than inside it, because it is the one job that
+#                   destroys its own checkout and nothing after it could be trusted.
 #   android       — Android APK of the app, and only when the change could reach it.
 #                   It costs a quarter of an hour against the other two together
-#                   costing two minutes, and the handbook, the ADRs and the
+#                   costing two minutes, and the workbench, the ADRs and the
 #                   screenshots cannot break a native build. `check` works out which
 #                   kind of change this is; see the step that does it.
 #
@@ -31,9 +35,17 @@ on:
     branches: [main]
 
 # Cancel an in-progress run when a newer commit is pushed to the same ref.
+# On a branch, a new push makes the running check pointless and cancelling it is
+# right. On `main` it is not: every merge commit is a state somebody can bisect
+# to or deploy from, and a cancelled run means that state was never checked.
+#
+# Seven merges landed on 2026-09-15 and most of `main`'s runs were cancelled by
+# the next one. That is how run #358 went unnoticed — the Android build failed on
+# `main` right after #139 merged, and `gh pr checks 139` shows green because it
+# reports the newest run against the pull request's head, not the one on `main`.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   check:
@@ -53,6 +65,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The decision ledger's only real guard compares `adr/decisions.lock.json`
+      # with its own revision on the default branch, because that is the one
+      # comparison a self-consistent hand-edit cannot satisfy. `actions/checkout`
+      # clones one commit and no other ref, so `origin/main` would not exist and
+      # the check would report that it could not run — red, deliberately, rather
+      # than quietly agreeing with whatever the working tree says.
+      - name: Fetch the default branch, for the decision ledger's baseline
+        run: git fetch --depth=1 origin +main:refs/remotes/origin/main
+
       # tsc over every workspace, then oxlint, oxfmt --check, jest and vitest.
       # Includes the boundary guard that keeps the core free of platform SDKs.
       - name: Check
@@ -60,7 +81,7 @@ jobs:
 
       # Whether the Android job has anything to say about this change. It is the
       # expensive job by an order of magnitude, and a whole class of change cannot
-      # reach it: the handbook is a separate site, `tools/` ships with nothing, and
+      # reach it: the workbench is a separate site, `tools/` ships with nothing, and
       # the ADRs and the screenshots are read by people. Everything else runs it,
       # because the list below is what to SKIP and a new directory therefore
       # defaults to building. Any doubt, including this step failing, also builds:
@@ -91,7 +112,7 @@ jobs:
             echo "native=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          SKIP='^(apps/handbook/|tools/|screens/|adr/|docs/|\.vscode/|\.github/workflows/pages\.yml$|[^/]+\.md$|[^/]+\.png$|\.editorconfig$)'
+          SKIP='^(apps/workbench/|tools/|screens/|adr/|docs/|\.vscode/|\.github/workflows/(pages|sources)\.yml$|[^/]+\.md$|[^/]+\.png$|\.editorconfig$)'
           if grep -Ev "$SKIP" changed.txt > reaching.txt; then
             echo "native=true" >> "$GITHUB_OUTPUT"
             echo "Android build runs; these files reach it:"
@@ -136,6 +157,18 @@ jobs:
             grep -rl "does not support this platform" dist/ | head
             exit 1
           fi
+          # Rozenite is development-only tooling and must not reach a shipped
+          # bundle. The deploy workflow asserts this too, but only on a push to
+          # main — which is after the merge. A `require` moved inside a function
+          # would go green here and break the deploy afterwards, and the whole
+          # argument for this check is that the failure is invisible otherwise:
+          # a no-op module still carries its export names (ADR 0026 §1).
+          test -d dist || { echo "::error::dist is missing — the export produced nothing"; exit 1; }
+          if grep -riq 'rozenite' dist/; then
+            echo "::error::the web bundle carries Rozenite. Check that metro.config.js still passes an explicit enabled, and that both requires are selected at MODULE scope."
+            grep -ril 'rozenite' dist/ | head
+            exit 1
+          fi
           for route in index 404 artikel entdecken mediathek mitmachen profil; do
             test -f "dist/$route.html" || { echo "::error::missing dist/$route.html"; exit 1; }
           done
@@ -147,28 +180,89 @@ jobs:
           for route in projekt/abriss-atlas aufruf/wem-gehoert-die-stadt serie/klima tagebuch/diary-bern-2 behauptung/claim-001; do
             test -f "dist/$route.html" || { echo "::error::missing dist/$route.html — a dynamic route did not pre-render its ids"; exit 1; }
           done
-          echo "web export OK — $(find dist -name '*.html' | wc -l) routes, no unsupported-platform stubs"
+          # The shell's two attributes, asserted on the ARTEFACT and not only on the
+          # source. `__tests__/export-language.test.ts` reads `app/+html.tsx` through
+          # the AST, which cannot see a change in how Expo serialises the element it
+          # returns. Losing the mark is the quiet one: `lib/ownDocument.ts` then
+          # answers no for every document, the runtime correction of `lang` stops
+          # running, and nothing about that looks broken.
+          missing_lang=$(grep -rL 'lang="de"' --include='*.html' dist/ | head)
+          if [ -n "$missing_lang" ]; then
+            echo "::error::an exported page has no lang=\"de\" — app/+html.tsx did not reach it"
+            echo "$missing_lang"
+            exit 1
+          fi
+          missing_mark=$(grep -rL 'data-correctiv-app' --include='*.html' dist/ | head)
+          if [ -n "$missing_mark" ]; then
+            echo "::error::an exported page lost the own-document mark, so the app will not correct its lang at runtime"
+            echo "$missing_mark"
+            exit 1
+          fi
+          echo "web export OK — $(find dist -name '*.html' | wc -l) routes, no unsupported-platform stubs, lang and mark on every page"
 
-      # The handbook is the other half of what Pages publishes, and it can break on
+      # The workbench is the other half of what Pages publishes, and it can break on
       # its own: it reads the repository's Markdown at build time, so a document
       # renamed or a link rewritten to a path that no longer exists fails here and
       # nowhere else. Its tests run in the `check` job; this is the build.
-      - name: Build the handbook
-        run: npm run build -w @correctiv/handbook
+      - name: Build the workbench
+        run: npm run build -w @correctiv/workbench
 
-      - name: Assert the handbook is not silently empty
+      - name: Assert the workbench is not silently empty
         run: |
           set -euo pipefail
-          test -f apps/handbook/dist/404.html || {
-            echo "::error::apps/handbook/dist/404.html is missing — every deep link would 404 on Pages."
+          test -f apps/workbench/dist/404.html || {
+            echo "::error::apps/workbench/dist/404.html is missing — every deep link would 404 on Pages."
             exit 1
           }
-          # A handbook that shipped no documents still renders its navigation.
-          grep -rq "platform-free" apps/handbook/dist/assets/*.js || {
-            echo "::error::the handbook bundle carries none of the repository's documents."
+          # A workbench that shipped no documents still renders its navigation.
+          grep -rq "platform-free" apps/workbench/dist/assets/*.js || {
+            echo "::error::the workbench bundle carries none of the repository's documents."
             exit 1
           }
-          echo "handbook OK"
+          # The Content-Security-Policy is written into the page by a Vite plugin
+          # (apps/workbench/plugin/policy.ts), and a plugin dropped from
+          # vite.config.ts fails no test: the site builds and renders the same,
+          # without the one thing that stops a document's markup from running
+          # script. 404.html is a copy made after the build, and it is the page
+          # Pages serves for every deep route, so both are read.
+          for page in index 404; do
+            grep -q 'http-equiv="Content-Security-Policy"' "apps/workbench/dist/$page.html" || {
+              echo "::error::apps/workbench/dist/$page.html carries no Content-Security-Policy — is contentSecurityPolicy() still in vite.config.ts?"
+              exit 1
+            }
+          done
+          echo "workbench OK"
+
+      # And the step above is not enough, which is what issue #160 cost. Grepping
+      # the bundle proves the documents reached it; it cannot prove the page mounts,
+      # and for a day it did not. `apps/mobile/src/i18n/polyfills.ts` calls
+      # `require()` inside a runtime condition, the production build hoisted that to
+      # a namespace import and merely warned, and the DEV SERVER hoisted it to a
+      # default import of a module that exports nothing — a link-time SyntaxError
+      # that emptied every route of `npm run workbench` while every check here stayed
+      # green. Two agents built themselves ways around the blank page rather than
+      # reporting it, because the green tick said the site was fine.
+      #
+      # Installed rather than assumed. The script fails rather than skips when it
+      # finds no browser, which is the safe direction and the wrong red: the day a
+      # runner image drops Chrome, this job goes red on every pull request in the
+      # repository with a message about the workbench. Two lines put the browser in
+      # the job that needs it and name where it went.
+      - name: Install Chrome for the render check
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      # So both paths get opened in a browser, the built one first because it is
+      # already on disk. `scripts/renders.mjs` starts the dev server itself, the way
+      # `npm run workbench` does.
+      - name: Assert the workbench actually renders, on both build paths
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          npm run workbench:renders:dist
+          npm run workbench:renders
 
       - name: Upload web bundle
         uses: actions/upload-artifact@v4
@@ -177,6 +271,238 @@ jobs:
           path: apps/mobile/dist
           if-no-files-found: error
           retention-days: 14
+
+      # The home-tool check needs the export pages.yml actually deploys — based
+      # under /app/, not root — so it is re-exported after the plain one above is
+      # already uploaded: an export with the wrong base 404s every asset under
+      # /app/, a different, already-guarded failure (TROUBLESHOOTING.md, "A
+      # default export writes URLs absolute from the domain root"). Metro's
+      # cache is warm from the export at the top of this job.
+      - name: Export the app again, based for the workbench's /app/
+        working-directory: apps/mobile
+        env:
+          EXPO_BASE_URL: /app
+        run: npm run build:web
+
+      # `apps/workbench/dist` alone, which is all `workbench:renders:dist` above
+      # ever serves, has no `/app/` under it — so it could not have caught this,
+      # and did not: a first visit to `/preview` with the home tool open and no
+      # `s=` fixture (the plain link RELEASE.md hands out) opened the app frame
+      # on the sign-in door, and every edit in the tool reached storage with no
+      # screen behind the door to redraw it. `scripts/home-live.mjs` assembles
+      # both halves the way `pages.yml` does, opens exactly that address, and
+      # drives the tool the way a person would.
+      - name: Assert a fresh visit to the home tool actually redraws the app frame
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run workbench:home-live
+
+  # ADR 0040, the build half. The workbench may read the app; the app may never
+  # read the workbench.
+  #
+  # The configuration half is in the suite and runs in `check` above:
+  # apps/mobile/__tests__/no-workbench-dependency.test.ts reads the manifests, the
+  # tsconfigs, metro.config.js, jest.config.js, app.json and global.css and fails on
+  # a name or a path that reaches across. It has to exist separately from this job
+  # because the shapes that matter most go GREEN when the directory is gone rather
+  # than red: a Tailwind `@source`, a jest moduleNameMapper, a Metro watch folder and
+  # a `paths` alias all MATCH NOTHING and build, and what comes out is an app missing
+  # whatever that entry was contributing. `src/global.css` records that happening
+  # from the other side — a stylesheet that built green while dozens of the app's
+  # utilities were missing, so every row stood on end. An unused named import of the
+  # workbench escapes this job for a different reason, measured 2026-09-17: the
+  # transform elides a binding nothing reads, so it never reaches the resolver. A
+  # side-effect import and a used binding both fail the export here.
+  #
+  # And this half has to exist separately from that one because a list is a list: it
+  # names the files the app's toolchain reads TODAY, and the couplings nobody
+  # enumerated are the set that matters most. This job asks the real toolchain
+  # instead.
+  #
+  # WHY IT IS HERE AND NOT IN `npm run check`. It costs two installs and three
+  # exports, two of them from a cold cache because neither may replay the other,
+  # which is minutes against a check that ARCHITECTURE.md measures because it is
+  # short enough to run constantly. And the honest version DELETES A DIRECTORY,
+  # which is fine in a runner's checkout and is not fine in somebody's working tree.
+  #
+  # WHY THE DELETION IS REAL. The alternative is a build with the workspace excluded
+  # from a list somewhere, which is cheaper and is another configuration list — and a
+  # stale configuration list is the exact failure the other half exists to catch. The
+  # second `npm ci` is part of that honesty: it leaves the tree npm would have
+  # installed had the directory never been there, which drops the workspace symlink
+  # AND the packages only the workbench declares. How many that is on the day is in
+  # the two "added N packages" lines this job prints, and no number is typed here,
+  # because it is a different number on a runner and on a laptop. An app that builds
+  # only because a developer tool's dependencies happen to be hoisted to the root is
+  # depending on that tool, and no source read can see it.
+  #
+  # WHY IT COMPARES THE EXPORT RATHER THAN JUST BUILDING IT. "It still builds" cannot
+  # see the silent-contribution shapes above at all. So the two exports are compared
+  # — but NOT byte for byte, and that is a correction rather than a preference. See
+  # scripts/export-shape.mjs, which holds the measurement: `expo export` does not
+  # emit the same bytes twice, this job asserted that it did, and it went red on a
+  # pull request that changed nothing but Markdown (#204, run 35233971746). A check
+  # that fails when nothing is wrong is the twin of the one AGENTS.md warns about,
+  # and it is worse than nothing because people learn to merge past it.
+  #
+  # What is compared instead is the bundle's MODULE LIST and the shape of everything
+  # else: the file paths with their content hashes normalised away, the prerendered
+  # HTML with the same normalisation, and every other file — the stylesheets above
+  # all — byte for byte. A module that disappears with the workbench is named. What
+  # this no longer sees is a change in module ids, in ordering or in minifier output,
+  # and that is said here and in the job's own output rather than left to be
+  # rediscovered.
+  independence:
+    name: The app builds without the workbench
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # COLD AND PRIVATE, and that is the load-bearing part of this step.
+      #
+      # Metro's transform cache lives under `os.tmpdir()`, and `npm ci` does not
+      # touch it. The first version of this job therefore had its second export
+      # REPLAY the first's bytes out of a warm cache — 53.8 s cold, then 2.7 s — so
+      # every green it printed was a cache hit rather than a measurement, and the
+      # reds were the runs where the cache missed. A fresh `TMPDIR` per side gives
+      # each export its own cache, `--clear` says so twice, and the price is that
+      # both exports are cold: about a minute each.
+      #
+      # `--source-maps` because the module list comes out of them and the app's own
+      # `build:web` does not ask for them. Both sides are exported by the same
+      # command into the same shape, so the comparison is like for like; the app's
+      # own script is run further down, without the workbench, to prove the release
+      # path still works.
+      - name: Export the app with the workbench present
+        working-directory: apps/mobile
+        env:
+          TMPDIR: ${{ runner.temp }}/cache-with
+        run: |
+          set -euo pipefail
+          mkdir -p "$TMPDIR"
+          npx expo export --platform web --source-maps --clear --output-dir "$RUNNER_TEMP/export-with"
+          node "$GITHUB_WORKSPACE/scripts/export-shape.mjs" "$RUNNER_TEMP/export-with" "$RUNNER_TEMP/with"
+
+      # `test -d` first, and it is not belt-and-braces: `mv` on a directory that is
+      # not there would fail the step with a message about mv, and a rename upstream
+      # of this job would otherwise read as "the app already builds without it".
+      - name: Remove the workbench, for real
+        run: |
+          set -euo pipefail
+          test -d apps/workbench || {
+            echo "::error::apps/workbench is not there to remove. If it moved, this job and ADR 0040 both need the new path."
+            exit 1
+          }
+          mv apps/workbench "$RUNNER_TEMP/workbench"
+          test ! -e apps/workbench
+
+      # The tree npm would have installed had the directory never existed. It prunes
+      # node_modules/@correctiv/workbench and every package only the workbench
+      # declares, so what follows resolves against the app's own dependencies alone.
+      - name: Re-install against the tree as it now is
+        run: |
+          set -euo pipefail
+          npm ci
+          test ! -e node_modules/@correctiv/workbench
+
+      - name: Typecheck and test the app and the packages without it
+        run: |
+          set -euo pipefail
+          npm run typecheck -w @correctiv/mobile
+          npm run typecheck -w @correctiv/app-core
+          npm run typecheck -w @correctiv/catalogue
+          npm run typecheck -w @correctiv/design-tokens
+          npm run test -w @correctiv/mobile
+          npm run test -w @correctiv/app-core
+          npm run test -w @correctiv/catalogue
+          npm run test -w @correctiv/design-tokens
+
+      # The same command, and a cache of its own again, so that neither export can
+      # replay the other.
+      - name: Export the app again, without it
+        working-directory: apps/mobile
+        env:
+          TMPDIR: ${{ runner.temp }}/cache-without
+        run: |
+          set -euo pipefail
+          mkdir -p "$TMPDIR"
+          npx expo export --platform web --source-maps --clear --output-dir "$RUNNER_TEMP/export-without"
+          node "$GITHUB_WORKSPACE/scripts/export-shape.mjs" "$RUNNER_TEMP/export-without" "$RUNNER_TEMP/without"
+
+      # And the app's own release script, which is what ADR 0040 names. It is not
+      # compared — it is the same bundler over the same tree — but it is the command
+      # a release runs, and running it here says that it still runs at all with the
+      # directory gone. Warm, off the export above, which is seconds.
+      - name: Run the app's own release script without the workbench
+        working-directory: apps/mobile
+        env:
+          TMPDIR: ${{ runner.temp }}/cache-without
+        run: npm run build:web
+
+      - name: Assert it is the same app
+        run: |
+          set -euo pipefail
+
+          # The guard against a comparison of two nothings, which every diff below
+          # would call success. A floor rather than a reading: it was 1949 modules
+          # and 143 files on 2026-09-17, and the numbers here are only low enough to
+          # catch a source map that stopped being emitted or a dist that came back
+          # empty. scripts/export-shape.mjs fails on an empty directory of its own.
+          for side in with without; do
+            test -s "$RUNNER_TEMP/$side.modules.txt" || {
+              echo "::error::$side.modules.txt is missing or empty. The module list comes from the export's source maps; if --source-maps stopped emitting them, this job would compare nothing, so it fails instead of passing."
+              exit 1
+            }
+            modules=$(wc -l < "$RUNNER_TEMP/$side.modules.txt")
+            test "$modules" -gt 1000 || {
+              echo "::error::$side.modules.txt holds only $modules modules. That is not a bundle of this app, so the comparison below would be meaningless."
+              exit 1
+            }
+            files=$(wc -l < "$RUNNER_TEMP/$side.shape.txt")
+            test "$files" -gt 100 || {
+              echo "::error::the $side export has $files files in it, which is not this app."
+              exit 1
+            }
+            grep -q '^_expo/static/css/global-HASH\.css' "$RUNNER_TEMP/$side.shape.txt" || {
+              echo "::error::the $side export emitted no app stylesheet, so the one artefact this repository has actually seen go silently wrong is not in the comparison at all."
+              exit 1
+            }
+          done
+
+          # Both messages below say WHAT differs and stop there. The first version
+          # of this job said "so something in the app is reading it", which was
+          # untrue on #204 and is the sentence that taught people to merge past the
+          # job. A difference here has two possible causes and this job cannot tell
+          # them apart; naming both is the honest report.
+          CAUSES="Two things can cause this and this job cannot tell them apart: the app really reads apps/workbench, or the export has a nondeterminism that reaches this comparison. Take the second seriously — the bytes of the bundle already have one (scripts/export-shape.mjs), which is why they are not compared. For the first, apps/mobile/__tests__/no-workbench-dependency.test.ts names the file when it is an import, a path or a manifest entry."
+
+          if ! diff -u "$RUNNER_TEMP/with.modules.txt" "$RUNNER_TEMP/without.modules.txt"; then
+            echo "::error::the app's bundle holds different modules with apps/workbench removed. The lines above name each one that came or went. $CAUSES"
+            exit 1
+          fi
+
+          if ! diff -u "$RUNNER_TEMP/with.shape.txt" "$RUNNER_TEMP/without.shape.txt"; then
+            echo "::error::the app's export changes shape with apps/workbench removed — a file, a prerendered page or a stylesheet. The stylesheet is the one to look at first: apps/mobile/src/global.css records the app once shipping a sheet dozens of its own utilities were missing from, and a Tailwind @source into a directory that is gone matches nothing and builds. $CAUSES"
+            exit 1
+          fi
+
+          echo "the same app — $(wc -l < "$RUNNER_TEMP/without.modules.txt") modules and $(wc -l < "$RUNNER_TEMP/without.shape.txt") files, with the workbench and without it."
+          echo "Not compared, and this job does not pretend otherwise: the JS bundle. Cold exports of one unchanged tree give a different hash every time and occasionally a different length, so neither can be asserted (scripts/export-shape.mjs has the measurement). What that leaves outside this check is the same modules with less code inside them; what stays inside it is a module, a page, a stylesheet or an asset arriving or leaving."
+          echo "For the record, the two bundles this run produced:"
+          for side in with without; do
+            bundle=$(find "$RUNNER_TEMP/export-$side/_expo/static/js/web" -name '*.js' | head -1)
+            echo "  $side: $(stat -c %s "$bundle") bytes, $(sha256sum "$bundle" | cut -c1-16)"
+          done
 
   android:
     name: Android build
@@ -242,8 +568,45 @@ jobs:
 
       # arm64-v8a for a real demo device, x86_64 so the APK also installs on an
       # emulator. Skipping armeabi-v7a and x86 roughly halves the native build.
+      # `:app:mergeExtDexRelease` died twice on 2026-09-15 with
+      # `java.lang.OutOfMemoryError: Java heap space` — run #356 on the branch and
+      # run #358 on `main` after the merge — and a retry passed both times. The
+      # heap is marginal for this dependency set rather than short, which is the
+      # worse of the two: a check that fails at random is one nobody reads, and
+      # this one put a red mark on a merged pull request whose code was fine.
+      #
+      # 2048m is what the React Native ecosystem's own `gradle.properties` files
+      # all carry and what `expo prebuild` writes. D8 merges dex in the Gradle
+      # daemon, so this is the daemon's heap, and the runner has 16 GB.
+      # Reported, not assumed. The first version of this step ran in `android/`
+      # and failed before its first command; the second appended a line and then
+      # could not grep it back out of the file it had just written. Neither said
+      # why, so this one prints what it sees and fails on nothing.
+      - name: Report what the Gradle heap is set from
+        working-directory: apps/mobile
+        run: |
+          pwd
+          ls -la android/ | head -20 || true
+          echo "--- gradle.properties as prebuild left it ---"
+          cat android/gradle.properties || echo "(no such file)"
+        continue-on-error: true
+
+      # The heap comes through the environment rather than through the generated
+      # `gradle.properties`, because that file belongs to a template this
+      # repository does not hold and writing into it turned out to be two
+      # failures deep. `GRADLE_OPTS` reaches daemon selection, which is where D8
+      # merges dex, and it cannot fail the build by being wrong about a path.
+      #
+      # 2048m is what `expo prebuild` writes and what every `gradle.properties`
+      # in the React Native ecosystem carries. `:app:mergeExtDexRelease` died
+      # twice on 2026-09-15 with `java.lang.OutOfMemoryError: Java heap space`,
+      # run #356 on a branch and run #358 on `main` after the merge, and a retry
+      # passed both times — marginal rather than short, which is the worse of the
+      # two: a check that fails at random is one nobody reads.
       - name: Build Android (release)
         working-directory: apps/mobile/android
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64
 
       - name: Upload APK

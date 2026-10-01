@@ -19,7 +19,7 @@ live palette, the frame's console, element-to-source — needs `@correctiv/desig
 as an import and a component with state. Copying twelve colour values into an HTML
 file by hand is exactly the drift `packages/design-tokens` exists to prevent.
 
-## Decision
+## 1. Decision
 
 ~~A workspace package, `tools/preview`, React and Vite, whose build output is written
 into `apps/mobile/public/`.~~ **Deleted on 2026-09-04 by

@@ -43,9 +43,12 @@ const EXACT = {
   uniwind: shim('uniwind.ts'),
   '@expo/vector-icons': shim('vector-icons.tsx'),
 
-  // Only what `apps/mobile/src` actually imports. expo-linking, expo-web-browser,
-  // expo-constants and expo-system-ui are declared in the app's package.json and
-  // imported NOWHERE, so shimming them would be dead code pretending to be coverage.
+  // Only what `apps/mobile/src` actually imports. expo-linking, expo-web-browser and
+  // expo-system-ui are declared in the app's package.json and imported NOWHERE, so
+  // shimming them would be dead code pretending to be coverage. `expo-constants` was in
+  // that sentence until main's home-as-data work gave `lib/home/layout.ts` a reason to
+  // read the build's own timestamp through it.
+  'expo-constants': shim('expo-constants.ts'),
   'expo-image': shim('expo-image.tsx'),
   'expo-video': shim('expo-video.tsx'),
   'expo-font': shim('expo-font.ts'),
@@ -54,6 +57,11 @@ const EXACT = {
   'react-native-safe-area-context': shim('react-native-safe-area-context.tsx'),
   'react-native-gesture-handler': shim('react-native-gesture-handler.tsx'),
   'react-native-webview': shim('react-native-webview.tsx'),
+  // Runtime-identical: a re-export with one TYPE widened. Its own header says which
+  // and why, and names what removes it. `react-intl-upstream` is the real package under
+  // the one name this table does not redirect, which is how that file reaches it.
+  'react-intl': shim('react-intl.ts'),
+  'react-intl-upstream': createRequire(import.meta.url).resolve('react-intl'),
   '@expo-google-fonts/merriweather': shim('expo-google-fonts.ts'),
   '@expo-google-fonts/source-sans-3': shim('expo-google-fonts.ts'),
 
@@ -74,6 +82,18 @@ const EXACT = {
   // in the desktop tree imports it, but a mobile module that grows the import should
   // find an empty module rather than a bundler that cannot parse CSS.
   '@/global.css': here('src/shims/empty.ts'),
+
+  // The app's Hermes polyfills, left out of a build whose runtime is not Hermes — the
+  // same exclusion `apps/workbench/vite.app.mjs` makes, for the same reason and with
+  // the argument written out in `apps/mobile/src/i18n/polyfills.ts` itself: the three
+  // `require` calls are inside an `if`, which only Metro leaves inside it, and a
+  // bundler that hoists them out imports some 90 KB of CLDR data per locale to replace
+  // an implementation that is already present and better.
+  //
+  // GJS is SpiderMonkey with a full ICU, so both objects the file installs are there.
+  // MEASURED on this machine's gjs 1.88.1: `Intl.PluralRules` and `Intl.Locale` are
+  // both present, which is the condition each branch guards on.
+  '@/i18n/polyfills': here('src/shims/empty.ts'),
 };
 
 /** Prefix redirects, longest first so `@/assets/` wins over `@/`. */
@@ -82,6 +102,10 @@ const PREFIX = [
   ['@/', here('../mobile/src/')],
   ['@correctiv/app-core/', here('../../packages/app-core/src/')],
   ['@correctiv/design-tokens/', here('../../packages/design-tokens/src/')],
+  // The German every user-facing string is rendered in (ADR 0049). Data only — no
+  // React, no platform SDK — so this host consumes it as source exactly as the phone
+  // does, and the provider that reads it is `@/i18n/Localisation`.
+  ['@correctiv/catalogue/', here('../../packages/catalogue/src/')],
 ];
 
 /**
@@ -160,6 +184,7 @@ function redirectPlugin() {
         if (source === '@correctiv/design-tokens') {
           return here('../../packages/design-tokens/src/index.ts');
         }
+        if (source === '@correctiv/catalogue') return here('../../packages/catalogue/src/index.ts');
         return null;
       },
     },

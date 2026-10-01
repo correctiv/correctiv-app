@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 
 import { resetPlatform } from '@correctiv/app-core';
 import { clearMemoryCache } from '@correctiv/app-core/services/cache.service';
+import { patch as feedsPatch } from '@correctiv/app-core/stores/feeds';
 import { patch as mediaPatch } from '@correctiv/app-core/stores/media';
 import { setPushOptIn, setTheme } from '@correctiv/app-core/stores/settings';
 import { signIn } from '@correctiv/app-core/stores/session';
@@ -16,6 +17,9 @@ import {
   type AppThunk,
 } from '@correctiv/app-core/stores/store';
 
+import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
+
+import { useInvestigations } from '@/lib/feeds/useFeed';
 import {
   coreStore,
   useCoreActions,
@@ -284,6 +288,57 @@ describe('useVideoChannel', () => {
     // a component showing "CORRECTIV im Gespräch".
     expect(renders()).toBe(before);
     await flush();
+  });
+});
+
+/**
+ * The profile's impact list, measured rather than reasoned about, because this hook
+ * got it wrong once: it selected `s.feeds`, which Immer hands a new identity every
+ * time ANY feed lands, so a profile tab left open re-rendered whenever Home finished
+ * loading a list it does not show. The selector takes the one slice it reads now
+ * (`RecherchenFeed` in `stores/feeds.ts`), and these two cases are the difference —
+ * the same pair as `useVideoChannel` above, for the same reason.
+ *
+ * The feed is seeded BEFORE the hook mounts, so `useLazyLoad` sees a status that is
+ * not `idle` and nothing here reaches for the network.
+ */
+describe('useInvestigations', () => {
+  const article = (id: string, path: string, feed: FeedKey = 'recherchen'): FeedItem => ({
+    id,
+    feed,
+    title: id,
+    url: `https://correctiv.org${path}`,
+    teaser: '',
+    publishedAt: '2026-08-11T08:00:00.000Z',
+    categories: [],
+  });
+
+  const STORY = article('r', '/russland/2026/08/11/russisches-haus/');
+
+  const land = (key: FeedKey, items: FeedItem[]) =>
+    act(() => {
+      coreStore.dispatch(feedsPatch(key, { items, status: 'ready' }));
+    });
+
+  beforeEach(() => land('recherchen', [STORY]));
+
+  it('re-renders for its own feed, with the fact checks taken out', () => {
+    const { value, renders } = renderHook(() => useInvestigations(3));
+    const before = renders();
+
+    land('recherchen', [STORY, article('c', '/faktencheck/2026/08/11/keine-ki-foto-ist-echt/')]);
+
+    expect(renders()).toBeGreaterThan(before);
+    expect(value().map((i) => i.id)).toEqual(['r']);
+  });
+
+  it('does not re-render when a different feed lands', () => {
+    const { renders } = renderHook(() => useInvestigations(3));
+    const before = renders();
+
+    land('klima', [article('k', '/klima/2026/08/10/hitze-in-der-stadt/', 'klima')]);
+
+    expect(renders()).toBe(before);
   });
 });
 

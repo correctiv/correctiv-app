@@ -1,137 +1,66 @@
-import { router } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { useMemo } from 'react';
 
-import { ArticleHero } from '@/components/feed/ArticleHero';
-import { ArticleRow } from '@/components/feed/ArticleRow';
-import { FaktencheckRail } from '@/components/feed/FaktencheckRail';
-import { BackstageTeaser } from '@/components/home/BackstageTeaser';
-import { CalloutTeaser } from '@/components/home/CalloutTeaser';
-import { EarlyAccessCard } from '@/components/home/EarlyAccessCard';
-import { HomeHeader } from '@/components/home/HomeHeader';
-import { ImpactFooter } from '@/components/home/ImpactFooter';
-import { MediathekReihe } from '@/components/home/MediathekReihe';
-import { SpotlightBriefing } from '@/components/home/SpotlightBriefing';
-import { Hairline, Screen, SectionHeader, Typo } from '@/components/ui';
-import { callouts } from '@correctiv/app-core/data/callouts';
-import { useFeed } from '@/lib/feeds/useFeed';
-import { openArticle } from '@/lib/openArticle';
-import { useColors } from '@/lib/theme';
-import { useTimedModule } from '@/lib/useTimedModule';
+import { readerOf } from '@correctiv/app-core/lib/home-audience';
+import { sectionsAtInstant } from '@correctiv/app-core/lib/home-layout';
+
+import { Screen } from '@/components/ui';
+import { useHomeInstant } from '@/lib/home/clock';
+import { useHomeLayout } from '@/lib/home/layout';
+import { HOME_MODULES } from '@/lib/home/modules';
+import { useSession } from '@/lib/store/core';
 
 /**
- * Home — a curated cross-section of the ecosystem, in the draft's order: lead
- * research, today's briefing, the club's early access, the latest research, fact
- * checks, one open callout, the media row, backstage, and a quiet thank-you.
+ * Home — a curated cross-section of the ecosystem, in the draft's order: lead research,
+ * today's briefing, the club's early access, the latest research, fact checks, one open
+ * callout, the media row, backstage, and a quiet thank-you.
  *
- * LIVE from the feeds: hero, "Neueste Recherchen", the fact-check rail and the
- * FunFacts tile. Sample data: briefing, early access, callout, backstage — each
- * one exists to show a flow the feeds cannot supply.
+ * **That order is no longer written here.** It is
+ * `@correctiv/app-core/src/data/home.layout.json`, an ordered list of sections each
+ * naming a module, and this screen is the loop that draws them
+ * ([ADR 0036](../../../../../adr/0036-the-home-screen-becomes-data.md)). What each module
+ * renders is `lib/home/modules.tsx`; which of them appear right now is
+ * `sectionsAtInstant`, which folds the document up to this instant and drops what is
+ * hidden in it.
  *
- * One block moves with the clock. The requirements want time-based modules lifted to
- * the top "after they drop into the chronological feed", so the callout is rendered
- * once, in one of two places, and `useTimedModule` decides which. Two more slots are
- * specified and stay empty because nothing in the app can fill them yet; the reasons
- * are in `lib/daypart.ts` beside the table.
+ * `useHomeLayout` rather than a read, because the document may be replaced while this
+ * screen is on it: §4's stored copy is a key in the app's own storage, and the
+ * workbench's editor writes it. `lib/home/layout.ts` is where that seam is argued.
+ *
+ * **What the clock decides is which STATE of that document this is.** The document is a
+ * day — places, plus a list of moments each carrying only what changes at it — and
+ * `sectionsAtInstant` folds it up to an instant, the day's minute in Berlin first and then
+ * whichever editions are running ([ADR 0039](../../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md),
+ * [ADR 0059](../../../../../adr/0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §4).
+ * So the callout still has two sections and is still rendered exactly once in one of two
+ * places; what says which is two moments in the document rather than a daypart named on
+ * each section. `useHomeInstant` is where that instant comes from, and the reason it is a
+ * hook rather than `Date.now()` on render. A module the document names and this host
+ * cannot draw was dropped when the document was read, with a report; the `?? null` below
+ * is the second net and not the mechanism.
+ *
+ * **And whose screen it is.** The fold takes the reader as its third parameter
+ * ([ADR 0060](../../../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md)
+ * §4): the audiences the signed-in entitlement is in, answered by the core's one file that
+ * knows what an audience means. A filter on what Home leads with and never a lock; every
+ * route stays as open as the door made it.
+ *
+ * LIVE from the feeds: hero, "Neueste Recherchen", the fact-check rail and the FunFacts
+ * tile. Sample data: briefing, early access, callout, backstage — each one exists to
+ * show a flow the feeds cannot supply.
  */
-function openCallout(entry: { slug: string }): void {
-  router.push({ pathname: '/aufruf/[slug]', params: { slug: entry.slug } });
-}
-
 export default function HomeScreen() {
-  const colors = useColors();
-  const recherchen = useFeed('recherchen');
-  const faktenchecks = useFeed('faktencheck');
-
-  const hero = recherchen.data?.[0];
-  const neueste = recherchen.data?.slice(1, 6) ?? [];
-  const callout = callouts.find((entry) => entry.status === 'open');
-  const liftCallout = useTimedModule() === 'participate';
+  const layout = useHomeLayout();
+  const { entitlement } = useSession();
+  const reader = useMemo(() => readerOf(entitlement), [entitlement]);
+  const instant = useHomeInstant(layout);
+  const sections = sectionsAtInstant(layout, instant, reader);
 
   return (
     <Screen>
-      <HomeHeader />
-
-      {(recherchen.offline || faktenchecks.offline) && (
-        <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
-          Ohne Verbindung. Sie sehen gespeicherte Artikel.
-        </Typo>
-      )}
-
-      {recherchen.loading && !recherchen.data && (
-        <View className="py-2xl">
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      )}
-
-      {callout &&
-        liftCallout && (
-          // mb-m, because the hero underneath runs edge to edge and has no top margin
-          // of its own. Without it the card's bottom edge and the photograph touch.
-          <View className="mt-s mb-m">
-            <CalloutTeaser callout={callout} onPress={openCallout} />
-          </View>
-        )}
-
-      {hero && <ArticleHero item={hero} onPress={openArticle} />}
-
-      <View className="mt-l">
-        <SpotlightBriefing onOpenArchive={() => router.push('/spotlight')} />
-      </View>
-
-      <View className="mt-l">
-        <EarlyAccessCard onPress={() => router.push('/backstage')} />
-      </View>
-
-      {neueste.length > 0 && (
-        <View className="mt-l">
-          <SectionHeader title="Neueste Recherchen" />
-          <View className="mt-2xs">
-            {neueste.map((item, i) => (
-              <View key={item.id}>
-                {i > 0 && <Hairline />}
-                <ArticleRow item={item} onPress={openArticle} />
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {(faktenchecks.data?.length ?? 0) > 0 && (
-        <View className="mt-l">
-          <SectionHeader
-            title="Faktenchecks"
-            className="mb-s"
-            actionLabel="Alle ansehen →"
-            onAction={() => router.push('/(tabs)/entdecken')}
-          />
-          <FaktencheckRail items={faktenchecks.data!.slice(0, 8)} onPress={openArticle} />
-        </View>
-      )}
-
-      {callout && !liftCallout && (
-        <View className="mt-l">
-          <CalloutTeaser callout={callout} onPress={openCallout} />
-        </View>
-      )}
-
-      <View className="mt-l">
-        <SectionHeader
-          title="Mediathek"
-          className="mb-s"
-          actionLabel="Alles ansehen →"
-          onAction={() => router.push('/(tabs)/mediathek')}
-        />
-        <MediathekReihe onOpenMediathek={() => router.push('/(tabs)/mediathek')} />
-      </View>
-
-      <View className="mt-l">
-        <BackstageTeaser
-          onOpenDiary={(id) => router.push({ pathname: '/tagebuch/[id]', params: { id } })}
-          onOpenBackstage={() => router.push('/backstage')}
-        />
-      </View>
-
-      <ImpactFooter />
+      {sections.map((section) => {
+        const Module = HOME_MODULES[section.module];
+        return Module ? <Module key={section.id} section={section} instant={instant} /> : null;
+      })}
     </Screen>
   );
 }

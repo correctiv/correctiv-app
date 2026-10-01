@@ -185,4 +185,18 @@ export const blobs: BlobStore = {
       );
     });
   },
+  delete(namespace, name) {
+    return new Promise((resolve) => {
+      const file = Gio.File.new_for_path(blobPath(namespace, name));
+      file.delete_async(GLib.PRIORITY_DEFAULT, null, (source, result) => {
+        try {
+          (source ?? file).delete_finish(result);
+        } catch {
+          // "Deleting what is not there is not an error", says the port, and a
+          // cache this cannot evict is still a cache.
+        }
+        resolve();
+      });
+    });
+  },
 };

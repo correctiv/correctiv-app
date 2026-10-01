@@ -1,6 +1,10 @@
 import { escapeHtml } from '../lib/html';
-import { formatDateDe } from '../lib/format';
-import { ratingLabel, ratingTone } from './rating';
+import { formatDate } from '../lib/format';
+import { coreMessage } from '../i18n/messages';
+import { gateReaderBody } from './body-allowlist';
+import { INLINE_EMBED_HOSTS } from './embeds';
+import { ratingTone } from './rating';
+import type { Locale } from '../stores/settings';
 import type { Article } from './types';
 
 /**
@@ -22,19 +26,162 @@ import type { Article } from './types';
  * dark by redefining them.
  */
 
+/**
+ * Every word this document prints that is not the article's own, formatted.
+ *
+ * Handed IN rather than fetched here, and that is the whole difference between
+ * this file and a screen. The document goes into a WebView as a string: there is
+ * no React tree, no provider and no `useIntl()` to reach for, so the core names
+ * the words it needs (`READER_COPY` below) and the host arrives with them already
+ * turned into text.
+ *
+ * `verdict` is absent on an article with no rating, which is most of them, and
+ * `byline` on one with no named author. Both are then simply not printed, exactly
+ * as before.
+ */
+export interface ReaderCopy {
+  /** The plaque a fact check wears instead of its section. */
+  factcheckBadge: string;
+  /**
+   * The verdict, spelled out — `RATING_LABELS` is where the wording comes from.
+   *
+   * Optional because most articles have no rating, and a host that has one has to
+   * supply it. It cannot be made required without making every unrated article
+   * format a verdict it does not have, and it cannot be tied to `article.rating`
+   * in the type, so the guarantee is made where it is enforceable: an empty one
+   * prints NO plaque rather than an empty one. The closed-union argument
+   * `AUDIO_ERROR_LABELS` makes does not reach here — that one fails to compile
+   * because the Record must be total, and this is one field on a bag of words.
+   * A red box with no word in it asserts a verdict and names none, which is worse
+   * than an article that shows no verdict at all.
+   */
+  verdict?: string;
+  /** The authors with their preposition, as one phrase. */
+  byline?: string;
+  /** How long the article takes to read. */
+  readingTime: string;
+  /** The line in the footer, which is the only thing the document says in its own voice. */
+  support: string;
+  /**
+   * The link standing in for an embed the reader does not load, named by its host
+   * (`articles/embeds.ts`). A function, because one article can embed from several
+   * hosts and the body that names them was cached without a language.
+   */
+  embedFallback: (host: string) => string;
+  /** The link standing in for a correctiv.org article embedded in this one. */
+  embedArticle: string;
+}
+
+/**
+ * What the host has to format, as message descriptors.
+ *
+ * These live in the core because the document does: a second host rendering the
+ * same reader must not have to invent a support line, and two hosts inventing two
+ * is the drift this file was written to end. `byline` and `readingTime` take a
+ * value, which is why they are messages and not constants — "von X" and "7 Min.
+ * Lesezeit" are one sentence each in German and two different shapes in English.
+ */
+export const READER_COPY = {
+  factcheckBadge: coreMessage({
+    id: 'core.reader.factcheckBadge',
+    defaultMessage: 'Fact check',
+    description:
+      "The badge on a fact check inside the article document. Uppercased by the code that builds the document, so write it in normal case. home.factCheckBadge is the same word on the home screen's rail.",
+  }),
+  byline: coreMessage({
+    id: 'core.reader.byline',
+    defaultMessage: 'by {authors}',
+    description:
+      'The byline in the article document the reader renders. {authors} is the list of authors, already joined.',
+  }),
+  readingTime: coreMessage({
+    id: 'core.reader.readingTime',
+    defaultMessage: '{minutes} min read',
+    description:
+      'Part of the meta line in the article document, after the byline and the date and joined to them with ‘ · ’. {minutes} is a whole number of minutes. There is no plural here, unlike `article.readingTime` in the feed; say so if your language needs one.',
+  }),
+  support: coreMessage({
+    id: 'core.reader.support',
+    defaultMessage: 'Made possible by supporters like you. Thank you for being here.',
+  }),
+  embedFallback: coreMessage({
+    id: 'core.reader.embedFallback',
+    defaultMessage: 'Open content from {host} in the browser',
+    description:
+      'A link in the article document where the article embeds something the app does not load, a video or a social media post. Tapping it opens the system browser. {host} is the address it comes from without "www.", for example "youtube.com" or "instagram.com".',
+  }),
+  embedArticle: coreMessage({
+    id: 'core.reader.embedArticle',
+    defaultMessage: 'Read the embedded article',
+    description:
+      'A link in the article document where the article embeds another CORRECTIV article. Tapping it opens that article in the app, not in a browser.',
+  }),
+};
+
 export interface ReaderHtmlOptions {
   /** Inline CSS, in order — token variables and `@font-face` first, layout last. */
   css?: string[];
   /** Stylesheet hrefs, resolved against the WebView's base url. */
   stylesheets?: string[];
-  /** The app's text-size setting; scales the root font size. 1 = default. */
+  /**
+   * The app's text scale, the same factor every other screen is drawn at
+   * ([ADR 0033](../../../../adr/0033-one-text-size-for-the-whole-app-the-systems-by-default.md)):
+   * the system's font scale, or the step a reader chose in its place. It sets the
+   * root font size, so every `rem` in the document follows. 1 = the design's size.
+   *
+   * It is the WHOLE scale, so the host has to keep the browser from applying the
+   * system's a second time — on Android the WebView's own text zoom follows the
+   * system font setting unless it is pinned to 100.
+   */
   textScale?: number;
+  /**
+   * What goes in `<html lang>`, which is not decoration.
+   *
+   * A browser hyphenates and a screen reader chooses a voice by this attribute, so
+   * a German article announced as English is read out in an English accent with no
+   * hyphenation. It was the literal `"de"` here until
+   * [ADR 0049](../../../../adr/0049-the-catalogue-is-a-package.md) §4 gave the host a
+   * locale to pass, and then a `= 'de'` default for one release, which a cold review
+   * caught: the sibling module that formats this document's dates refuses to default a
+   * locale in as many words, because a default is the constant back under another name
+   * and its whole failure mode is being invisible. Required, so a host that forgets it
+   * cannot silently claim German.
+   *
+   * It is the LOCALE and not the article's own language, which this document does
+   * not know: the words around the article are the app's, and the app is in one
+   * language at a time. The day an English app shows a German article, that is a
+   * `lang` on the body rather than a second argument here.
+   */
+  locale: Locale;
 }
 
 const ROOT_FONT_PX = 16;
 
-export function buildReaderHtml(article: Article, options: ReaderHtmlOptions = {}): string {
-  const { css = [], stylesheets = [], textScale = 1 } = options;
+/**
+ * The document's Content Security Policy, first thing in its `<head>`.
+ *
+ * No script at all, because the document has none of its own and needs none: the
+ * body is a remote page's, and a hole in a cleaner must not become script running
+ * in the app. That is also what lets the web host give its frame `allow-scripts`,
+ * which the embeds' own frames inherit and need (ADR 0065 §5). Frames only from
+ * `INLINE_EMBED_HOSTS`, so the list is enforced by the browser as well as by the
+ * cleaners. A policy in a meta tag can only be tightened by a later one, never
+ * loosened, so a body that brings its own changes nothing.
+ */
+export const READER_CSP = [
+  "script-src 'none'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  `frame-src ${INLINE_EMBED_HOSTS.map((host) => `https://${host}`).join(' ')}`,
+].join('; ');
+
+export function buildReaderHtml(
+  article: Article,
+  copy: ReaderCopy,
+  options: ReaderHtmlOptions,
+): string {
+  const { css = [], stylesheets = [], textScale = 1, locale } = options;
 
   const rootStyle = `font-size:${ROOT_FONT_PX * textScale}px`;
   const links = stylesheets
@@ -42,27 +189,40 @@ export function buildReaderHtml(article: Article, options: ReaderHtmlOptions = {
     .join('');
   const styles = css.length > 0 ? `<style>${css.join('\n')}</style>` : '';
 
-  const hero = article.heroImageUrl
-    ? `<figure class="hero"><img src="${escapeHtml(article.heroImageUrl)}" alt=""></figure>`
-    : '';
+  const hero = heroHtml(article);
 
-  // A fact check announces itself; everything else shows its section.
-  const badgeText = article.rating ? 'FAKTENCHECK' : (article.kicker ?? '').toUpperCase();
+  /**
+   * A fact check announces itself; everything else shows its section.
+   *
+   * Uppercased HERE, and that is the correctness of the string rather than of the
+   * stylesheet. `.badge{text-transform:uppercase}` in `READER_LAYOUT_CSS` says the
+   * same thing and is not the guarantee: `css` is optional and the split this file
+   * documents is that the CSS belongs to the HOST, so a host with a stylesheet of
+   * its own — or one that appends ours anywhere but last — renders "Faktencheck"
+   * in title case with nothing failing anywhere. The kicker was already uppercased
+   * in JavaScript on the same line, so the one branch that read differently was
+   * the one only a rendered document could show. The CSS rule stays, because it is
+   * what makes a host's OWN badge text agree with this one.
+   */
+  const badgeText = (article.rating ? copy.factcheckBadge : (article.kicker ?? '')).toUpperCase();
   const badge = badgeText ? `<p class="badge">${escapeHtml(badgeText)}</p>` : '';
 
-  const rating = article.rating
-    ? `<div class="rating rating--${ratingTone(article.rating)}">` +
-      `<span class="rating__label">${escapeHtml(ratingLabel(article.rating))}</span></div>`
-    : '';
+  // Both halves, or neither: a plaque with no word in it is a coloured box
+  // asserting a verdict it does not name. See `ReaderCopy.verdict`.
+  const rating =
+    article.rating && copy.verdict
+      ? `<div class="rating rating--${ratingTone(article.rating)}">` +
+        `<span class="rating__label">${escapeHtml(copy.verdict)}</span></div>`
+      : '';
 
   // The app's own date format wins over the publisher's wording: correctiv.org prints
   // "04. August 2026" where every list in the app reads "4. August 2026", and the
   // reader is the one screen a date row appears in twice. `publishedText` stays as the
-  // fallback for a page with no parsable date — `formatDateDe` returns '' for one.
+  // fallback for a page with no parsable date — `formatDate` returns '' for one.
   const metaLine = [
-    article.authors.length > 0 ? `von ${article.authors.join(', ')}` : '',
-    formatDateDe(article.publishedAt) || article.publishedText,
-    `${article.readingMinutes} Min. Lesezeit`,
+    article.authors.length > 0 ? copy.byline : '',
+    formatDate(article.publishedAt, locale) || article.publishedText,
+    copy.readingTime,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -77,12 +237,22 @@ export function buildReaderHtml(article: Article, options: ReaderHtmlOptions = {
    * includes the app, so that branch addressed nobody and the button offered them
    * what they already had. Removed with ADR 0018.
    */
-  const footer = `<p class="support-line">Ermöglicht durch Unterstützer:innen wie Sie. Danke, dass Sie dabei sind.</p>`;
+  const footer = `<p class="support-line">${escapeHtml(copy.support)}</p>`;
+
+  // The last gate: every body, from wherever it came, held to one table over a
+  // parsed tree, with the fallback markers turned into links in the reader's
+  // language (ADR 0065 §7, `body-allowlist.ts`).
+  const body = gateReaderBody(
+    article.bodyHtml,
+    { openElsewhere: copy.embedFallback, openArticle: copy.embedArticle },
+    article.url,
+  );
 
   return `<!DOCTYPE html>
-<html lang="de" style="${rootStyle}">
+<html lang="${escapeHtml(locale)}" style="${rootStyle}">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="${READER_CSP}">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 ${links}${styles}
 </head>
@@ -96,13 +266,57 @@ ${rating}
 <p class="meta">${escapeHtml(metaLine)}</p>
 </header>
 ${excerpt}
-<div class="reader-body">${article.bodyHtml}</div>
+<div class="reader-body">${body}</div>
 <footer class="reader-footer">
 ${footer}
 </footer>
 </article>
 </body>
 </html>`;
+}
+
+/**
+ * The picture above the headline: the hero image, or a video that stands in for it.
+ *
+ * The video does what correctiv.org's own `cvui/header-post` does with the same
+ * file: it plays on its own, muted, looping, inline and with no controls, so it is
+ * a picture that moves rather than something to watch. Each of those attributes
+ * is required somewhere: WebKit plays nothing inline that is not both `muted` and
+ * `playsinline`, and the host's WebView has to allow media to start without a tap.
+ * `aria-hidden` because it says nothing the image's empty `alt` does not.
+ *
+ * The image stays, as the `poster` until the first frame arrives and as the still
+ * that replaces the video for a reader who asked the system for less motion. That
+ * swap is CSS in `READER_LAYOUT_CSS`, since the document carries no script. The
+ * `media` on the `<source>` is the half that saves the download: Chromium honours
+ * it and picks no source under reduced motion (an empty `currentSrc`, measured on
+ * 2026-09-24), and a WebView that does not plays the video hidden, which costs
+ * bytes and not motion. Without an image there is no still to fall back to, and a reader who
+ * asked for less motion then gets no hero at all rather than a moving one.
+ *
+ * A document with scripting disabled gets its video's controls whether it asked for
+ * them or not, which is the HTML standard's rule, and the same state keeps
+ * `autoplay` from starting anything. Measured in Chromium on 2026-09-24: in
+ * `sandbox="allow-same-origin"` the video stayed paused behind its poster with a
+ * play bar across it, even with the browser's autoplay policy switched off. That
+ * was the web target's frame until ADR 0065 §5 gave it `allow-scripts` for the
+ * embeds, and measured the same day in the web export, the hero now plays there
+ * too, without controls. The document still runs no script of its own: its policy
+ * is `script-src 'none'`, and scripting being ENABLED is what the video rule reads.
+ * `READER_LAYOUT_CSS` keeps hiding forced controls and taking the pointer off the
+ * video, for a host whose frame has scripting off. The native WebViews play it.
+ */
+function heroHtml(article: Article): string {
+  const image = article.heroImageUrl ? escapeHtml(article.heroImageUrl) : '';
+  const img = image ? `<img src="${image}" alt="">` : '';
+  if (!article.heroVideoUrl) return img ? `<figure class="hero">${img}</figure>` : '';
+  const poster = image ? ` poster="${image}"` : '';
+  return (
+    `<figure class="hero hero--video">` +
+    `<video autoplay muted loop playsinline aria-hidden="true"${poster}>` +
+    `<source src="${escapeHtml(article.heroVideoUrl)}" media="(prefers-reduced-motion: no-preference)">` +
+    `</video>${img}</figure>`
+  );
 }
 
 /**
@@ -129,17 +343,21 @@ body{background:var(--var-color-canvas);color:var(--var-color-on-canvas);
   font-family:'Merriweather',Georgia,serif}
 article{max-width:38.75rem;margin:0 auto;padding-bottom:var(--var-spacing-3xl)}
 .hero{display:block;margin:0 0 var(--var-spacing-m)}
-.hero img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;
+.hero img,.hero video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;
   background:var(--var-color-surface)}
+.hero--video img{display:none}
+.hero video{pointer-events:none}
+.hero video::-webkit-media-controls{display:none!important}
+@media (prefers-reduced-motion: reduce){.hero--video video{display:none}.hero--video img{display:block}}
 .reader-header{padding:0 var(--var-spacing-m)}
-.badge{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:11px;
+.badge{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:0.6875rem;
   letter-spacing:.4px;text-transform:uppercase;color:var(--var-color-white);
   background:var(--var-color-accent);
   padding:3px 8px;border-radius:var(--var-radius-s);margin-bottom:var(--var-spacing-xs)}
 h1{font-family:'Merriweather',Georgia,serif;font-weight:700;font-size:var(--var-font-size-headline-xl);
   line-height:var(--var-leading-tight);letter-spacing:var(--var-letter-spacing-tighter);
   margin-bottom:var(--var-spacing-s)}
-.rating{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:13px;
+.rating{display:inline-block;font-family:'SourceSans3',sans-serif;font-weight:700;font-size:0.8125rem;
   letter-spacing:.3px;text-transform:uppercase;padding:6px 12px;border-radius:var(--var-radius-md);
   margin-bottom:var(--var-spacing-s);background:var(--var-color-grey-300);
   color:var(--var-color-on-canvas)}
@@ -179,6 +397,42 @@ h1{font-family:'Merriweather',Georgia,serif;font-weight:700;font-size:var(--var-
 .reader-body blockquote{border-left:3px solid var(--var-color-accent);
   padding-left:var(--var-spacing-s);margin:var(--var-spacing-m) 0;
   color:var(--var-color-on-canvas-muted)}
+/* An embed that renders: the full column, at the height its frame states, or at
+   most of a screen where it states none (ADR 0065 §3). The attribute is a
+   presentational hint, so it loses to any height set here; only the frame without
+   one gets a CSS height.
+   The fill is the primitive white on purpose, the case ADR 0022 keeps primitives for:
+   an embed draws itself for a light page and leaves its background transparent, so
+   on the dark canvas a Datawrapper chart printed black text on near-black. */
+.reader-body .reader-embed{display:block;width:100%;border:0;margin:var(--var-spacing-m) 0;
+  background:var(--var-color-white);border-radius:var(--var-radius-md)}
+.reader-body .reader-embed:not([height]){height:75vh}
+/* One that does not: a link that looks like a thing to tap, not like a sentence. */
+.reader-body .embed-fallback{display:block;margin:var(--var-spacing-m) 0;
+  padding:var(--var-spacing-s) var(--var-spacing-m);border:1px solid var(--var-color-stroke);
+  border-radius:var(--var-radius-md);background:var(--var-color-surface);
+  font-family:'SourceSans3',sans-serif;font-weight:700;font-size:var(--var-font-size-text-m);
+  line-height:var(--var-leading-snug);letter-spacing:0;color:var(--var-color-on-canvas-accent)}
+.reader-body .embed-fallback::after{content:' \\2197'}
+.reader-body .embed-fallback--article::after{content:' \\2192'}
+/* An accordion from the site's cvui/interactive-list, rebuilt as <details> by
+   articles/blocks.ts, so it opens without a script. The disclosure triangle is the
+   browser's own and follows the text colour. */
+.reader-body details{margin:var(--var-spacing-m) 0;background:var(--var-color-surface);
+  border-radius:var(--var-radius-md)}
+.reader-body summary{font-family:'SourceSans3',sans-serif;font-weight:700;
+  font-size:var(--var-font-size-headline-s);line-height:var(--var-leading-snug);
+  padding:var(--var-spacing-s) var(--var-spacing-m);cursor:pointer}
+.reader-body details>:not(summary){margin-left:var(--var-spacing-m);margin-right:var(--var-spacing-m)}
+.reader-body details[open]{padding-bottom:var(--var-spacing-2xs)}
+/* An infobox from the site's cvui/infobox, marked by articles/blocks.ts: an aside
+   to the article, set apart the way the site sets it apart, as a filled box. The
+   fill alone is nearly white on white in the light scheme, so the edge says it. */
+.reader-body .infobox{margin:var(--var-spacing-m) 0;padding:var(--var-spacing-m);
+  background:var(--var-color-surface);border:1px solid var(--var-color-stroke);
+  border-radius:var(--var-radius-md);font-family:'SourceSans3',sans-serif;
+  font-size:var(--var-font-size-text-m);line-height:var(--var-leading-loose);letter-spacing:0}
+.reader-body .infobox>:last-child{margin-bottom:0}
 .reader-footer{margin:var(--var-spacing-xl) var(--var-spacing-m) 0;
   background:var(--var-color-surface);border-radius:var(--var-radius-md);
   padding:var(--var-spacing-l);text-align:center}

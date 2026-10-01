@@ -1,9 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
+import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, View } from 'react-native';
 
 import { Badge, Typo } from '@/components/ui';
 import { bonusMedia, diaries } from '@correctiv/app-core/data/backstage';
-import { useColors } from '@/lib/theme';
+import { sizes, useColors } from '@/lib/theme';
+
+/**
+ * The card's one action, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/backstage.ts` (ADR 0026 §6). The badge says `Backstage`,
+ * which is a mark and carries no id; the diary entry and the bonus episode are
+ * content.
+ *
+ * The arrow stays out of the message and beside it in the markup. It is
+ * decoration on the link, and a screen reader that reads the accessibility name
+ * should say the words and not "right arrow" — which is why the same message
+ * serves both.
+ */
+const COPY = defineMessages({
+  allFromBackstage: {
+    id: 'backstage.allFromBackstage',
+    defaultMessage: 'Everything from Backstage',
+  },
+});
 
 /**
  * Backstage on Home: the latest research diary, with the bonus episode named
@@ -21,6 +40,7 @@ export function BackstageTeaser({
   onOpenDiary: (id: string) => void;
   onOpenBackstage: () => void;
 }) {
+  const intl = useIntl();
   const colors = useColors();
   const diary = diaries[0];
   const bonus = bonusMedia[0];
@@ -53,13 +73,18 @@ export function BackstageTeaser({
 
       <Pressable
         onPress={onOpenBackstage}
-        hitSlop={8}
         accessibilityRole="link"
-        accessibilityLabel="Alles aus dem Backstage"
-        className="mx-m mb-m active:opacity-60"
+        accessibilityLabel={intl.formatMessage(COPY.allFromBackstage)}
+        className="mx-m mb-m justify-center active:opacity-60"
+        /*
+         * 24 dp with an 8 dp slop around it before #102. This link has a line of
+         * the card to itself, above the card's bottom margin, so the box takes the
+         * room without reaching either neighbour.
+         */
+        style={{ minHeight: sizes.tapTarget }}
       >
         <Typo variant="button" color="accent">
-          Alles aus dem Backstage →
+          {intl.formatMessage(COPY.allFromBackstage)} →
         </Typo>
       </Pressable>
     </View>

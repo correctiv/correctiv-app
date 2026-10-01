@@ -7,6 +7,7 @@ import {
 } from '@reduxjs/toolkit';
 
 import { RADIO_STREAM_URL } from '../data/feeds.config';
+import { coreMessage, type CoreMessage } from '../i18n/messages';
 import { stopOtherMedia } from '../media/exclusive-playback';
 import { platform, type AudioBackend, type PlaybackStatus } from '../ports';
 import type { AudioTrack } from '../types/models';
@@ -43,8 +44,55 @@ export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
  */
 const LOADING_TIMEOUT_MS = 12000;
 
-/** User-facing copy stays German, in the formal register: this is product voice. */
-const NETWORK_HINT = 'Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+/**
+ * What went wrong, as a value rather than as a sentence.
+ *
+ * The state used to carry the finished German — `Wiedergabe unterbrochen. Prüfen
+ * Sie Ihre Internetverbindung…` — which made the store the last place a
+ * translation could reach and the first place a host had to agree with. A code is
+ * the smallest thing that is TRUE here: the player knows what failed, not what to
+ * say about it, and a screen, a log and a crash report each want a different
+ * rendering of the same fact.
+ *
+ * Three codes out of four dispatch sites, because two of them were never
+ * distinguishable to anybody listening. The watchdog fires when the source has not
+ * loaded in `LOADING_TIMEOUT_MS`, `load()` rejecting fires when it said no sooner;
+ * both mean "this never started, your connection is the thing to check", and they
+ * said so in two different sentences. The distinction that is real is a
+ * DIAGNOSTIC one, and it lives in the two `console.warn`s below, where it is
+ * useful to a developer rather than confusing to a listener.
+ *
+ * `interrupted` stays its own code because the user heard sound and then did not,
+ * which no "could not start" sentence can say.
+ */
+export type AudioError = 'unsupported-platform' | 'start-failed' | 'interrupted';
+
+/**
+ * A sentence per code, in the core because the taxonomy is the core's.
+ *
+ * Next to the union rather than in a host: a fourth code added below fails to
+ * compile until somebody writes what it says, and the mini bar and the full
+ * player cannot disagree about the wording because neither of them owns it.
+ *
+ * Each message is one whole sentence, including the hint two of them share. The
+ * hint used to be a constant interpolated in — cheaper in the source and
+ * untranslatable, because a fragment has no word order of its own. The repetition
+ * moves into the catalogue, which is where repetition is data.
+ */
+export const AUDIO_ERROR_LABELS: Record<AudioError, CoreMessage> = {
+  'unsupported-platform': coreMessage({
+    id: 'core.audio.unsupportedPlatform',
+    defaultMessage: 'Playback is not available on this platform.',
+  }),
+  'start-failed': coreMessage({
+    id: 'core.audio.startFailed',
+    defaultMessage: 'Playback could not be started. Check your connection and try again.',
+  }),
+  interrupted: coreMessage({
+    id: 'core.audio.interrupted',
+    defaultMessage: 'Playback was interrupted. Check your connection and try again.',
+  }),
+};
 
 export interface AudioState {
   track: AudioTrack | null;
@@ -54,7 +102,8 @@ export interface AudioState {
   durationSec: number;
   /** Playback rate; in state because the full player shows it. */
   speed: number;
-  errorMessage: string | null;
+  /** Why playback stopped; `AUDIO_ERROR_LABELS` is what a host renders it with. */
+  error: AudioError | null;
 }
 
 const IDLE: AudioState = {
@@ -63,7 +112,7 @@ const IDLE: AudioState = {
   positionSec: 0,
   durationSec: 0,
   speed: 1,
-  errorMessage: null,
+  error: null,
 };
 
 /** Pure selectors — live playback has neither a length nor a position. */
@@ -81,9 +130,9 @@ const slice = createSlice({
     started(state, action: PayloadAction<AudioTrack>) {
       Object.assign(state, IDLE, { track: action.payload, status: 'loading' });
     },
-    failed(state, action: PayloadAction<string>) {
+    failed(state, action: PayloadAction<AudioError>) {
       state.status = 'error';
-      state.errorMessage = action.payload;
+      state.error = action.payload;
     },
     tick(
       state,
@@ -194,7 +243,11 @@ startListening({
       watchdog = null;
       // Something may have answered after this timer was armed and before it ran.
       if (getState().audio.status !== 'loading') return;
-      dispatch(failed(`Keine Verbindung zum Stream. ${NETWORK_HINT}`));
+      // The half of `start-failed` that carries no exception with it: nothing
+      // rejected, the stream simply never answered. Said here rather than in the
+      // state, because it is the developer's distinction and not the listener's.
+      console.warn('[audio] stream did not load within', LOADING_TIMEOUT_MS, 'ms');
+      dispatch(failed('start-failed'));
     }, LOADING_TIMEOUT_MS);
   },
 });
@@ -263,7 +316,7 @@ startListening({
 
     if (status.error) {
       console.warn('[audio] playback error:', status.error);
-      dispatch(failed(`Wiedergabe unterbrochen. ${NETWORK_HINT}`));
+      dispatch(failed('interrupted'));
       return;
     }
 
@@ -296,7 +349,7 @@ const start =
 
     const audio = platform().audio;
     if (!audio) {
-      dispatch(failed('Auf dieser Plattform ist keine Wiedergabe möglich.'));
+      dispatch(failed('unsupported-platform'));
       return;
     }
 
@@ -309,17 +362,34 @@ const start =
       audio.play();
     } catch (err) {
       console.warn('[audio] start failed:', err);
-      dispatch(failed(`Wiedergabe nicht möglich. ${NETWORK_HINT}`));
+      dispatch(failed('start-failed'));
     }
   };
 
-export const playRadio = (): AppThunk<Promise<void>> =>
-  start({
-    kind: 'radio',
-    title: 'Salon5 Radio',
-    subtitle: '● LIVE · 24/7 aus Bottrop',
-    url: RADIO_STREAM_URL,
-  });
+/**
+ * How the live stream names itself, formatted by the host.
+ *
+ * Handed IN for the reason `ReaderCopy` gives in `articles/reader-html.ts`: the
+ * station's name and its strapline are words a listener reads, on the mini bar and
+ * on the lock screen, and this thunk held the finished German for both. Which
+ * stream it is stays here — `RADIO_STREAM_URL` is a fact about CORRECTIV's Icecast
+ * server and not a word — so a host passes the copy and nothing else.
+ *
+ * No descriptor beside it, unlike `AUDIO_ERROR_LABELS`, and that is deliberate:
+ * the app already declares these two in `apps/mobile/src/lib/audio/tracks.ts`
+ * under `player.*`, where the live banner prints the same words without starting
+ * anything. A second pair of ids in the core would be one string with two
+ * catalogue entries, which is the drift the lift exists to end.
+ */
+export interface RadioCopy {
+  /** The station, as the players and the lock screen name it. */
+  title: string;
+  /** The line under it. Absent leaves the lock screen its 'CORRECTIV' fallback. */
+  subtitle?: string;
+}
+
+export const playRadio = (copy: RadioCopy): AppThunk<Promise<void>> =>
+  start({ ...copy, kind: 'radio', url: RADIO_STREAM_URL });
 
 export const playEpisode = (track: Omit<AudioTrack, 'kind'>): AppThunk<Promise<void>> =>
   start({ ...track, kind: 'episode' });
@@ -358,16 +428,6 @@ export const setSpeed =
 export const stop = (): AppThunk => (dispatch) => {
   platform().audio?.release();
   dispatch(stopped()); // stands the watchdog down — see the entry above
-};
-
-export const audioActions = {
-  ...slice.actions,
-  playRadio,
-  playEpisode,
-  togglePlay,
-  seekTo,
-  setSpeed,
-  stop,
 };
 
 /**

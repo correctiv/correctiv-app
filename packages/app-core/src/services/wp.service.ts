@@ -34,6 +34,8 @@
  * per post instead, which is why this reads it there.
  */
 
+import { applyBlockRules, articleBlockRules, headerPostOf } from '../articles/blocks';
+import { rewriteEmbeds } from '../articles/embeds';
 import { estimateReadingMinutes } from '../articles/page-meta';
 import { ratingFromInterpretation } from '../articles/rating';
 import type { ExtractedArticle } from '../articles/types';
@@ -41,6 +43,7 @@ import type { FeedPriority } from '../data/feeds.config';
 import { plainText, sanitizeArticleHtml, stripTags } from '../lib/html';
 import type { FeedItem, FeedKey } from '../types/models';
 import { fetchJson } from './http';
+import { SPOTLIGHT_ENDPOINT } from './spotlight.service';
 
 const API = 'https://correctiv.org/wp-json/wp/v2';
 
@@ -284,17 +287,24 @@ export function toFeedItem(post: WpPost, feed: FeedKey): FeedItem {
 /** A post as a fully extracted article, ready for `buildReaderHtml`. */
 export function toArticle(post: WpPost): ExtractedArticle {
   const body = post.content?.rendered ?? '';
+  // The block's byline names every author and Yoast's names one; see `headerPostOf`.
+  const headerPost = headerPostOf(body);
+  const yoast = author(post);
   return {
     title: plainText(post.title?.rendered ?? ''),
     kicker: text(post.acf?.['post::topline']) || undefined,
     excerpt: excerpt(post) || undefined,
-    authors: author(post) ? [author(post) as string] : [],
+    authors: headerPost.authors.length > 0 ? headerPost.authors : yoast ? [yoast] : [],
     publishedAt: isoFromGmt(post.date_gmt, ''),
     readingMinutes: readingMinutes(post) ?? estimateReadingMinutes(stripTags(body)),
     // `list` (706 px) and not `widget-post` (2560): the reader is a phone-width
     // WebView, and the offline generator already settled on 640 as enough.
     heroImageUrl: wpImage(post, 'list') ?? undefined,
-    bodyHtml: sanitizeArticleHtml(body),
+    heroVideoUrl: headerPost.videoUrl,
+    // The same block table the page path reads (`articles/blocks.ts`), under the
+    // default ad prefix, because a REST body has no `<body>` to declare its own;
+    // then the embeds, before the cleaner would drop their frames.
+    bodyHtml: sanitizeArticleHtml(rewriteEmbeds(applyBlockRules(body, articleBlockRules()))),
     rating: ratingFromInterpretation(interpretation(post)),
   };
 }
@@ -307,8 +317,12 @@ export function toArticle(post: WpPost): ExtractedArticle {
  * (`{ code, message }`) rather than a list, so a request that failed and still
  * parsed would otherwise be mapped over as if it were one.
  */
-async function fetchPosts(params: URLSearchParams, timeoutMs = LIST_TIMEOUT_MS): Promise<WpPost[]> {
-  const posts = await fetchJson<WpPost[]>(`${API}/posts?${params}`, { timeoutMs });
+async function fetchPosts(
+  params: URLSearchParams,
+  timeoutMs = LIST_TIMEOUT_MS,
+  endpoint = `${API}/posts`,
+): Promise<WpPost[]> {
+  const posts = await fetchJson<WpPost[]>(`${endpoint}?${params}`, { timeoutMs });
   return Array.isArray(posts) ? posts : [];
 }
 
@@ -402,7 +416,7 @@ export function slugFromUrl(url: string): string | null {
  * Is the post the API returned the one that was asked for?
  *
  * A slug is only unique among posts, and `slugFromUrl` takes the last path
- * segment of *any* correctiv.org URL. `articleUrl.ts` routes every non-listing
+ * segment of *any* correctiv.org URL. `articles/url.ts` routes every non-listing
  * path with at least two segments into the reader, so a page such as
  * `/projekte/klimawandel/` is asked for by the segment `klimawandel` — and if a
  * post carries that slug, the API answers with the post.
@@ -419,10 +433,26 @@ function isSameArticle(link: string | undefined, requested: string): boolean {
   return bare(link) === bare(requested);
 }
 
+const NEWSLETTER_URL = /^https:\/\/correctiv\.org\/spotlight-newsletter\//;
+
+/**
+ * The masthead every issue opens with, a figure of the newsletter's standing GIF.
+ * The post has no featured image, so the reader would start with a headline under
+ * its own floating buttons; the masthead is the hero instead, and leaves the body.
+ */
+const MASTHEAD =
+  /^\s*<figure[^>]*\bimg-intro-header\b[^>]*>\s*<img[^>]*\bsrc="([^"]+)"[^>]*>\s*<\/figure>/;
+
 /**
  * One article, by its public URL. `null` when the API does not know the slug,
  * which is a normal answer and not an error: the caller then scrapes the page as
  * it always did.
+ *
+ * A Spotlight issue is not a `post` but a `newspack_nl_cpt`, so `?slug=` on
+ * `wp/v2/posts` never finds one. Its `content.rendered` is the same block markup
+ * the page carries (no tables, measured 2026-10-01), and asking the API matters on
+ * the web, where the browser refuses to read the page itself: correctiv.org sends
+ * no CORS header for HTML.
  */
 export async function fetchWpArticle(
   url: string,
@@ -431,8 +461,18 @@ export async function fetchWpArticle(
   const slug = slugFromUrl(url);
   if (!slug) return null;
   const params = new URLSearchParams({ slug, _fields: ARTICLE_FIELDS, per_page: '1' });
-  const [post] = await fetchPosts(params, timeoutMs);
+  const [post] = await fetchPosts(
+    params,
+    timeoutMs,
+    NEWSLETTER_URL.test(url) ? SPOTLIGHT_ENDPOINT : undefined,
+  );
   if (!post?.content?.rendered || !isSameArticle(post.link, url)) return null;
-  const article = toArticle(post);
+  const masthead = NEWSLETTER_URL.test(url) ? MASTHEAD.exec(post.content.rendered) : null;
+  const article = toArticle(
+    masthead
+      ? { ...post, content: { rendered: post.content.rendered.replace(MASTHEAD, '') } }
+      : post,
+  );
+  if (masthead) article.heroImageUrl = masthead[1];
   return article.bodyHtml ? article : null;
 }

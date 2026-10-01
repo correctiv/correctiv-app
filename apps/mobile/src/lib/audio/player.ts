@@ -1,3 +1,4 @@
+import type { RadioCopy } from '@correctiv/app-core/stores/audio';
 import type { AudioTrack } from '@correctiv/app-core/types/models';
 
 import { coreActions } from '@/lib/store/core';
@@ -5,7 +6,7 @@ import { coreActions } from '@/lib/store/core';
 /**
  * The app's audio actions.
  *
- * All of the logic — the state machine, the watchdog, the German error copy — is in
+ * All of the logic — the state machine, the watchdog, the failure codes — is in
  * `@correctiv/app-core/stores/audio`. expo-audio sits behind `AudioBackend` in
  * `./backend.ts`.
  *
@@ -16,8 +17,13 @@ import { coreActions } from '@/lib/store/core';
 
 export type { AudioState, PlayerStatus } from '@correctiv/app-core/stores/audio';
 
-/** The Salon5 live stream (Icecast). */
-export const playRadio = (): Promise<void> => coreActions.audio.playRadio();
+/**
+ * The Salon5 live stream (Icecast), named by the caller.
+ *
+ * The station's words are the host's — `salon5RadioCopy(intl)` in `./tracks.ts`
+ * formats them — because the core carries the stream's URL and not its strapline.
+ */
+export const playRadio = (copy: RadioCopy): Promise<void> => coreActions.audio.playRadio(copy);
 
 /** A podcast episode or bonus audio, in full. */
 export const playEpisode = (track: Omit<AudioTrack, 'kind'>): Promise<void> =>

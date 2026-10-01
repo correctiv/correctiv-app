@@ -22,7 +22,14 @@
 // `Position` is deliberately outside that diff — the spec keeps it out of
 // `PropertiesChanged` and a shell reads it when it wants it.
 
-import { audioActions, isLive } from '@correctiv/app-core/stores/audio';
+// Aliased, because the source below has a `stop` and a `seekTo` of its own and the
+// two names meeting in one file is how a dispatch turns into a recursion.
+import {
+  isLive,
+  seekTo as seekCoreTo,
+  stop as stopCore,
+  togglePlay as toggleCorePlay,
+} from '@correctiv/app-core/stores/audio';
 import type { AudioState } from '@correctiv/app-core/stores/audio';
 import { coreStore } from '@/lib/store/core';
 
@@ -107,14 +114,14 @@ export function installAudioMpris(handle: MprisHandle): () => void {
       // thunk reads the store and pauses only from `playing`, so this is a play
       // everywhere else and a no-op when it is already playing.
       if (read().status === 'playing') return;
-      void coreStore.dispatch(audioActions.togglePlay());
+      void coreStore.dispatch(toggleCorePlay());
     },
     pause(): void {
       if (read().status !== 'playing') return;
-      void coreStore.dispatch(audioActions.togglePlay());
+      void coreStore.dispatch(toggleCorePlay());
     },
     stop(): void {
-      void coreStore.dispatch(audioActions.stop());
+      void coreStore.dispatch(stopCore());
     },
     seekBy(offsetUs: number): void {
       const state = read();
@@ -123,13 +130,13 @@ export function installAudioMpris(handle: MprisHandle): () => void {
       // Clamped at both ends: the spec says a seek past the end is a "next track", and
       // with no track list the honest reading is the end of this one.
       const clamped = Math.min(Math.max(0, target), state.durationSec);
-      void coreStore.dispatch(audioActions.seekTo(clamped));
+      void coreStore.dispatch(seekCoreTo(clamped));
     },
     seekTo(positionUs: number): void {
       const state = read();
       if (state.track === null || isLive(state)) return;
       const seconds = Math.min(Math.max(0, positionUs / US_PER_SEC), state.durationSec);
-      void coreStore.dispatch(audioActions.seekTo(seconds));
+      void coreStore.dispatch(seekCoreTo(seconds));
     },
   };
 

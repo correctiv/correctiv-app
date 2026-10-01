@@ -75,9 +75,18 @@ out. The current debugger genuinely does stay out, but because
 `redux-devtools-expo-dev-plugin/build/index.js` carries
 `if (process.env.NODE_ENV !== "production")` at module scope, which Metro substitutes
 and then eliminates. `@rozenite/redux-devtools-plugin` 2.4.0 guards itself the same
-way, so the swap keeps the property. **The shape in `core.ts` is not what to copy for
-a local module**, which is why the agent-tools component below is selected at module
-scope.
+way, so the swap keeps the property. ~~The shape in `core.ts` is not what to copy for
+a local module, which is why the agent-tools component below is selected at module
+scope.~~ It keeps the implementation out and not the NAME, so it is not what to copy
+anywhere. Measured while implementing this (#149, 2026-09-15): with the require left
+inside `devToolsEnhancers()`, the production export carried the package's no-op module,
+and a no-op still carries its export names — `rozeniteDevToolsEnhancer`,
+`composeWithRozeniteDevTools` and `useReduxDevToolsAgentTools` all survived
+minification. That trips the very grep this section asks CI to run, so the check would
+have to be permanently red or permanently loosened. **Module scope is required for both
+requires.** A third variant is measured now beside the two above: `__DEV__ &&
+process.env.NODE_ENV !== 'test' ? require(…) : …` folds the same way and leaves the
+module out, which is the shape both call sites use.
 
 **A developer and an agent cannot look at once.** Rozenite's own documentation states
 that React Native DevTools disconnects when an agent session begins, because the
@@ -151,9 +160,11 @@ Android window resizing may rescue a particular screen and establishes nothing a
 the other platform.
 
 `KeyboardAvoidingView` is the default answer for sign-in and participation, with
-search in the same pass. If a layout needs more,
+search in the same pass. ~~If a layout needs more,
 [React Native Keyboard Controller](https://kirillzyusko.github.io/react-native-keyboard-controller/)
-is the escalation and not a dependency to add first. Coordinate the footer with the
+is the escalation and not a dependency to add first.~~ Void since
+[ADR 0068](0068-the-keyboard-controller-measured-and-rejected.md): measured on a 1600 px
+window, it lost the field. Coordinate the footer with the
 scroller, do not double-apply insets, and keep the web layout.
 
 Done means the focused field, the caret, errors and the next/submit control stay
@@ -334,16 +345,26 @@ lift the string out, once to find that it sat inside a condition.
 
 **German is what ships.** The language is fixed and there is no user-facing switch;
 a developer-only switch belongs in the workbench, which already carries route,
-appearance and app state in its address, and not in the app's settings. `locale` is
-therefore a fixed value in the store rather than something read from the device, and
-`expo-localization` is not needed for this step.
+appearance and app state in its address, and not in the app's settings. ~~`locale` is
+therefore a fixed value in the store~~ — it is supplied by the host at construction,
+voided by [ADR 0049](0049-the-catalogue-is-a-package.md) §4. The second half stands:
+it is still not read from the device, and the phone still passes `'de'` for the
+reason this paragraph gives. `expo-localization` is not needed for this step.
 
 **Where things live.** Message descriptors are plain objects — `{ id, defaultMessage }`
 — so they live wherever the string lives, screens in the app and core-owned
 vocabulary in the core, and the core imports no React, which
 `packages/app-core/test/boundary.test.ts` enforces. The `intl` instance and the
-provider are the host's. Extraction runs over both workspaces and the compiled
-catalogues are build artifacts. For `packages/app-core/src/data/`, which holds around
+provider are the host's. Extraction runs over both workspaces and ~~the compiled
+catalogues are build artifacts~~ — wrong on the day this was written: nothing in this
+tree had ever compiled a catalogue. `formatjs extract` ran and wrote `en.json`, read
+by a check and by nobody at run time; `formatjs compile` had no script, no CI step
+and no output anywhere. Measured 2026-09-18, and **made true the same day** by
+[ADR 0049](0049-the-catalogue-is-a-package.md) §3, which compiles `en.generated.ts`
+and puts a drift check under it. The sentence stays struck because it was not true
+when it was written, and a reader who acted on it that morning would have gone
+looking for something that was not there. The German that ships is still
+hand-written data, which the rest of this section describes correctly. For `packages/app-core/src/data/`, which holds around
 230 German strings, the line is: *would this string still exist if the content came
 from a CMS?* If yes it is UI vocabulary in data's clothing and goes in the catalogue;
 if no it is content and follows the same rule as articles, which this record does not
@@ -460,7 +481,12 @@ and `git commit --no-verify` skips it, so this is a convenience and never a gate
 One figure to correct while the hooks land: [AGENTS.md](../AGENTS.md) says
 `npm run check` takes "about ten seconds", and it took 17.2 s here. That sentence sets
 the expectation the `pre-commit`/`pre-push` split is argued from, so it is part of
-this work rather than a note beside it.
+this work rather than a note beside it. **Done**, and not where this expected: the
+figure is in [ARCHITECTURE.md](../ARCHITECTURE.md) now and AGENTS.md carries none,
+because a number typed in two documents is the shape AGENTS.md has a section about
+([#151](https://github.com/faktenforum/correctiv-app/pull/151), 18.9 to 19.9 s over
+three warm runs). Not struck: the sentence was true when it was written and the
+instruction in it was carried out, which is what a record should look like afterwards.
 
 ### 9. Navigation headers: the platform's on iOS and Android, ours on web
 
@@ -505,8 +531,14 @@ Three details this decision does not settle, and the implementation ADR has to:
 Lower risk than 0013 in one respect: native stack headers are the oldest path in
 react-navigation, not an alpha API. A cost worth naming: a title has to be written for
 each of the fifteen routes that use `ScreenHeader`, because no `Stack.Screen` sets one
-today, which is also the fix for every pushed route on the published web target
-sharing one browser-tab title. And the chevron's colour comes from `useColors()`
+today, which is also the fix for ~~every pushed route on the published web target
+sharing one browser-tab title~~ — they share none: every one of them ships an empty
+`<title>`, measured and retired by
+[ADR 0030](0030-the-platforms-header-and-ours-on-web.md), which also found that
+`options.title` does not reach a browser tab at all here and that writing the titles is
+therefore only half the fix. The conclusion this paragraph draws from the wrong premise
+— that the titles have to be written — is right.
+And the chevron's colour comes from `useColors()`
 rather than from a class, because `Ionicons` takes a colour prop and not a class name,
 so this is a change that has to be seen in both appearance settings and with "System"
 against a dark device.
@@ -589,9 +621,16 @@ measurement without one expires invisibly.
 
 ## What this retires
 
-Nothing in another ADR. Three claims in the source, and none is struck here, because a
-claim is struck when the code that made it true changes and not when a record says it
-will:
+~~Nothing in another ADR.~~ Two cells in [ADR 0006](0006-one-core-two-hosts.md)'s ports
+table, struck there when section 4 was carried out in
+[#136](https://github.com/faktenforum/correctiv-app/pull/136): the Expo host's answer
+for `KeyValueStore`, "AsyncStorage", and its answer for `BlobStore`, also
+"AsyncStorage". Both are MMKV now, in a store of its own each, and anyone reading
+either cell would go looking in the wrong place. The rest of that table and the
+argument around it stand.
+
+Three claims in the source, and none is struck here, because a claim is struck when the
+code that made it true changes and not when a record says it will:
 
 - The comment atop `packages/app-core/src/lib/format.ts` justifies hand-written German
   month and weekday names with "The NS runtime has no German ICU". That runtime left
@@ -611,7 +650,10 @@ gets corrected rather than struck. Each correction belongs in the commit that ma
 necessary, not in this one: German "for everything a user reads, and only there" and
 multilingual support being "under consideration" both stop being true with the first
 message descriptor (section 6), and `npm run check` taking "about ten seconds" is
-already 7 s out (section 8).
+already 7 s out (section 8). **All three are done**: the first two in
+[#144](https://github.com/faktenforum/correctiv-app/pull/144) with the localisation
+seam, the third in [#151](https://github.com/faktenforum/correctiv-app/pull/151),
+which moved the figure to ARCHITECTURE.md rather than correcting it in place.
 
 ## What this has not delivered
 
@@ -637,8 +679,14 @@ temporarily installed in a separate benchmark application ID, then removed with 
 instrumentation. Section 4 exercised the real core persistence and cache code with
 synthetic data, not screen rendering, navigation or scrolling. No physical-device,
 iOS, battery, peak-memory or power-loss-durability conclusion follows. The storage
-adapter replacement and bounded-cache policy remain implementation work.
+adapter replacement and bounded-cache policy ~~remain implementation work~~ landed in
+[#136](https://github.com/faktenforum/correctiv-app/pull/136); the retires section
+above already records section 4 as built, and this sentence contradicted it.
 
-**Rozenite was read, not run.** Section 1 still relies on the published
+~~**Rozenite was read, not run.** Section 1 still relies on the published
 `@rozenite/metro` 2.4.0 tarball, not an installed integration. Its runtime behaviour
-in this app remains unobserved.
+in this app remains unobserved.~~ Installed and run in
+[#149](https://github.com/faktenforum/correctiv-app/pull/149), which found the export
+above and two things section 1 could not have known from a tarball: the Storage domain
+is `@rozenite/mmkv-plugin`, there being no async-storage plugin, and expo-router 57
+vendors its own react-navigation, so the navigation plugin talks to a second copy.

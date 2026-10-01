@@ -24,7 +24,7 @@ here for.
 > paragraph draws — that the dark palette is this repo's to decide, and that it is
 > what a second consumer comes here for — is unchanged.
 
-## Decision
+## 1. Decision
 
 `packages/design-tokens` — the generator, `palette.js`, and every artefact it writes.
 Nothing is written into the app any more.

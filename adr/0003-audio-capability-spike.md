@@ -89,9 +89,9 @@ lose the same two days.
   API — the ~600 LOC rewrite from the effort estimate, now with feasibility
   demonstrated.
 
-## Consequence for the stack decision
+## 1. Consequence for the stack decision
 
-The gate set in §8 is **passed on Android**. The strongest remaining reason to switch to
+The gate set in `APP-STRATEGIE.md` §8 is **passed on Android**. The strongest remaining reason to switch to
 Expo — "authenticated background audio only works with hand-written native modules" — is
 refuted. The recommendation "stay on NativeScript" stands.
 

@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { defineMessages, useIntl } from 'react-intl';
 import { View } from 'react-native';
 
 import { ProjectRow } from '@/components/discover/ProjectRow';
@@ -7,7 +8,21 @@ import { TopicRail } from '@/components/discover/TopicRail';
 import { Overline, Screen, Typo } from '@/components/ui';
 import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
 import { projectTarget } from '@/lib/discover/target';
-import { openExternal } from '@/lib/openExternal';
+import { openLink } from '@/lib/openLink';
+
+/**
+ * The tab's own name, in ENGLISH; the German that ships is
+ * `packages/catalogue/src/de/discover.ts`. Everything else on this screen is the
+ * catalogue from `@correctiv/app-core/data/projects`, which is content.
+ */
+const COPY = defineMessages({
+  screenTitle: {
+    id: 'discover.title',
+    defaultMessage: 'Discover',
+    description:
+      'The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room.',
+  },
+});
 
 /**
  * Entdecken — the ordered directory of the ecosystem: the search entry point, the
@@ -17,10 +32,11 @@ import { openExternal } from '@/lib/openExternal';
  * only decides what a tap means.
  */
 export default function EntdeckenScreen() {
+  const intl = useIntl();
   return (
     <Screen>
       <Typo variant="headline-xl" className="mb-s">
-        Entdecken
+        {intl.formatMessage(COPY.screenTitle)}
       </Typo>
 
       <SearchEntry onPress={() => router.push('/suche')} />
@@ -55,7 +71,7 @@ function openProjectCard(project: Project) {
       router.push(target.path);
       return;
     case 'external':
-      openExternal(target.url);
+      openLink(target.url);
       return;
     default:
       openProject(target.id);

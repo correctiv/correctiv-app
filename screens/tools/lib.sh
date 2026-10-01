@@ -23,6 +23,27 @@ mkdir -p "$OUT"
 quiet_system_ui() {
   $A shell settings put secure stylus_handwriting_enabled 0 >/dev/null 2>&1
   $A shell settings put secure stylus_handwriting_default_value 0 >/dev/null 2>&1
+  # Animations ON, which is not the obvious choice for a screenshot tour.
+  #
+  # An emulator left at scale 0 makes Reanimated warn "Reduced motion setting is
+  # enabled on this device", and in a debuggable build that warning is a LogBox
+  # banner across the bottom of the screen. The banner is NOT in the accessibility
+  # tree: `uiautomator` reports the button underneath it as present, enabled and
+  # clickable, `tap` touches the right coordinates, the banner takes the touch, and
+  # the walk stalls with every step reported as done. Three rounds went that way and
+  # only a screenshot showed it, which is this file's own rule turned on itself —
+  # the UI tree is not evidence either.
+  #
+  # The second reason holds even in a release build, which has no LogBox at all: at
+  # scale 0 Reanimated disables animations, so a walk with them off is not walking
+  # the app that ships.
+  #
+  # The previous values are saved and `finish` puts them back, because this is the
+  # developer's own emulator and a tour has no business leaving it changed.
+  for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
+    SCALES_BEFORE+=("$scale=$($A shell settings get global "$scale" | tr -d '\r')")
+    $A shell settings put global "$scale" 1 >/dev/null 2>&1
+  done
   # Whatever is already on screen, before the first step.
   $A shell input keyevent 4 >/dev/null 2>&1
 }
@@ -37,10 +58,15 @@ quiet_system_ui() {
 #
 # So misses are collected here and `finish` makes them fatal.
 MISSES=()
+# Animation scales as they were before quiet_system_ui, restored by `finish`.
+SCALES_BEFORE=()
 note_miss() { MISSES+=("$1"); echo "  MISS $1"; }
 
 # Ends a tour. Non-zero if any step did not happen, naming each one.
 finish() {
+  for pair in ${SCALES_BEFORE+"${SCALES_BEFORE[@]}"}; do
+    $A shell settings put global "${pair%%=*}" "${pair#*=}" >/dev/null 2>&1
+  done
   if [ ${#MISSES[@]} -eq 0 ]; then
     echo "done — $(find "$OUT" -name '*.png' | wc -l) shots, every step performed"
     return 0
@@ -64,7 +90,11 @@ warn_if_debuggable() {
   fi
 }
 
-shot() { $A exec-out screencap -p > "$OUT/$1.png"; echo "shot $1"; }
+# A settle before the shutter, because animations are on: `expect` returns the
+# instant a label enters the tree, and a tab switch is still moving then. Without
+# it the round drifts against `screens/`, which README puts at 0.4 to 1.4 % and
+# tells the reader to open anything larger — a half-shifted tab is larger.
+shot() { sleep "${SHOT_SETTLE:-0.6}"; $A exec-out screencap -p > "$OUT/$1.png"; echo "shot $1"; }
 back() { $A shell input keyevent 4; sleep 1.4; }
 scroll() { for _ in $(seq 1 "${1:-1}"); do $A shell input swipe 540 1900 540 700 260; sleep 0.7; done; sleep 0.6; }
 top() { for _ in $(seq 1 6); do $A shell input swipe 540 700 540 2000 220; done; sleep 1; }

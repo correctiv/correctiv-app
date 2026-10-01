@@ -33,7 +33,17 @@ import type { Article, ArticleExtractor } from './types';
  * not a post.
  */
 
-const CACHE_NS = 'articles';
+/**
+ * Versioned, because what is cached is the article AFTER cleanup. Bodies saved
+ * before `articles/blocks.ts` carry ads and empty accordion headings, and one of
+ * them would be served for a day as fresh and after that by `getStale` for as
+ * long as the network is down, which is when the reader has nothing else. A new
+ * namespace reads none of them. Raise it whenever the cleanup changes what a
+ * stored body looks like. The old entries are not read again; the cache's size
+ * bound is what removes them. Raised to 3 when a body began to carry the infobox's
+ * box and the images' `srcset`, both of which a scraped body saved before had lost.
+ */
+const CACHE_NS = 'articles-3';
 const TTL_MS = 24 * 60 * 60 * 1000;
 const PAGE_TIMEOUT_MS = 12000;
 

@@ -3,8 +3,11 @@ import { useEffect, useMemo } from 'react';
 import {
   fetchFeedKey,
   fetchMany,
+  investigations,
+  loadMore as loadMoreItems,
   mergedFeedItems,
   mergedFeedStatus,
+  type FeedEnd,
   type FeedStatus,
 } from '@correctiv/app-core/stores/feeds';
 import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
@@ -23,6 +26,18 @@ import { useAppDispatch, useAppSelector, useLazyLoad } from '@/lib/store/core';
  * `{ data, loading, error }`, so `offline` was added beside them rather than
  * folded into either.
  */
+
+/**
+ * A single feed, and the one thing `AsyncState` cannot express: whether more of it
+ * exists. `AsyncState` describes one request's outcome, and a merge of several feeds
+ * has no page two — so the three fields live here rather than on `AsyncState`, where
+ * every caller would have to answer for a pagination that only one feed has.
+ */
+export interface FeedState extends AsyncState<FeedItem[]> {
+  end: FeedEnd;
+  loadingMore: boolean;
+  loadMore: () => void;
+}
 
 export interface AsyncState<T> {
   data: T | null;
@@ -62,17 +77,22 @@ function toAsyncState<T>(items: T | null, status: FeedStatus, reload: () => void
  * `useVideoChannel` and `usePodcastLibrary` need, including the reason all three
  * dispatch through the Provider rather than the imported store.
  */
-export function useFeed(feed: FeedKey): AsyncState<FeedItem[]> {
+export function useFeed(feed: FeedKey): FeedState {
   const dispatch = useAppDispatch();
   const slice = useAppSelector((s) => s.feeds.byKey[feed]);
 
   useLazyLoad(slice.status, fetchFeedKey, feed);
 
-  return toAsyncState(
-    slice.items.length > 0 ? slice.items : null,
-    slice.status,
-    () => void dispatch(fetchFeedKey(feed, { force: true })),
-  );
+  return {
+    ...toAsyncState(
+      slice.items.length > 0 ? slice.items : null,
+      slice.status,
+      () => void dispatch(fetchFeedKey(feed, { force: true })),
+    ),
+    end: slice.end,
+    loadingMore: slice.loadingMore,
+    loadMore: () => void dispatch(loadMoreItems(feed)),
+  };
 }
 
 /**
@@ -101,4 +121,27 @@ export function useMergedFeeds(feeds: FeedKey[]): AsyncState<FeedItem[]> {
     status,
     () => void Promise.all(feeds.map((key) => dispatch(fetchFeedKey(key, { force: true })))),
   );
+}
+
+/**
+ * The site-wide stream with its fact checks taken out, loaded on first use.
+ *
+ * `investigations` is the core's selector rather than a `.filter().slice()` in a
+ * screen, and it is memoised because it builds a fresh array: handed straight to
+ * `useSelector` it would compare unequal on every unrelated dispatch. Same shape
+ * and the same reason as `useSpotlight` in `lib/store/core.ts`.
+ *
+ * ONE slice is subscribed to, not `s.feeds`. Immer patches `byKey[feed]` in place
+ * and leaves its siblings alone, so `byKey.recherchen` keeps its identity while the
+ * other six feeds land and `s.feeds` does not — reading the whole object would
+ * re-render the profile every time Home finished loading something it does not
+ * show. The selector takes that slice (`RecherchenFeed`), so the narrow read is
+ * what it asks for rather than something this hook has to remember.
+ */
+export function useInvestigations(limit: number): FeedItem[] {
+  const recherchen = useAppSelector((s) => s.feeds.byKey.recherchen);
+
+  useLazyLoad(recherchen.status, fetchFeedKey, 'recherchen');
+
+  return useMemo(() => investigations({ byKey: { recherchen } }, limit), [recherchen, limit]);
 }

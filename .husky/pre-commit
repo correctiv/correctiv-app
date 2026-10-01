@@ -1,0 +1,12 @@
+# Formats what is being committed, and reports on it. Never blocks on style.
+#
+# `lint-staged` is here for correctness, not for speed (ADR 0026 §8): oxfmt and
+# oxlint together take 0.72 s over the WHOLE repository, so narrowing them saves
+# nothing. What narrowing buys is that a hook which writes files writes only the
+# ones being committed — running oxfmt across the tree from here would pull
+# unstaged work into somebody's commit.
+#
+# Typecheck and tests are deliberately absent: they are 16 of the 17 seconds and
+# they run on pre-push, which is the moment the work starts to matter to anyone
+# else.
+npx lint-staged

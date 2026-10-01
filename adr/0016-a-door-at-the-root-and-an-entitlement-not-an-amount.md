@@ -24,53 +24,60 @@ tested and all of which is right for an onboarding.
 
 ## Decision
 
-**1. A render branch, not a redirect.** The root layout renders either the navigator
-or `components/gate/LoginGate`. While the session is not admitted, no route is
-mounted, so there is nothing to deep-link to, share, or press back into. A redirect
-would leave every route reachable by address and would have to be repeated on every
-screen. The onboarding jump stays a redirect, and it waits for admission: it is the
-first thing behind the door, not something in front of it, and the decision is taken
-at the moment the navigator mounts.
+### 1. A render branch, not a redirect
 
-**2. An entitlement, never an amount.** The door reads `isAdmitted(session, now)`,
-which reads an `Entitlement`: the tier, whether the app is included, why (`paid`,
-`local-bundle`, `trial`) and until when. All of it is what the membership system
-answered; the app respects `appAccess` and does not derive it. Two cases from the
-scope make an amount the wrong input. A trial pays 0 € for a month and has the app. A
-local-newsletter subscription has the app without being an app membership. Reading
-`membership.amountEur` would lock out exactly the people being courted. `now` is a
-parameter of the selector, so a trial's end is a pure function and a test can move
-the clock.
+The root layout renders either the navigator or `components/gate/LoginGate`. While the
+session is not admitted, no route is mounted, so there is nothing to deep-link to,
+share, or press back into. A redirect would leave every route reachable by address and
+would have to be repeated on every screen. The onboarding jump stays a redirect, and it
+waits for admission: it is the first thing behind the door, not something in front of
+it, and the decision is taken at the moment the navigator mounts.
 
-**3. A `session` slice beside `membership`, not a field on it.** `membership` stays
-the club lever inside the app, and the door must not depend on it: signing in does
-not set `isMember`, and joining the simulated club does not open the door. Persisted
-are the account and the entitlement; the status is derived from the account on
-hydration, so a restart is either signed out or signed in, never mid-request. The
-slice hydrates before the first render like everything else, for the same reason as
+### 2. An entitlement, never an amount
+
+The door reads `isAdmitted(session, now)`, which reads an `Entitlement`: the tier,
+whether the app is included, why (`paid`, `local-bundle`, `trial`) and until when. All
+of it is what the membership system answered; the app respects `appAccess` and does not
+derive it. Two cases from the scope make an amount the wrong input. A trial pays 0 € for
+a month and has the app. A local-newsletter subscription has the app without being an
+app membership. Reading `membership.amountEur` would lock out exactly the people being
+courted. `now` is a parameter of the selector, so a trial's end is a pure function and a
+test can move the clock.
+
+### 3. A `session` slice beside `membership`, not a field on it
+
+`membership` stays the club lever inside the app, and the door must not depend on it:
+signing in does not set `isMember`, and joining the simulated club does not open the
+door. Persisted are the account and the entitlement; the status is derived from the
+account on hydration, so a restart is either signed out or signed in, never mid-request.
+The slice hydrates before the first render like everything else, for the same reason as
 `onboardingDone`: hydrated late, a returning member sees the form for a frame.
 
-**4. Simulated, and said so on the screen.** `services/auth.service.ts` is the seam
-to beabee. It answers from a directory of rules the door prints: any address signs
-in, "frei" answers with the 0 € tier and no access, "test" with a trial, "lokal"
-with the bundle, a password under four characters fails. The rules exist so that
-every state of the door is reachable on a device without a backend. There is no
-secure-storage port yet, because there is no token to store; a simulated account is
-not a secret, and the port comes with the real login (C1 in the scope plan).
+### 4. Simulated, and said so on the screen
 
-**5. Four states on one surface.** Signed out is the form. Signing in is the form
-with the button replaced by "Wir prüfen Ihre Mitgliedschaft …", so the wait explains
-itself and sets up the fourth state. Failed is the form with the reason under it and
-both fields marked, because the answer does not say which was wrong. Signed in
-without the app is not a form and not an error: it is addressed to a member, thanks
-them, says what the 0 € membership does cover, shows the entitlement as a tier and an
-access line, and offers the upgrade outside, a re-check, and the form again for
-another account. The page surface rather than the mission screen's red, because a
-form on red reads as an alarm and this is a front door.
+`services/auth.service.ts` is the seam to beabee. It answers from a directory of rules
+the door prints: any address signs in, "frei" answers with the 0 € tier and no access,
+"test" with a trial, "lokal" with the bundle, a password under four characters fails.
+The rules exist so that every state of the door is reachable on a device without a
+backend. There is no secure-storage port yet, because there is no token to store; a
+simulated account is not a secret, and the port comes with the real login (C1 in the
+scope plan).
 
-**6. Sign-out lives in Einstellungen** under a "Konto" card, next to the demo reset,
-until the account area from the scope exists. A door with no way back out cannot be
-checked on a device.
+### 5. Four states on one surface
+
+Signed out is the form. Signing in is the form with the button replaced by "Wir prüfen
+Ihre Mitgliedschaft …", so the wait explains itself and sets up the fourth state. Failed
+is the form with the reason under it and both fields marked, because the answer does not
+say which was wrong. Signed in without the app is not a form and not an error: it is
+addressed to a member, thanks them, says what the 0 € membership does cover, shows the
+entitlement as a tier and an access line, and offers the upgrade outside, a re-check,
+and the form again for another account. The page surface rather than the mission
+screen's red, because a form on red reads as an alarm and this is a front door.
+
+### 6. Sign-out lives in Einstellungen
+
+Under a "Konto" card, next to the demo reset, until the account area from the scope
+exists. A door with no way back out cannot be checked on a device.
 
 ## Consequences
 

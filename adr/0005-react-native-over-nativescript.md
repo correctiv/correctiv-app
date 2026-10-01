@@ -23,7 +23,7 @@ not nostalgia — it is a better *concept* in one specific way.
 - **A smaller substructure.** No Fabric / JSI / Hermes / New-Architecture layering
   to reason about.
 
-## Decision
+## 1. Decision
 
 **React Native / Expo is the stack.** After the device test passes, the
 NativeScript app is removed from `main` and archived as the annotated tag

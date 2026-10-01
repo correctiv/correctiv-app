@@ -6,8 +6,11 @@
  * folder would keep itself up to date and could not know what to pass a component
  * — and a gallery that renders `<ArticleHero>` with no item shows an empty box,
  * which is worse than no entry at all. The cost is that a new component does not
- * appear here on its own; `__tests__/gallery-catalogue.test.ts` fails when one is
- * missing, so the list cannot drift without saying so.
+ * appear here on its own, and what carries that cost is a TYPE rather than a
+ * test: `components.generated.ts` is the folder read as a union, this file is
+ * held against it, and a component with no entry is a compile error.
+ * `__tests__/gallery-catalogue.test.ts` keeps the union honest and checks the
+ * handful of things a type cannot see. ADR 0031 is the ladder this climbed.
  *
  * Specimens are plain elements, built once at module scope. The frame renders each
  * of them twice, on `canvas` and on `surface`, so a colour that does not follow
@@ -31,6 +34,7 @@ import { HomeHeader } from '@/components/home/HomeHeader';
 import { ImpactFooter } from '@/components/home/ImpactFooter';
 import { MediathekReihe } from '@/components/home/MediathekReihe';
 import { SpotlightBriefing } from '@/components/home/SpotlightBriefing';
+import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
 import { EpisodeRow } from '@/components/media/EpisodeRow';
 import { LiveBanner } from '@/components/media/LiveBanner';
 import { MediaCard } from '@/components/media/MediaCard';
@@ -46,18 +50,28 @@ import { NavCard } from '@/components/profile/NavCard';
 import { SettingRow } from '@/components/profile/SettingRow';
 import { ReaderView } from '@/components/reader/ReaderView';
 import { RecoveryScreen } from '@/components/recovery/RecoveryScreen';
+// The bar itself, not the seam: on iOS and Android `ScreenHeader` configures the
+// platform's stack header and draws nothing, and configuring one from inside a
+// gallery card would set the options of the route the gallery is on (ADR 0030).
+// What is drawn here is what `ScreenHeader` draws on web, which is the whole of
+// what there is to look at.
+import { ScreenHeaderBar } from '@/components/ui/ScreenHeaderBar';
 import {
   Badge,
   Bleed,
+  ContentColumn,
   Button,
   Card,
   Chip,
   Hairline,
+  NavRail,
   Overline,
   Rail,
   SafeAreaView,
+  ScaledText,
+  ScaledTextInput,
+  SplitRow,
   Screen,
-  ScreenHeader,
   SectionCard,
   SectionHeader,
   Thumbnail,
@@ -65,6 +79,7 @@ import {
 } from '@/components/ui';
 import { sizes, typography, type TypoVariant } from '@/lib/theme';
 
+import type { ComponentId } from './components.generated';
 import {
   ARTICLE,
   ARTICLE_BARE,
@@ -109,13 +124,20 @@ export interface Entry {
   name: string;
   /** One line, only where the specimen alone would mislead. */
   note?: string;
-  specimens: Specimen[];
+  /**
+   * `readonly`, and so is `Folder['entries']`, because `LISTED` below is a
+   * `const` assertion and a const-asserted array is a readonly tuple. That is
+   * what keeps `'Typo'` a literal type instead of a `string`, which is the whole
+   * mechanism: without the literals there is no union to hold against
+   * `ComponentId`. Nothing reads these lists to write to them.
+   */
+  specimens: readonly Specimen[];
 }
 
 /**
  * One component's address, and the same string on both sides of the seam.
  *
- * The handbook's reference and this gallery are two views of one list, and a link
+ * The workbench's reference and this gallery are two views of one list, and a link
  * between them is only as good as the agreement on what a component is called.
  * `folder/name` is that agreement: it is what `src/components` already calls a
  * component, and it is what `?c=` carries in both directions.
@@ -134,8 +156,36 @@ export function componentId(folder: string, name: string): string {
 export interface Folder {
   /** The directory under `src/components`. */
   folder: string;
-  entries: Entry[];
+  entries: readonly Entry[];
 }
+
+/**
+ * A component that exists and deliberately has NO entry of its own.
+ *
+ * The parameter is constrained to `ComponentId`, which is the half that stops a
+ * reason outliving the thing it is about: delete the component, run
+ * `npm run component-ids`, and the excuse below stops compiling with the name of
+ * what is gone. An `Exclude` on its own would quietly succeed.
+ */
+type NoEntryOfItsOwn<Id extends ComponentId> = Id;
+
+/**
+ * Read off the two `ScreenHeader` files and the import comment above: on iOS and
+ * Android `ScreenHeader` configures the platform's stack header and draws nothing
+ * (ADR 0030), and calling `Stack.Screen` from inside a gallery card would set the
+ * options of the route the gallery is on. So the `ui/ScreenHeader` entry draws
+ * THIS component, which is the whole of what there is to look at, and a second
+ * entry would be the same picture under the name no screen asks for.
+ */
+type DrawnUnderScreenHeader = NoEntryOfItsOwn<'ui/ScreenHeaderBar'>;
+
+/** Every component that must appear in `LISTED`. One exception, named above. */
+type MustBeListed = Exclude<ComponentId, DrawnUnderScreenHeader>;
+
+/** `folder/Name` for every entry, read off the catalogue's own type. */
+type IdsOf<T extends readonly Folder[]> = {
+  [I in keyof T]: `${T[I]['folder']}/${T[I]['entries'][number]['name']}`;
+}[number];
 
 /** A visible block, for the components whose own size is zero. */
 const filler = (label: string) => (
@@ -148,7 +198,15 @@ const filler = (label: string) => (
 
 const TYPO_VARIANTS = Object.keys(typography) as TypoVariant[];
 
-export const CATALOGUE: Folder[] = [
+/**
+ * The catalogue as written, with every `folder:` and `name:` still a literal type.
+ *
+ * `as const` is what keeps them literal; `satisfies` is what keeps the shape
+ * checked, including the excess-property check on each entry that a plain
+ * annotation used to do — `notes:` for `note:` is still an error here. The two
+ * together are what let `IdsOf` read the addresses back out of the type.
+ */
+const LISTED = [
   {
     folder: 'ui',
     entries: [
@@ -263,7 +321,7 @@ export const CATALOGUE: Folder[] = [
           { label: 'title only', node: <SectionHeader title="Aus dem Backstage" /> },
           {
             label: 'with actionLabel',
-            node: <SectionHeader title="Aus dem Backstage" actionLabel="Alles →" onAction={noop} />,
+            node: <SectionHeader title="Aus dem Backstage" actionLabel="Alles" onAction={noop} />,
           },
         ],
       },
@@ -290,9 +348,59 @@ export const CATALOGUE: Folder[] = [
         ],
       },
       {
+        name: 'SplitRow',
+        note: 'A two-sided row that keeps its gap and may wrap. `justify-between` distributes what is LEFT OVER, so a row written with it alone is correct exactly while there is room left over — at a 200 % system font scale there is none, and the two sides touch (#158).',
+        specimens: [
+          {
+            label: 'room to spare',
+            node: (
+              <SplitRow>
+                <Typo variant="text-s">SPOTLIGHT</Typo>
+                <Typo variant="text-s" color="accent">
+                  Alle Ausgaben
+                </Typo>
+              </SplitRow>
+            ),
+          },
+          {
+            label: 'no room left, so it wraps',
+            node: (
+              <View style={{ width: 150 }}>
+                <SplitRow>
+                  <Typo variant="text-s">Passwort vergessen?</Typo>
+                  <Typo variant="text-s" color="accent">
+                    Mitglied werden
+                  </Typo>
+                </SplitRow>
+              </View>
+            ),
+          },
+        ],
+      },
+      {
         name: 'Hairline',
         note: 'One dp in `stroke`. Visible against both surfaces, which is the point of it.',
         specimens: [{ label: 'default', node: <Hairline /> }],
+      },
+      {
+        name: 'ScaledText',
+        note: 'The Text under Typo, Button, Badge and Chip: it applies the app text size (ADR 0033). Following the system it is a plain Text; with a size chosen in the settings, it draws at that size in place of the system one.',
+        specimens: [
+          {
+            label: 'text-m, unstyled otherwise',
+            node: <ScaledText style={typography['text-m']}>ScaledText</ScaledText>,
+          },
+        ],
+      },
+      {
+        name: 'ScaledTextInput',
+        note: 'The same for a field: the four text fields render this rather than TextInput.',
+        specimens: [
+          {
+            label: 'text-m, empty',
+            node: <ScaledTextInput placeholder="ScaledTextInput" style={typography['text-m']} />,
+          },
+        ],
       },
       {
         name: 'Rail',
@@ -311,6 +419,13 @@ export const CATALOGUE: Folder[] = [
         name: 'Bleed',
         note: 'Escapes the screen padding. Here the red block runs wider than the label above it.',
         specimens: [{ label: 'default', node: <Bleed>{filler('edge to edge')}</Bleed> }],
+      },
+      {
+        name: 'ContentColumn',
+        note: 'Caps content at the reading width and centres it. On a phone it changes nothing.',
+        specimens: [
+          { label: 'default', node: <ContentColumn>{filler('reading width')}</ContentColumn> },
+        ],
       },
       {
         name: 'Thumbnail',
@@ -370,22 +485,28 @@ export const CATALOGUE: Folder[] = [
       },
       {
         name: 'ScreenHeader',
+        note: 'The bar it draws on web, and on the two screens that keep the bar everywhere. On iOS and Android it configures the platform’s stack header instead and draws nothing (ADR 0030).',
         specimens: [
-          { label: 'default', height: 72, ownSurface: true, node: <ScreenHeader onBack={noop} /> },
+          {
+            label: 'default',
+            height: 72,
+            ownSurface: true,
+            node: <ScreenHeaderBar onBack={noop} />,
+          },
           {
             label: 'backLabel="Abbrechen"',
             height: 72,
             ownSurface: true,
-            node: <ScreenHeader backLabel="Abbrechen" onBack={noop} />,
+            node: <ScreenHeaderBar backLabel="Abbrechen" onBack={noop} />,
           },
           {
             label: 'with children, so back shrinks to the chevron',
             height: 72,
             ownSurface: true,
             node: (
-              <ScreenHeader onBack={noop}>
+              <ScreenHeaderBar onBack={noop}>
                 <SearchEntry onPress={noop} />
-              </ScreenHeader>
+              </ScreenHeaderBar>
             ),
           },
         ],
@@ -404,6 +525,36 @@ export const CATALOGUE: Folder[] = [
                   Inside the safe area
                 </Typo>
               </SafeAreaView>
+            ),
+          },
+        ],
+      },
+      {
+        name: 'NavRail',
+        note: 'The five tab triggers for the tablet rail, plus the mini player pinned to its bottom. Width is 88 px — justified in sizes.ts.',
+        specimens: [
+          {
+            label: 'active="index"',
+            height: 480,
+            ownSurface: true,
+            node: (
+              <NavRail
+                active="index"
+                onSelect={noop}
+                insets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+              />
+            ),
+          },
+          {
+            label: 'active="profil"',
+            height: 480,
+            ownSurface: true,
+            node: (
+              <NavRail
+                active="profil"
+                onSelect={noop}
+                insets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+              />
             ),
           },
         ],
@@ -446,7 +597,10 @@ export const CATALOGUE: Folder[] = [
   {
     folder: 'home',
     entries: [
-      { name: 'HomeHeader', specimens: [{ label: 'default', node: <HomeHeader /> }] },
+      {
+        name: 'HomeHeader',
+        specimens: [{ label: 'default', node: <HomeHeader instant={Date.now()} /> }],
+      },
       {
         name: 'SpotlightBriefing',
         note: 'Loads the newsletter archive on first render, so this entry makes a request.',
@@ -795,4 +949,70 @@ export const CATALOGUE: Folder[] = [
       },
     ],
   },
-];
+  {
+    folder: 'keyboard',
+    entries: [
+      {
+        name: 'KeyboardAvoiding',
+        // There is nothing to look at, and that is worth an entry rather than an
+        // exception: the gallery draws its specimens with no keyboard open, and
+        // everything this component does happens while one is. The note points at
+        // where the argument is written down instead.
+        note: 'A layout wrapper with no appearance of its own: it pads its bottom while a software keyboard is open, which no still picture can show. The component file carries the reasoning.',
+        specimens: [
+          {
+            label: 'around a box',
+            node: <KeyboardAvoiding>{filler('KeyboardAvoiding')}</KeyboardAvoiding>,
+          },
+        ],
+      },
+    ],
+  },
+] as const satisfies readonly Folder[];
+
+/**
+ * **Nothing is forgotten, and it is a compile error rather than a test.**
+ *
+ * Three claims, each written as a type parameter whose DEFAULT must be `never`.
+ * When one is not, TypeScript reports the offending address by name on the line
+ * of the claim it broke — which is the point: the failure has to say which rule
+ * broke and about what, or it is a red build somebody widens.
+ *
+ * `ComponentId` is generated from `src/components` by
+ * `scripts/generate-component-ids.mjs`, so the closed set these are checked
+ * against is the folder itself rather than a list anybody maintains. Forgetting
+ * to regenerate it is the one hole left, and it is the drift check in
+ * `__tests__/gallery-catalogue.test.ts` (ADR 0031, mechanism 2).
+ *
+ * What none of them can see: a component listed TWICE, which a union of
+ * addresses silently folds into one, and every fact about `src/components` that
+ * is not the set of addresses. Those stay in the test, and it says so at itself.
+ */
+type EveryComponentHasAnEntry<Missing extends never = Exclude<MustBeListed, IdsOf<typeof LISTED>>> =
+  Missing;
+/** Catches a deleted component, a renamed one, and an entry under the wrong folder. */
+type EveryEntryHasAComponent<Stale extends never = Exclude<IdsOf<typeof LISTED>, ComponentId>> =
+  Stale;
+/** An excuse for a component that now has an entry is a leftover, not a rule. */
+type NoExcusedComponentIsListed<
+  Both extends never = Extract<IdsOf<typeof LISTED>, DrawnUnderScreenHeader>,
+> = Both;
+
+/**
+ * The catalogue the gallery and the workbench read.
+ *
+ * Spread rather than aliased: `LISTED` is a readonly tuple and both readers type
+ * against `Folder[]` — `Gallery.tsx`'s `shown()` returns one. The copy is twelve
+ * references at module scope and buys the literal types above.
+ */
+export const CATALOGUE: Folder[] = [...LISTED];
+
+/**
+ * Exported so that the three claims above are not dead code.
+ *
+ * They are proofs rather than types anybody uses, and oxlint's `no-unused-vars`
+ * is an ERROR on an unreferenced type alias — so without this line the check that
+ * makes the catalogue complete is itself the thing a lint fix deletes. Nothing
+ * imports them, and nothing should.
+ */
+export type { EveryComponentHasAnEntry, EveryEntryHasAComponent, NoExcusedComponentIsListed };

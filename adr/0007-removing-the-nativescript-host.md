@@ -28,7 +28,7 @@ What remained was the cost ADR 0005 named first and ADR 0006 never disputed: **e
 screen is built twice.** That cost is paid on each change, forever, and it now buys
 nothing that is not already bought.
 
-## Decision
+## 1. Decision
 
 **`apps/mobile` is deleted. `apps/mobile-rn` is the app; the core stays as it is.**
 

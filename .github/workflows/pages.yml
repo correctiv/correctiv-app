@@ -1,14 +1,14 @@
-# Publishes the handbook and the app to GitHub Pages — https://faktenforum.github.io/correctiv-app/
+# Publishes the workbench and the app to GitHub Pages — https://correctiv.github.io/correctiv-app/
 #
-# TWO BUILDS, ONE ARTIFACT. The site root is the handbook: the repository's own
+# TWO BUILDS, ONE ARTIFACT. The site root is the workbench: the repository's own
 # documentation, the source inventory, the diagrams and the reference, rendered as
-# a React app (apps/handbook). The web export of the app is published beneath it at
-# /app/, and the handbook frames it.
+# a React app (apps/workbench). The web export of the app is published beneath it at
+# /app/, and the workbench frames it.
 #
 # The app used to own the root, and this workflow said in its own comments that the
 # root was the wrong place to send people: the app has no desktop layout, so a full
 # browser window is the wrong shape to judge it in, and the address handed out was
-# /preview.html instead. The handbook fills that gap, so the root is now a page that
+# /preview.html instead. The workbench fills that gap, so the root is now a page that
 # is meant to be read at that size.
 #
 # WHY THIS IS SAFE FOR THE INSPECTOR. Everything the preview shell does to the app is
@@ -17,15 +17,15 @@
 # path-sensitive, and both halves are uploaded here as ONE artifact, so `/` and
 # `/app/` are the same origin and framing works. ADR 0014 put the shell inside
 # apps/mobile/public/ to get that guarantee; assembling one origin at deploy time is
-# a second way to the same thing, and it is the one that lets the handbook own the
-# root. In development the handbook's Vite server proxies /app to the app's dev
+# a second way to the same thing, and it is the one that lets the workbench own the
+# root. In development the workbench's Vite server proxies /app to the app's dev
 # server, which is the same trick locally.
 #
 # ONE-TIME SETUP, and this workflow cannot do it for you: the site's source has to be
 # switched from `main:/docs` to GitHub Actions. Settings → Pages → Build and
 # deployment → Source: GitHub Actions, or:
 #
-#     gh api -X POST repos/faktenforum/correctiv-app/pages -f build_type=workflow
+#     gh api -X POST repos/correctiv/correctiv-app/pages -f build_type=workflow
 #
 # `actions/configure-pages` below only creates a site when none exists — it reads an
 # existing one and leaves its build type alone — so until the switch is made,
@@ -59,7 +59,7 @@ jobs:
   deploy:
     name: Build and deploy
     runs-on: ubuntu-latest
-    # The site root is now the address to hand out: it is the handbook's landing
+    # The site root is now the address to hand out: it is the workbench's landing
     # page, which introduces the documentation and links to the app in its frame.
     environment:
       name: github-pages
@@ -85,7 +85,7 @@ jobs:
 
       # A PRODUCTION export, and it has to be. This built a development bundle for
       # a while, to keep the app's dev handle on the published site so the
-      # workbench's appearance control and inspector would work there. Measured on
+      # preview's appearance control and inspector would work there. Measured on
       # 2026-09-05, that trade was not the one it looked like: a `--dev` bundle
       # does not apply `experiments.baseUrl` to ROUTE MATCHING, only to asset
       # URLs. The app is published under `/app/`, so every route past the door
@@ -95,13 +95,13 @@ jobs:
       #   --dev      + base /app  signed in at /app/entdecken -> the app's 404
       #   production + base /app  signed in at /app/entdecken -> Entdecken
       #
-      # So the published app works and carries no handle, and the workbench says
+      # So the published app works and carries no handle, and the preview says
       # so on the panels that need one. A published app nobody can walk through is
       # not worth a debugging surface on top of it.
       #
       # apps/mobile/app.config.js turns EXPO_BASE_URL into experiments.baseUrl.
       # Without it every asset URL is absolute from the domain root and resolves to
-      # faktenforum.github.io/_expo/…, which is a blank page served by a green build.
+      # correctiv.github.io/_expo/…, which is a blank page served by a green build.
       # The value now carries the /app suffix as well, and experiments.baseUrl takes
       # any depth.
       - name: Export the app
@@ -110,33 +110,47 @@ jobs:
           EXPO_BASE_URL: ${{ steps.pages.outputs.base_path }}/app
         run: npm run build:web
 
-      # GITHUB_SHA reaches the handbook so every link it writes into the source
+      # GITHUB_SHA reaches the workbench so every link it writes into the source
       # points at the commit the page was built from rather than at main. A page
       # describing a line should keep pointing at that line.
-      - name: Build the handbook
+      - name: Build the workbench
         env:
-          HANDBOOK_BASE: ${{ steps.pages.outputs.base_path }}/
-        run: npm run build -w @correctiv/handbook
+          WORKBENCH_BASE: ${{ steps.pages.outputs.base_path }}/
+        run: npm run build -w @correctiv/workbench
 
       - name: Assemble the site
         run: |
           set -euo pipefail
           rm -rf site
-          cp -r apps/handbook/dist site
+          cp -r apps/workbench/dist site
           cp -r apps/mobile/dist site/app
           echo "assembled $(find site -name '*.html' | wc -l) pages"
 
-      # Five ways this deploy can be broken while both builds succeed, so all five
-      # are read off the assembled files rather than assumed:
+      # The home document the app fetches (ADR 0036 §4, ADR 0057 §4): the core's own
+      # file, the same one the app bundles, published at <base>/home.layout.json. The
+      # app holds that address as HOME_LAYOUT_URL in apps/mobile/src/lib/home/layout.ts.
+      #
+      # A step of its own, and it names the core's path and nothing else. That is what
+      # keeps it on the right side of ADR 0040 §1: the document is the core's file, not
+      # the workbench's output, and this step reads neither the app nor the workbench,
+      # so the `independence` job in ci.yml, which deletes apps/workbench and rebuilds
+      # the app, removes nothing this path touches.
+      - name: Publish the home document
+        run: cp packages/app-core/src/data/home.layout.json site/home.layout.json
+
+      # Ways this deploy can be broken while both builds succeed, so each one
+      # is read off the assembled files rather than assumed:
       #   1. a component with no web implementation (react-native-webview renders a
       #      sentence instead of the reader, and exports happily)
       #   2. either base path not applied — the failure mode this workflow exists for
       #   3. a missing route, or a missing 404.html, which is what makes deep links
       #      resolve on a host that cannot rewrite
-      #   4. the handbook shipping no documents, which is a site with a navigation
+      #   4. the workbench shipping no documents, which is a site with a navigation
       #      and nothing behind it
-      #   5. the workbench bundled without the app it frames, which is a device
+      #   5. the preview bundled without the app it frames, which is a device
       #      frame around a 404
+      #   6. the home document missing or not a clean layout, which every installed
+      #      app fetches: the app survives it on its last copy, and says nothing
       - name: Assert the deployable is not silently broken
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
@@ -156,7 +170,7 @@ jobs:
           }
 
           grep -q "\"$BASE_PATH/assets/" site/index.html || {
-            echo "::error::site/index.html does not reference $BASE_PATH/assets/ — HANDBOOK_BASE was not applied, and the handbook would be blank."
+            echo "::error::site/index.html does not reference $BASE_PATH/assets/ — WORKBENCH_BASE was not applied, and the workbench would be blank."
             grep -o 'src="[^"]*"' site/index.html | head
             exit 1
           }
@@ -173,24 +187,43 @@ jobs:
             test -f "site/app/$route.html" || { echo "::error::missing site/app/$route.html — a dynamic route did not pre-render its ids"; exit 1; }
           done
 
-          # The handbook is a single page application: 404.html is what makes a deep
+          # The workbench is a single page application: 404.html is what makes a deep
           # link like /decisions/0022 resolve on a host that cannot rewrite.
-          test -f site/404.html || { echo "::error::site/404.html is missing — every handbook deep link would 404."; exit 1; }
+          test -f site/404.html || { echo "::error::site/404.html is missing — every workbench deep link would 404."; exit 1; }
 
-          # The old address, still in README.md and in links people already have.
-          test -f site/preview.html || { echo "::error::site/preview.html redirect stub is missing."; exit 1; }
+          # Both workbench pages carry the Content-Security-Policy, which a Vite
+          # plugin writes and nothing else would notice missing (ci.yml says why).
+          for page in index 404; do
+            grep -q 'http-equiv="Content-Security-Policy"' "site/$page.html" || {
+              echo "::error::site/$page.html carries no Content-Security-Policy."
+              exit 1
+            }
+          done
 
-          # A handbook that shipped no documents still renders its navigation, so
-          # check that a document's own words reached the bundle.
-          grep -rq "platform-free" site/assets/*.js || {
-            echo "::error::the handbook bundle carries none of the repository's documents."
+          # And NO stub named after a live route, which is the other half of the
+          # same promise. `/preview.html` and `/workbench` are the two addresses this
+          # site has moved, and both are answered by `MOVED` in src/router.tsx after
+          # 404.html has loaded the shell. A file called preview.html would be served
+          # for the clean URL /preview as well — Pages resolves /x by trying x.html
+          # before falling through — so the stub that used to keep the old link
+          # working would now forward the live page to itself.
+          # (ADR 0037; apps/workbench/test/routes.test.ts asks the same of the source.)
+          test ! -e site/preview.html || {
+            echo "::error::site/preview.html exists. Pages serves it for /preview too, so the live route would redirect to itself. The moved addresses belong in src/router.tsx."
             exit 1
           }
 
-          # The workbench frames the app across `/` and `/app/`, which are the same
+          # A workbench that shipped no documents still renders its navigation, so
+          # check that a document's own words reached the bundle.
+          grep -rq "platform-free" site/assets/*.js || {
+            echo "::error::the workbench bundle carries none of the repository's documents."
+            exit 1
+          }
+
+          # The preview frames the app across `/` and `/app/`, which are the same
           # origin only because both halves are in this one artifact. If the app's
           # entry is missing, the frame is a 404 in a phone-shaped box.
-          test -f site/app/index.html || { echo "::error::site/app/index.html is missing — the workbench would frame a 404."; exit 1; }
+          test -f site/app/index.html || { echo "::error::site/app/index.html is missing — the preview would frame a 404."; exit 1; }
 
           # And it has to be a PRODUCTION export. A development bundle leaves the
           # app's dev handle on its global, which is convenient, and does not
@@ -201,7 +234,50 @@ jobs:
             exit 1
           fi
 
-          echo "deployable OK — handbook at $BASE_PATH/, app at $BASE_PATH/app/, $(find site -name '*.html' | wc -l) pages"
+          # And it must carry no Rozenite. That tooling is development-only by
+          # decision (ADR 0026 §1), and — unlike the debugger it replaced — nothing
+          # in the toolchain enforces it: `@rozenite/metro` 2.4.0 switches itself on
+          # when `enabled` is left undefined, and an explicit `enabled` skips its own
+          # `isBundling()` check, so `true` would reach an `expo export` exactly as it
+          # reaches `expo start`. What keeps it out here is metro.config.js reading
+          # ROZENITE from the environment and nothing in this workflow setting it,
+          # which is a discipline rather than a property — so it gets a check.
+          #
+          # It covers both halves at once, and it greps for the word rather than
+          # for an import path because Metro rewrites paths to numeric ids and
+          # they do not survive. What survives minification is export names and
+          # string literals, and all three packages carry the word in both:
+          # `rozeniteDevToolsEnhancer`, `useReduxDevToolsAgentTools`, and the
+          # plugin ids `@rozenite/mmkv-plugin` and
+          # `@rozenite/react-navigation-plugin`. Measured 2026-09-15 by running
+          # this same grep over a `--dev` export with ROZENITE=1, where it hits,
+          # and over the production export, where it does not.
+          # `test -d` first, and it is not belt-and-braces: a `grep` over a
+          # directory that is not there exits 2, the `if` is then false, and this
+          # step prints "deployable OK" and deploys. `set -euo pipefail` does not
+          # reach inside an `if` condition. A renamed export directory would have
+          # turned the check off silently, which is the failure this whole section
+          # is about.
+          test -d site/app || { echo "::error::site/app is missing — the export did not assemble"; exit 1; }
+          if grep -riq 'rozenite' site/app/; then
+            echo "::error::the app bundle carries Rozenite. It is development-only tooling: check that metro.config.js still passes an explicit enabled, that ROZENITE is unset here, and that app/_layout.tsx still selects lib/devtools/AgentTools at MODULE scope — a require inside a function keeps its module whatever guards the call."
+            grep -ril 'rozenite' site/app/ | head
+            exit 1
+          fi
+
+          # The home document every installed app fetches. A phone that cannot use it
+          # keeps its last good copy, which is correct and invisible, so a broken one
+          # would stand unnoticed for as long as nobody compared a phone with the
+          # repository. So it is judged by the core's own parser, not by JSON.parse:
+          # `{"version":2,"sections":[]}` and `null` are both JSON, and both are an
+          # empty home screen. The script is stricter than the app and says why.
+          test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
+          npx tsx packages/app-core/scripts/check-home-layout.ts site/home.layout.json || {
+            echo "::error::site/home.layout.json is not a home layout the app would draw as written; the lines above name each problem."
+            exit 1
+          }
+
+          echo "deployable OK — workbench at $BASE_PATH/, app at $BASE_PATH/app/, $(find site -name '*.html' | wc -l) pages"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

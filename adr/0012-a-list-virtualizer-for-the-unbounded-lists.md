@@ -21,7 +21,7 @@ lot is cheaper than virtualizing it:
 | Where | Length | Bounded by |
 | --- | --- | --- |
 | `suche.tsx`, articles | ≤ 15 | `searchArticles(debounced, 15)`; the offline fallback caps at 12 |
-| `projekt/[id].tsx`, feed | ≤ 12 | `data?.slice(0, 12)` |
+| `projekt/[id].tsx`, feed | ~~≤ 12~~ **unbounded** | ~~`data?.slice(0, 12)`~~ nothing, since the "load more" that `loadMore` in the core had been waiting for — see [ADR 0066](0066-a-project-feed-has-a-load-more-and-its-own-list.md) |
 | `(tabs)/index.tsx`, "Neueste Recherchen" | 5 | `recherchen.data?.slice(1, 6)` |
 | `(tabs)/index.tsx`, fact-check rail | ≤ 8 | `.slice(0, 8)` |
 | `(tabs)/mediathek.tsx`, videos | ≤ 6 | `videos.slice(0, 6)` |
@@ -41,10 +41,14 @@ a `ScrollView` every one of those subscriptions is live from the moment the scre
 opens, including for the episodes nobody has scrolled to. A show with two hundred
 episodes mounts two hundred store subscriptions to display about eight.
 
-## Decision
+## 1. Decision
 
-`FlatList` on `gespeichert.tsx` and `serie/[id].tsx`. Every other list stays a mapped
-`ScrollView`.
+`FlatList` on `gespeichert.tsx` and `serie/[id].tsx`. ~~Every other list stays a
+mapped `ScrollView`.~~ That second half no longer holds whole, with
+[ADR 0066](0066-a-project-feed-has-a-load-more-and-its-own-list.md): the project
+feed's cap of `slice(0, 12)` came off, its length stopped being bounded by this
+repository, and it is a `FlatList` for the reason the first two are — with the
+difference that its scroller became the list rather than a list inside one.
 
 **`FlatList`, not `FlashList` or `LegendList`, and the reason is not performance.**
 For lists of this size the three are indistinguishable: FlashList's advantage is row
@@ -91,9 +95,12 @@ memoization — the compiler already handles the inline case, which is the same 
 
 **The other twenty-one lists are unmeasured, not proven fine.** The table above counts
 array lengths, which is the cheap half. Nothing here was profiled on a device, and the
-caps it relies on are caps *this repo currently applies* — raising `slice(0, 12)` on
+caps it relies on are caps *this repo currently applies* — ~~raising `slice(0, 12)` on
 `projekt/[id].tsx` to a real "load more" would move that screen into the first
-category without anything in the code saying so.
+category without anything in the code saying so.~~ That is what [ADR
+0066](0066-a-project-feed-has-a-load-more-and-its-own-list.md) did, and it said so
+here first: the ceiling is gone, the screen is a `FlatList`, and twenty of the
+twenty-one are still here unmeasured.
 
 **Home is untouched and is the interesting case.** `(tabs)/index.tsx` is a
 heterogeneous feed — hero, briefing, early access, rows, two rails, a callout,
@@ -104,7 +111,7 @@ was deliberately not attempted here.
 
 **The desktop host is a reason, not a plan.** ~~No gjsify target exists in this
 repo.~~ One does, in `apps/desktop`, and
-[ADR 0027](0027-re-exported-screens-and-a-variant-where-the-host-refuses.md) records
+[ADR 0071](0071-re-exported-screens-and-a-variant-where-the-host-refuses.md) records
 what became of the three decisions this paragraph asks for: all three were needed, and
 all three are made. If one is ever built, three things this app does today are not
 answered by `@gjsify/react-native`'s support table and would need their own decisions:

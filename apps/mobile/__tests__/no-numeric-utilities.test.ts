@@ -1,5 +1,7 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { filesUnder, floorFaults, withoutComments } from '@correctiv/prose-and-code';
 
 /**
  * Numeric size and spacing utilities are banned in this app.
@@ -25,21 +27,15 @@ const SRC = join(__dirname, '..', 'src');
 const FORBIDDEN =
   /\b(?:w|h|size|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|gap-y)-[1-9][0-9]*\b/g;
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir).flatMap((entry) => {
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) return sourceFiles(path);
-    return /\.tsx?$/.test(entry) ? [path] : [];
-  });
-}
-
-/** Comments explain the trap, so they are allowed to name it. */
-function withoutComments(code: string): string {
-  return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
-}
-
 test('no numeric Tailwind size or spacing utilities in src/', () => {
-  const offenders = sourceFiles(SRC).flatMap((file) => {
+  // Comments explain the trap, so they are allowed to name it — and the stripper
+  // leaves the newlines behind, which this file needs and its own copy did not do:
+  // it reports `file:line`, and deleting a block comment outright moves every line
+  // after it up by as many lines as that comment was long.
+  const files = filesUnder(SRC, /\.tsx?$/);
+  expect(floorFaults({ 'files under src/': { found: files.length, atLeast: 50 } })).toEqual([]);
+
+  const offenders = files.flatMap((file) => {
     const lines = withoutComments(readFileSync(file, 'utf8')).split('\n');
     return lines.flatMap((line, i) => {
       const hits = line.match(FORBIDDEN) ?? [];

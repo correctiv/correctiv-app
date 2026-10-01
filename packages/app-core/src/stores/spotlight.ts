@@ -97,5 +97,3 @@ export const fetchIssues =
       );
     }
   };
-
-export const spotlightActions = { ...slice.actions, fetchIssues };

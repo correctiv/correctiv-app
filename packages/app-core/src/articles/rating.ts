@@ -1,3 +1,4 @@
+import { coreMessage, type CoreMessage } from '../i18n/messages';
 import type { FactcheckRating } from './types';
 
 /**
@@ -12,17 +13,42 @@ import type { FactcheckRating } from './types';
  * Both readings now land on the same union.
  */
 
-const LABELS: Record<FactcheckRating, string> = {
-  falsch: 'Falsch',
-  'groesstenteils-falsch': 'Größtenteils falsch',
-  'teilweise-falsch': 'Teilweise falsch',
-  'fehlender-kontext': 'Fehlender Kontext',
-  unbelegt: 'Unbelegt',
-  irrefuehrend: 'Irreführend',
-  manipuliert: 'Manipuliert',
-  satire: 'Satire',
-  'groesstenteils-richtig': 'Größtenteils richtig',
-  richtig: 'Richtig',
+/**
+ * How each verdict is spoken, as descriptors rather than as German.
+ *
+ * The keys are the slugs CORRECTIV publishes and stay German, because they are
+ * identifiers and not words — `groesstenteils-falsch` is what the API says. The
+ * ids are English for the same reason the `defaultMessage` is: an id is read by
+ * whoever fills a catalogue, and a German id in an English file is a spelling
+ * nobody can guess.
+ *
+ * `ratingLabel()` used to return the German straight out of here, which is what
+ * put a rendered verdict inside `buildReaderHtml` and inside `data/claims.ts`.
+ * Both take the formatted label from their host now.
+ */
+export const RATING_LABELS: Record<FactcheckRating, CoreMessage> = {
+  falsch: coreMessage({ id: 'core.rating.false', defaultMessage: 'False' }),
+  'groesstenteils-falsch': coreMessage({
+    id: 'core.rating.mostlyFalse',
+    defaultMessage: 'Mostly false',
+  }),
+  'teilweise-falsch': coreMessage({
+    id: 'core.rating.partlyFalse',
+    defaultMessage: 'Partly false',
+  }),
+  'fehlender-kontext': coreMessage({
+    id: 'core.rating.missingContext',
+    defaultMessage: 'Missing context',
+  }),
+  unbelegt: coreMessage({ id: 'core.rating.unproven', defaultMessage: 'Unproven' }),
+  irrefuehrend: coreMessage({ id: 'core.rating.misleading', defaultMessage: 'Misleading' }),
+  manipuliert: coreMessage({ id: 'core.rating.manipulated', defaultMessage: 'Manipulated' }),
+  satire: coreMessage({ id: 'core.rating.satire', defaultMessage: 'Satire' }),
+  'groesstenteils-richtig': coreMessage({
+    id: 'core.rating.mostlyTrue',
+    defaultMessage: 'Mostly true',
+  }),
+  richtig: coreMessage({ id: 'core.rating.true', defaultMessage: 'True' }),
 };
 
 /**
@@ -137,13 +163,9 @@ export function ratingFromText(text: string | null | undefined): FactcheckRating
   return FROM_TEXT.find((r) => r.test.test(text))?.value;
 }
 
-export function ratingLabel(rating: FactcheckRating): string {
-  return LABELS[rating];
-}
-
 export function ratingTone(rating: FactcheckRating): RatingTone {
   return TONES[rating];
 }
 
 /** Every known verdict — for tests and for rendering a legend. */
-export const FACTCHECK_RATINGS = Object.keys(LABELS) as FactcheckRating[];
+export const FACTCHECK_RATINGS = Object.keys(RATING_LABELS) as FactcheckRating[];

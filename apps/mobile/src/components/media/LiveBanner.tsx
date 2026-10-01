@@ -1,11 +1,44 @@
 import { Ionicons } from '@expo/vector-icons';
+import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import { Badge, Typo } from '@/components/ui';
 import { playRadio, stop } from '@/lib/audio/player';
+import { salon5RadioCopy, SALON5_RADIO_COPY } from '@/lib/audio/tracks';
 import { useRadioState } from '@/lib/audio/useAudio';
 import { useCoreActions, useRadioStation } from '@/lib/store/core';
 import { colors, sizes } from '@/lib/theme';
+
+/**
+ * The banner's own words, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/mediathek.ts` (ADR 0026 §6). The station's name and its
+ * strapline are NOT here: they are `SALON5_RADIO_COPY` in `lib/audio/tracks.ts`,
+ * because the lock screen prints the same words and the thunk that starts the
+ * stream is handed them from there.
+ *
+ * `live` is the badge, declared here and in `components/home/MediathekReihe.tsx`
+ * under one id; `npm run i18n:extract --throws` fails if one default is edited
+ * without the other.
+ *
+ * `listeners` is an ICU plural and needs `Intl.PluralRules`, which Hermes does
+ * not ship — see `src/i18n/polyfills.ts`, which installs it before anything
+ * formats.
+ */
+const COPY = defineMessages({
+  live: { id: 'mediathek.live', defaultMessage: 'Live' },
+  listeners: {
+    id: 'mediathek.listeners',
+    defaultMessage: '{count, plural, one {# listener} other {# listeners}}',
+    description:
+      'Inside the live radio banner, in the row beside the Live badge. {count} is how many people are listening right now.',
+  },
+  streamUnavailable: {
+    id: 'mediathek.streamUnavailable',
+    defaultMessage: 'Stream cannot be reached',
+  },
+  pauseRadio: { id: 'mediathek.pauseRadio', defaultMessage: 'Pause the radio' },
+  playRadio: { id: 'mediathek.playRadio', defaultMessage: 'Play the radio' },
+});
 
 /**
  * The Salon5 live banner: dark card, big coral play button on the left, as in the
@@ -23,22 +56,27 @@ import { colors, sizes } from '@/lib/theme';
  * (`useRadio`) did.
  *
  * Two statuses meet in the second line, and they are not the same thing.
- * `useRadioState` is our player, so it owns "Stream nicht erreichbar" — only a
- * failed attempt to play may say that. `useRadioStation` is the station's own
+ * `useRadioState` is our player, so it owns `streamUnavailable` — only a failed
+ * attempt to play may say that. `useRadioStation` is the station's own
  * Icecast status, and it contributes the title on air, which is real information
  * the banner never had: the fixed "24/7 aus Bottrop" was true about the stream and
  * silent about what was running on it. When the status document cannot be reached
  * the line falls back to that fixed copy, because not knowing the title is not a
  * fault worth reporting.
  */
-export function LiveBanner({ subtitle = '24/7 aus Bottrop' }: { subtitle?: string }) {
+export function LiveBanner({ subtitle }: { subtitle?: string }) {
+  const intl = useIntl();
   const state = useRadioState();
   const { nowPlaying, listeners } = useRadioStation();
   const actions = useCoreActions();
   const busy = state === 'loading';
   const playing = state === 'playing';
 
-  const line = state === 'error' ? 'Stream nicht erreichbar' : (nowPlaying ?? subtitle);
+  // The default used to be the parameter's; a default cannot call a hook, so the
+  // fixed copy is chosen here instead. Same fallback, same words.
+  const fixed = subtitle ?? intl.formatMessage(SALON5_RADIO_COPY.subtitle);
+  const line =
+    state === 'error' ? intl.formatMessage(COPY.streamUnavailable) : (nowPlaying ?? fixed);
 
   /**
    * Pressing play also asks the station what it is doing.
@@ -55,7 +93,7 @@ export function LiveBanner({ subtitle = '24/7 aus Bottrop' }: { subtitle?: strin
       stop();
       return;
     }
-    playRadio();
+    playRadio(salon5RadioCopy(intl));
     actions.radio.fetchStatus({ force: true });
   };
 
@@ -63,10 +101,10 @@ export function LiveBanner({ subtitle = '24/7 aus Bottrop' }: { subtitle?: strin
     <View className="flex-row items-center rounded-md bg-always-dark p-s">
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={playing ? 'Radio pausieren' : 'Radio abspielen'}
+        accessibilityLabel={intl.formatMessage(playing ? COPY.pauseRadio : COPY.playRadio)}
         onPress={onPlay}
         className="mr-s items-center justify-center rounded-full bg-accent active:opacity-80"
-        style={{ width: sizes.playButton, height: sizes.playButton }}
+        style={{ minWidth: sizes.playButton, minHeight: sizes.playButton }}
       >
         {busy ? (
           <ActivityIndicator color={colors['always-light']} />
@@ -76,17 +114,17 @@ export function LiveBanner({ subtitle = '24/7 aus Bottrop' }: { subtitle?: strin
       </Pressable>
       <View className="flex-1">
         <View className="mb-4xs flex-row items-center gap-2xs">
-          <Badge label="Live" tone="live" />
+          <Badge label={intl.formatMessage(COPY.live)} tone="live" />
           {/* `listenerCount` in the core already answers null for "nobody" and
               for "not known", so there is one condition here rather than two. */}
           {listeners !== null && (
             <Typo variant="text-s" color="always-light" className="opacity-70">
-              {listeners === 1 ? '1 Hörer:in' : `${listeners} Hörer:innen`}
+              {intl.formatMessage(COPY.listeners, { count: listeners })}
             </Typo>
           )}
         </View>
         <Typo variant="headline-s" color="always-light">
-          Salon5 Radio
+          {intl.formatMessage(SALON5_RADIO_COPY.title)}
         </Typo>
         {/*
           ONE LINE, and the one change in this file a reader will see on the phone:

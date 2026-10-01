@@ -52,7 +52,7 @@
  * `npm run component-sweep` opens the phone's component catalogue, which covers every
  * component in `src/components` in the variants its props allow rather than the ones
  * a screen happens to pass.
- * ([ADR 0027](../../../adr/0027-re-exported-screens-and-a-variant-where-the-host-refuses.md))
+ * ([ADR 0071](../../../adr/0071-re-exported-screens-and-a-variant-where-the-host-refuses.md))
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -88,11 +88,26 @@ const DESKTOP_SRC = resolve(__dirname, '..', 'src');
  * passed. There is no oracle for it either: the published prop table answers "is this
  * prop accepted on this primitive" and nothing published answers "does this element
  * make its parent an overlay". The entry was re-checked because the whole 0.47 → 0.48
- * ledger was, and ADR 0027's second addendum says so rather than leaving it implied.
+ * ledger was, and ADR 0071's second addendum says so rather than leaving it implied.
  */
 const ANSWERED_BY_A_DESKTOP_VARIANT: Readonly<
   Record<string, { readonly where: string; readonly importableAnyway?: string }>
-> = {};
+> = {
+  /**
+   * Both arrived with main, both are P3, and both are answered the same way: the shim
+   * exports an object with the shape the caller needs and a subscription that never
+   * fires. Each one's docblock in `src/shims/react-native.tsx` says what the app loses,
+   * and in both cases what it loses is a platform event this platform does not have —
+   * which is the narrow case where an inert answer beats a variant. A screen forking
+   * for either would be forking over an `addEventListener` that is never called.
+   */
+  AppState: {
+    where: 'src/shims/react-native.tsx — a subscription that never fires',
+  },
+  BackHandler: {
+    where: 'src/shims/react-native.tsx — a subscription that never fires',
+  },
+};
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

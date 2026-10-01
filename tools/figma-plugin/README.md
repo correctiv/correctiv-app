@@ -17,8 +17,16 @@ here too.
     the board      serves it      polls it     draws it
 
 Changing the board therefore never means changing code, and never means re-importing
-the plugin: edit `spec.json`, save, and it redraws within a second. Only a JSON
-document crosses the wire, never anything executable.
+the plugin: edit `spec.json`, save, and it redraws within a second — **unless the
+`Bausteine` page has been changed by hand**, which it asks about first
+([ADR 0069](../../adr/0069-a-redraw-waits-for-a-look.md)). Only a JSON document crosses
+the wire, never anything executable: the board's own description travels the same way,
+so what a person changed on the board is compared rather than overwritten.
+
+The plugin stamps each node it draws with its path in `spec.json`, describes the
+`Bausteine` page back in the spec's own vocabulary, and the server diffs the two. Figma
+ids cannot do this job: the owned frames are deleted and rebuilt on every draw, so an
+id from the last draw names nothing on this one.
 
     node tools/figma-plugin/server.mjs      # then run the plugin once, and leave it open
 

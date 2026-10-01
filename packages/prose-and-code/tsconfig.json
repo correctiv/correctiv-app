@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Node, and nothing else. This package reads files and runs generators, so it
+    // needs the platform it declares; what it must NOT have is a UI framework or
+    // anything else in this repository — `test/licence-boundary.test.ts` is the
+    // check under that, and the reason is a licence rather than a preference.
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

@@ -1,5 +1,15 @@
 import { useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
+
+/**
+ * The bar's spoken name, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/player.ts` (ADR 0026 §6). The bar has no text, so this
+ * is all a screen reader has.
+ */
+const COPY = defineMessages({
+  position: { id: 'player.position', defaultMessage: 'Playback position' },
+});
 
 /**
  * Playback progress, with tap-to-seek.
@@ -19,6 +29,7 @@ export function ProgressBar({
   durationSec: number;
   onSeek: (seconds: number) => void;
 }) {
+  const intl = useIntl();
   const [width, setWidth] = useState(0);
   const ratio = durationSec > 0 ? Math.min(1, Math.max(0, positionSec / durationSec)) : 0;
 
@@ -27,7 +38,7 @@ export function ProgressBar({
   return (
     <Pressable
       accessibilityRole="adjustable"
-      accessibilityLabel="Wiedergabeposition"
+      accessibilityLabel={intl.formatMessage(COPY.position)}
       accessibilityValue={{ min: 0, max: Math.round(durationSec), now: Math.round(positionSec) }}
       onLayout={onLayout}
       onPress={(event) => {

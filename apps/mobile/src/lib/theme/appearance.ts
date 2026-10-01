@@ -34,9 +34,44 @@ export type ThemeSetting = 'system' | 'light' | 'dark';
  * reason this is a setting: a user who picks light on a dark phone means it.
  */
 export function useAppearance(): void {
-  const setting = useTheme();
+  useGivenAppearance(useTheme());
+}
 
+/**
+ * The same, for a host that already has an appearance setting of its own.
+ *
+ * `apps/workbench` is a website with a light/dark/system control in its own
+ * header, and the components it draws have to follow THAT rather than the app's
+ * stored preference — the app's store is not hydrated there, so every specimen
+ * would sit at `'system'` while the page around it was explicitly dark.
+ *
+ * Split out rather than copied, because the one line it wraps is the line that
+ * has broken twice (see above, and ADR 0008): `Uniwind.setTheme` is called from
+ * exactly one place in this repository, and both hosts reach it through here.
+ */
+export function useGivenAppearance(setting: ThemeSetting): void {
   useEffect(() => {
     Uniwind.setTheme(setting);
+
+    // ON THE WEB, `'system'` is resolved ONCE and has to be asked again when the
+    // device answer changes. `setTheme('system')` reads the scheme and stamps the
+    // result on the root element; nothing re-reads it, so a reader who switches
+    // their machine to dark with the page open keeps the scheme it loaded with.
+    // Measured on the built site on 2026-09-11: the site's own chrome followed,
+    // because its CSS sits behind a media query, while everything drawn through
+    // Uniwind stayed light. The other two settings are explicit and mean what they
+    // say, so they do not listen.
+    //
+    // `matchMedia` is the guard rather than `Platform.OS`, because this has to be
+    // false in two places that are not a platform: the pre-render pass of
+    // `expo export`, which runs in Node, and any native runtime that grows a
+    // partial `window`. What the native side does with an adaptive theme is
+    // Uniwind's own business and is not measured here.
+    if (setting !== 'system') return;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const device = window.matchMedia('(prefers-color-scheme: dark)');
+    const resolveAgain = () => Uniwind.setTheme('system');
+    device.addEventListener('change', resolveAgain);
+    return () => device.removeEventListener('change', resolveAgain);
   }, [setting]);
 }

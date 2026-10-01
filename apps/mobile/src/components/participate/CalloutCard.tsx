@@ -1,9 +1,9 @@
+import { defineMessages, useIntl } from 'react-intl';
 import { View } from 'react-native';
 
 import { Button, Card, Overline, Typo } from '@/components/ui';
 import type { Callout } from '@correctiv/app-core/data/callouts';
-import { formatNumberDe } from '@correctiv/app-core/lib/format';
-import { calloutStyle } from '@/lib/participate/calloutStyle';
+import { calloutKicker, calloutStyle } from '@/lib/participate/calloutStyle';
 import { useExtraCount, useHasSubmitted } from '@/lib/store/core';
 import { sizes } from '@/lib/theme';
 
@@ -14,6 +14,17 @@ import { sizes } from '@/lib/theme';
  * look differently filled.
  */
 const GOAL = 3000;
+
+/**
+ * The card's own two words, in ENGLISH; the German is in
+ * `packages/catalogue/src/de/callout.ts`. Everything else it says comes from
+ * `lib/participate/calloutStyle.ts`, which answers for the card and the home
+ * teaser alike.
+ */
+const COPY = defineMessages({
+  contributed: { id: 'callout.card.contributed', defaultMessage: '✓ You have contributed' },
+  contributeAgain: { id: 'callout.contributeAgain', defaultMessage: 'Send another tip' },
+});
 
 /**
  * An open callout in the overview. The counter is the demo's magic: your own
@@ -31,6 +42,7 @@ export function CalloutCard({
   callout: Callout;
   onPress: (callout: Callout) => void;
 }) {
+  const intl = useIntl();
   const extra = useExtraCount(callout.slug);
   const submitted = useHasSubmitted(callout.slug);
   const total = callout.responseCount + extra;
@@ -39,7 +51,7 @@ export function CalloutCard({
 
   return (
     <Card className="mb-s">
-      <Overline label={style.kicker} color="accent" />
+      <Overline label={calloutKicker(intl, style)} color="accent" />
       <Typo variant="headline-xs" className="mt-2xs">
         {callout.title}
       </Typo>
@@ -48,23 +60,23 @@ export function CalloutCard({
       </Typo>
 
       <View
-        className="mt-s overflow-hidden rounded-s bg-grey-250"
+        className="mt-s overflow-hidden rounded-s bg-stroke"
         style={{ height: sizes.progressBar }}
       >
         <View className="h-full bg-on-surface" style={{ width: `${percent}%` }} />
       </View>
       <Typo variant="text-s" color="grey-500" className="mt-3xs">
-        {formatNumberDe(total)} {style.unit}
+        {intl.formatMessage(style.count, { count: total })}
       </Typo>
 
       {submitted && (
         <Typo variant="text-s" color="accent" className="mt-2xs">
-          ✓ Sie haben beigetragen
+          {intl.formatMessage(COPY.contributed)}
         </Typo>
       )}
 
       <Button
-        title={submitted ? 'Weiteren Hinweis geben' : style.cta}
+        title={intl.formatMessage(submitted ? COPY.contributeAgain : style.cta)}
         variant={submitted ? 'outline' : style.variant}
         onPress={() => onPress(callout)}
         className="mt-s"

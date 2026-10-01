@@ -1,13 +1,66 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { VideoFrame } from '@/components/media/VideoFrame';
-import { Button, Overline, ScreenHeader, Typo } from '@/components/ui';
-import { formatDateDe, formatMinutesDe, formatNumberDe } from '@correctiv/app-core/lib/format';
+import { Button, ContentColumn, Overline, ScreenHeader, Typo } from '@/components/ui';
+import { formatDate, minutesOf } from '@correctiv/app-core/lib/format';
 import type { Video } from '@correctiv/app-core/types/models';
-import { useVideo } from '@/lib/store/core';
+import { useLocale, useVideo } from '@/lib/store/core';
 import { openExternal } from '@/lib/openExternal';
 import { colors } from '@/lib/theme';
+
+/**
+ * Everything this screen says, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/video.ts` (ADR 0026 §6).
+ *
+ * `views` is an ICU plural. It replaces a `formatNumber` call: `#` inside a
+ * plural is formatted by the provider's locale, so the thousands separator is
+ * still the language's own and the count now picks its own noun.
+ */
+const COPY = defineMessages({
+  screenTitle: {
+    id: 'video.screenTitle',
+    defaultMessage: 'Video',
+    description:
+      "The video route's name. On the web target it is the browser tab's title; on iOS and Android the header does not draw it, so nobody sees it there. `video.kicker` is the word above the video's own title and `video.frameTitle` names the embed.",
+  },
+  duration: {
+    id: 'video.duration',
+    defaultMessage: '{count, plural, one {# min} other {# min}}',
+    description:
+      'Beside the publication date under a video. {count} is a whole number of minutes, never less than one; both branches read the same in English because the abbreviation does not inflect, and a language whose does needs both.',
+  },
+  none: { id: 'video.none', defaultMessage: 'No video selected.' },
+  unavailable: { id: 'video.unavailable', defaultMessage: 'Video unavailable' },
+  loading: {
+    id: 'video.loading',
+    defaultMessage: 'Loading …',
+    description:
+      'On the video screen, in place of the native player while there is no stream address yet. Not the loading state itself, which is a spinner. `player.loading` is the same word in the mini player.',
+  },
+  today: { id: 'video.today', defaultMessage: 'Today' },
+  yesterday: { id: 'video.yesterday', defaultMessage: 'Yesterday' },
+  views: {
+    id: 'video.views',
+    defaultMessage: '{count, plural, one {# view} other {# views}}',
+    description: "Under a video's title. {count} is how often it has been watched.",
+  },
+  newEpisode: { id: 'video.newEpisode', defaultMessage: 'New episode' },
+  kicker: {
+    id: 'video.kicker',
+    defaultMessage: 'Video',
+    description:
+      "The kicker above a video's title, and only on a video older than seven days: anything newer gets `video.newEpisode` instead. `video.screenTitle` is the same word as the route's name, which on the web target is the browser tab.",
+  },
+  watchOn: {
+    id: 'video.watchOn',
+    defaultMessage: 'Watch on {host}',
+    description:
+      "The button that leaves the app for the platform the video is hosted on. {host} is that platform's host name, such as youtube.com.",
+  },
+  watchOriginal: { id: 'video.watchOriginal', defaultMessage: 'Watch the original' },
+});
 
 /**
  * One screen for both video sources.
@@ -30,36 +83,39 @@ import { colors } from '@/lib/theme';
  * along.
  */
 export default function VideoScreen() {
+  const intl = useIntl();
   const { current, hlsUrl, status } = useVideo();
 
   return (
     <View className="flex-1 bg-canvas">
-      <ScreenHeader />
+      <ScreenHeader title={intl.formatMessage(COPY.screenTitle)} />
       {!current ? (
         <View className="flex-1 items-center justify-center px-m">
           <Typo variant="text-m" color="on-canvas-muted">
-            Kein Video ausgewählt.
+            {intl.formatMessage(COPY.none)}
           </Typo>
         </View>
       ) : (
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* The stage stays dark in both schemes. A video does not sit on a light
-              surface, not even in a light app. */}
-          <View className="bg-always-dark" style={{ aspectRatio: 16 / 9 }}>
-            {current.source === 'peertube' ? (
-              <PeertubeStage
-                video={current}
-                hlsUrl={hlsUrl}
-                loading={status === 'loading'}
-                failed={status === 'error'}
-              />
-            ) : (
-              <VideoFrame
-                uri={`https://www.youtube-nocookie.com/embed/${current.id}?playsinline=1&rel=0`}
-              />
-            )}
-          </View>
-          <VideoMeta video={current} />
+          <ContentColumn>
+            {/* The stage stays dark in both schemes. A video does not sit on a light
+                surface, not even in a light app. */}
+            <View className="bg-always-dark" style={{ aspectRatio: 16 / 9 }}>
+              {current.source === 'peertube' ? (
+                <PeertubeStage
+                  video={current}
+                  hlsUrl={hlsUrl}
+                  loading={status === 'loading'}
+                  failed={status === 'error'}
+                />
+              ) : (
+                <VideoFrame
+                  uri={`https://www.youtube-nocookie.com/embed/${current.id}?playsinline=1&rel=0`}
+                />
+              )}
+            </View>
+            <VideoMeta video={current} />
+          </ContentColumn>
         </ScrollView>
       )}
     </View>
@@ -71,6 +127,8 @@ export default function VideoScreen() {
  *
  * One place for it, because two now need it: the meta block under the stage, and the
  * metadata the system's own media controls display.
+ *
+ * Both are marks rather than sentences, so neither carries a message id.
  */
 const channelOf = (video: Video): string =>
   video.source === 'peertube' ? 'FunFacts' : 'CORRECTIV';
@@ -87,6 +145,7 @@ function PeertubeStage({
   loading: boolean;
   failed: boolean;
 }) {
+  const intl = useIntl();
   /**
    * THE SOURCE CARRIES THE METADATA, and that is the only way the system's media
    * controls learn anything about a video.
@@ -128,7 +187,7 @@ function PeertubeStage({
           <ActivityIndicator color={colors['always-light']} />
         ) : (
           <Typo variant="text-s" color="always-light">
-            {failed ? 'Video nicht verfügbar' : 'Lädt …'}
+            {intl.formatMessage(failed ? COPY.unavailable : COPY.loading)}
           </Typo>
         )}
       </View>
@@ -156,17 +215,29 @@ function PeertubeStage({
 
 /** Kicker, title, source, description, link — the same for both sources. */
 function VideoMeta({ video }: { video: Video }) {
+  const intl = useIntl();
+  const locale = useLocale();
   const days = daysSince(video.publishedAt);
-  const when = days <= 0 ? 'Heute' : days === 1 ? 'Gestern' : formatDateDe(video.publishedAt);
-  const duration = video.durationSec ? formatMinutesDe(video.durationSec) : '';
-  const views = video.views != null ? `${formatNumberDe(video.views)} Aufrufe` : '';
+  const when =
+    days <= 0
+      ? intl.formatMessage(COPY.today)
+      : days === 1
+        ? intl.formatMessage(COPY.yesterday)
+        : formatDate(video.publishedAt, locale);
+  const duration = video.durationSec
+    ? intl.formatMessage(COPY.duration, { count: minutesOf(video.durationSec) })
+    : '';
+  const views = video.views != null ? intl.formatMessage(COPY.views, { count: video.views }) : '';
   const channel = channelOf(video);
   const host = (video.url || '').replace(/^https?:\/\//, '').split('/')[0];
 
   return (
     <View className="px-m pb-2xl pt-m">
       <View className="flex-row items-center">
-        <Overline label={days <= 7 ? 'Neue Folge' : 'Video'} color="accent" />
+        <Overline
+          label={intl.formatMessage(days <= 7 ? COPY.newEpisode : COPY.kicker)}
+          color="accent"
+        />
         <Typo variant="text-s" color="grey-500" className="ml-s">
           {[when, duration].filter(Boolean).join(' · ')}
         </Typo>
@@ -187,7 +258,11 @@ function VideoMeta({ video }: { video: Video }) {
 
       {video.url ? (
         <Button
-          title={host ? `Auf ${host} ansehen` : 'Original ansehen'}
+          title={
+            host
+              ? intl.formatMessage(COPY.watchOn, { host })
+              : intl.formatMessage(COPY.watchOriginal)
+          }
           variant="outline"
           className="mt-m"
           onPress={() => openExternal(video.url)}
