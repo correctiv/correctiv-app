@@ -319,6 +319,7 @@ export const en: Record<string, string> = {
   "ui.tabDiscover": "Discover",
   "ui.tabHome": "Home",
   "ui.tabMediathek": "Mediathek",
+  "ui.tabMore": "More",
   "ui.tabParticipate": "Take part",
   "ui.tabProfile": "Profile",
   "video.cardLabel": "Video: {title}",

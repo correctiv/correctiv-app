@@ -42,15 +42,29 @@ export const SCREEN_DOCUMENTS = {
 export const SCREEN_LAYOUTS_VERSION = 1;
 
 /**
- * The published document: every screen's file under its screen id, joined and nothing
- * else (ADR 0071 §1). Keys beside `screens` are reserved for what a later phase adds,
- * the navigation first, and an app that does not know one ignores it.
+ * The published document: every screen's file under its screen id, and the navigation
+ * beside them, joined and nothing else (ADR 0071 §1, §6). An app that does not know a key
+ * beside `screens` ignores it.
  */
-export function joinScreenDocuments(documents: Record<string, unknown>): {
+export function joinScreenDocuments(
+  documents: Record<string, unknown>,
+  navigation?: unknown,
+): {
   version: number;
   screens: Record<string, unknown>;
+  navigation?: unknown;
 } {
-  return { version: SCREEN_LAYOUTS_VERSION, screens: documents };
+  return navigation === undefined
+    ? { version: SCREEN_LAYOUTS_VERSION, screens: documents }
+    : { version: SCREEN_LAYOUTS_VERSION, screens: documents, navigation };
+}
+
+/** The navigation out of a fetched joined document, or `undefined` when it carries none. */
+export function navigationDocumentOf(body: unknown): unknown {
+  if (typeof body !== 'object' || body === null) return undefined;
+  return Object.hasOwn(body, 'navigation')
+    ? (body as { navigation: unknown }).navigation
+    : undefined;
 }
 
 /**

@@ -46,6 +46,8 @@ const MEASURED_THRESHOLD = '1.3';
 
 const SRC = join(__dirname, '..', 'src');
 const TABS_LAYOUT = join(SRC, 'app', '(tabs)', '_layout.tsx');
+/** Where the labels are declared, for all three bars (ADR 0071 §4). */
+const TAB_TARGETS = join(SRC, 'lib', 'tabTargets.ts');
 /**
  * The German left this app for a package in
  * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §1, so the first read
@@ -70,7 +72,7 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
     // Every assertion below is over a regular expression against source. A moved
     // file or a renamed key empties the match rather than breaking it, and an
     // empty record agrees with an empty record.
-    expect(Object.keys(germanLabels(read(GERMAN_UI)))).toHaveLength(5);
+    expect(Object.keys(germanLabels(read(GERMAN_UI)))).toHaveLength(6);
     expect(read(TABS_LAYOUT)).toContain('LABELS_FIT_UP_TO');
     // The third file this reads, added with the locale assertion below and named
     // here for the same reason as the other two: a moved file empties a match
@@ -83,16 +85,21 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
     // The whole point of the file. `Mitmachen` becoming `Engagieren` is nine
     // characters where there were nine, and `Mediathek` becoming `Audio & Video`
     // is not — and nothing else in the repository would notice either.
-    expect(germanLabels(read(GERMAN_UI))).toEqual(MEASURED_LABELS);
+    // "Mehr" is the sixth, and four letters shorter than the widest of the five.
+    const { 'ui.tabMore': more, ...five } = germanLabels(read(GERMAN_UI));
+    expect(five).toEqual(MEASURED_LABELS);
+    expect(more).toBe('Mehr');
   });
 
   it('declares those five ids in the tab bar itself', () => {
     // The other end of the same string. A tab renamed in `_layout.tsx` takes a new
     // id with it, the catalogue keeps the old one, and the assertion above would
     // pass while the bar drew something nobody measured.
-    const declared = [...read(TABS_LAYOUT).matchAll(/id: '(ui\.tab\w+)'/g)].map(([, id]) => id);
+    // "Mehr" is the sixth label, drawn only when the bar overflows. It is one short word,
+    // and it replaces a tab rather than adding one, so the bar is never wider than five.
+    const declared = [...read(TAB_TARGETS).matchAll(/id: '(ui\.tab\w+)'/g)].map(([, id]) => id);
 
-    expect(declared.sort()).toEqual(Object.keys(MEASURED_LABELS).sort());
+    expect(declared.sort()).toEqual([...Object.keys(MEASURED_LABELS), 'ui.tabMore'].sort());
   });
 
   it('still carries the threshold those five words produced', () => {

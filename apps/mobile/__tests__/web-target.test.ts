@@ -209,25 +209,15 @@ describe('web target', () => {
     expect(offenders.map((f) => relative(SRC, f))).toEqual([]);
   });
 
-  it('declares the same five tab labels on both targets', () => {
-    // The two tab bars are drawn by different files with nothing between them to
-    // import a constant through, so the five labels are written out twice. One
-    // shape of drift is already caught elsewhere: the same id with two different
-    // English defaults changes what `npm run i18n:extract` produces, and
-    // `localisation-seam.test.ts` compares that against the committed `en.json`.
-    // Every other shape is silent. A web tab reusing an id that already exists
-    // extracts to the same catalogue, keeps its German, and ships a bar with two
-    // tabs called "Home" past a fully green `npm run check` — verified.
-    //
-    // So the agreement is checked where it is written: key, id, default and order,
-    // one row per tab, both files.
-    const native = tabLabels('app/(tabs)/_layout.tsx');
-
-    // Also the guard against a parse that matched nothing, since two empty lists
-    // are equal. A default containing an apostrophe would land here rather than
-    // pass quietly — the row is dropped and the count is wrong.
-    expect(native).toHaveLength(5);
-    expect(tabLabels('app/(tabs)/_layout.web.tsx')).toEqual(native);
+  it('declares the tab labels once, in lib/tabTargets.ts, for all three bars', () => {
+    // The bars used to write their five labels out twice and this compared the copies.
+    // They now draw from one declaration (ADR 0071 §4), so what is held is that the
+    // declaration is read and that neither layout grows a set of its own again.
+    // Five destinations and "Mehr"; an empty parse would equal nothing here.
+    expect(tabLabels('lib/tabTargets.ts')).toHaveLength(6);
+    for (const layout of ['app/(tabs)/_layout.tsx', 'app/(tabs)/_layout.web.tsx']) {
+      expect(readFileSync(resolve(SRC, layout), 'utf8')).not.toContain('defineMessages');
+    }
   });
 
   it('never imports from expo-router/tabs', () => {

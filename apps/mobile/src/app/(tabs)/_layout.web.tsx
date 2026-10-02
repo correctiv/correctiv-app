@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import { defineMessages, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
 import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { tabReachable } from '@/lib/features';
 import { railScreenOptions, renderRailTabBar } from '@/lib/navigation/railTabs';
-import { useReachable } from '@/lib/store/core';
+import { declaredTabRoutes, tabBar } from '@/lib/navigation/tabBar';
+import { TAB_TARGETS } from '@/lib/tabTargets';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
@@ -30,41 +30,6 @@ import { sizes, spacingPx, useColors } from '@/lib/theme';
  */
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
-
-/**
- * The five tab labels, in ENGLISH; the German ships in
- * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
- *
- * **The same five ids are declared in `_layout.tsx`, with the same defaults.** The two
- * files draw the bar differently and share nothing they could import a constant
- * through, so the agreement is enforced instead of arranged: `npm run
- * i18n:extract` runs with `--throws`, which fails on one id carrying two
- * different English defaults, and `__tests__/localisation-seam.test.ts` fails if
- * an id loses its German. One set of ids, one German word per tab, on both
- * targets.
- */
-const COPY = defineMessages({
-  home: { id: 'ui.tabHome', defaultMessage: 'Home' },
-  discover: {
-    id: 'ui.tabDiscover',
-    defaultMessage: 'Discover',
-    description:
-      'A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens.',
-  },
-  mediathek: { id: 'ui.tabMediathek', defaultMessage: 'Mediathek' },
-  participate: {
-    id: 'ui.tabParticipate',
-    defaultMessage: 'Take part',
-    description:
-      'A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens.',
-  },
-  profile: {
-    id: 'ui.tabProfile',
-    defaultMessage: 'Profile',
-    description:
-      'A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens.',
-  },
-});
 
 /**
  * An explicit height, because the mini player has to sit exactly on top of the tab
@@ -95,8 +60,8 @@ export default function TabsLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const reachable = useReachable();
-  const tab = (route: string) => tabReachable(route, reachable);
+  const { bar } = tabBar();
+  const routes = declaredTabRoutes(bar);
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
 
   const rail = width >= sizes.railBreakpoint;
@@ -147,47 +112,24 @@ export default function TabsLayout() {
           tabBarItemStyle: { paddingHorizontal: spacingPx['3xs'] },
         }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: intl.formatMessage(COPY.home),
-            tabBarIcon: tabIcon('home', 'home-outline'),
-          }}
-        />
-        <Tabs.Protected guard={tab('entdecken')}>
-          <Tabs.Screen
-            name="entdecken"
-            options={{
-              title: intl.formatMessage(COPY.discover),
-              tabBarIcon: tabIcon('compass', 'compass-outline'),
-            }}
-          />
-        </Tabs.Protected>
-        <Tabs.Protected guard={tab('mediathek')}>
-          <Tabs.Screen
-            name="mediathek"
-            options={{
-              title: intl.formatMessage(COPY.mediathek),
-              tabBarIcon: tabIcon('play-circle', 'play-circle-outline'),
-            }}
-          />
-        </Tabs.Protected>
-        <Tabs.Protected guard={tab('mitmachen')}>
-          <Tabs.Screen
-            name="mitmachen"
-            options={{
-              title: intl.formatMessage(COPY.participate),
-              tabBarIcon: tabIcon('people', 'people-outline'),
-            }}
-          />
-        </Tabs.Protected>
-        <Tabs.Screen
-          name="profil"
-          options={{
-            title: intl.formatMessage(COPY.profile),
-            tabBarIcon: tabIcon('person', 'person-outline'),
-          }}
-        />
+        {routes.map((route) => {
+          const target = TAB_TARGETS[route]!;
+          // In the bar, or reachable from "Mehr" without a button, or not there at all.
+          const shown = bar.tabs.includes(route);
+          const behindMore = bar.more.includes(route);
+          return (
+            <Tabs.Protected key={route} guard={shown || behindMore}>
+              <Tabs.Screen
+                name={route}
+                options={{
+                  title: intl.formatMessage(target.label),
+                  tabBarIcon: tabIcon(target.ionicon.active, target.ionicon.inactive),
+                  ...(shown ? null : { href: null }),
+                }}
+              />
+            </Tabs.Protected>
+          );
+        })}
       </Tabs>
 
       {/*

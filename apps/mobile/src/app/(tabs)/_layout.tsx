@@ -1,11 +1,11 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { defineMessages, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { tabReachable } from '@/lib/features';
 import { RailTabs } from '@/lib/navigation/railTabs';
-import { useReachable } from '@/lib/store/core';
+import { declaredTabRoutes, tabBar } from '@/lib/navigation/tabBar';
+import { TAB_TARGETS } from '@/lib/tabTargets';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, useColors } from '@/lib/theme';
 
@@ -32,41 +32,6 @@ import { sizes, useColors } from '@/lib/theme';
  * See ADR 0013 for what this costs, which is not nothing: the API is alpha, all five
  * tabs now mount eagerly, and the bar's height can no longer be measured.
  */
-
-/**
- * The five tab labels, in ENGLISH; the German ships in
- * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
- *
- * **The same five ids are declared in `_layout.web.tsx`, with the same defaults.** The two
- * files draw the bar differently and share nothing they could import a constant
- * through, so the agreement is enforced instead of arranged: `npm run
- * i18n:extract` runs with `--throws`, which fails on one id carrying two
- * different English defaults, and `__tests__/localisation-seam.test.ts` fails if
- * an id loses its German. One set of ids, one German word per tab, on both
- * targets.
- */
-const COPY = defineMessages({
-  home: { id: 'ui.tabHome', defaultMessage: 'Home' },
-  discover: {
-    id: 'ui.tabDiscover',
-    defaultMessage: 'Discover',
-    description:
-      'A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens.',
-  },
-  mediathek: { id: 'ui.tabMediathek', defaultMessage: 'Mediathek' },
-  participate: {
-    id: 'ui.tabParticipate',
-    defaultMessage: 'Take part',
-    description:
-      'A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens.',
-  },
-  profile: {
-    id: 'ui.tabProfile',
-    defaultMessage: 'Profile',
-    description:
-      'A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens.',
-  },
-});
 
 const IS_IOS = Platform.OS === 'ios';
 
@@ -140,10 +105,13 @@ export default function TabsLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, fontScale } = useWindowDimensions();
-  const reachable = useReachable();
+  // Decided once per process: the navigator cannot change its triggers without losing the
+  // state of every tab, so a fetched navigation applies on the next start (ADR 0071 §6).
+  const { bar } = tabBar();
   // Hidden is how a native tab is withheld: the navigator treats it as protected, so its
-  // address resolves to not-found as well (ADR 0072 §5).
-  const hidden = (route: string) => !tabReachable(route, reachable);
+  // address resolves to not-found as well (ADR 0072 §5). An overflow entry is hidden too,
+  // and Mehr opens it by route.
+  const hidden = (route: string) => !bar.tabs.includes(route);
 
   if (width >= sizes.railBreakpoint) {
     return <RailTabs />;
@@ -177,10 +145,10 @@ export default function TabsLayout() {
   const labelVisibilityMode = fontScale > LABELS_FIT_UP_TO ? 'selected' : 'labeled';
 
   /*
-   * Five triggers, written out rather than mapped. Android's Material tabs cap at
-   * five, so this list is at its limit — a sixth is a redesign, not an edit, and
-   * spelling them out is what makes that visible at the point where someone would
-   * add one.
+   * At most five triggers show, "Mehr" included: Android's Material tabs throw on a sixth
+   * and iOS folds a sixth into its own "More", which cannot be switched off. The parser
+   * and `arrangeTabBar` hold that number; every route is declared so that an overflow
+   * entry stays reachable, and the ones the bar does not show are `hidden`.
    */
   const tabs = (
     <NativeTabs
@@ -209,45 +177,15 @@ export default function TabsLayout() {
        */
       labelVisibilityMode={labelVisibilityMode}
     >
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.home)}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'house', selected: 'house.fill' }}
-          md={{ default: 'home', selected: 'home' }}
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="entdecken" hidden={hidden('entdecken')}>
-        <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.discover)}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'safari', selected: 'safari.fill' }}
-          md={{ default: 'explore', selected: 'explore' }}
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="mediathek" hidden={hidden('mediathek')}>
-        <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.mediathek)}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'play.circle', selected: 'play.circle.fill' }}
-          md={{ default: 'play_circle', selected: 'play_circle' }}
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="mitmachen" hidden={hidden('mitmachen')}>
-        <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.participate)}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'person.2', selected: 'person.2.fill' }}
-          md={{ default: 'groups', selected: 'groups' }}
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="profil">
-        <NativeTabs.Trigger.Label>{intl.formatMessage(COPY.profile)}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
-          md={{ default: 'account_circle', selected: 'account_circle' }}
-        />
-      </NativeTabs.Trigger>
+      {declaredTabRoutes(bar).map((route) => {
+        const target = TAB_TARGETS[route]!;
+        return (
+          <NativeTabs.Trigger key={route} name={route} hidden={hidden(route)}>
+            <NativeTabs.Trigger.Label>{intl.formatMessage(target.label)}</NativeTabs.Trigger.Label>
+            <NativeTabs.Trigger.Icon sf={target.sf} md={target.md} />
+          </NativeTabs.Trigger>
+        );
+      })}
 
       {/*
         iOS has a slot for exactly this: the bar above the tab bar that Apple Music

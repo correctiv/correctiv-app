@@ -10,7 +10,12 @@
 import { readFileSync } from 'node:fs';
 
 import { parseHomeLayout } from '../src/lib/home-layout';
-import { CONFIGURABLE_SCREENS, screenDocumentOf } from '../src/lib/screen-layout';
+import { parseNavigation } from '../src/lib/navigation';
+import {
+  CONFIGURABLE_SCREENS,
+  navigationDocumentOf,
+  screenDocumentOf,
+} from '../src/lib/screen-layout';
 
 const path = process.argv[2];
 if (!path) {
@@ -42,6 +47,23 @@ for (const screen of CONFIGURABLE_SCREENS) {
     failed = true;
   } else {
     console.log(`${path}: ${screen}: ${layout.sections.length} sections, no problems`);
+  }
+}
+const navigation = navigationDocumentOf(body);
+if (navigation === undefined) {
+  console.error(`${path}: navigation: missing`);
+  failed = true;
+} else {
+  const parsed = parseNavigation(navigation);
+  for (const problem of parsed.problems)
+    console.error(`${path}: navigation: ${problem.code} ${JSON.stringify(problem.context)}`);
+  if (!parsed.navigation) {
+    console.error(`${path}: navigation: refused`);
+    failed = true;
+  } else {
+    console.log(
+      `${path}: navigation: ${parsed.navigation.tabs.length} tabs after Home, no problems`,
+    );
   }
 }
 process.exit(failed ? 1 : 0);
