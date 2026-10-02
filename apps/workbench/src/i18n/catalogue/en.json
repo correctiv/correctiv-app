@@ -2032,6 +2032,26 @@
     "defaultMessage": "Search tags",
     "description": "Placeholder and accessible name of the search field above the tag picker."
   },
+  "home.setting.text.aboutLanguage": {
+    "defaultMessage": "This field writes the language this workbench is in. German is required and every other language may be missing; a gap is a mark, never a fault.",
+    "description": "The explanation behind the mark on a text setting’s field, saying why there is one field rather than one per language: German is the language a document has to carry, every other may be missing, and nothing here refuses anything."
+  },
+  "home.setting.text.bound": {
+    "defaultMessage": "{count} characters at most.",
+    "description": "The explanation behind the remaining-characters count of a text setting, for a text declared as one line. {count} is the bound in characters, which comes from the block’s declaration rather than from this tool."
+  },
+  "home.setting.text.boundMultiline": {
+    "defaultMessage": "{count} characters at most, and the text may run over several lines.",
+    "description": "The explanation behind the remaining-characters count of a text setting, for a text whose declaration allows a line break. {count} is the bound in characters, which comes from the block’s declaration rather than from this tool."
+  },
+  "home.setting.text.charsLeft": {
+    "defaultMessage": "{count, plural, =0 {No characters left} one {# character left} other {# characters left}}",
+    "description": "Beside a field for a text setting: how much of the bound its declaration gives is still free. {count} is that number of characters, never negative while the field is being typed in."
+  },
+  "home.setting.text.missing": {
+    "defaultMessage": "{language} is missing",
+    "description": "The mark on a block card beside the field of a text setting, for a language the word does not carry. {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and never the word being typed — a gap is a mark and not a fault (ADR 0075 §2)."
+  },
   "home.setting.unknown.what": {
     "defaultMessage": "No description for it.",
     "description": "Under a setting the core declares that SETTING_LABELS has no entry for, where the label above it is the setting’s raw key. home.module.unknown.what is the same kind of stand-in one level up, for a whole module, and says more because a module’s id says less about it than a setting’s key does."

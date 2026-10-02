@@ -43,10 +43,15 @@ import {
 
 import {
   settingsFor,
+  textBoundOf,
+  TEXT_FALLBACK_LANGUAGE,
+  TEXT_LANGUAGES,
   type CountSetting,
   type LocalisedText,
   type SettingSpec,
+  type TextSetting,
 } from '@correctiv/app-core/lib/home-settings';
+import type { Locale } from '@correctiv/app-core/stores/settings';
 
 import { say, wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 
@@ -551,6 +556,192 @@ export function settingLabel(module: string, spec: SettingSpec): ModuleWords {
 
 export { formatTimeOfDay, settingsFor, type CountSetting, type SettingSpec };
 
+// --- a word, the fifth kind of setting ---------------------------------------------
+
+/**
+ * What a field for a `text` shows and edits, and the rules the four functions below hold
+ * to, in one place because the panel is not where a decision about a document belongs.
+ *
+ * ## One field, for the language this site is in
+ *
+ * [ADR 0075](../../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §2 makes German the one language a word has to carry and every other language
+ * optional, and this is the editor's half of that: the field writes **the language the
+ * workbench interface is in**, and the others are a mark. A field per language would be
+ * the other arrangement and it is the one §2 refuses, because a required field somebody
+ * has to get past gets filled with the German, and then nothing distinguishes a
+ * translation from a placeholder. So a newsroom that works in German never sees an empty
+ * English field asking to be filled, and one that works in English writes English without
+ * leaving German behind.
+ *
+ * **The value that is written is the whole word, not one key of it.** Settings merge key
+ * by key and this key holds every language, which is what `withSetting` above can write
+ * and what the parser reads; a field that wrote only the language being edited would need
+ * the core to merge language by language, and the core's rule is deliberately the smaller
+ * one: a document holds a word or it holds none.
+ *
+ * ## What a write may produce
+ *
+ * `withWord` is where the core's own refusal is kept out of the document, because this
+ * editor is the half that can know: a word without a German is a fault
+ * (`text-german-missing`) and a fault in a setting takes the whole place with it
+ * (`home-layout.ts` refuses the section), so a field that let the German be cleared while
+ * an English stood would lose the block rather than a word. Clearing the last language
+ * therefore takes the setting out, and the block's own words come back — which is the
+ * same answer every other setting gives, and the reason a field with a German in it shows
+ * the German of the block when the document says nothing.
+ */
+
+/** What one setting says in words, or the block's own when the document says none. */
+export function wordsOf(spec: SettingSpec, value: unknown): LocalisedText | null {
+  if (spec.kind !== 'text') return null;
+  if (asWords(value) !== null) return value as LocalisedText;
+  return spec.fallback;
+}
+
+/**
+ * Whether a language's word is really there.
+ *
+ * Blank is missing, which is what `resolveText` does with it — it falls back rather than
+ * drawing an empty heading — and what `faultOf` refuses for German. A string of spaces is
+ * therefore no word in either, and trimming is the one test both halves agree on.
+ */
+export function holdsWord(
+  words: Readonly<Record<string, string | undefined>> | null | undefined,
+  language: Locale,
+): boolean {
+  const one = words?.[language];
+  return typeof one === 'string' && one.trim().length > 0;
+}
+
+/**
+ * The languages a word is missing in, and never the one the field is writing.
+ *
+ * `TEXT_LANGUAGES` rather than the keys the word happens to carry, because the point of
+ * the mark is a language somebody has NOT written: the field is the other one, and a mark
+ * about the language being typed would move under the cursor.
+ */
+export function languagesMissing(
+  words: Readonly<Record<string, string | undefined>> | null | undefined,
+  editing: Locale,
+): Locale[] {
+  return TEXT_LANGUAGES.filter((language) => language !== editing && !holdsWord(words, language));
+}
+
+/** How much of the bound a text has left, negative when a document arrived over it. */
+export function charsLeft(text: string, spec: TextSetting): number {
+  return textBoundOf(spec).maxChars - text.length;
+}
+
+/**
+ * What the document says after somebody typed one language of a word.
+ *
+ * `undefined` means "write nothing", which is how a field takes a word out: an emptied
+ * language is deleted rather than written empty, because an empty string is a value the
+ * app has to fall back from and a missing one is a value the block never had. And a word
+ * left without its German is not a word at all, so that is `undefined` too, with every
+ * other language it would have dragged along.
+ */
+export function withWord(
+  words: Readonly<Record<string, string | undefined>> | null | undefined,
+  language: Locale,
+  text: string,
+): SettingValue | undefined {
+  const next: Record<string, string | undefined> = { ...words };
+  if (text.trim() === '') delete next[language];
+  else next[language] = text;
+  const german = next[TEXT_FALLBACK_LANGUAGE];
+  if (german === undefined || german.trim() === '') return undefined;
+  return { ...next, de: german };
+}
+
+/**
+ * Two setting values, compared the way a document compares them.
+ *
+ * `===` for the four scalar kinds, and key by key for a word, because the fifth kind is
+ * the only one whose value is an object: the parser hands this tool a fresh object per
+ * parse, `withSetting` compares a value against what the point inherits, and `===` on
+ * two objects that hold the same words says they differ. That is not only a badge that
+ * lights when nothing was set — it is a moment written for a word nobody changed, which
+ * is the thing the whole model exists to avoid writing.
+ */
+export function sameSettingValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  const left = asWords(a);
+  const right = asWords(b);
+  if (left === null || right === null) return false;
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...keys].every((language) => left[language] === right[language]);
+}
+
+/** A value that is a word, or null for anything else, including a string and an array. */
+function asWords(value: unknown): Readonly<Record<string, string | undefined>> | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  return value as Readonly<Record<string, string | undefined>>;
+}
+
+// --- what a word's field says -------------------------------------------------------
+
+/** The characters left, and where a number that reads as a caption stays one. */
+export const TEXT_CHARS_LEFT = wbMessage({
+  id: 'home.setting.text.charsLeft',
+  defaultMessage:
+    '{count, plural, =0 {No characters left} one {# character left} other {# characters left}}',
+  description:
+    'Beside a field for a text setting: how much of the bound its declaration gives is still free. {count} is that number of characters, never negative while the field is being typed in.',
+});
+
+/**
+ * The mark on a language the word does not carry, naming it in the reader's language.
+ *
+ * `Intl.DisplayNames` and not a table here for the reason the repository's own language
+ * picker writes „Englisch“ and „Deutsch“ in their own language: a reader leaving German is
+ * answered in the language they are trying to leave, and `Intl` knows the name in every
+ * language this site will ever have without anything being added when it gets one.
+ */
+export const TEXT_LANGUAGE_MISSING = wbMessage({
+  id: 'home.setting.text.missing',
+  defaultMessage: '{language} is missing',
+  description:
+    'The mark on a block card beside the field of a text setting, for a language the word does not carry. {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and never the word being typed — a gap is a mark and not a fault (ADR 0075 §2).',
+});
+
+/** Behind the mark: which language the field writes, and what a gap costs. */
+export const TEXT_ABOUT_LANGUAGE = wbMessage({
+  id: 'home.setting.text.aboutLanguage',
+  defaultMessage:
+    'This field writes the language this workbench is in. German is required and every other language may be missing; a gap is a mark, never a fault.',
+  description:
+    'The explanation behind the mark on a text setting’s field, saying why there is one field rather than one per language: German is the language a document has to carry, every other may be missing, and nothing here refuses anything.',
+});
+
+/** Behind the count: where the bound comes from. */
+export const TEXT_BOUND = wbMessage({
+  id: 'home.setting.text.bound',
+  defaultMessage: '{count} characters at most.',
+  description:
+    'The explanation behind the remaining-characters count of a text setting, for a text declared as one line. {count} is the bound in characters, which comes from the block’s declaration rather than from this tool.',
+});
+
+/** The same, where the declaration says the text may run over several lines. */
+export const TEXT_BOUND_MULTILINE = wbMessage({
+  id: 'home.setting.text.boundMultiline',
+  defaultMessage: '{count} characters at most, and the text may run over several lines.',
+  description:
+    'The explanation behind the remaining-characters count of a text setting, for a text whose declaration allows a line break. {count} is the bound in characters, which comes from the block’s declaration rather than from this tool.',
+});
+
+/**
+ * A language in the reader's own language, which is what `Intl.DisplayNames` is for.
+ *
+ * `type: 'language'` and not the default, which names a region: `de` is German and
+ * Germany, and only the first is what a mark about a word means. The fallback is the code
+ * itself, so a language this browser cannot name is still a language somebody can see.
+ */
+export function languageName(intl: IntlShape, language: Locale): string {
+  return intl.formatDisplayName(language, { type: 'language' }) ?? language;
+}
+
 // --- where in the day -----------------------------------------------------------
 
 /**
@@ -1033,7 +1224,7 @@ export function withSetting(
     value !== undefined &&
     readersFor(audience).every((one) => {
       const inherited = inheritedSetting(layout, point, id, key, one);
-      return inherited !== undefined && sameValue(inherited, value);
+      return inherited !== undefined && sameSettingValue(inherited, value);
     });
   const next = same || value === undefined ? undefined : value;
 
@@ -1088,11 +1279,6 @@ function fallbackOf(module: string, key: string): SettingValue | undefined {
 function valueOf(section: HomeSection, key: string): SettingValue | undefined {
   const held = section.settings?.[key];
   return held !== undefined ? held : fallbackOf(section.module, key);
-}
-
-/** Two setting values, compared the way a document compares them. */
-function sameValue(a: SettingValue, b: SettingValue): boolean {
-  return a === b;
 }
 
 /**
@@ -1173,7 +1359,7 @@ function settledChange(
     const value = next.settings?.[key];
     const restated = held.every((section) => {
       const was = valueOf(section, key);
-      return value !== undefined && was !== undefined && sameValue(was, value);
+      return value !== undefined && was !== undefined && sameSettingValue(was, value);
     });
     if (restated) next = withKey(next, key, undefined);
   }
@@ -1417,7 +1603,7 @@ export function writeSetting(
         (section) => section.id === id,
       );
       const inherited = before ? valueOf(before, key) : undefined;
-      return inherited !== undefined && sameValue(inherited, value);
+      return inherited !== undefined && sameSettingValue(inherited, value);
     });
   const next = same || value === undefined ? undefined : value;
   return withEditionChange(layout, target.edition.id, target.point, id, reader, (change) =>
@@ -2121,13 +2307,29 @@ function settingsEntries(module: string, settings: ModuleSettings): Obj {
   const specs = settingsFor(module);
   const known = specs
     .filter((spec) => settings[spec.key] !== undefined)
-    .map((spec) => [spec.key, settings[spec.key]] as const);
+    .map((spec) => [spec.key, printableValue(settings[spec.key]!)] as const);
   // A key no module declares cannot be written by this editor and would not parse, so it
   // is here only to keep the printer total: printing is not where a document is judged.
   const rest = Object.keys(settings)
     .filter((key) => !specs.some((spec) => spec.key === key))
-    .map((key) => [key, settings[key]] as const);
+    .map((key) => [key, printableValue(settings[key]!)] as const);
   return obj([...known, ...rest]);
+}
+
+/**
+ * A settings value in the shape the printer holds values.
+ *
+ * A word is the one value here that is a plain object rather than a tagged `Obj`, and
+ * `flat()` hands such a value to `JSON.stringify`, which writes `{"de":"Mitmachen"}` where
+ * the repository's formatter writes `{ "de": "Mitmachen" }`. So a value with languages in
+ * it goes through the same `wordEntries` a screen's own words do, and that is the whole of
+ * the difference: a document whose settings carry words is printed the way oxfmt prints
+ * it, which `test/preview/home-document.test.ts` runs the formatter over. Asked of the
+ * value and not of the declaration, because no module declares a `text` yet and the key
+ * of such a setting therefore arrives through the branch below, which has no spec to ask.
+ */
+function printableValue(value: SettingValue): unknown {
+  return asWords(value) === null ? value : wordEntries(value as LocalisedText);
 }
 
 /**
