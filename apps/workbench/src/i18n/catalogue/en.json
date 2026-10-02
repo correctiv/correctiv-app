@@ -1520,7 +1520,8 @@
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
   },
   "home.document.follow": {
-    "defaultMessage": "Scroll the frame to the block you point at"
+    "defaultMessage": "Scroll the frame to the block you point at",
+    "description": "The tooltip, and the accessible name, of the button in the editor’s bar that switches following the pointer on and off. It was a checkbox with this sentence beside it, which took a row of the panel that the block list wanted."
   },
   "home.document.refused": {
     "defaultMessage": "refused",
@@ -1528,30 +1529,34 @@
   },
   "home.document.rule": {
     "defaultMessage": "A moment holds only what changes at that time. Everything else carries on as before.",
-    "description": "Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
+    "description": "Behind the ⓘ in the card under the chip, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
   },
   "home.document.scenarioGuard": {
     "defaultMessage": "Scenarios are examples. They are not submitted.",
-    "description": "Under the switched-off Submit changes, and under the switched-off Save on a dev server, while a scenario is open or the document still holds one. Submitting or saving it would publish the example on every phone."
+    "description": "Inside the ⓘ beside Submit while a scenario is open or the document still holds one, which is why the switched-off Submit and the switched-off Save in the header are off. Submitting or saving it would publish the example on every phone."
   },
   "home.document.screen": {
     "defaultMessage": "Screen",
-    "description": "The label of the picker at the top of the layout tool, which chooses which of the app’s screens is being edited. One word, beside a drop-down."
+    "description": "The legend of the icon switcher at the top of the layout tool, which chooses which of the app’s screens is being edited. Read aloud rather than drawn, because each of the five segments is named by the screen it switches to."
   },
   "home.document.screenLocked": {
     "defaultMessage": "A scenario is a Home document, so the screen stays on Home while one is open.",
-    "description": "Under the screen picker while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens."
+    "description": "Under the screen switcher while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens."
+  },
+  "home.document.submitAbout": {
+    "defaultMessage": "Submitting the change",
+    "description": "Names the ⓘ in the editor’s bar, which is what this ⓘ explains: what the Submit button in the header does with the change. The tooltip names the topic, as every ⓘ on this site does."
   },
   "home.document.submitCopied": {
     "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."
   },
   "home.document.submitHint": {
     "defaultMessage": "GitHub opens with your change filled in. One click on “Create” submits it. You need a GitHub account.",
-    "description": "The one line under Submit changes. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
+    "description": "Inside the ⓘ beside Submit, which is what the Submit button in the header does. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
   },
   "home.document.submitHintLong": {
     "defaultMessage": "This change is too long for a link. The click copies it to your clipboard, and you paste it in on GitHub. You need a GitHub account.",
-    "description": "Stands in for home.document.submitHint when the change is too long to travel in the address, so it has to go by the clipboard."
+    "description": "Stands in for home.document.submitHint inside the ⓘ when the change is too long to travel in the address, so it has to go by the clipboard."
   },
   "home.document.submitNoClipboard": {
     "defaultMessage": "The browser did not let this page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
@@ -1797,12 +1802,21 @@
     "defaultMessage": "Add a block",
     "description": "The heading of the dialog that hairline opens. home.palette.addHere is the hairline’s own name and says where as well; this one is read under it and does not."
   },
+  "home.point.close": {
+    "defaultMessage": "The point being edited: {point}. Hide its time, its rule and what can be done to it.",
+    "description": "The accessible name of that chip while the card is expanded. {point} is the time of day as 14:00, or home.point.start for the day itself."
+  },
   "home.point.midnight": {
     "defaultMessage": "midnight",
     "description": "Stands where a time of day would, for the end of the last stretch of the day. Reads inside home.point.startLead and home.point.span."
   },
   "home.point.noMoments": {
-    "defaultMessage": "This day has no moments. The home screen looks the same all day."
+    "defaultMessage": "This day has no moments. The home screen looks the same all day.",
+    "description": "Inside the expanded card while the day being edited has no moments at all, which is what the card has to say rather than an empty time field."
+  },
+  "home.point.open": {
+    "defaultMessage": "The point being edited: {point}. Show its time, its rule and what can be done to it.",
+    "description": "The accessible name of the chip that opens the card under it, on the closed chip. {point} is the time of day as 14:00, or home.point.start for the day itself. The same chip says home.point.close while it is open, because a control whose name does not change with its state is a control that does not say which state it is in."
   },
   "home.point.remove": {
     "defaultMessage": "Remove the moment at {time}",
@@ -1810,19 +1824,23 @@
   },
   "home.point.span": {
     "defaultMessage": "until {until} · {changes, plural, =0 {nothing changes here yet} other {# changed here}}",
-    "description": "Beside the time field: how long this moment lasts and how much it changes. {until} is when the next point takes over, as 18:30, or the word for midnight; {changes} is how many blocks this moment differs on."
+    "description": "Beside the time on the chip, and nowhere else: how long this moment lasts and how much it changes. The card under the chip says neither, because the chip is thirty pixels above it and says both. {until} is when the next point takes over, as 18:30, or the word for midnight; {changes} is how many blocks this moment differs on."
   },
   "home.point.start": {
     "defaultMessage": "The day’s start",
-    "description": "Names the point being edited when it is the document itself rather than one of its moments."
+    "description": "Names the point being edited when it is the document itself rather than one of its moments. On the chip, and in the expanded card under it."
   },
   "home.point.startLead": {
     "defaultMessage": "from midnight until {until}",
-    "description": "Beside the day’s start, the way home.point.span stands beside a moment: how long it lasts. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none. That every moment builds on it is behind the ⓘ beside it, home.document.rule."
+    "description": "Beside the day’s start in the card under the chip, and nothing else: the chip says the same thing in home.point.startUntil, which drops the half the chip’s own label already carries. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none. That every moment builds on it is behind the ⓘ in the card, home.document.rule."
+  },
+  "home.point.startUntil": {
+    "defaultMessage": "bis {until}",
+    "description": "Beside “The day’s start” on the chip, the way home.point.span stands beside a moment: when the first moment takes over. The full sentence is home.point.startLead, which the card under the chip shows. {until} is that time as 11:00, or the word for midnight where the day has none."
   },
   "home.point.time": {
     "defaultMessage": "The time of this moment",
-    "description": "The label of the time field at the head of the editor. Read aloud, not drawn."
+    "description": "The name of the chip that opens the expanded card, read out when it carries an icon rather than the time as its own words."
   },
   "home.row.changed": {
     "defaultMessage": "changed",
@@ -2601,7 +2619,7 @@
   },
   "scenarios.label": {
     "defaultMessage": "Scenario",
-    "description": "The label of the select that opens a named example of the home screen, such as the election night, in the editor and the frame."
+    "description": "The name of the select that opens a named example of the home screen, such as the election night, in the editor and the frame. Read aloud rather than drawn: the select stands in a row of the editor’s bar beside the screen switcher, where its own label would take a row to itself, and the trigger carries the open scenario’s name."
   },
   "scenarios.live": {
     "defaultMessage": "All content is live.",

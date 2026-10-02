@@ -7,6 +7,16 @@ export interface SegmentedOption {
   label: ReactNode;
   /** One segment that cannot be chosen while the rest can: `an` for a feature with sample data only. */
   disabled?: boolean;
+  /**
+   * The name of this option, when `label` is an icon rather than words.
+   *
+   * **A radio whose only child is a glyph announces "radio button, not selected"
+   * and stops**, which is a switch five people cannot tell apart. `icon: true`
+   * says the segment is drawn square and takes its name from here instead, so the
+   * icon is paint and this is the name — with a tooltip beside it, because the
+   * name a screen reader gets is not one a sighted reader of an icon does.
+   */
+  icon?: { name: string };
 }
 
 interface Props {
@@ -72,12 +82,27 @@ export function Segmented({
               checked={value === option.value}
               onChange={() => onChange(option.value)}
               disabled={option.disabled}
+              /*
+                The name, on the input rather than on the paint beside it: a
+                `sr-only` span inside the label would be announced as part of the
+                label, which a screen reader reads before the role, and the icon
+                after it adds nothing. This way the radio says what it is on its
+                own, which is also what `title` below gives the pointer.
+              */
+              aria-label={option.icon?.name}
               className="peer sr-only"
             />
             <span
+              title={option.icon?.name}
               className={cn(
                 'block cursor-pointer rounded-s px-xs py-3xs text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
+                /*
+                 * An icon segment is square and centres its one glyph, so a row of
+                 * five of them is the size of one wide button rather than five
+                 * narrow ones with the first glyph crowded against the left.
+                 */
+                option.icon && 'grid size-[1.75rem] place-items-center p-0',
                 value === option.value
                   ? 'bg-accent text-white'
                   : 'text-on-canvas-muted hover:bg-surface hover:text-on-canvas',

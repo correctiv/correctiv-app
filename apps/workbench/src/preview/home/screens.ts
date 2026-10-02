@@ -1,3 +1,5 @@
+import { CirclePlay, Compass, House, User, Users, type LucideIcon } from 'lucide-react';
+
 import { parseHomeLayout, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
 import {
   CONFIGURABLE_SCREENS,
@@ -44,6 +46,30 @@ export const SCREEN_ROUTES: Readonly<Record<ConfigurableScreen, string>> = {
   mediathek: '/mediathek',
   mitmachen: '/mitmachen',
   profil: '/profil',
+};
+
+/**
+ * The mark each screen wears in the editor's screen switcher, and the app tab's
+ * own name for the same mark beside it.
+ *
+ * **The same icons as the app's tab bar, in the kit's own set.** `tabTargets.ts`
+ * in the app declares three spellings of every tab icon — SF Symbols, Material
+ * and Ionicons — because three platforms draw three, and it is the Ionicons name
+ * that is recorded here beside the lucide one that gets drawn. The app is not
+ * importable from this half of the repository and its icon components are React
+ * Native's, so the pair is what can be held in step; `test/preview/screen-editor.test.ts`
+ * reads the app's file as text and fails when a screen's name there is not the one
+ * written here, which is the only way this can drift and the reason it is a map
+ * with two entries per row rather than a comment.
+ */
+export const SCREEN_ICONS: Readonly<
+  Record<ConfigurableScreen, { readonly ionicon: string; readonly Icon: LucideIcon }>
+> = {
+  home: { ionicon: 'home', Icon: House },
+  entdecken: { ionicon: 'compass', Icon: Compass },
+  mediathek: { ionicon: 'play-circle', Icon: CirclePlay },
+  mitmachen: { ionicon: 'people', Icon: Users },
+  profil: { ionicon: 'person', Icon: User },
 };
 
 const shipped = new Map<ConfigurableScreen, HomeLayout>();

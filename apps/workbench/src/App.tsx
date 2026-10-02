@@ -38,7 +38,7 @@ import { TooltipProvider } from './ui/kit/tooltip';
 import { ActionsProvider } from './shell/actions';
 import { SlotProvider, SlotTarget, slotsOf } from './shell/slots';
 import { useAddress, type ShellProps } from './shell/address';
-import { resolveView, type SectionId, type ViewKind } from './shell/views';
+import { panelWidthOf, resolveView, type SectionId, type ViewKind } from './shell/views';
 import { cn } from './lib/cn';
 import { useMedia, WIDE } from './lib/useMedia';
 import { PAGE_TITLES, pageTitleText, TITLE_COPY } from './nav';
@@ -260,7 +260,20 @@ export function App() {
    * stated next time.
    */
   const dragged = useRef<string | null>(null);
-  usePanelState(panelRef, panelOpen, () => dragged.current ?? view.panelWidth, wide && !full);
+  /*
+   * `panelWidthOf` rather than `view.panelWidth`, so a tool whose content has a
+   * size of its own opens at that size — the layout editor's column is as wide as
+   * the phone it draws, whatever the window is. The `tool` is passed on as the
+   * thing to re-apply it for: switching tools re-states the width, and the width
+   * somebody dragged to still wins over both, because `dragged` is asked first.
+   */
+  usePanelState(
+    panelRef,
+    panelOpen,
+    () => dragged.current ?? panelWidthOf(view, tool),
+    wide && !full,
+    tool,
+  );
 
   const page = pageFor();
 
@@ -383,7 +396,14 @@ export function App() {
                         panelRef={panelRef}
                         collapsible
                         collapsedSize="0%"
-                        defaultSize={view.panelWidth}
+                        defaultSize={panelWidthOf(view, tool)}
+                        /*
+                         * The floor is fourteen per cent, which on a wide window
+                         * is a column narrower than any tool can use. Nothing
+                         * here changes it: the editor's own default is asked of
+                         * `panelWidthOf`, and a width this small is one somebody
+                         * dragged there on purpose.
+                         */
                         minSize="14%"
                         maxSize="55%"
                         /* Only while a handle is held. Otherwise this fires on the layout

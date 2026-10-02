@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { fit } from '../../src/preview/home/fit';
+import { fit, GUTTER, rowWidth } from '../../src/preview/home/fit';
 
 /**
  * How big a drawn block is and where it stands, run rather than read.
  *
  * ADR 0045 §3 gives one rule — a block draws at the phone's own width and scales DOWN to
- * fit, never up — and the row it stands in gives the other, because ADR 0038 makes the
- * panel a share of the window and the two do not meet on a wide screen.
+ * fit, never up — and the row it stands in gives the other, because a person who drags
+ * the panel wider leaves room on both sides and a drawing flush against the panel's edge
+ * reads as an accident rather than as a phone.
  *
  * Both used to be one-liners inside `HomeBlock.tsx`, where the only check possible was a
  * search for `Math.min` in a file. This repository has been bitten three times in one week
@@ -16,6 +17,24 @@ import { fit } from '../../src/preview/home/fit';
 
 /** The phone this tool opens at. A number here because the case is the arithmetic. */
 const PHONE = 393;
+
+describe('the row a drawing stands in', () => {
+  it('is the phone plus the gutter beside it, and the gutter is a number of its own', () => {
+    expect(GUTTER).toBe(26);
+    expect(rowWidth(PHONE)).toBe(PHONE + GUTTER);
+  });
+
+  it('is what leaves the drawing nothing to be centred in, at the editor’s own width', () => {
+    // The property the panel's default rests on. The row is the gutter beside the
+    // drawing (`HomeBlock`'s shell measures the room it is given, which is the row
+    // less the gutter), so a row of exactly `rowWidth` leaves the drawing the phone's
+    // own width: it fills it, `aside` is nought, and no rounding shows.
+    const shell = rowWidth(PHONE) - GUTTER;
+    expect(shell).toBe(PHONE);
+    expect(fit(shell, PHONE).aside).toBe(0);
+    expect(fit(shell, PHONE).scale).toBe(1);
+  });
+});
 
 describe('a drawing in a row', () => {
   it('draws at the phone’s own width when the row is wide enough', () => {
@@ -37,7 +56,9 @@ describe('a drawing in a row', () => {
   });
 
   it('centres what is left over, and leaves nothing over when it scaled', () => {
-    // Measured at a 2000px window: a 531px row, a 393px drawing, 138px of nothing.
+    // The 531px row is what the panel used to give at a 2000px window: a 393px
+    // drawing and 138px of nothing. The editor now asks the panel for the row it
+    // draws in, so this is the case a dragged-wider panel produces.
     expect(fit(531, PHONE).aside).toBe((531 - PHONE) / 2);
     // And below one there is nothing to centre, because the drawing fills the row.
     expect(fit(308, PHONE).aside).toBe(0);

@@ -24,7 +24,12 @@ import {
   NAVIGATION_FILE,
   NAVIGATION_KEY,
 } from '../../src/preview/home/names';
-import { screenOfRoute, shippedOf, SCREEN_ROUTES } from '../../src/preview/home/screens';
+import {
+  screenOfRoute,
+  SCREEN_ICONS,
+  shippedOf,
+  SCREEN_ROUTES,
+} from '../../src/preview/home/screens';
 import { getLayout, getScreen, setLayout, setScreen } from '../../src/preview/home/store';
 import {
   barOf,
@@ -88,6 +93,56 @@ describe('the screen picker and its palette', () => {
     expect(APP('lib/navigation/tabBar.ts')).toContain(`'${NAVIGATION_KEY}'`);
     for (const screen of CONFIGURABLE_SCREENS)
       expect(read(layoutFile(screen))).toBe(formatLayoutDocument(shippedOf(screen)));
+  });
+});
+
+describe('the screen switcher’s icons', () => {
+  /**
+   * The Ionicons name the app's own tab bar gives each screen, read out of the app's
+   * file as text — the app is not importable from Node and its icon components are
+   * React Native's, so the name is the part that can be compared.
+   *
+   * Read out of `DESTINATIONS` rather than out of the whole file: the label table above
+   * it has a `home:` of its own, and a search for `home: {` in the file at large finds
+   * that one first.
+   */
+  function appIonicon(screen: string): string | null {
+    const table = /export const DESTINATIONS[\s\S]*?\n};/.exec(APP('lib/tabTargets.ts'))![0];
+    /*
+     * `[{ ]active` and not `active`: `inactive:` ends in it, and a search without
+     * the leading character reads `compass-outline` where it means `compass`.
+     */
+    const at = new RegExp(
+      `${screen}:\\s*\\{[\\s\\S]*?ionicon:\\s*\\{[^}]*[{ ]active:\\s*'([^']+)'`,
+    ).exec(table);
+    return at === null ? null : at[1]!;
+  }
+
+  it('gives every screen a mark', () => {
+    expect(Object.keys(SCREEN_ICONS).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
+    for (const screen of CONFIGURABLE_SCREENS) expect(SCREEN_ICONS[screen].Icon).toBeTruthy();
+  });
+
+  it('draws the app’s own tab icon for each of them', () => {
+    // The editor's switcher stands in for the app's tab bar, so a screen marked
+    // differently in the two is a mark somebody has to learn twice. Home is the tab
+    // bar's first entry rather than a row of `DESTINATIONS`, so it is read apart.
+    // One object per screen rather than an `expect` each, as `tool-panel.test.tsx`
+    // does it: a failure names every screen whose mark has drifted, and they drift
+    // together, because the drift is a rename in the app's file.
+    expect(
+      Object.fromEntries(
+        CONFIGURABLE_SCREENS.filter((of) => of !== 'home').map((of) => [
+          of,
+          SCREEN_ICONS[of].ionicon === appIonicon(of) ? 'the app’s mark' : SCREEN_ICONS[of].ionicon,
+        ]),
+      ),
+    ).toEqual(
+      Object.fromEntries(
+        CONFIGURABLE_SCREENS.filter((of) => of !== 'home').map((of) => [of, 'the app’s mark']),
+      ),
+    );
+    expect(SCREEN_ICONS.home.ionicon).toBe('home');
   });
 });
 

@@ -39,11 +39,12 @@ export function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         /*
-         * Left, and out of the panel, by default. The panel this opens in is a narrow dock
-         * (ADR 0038 gives the home tool 31% of the window) and the stage beside it is the
-         * widest empty thing on screen, so a panel opening inward would cover the one
-         * block it is about. `collisionPadding` is what turns that into a preference
-         * rather than a promise: on a window too narrow for it, Radix flips it back.
+         * Left, and out of the panel, by default. The panel this opens in is a narrow
+         * dock — the home tool asks for the width of the phone it draws in, and the
+         * device frame beside it is the widest empty thing on screen — so a panel
+         * opening inward would cover the one block it is about. `collisionPadding` is
+         * what turns that into a preference rather than a promise: on a window too
+         * narrow for it, Radix flips it back.
          *
          * **Which side of what** is the caller's to say, and the home editor says it with
          * a `PopoverAnchor` rather than letting this hang off the button: anchored to the
