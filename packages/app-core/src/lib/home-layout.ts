@@ -673,6 +673,11 @@ function holds(spec: SettingSpec, value: unknown): boolean {
         value >= spec.min &&
         value <= spec.max
       );
+    case 'category':
+    case 'tag':
+      // A WordPress term id, or `null` for "no term"; never `0` and never a slug, which
+      // is editable where an id is not (`data/feeds.config.ts`).
+      return value === null || (typeof value === 'number' && Number.isInteger(value) && value > 0);
   }
 }
 

@@ -1,7 +1,9 @@
 import type {
   ArticleSetting,
+  CategorySetting,
   CountSetting,
   SettingSpec,
+  TagSetting,
 } from '@correctiv/app-core/lib/home-settings';
 
 /**
@@ -76,6 +78,25 @@ import type {
  */
 export const HERO_PIN: ArticleSetting = { key: 'pin', kind: 'article', fallback: null };
 
+/**
+ * The rules of the three blocks with an editorial question about WHAT they draw
+ * (ADR 0057 §2, ADR 0071 §7). The fallback of each is what the block draws today, so a
+ * document that sets none of them changes nothing: no category for the lead and the
+ * investigations, the fact-check category (`FEEDS.faktencheck.categoryId`) for the rail.
+ */
+export const HERO_CATEGORY: CategorySetting = { key: 'category', kind: 'category', fallback: null };
+export const RESEARCH_CATEGORY: CategorySetting = {
+  key: 'category',
+  kind: 'category',
+  fallback: null,
+};
+export const RESEARCH_TAG: TagSetting = { key: 'tag', kind: 'tag', fallback: null };
+export const FACT_CHECK_CATEGORY: CategorySetting = {
+  key: 'category',
+  kind: 'category',
+  fallback: 5,
+};
+
 export const RESEARCH_COUNT: CountSetting = {
   key: 'count',
   kind: 'count',
@@ -95,9 +116,9 @@ export const FACT_CHECK_COUNT: CountSetting = {
 /**
  * Module name, as the document writes it, to the settings it understands.
  *
- * Three settings over two kinds, which is deliberately the smallest table that proves
- * the mechanism: different blocks want different settings, and one of them is the
- * "which article does this block highlight" the product side asked for by name.
+ * Different blocks want different settings: which article one highlights (the product
+ * side asked for that by name), how many a list draws, and which category or tag a rule
+ * reads from.
  *
  * Keyed by a string rather than by the module names `modules.tsx` holds, because typing
  * it against those would mean importing that file and the React Native tree under it —
@@ -106,7 +127,7 @@ export const FACT_CHECK_COUNT: CountSetting = {
  * cannot draw.
  */
 export const HOME_MODULE_SETTINGS: Readonly<Record<string, readonly SettingSpec[]>> = {
-  'article-hero': [HERO_PIN],
-  'latest-research': [RESEARCH_COUNT],
-  'faktencheck-rail': [FACT_CHECK_COUNT],
+  'article-hero': [HERO_PIN, HERO_CATEGORY],
+  'latest-research': [RESEARCH_COUNT, RESEARCH_CATEGORY, RESEARCH_TAG],
+  'faktencheck-rail': [FACT_CHECK_COUNT, FACT_CHECK_CATEGORY],
 };

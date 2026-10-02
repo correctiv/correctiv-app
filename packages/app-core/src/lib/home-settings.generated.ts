@@ -16,7 +16,7 @@ import type { SettingSpec } from './home-settings';
  * first.
  */
 export const MODULE_SETTINGS: Readonly<Record<string, readonly SettingSpec[]>> = {
-  'article-hero': [{ key: 'pin', kind: 'article', fallback: null }],
-  'latest-research': [{ key: 'count', kind: 'count', min: 1, max: 8, fallback: 5 }],
-  'faktencheck-rail': [{ key: 'count', kind: 'count', min: 1, max: 12, fallback: 8 }],
+  'article-hero': [{ key: 'pin', kind: 'article', fallback: null }, { key: 'category', kind: 'category', fallback: null }],
+  'latest-research': [{ key: 'count', kind: 'count', min: 1, max: 8, fallback: 5 }, { key: 'category', kind: 'category', fallback: null }, { key: 'tag', kind: 'tag', fallback: null }],
+  'faktencheck-rail': [{ key: 'count', kind: 'count', min: 1, max: 12, fallback: 8 }, { key: 'category', kind: 'category', fallback: 5 }],
 };

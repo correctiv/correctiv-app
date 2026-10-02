@@ -773,6 +773,29 @@ describe('parseHomeLayout, on the settings a module understands', () => {
     expect(codes(parseHomeLayout(document([rail(2.5)])))).toEqual(['section-setting-invalid']);
   });
 
+  it('takes a category or tag id, or null, and refuses anything that is no term id', () => {
+    const rail = (category: unknown) =>
+      section({ id: 'rail', module: 'faktencheck-rail', settings: { category } });
+    const research = (tag: unknown) =>
+      section({ id: 'latest', module: 'latest-research', settings: { tag } });
+    expect(read(document([rail(172)])).sections[0]?.settings).toEqual({ category: 172 });
+    expect(read(document([rail(null)])).sections[0]?.settings).toEqual({ category: null });
+    expect(read(document([research(2699)])).sections[0]?.settings).toEqual({ tag: 2699 });
+    for (const bad of [0, -3, 1.5, '172', 'klima', true]) {
+      expect(codes(parseHomeLayout(document([rail(bad)])))).toEqual(['section-setting-invalid']);
+      expect(codes(parseHomeLayout(document([research(bad)])))).toEqual([
+        'section-setting-invalid',
+      ]);
+    }
+  });
+
+  it('refuses a kind of setting on a module that does not declare it', () => {
+    const parse = parseHomeLayout(
+      document([section({ id: 'rail', module: 'faktencheck-rail', settings: { tag: 5 } })]),
+    );
+    expect(codes(parse)).toEqual(['section-setting-unknown']);
+  });
+
   /**
    * The rule the brief asked for: a setting a module does not understand is REPORTED,
    * and the rest of the screen survives.

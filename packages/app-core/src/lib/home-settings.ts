@@ -76,7 +76,29 @@ export interface CountSetting {
   readonly fallback: number;
 }
 
-export type SettingSpec = ArticleSetting | CountSetting;
+/**
+ * A WordPress category, by its numeric id, which makes a block's rule configurable
+ * ([ADR 0057](../../../../adr/0057-the-structure-comes-from-the-workbench-the-selection-from-wordpress.md)
+ * §2, ADR 0071 §7).
+ *
+ * The fallback is the category the block draws today (`null` for "every post"), so a
+ * document that sets nothing reproduces the screen as it was. A held `null` is a value,
+ * as it is for a pin: "no category", whatever the fallback says.
+ */
+export interface CategorySetting {
+  readonly key: string;
+  readonly kind: 'category';
+  readonly fallback: number | null;
+}
+
+/** A WordPress tag, by its numeric id. Same meaning as {@link CategorySetting}. */
+export interface TagSetting {
+  readonly key: string;
+  readonly kind: 'tag';
+  readonly fallback: number | null;
+}
+
+export type SettingSpec = ArticleSetting | CountSetting | CategorySetting | TagSetting;
 
 /**
  * Module name, as the document writes it, to the settings it understands.
@@ -109,6 +131,12 @@ type Held = Readonly<Record<string, unknown>> | undefined;
 export function pinnedItem(settings: Held, spec: ArticleSetting): string | null {
   const held = settings?.[spec.key];
   return typeof held === 'string' ? held : spec.fallback;
+}
+
+/** The term a rule asks for: the held id, a held `null` ("none"), or the module's own. */
+export function termOf(settings: Held, spec: CategorySetting | TagSetting): number | null {
+  const held = settings?.[spec.key];
+  return typeof held === 'number' || held === null ? held : spec.fallback;
 }
 
 export function itemCount(settings: Held, spec: CountSetting): number {

@@ -39,7 +39,7 @@ import { rewriteEmbeds } from '../articles/embeds';
 import { estimateReadingMinutes } from '../articles/page-meta';
 import { ratingFromInterpretation } from '../articles/rating';
 import type { ExtractedArticle } from '../articles/types';
-import type { FeedPriority } from '../data/feeds.config';
+import { FEED_PRIORITY, type FeedPriority } from '../data/feeds.config';
 import { plainText, sanitizeArticleHtml, stripTags } from '../lib/html';
 import type { FeedItem, FeedKey } from '../types/models';
 import { fetchJson } from './http';
@@ -335,9 +335,24 @@ export interface WpFeedPage {
 export interface FetchWpFeedOptions {
   /** WordPress category id. Omit for the site-wide stream of every post. */
   categoryId?: number;
+  /** WordPress tag id, for a block whose rule reads a tag (ADR 0071 §7). */
+  tagId?: number;
   /** 1-based, as WordPress counts. */
   page?: number;
   perPage?: number;
+}
+
+/** The query for one page of a feed: its category or tag, and the page asked for. */
+export function feedQuery(options: FetchWpFeedOptions = {}): URLSearchParams {
+  const { categoryId, tagId, page = 1, perPage = 20 } = options;
+  const query = new URLSearchParams({
+    per_page: String(perPage),
+    page: String(page),
+    _fields: LIST_FIELDS,
+  });
+  if (categoryId !== undefined) query.set('categories', String(categoryId));
+  if (tagId !== undefined) query.set('tags', String(tagId));
+  return query;
 }
 
 /**
@@ -353,13 +368,8 @@ export async function fetchWpFeed(
   feed: FeedKey,
   options: FetchWpFeedOptions = {},
 ): Promise<WpFeedPage> {
-  const { categoryId, page = 1, perPage = 20 } = options;
-  const query = new URLSearchParams({
-    per_page: String(perPage),
-    page: String(page),
-    _fields: LIST_FIELDS,
-  });
-  if (categoryId !== undefined) query.set('categories', String(categoryId));
+  const { perPage = 20 } = options;
+  const query = feedQuery(options);
 
   const posts = await fetchPosts(query);
   const list = posts.filter((post) => post?.link);
@@ -380,6 +390,59 @@ export async function fetchWpFeed(
     // stop paging early.
     hasMore: posts.length === perPage,
   };
+}
+
+/**
+ * One published post by its WordPress id, or `null` when there is none.
+ *
+ * A pin stores this id (ADR 0071 §7). A post that was unpublished or deleted answers
+ * 401/404, which `fetchJson` throws; both are the normal "gone" and not a fault, so the
+ * place falls back to its rule (ADR 0036 §8).
+ */
+export async function fetchWpPostById(id: number): Promise<FeedItem | null> {
+  try {
+    const post = await fetchJson<WpPost>(`${API}/posts/${id}?_fields=${LIST_FIELDS}`, {
+      timeoutMs: SEARCH_TIMEOUT_MS,
+    });
+    if (!post || Array.isArray(post) || !post.link) return null;
+    return toFeedItem(post, wpFeedKey(post, FEED_PRIORITY));
+  } catch {
+    return null;
+  }
+}
+
+/** A category or a tag as the editor lists it. */
+export interface WpTerm {
+  id: number;
+  name: string;
+  count: number;
+}
+
+/**
+ * Categories or tags, the most used first. With `search` it is WordPress's own term
+ * search, which is how a tag among thousands is found; without, a list of the first
+ * `perPage`, which holds every category.
+ */
+export async function fetchWpTerms(
+  taxonomy: 'categories' | 'tags',
+  options: { search?: string; perPage?: number } = {},
+): Promise<WpTerm[]> {
+  const params = new URLSearchParams({
+    per_page: String(options.perPage ?? 100),
+    orderby: 'count',
+    order: 'desc',
+    hide_empty: 'true',
+    _fields: 'id,name,count',
+  });
+  if (options.search) params.set('search', options.search);
+  const terms = await fetchJson<WpTerm[]>(`${API}/${taxonomy}?${params}`, {
+    timeoutMs: SEARCH_TIMEOUT_MS,
+  });
+  return Array.isArray(terms)
+    ? terms
+        .filter((t) => typeof t?.id === 'number' && t.name)
+        .map((t) => ({ id: t.id, name: plainText(t.name), count: t.count ?? 0 }))
+    : [];
 }
 
 /** Full-text search over published posts. */

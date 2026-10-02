@@ -86,6 +86,18 @@ export const home: Record<string, string> = {
   'home.setting.articleHero.pin': 'Welcher Artikel führt',
   'home.setting.articleHero.pin.what':
     'Der angeheftete, oder die neueste Recherche, wenn keiner angeheftet ist.',
+  'home.setting.articleHero.category': 'Aus welcher Kategorie der Aufmacher kommt',
+  'home.setting.articleHero.category.what':
+    'Die Regel, die den Aufmacher wählt, solange nichts angeheftet ist.',
+  'home.setting.latestResearch.category': 'Aus welcher Kategorie die Recherchen kommen',
+  'home.setting.latestResearch.category.what':
+    'Begrenzt die Liste unter dem Aufmacher auf eine Kategorie.',
+  'home.setting.latestResearch.tag': 'Welches Schlagwort die Recherchen tragen',
+  'home.setting.latestResearch.tag.what':
+    'Begrenzt die Liste unter dem Aufmacher auf ein Schlagwort.',
+  'home.setting.faktencheckRail.category': 'Aus welcher Kategorie die Faktenchecks kommen',
+  'home.setting.faktencheckRail.category.what':
+    'Die Kategorie, die die Reihe liest; Faktenchecks, solange nichts geändert wird.',
   'home.setting.latestResearch.count': 'Wie viele Recherchen',
   'home.setting.latestResearch.count.what': 'Die Liste unter dem Aufmacher.',
   'home.setting.faktencheckRail.count': 'Wie viele Faktenchecks',
@@ -214,6 +226,16 @@ export const home: Record<string, string> = {
   'home.setHere': 'hier gesetzt',
   'home.setting.noPin': 'Die neueste Recherche (nichts angeheftet)',
   'home.setting.sampleBadge': 'Beispieldaten',
+  'home.setting.pinLive': 'Live',
+  'home.setting.pinSample': 'Beispiel',
+  'home.setting.pinSearch': 'Artikel auf correctiv.org suchen',
+  'home.setting.searching': 'Suche läuft …',
+  'home.setting.searchHits':
+    '{count, plural, =0 {Keine Artikel gefunden.} one {# Artikel gefunden.} other {# Artikel gefunden.}}',
+  'home.setting.termNone': 'Alle (kein Filter)',
+  'home.setting.termDefault': 'Die eigene Kategorie des Blocks',
+  'home.setting.termOption': '{name} ({count})',
+  'home.setting.termSearch': 'Schlagwörter suchen',
   'home.setting.sample':
     'Eine feste Auswahl echter Artikel, stellvertretend für das, was WordPress später liefert.',
   'home.setting.sampleQuote': 'In der Statusübersicht der Quellen:',

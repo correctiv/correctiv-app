@@ -407,6 +407,9 @@ function holds(spec: SettingSpec, value: unknown): boolean {
         value >= spec.min &&
         value <= spec.max
       );
+    case 'category':
+    case 'tag':
+      return value === null || (typeof value === 'number' && Number.isInteger(value) && value > 0);
   }
 }
 
