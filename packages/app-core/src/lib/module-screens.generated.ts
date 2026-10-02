@@ -35,7 +35,7 @@ export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen
   'callout-list': ['mitmachen'],
   'faktenforum-card': ['mitmachen'],
   'atlas-card': ['mitmachen'],
-  'tip-card': ['mitmachen'],
+  'tip-card': ['home', 'mitmachen'],
   'community-note': ['mitmachen'],
   'profile-club-card': ['profil'],
   'profile-membership': ['profil'],
