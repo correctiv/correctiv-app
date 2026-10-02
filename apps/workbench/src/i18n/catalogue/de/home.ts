@@ -185,12 +185,7 @@ export const home: Record<string, string> = {
   'home.issue.headingScreen': 'Änderungen am Bildschirm {screen}',
   'home.issue.leadLayout':
     'Diese Änderung an einem Bildschirm kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
-  'home.document.submitAbout': 'Die Änderung einreichen',
-  'home.document.submitHint':
-    'GitHub öffnet sich mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.scenarioGuard': 'Szenarien sind Beispiele. Sie werden nicht eingereicht.',
-  'home.document.submitHintLong':
-    'Diese Änderung ist zu lang für einen Link. Der Klick kopiert sie in die Zwischenablage, auf GitHub fügen Sie sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.submitCopied':
     'Die Änderung liegt in der Zwischenablage. Fügen Sie sie auf GitHub in das Issue ein.',
   'home.document.submitNoClipboard':

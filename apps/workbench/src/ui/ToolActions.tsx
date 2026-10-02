@@ -1,4 +1,5 @@
 import { GitPullRequest, Link, RotateCcw, Save } from 'lucide-react';
+import { useId } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../i18n/Localisation';
@@ -26,8 +27,15 @@ const COPY = defineMessages({
   submitTip: {
     id: 'actions.submitTip',
     defaultMessage:
-      'Opens a new issue on GitHub with your change in it. A pull request is made from it automatically. This page stores no password and no token.',
-    description: 'The tooltip on the submit button: what happens after the click.',
+      'Opens GitHub with your change filled in, or copies it to your clipboard when it is too long for a link. One click on “Create” submits it, and a pull request is made from it automatically. You need a GitHub account, and this page stores no password and no token.',
+    description:
+      'The tooltip on the submit button, and its accessible description: what happens after the click, and that a GitHub account is what it needs. The one explanation of a submission on this site, for every tool — a panel that carried its own said the same thing once per tool, which is the copy this replaced.',
+  },
+  submitOff: {
+    id: 'actions.submitOff',
+    defaultMessage: 'Nothing to submit yet. Change something in this tool first.',
+    description:
+      'The tooltip on the submit button while the tool holds no changes, which is why it is switched off. Said in place of actions.submitTip rather than after it, because a reader who has just been told a button does nothing is not asking what it would do.',
   },
   save: {
     id: 'actions.save',
@@ -96,14 +104,36 @@ const COPY = defineMessages({
  * with the first keystroke moves every control beside it, and one that is always
  * there is where a hand already is. A tool that registered no actions (the console,
  * Measure) draws nothing, because for it there is no position to keep.
+ *
+ * **The tooltip on a disabled button says why, and that is what the per-panel ⓘ was.**
+ * Every tool carried its own paragraph explaining this button — what happens on
+ * GitHub, that a GitHub account is what it needs — in its own words, once per tool,
+ * next to a control that is not the one it describes. It is the button's own
+ * explanation, so it belongs on the button, and the reason it is off belongs there
+ * too: `blocked` is what the tool hands over, and a disabled control that cannot say
+ * why is a dead end. The wrapper `<span>` is what makes it reachable at all: the
+ * button has `disabled:pointer-events-none`, so a tooltip on it alone would open for
+ * nobody. `test/shell/actions.test.tsx` holds both halves.
  */
 export function ToolActions() {
   const intl = useWorkbenchIntl();
   const actions = useActiveActions();
+  /** Above the early return below, because a hook may not follow one. */
+  const submitNoteId = useId();
   if (actions === null) return null;
 
   const { dirty, count, blocked, submit, share, save, discard } = actions;
-  const live = dirty && !blocked;
+  const live = dirty && blocked === undefined;
+  /**
+   * What a switched-off Submit says, ready for the tooltip and for the description a
+   * screen reader reads: the tool's own reason, or the one this file has for a clean
+   * tool. The reason is already formatted by the tool, which is what let `blocked`
+   * carry a problem code, so it is used as it stands rather than run back through
+   * `intl`.
+   */
+  const offReason = blocked ?? intl.formatMessage(COPY.submitOff);
+  /** The one sentence this button says, in the tooltip and to a screen reader. */
+  const submitNote = live ? intl.formatMessage(COPY.submitTip) : offReason;
 
   return (
     <div
@@ -185,29 +215,61 @@ export function ToolActions() {
 
       {submit !== undefined && (
         <Tooltip>
+          {/*
+            A span around both arms, because a disabled button has
+            `pointer-events: none` and a trigger that cannot be pointed at opens for
+            nobody — which is the whole reason the reason has to live here.
+          */}
           <TooltipTrigger asChild>
-            {live && submit ? (
-              // A link, because the click leaves for GitHub in a new tab and a link is what a
-              // browser opens a tab for without a popup blocker in the way (ADR 0061 §1).
-              <Button asChild size="sm" data-testid="action-submit">
-                <a
-                  href={submit.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={submit.onClick}
+            <span className="inline-flex">
+              {live && submit ? (
+                // A link, because the click leaves for GitHub in a new tab and a link is what a
+                // browser opens a tab for without a popup blocker in the way (ADR 0061 §1).
+                <Button asChild size="sm" data-testid="action-submit">
+                  <a
+                    href={submit.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={submit.onClick}
+                    aria-describedby={submitNoteId}
+                  >
+                    <GitPullRequest aria-hidden="true" />
+                    {intl.formatMessage(COPY.submit)}
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  disabled
+                  data-testid="action-submit"
+                  aria-describedby={submitNoteId}
                 >
                   <GitPullRequest aria-hidden="true" />
                   {intl.formatMessage(COPY.submit)}
-                </a>
-              </Button>
-            ) : (
-              <Button size="sm" disabled data-testid="action-submit">
-                <GitPullRequest aria-hidden="true" />
-                {intl.formatMessage(COPY.submit)}
-              </Button>
-            )}
+                </Button>
+              )}
+            </span>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{intl.formatMessage(COPY.submitTip)}</TooltipContent>
+          {/*
+            `max-w-[22rem]`, because this is the one tooltip on this site that has
+            to say two things at once — what the click does and that a GitHub account
+            is what it needs — and the kit's tooltip has no width of its own, so four
+            sentences ran the length of a 1600-pixel window and off its right edge.
+          */}
+          <TooltipContent side="bottom" className="max-w-[22rem] leading-relaxed">
+            {submitNote}
+          </TooltipContent>
+          {/*
+            The same sentence once more, for a screen reader, because a tooltip is a
+            description a reader has to go looking for and this one has to answer a
+            question a reader may not know they are asking. `aria-describedby` and
+            not `aria-description`, which `jsx-a11y` refuses on a link and which
+            fewer screen readers implement; the trigger is the span above, so Radix's
+            own `aria-describedby` lands on the span and the two do not collide.
+          */}
+          <span id={submitNoteId} className="sr-only">
+            {submitNote}
+          </span>
         </Tooltip>
       )}
     </div>
