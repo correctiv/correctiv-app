@@ -22,6 +22,11 @@ export const features: Record<string, string> = {
     'Die Änderung war zu lang für den Link, deshalb liegt sie in Ihrer Zwischenablage. Löschen Sie diesen Text, fügen Sie die Änderung hier ein (Strg+V, am Mac Cmd+V) und klicken Sie auf „Create“.',
   'features.mark.vorschau': 'Nur Vorschau: Ein Release-Build zeigt es nicht.',
   'features.mark.aus': 'Aus: Kein Build zeigt es.',
+  // The chip's two words, beside the two sentences above them and not instead of them: the
+  // chip is what fits on a card in the block picker, and the sentence is what its tooltip and
+  // its accessible description carry. Same claim, one word and a sentence.
+  'features.mark.chip.vorschau': 'Vorschau',
+  'features.mark.chip.aus': 'Aus',
   'features.mark.reason.declared': 'Die Freigabedatei hält es zurück.',
   'features.mark.reason.data': 'Es liest nur Beispieldaten.',
   'features.mark.reason.group': 'Seine Gruppe wird zurückgehalten.',

@@ -27,8 +27,8 @@ import { Platform, Pressable, ScrollView, View } from 'react-native';
 import type { BlockCategory } from '@correctiv/app-core/lib/block-category';
 import type { ThemePreference } from '@correctiv/app-core/stores/settings';
 
-import { useCategoryLabel } from '@/lib/home/category-labels';
-import { Badge, Hairline, Overline, SafeAreaView, Typo } from '@/components/ui';
+import { categoryName } from '@/lib/home/category-labels';
+import { Badge, Hairline, SafeAreaView, Typo } from '@/components/ui';
 import { FEATURES, featureState, limitReason } from '@correctiv/app-core/features/features';
 import { useAppSelector, useCoreActions, useTheme } from '@/lib/store/core';
 import { useIsDark } from '@/lib/theme';
@@ -54,7 +54,7 @@ const SPECIMEN_COUNT = CATALOGUE.reduce(
  * the core holds tomorrow.
  */
 const BLURB = {
-  all: `${COMPONENT_COUNT} components from src/components, ${SPECIMEN_COUNT} specimens, grouped by what each one is: the families a block belongs to, then the building blocks they are made of. A page for developers, published like any other route.`,
+  all: `${COMPONENT_COUNT} components from src/components, ${SPECIMEN_COUNT} specimens, grouped by what each one is: the families a block belongs to, then the building blocks they are made of. The grouping and this page's own words are English, because it is a page for developers; the specimens carry the app's real German copy, which is content here. Published like any other route.`,
   one: 'One component of the catalogue. The reference has its props.',
   none: 'No component of that name. The link that sent you here is out of date.',
 };
@@ -123,6 +123,15 @@ function Surface({
     </View>
   );
 }
+
+/**
+ * The one section that holds a single component, said in words.
+ *
+ * A gallery of components, one per section, happens: filter to one entry with `?c=` and the
+ * family it belongs to holds that entry and nothing else. `1 components` reads as a bug, so
+ * the singular has its own line. Every other count takes the plural.
+ */
+const ONE_COMPONENT = '1 component';
 
 const REASONS = {
   declared: 'held back by the release file',
@@ -398,20 +407,61 @@ function SeededNote() {
 /**
  * The heading over one section: a family a block belongs to, or the building blocks.
  *
- * **A component of its own, and the reason is a hook.** `useCategoryLabel` reads the app's
- * `IntlProvider`, and React will not let a component call it once per section out of a map
- * — the number of calls would change with the number of sections, which changes with the
- * filter. So each heading is its own component, and the one section that has no family
- * prints the constant beside it instead of asking for a label it does not have.
+ * **A real heading where there was an overline.** It was an `Overline` — twelve pixels,
+ * uppercase, letter-spaced — which is the smallest thing a page can draw, over sections that
+ * hold forty components each. A design review found the hierarchy unreadable: the section
+ * headings were the quietest text on a page made of headings, and a reader could not tell a
+ * family from the component under it. `headline-s` bold, above a hairline, with the entry
+ * names a step below it at `headline-xs`, is the hierarchy the page was already implying.
+ *
+ * **A component of its own, and the reason used to be a hook.** `useCategoryLabel` reads the
+ * app's `IntlProvider` and React will not let a component call it once per section out of a
+ * map; this page asks `categoryName` instead, which is a plain function, and keeps the
+ * component because a heading and its count are one row and belong in one element.
  */
-function SectionHeading({ category }: { category: BlockCategory | undefined }) {
-  if (category !== undefined) return <FamilyHeading category={category} />;
-  return <Overline label={BAUSTEINE} color="accent" className="mt-s" />;
+function SectionHeading({
+  category,
+  count,
+}: {
+  category: BlockCategory | undefined;
+  count: number;
+}) {
+  return (
+    <View className="mt-s flex-row items-baseline justify-between gap-s">
+      <Typo variant="headline-s" weight="bold">
+        {category === undefined ? BAUSTEINE : <FamilyHeading category={category} />}
+      </Typo>
+      {/*
+        How many components are under the heading, which is what makes a section navigable
+        before scrolling into it: four or forty reads very differently from a heading with
+        nothing beside it. Said in words rather than a bare number, so the reader is not left
+        to decide whether 1 is a mistake.
+      */}
+      <Typo variant="text-s" color="on-canvas-muted" className="shrink-0">
+        {count === 1 ? ONE_COMPONENT : `${count} components`}
+      </Typo>
+    </View>
+  );
 }
 
+/**
+ * A family's name, in the language this page is written in.
+ *
+ * **English, and `categoryName` rather than `useCategoryLabel`.** The table of six words is
+ * the app's and German is what ships in it, but this page is a developer's: it is excluded
+ * from both of the app's string checks as `DEVELOPER_ONLY` and its furniture has always been
+ * English. A design review found the mixture — English headings and lede, German family
+ * headings, English again under them — and read it as a page nobody had decided on. So the
+ * page is one language, English, and the six words are printed from the same descriptors'
+ * `defaultMessage` rather than from the catalogue: same table, second reader, nothing to
+ * translate twice. `lib/home/category-labels.ts` says why that is not a second copy.
+ *
+ * **The specimens keep their German**, which is not the same decision: they are the app's
+ * real components carrying the copy they really carry, so their text is content here, the
+ * same way `/handbook`'s English documents are content on a German page (ADR 0052 §1).
+ */
 function FamilyHeading({ category }: { category: BlockCategory }) {
-  const name = useCategoryLabel(category);
-  return <Overline label={name} color="accent" className="mt-s" />;
+  return <>{categoryName(category)}</>;
 }
 
 /**
@@ -472,22 +522,43 @@ export function Gallery({ only, bare, pick }: { only?: string; bare?: boolean; p
         ) : null}
 
         {sections.map((section, g) => (
-          // The first section sits under the page's own header, which is already a
-          // break; the gap that separates two sections would read as a hole there.
-          <View key={section.key} className={g === 0 ? (bare ? '' : 'mt-l') : 'mt-4xl'}>
+          /*
+           * **The gaps between sections were 128 pixels, and that was the dead space a
+           * design review named.** `mt-4xl` is the largest step in the scale; between two
+           * headings on a page of fifty components it is four blank screens' worth of nothing
+           * per section, and it made the next section impossible to see coming while
+           * scrolling. `mt-2xl` still says "this is a new group" against the `mt-l` inside
+           * one, and the hairline above each heading does the rest. The gap between two
+           * components inside a section came down the same way, from `mt-4xl` to `mt-xl`.
+           *
+           * The first section sits under the page's own header, which is already a break;
+           * the gap that separates two sections would read as a hole there.
+           */
+          <View key={section.key} className={g === 0 ? (bare ? '' : 'mt-l') : 'mt-2xl'}>
             {bare ? null : (
               <>
-                <Hairline />
-                <SectionHeading category={section.category} />
+                <Hairline className={g === 0 ? undefined : 'mt-2xl'} />
+                <SectionHeading category={section.category} count={section.entries.length} />
               </>
             )}
             {section.entries.map((entry, i) => (
-              <View key={entry.name} className={i === 0 ? (bare ? '' : 'mt-l') : 'mt-4xl'}>
+              <View key={entry.name} className={i === 0 ? (bare ? '' : 'mt-l') : 'mt-xl'}>
                 {/* A rule above every component but the first of its section. The
                     section already has one, and two hairlines with nothing between
                     them read as a mistake rather than as a boundary. */}
                 {i === 0 ? null : <Hairline className="mb-l" />}
-                {bare ? null : <Typo variant="headline-s">{entry.name}</Typo>}
+                {/*
+                  **A step below the section heading, not level with it.** Both were
+                  `headline-s`, which is why the hierarchy read as flat: a component name
+                  and a family name were the same size and the same weight, and the eye had
+                  nothing to grab on the way down the page. `headline-xs` with the section at
+                  `headline-s` bold is the step the page was missing.
+                */}
+                {bare ? null : (
+                  <Typo variant="headline-xs" weight="semibold">
+                    {entry.name}
+                  </Typo>
+                )}
                 {/* The block this component draws, where it is one. It is the same word
                     the palette offers it under and the same id the layout document
                     gives it, so a reader who has arranged a screen can find the

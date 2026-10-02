@@ -217,6 +217,53 @@ describe('a search', () => {
   });
 });
 
+describe('the tab row as a row', () => {
+  /**
+   * The row's shape, which a design review named as a fault: seven German family names beside
+   * „Alle" and one of them on a line of its own. The row is a fixed control here and the
+   * fault was in how it was drawn, so what this holds is that every option the row offers is
+   * a tab with blocks under it — an empty tab is what a wrap was making the last one look
+   * like, and it would be worth knowing about before the pixels rather than after.
+   */
+  it('offers no tab with nothing under it, on any screen', () => {
+    for (const screen of CONFIGURABLE_SCREENS) {
+      const tabs = tabsFor(screen);
+      // „Alle" plus at least the five families a screen but the Mediathek's own title has
+      // blocks in, which is the row a design review found broken at seven options.
+      expect(tabs.length).toBeGreaterThanOrEqual(6);
+      // Named in the value rather than in a second argument to `expect`, which Vitest takes
+      // none of: a failure names the empty tab by printing the list under it.
+      const empty = tabs.filter(
+        (tab) =>
+          groupsShown(screen, tab, '', words).flatMap((group) => [...group.blocks]).length === 0,
+      );
+      expect({ screen, empty }).toEqual({ screen, empty: [] });
+      // Every tab is distinct: two of the same name on one row would be a family listed twice,
+      // and the reader could not tell which one they had chosen.
+      expect(new Set(tabs).size).toBe(tabs.length);
+    }
+  });
+
+  it('offers every block of the screen once across the families, and all of them under "all"', () => {
+    // The family tabs partition the shelf: whatever family a block is filed in, it is on that
+    // tab and no other, so no block can be listed twice in a row of choices and none can be
+    // listed nowhere. „Alle" is then the union of the families rather than something beside
+    // them — a picker whose „Alle" held a block no family offered would be a second answer to
+    // the same question, and the reader would have no way to tell which was current.
+    for (const screen of CONFIGURABLE_SCREENS) {
+      const tabs = tabsFor(screen);
+      const perTab = tabs.map((tab) =>
+        groupsShown(screen, tab, '', words).flatMap((group) => [...group.blocks]),
+      );
+      const families = perTab.slice(1).flatMap((blocks) => blocks);
+      expect(families.length).toBe(new Set(families).size);
+      expect(new Set(families)).toEqual(new Set(offered(screen)));
+      // And „Alle" holds every one of them, so the two cannot part.
+      expect(new Set(perTab[0]!)).toEqual(new Set(families));
+    }
+  });
+});
+
 describe('the last tab', () => {
   it('is "all" until a tab is chosen, and then it is that one', () => {
     const screen: ConfigurableScreen = 'home';

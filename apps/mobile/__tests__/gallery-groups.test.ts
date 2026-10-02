@@ -10,6 +10,7 @@ import {
 
 import { floorFaults, withoutComments } from '@correctiv/prose-and-code';
 import { BAUSTEINE, galleryGroups } from '../src/gallery/groups';
+import { CATEGORY_LABELS, categoryName } from '../src/lib/home/category-labels';
 
 /**
  * The gallery's grouping, and the two things a second grouping would cost.
@@ -171,6 +172,32 @@ describe('the sections the page draws', () => {
     }
   });
 
+  /**
+   * **The count beside each heading is the number of entries under it**, which is the one
+   * number a design review asked for: a heading with nothing beside it says nothing about how
+   * far down the page it goes, which is what made the sections hard to navigate.
+   *
+   * Counted here from the catalogue rather than read back off the sections, because reading
+   * `section.entries.length` back off the sections asserts that the array is as long as the
+   * array says it is. The comparison is per key, so a section that counted a neighbour's
+   * entries fails rather than passing on the total.
+   */
+  it('count what is under each heading, and no heading counts nothing', () => {
+    const counted = new Map<string, number>();
+    for (const [, block] of blocksByComponent(readFileSync(CATALOGUE, 'utf8'))) {
+      const key = block === undefined ? BAUSTEINE : categoryOf(block)!;
+      counted.set(key, (counted.get(key) ?? 0) + 1);
+    }
+    // By key rather than in order: the sections are the core's order, which the test above
+    // already holds, and the order they are counted in here is the catalogue's. What this is
+    // about is the number under each heading.
+    const drawn = new Map(sections.map((section) => [section.key, section.entries.length]));
+    expect([...drawn.entries()].sort()).toEqual([...counted.entries()].sort());
+    // And a section that counts nothing is one `galleryGroups` refuses to draw at all, so a
+    // heading reading „0 components" would be a state the page cannot be in.
+    expect(sections.every((section) => section.entries.length > 0)).toBe(true);
+  });
+
   it('survives being asked about one component alone', () => {
     // The `?c=` address draws a single entry, and a filter that returned an empty section
     // for it would leave the page with a heading and nothing under it.
@@ -242,11 +269,74 @@ describe('there is one list of families and one table of words', () => {
     const groups = readFileSync(GROUPS, 'utf8');
     expect(groups).toMatch(/categoryOf\(entry\.block\)/);
     expect(groups).toMatch(/BLOCK_CATEGORIES\.map/);
-    // The heading is the app's word, asked through the hook that reads the app's table —
-    // the same six words the newsroom's palette reads, which is the whole of the move.
-    expect(groups + readFileSync(join(APP, 'src/gallery/Gallery.tsx'), 'utf8')).toMatch(
-      /useCategoryLabel\(/,
+    // The heading is the app's word, asked out of the app's table — the same six words the
+    // newsroom's palette reads, which is the whole of the move.
+    const gallery = readFileSync(join(APP, 'src/gallery/Gallery.tsx'), 'utf8');
+    expect(groups + gallery).toMatch(
+      /categoryName\(category\)|from '@\/lib\/home\/category-labels'/,
     );
+  });
+
+  /**
+   * **One language on this page, and it is English.**
+   *
+   * A design review found the gallery's headings German while every word around them was
+   * English — the heading of a section, then English again for the component under it — and
+   * read the page as one that had never been given a language. [ADR
+   * 0052](../../../../../adr/0052-the-sites-own-words-follow-the-setting.md) §1 draws the
+   * seam between what a page writes and what it quotes, and this page writes English: it is
+   * excluded from `localisation-seam.test.ts` and `rendered-literals.test.ts` as
+   * `DEVELOPER_ONLY`, and its furniture has always been English.
+   *
+   * **Asserted on the words themselves rather than on the call**, because the call is easy:
+   * any of `useCategoryLabel`, `categoryName` or a hand-written `faktencheck` satisfies a
+   * test that only looks for a call, and the last two of those are what this exists to keep
+   * out. So this takes the six names the page would draw, in English, and asks that none of
+   * them is the id and none of them carries a German character — and that the section with
+   * no family is called in English too.
+   *
+   * The specimens' German is not in scope and cannot be: they are the app's real components
+   * carrying the copy they really carry, which is content here the way `/handbook`'s English
+   * documents are content on a German page.
+   */
+  it('names every section in the language the page is written in', () => {
+    const words = BLOCK_CATEGORIES.map((category) => [category, categoryName(category)] as const);
+    // Read out of the table rather than off the core's list, so a family the core knows and
+    // this page cannot name fails here as „no name" rather than being skipped by the map.
+    expect(Object.keys(CATEGORY_LABELS).sort()).toEqual([...BLOCK_CATEGORIES].sort());
+    // Jest's `expect` takes no message argument, so the failures carry the family in the
+    // values they compare: an empty word and the id are different strings, and an umlaut is
+    // visible in the diff.
+    for (const [category, word] of words) {
+      expect([category, word]).not.toEqual([category, '']);
+      // Printed as its id, which is what a lazy label would be: `faktencheck` over a family
+      // of fact checks reads as a key to whoever has to place one.
+      expect([category, word]).not.toEqual([category, category]);
+      // And not the German the catalogue ships. The page is English, and a heading that
+      // drifted back to German would be indistinguishable from a bug to whoever reads it —
+      // which is exactly what it would be, and what this holds against.
+      expect([category, word.replace(/[äöüß]/gi, '')]).toEqual([category, word]);
+    }
+    // The section with no family, which is called in words rather than by an id. It was
+    // `Bausteine`, a German heading on an English page and the sharpest case of the mixture.
+    expect(BAUSTEINE).toBe('Building blocks');
+    expect(BAUSTEINE.replace(/[äöüß]/gi, '')).toBe(BAUSTEINE);
+  });
+
+  /** The two halves of the one table, imported rather than read as text. */
+  it('reads the words from the one table and holds neither half of it here', () => {
+    const labels = readFileSync(join(APP, 'src/lib/home/category-labels.ts'), 'utf8');
+    // `categoryName` is the page's half: it asks the descriptors for their own English
+    // rather than formatting the catalogue, which is what makes this a second reader of one
+    // table and not a second table. A `createIntl` or a `useIntl` in `Gallery.tsx` would be
+    // the German creeping back in through the front door.
+    expect(labels).toMatch(/export function categoryName\(category: BlockCategory\): string/);
+    // Over the file with its comments stripped, because the reasoning in this one names both
+    // of the functions it does not call — a check that read the prose would be checking the
+    // comment, and a `/* *\/` added to the file would be enough to switch it off.
+    const gallery = withoutComments(readFileSync(join(APP, 'src/gallery/Gallery.tsx'), 'utf8'));
+    expect(gallery).not.toMatch(/useIntl\(|createIntl\(/);
+    expect(gallery).not.toMatch(/useCategoryLabel/);
   });
 });
 

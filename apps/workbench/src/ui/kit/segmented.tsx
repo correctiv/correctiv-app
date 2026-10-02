@@ -20,6 +20,27 @@ interface Props {
   disabled?: boolean;
   /** Off where the group already stands under a heading that says what it is. */
   showLegend?: boolean;
+  /**
+   * One row that scrolls sideways instead of breaking into two.
+   *
+   * **Off here, and it was the one fault a cold review found on the block picker.** The
+   * six family names are the app's words (ADR 0074), German, long, and beside „Alle" they
+   * are one option more than fits; `flex-wrap` answered that by leaving „Club und Profil"
+   * alone on a second line, which reads as an afterthought rather than as a seventh choice.
+   * Two answers were available and this is the one that keeps every option on one line: the
+   * options keep their own width, the row scrolls, and a tab that does not fit is one wheel
+   * away rather than one row down.
+   *
+   * The alternatives were to shorten the labels — which would put this file's own wording in
+   * the way of a table ADR 0074 moved to the app — and to break the row deliberately, which
+   * is what happened.
+   *
+   * The scrollbar is hidden rather than styled, because a bar under a row of chips says
+   * "there is more" twice: once as a bar and once as the cut-off chip beside it. Keyboard
+   * focus still scrolls the row, because a focused radio the browser scrolled out of sight
+   * would leave a sighted keyboard user with no idea which segment they are on.
+   */
+  scroll?: boolean;
   className?: string;
 }
 
@@ -45,6 +66,7 @@ export function Segmented({
   onChange,
   disabled,
   showLegend = false,
+  scroll = false,
   className,
 }: Props) {
   return (
@@ -58,13 +80,25 @@ export function Segmented({
      * for, the grouping and the `disabled` that switches every radio off at
      * once, and the box keeps the shape.
      */
-    <fieldset disabled={disabled} className={cn('min-w-0 disabled:opacity-60', className)}>
+    <fieldset
+      disabled={disabled}
+      className={cn('min-w-0 disabled:opacity-60', scroll && 'max-w-full', className)}
+    >
       <legend className={showLegend ? 'mb-2xs text-s text-on-canvas-muted' : 'sr-only'}>
         {legend}
       </legend>
-      <div className="inline-flex max-w-full flex-wrap items-center gap-4xs rounded-md border border-stroke bg-canvas p-4xs">
+      <div
+        className={cn(
+          'inline-flex max-w-full items-center gap-4xs rounded-md border border-stroke bg-canvas p-4xs',
+          scroll
+            ? // `flex-nowrap` and `overflow-x-auto` together: wrapping is what left an
+              // orphan on a second row, and scrolling is what keeps one row of options.
+              'flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'flex-wrap',
+        )}
+      >
         {options.map((option) => (
-          <label key={option.value} className="min-w-0">
+          <label key={option.value} className={cn('min-w-0', scroll && 'shrink-0')}>
             <input
               type="radio"
               name={name}
@@ -76,7 +110,7 @@ export function Segmented({
             />
             <span
               className={cn(
-                'block cursor-pointer rounded-s px-xs py-3xs text-s font-medium transition-colors',
+                'block cursor-pointer whitespace-nowrap rounded-s px-xs py-3xs text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
                 value === option.value
                   ? 'bg-accent text-white'

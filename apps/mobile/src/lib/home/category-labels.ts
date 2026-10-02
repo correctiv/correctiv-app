@@ -44,6 +44,18 @@ import { defineMessages, useIntl, type MessageDescriptor } from 'react-intl';
 import type { BlockCategory } from '@correctiv/app-core/lib/block-category';
 
 /**
+ * A descriptor in this table, with its English required.
+ *
+ * **`MessageDescriptor` alone will not do**, because `defaultMessage` is optional there and
+ * typed as `string | MessageFormatElement[]` for the AST form: `categoryName` below reads it
+ * as the word a developer page prints, and both a missing message and an AST would have to be
+ * defended against at every call. Requiring it here says once, in the type, what the table
+ * already is in fact — six entries, each with an English in it — and the `formatMessage`
+ * result above has to be narrowed the same way for the same reason.
+ */
+export type CategoryLabel = MessageDescriptor & { readonly defaultMessage: string };
+
+/**
  * What each family of blocks is called, for the heading a picker or a gallery groups
  * under.
  *
@@ -52,7 +64,7 @@ import type { BlockCategory } from '@correctiv/app-core/lib/block-category';
  * so a category added without a word is a type error here rather than a heading reading
  * `faktencheck` to a newsroom.
  */
-export const CATEGORY_LABELS: Readonly<Record<BlockCategory, MessageDescriptor>> = defineMessages({
+export const CATEGORY_LABELS: Readonly<Record<BlockCategory, CategoryLabel>> = defineMessages({
   struktur: {
     id: 'home.category.struktur',
     defaultMessage: 'Structure and notices',
@@ -93,4 +105,33 @@ export const CATEGORY_LABELS: Readonly<Record<BlockCategory, MessageDescriptor>>
  */
 export function useCategoryLabel(category: BlockCategory): string {
   return useIntl().formatMessage(CATEGORY_LABELS[category]);
+}
+
+/**
+ * One family's name in the language it was written in, which is English.
+ *
+ * **The second reader of this table, and it is a page rather than a tool.** The component
+ * gallery is the app's own page and a developer's: `Gallery.tsx` and its neighbours are
+ * excluded from `localisation-seam.test.ts` and `rendered-literals.test.ts` as
+ * `DEVELOPER_ONLY`, and their furniture is English because a developer reads it. A heading
+ * in German over English furniture is the mixed page ADR 0052 §1 refuses, and the fix is
+ * not to translate the furniture — a catalogue of components is read by developers and
+ * translating it would be work nobody asked for — but to print these six words in the
+ * language they are written in, so the page is one language.
+ *
+ * **`defaultMessage` and not a second table.** The English of a descriptor IS its
+ * `defaultMessage` ([ADR 0049](../../../../../../adr/0049-the-catalogue-is-a-package.md)
+ * §2: the German is a package and the English ships in the source), so asking for it is
+ * asking the same table rather than keeping a copy of it. `apps/workbench/test/preview/
+ * palette.test.ts` asserts there is exactly one table and no second list of families in
+ * either tree, and this is the same table read a second way — which is why the ratchet
+ * still holds and why nothing here is a new word to translate.
+ *
+ * So the page reads: the app's own words are English because the app's developers read them,
+ * and the six headings over the families are English for the same reason. What the specimens
+ * themselves carry is the app's German copy, drawn as the phone draws it, which is content
+ * in the same sense `/handbook`'s English documents are content on a German page.
+ */
+export function categoryName(category: BlockCategory): string {
+  return CATEGORY_LABELS[category].defaultMessage;
 }

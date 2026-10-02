@@ -1113,6 +1113,14 @@
     "defaultMessage": "Off: no build draws it.",
     "description": "The mark on a block or a component whose feature is `aus`, which is reachable nowhere. features.mark.reason.* is read right after it and says what holds it back."
   },
+  "features.mark.chip.aus": {
+    "defaultMessage": "Off",
+    "description": "The chip that says a feature is `aus`: no build draws it. The sentence behind it is features.mark.aus, which the chip’s tooltip carries."
+  },
+  "features.mark.chip.vorschau": {
+    "defaultMessage": "Preview",
+    "description": "The chip that says a feature is `vorschau`: a release build does not draw it, and the preview channel does. The sentence behind it is features.mark.vorschau, which the chip’s tooltip carries."
+  },
   "features.mark.reason.data": {
     "defaultMessage": "It reads sample data only.",
     "description": "The reason after a mark: every data source of the feature is a stand-in file, which caps it at `vorschau` (ADR 0072 §4)."
@@ -1763,7 +1771,7 @@
   },
   "home.palette.addModule": {
     "defaultMessage": "Add {name}. {what}",
-    "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
+    "description": "The accessible name of one card in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the card. The sentence is read in full here because the card shows two lines of it."
   },
   "home.palette.found": {
     "defaultMessage": "{found} of {total} blocks match.",

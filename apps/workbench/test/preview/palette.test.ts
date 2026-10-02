@@ -314,6 +314,109 @@ describe('the marks and the verbs they carry', () => {
     );
   });
 
+  it('draws the block on top of the card, at the card’s width, and crops it with a fade', () => {
+    /**
+     * A design review found four faults in the old card and they are one fault: the drawing
+     * was a 132px thumbnail down the left with the words beside it, so it was too small to
+     * recognise and the card's own text was carrying the whole decision. Read here as the
+     * shape that answers it — a well across the top, in the app's own width, scaled to the
+     * card, with the cut-off softened.
+     */
+    // The well spans the card and has a ratio rather than a fixed height, which is what makes
+    // every card in a row the same height whatever a block measures.
+    expect(PALETTE).toMatch(/aspectRatio: PREVIEW_RATIO/);
+    expect(PALETTE).toMatch(/const PREVIEW_RATIO = 16 \/ 10/);
+    // Scaled from the device's real width to the well's own width, and the scale is `fit()`'s
+    // so it can never exceed one (ADR 0045 §3: a block drawn larger than the phone draws it
+    // is a lie about the thing being placed).
+    expect(PALETTE).toMatch(/return \[fit\(room, deviceWidth\)\.scale, measured\]/);
+    expect(PALETTE).toMatch(/transform: `scale\(\$\{scale\}\)`/);
+    // Measured, not guessed: a card at two columns is wider than one at three, and a fixed
+    // thumbnail width is legible in one and a smudge in the other. The observer is on the
+    // WELL and not on the drawing inside it, whose `clientWidth` is the device's own 393
+    // whatever the scale — which is what the first version watched, and every card came out
+    // unscaled and clipped.
+    expect(PALETTE).toMatch(/new ResizeObserver\(\(\) => setRoom\(node\.clientWidth\)\)/);
+    expect(PALETTE).toMatch(/ref=\{measured\}[\s\S]{0,400}?aspectRatio: PREVIEW_RATIO/);
+    // The fade, which is the difference between a crop that reads as a crop and a line drawn
+    // through whatever happened to be there.
+    expect(PALETTE).toMatch(/from-canvas to-transparent/);
+    // And a ground behind it, so a block that draws almost nothing here is a quiet card
+    // rather than one that looks like it failed to load.
+    expect(PALETTE).toMatch(/overflow-hidden bg-canvas/);
+  });
+
+  it('holds every card in a row to the same height, in four ways', () => {
+    // One line for the name, two RESERVED for the sentence, and the mark as a chip rather
+    // than a paragraph — the third of those was the height fault: a card with a feature mark
+    // was half again as tall as its neighbours because the mark printed two or three lines.
+    expect(PALETTE).toMatch(/className="truncate text-m font-semibold text-on-canvas"/);
+    // `min-h-[2lh]` and not only the clamp: `line-clamp-2` holds the long sentences to two
+    // and lets the short ones stand at one, which measured as rows of 318px beside rows of
+    // 337px in the same grid. Reserving both lines is what makes the rows equal by
+    // construction rather than by the grid's mercy.
+    expect(PALETTE).toMatch(/line-clamp-2 min-h-\[2lh\]/);
+    expect(PALETTE).toMatch(/<FeatureChip feature=\{MODULE_FEATURES\[module\]\?\.feature\}/);
+    // `h-full` on the card and the grid above it, so the row equalises rather than each card
+    // reporting its own height.
+    expect(PALETTE).toMatch(/flex h-full w-full flex-col/);
+    // `mt-auto` on the chip pins every card's foot to the same line whatever is above it, so
+    // a marked card and an unmarked one are the same height.
+    expect(PALETTE).toMatch(/<FeatureChip[^>]*className="mt-auto"/);
+  });
+
+  it('puts the whole card behind one button and keeps the sentence whole for a reader', () => {
+    // The card is the target: an overlay sheet, not a button round the drawing, because the
+    // app's own pressables are inside the drawing.
+    expect(PALETTE).toMatch(/peer absolute inset-0 z-10 rounded-md/);
+    // The description is clamped to two lines for the eye and read in full twice over for
+    // everyone else: the `title` under the pointer and the button's accessible name, which
+    // carries the whole sentence rather than the two lines that fit.
+    expect(PALETTE).toMatch(/title=\{sentence\}/);
+    expect(PALETTE).toMatch(/what: sentence/);
+  });
+
+  it('keeps the family tabs on one row that scrolls rather than wrapping', () => {
+    /**
+     * The other fault a design review named: seven German family names beside „Alle", and
+     * `flex-wrap` answering that by leaving „Club und Profil" alone on a second line. The
+     * fix is in the control (`ui/kit/segmented.tsx`'s `scroll`) and it is opted into here,
+     * because a control that scrolled everywhere would change ten other pages.
+     */
+    expect(PALETTE).toMatch(/<Segmented[\s\S]{0,400}?\bscroll\b/);
+    // The search field and the tab row on two lines, which is what gives the strip the
+    // dialog's full width instead of what is left beside a field.
+    const picker = PALETTE.slice(PALETTE.indexOf('function BlockPicker'));
+    expect(picker.indexOf('COPY.searchLegend')).toBeLessThan(picker.indexOf('COPY.familyLegend'));
+    // And three columns at the dialog's width, two below it, asked of the container rather
+    // than the window: the dialog is `min(64rem, 94vw)`, so a viewport query would answer
+    // for a width the cards are not laid out in.
+    expect(PALETTE).toMatch(
+      /@container grid grid-cols-1 gap-xs @min-\[34rem\]:grid-cols-2 @min-\[52rem\]:grid-cols-3/,
+    );
+  });
+
+  it('says what a release build would do with a block as one word, and the reason underneath', () => {
+    // ADR 0072 §5: the mark stays on the card whatever this build would do. The long form is
+    // still there for the feature page and a component's own card; on the tile it is a chip,
+    // because the sentence is what made one card taller than the row it sat in.
+    const MARK = read('apps/workbench/src/preview/features/Mark.tsx');
+    expect(MARK).toMatch(/export function FeatureChip/);
+    expect(MARK).toMatch(/data-testid="feature-chip"/);
+    // The reason is moved into the chip rather than dropped: `title` for a pointer,
+    // `aria-description` for a screen reader, both built from the same two descriptors the
+    // long form prints, so a tooltip and the sentence cannot part.
+    expect(MARK).toMatch(/title=\{full\}/);
+    expect(MARK).toMatch(/aria-description=\{full\}/);
+    expect(MARK).toMatch(/MARK_CHIP\[mark\.state\]/);
+    // And the words are a second set of ids in the same file as the sentences, so the chip
+    // says „Preview" where the sentence says „Preview only: a release build does not draw
+    // it" — one claim, not two.
+    expect(read('apps/workbench/src/preview/features/document.ts')).toMatch(
+      /export const MARK_CHIP/,
+    );
+  });
+
   it('names a specimen without wrapping the app’s own controls in a button', () => {
     /*
      * A cold review measured what the wrapped version cost: nine of the modules carry

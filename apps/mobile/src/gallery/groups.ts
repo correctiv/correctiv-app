@@ -14,18 +14,22 @@
  * file would be the second one that could fall behind the first. `__tests__/gallery-groups.test.ts`
  * is what says no such list has appeared.
  *
- * **The heading is the app's, not this page's.** `useCategoryLabel` reads the table beside
- * the blocks, `lib/home/category-labels.ts`, which is where the newsroom's palette reads
- * it too; there is one table of six words and this page is not where the second copy
- * would live.
+ * **The heading is the app's table, not this page's.** `lib/home/category-labels.ts` sits
+ * beside the blocks and is where the newsroom's palette reads the six words too; there is
+ * one table and this page is not where the second copy would live. Which of the two halves
+ * of that table this page reads is `Gallery.tsx`'s decision and its own: the newsroom's
+ * picker formats them through the app's provider and gets German, and this page is a
+ * developer's page in English and prints the descriptors' `defaultMessage`. Same words, same
+ * table, one language per page.
  *
- * **Everything that is not a block goes into one section**, called `Bausteine` here and
- * "Building blocks" nowhere — the gallery's own furniture is English, like the rest of
- * the page, and a section is named by the folder it stands for. Nothing else was
- * available: a button has no family, and filing it under one would put a category id in
- * the catalogue that no block declares, which is exactly the second list ADR 0073 §2
- * refused. So the list of families is the core's, and what is left over is one section
- * that says so.
+ * **Everything that is not a block goes into one section**, called "Building blocks" here
+ * and nowhere else — the gallery's own furniture is English, like the rest of the page, and
+ * a section is named by the folder it stands for. It was `Bausteine`, which was a German
+ * heading on an English page; a design review named it as the sharpest case of a page that
+ * had not decided on a language. Nothing else was available as a grouping: a button has no
+ * family, and filing it under one would put a category id in the catalogue that no block
+ * declares, which is exactly the second list ADR 0073 §2 refused. So the list of families is
+ * the core's, and what is left over is one section that says so.
  */
 import {
   BLOCK_CATEGORIES,
@@ -35,8 +39,15 @@ import {
 
 import type { Entry } from './catalogue';
 
-/** What the section of components that are not a block's own drawing is called. */
-export const BAUSTEINE = 'Bausteine';
+/**
+ * What the section of components that are not a block's own drawing is called.
+ *
+ * English, like the rest of this page's furniture. `BAUSTEINE` was the id of this constant
+ * before a design review found the mixed page it produced; it is now the words themselves,
+ * and `__tests__/gallery-groups.test.ts` asserts they are ASCII so the German cannot come
+ * back by a rename nobody looked at.
+ */
+export const BAUSTEINE = 'Building blocks';
 
 /**
  * What the grouping reads off an entry, which is the block it draws and nothing else.
