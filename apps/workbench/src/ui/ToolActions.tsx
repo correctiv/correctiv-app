@@ -1,4 +1,4 @@
-import { GitPullRequest, RotateCcw, Save } from 'lucide-react';
+import { GitPullRequest, Link, RotateCcw, Save } from 'lucide-react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../i18n/Localisation';
@@ -8,8 +8,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 
 /**
  * Everything the actions say, in ENGLISH; the German that ships is
- * `src/i18n/catalogue/de/actions.ts`. One vocabulary for every tool: submit, save,
- * discard.
+ * `src/i18n/catalogue/de/actions.ts`. One vocabulary for every tool: share, save,
+ * discard, submit.
  */
 const COPY = defineMessages({
   group: {
@@ -40,6 +40,19 @@ const COPY = defineMessages({
     defaultMessage:
       'On a dev server, writes the change into your own checkout. A shortcut for developers; the way to a pull request is Submit.',
     description: 'The tooltip on the save button.',
+  },
+  share: {
+    id: 'actions.share',
+    defaultMessage: 'Share link',
+    description:
+      'Puts the open draft into a link, so a colleague can look at it before anybody submits anything (ADR 0076). The same word for every tool.',
+  },
+  shareTip: {
+    id: 'actions.shareTip',
+    defaultMessage:
+      'Copies a link that opens this draft on somebody else’s machine. A draft is not a secret: everything it carries goes into a public GitHub issue the moment somebody submits it.',
+    description:
+      'The tooltip on the share button. The second sentence is the whole argument for putting the draft in the link rather than hiding it: the submission path is public, so a link is not a smaller disclosure than submitting is.',
   },
   discard: {
     id: 'actions.discard',
@@ -76,7 +89,7 @@ const COPY = defineMessages({
 });
 
 /**
- * The open tool's save, submit and discard, at the right end of the header and
+ * The open tool's share, save, submit and discard, at the right end of the header and
  * nowhere else.
  *
  * **Disabled rather than hidden** when there is nothing to do: a button that appears
@@ -89,7 +102,7 @@ export function ToolActions() {
   const actions = useActiveActions();
   if (actions === null) return null;
 
-  const { dirty, count, blocked, submit, save, discard } = actions;
+  const { dirty, count, blocked, submit, share, save, discard } = actions;
   const live = dirty && !blocked;
 
   return (
@@ -131,6 +144,24 @@ export function ToolActions() {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">{intl.formatMessage(COPY.discardTip)}</TooltipContent>
+        </Tooltip>
+      )}
+
+      {share !== undefined && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!live}
+              onClick={share.run}
+              data-testid="action-share"
+            >
+              <Link aria-hidden="true" />
+              {intl.formatMessage(COPY.share)}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{intl.formatMessage(COPY.shareTip)}</TooltipContent>
         </Tooltip>
       )}
 

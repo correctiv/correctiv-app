@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Seventy-three records shaped this repo. Read them when you want to know *why* something
+Seventy-four records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -78,6 +78,7 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0072](0072-features-are-released-by-a-commit-and-never-by-a-fetch.md) | Features are released by a commit and never by a fetch | accepted, not built; channel `release`/`preview` set by the host and fail-closed on native, three states `aus`/`vorschau`/`an`, data provenance as a ceiling, gated blocks omitted silently and labelled in the tools, `features.json` bundled and never fetched, separate from layout |
 | [0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md) | Every screen takes every block, and a block declares its category | accepted; supersedes 0071 §2 and 0054 §2 — the per-screen table is removed and every configurable screen may carry every block, each block declares one of six categories instead and the core exports the grouping a picker reads, the words for a category stay in the workbench, and four screen-title blocks keep a binding to their own screen |
 | [0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md) | A document carries its own words, and a screen says what it is called | accepted, not built; supersedes 0073 §3 whole and the label-and-icon clause of 0071 §4 — a setting kind `text` holding one string per language with `de` required and the fallback and a missing translation marked rather than refused, a screen document carrying its own title, tab label and icon out of a set the app declares, the navigation document left with placement and order alone, one `screen-header` block replacing the four bound title rows, and the constraints a custom screen has to meet; 0057 §2 is not struck, because its claim is about an article |
+| [0076](0076-a-draft-travels-in-the-fragment.md) | A draft travels in the fragment | accepted, built the same day; the other half of the address question 0061 §6 decided for the issue path — the draft goes in the fragment under `draft`, deflate-raw and base64url in the submission's own envelope, so nothing is sent to a server that does not exist; the limit is 2000 characters of address, measured against the documents this tool holds rather than against the browser, which opened 2 MiB; an arriving draft is held and not published, because the key the two halves share is where the framed app reads from and a link must not cost the reader their own unsubmitted work; the inflate is bounded at the app's own 256 KiB |
 
 Ten notes for readers of the older ones:
 

@@ -746,5 +746,23 @@
       "6": ["One header block prints the screen's own words, and the four bound headers go"],
       "7": ["What a custom screen must satisfy, and why it is not a tab"]
     }
+  },
+  "0076": {
+    "slugs": ["a-draft-travels-in-the-fragment"],
+    "decisions": {
+      "1": [
+        "The draft travels in the fragment, under the name `draft`, inside the submission's own envelope"
+      ],
+      "2": [
+        "Length is the limit, it is 2000 characters, and past it the tool says so and points at the submission"
+      ],
+      "3": [
+        "An arriving draft is held, not published, and nothing about it is written into the machine"
+      ],
+      "4": ["The inflate is bounded, and the bound is the app's own document ceiling"],
+      "5": [
+        "The button is in the header with the other words, and what came of the click is said in the panel"
+      ]
+    }
   }
 }

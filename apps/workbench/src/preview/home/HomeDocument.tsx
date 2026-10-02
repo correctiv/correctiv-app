@@ -8,6 +8,8 @@ import {
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
+
+import type { HomeLayout } from '@correctiv/app-core/lib/home-layout';
 import {
   useEffect,
   useMemo,
@@ -65,6 +67,7 @@ import {
   decidedAt,
   editableAt,
   differs,
+  formatLayoutDocument,
   formatTimeOfDay,
   inheritedAt,
   added,
@@ -97,8 +100,17 @@ import { CONTROLS_COPY, EditorBar, PointChip } from './Controls';
 import { GUTTER, rowWidth } from './fit';
 import type { ScenarioControl } from './Scenario';
 import { screenOfRoute, SCREEN_ROUTES, shippedOf, type ConfigurableScreen } from './screens';
-import { getLayout, getScreen, setLayout, setScreen, subscribeLayout } from './store';
+import {
+  getLayout,
+  getScreen,
+  incomingOf,
+  noticeOf,
+  setLayout,
+  setScreen,
+  subscribeLayout,
+} from './store';
 import { copyNow } from '../clipboard';
+import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { canSave, publish, save, submission, type SaveResult } from './write';
 
 /**
@@ -194,6 +206,47 @@ const COPY = defineMessages({
     defaultMessage: 'refused',
     description:
       'The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated.',
+  },
+  shareCopied: {
+    id: 'home.document.shareCopied',
+    defaultMessage:
+      'The link is on your clipboard. Open it yourself to see what the person you send it to will see.',
+    description:
+      'After Share link, when the address went on the clipboard (ADR 0076). Says what the click did and what to check before it goes out, which is the half of sharing nobody thinks of.',
+  },
+  shareNoClipboard: {
+    id: 'home.document.shareNoClipboard',
+    defaultMessage:
+      'The browser did not let this page use the clipboard. Copy the link from this field.',
+    description:
+      'After Share link, when the clipboard was refused. The link is in the field beside it, as the submission’s body is in its own.',
+  },
+  shareTooLong: {
+    id: 'home.document.shareTooLong',
+    defaultMessage:
+      'This draft is too long to share as a link: {link} characters, where a link stops being usable at {limit}. Submit it instead — that opens GitHub with the change in it.',
+    description:
+      'After Share link, when the address came out longer than the measured limit (ADR 0076 §2). {link} is how long that address was and {limit} the limit, both as plain numbers, because the sentence says which of the two is the rule. The second sentence names no button: the one that submits is called Einreichen here and Submit in English, and a sentence that quoted one of those would be wrong in the other language.',
+  },
+  shareLinkField: {
+    id: 'home.document.shareField',
+    defaultMessage: 'The link',
+    description:
+      'The name read out for the field that holds the address when the clipboard was refused.',
+  },
+  sharedHeld: {
+    id: 'home.document.sharedHeld',
+    defaultMessage:
+      'This draft came in a link. It is not saved on this machine: submit it, or reload to get your own document back.',
+    description:
+      'Under the head of the layout tool, after a link with a draft in it was opened (ADR 0076 §3). Says the two things a person cannot see: where the document came from, and that nothing of it was written here.',
+  },
+  sharedDamaged: {
+    id: 'home.document.sharedDamaged',
+    defaultMessage:
+      'This link carries no draft this tool can open, so it was left out. The tool is unchanged.',
+    description:
+      'Stands in for home.document.sharedHeld after a link whose draft would not open — damaged characters, or a document this editor cannot hold (ADR 0076 §3). One sentence for both, because nobody reading it can act on the difference.',
   },
 
   rowOff: {
@@ -406,6 +459,25 @@ const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
   'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
+/**
+ * The address this draft is handed over as, and how long it came out.
+ *
+ * Out of the module rather than out of the render, because the click reaches the store and
+ * not the component: `getScreen()` and `getLayout()` are what the document is at the moment
+ * the button was pressed, and the header's button holds the `run` of the last render it drew.
+ *
+ * `window.location` twice over: the origin and the path say which page this is, and the
+ * hash is the frame's half of the link — the device, the hour, the scenario — which
+ * `shareLink` reads and writes back so a link says what the person looking at it sees.
+ */
+async function shareDraft(of: ConfigurableScreen, held: HomeLayout) {
+  return await shareLink(
+    'home',
+    { screen: of, document: formatLayoutDocument(held) },
+    { base: `${window.location.origin}${window.location.pathname}`, hash: window.location.hash },
+  );
+}
+
 export function HomeDocument({
   state,
   onChange,
@@ -447,6 +519,18 @@ export function HomeDocument({
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   /** The screen whose document that is, and the file the app ships for it. */
   const screen = useSyncExternalStore(subscribeLayout, getScreen, getScreen);
+  /**
+   * Whether this document came in a shared link, and whether one arrived that would not
+   * open (ADR 0076 §3). Read out of the store rather than handed in, because the arrival
+   * happens on the page's mount — before this panel's first render — and the one thing
+   * that must survive a reload is the fact that it must not.
+   */
+  const incoming = useSyncExternalStore(
+    subscribeLayout,
+    () => incomingOf(screen),
+    () => false,
+  );
+  const notice = useSyncExternalStore(subscribeLayout, noticeOf, () => null);
   const shipped = shippedOf(screen);
   /**
    * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the session the framed app holds,
@@ -464,6 +548,19 @@ export function HomeDocument({
    */
   const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
   const copyField = useRef<HTMLTextAreaElement>(null);
+  /**
+   * What the last click on Share link came to (ADR 0076 §2): the address went to the
+   * clipboard, the browser refused it and the field beside the sentence holds the address
+   * instead, or the draft was too long and there is no address at all. `length` is the one
+   * that came out long, said as a number so the sentence can name the limit beside it.
+   */
+  const [linked, setLinked] = useState<
+    | { kind: 'copied' }
+    | { kind: 'no-clipboard'; link: string }
+    | { kind: 'too-long'; length: number }
+    | null
+  >(null);
+  const linkField = useRef<HTMLTextAreaElement>(null);
   /**
    * Whether the frame scrolls to the block under the pointer.
    *
@@ -634,6 +731,7 @@ export function HomeDocument({
   useEffect(() => {
     setResult(null);
     setCopied(null);
+    setLinked(null);
   }, [layout]);
 
   /*
@@ -643,6 +741,29 @@ export function HomeDocument({
   useEffect(() => {
     if (copied === 'no-clipboard') copyField.current?.focus();
   }, [copied]);
+
+  /** And the same for a link the clipboard would not take: the field, then the hand. */
+  useEffect(() => {
+    if (linked?.kind === 'no-clipboard') linkField.current?.focus();
+  }, [linked]);
+
+  /**
+   * Share this draft as a link, and say what came of it (ADR 0076 §2).
+   *
+   * **The document is read out of the store, not out of this render.** The header's button
+   * holds the `run` of the last render it drew — `shell/actions.tsx` only tells it about
+   * fields that are drawn — and the document is exactly the field that is not drawn.
+   * Reading it when the click happens is one line and removes the question of which copy
+   * went into the link.
+   */
+  const share = async () => {
+    const { link, length } = await shareDraft(getScreen(), getLayout());
+    if (link === null) {
+      setLinked({ kind: 'too-long', length });
+      return;
+    }
+    setLinked(copyNow(link) ? { kind: 'copied' } : { kind: 'no-clipboard', link });
+  };
 
   const goTo = (next: MinuteOfDay) => onChange({ time: timeOf(next) });
 
@@ -899,6 +1020,13 @@ export function HomeDocument({
             ).then(setResult),
         }
       : undefined,
+    /*
+     * A link that carries the draft, and nothing else (ADR 0076). Switched off for a
+     * scenario for the reason Submit is: a scenario is an example with a date made up for
+     * it, and a link to one would land the reader in a document they cannot submit and do
+     * not know why they cannot.
+     */
+    share: guarded ? undefined : { run: () => void share() },
     discard: () => {
       // The file, and out of the scenario with it: discarding is the way back to what
       // readers see, and a scenario left open would be loaded again.
@@ -952,32 +1080,89 @@ export function HomeDocument({
               ? CONTROLS_COPY.submitHintLong
               : CONTROLS_COPY.submitHint
         }
+        /*
+         * Where the document came from, and one sentence for an arrival that was nothing
+         * (ADR 0076 §3). Both stand above the outcome because both are about the
+         * document rather than about the way out of it, and because the one that matters
+         * most says something nobody can see: this machine holds nothing of it.
+         */
+        notice={
+          incoming || notice !== null ? (
+            <p className={NOTE} data-testid="shared-hint">
+              {intl.formatMessage(notice === 'damaged' ? COPY.sharedDamaged : COPY.sharedHeld)}
+            </p>
+          ) : undefined
+        }
         outcome={
-          offer && copied !== null ? (
-            <div className="flex flex-col gap-xs">
-              <output className="flex items-start gap-xs text-s text-on-canvas">
-                {copied === 'copied' && (
-                  <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
-                )}
-                <span className="min-w-0">
-                  {intl.formatMessage(
-                    copied === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+          <>
+            {offer && copied !== null && (
+              <div className="flex flex-col gap-xs">
+                <output className="flex items-start gap-xs text-s text-on-canvas">
+                  {copied === 'copied' && (
+                    <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
                   )}
-                </span>
-              </output>
-              {copied === 'no-clipboard' && (
-                <textarea
-                  ref={copyField}
-                  readOnly
-                  aria-label={intl.formatMessage(COPY.documentField)}
-                  value={offer.body}
-                  rows={8}
-                  onFocus={(event) => event.currentTarget.select()}
-                  className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
-                />
-              )}
-            </div>
-          ) : null
+                  <span className="min-w-0">
+                    {intl.formatMessage(
+                      copied === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+                    )}
+                  </span>
+                </output>
+                {copied === 'no-clipboard' && (
+                  <textarea
+                    ref={copyField}
+                    readOnly
+                    aria-label={intl.formatMessage(COPY.documentField)}
+                    value={offer.body}
+                    rows={8}
+                    onFocus={(event) => event.currentTarget.select()}
+                    className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
+                  />
+                )}
+              </div>
+            )}
+
+            {/*
+             * What the last click on Share link came to, drawn in the submission's own
+             * place rather than in the header: a link is a second way out of the tool and
+             * the two are never both in play — the draft that could not be shared is
+             * submitted instead, which is what the sentence says. The field is the
+             * submission's field for the same reason and in the same way: the clipboard is
+             * a thing the browser may refuse, and the address is still there to be copied
+             * by hand (ADR 0076 §2).
+             */}
+            {linked !== null && (
+              <div className="flex flex-col gap-xs">
+                <output
+                  className="flex items-start gap-xs text-s text-on-canvas"
+                  data-testid="share-outcome"
+                >
+                  {linked.kind === 'copied' && (
+                    <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
+                  )}
+                  <span className="min-w-0">
+                    {linked.kind === 'copied' && intl.formatMessage(COPY.shareCopied)}
+                    {linked.kind === 'no-clipboard' && intl.formatMessage(COPY.shareNoClipboard)}
+                    {linked.kind === 'too-long' &&
+                      intl.formatMessage(COPY.shareTooLong, {
+                        link: linked.length,
+                        limit: SHARE_ADDRESS_LIMIT,
+                      })}
+                  </span>
+                </output>
+                {linked.kind === 'no-clipboard' && (
+                  <textarea
+                    ref={linkField}
+                    readOnly
+                    aria-label={intl.formatMessage(COPY.shareLinkField)}
+                    value={linked.link}
+                    rows={3}
+                    onFocus={(event) => event.currentTarget.select()}
+                    className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
+                  />
+                )}
+              </div>
+            )}
+          </>
         }
       />
 

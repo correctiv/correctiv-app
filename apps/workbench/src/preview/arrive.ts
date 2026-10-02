@@ -1,0 +1,53 @@
+/**
+ * A draft that comes out of the address, once, on arrival (ADR 0076 §3).
+ *
+ * **Out of `Preview.tsx` and into a module that can be asked.** The read is four lines and
+ * the argument around it is long, and the whole of that argument is about what must not
+ * happen to the machine that opens the link: nothing of the draft may be written into its
+ * storage before a person has edited it. That is a claim about behaviour and a test is the
+ * only thing that can hold it, so the path is a function that takes an address rather than
+ * an effect nobody can reach from Node (`test/preview/arrive.test.ts` is the test).
+ */
+
+import { holdIncoming, noteDamaged, setScreen } from './home/store';
+import { isScreen, SCREEN_ROUTES } from './home/screens';
+import { packedIn, unpack } from './share';
+import { set } from './store';
+
+/**
+ * Take the draft out of `hash` and hand it to the tool, or say that there was none.
+ *
+ * **Nothing is written into the address on the way.** The tool that made the link put the
+ * draft there, and the tool that opens it does not write it back: `toAddress` writes the
+ * frame's own parameters and a draft is not one, so a link that carried one and were
+ * rewritten would go on claiming a draft the tool has moved on from — the first edit would
+ * leave a stale address behind. The draft travels out of the address and into the editor,
+ * the button is the only thing that makes one again, and what the address says stays true.
+ *
+ * **One sentence for everything that is not a draft.** Damaged characters, an envelope the
+ * core will not open, a screen that does not exist: three faults, one `noteDamaged`, and no
+ * difference a person could act on.
+ *
+ * Returns whether a draft was taken, which the caller here does nothing with and a test
+ * reads.
+ */
+export async function arriveFrom(hash: string): Promise<boolean> {
+  const packed = packedIn(hash);
+  if (packed === null) return false;
+  const arrival = await unpack(packed);
+  const draft = arrival === null || 'damaged' in arrival ? null : arrival.draft;
+  if (draft === null || !isScreen(draft.screen)) {
+    noteDamaged();
+    return false;
+  }
+  if (!holdIncoming(draft.screen, draft.document)) return false;
+  /*
+   * The screen the draft belongs to, and the frame goes to it with the tool. The editor
+   * holds one document at a time (`home/store.ts`), so a draft for another screen loaded
+   * without this would be in the store and on no screen at all — the reader would be sent
+   * an address they cannot see.
+   */
+  setScreen(draft.screen);
+  set({ route: SCREEN_ROUTES[draft.screen] });
+  return true;
+}

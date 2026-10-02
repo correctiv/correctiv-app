@@ -215,6 +215,7 @@ export function EditorBar({
   follow,
   onFollow,
   submitHint,
+  notice,
   outcome,
 }: {
   screen: ConfigurableScreen;
@@ -230,7 +231,14 @@ export function EditorBar({
    * long the change is.
    */
   submitHint: MessageDescriptor;
-  /** What the last submit click did, drawn under the row. Nothing while there is none. */
+  /**
+   * What the bar has to say about the document itself rather than about a control: where
+   * it came from, if it came in a link (ADR 0076 §3). A row of its own above the
+   * outcome, because it stays while somebody works and an outcome is gone by the next
+   * click.
+   */
+  notice?: ReactNode;
+  /** What the last submit or share click did, drawn under the row. Nothing while there is none. */
   outcome?: ReactNode;
 }) {
   const intl = useWorkbenchIntl();
@@ -315,6 +323,7 @@ export function EditorBar({
         on its own line now, which is what a row of controls plus a stack of state is.
       */}
       {guarded && <p className={NOTE}>{intl.formatMessage(CONTROLS_COPY.screenLocked)}</p>}
+      {notice}
       {outcome}
     </div>
   );
