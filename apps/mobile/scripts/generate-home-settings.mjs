@@ -216,6 +216,14 @@ function renderSpec(spec) {
       `min: ${spec.min}, max: ${spec.max}, fallback: ${spec.fallback} }`
     );
   }
+  if (spec.kind === 'category' || spec.kind === 'tag') {
+    if (spec.fallback !== null && !(Number.isInteger(spec.fallback) && spec.fallback > 0)) {
+      throw new Error(
+        `${SCRIPT}: ${DECLARATIONS_LABEL} gives '${spec.key}' a fallback that is no term id`,
+      );
+    }
+    return `{ key: ${name(spec.key, 'a setting key')}, kind: '${spec.kind}', fallback: ${spec.fallback} }`;
+  }
   throw new Error(
     `${SCRIPT}: ${DECLARATIONS_LABEL} declares a setting of kind ` +
       `'${/** @type {{ kind: string }} */ (spec).kind}', which this script cannot write. ` +

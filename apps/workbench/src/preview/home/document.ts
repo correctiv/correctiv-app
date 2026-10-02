@@ -429,6 +429,46 @@ export const SETTING_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'Pinned, or the newest investigation when nothing is.',
     }),
   },
+  'article-hero.category': {
+    label: wbMessage({
+      id: 'home.setting.articleHero.category',
+      defaultMessage: 'Which category the lead comes from',
+    }),
+    what: wbMessage({
+      id: 'home.setting.articleHero.category.what',
+      defaultMessage: 'The rule that picks the lead when nothing is pinned.',
+    }),
+  },
+  'latest-research.category': {
+    label: wbMessage({
+      id: 'home.setting.latestResearch.category',
+      defaultMessage: 'Which category the investigations come from',
+    }),
+    what: wbMessage({
+      id: 'home.setting.latestResearch.category.what',
+      defaultMessage: 'Limits the list under the lead article to one category.',
+    }),
+  },
+  'latest-research.tag': {
+    label: wbMessage({
+      id: 'home.setting.latestResearch.tag',
+      defaultMessage: 'Which tag the investigations carry',
+    }),
+    what: wbMessage({
+      id: 'home.setting.latestResearch.tag.what',
+      defaultMessage: 'Limits the list under the lead article to one tag.',
+    }),
+  },
+  'faktencheck-rail.category': {
+    label: wbMessage({
+      id: 'home.setting.faktencheckRail.category',
+      defaultMessage: 'Which category the fact checks come from',
+    }),
+    what: wbMessage({
+      id: 'home.setting.faktencheckRail.category.what',
+      defaultMessage: 'The category the row reads; fact checks unless changed.',
+    }),
+  },
   'latest-research.count': {
     label: wbMessage({
       id: 'home.setting.latestResearch.count',

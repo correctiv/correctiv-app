@@ -39,6 +39,10 @@ import {
   type MinuteOfDay,
 } from '@correctiv/app-core/lib/home-layout';
 import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
+import { postIdOf } from '@correctiv/app-core/lib/home-rules';
+import type { CategorySetting, TagSetting } from '@correctiv/app-core/lib/home-settings';
+
+import { useLivePosts, useLivePostTitle, useTerms } from './liveSettings';
 
 import { SOURCES } from '../../../content/sources.manifest';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
@@ -402,6 +406,58 @@ const COPY = defineMessages({
     defaultMessage: 'set here',
     description:
       'The mark on a value this moment sets, as against one it inherits from the point before it. Drawn white on the accent, beside a control.',
+  },
+  pinLive: {
+    id: 'home.setting.pinLive',
+    defaultMessage: 'Live',
+    description:
+      'A badge after an option of a picker whose entry is read from WordPress right now: a post found by the search, or a category or tag from the live list.',
+  },
+  pinSample: {
+    id: 'home.setting.pinSample',
+    defaultMessage: 'Sample',
+    description:
+      'A badge after an option of the article picker that is one of the checked-in stand-in articles, as against one found live.',
+  },
+  pinSearch: {
+    id: 'home.setting.pinSearch',
+    defaultMessage: 'Search articles on correctiv.org',
+    description: 'Placeholder and accessible name of the search field above the article picker.',
+  },
+  searching: {
+    id: 'home.setting.searching',
+    defaultMessage: 'Searching…',
+    description: 'Under the search field of a picker while WordPress has not answered yet.',
+  },
+  searchHits: {
+    id: 'home.setting.searchHits',
+    defaultMessage:
+      '{count, plural, =0 {No articles found.} one {# article found.} other {# articles found.}}',
+    description:
+      'Under the search field of the article picker once WordPress has answered. {count} is the number of articles added to the list below.',
+  },
+  termNone: {
+    id: 'home.setting.termNone',
+    defaultMessage: 'Any (no filter)',
+    description:
+      'The first option of a category or tag picker whose block draws every post by default: no category or tag is asked for.',
+  },
+  termDefault: {
+    id: 'home.setting.termDefault',
+    defaultMessage: 'The block’s own category',
+    description:
+      'The first option of a category picker whose block draws one category by default, shown until the live list has told which one that is.',
+  },
+  termOption: {
+    id: 'home.setting.termOption',
+    defaultMessage: '{name} ({count})',
+    description:
+      'One category or tag in its picker. {name} is the term’s name and {count} the number of posts filed under it.',
+  },
+  termSearch: {
+    id: 'home.setting.termSearch',
+    defaultMessage: 'Search tags',
+    description: 'Placeholder and accessible name of the search field above the tag picker.',
   },
   noPin: {
     id: 'home.setting.noPin',
@@ -2166,19 +2222,17 @@ function Setting({
           label={say(intl, label)}
           onSet={onSet}
         />
+      ) : spec.kind === 'category' || spec.kind === 'tag' ? (
+        <Term
+          spec={spec}
+          value={value}
+          disabled={disabled}
+          label={say(intl, label)}
+          onSet={onSet}
+        />
       ) : (
         <>
-          <Select
-            disabled={disabled}
-            aria-label={say(intl, label)}
-            value={typeof value === 'string' ? value : ''}
-            onValueChange={(next) => onSet(next === '' ? null : next)}
-            className="w-full"
-            options={[
-              { value: '', label: intl.formatMessage(COPY.noPin) },
-              ...HOME_PINS.map((item) => ({ value: item.url, label: item.title })),
-            ]}
-          />
+          <PinSelect value={value} disabled={disabled} label={say(intl, label)} onSet={onSet} />
           {inEdition && typeof value === 'string' && (
             <Warning>{intl.formatMessage(EDITION_COPY.pinEarly)}</Warning>
           )}
@@ -2211,6 +2265,157 @@ function Setting({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * The article picker: the sample pins and a live search over WordPress, side by side.
+ *
+ * ADR 0071 §7. A live result stores the post's id and nothing else; a sample pin stores its
+ * address, as before. Every option says which it is, because the two are not the same kind
+ * of promise: a sample is a checked-in stand-in, a live post can be unpublished tomorrow,
+ * and the app then falls back to the block's rule.
+ */
+function PinSelect({
+  value,
+  disabled,
+  label,
+  onSet,
+}: {
+  value: unknown;
+  disabled: boolean;
+  label: string;
+  onSet: (value: string | null) => void;
+}) {
+  const intl = useWorkbenchIntl();
+  const [query, setQuery] = useState('');
+  const live = useLivePosts(query);
+  const heldTitle = useLivePostTitle(value);
+  const held = typeof value === 'string' ? value : '';
+
+  const liveOptions = (live ?? [])
+    .map((item) => ({ id: postIdOf(item), item }))
+    .filter((entry): entry is { id: number; item: (typeof entry)['item'] } => entry.id !== null)
+    .map(({ id, item }) => ({
+      value: String(id),
+      label: item.title,
+      badge: intl.formatMessage(COPY.pinLive),
+    }));
+  const sample = HOME_PINS.map((item) => ({
+    value: item.url,
+    label: item.title,
+    badge: intl.formatMessage(COPY.pinSample),
+  }));
+  const options = [{ value: '', label: intl.formatMessage(COPY.noPin) }, ...liveOptions, ...sample];
+  if (held !== '' && !options.some((option) => option.value === held)) {
+    options.splice(1, 0, {
+      value: held,
+      label: heldTitle ?? held,
+      badge: intl.formatMessage(COPY.pinLive),
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-3xs">
+      <input
+        type="search"
+        value={query}
+        disabled={disabled}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder={intl.formatMessage(COPY.pinSearch)}
+        aria-label={intl.formatMessage(COPY.pinSearch)}
+        className="h-[1.75rem] rounded-md border border-stroke bg-canvas px-2xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      />
+      {query.trim().length >= 2 && (
+        <p className={NOTE} aria-live="polite">
+          {live === null
+            ? intl.formatMessage(COPY.searching)
+            : intl.formatMessage(COPY.searchHits, { count: liveOptions.length })}
+        </p>
+      )}
+      <Select
+        disabled={disabled}
+        aria-label={label}
+        value={held}
+        onValueChange={(next) => onSet(next === '' ? null : next)}
+        className="w-full"
+        options={options}
+      />
+    </div>
+  );
+}
+
+/**
+ * The category or tag a block's rule reads (ADR 0057 §2, ADR 0071 §7), chosen from the live
+ * taxonomy and stored as the term's id.
+ *
+ * The first option is "as the block draws today", which sends the module's own fallback, so
+ * choosing it again removes the setting rather than writing a value that says nothing. A
+ * category is a short list; a tag is one of thousands and is found by searching.
+ */
+function Term({
+  spec,
+  value,
+  disabled,
+  label,
+  onSet,
+}: {
+  spec: CategorySetting | TagSetting;
+  value: unknown;
+  disabled: boolean;
+  label: string;
+  onSet: (value: number | null) => void;
+}) {
+  const intl = useWorkbenchIntl();
+  const [query, setQuery] = useState('');
+  const taxonomy = spec.kind === 'category' ? 'categories' : 'tags';
+  const terms = useTerms(taxonomy, spec.kind === 'tag' ? query : '');
+  const held = typeof value === 'number' ? value : spec.fallback;
+  const shown = held === spec.fallback ? '' : String(held);
+
+  const options = [
+    {
+      value: '',
+      label:
+        spec.fallback === null
+          ? intl.formatMessage(COPY.termNone)
+          : (terms?.find((term) => term.id === spec.fallback)?.name ??
+            intl.formatMessage(COPY.termDefault)),
+    },
+    ...(terms ?? [])
+      .filter((term) => term.id !== spec.fallback)
+      .map((term) => ({
+        value: String(term.id),
+        label: intl.formatMessage(COPY.termOption, { name: term.name, count: term.count }),
+        badge: intl.formatMessage(COPY.pinLive),
+      })),
+  ];
+  if (shown !== '' && !options.some((option) => option.value === shown)) {
+    options.push({ value: shown, label: `#${shown}`, badge: intl.formatMessage(COPY.pinLive) });
+  }
+
+  return (
+    <div className="flex flex-col gap-3xs">
+      {spec.kind === 'tag' && (
+        <input
+          type="search"
+          value={query}
+          disabled={disabled}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={intl.formatMessage(COPY.termSearch)}
+          aria-label={intl.formatMessage(COPY.termSearch)}
+          className="h-[1.75rem] rounded-md border border-stroke bg-canvas px-2xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        />
+      )}
+      <Select
+        disabled={disabled}
+        aria-label={label}
+        value={shown}
+        onValueChange={(next) => onSet(next === '' ? spec.fallback : Number(next))}
+        className="w-full"
+        options={options}
+      />
     </div>
   );
 }

@@ -5,9 +5,9 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import type { Instant } from '@correctiv/app-core/lib/berlin-time';
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
+import { leadItem, ruleOf } from '@correctiv/app-core/lib/home-rules';
 import { itemCount, pinnedItem } from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
-import { pinnedArticle } from '@correctiv/app-core/data/home-pins';
 import { atlasStats } from '@correctiv/app-core/data/abriss-atlas';
 import { claims } from '@correctiv/app-core/data/claims';
 import { projectGroups, type Project } from '@correctiv/app-core/data/projects';
@@ -54,7 +54,16 @@ import {
   SplitRow,
   Typo,
 } from '@/components/ui';
-import { FACT_CHECK_COUNT, HERO_PIN, RESEARCH_COUNT } from '@/lib/home/settings';
+import {
+  FACT_CHECK_CATEGORY,
+  FACT_CHECK_COUNT,
+  HERO_CATEGORY,
+  HERO_PIN,
+  RESEARCH_CATEGORY,
+  RESEARCH_COUNT,
+  RESEARCH_TAG,
+} from '@/lib/home/settings';
+import { useLivePin, useRuleItems } from '@/lib/home/useRule';
 import { projectTarget } from '@/lib/discover/target';
 import { useFeed, useInvestigations } from '@/lib/feeds/useFeed';
 import { TIER_LABELS } from '@/lib/membership/tierLabel';
@@ -335,11 +344,11 @@ const FeedStatusModule: HomeModule = ({ section }) => {
  * lead belongs.
  */
 const ArticleHeroModule: HomeModule = ({ section }) => {
-  const newest = useFeed('recherchen').data;
+  const plain = useFeed('recherchen').data ?? undefined;
   const pin = pinnedItem(section.settings, HERO_PIN);
-  const hero =
-    (pin === null ? null : (newest?.find((item) => item.url === pin) ?? pinnedArticle(pin))) ??
-    newest?.[0];
+  const rule = ruleOf(section.settings, { category: HERO_CATEGORY });
+  const ruled = useRuleItems('recherchen', rule, plain);
+  const hero = leadItem(pin, ruled, useLivePin(pin));
   if (!hero) return null;
   return (
     <Place section={section}>
@@ -363,7 +372,12 @@ const EarlyAccessModule: HomeModule = ({ section }) => (
 const LatestResearchModule: HomeModule = ({ section }) => {
   const intl = useIntl();
   const under = itemCount(section.settings, RESEARCH_COUNT);
-  const neueste = useFeed('recherchen').data?.slice(1, 1 + under) ?? [];
+  const rule = ruleOf(section.settings, { category: RESEARCH_CATEGORY, tag: RESEARCH_TAG });
+  const neueste =
+    useRuleItems('recherchen', rule, useFeed('recherchen').data ?? undefined)?.slice(
+      1,
+      1 + under,
+    ) ?? [];
   if (neueste.length === 0) return null;
   return (
     <Place section={section} className="mt-l">
@@ -382,8 +396,8 @@ const LatestResearchModule: HomeModule = ({ section }) => {
 
 const FaktencheckRailModule: HomeModule = ({ section, screen }) => {
   const intl = useIntl();
-  const faktenchecks = useFeed('faktencheck');
-  const items = faktenchecks.data ?? [];
+  const rule = ruleOf(section.settings, { category: FACT_CHECK_CATEGORY });
+  const items = useRuleItems('faktencheck', rule, useFeed('faktencheck').data ?? undefined) ?? [];
   if (items.length === 0) return null;
   return (
     <Place section={section} className="mt-l">

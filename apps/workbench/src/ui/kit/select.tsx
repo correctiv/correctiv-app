@@ -9,6 +9,8 @@ export interface SelectOption {
   /** What the list shows, in the reader's language. Shown whole, however long. */
   label: string;
   disabled?: boolean;
+  /** A small mark after the label in the open list only, such as where the option comes from. */
+  badge?: string;
 }
 
 export interface SelectProps {
@@ -140,6 +142,11 @@ export function Select({
                 )}
               >
                 <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
+                {option.badge && (
+                  <span className="ml-2xs shrink-0 self-start rounded-full border border-stroke px-3xs text-[0.6875rem] text-on-canvas-muted">
+                    {option.badge}
+                  </span>
+                )}
                 <SelectPrimitive.ItemIndicator className="absolute top-[0.35rem] right-2xs text-accent">
                   <Check aria-hidden="true" className="size-[0.875rem]" />
                 </SelectPrimitive.ItemIndicator>
