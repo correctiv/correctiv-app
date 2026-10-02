@@ -26,12 +26,13 @@ import { Platform, Pressable, ScrollView, View } from 'react-native';
 
 import type { ThemePreference } from '@correctiv/app-core/stores/settings';
 
-import { Hairline, Overline, SafeAreaView, Typo } from '@/components/ui';
+import { Badge, Hairline, Overline, SafeAreaView, Typo } from '@/components/ui';
 import { featureState } from '@correctiv/app-core/features/features';
 import { useAppSelector, useCoreActions, useTheme } from '@/lib/store/core';
 import { useIsDark } from '@/lib/theme';
 
-import { CATALOGUE, componentId, type Folder, type Specimen } from './catalogue';
+import { CATALOGUE, componentId, type Entry, type Folder, type Specimen } from './catalogue';
+import { dataOptions, specimensFor, validChoice } from './data-pick';
 
 const SETTINGS: ThemePreference[] = ['system', 'light', 'dark'];
 
@@ -126,6 +127,80 @@ function FeatureMark({ feature }: { feature: string }) {
     <Typo variant="text-s" color="accent" className="mt-4xs">
       {`Feature "${feature}" is ${state}: ${state === 'vorschau' ? 'preview builds only' : 'in no build'}.`}
     </Typo>
+  );
+}
+
+/**
+ * Which data the one component on screen is drawn with, in two groups.
+ *
+ * **Live** is the current fetch and **Beispiel** the named sample variants, each option
+ * badged with the provenance its source declares (ADR 0072 §4). The choice is the `p`
+ * query value, so a link carries it. Shown for a single component only: on the whole page
+ * a choice per entry would be 100 controls, and the default view stays as it was.
+ */
+const choose = (next: string | undefined) => router.setParams({ p: next });
+
+function DataPicker({ entry, value }: { entry: Entry; value: string | undefined }) {
+  const options = dataOptions(entry);
+  if (!options) return null;
+  const groups = [
+    { title: 'Live', kind: 'live' as const, items: options.filter((o) => o.kind === 'live') },
+    {
+      title: 'Beispiel',
+      kind: 'sample' as const,
+      items: options.filter((o) => o.kind === 'sample'),
+    },
+  ];
+
+  return (
+    <View className="mt-s">
+      <Typo variant="text-s" weight="semibold" color="on-canvas-muted">
+        Data
+      </Typo>
+      <Pressable
+        onPress={() => choose(undefined)}
+        accessibilityRole="button"
+        accessibilityState={{ selected: value === undefined }}
+        className="mt-2xs active:opacity-60"
+      >
+        <Typo variant="text-s" weight={value === undefined ? 'semibold' : 'normal'}>
+          Specimens of the catalogue
+        </Typo>
+      </Pressable>
+      {groups
+        .filter((group) => group.items.length > 0)
+        .map((group) => (
+          <View key={group.kind} className="mt-xs">
+            <Typo variant="text-s" color="on-canvas-muted">
+              {group.title}
+            </Typo>
+            {group.items.map((option) => (
+              <Pressable
+                key={option.value}
+                onPress={() => choose(option.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: value === option.value }}
+                className="mt-2xs active:opacity-60"
+              >
+                <View className="flex-row items-center gap-2xs">
+                  <Badge
+                    label={option.kind === 'live' ? 'Live' : 'Beispiel'}
+                    tone={option.provenance === 'live' ? 'live' : 'neutral'}
+                  />
+                  <Typo variant="text-s" weight={value === option.value ? 'semibold' : 'normal'}>
+                    {option.name}
+                  </Typo>
+                </View>
+                {option.note ? (
+                  <Typo variant="text-s" color="on-canvas-muted">
+                    {option.note}
+                  </Typo>
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        ))}
+    </View>
   );
 }
 
@@ -303,8 +378,9 @@ function SeededNote() {
 /**
  * @param only One component, as `folder/name`. Everything, when absent.
  * @param bare Without the page's own furniture, for a frame that is 393px wide.
+ * @param pick The data choice for the one component: `live` or `<domain>/<variant>`.
  */
-export function Gallery({ only, bare }: { only?: string; bare?: boolean }) {
+export function Gallery({ only, bare, pick }: { only?: string; bare?: boolean; pick?: string }) {
   const groups = shown(only);
   const found = groups.length > 0;
   const seeded = seededByTheWorkbench();
@@ -375,9 +451,14 @@ export function Gallery({ only, bare }: { only?: string; bare?: boolean }) {
                     {entry.note}
                   </Typo>
                 ) : null}
-                {entry.specimens.map((specimen) => (
-                  <SpecimenBlock key={specimen.label} specimen={specimen} />
-                ))}
+                {only && !bare ? (
+                  <DataPicker entry={entry} value={validChoice(entry, pick)} />
+                ) : null}
+                {(only ? specimensFor(entry, validChoice(entry, pick)) : entry.specimens).map(
+                  (specimen) => (
+                    <SpecimenBlock key={specimen.label} specimen={specimen} />
+                  ),
+                )}
               </View>
             ))}
           </View>
