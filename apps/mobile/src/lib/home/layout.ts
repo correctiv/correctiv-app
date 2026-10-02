@@ -265,51 +265,6 @@ export function useHomeLayout(): HomeLayout {
 }
 
 /**
- * Whether the workbench is replacing any screen's document outright, right now, with one
- * that actually reads differently from what ships.
- *
- * **Not `overrideText() !== null` alone**, which was measured overcounting: a key that
- * cannot be parsed, or that parses to something `parseHomeLayout` refuses, is not drawn
- * at all, since `screenLayout()` falls back to the bundle for exactly that document, so
- * the screen matches what ships while the key still holds text. So this parses the
- * override the same way and compares the result to the bundled document, rather than
- * trusting presence.
- *
- * **Not a comparison against `screenLayout()`'s own answer either**, which can differ
- * from the bundle for a reason that is not a draft at all: ADR 0036 §4's fetched copy,
- * a newer document this build simply asked for. Comparing the override in isolation is
- * what keeps this from firing on that ordinary case.
- *
- * Exported for `lib/draftMarker.tsx`, the one caller with no business asking anything
- * else about the document.
- */
-function overrideDiffers(): boolean {
-  return CONFIGURABLE_SCREENS.some((screen) => {
-    const text = overrideText(screen);
-    if (text === null) return false;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return false;
-    }
-    const { layout } = parseHomeLayout(parsed, RENDERABLE, screen);
-    if (!layout) return false;
-    const shipped = parseHomeLayout(SCREEN_DOCUMENTS[screen], undefined, screen).layout;
-    return JSON.stringify(layout) !== JSON.stringify(shipped);
-  });
-}
-
-/**
- * The same function serves as the snapshot and the server snapshot, as `useScreenLayout`
- * above already does: the static export prerenders with no `window`, so `overrideText()`
- * answers `null` there on its own and this answers `false`.
- */
-export function useHomeLayoutOverrideActive(): boolean {
-  return useSyncExternalStore(subscribeToLayout, overrideDiffers, overrideDiffers);
-}
-
-/**
  * Fetch the screen documents at launch and on every return to the foreground (§5).
  *
  * Called once, from the root layout, after persistence has hydrated: before that the

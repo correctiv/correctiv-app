@@ -15,5 +15,6 @@ export const actions: Record<string, string> = {
     'Setzt alle Änderungen dieses Werkzeugs auf den ausgelieferten Stand zurück.',
   'actions.count': '{count, plural, =0 {Keine Änderungen} one {# Änderung} other {# Änderungen}}',
   'actions.changed': 'Geändert',
+  'actions.previewTip': 'Die Vorschau zeigt diesen Entwurf, nicht die veröffentlichte App.',
   'actions.unchanged': 'Unverändert',
 };

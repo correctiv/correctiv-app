@@ -62,6 +62,12 @@ const COPY = defineMessages({
     defaultMessage: 'Changed',
     description: 'Beside the buttons, for a tool that does not count and holds changes.',
   },
+  previewTip: {
+    id: 'actions.previewTip',
+    defaultMessage: 'The preview shows this draft, not the published app.',
+    description:
+      'The tooltip on the change status while the open tool holds changes: says the device frame draws the unpublished edit.',
+  },
   unchanged: {
     id: 'actions.unchanged',
     defaultMessage: 'Unchanged',
@@ -93,11 +99,22 @@ export function ToolActions() {
       data-testid="tool-actions"
       className="flex shrink-0 items-center gap-xs"
     >
-      <span className="text-s text-on-canvas-muted" data-testid="tool-actions-status">
-        {count !== undefined
-          ? intl.formatMessage(COPY.count, { count })
-          : intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="text-s text-on-canvas-muted"
+            data-testid="tool-actions-status"
+            data-draft={dirty ? 'true' : undefined}
+          >
+            {count !== undefined
+              ? intl.formatMessage(COPY.count, { count })
+              : intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
+          </span>
+        </TooltipTrigger>
+        {dirty && (
+          <TooltipContent side="bottom">{intl.formatMessage(COPY.previewTip)}</TooltipContent>
+        )}
+      </Tooltip>
 
       {discard && (
         <Tooltip>

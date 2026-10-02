@@ -61,6 +61,7 @@ describe('the header actions', () => {
     expect((q('action-discard') as HTMLButtonElement).disabled).toBe(true);
     expect((q('action-save') as HTMLButtonElement).disabled).toBe(true);
     expect((q('action-submit') as HTMLButtonElement).disabled).toBe(true);
+    expect(q('tool-actions-status')?.dataset.draft).toBeUndefined();
   });
 
   it('enables them when dirty, and submit is a link', () => {
@@ -73,6 +74,7 @@ describe('the header actions', () => {
       discard: () => (discarded = true),
     });
     expect(q('tool-actions-status')?.textContent).toBe('2 changes');
+    expect(q('tool-actions-status')?.dataset.draft).toBe('true');
     expect((q('action-save') as HTMLButtonElement).disabled).toBe(false);
     expect(q('action-submit')?.tagName).toBe('A');
     act(() => q('action-discard')!.click());
