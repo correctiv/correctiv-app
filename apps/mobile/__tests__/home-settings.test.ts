@@ -11,15 +11,18 @@ import { MODULE_AUDIENCES as AUDIENCE_ARTEFACT } from '@correctiv/app-core/lib/h
 import {
   APP,
   AUDIENCES_OUT,
-  SCREENS_OUT,
+  CATALOGUE_OUT,
   OUT,
   REPO,
   render,
   renderAudiences,
-  renderScreens,
+  renderCatalogue,
 } from '../scripts/generate-home-settings.mjs';
-import { MODULE_SCREENS as SCREENS } from '@/lib/home/screens';
-import { MODULE_SCREENS as SCREENS_ARTEFACT } from '@correctiv/app-core/lib/module-screens.generated';
+import { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS } from '@/lib/home/blocks';
+import {
+  MODULE_CATEGORIES as CATEGORIES_ARTEFACT,
+  SCREEN_BOUND_BLOCKS as BOUND_ARTEFACT,
+} from '@correctiv/app-core/lib/block-catalogue.generated';
 import { HOME_MODULE_AUDIENCES } from '@/lib/home/conditions';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 
@@ -254,16 +257,55 @@ describe('the audiences a module declares beside itself', () => {
   });
 });
 
-describe('the screens a module declares beside itself', () => {
+/**
+ * The third artefact: a block's category, and the few blocks bound to one screen
+ * ([ADR 0073](../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)).
+ *
+ * The categories table is floored and the bound one is not, and the asymmetry is the
+ * decision rather than an oversight: a release in which no block is tied to a screen is a
+ * legal one, and a release in which no block has a family is a picker with nothing in it.
+ */
+describe('the category a block declares beside itself', () => {
+  const DECLARATIONS = resolve(APP, 'src/lib/home/blocks.ts');
+
   it('keeps the generated table current', () => {
-    expect(readFileSync(SCREENS_OUT, 'utf8')).toBe(renderScreens(SCREENS));
+    expect(readFileSync(CATALOGUE_OUT, 'utf8')).toBe(
+      renderCatalogue(MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS),
+    );
   });
 
-  it('is the table the parser reads, and carries the declared values', () => {
-    expect(SCREENS_ARTEFACT).toEqual(SCREENS);
+  it('is the table the core reads, and carries the declared values', () => {
+    expect(CATEGORIES_ARTEFACT).toEqual(MODULE_CATEGORIES);
+    expect(BOUND_ARTEFACT).toEqual(SCREEN_BOUND_BLOCKS);
+  });
+
+  it('keeps the declaration file loadable by the generator (types and nothing else)', () => {
+    const source = withoutComments(readFileSync(DECLARATIONS, 'utf8'));
+    const statements = [...source.matchAll(/^\s*(?:import|export)\b[^;]*?\bfrom\b/gm)].map(
+      ([match]) => match.trim().replace(/\s+/g, ' '),
+    );
+    expect(statements.filter((one) => !/^(?:import|export) type\b/.test(one))).toEqual([]);
+    expect(source).not.toMatch(/^\s*import\s*['"]/m);
+    expect(source).not.toMatch(/\b(?:require|import)\s*\(/);
+    expect(statements.length).toBeGreaterThan(0);
+  });
+
+  it('refuses to write a table with no block in it', () => {
+    // The floor the settings' `render` has, for the same reason one level along: every
+    // tool that offers a block reads this, so an empty one is a palette with nothing in
+    // it and a roll-call that agrees with every registry it is compared against.
+    expect(() => renderCatalogue({}, {})).toThrow(/no block at all/);
+  });
+
+  it('writes an empty binding table rather than refusing one', () => {
+    expect(renderCatalogue({ quiz: 'medien' }, {})).toContain(
+      'SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = {}',
+    );
   });
 
   it('refuses a name it cannot write into a source file as it stands', () => {
-    expect(() => renderScreens({ "x': 'home', 'evil": ['home'] })).toThrow(/plain one/);
+    expect(() => renderCatalogue({ "x': 'medien', 'evil": 'medien' }, {})).toThrow(/plain one/);
+    expect(() => renderCatalogue({ quiz: "med'ien" }, {})).toThrow(/plain one/);
+    expect(() => renderCatalogue({ quiz: 'medien' }, { quiz: "ho'me" })).toThrow(/plain one/);
   });
 });

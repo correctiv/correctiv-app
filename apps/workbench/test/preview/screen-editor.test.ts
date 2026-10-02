@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { blocksByCategory, blocksFor } from '@correctiv/app-core/lib/block-category';
 import { CONFIGURABLE_SCREENS } from '@correctiv/app-core/lib/screen-layout';
 import { MAX_TABS, MIN_TABS } from '@correctiv/app-core/lib/navigation';
 
@@ -43,37 +44,39 @@ const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 const repo = { read, list: () => [] as string[] };
 const APP = (path: string) => read(`apps/mobile/src/${path}`);
 
-/** The block names `screens.ts` in the app declares, per screen, read as text: the app is not importable from Node. */
-function declared(screen: string): string[] {
-  const table = /export const MODULE_SCREENS[\s\S]*?\n};/.exec(APP('lib/home/screens.ts'))![0];
-  return [...table.matchAll(/'([\w-]+)': \[([^\]]*)\]/g)]
-    .filter(([, , screens]) => screens!.includes(`'${screen}'`))
-    .map(([, name]) => name!);
-}
-
 describe('the screen picker and its palette', () => {
   it('knows every screen the core configures, with a route each', () => {
     expect(Object.keys(SCREEN_ROUTES).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
   });
 
-  it('offers each screen the blocks that declare it, and its shipped blocks are among them', () => {
+  it('offers each screen every block, and its shipped blocks are among them', () => {
     for (const screen of CONFIGURABLE_SCREENS) {
-      const palette = declared(screen);
-      expect(palette.length).toBeGreaterThan(0);
+      const palette = blocksFor(screen);
+      expect(palette.length).toBeGreaterThan(20);
       for (const section of shippedOf(screen).sections) expect(palette).toContain(section.module);
     }
   });
 
-  it('keeps a block off a screen it does not declare, and offers a shared one on both', () => {
-    expect(declared('entdecken')).not.toContain('article-hero');
-    expect(declared('profil')).not.toContain('podcast-rail');
-    expect(declared('home')).toContain('faktencheck-rail');
-    expect(declared('entdecken')).toContain('faktencheck-rail');
+  /**
+   * ADR 0073 §1, which is the product decision this editor exists to serve: the pairs
+   * below were each impossible before it, and the only thing a screen still does not
+   * offer is another screen's own title (§3).
+   */
+  it('offers a block of every screen on every other, bar the screen titles', () => {
+    expect(blocksFor('home')).toContain('live-radio-banner');
+    expect(blocksFor('home')).toContain('podcast-rail');
+    expect(blocksFor('mediathek')).toContain('article-hero');
+    expect(blocksFor('profil')).toContain('faktencheck-rail');
+    expect(blocksFor('home')).not.toContain('mediathek-header');
+    expect(blocksFor('mediathek')).toContain('mediathek-header');
   });
 
-  it('names every block a palette can offer', () => {
-    for (const screen of CONFIGURABLE_SCREENS)
-      for (const module of declared(screen)) expect(MODULE_LABELS[module]).toBeDefined();
+  it('names every block a palette can offer, and puts it in exactly one group', () => {
+    for (const screen of CONFIGURABLE_SCREENS) {
+      for (const module of blocksFor(screen)) expect(MODULE_LABELS[module]).toBeDefined();
+      const groups = blocksByCategory(screen);
+      expect(groups.flatMap((group) => group.blocks).sort()).toEqual([...blocksFor(screen)].sort());
+    }
   });
 
   it('writes each screen to its own file and its own preview key, spelled as the app spells them', () => {
@@ -219,9 +222,10 @@ describe('the layout submission', () => {
     expect(
       refusal(() => applyLayout(layoutPayload('navigation', '{"version":1,"tabs":[]}'), repo)),
     ).toBe('refused');
-    // A block the screen does not declare is the parser's to refuse (ADR 0071 §2).
+    // Another screen's own title is the parser's to refuse, and after ADR 0073 §1 it is
+    // the only block that still is: `article-hero` here would now be accepted.
     const foreign = JSON.parse(same) as { sections: { id: string; module: string }[] };
-    foreign.sections[0]!.module = 'article-hero';
+    foreign.sections[0]!.module = 'home-header';
     expect(
       refusal(() => applyLayout(layoutPayload('entdecken', JSON.stringify(foreign)), repo)),
     ).toBe('refused');

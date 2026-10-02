@@ -7,13 +7,13 @@ import { say } from '../../i18n/messages';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 
-// The app's own declaration, and ADR 0046 §1 one step along: the palette was
-// `HOME_MODULES` itself, and is now the blocks that say they belong on the screen being
-// edited (ADR 0054 §2 and §5). The check that used to refuse a module the shipped
-// document does not place went with ADR 0046 §1 and has not come back; what holds the
-// declaration against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in
-// both directions, which is what ADR 0046 §1's "no second list to forget" became.
-import { blocksFor } from '@/lib/home/screens';
+// The app's own declaration, carried into the core and grouped there (ADR 0073 §2). The
+// palette was `HOME_MODULES` itself (ADR 0046 §1), then the blocks that declared the
+// screen being edited (ADR 0054 §2); it is now every block but the four bound to another
+// screen's title, in the categories the core groups them into. What holds the declaration
+// against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in both
+// directions, which is what ADR 0046 §1's "no second list to forget" became.
+import { blocksByCategory } from '@correctiv/app-core/lib/block-category';
 import { MODULE_FEATURES } from '@/lib/features';
 import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '../../ui/kit/dialog';
 import { FeatureMark } from '../features/Mark';
-import { moduleLabel } from './document';
+import { CATEGORY_LABELS, moduleLabel } from './document';
 import { HomeBlock } from './HomeBlock';
 
 /**
@@ -102,7 +102,7 @@ const COPY = defineMessages({
   leadMore: {
     id: 'home.palette.leadMore',
     defaultMessage:
-      'The list offers every block that fits this screen. How it looks, you see in the frame beside it.',
+      'The list offers every block the app has, in groups. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.',
     description: 'Behind the ⓘ beside the palette dialog’s heading, home.palette.title.',
   },
   addModule: {
@@ -123,7 +123,7 @@ export function InsertMark({
   where: string;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
-  /** The screen being edited: the palette offers the blocks that declare it (ADR 0054 §2). */
+  /** The screen being edited: every block but another screen's title (ADR 0073 §1, §3). */
   screen: ConfigurableScreen;
   onAdd: (module: string) => void;
 }) {
@@ -214,22 +214,35 @@ export function InsertMark({
           dialog is open, which is why a second one beside the list's is affordable.
         */}
         <AppHost>
-          <ul className="mt-s grid grid-cols-1 gap-xs sm:grid-cols-2">
-            {/* The blocks that declare the screen being edited (ADR 0054 §2), which is
-                what the second screen was always going to change on this line. */}
-            {blocksFor(screen).map((module) => (
-              <Specimen
-                key={module}
-                module={module}
-                deviceWidth={deviceWidth}
-                screen={screen}
-                onPick={() => {
-                  onAdd(module);
-                  setOpen(false);
-                }}
-              />
-            ))}
-          </ul>
+          {/*
+            Every block this screen may take, under a heading per category (ADR 0073 §2).
+            Headings and not tabs, for now: the list is the whole of what the newsroom
+            asked for, and a picker that hides five of six families behind a control is a
+            second decision — which family a person is looking in — that wants its own
+            change. The grouping itself is the core's, so the tabbed version reads the
+            same `blocksByCategory` and moves no list.
+          */}
+          {blocksByCategory(screen).map(({ category, blocks }) => (
+            <section key={category}>
+              <h3 className="mt-s text-s font-semibold text-on-canvas-muted">
+                {intl.formatMessage(CATEGORY_LABELS[category])}
+              </h3>
+              <ul className="mt-2xs grid grid-cols-1 gap-xs sm:grid-cols-2">
+                {blocks.map((module) => (
+                  <Specimen
+                    key={module}
+                    module={module}
+                    deviceWidth={deviceWidth}
+                    screen={screen}
+                    onPick={() => {
+                      onAdd(module);
+                      setOpen(false);
+                    }}
+                  />
+                ))}
+              </ul>
+            </section>
+          ))}
         </AppHost>
       </DialogContent>
     </Dialog>

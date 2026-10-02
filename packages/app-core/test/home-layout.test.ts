@@ -693,12 +693,12 @@ describe('parseHomeLayout, on a section it cannot use', () => {
   });
 
   /**
-   * ADR 0054 §5, the parser half, against the real declarations: `article-hero` is Home's
-   * alone, `discover-header` is Entdecken's alone and `faktencheck-rail` is on both. No
-   * entry is rewritten for the test, which the first version of this had to do because
-   * there was only one screen to be wrong on.
+   * ADR 0073 §1 against the real declarations: `article-hero` and `faktencheck-rail` are
+   * nobody's alone any more, so a document carrying them reads on either screen. What
+   * ADR 0071 §2's refusal has shrunk to is §3's four screen titles, and `discover-header`
+   * is the one in this case. No entry is rewritten for the test.
    */
-  it('refuses a block the app declares for a screen other than the one being read', () => {
+  it('takes an ordinary block on any screen, and refuses another screen’s title', () => {
     const doc = document([
       section({ id: 'hero', module: 'article-hero' }),
       section({ id: 'title', module: 'discover-header' }),
@@ -715,13 +715,28 @@ describe('parseHomeLayout, on a section it cannot use', () => {
     ]);
 
     const discover = parseHomeLayout(doc, undefined, 'entdecken');
-    expect(discover.layout?.sections.map((s) => s.id)).toEqual(['title', 'rail']);
-    expect(discover.problems).toEqual([
-      {
-        code: 'section-module-not-on-screen',
-        context: { id: 'hero', module: 'article-hero', screen: 'entdecken' },
-      },
-    ]);
+    expect(discover.layout?.sections.map((s) => s.id)).toEqual(['hero', 'title', 'rail']);
+    expect(discover.problems).toEqual([]);
+  });
+
+  /**
+   * The half of ADR 0073 §1 that is the product decision itself, read at the parser:
+   * every screen takes every block that is not one of the four titles, and the proof
+   * worth having is the pair that was impossible before — the Mediathek's live radio on
+   * Home, and Home's lead article on the Mediathek.
+   */
+  it('lets every screen carry every block but the four titles', () => {
+    for (const screen of CONFIGURABLE_SCREENS) {
+      const doc = document([
+        section({ id: 'radio', module: 'live-radio-banner' }),
+        section({ id: 'hero', module: 'article-hero' }),
+        section({ id: 'club', module: 'profile-club-card' }),
+      ]);
+      expect({ screen, problems: parseHomeLayout(doc, undefined, screen).problems }).toEqual({
+        screen,
+        problems: [],
+      });
+    }
   });
 
   it('holds every bundled screen to its own declarations', () => {

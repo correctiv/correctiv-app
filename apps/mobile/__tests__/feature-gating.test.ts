@@ -8,7 +8,7 @@ import { filesUnder, floorFaults, withoutComments } from '@correctiv/prose-and-c
 
 import { CHANNEL, PREVIEW_OPT_IN, channelFor } from '../src/lib/channel';
 import { MODULE_FEATURES, ROUTE_FEATURES, TAB_FEATURES, tabReachable } from '../src/lib/features';
-import { MODULE_SCREENS } from '../src/lib/home/screens';
+import { MODULE_CATEGORIES } from '../src/lib/home/blocks';
 
 /**
  * ADR 0072 §5's cost, as a test: a gated thing declares its feature, and the declaration
@@ -57,7 +57,7 @@ describe('feature declarations', () => {
   });
 
   it('give every Home block a feature, and name no block that is not one', () => {
-    const blocks = Object.keys(MODULE_SCREENS);
+    const blocks = Object.keys(MODULE_CATEGORIES);
     expect(blocks.filter((block) => !(block in MODULE_FEATURES))).toEqual([]);
     expect(Object.keys(MODULE_FEATURES).filter((block) => !blocks.includes(block))).toEqual([]);
   });

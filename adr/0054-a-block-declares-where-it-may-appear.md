@@ -60,16 +60,24 @@ what it was missing rather than an argument against it.
 
 ### 2. A block names the screens it may appear on, and it may name more than one
 
-One field on the declaration beside the module, a list rather than a single value. Today
+~~One field on the declaration beside the module, a list rather than a single value. Today
 every entry reads `['home']` and there is nothing else to write, and that is the point of
 writing it: the answer stops being implied by the name of a constant and becomes something
-a reader can be held to.
+a reader can be held to. A list rather than a value because the obvious second case is a
+block that belongs on two screens. The fact-check rail is the same composition on Entdecken
+as on the home screen, and a newsroom arranging either one should meet it in both palettes.
+Two declarations for one block would then be two things to keep in step, which is what
+ADR 0045 §9 spent its argument avoiding.~~
+Struck: every configurable screen takes every block, so there is no list of screens to
+declare — [ADR 0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
+§1. The field survives with its question changed, from where a block may appear to what
+kind of thing it is (§2 there), and the file this decision created is where the category
+is declared. The four blocks that print a screen's own title keep a binding, which is §3
+there and the whole of what is left of this one.
 
-A list rather than a value because the obvious second case is a block that belongs on two
-screens. The fact-check rail is the same composition on Entdecken as on the home screen,
-and a newsroom arranging either one should meet it in both palettes. Two declarations for
-one block would then be two things to keep in step, which is what ADR 0045 §9 spent its
-argument avoiding.
+What this decision got right and this record keeps: the pair of assertions that fail in
+both directions, a block with no declaration and a declaration for no block, which is what
+ADR 0046 §1's "no second list to forget" became and which the category inherits unchanged.
 
 ### 3. The structure stays in the app, the words stay in the workbench
 
