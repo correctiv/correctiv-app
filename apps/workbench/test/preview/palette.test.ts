@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { createIntl } from 'react-intl';
@@ -10,14 +10,9 @@ import { ROOT } from '../../plugin/collect.ts';
 import { de } from '../../src/i18n/catalogue/de';
 import { say } from '../../src/i18n/messages';
 import { BLOCK_CATEGORIES } from '@correctiv/app-core/lib/block-category';
+import { CATEGORY_LABELS } from '../../../mobile/src/lib/home/category-labels';
 
-import {
-  blockName,
-  CATEGORY_LABELS,
-  MODULE_LABELS,
-  SHIPPED,
-  whereAt,
-} from '../../src/preview/home/document';
+import { blockName, MODULE_LABELS, SHIPPED, whereAt } from '../../src/preview/home/document';
 import { code } from '../source.ts';
 
 /**
@@ -46,6 +41,9 @@ import { code } from '../source.ts';
 const read = (path: string): string => code(readFileSync(join(ROOT, path), 'utf8'));
 
 const PALETTE = read('apps/workbench/src/preview/home/Palette.tsx');
+const OFFERED = read('apps/workbench/src/preview/home/offered.ts');
+const APP_LABELS = read('apps/mobile/src/lib/home/category-labels.ts');
+const APP_GERMAN = read('packages/catalogue/src/de/home.ts');
 const PANEL = read('apps/workbench/src/preview/home/HomeDocument.tsx');
 const BLOCK = read('apps/workbench/src/preview/home/HomeBlock.tsx');
 const APP_CHECK = read('apps/mobile/__tests__/home-layout.test.tsx');
@@ -65,6 +63,8 @@ describe('the files this reads', () => {
     expect(
       floorFaults({
         'preview/home/Palette.tsx': { found: PALETTE.length, atLeast: 2000 },
+        'preview/home/offered.ts': { found: OFFERED.length, atLeast: 1000 },
+        'lib/home/category-labels.ts': { found: APP_LABELS.length, atLeast: 1000 },
         'preview/home/HomeDocument.tsx': { found: PANEL.length, atLeast: 8000 },
         'preview/home/HomeBlock.tsx': { found: BLOCK.length, atLeast: 1000 },
         'apps/mobile/__tests__/home-layout.test.tsx': { found: APP_CHECK.length, atLeast: 500 },
@@ -145,38 +145,121 @@ describe('the palette is the registry', () => {
    * written rather than implied.
    */
   it('reads the core’s grouping and keeps no list beside it', () => {
-    expect(PALETTE).toMatch(
-      /import \{ blocksByCategory \} from '@correctiv\/app-core\/lib\/block-category'/,
+    // **The grouping moved into `./offered.ts`** when the palette grew tabs, and this
+    // asserts it where it now lives rather than where it used to: the dialog reads the
+    // three functions that answer "which family" and "which of them matches", and none of
+    // them is a list. The screen is still an argument — a palette on the Mediathek is not a
+    // palette on Home, and the argument is how the four screen titles stay off the others.
+    expect(OFFERED).toMatch(
+      /import \{[^}]*blocksByCategory[^}]*\} from '@correctiv\/app-core\/lib\/block-category'/,
     );
-    expect(PALETTE).toMatch(/blocksByCategory\(screen\)/);
-    expect(PALETTE).not.toMatch(/blocksByCategory\('home'\)/);
-    expect(PALETTE).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
+    expect(OFFERED).toMatch(/blocksByCategory\(screen\)/);
+    expect(OFFERED).not.toMatch(/blocksByCategory\('home'\)/);
+    expect(`${PALETTE}\n${OFFERED}`).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
+    expect(PALETTE).not.toMatch(/MODULE_CATEGORIES/);
   });
 
-  it('draws a heading per category out of the words table, and spells none itself', () => {
-    // ADR 0073 §2's seam: the category is the app's vocabulary, the heading over it is
-    // this site's word for it. A literal here would be German in a `.tsx` file, which
-    // `test/rendered-literals.test.ts` fails on — but only for a string it can see, and a
-    // heading built out of the id (`category`) would read `faktencheck` to a newsroom and
-    // trip nothing at all.
-    expect(PALETTE).toMatch(/intl\.formatMessage\(CATEGORY_LABELS\[category\]\)/);
+  it('draws the family names out of the app’s table, and spells none itself', () => {
+    // ADR 0073 §2's seam: the category is the app's vocabulary and now so are the words
+    // over it, because the app's own component gallery groups by the same families and
+    // may not import this site (ADR 0040). A literal here would be German in a `.tsx`
+    // file, which `test/rendered-literals.test.ts` fails on — but only for a string it can
+    // see, and a tab built out of the id (`category`) would read `faktencheck` to a
+    // newsroom and trip nothing at all.
+    expect(PALETTE).toMatch(/import \{ useCategoryLabel \} from '@\/lib\/home\/category-labels'/);
+    expect(PALETTE).toMatch(/useCategoryLabel\(category\)/);
     expect(PALETTE).not.toMatch(/>\{category\}</);
+    // And the hook is asked by a component of its own, because a hook called once per
+    // option out of a map is a hook whose number of calls changes with the number of
+    // families. Named here, since that is a claim about the shape rather than a literal.
+    expect(PALETTE).toMatch(/function FamilyName\(\{ category \}: \{ category: BlockCategory \}\)/);
   });
 
   it('gives every category in the core’s order a word, and invents none', () => {
+    // **Read from the app, not from here.** The table is `apps/mobile/src/lib/home/
+    // category-labels.ts` since the gallery needed it too, and this file imports it across
+    // the seam ADR 0040 draws the other way round — which is allowed, since the workbench
+    // may read the app and the app may not read the workbench.
     expect(Object.keys(CATEGORY_LABELS).sort()).toEqual([...BLOCK_CATEGORIES].sort());
-    const german = createIntl({ locale: 'de', defaultLocale: 'en', messages: de });
+    const source = createIntl({ locale: 'en', defaultLocale: 'en' });
     for (const category of BLOCK_CATEGORIES) {
-      const word = german.formatMessage(CATEGORY_LABELS[category]);
+      const word = source.formatMessage(CATEGORY_LABELS[category]);
       expect(word).not.toBe('');
-      // A missing entry in the catalogue falls through to the English `defaultMessage`,
-      // which is the failure this is here for: the heading a newsroom reads is German.
-      expect(word).not.toBe(
-        createIntl({ locale: 'en', defaultLocale: 'en' }).formatMessage(CATEGORY_LABELS[category]),
-      );
-      // And not the id itself, which is what a lazy label would be.
+      // Not the id, which is what a lazy label would be: `faktencheck` above a family of
+      // fact checks reads as a key to whoever has to place one.
       expect(word).not.toBe(category);
+      // And the German that ships is the APP's, so it is checked where it now lives: a
+      // missing entry in `packages/catalogue/src/de/home.ts` would fall through to the
+      // English `defaultMessage` for every reader of the app, and the newsroom's tab row
+      // would be the first place it showed.
+      expect(APP_GERMAN).toMatch(new RegExp(`'home\\.category\\.${category}':\\s*'`));
     }
+  });
+
+  it('keeps the six words in one table, which is the app’s', () => {
+    // The ratchet for a move like this one: two hosts, one table. The ids are still
+    // `home.category.*` — a translator's existing entry is reused rather than a new id to
+    // fill in — and the German that ships is the app's catalogue, beside every other
+    // `home.*` string, because a second copy of six words in this site's catalogue would be
+    // the one nobody re-translates.
+    expect(APP_LABELS).toMatch(/export const CATEGORY_LABELS/);
+    expect(read('apps/workbench/src/preview/home/document.ts')).not.toMatch(/home\.category\./);
+    expect(read('apps/workbench/src/i18n/catalogue/de/home.ts')).not.toMatch(
+      /'home\.category\.[a-z]+':/,
+    );
+    expect(read('packages/catalogue/src/de/home.ts')).toMatch(/'home\.category\.struktur':/);
+  });
+
+  it('is declared and translated exactly once across both trees', () => {
+    /**
+     * The whole-repo half of the ratchet, and it is here rather than in the app's own test
+     * because of [ADR 0040](../../../../adr/0040-the-app-does-not-depend-on-the-workbench.md):
+     * the app may not read this site, so a check inside it could not name this site at all,
+     * and a second declaration on this side would be invisible to it.
+     *
+     * Six words can be written twice without anything failing. The second copy draws, reads
+     * well and is translated, and the two part the day a family is added — which is the
+     * claim ADR 0073 §2 already made about the family LIST, applied here to the words.
+     */
+    const sourceFiles = (root: string): string[] => {
+      const out: string[] = [];
+      const walk = (dir: string): void => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const full = join(dir, entry.name);
+          if (entry.isDirectory()) walk(full);
+          else if (/\.tsx?$/.test(full)) out.push(full);
+        }
+      };
+      walk(root);
+      return out;
+    };
+    // `ROOT` ends in a separator, so the slice needs no arithmetic of its own.
+    const under = (full: string): string => full.slice(ROOT.length);
+    const both = [
+      ...sourceFiles(join(ROOT, 'apps/mobile/src')),
+      ...sourceFiles(join(ROOT, 'apps/workbench/src')),
+    ];
+
+    // Both spellings a declaration can take, so the check is not about formatting.
+    const DECLARING = /(id: 'home\.category\.[a-z]+'|'home\.category\.[a-z]+': \{\s*\n\s*id:)/;
+    expect(
+      both
+        .filter((full) => DECLARING.test(readFileSync(full, 'utf8')))
+        .map(under)
+        .sort(),
+    ).toEqual(['apps/mobile/src/lib/home/category-labels.ts']);
+
+    // And no second list of the families, in either spelling. Six names inside ONE array
+    // literal is the shape a hand-written list takes; the app's own block→family
+    // declaration is keyed by block and spread over many lines, which is why the bracket is
+    // the discriminator rather than the names alone.
+    const SIX_NAMES = /\[[^\]]{0,900}'struktur'[^\]]{0,900}'recherche'[^\]]{0,900}'faktencheck'/;
+    expect(
+      both
+        .filter((full) => SIX_NAMES.test(readFileSync(full, 'utf8')))
+        .map(under)
+        .sort(),
+    ).toEqual([]);
   });
 
   it('gives every module in that table words a newsroom can read', () => {

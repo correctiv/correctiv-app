@@ -1495,26 +1495,6 @@
     "defaultMessage": "{day}, today",
     "description": "The accessible name of the column for today in the week or month under the frame. {day} is the date already spelled by the browser, as “Monday, 28 September”."
   },
-  "home.category.club": {
-    "defaultMessage": "Club and profile",
-    "description": "The heading over the blocks a membership pays for and the ones that show it: early access, Backstage, and the profile’s own rows."
-  },
-  "home.category.faktencheck": {
-    "defaultMessage": "Fact checking"
-  },
-  "home.category.medien": {
-    "defaultMessage": "Audio and video"
-  },
-  "home.category.mitmachen": {
-    "defaultMessage": "Taking part and community"
-  },
-  "home.category.recherche": {
-    "defaultMessage": "News and investigations"
-  },
-  "home.category.struktur": {
-    "defaultMessage": "Structure and notices",
-    "description": "The heading over the blocks that build a screen’s frame rather than its content: the headers, the search field, the loading notice and the footer."
-  },
   "home.document.field": {
     "defaultMessage": "The change",
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
@@ -1785,13 +1765,37 @@
     "defaultMessage": "Add {name}. {what}",
     "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
   },
+  "home.palette.found": {
+    "defaultMessage": "{found} of {total} blocks match.",
+    "description": "Said above the shelf while a search is typed, so a shelf that has narrowed to one card is not mistaken for the whole of what is there. {found} is how many blocks match and {total} how many this screen offers."
+  },
   "home.palette.lead": {
     "defaultMessage": "The new block goes {where}.",
     "description": "The one line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
   },
   "home.palette.leadMore": {
-    "defaultMessage": "The list offers every block the app has, in groups. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.",
+    "defaultMessage": "The shelf holds every block the app has, sorted into families and drawn as it will appear. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.",
     "description": "Behind the ⓘ beside the palette dialog’s heading, home.palette.title."
+  },
+  "home.palette.none": {
+    "defaultMessage": "No block matches “{query}”.",
+    "description": "Stands in for an empty shelf, where a search matched nothing. {query} is the text that was typed, in its own spelling."
+  },
+  "home.palette.search": {
+    "defaultMessage": "Name or description",
+    "description": "The text in the palette’s search field while it is empty. It is a hint rather than a name, so the browser reads the field as the search legend beside it."
+  },
+  "home.palette.search.legend": {
+    "defaultMessage": "Search by name and description",
+    "description": "The name of the field that narrows the shelf, above it. Every word typed has to appear in a block’s name or its sentence, so a search is an answer rather than a guess."
+  },
+  "home.palette.tab.all": {
+    "defaultMessage": "All",
+    "description": "The first tab of the palette: every block this screen may take, whichever family it is in. The families themselves are the app’s words and come from the app."
+  },
+  "home.palette.tab.legend": {
+    "defaultMessage": "Which family of block you are looking in",
+    "description": "The name the row of family tabs carries for the browser, above the tabs. It is read where the tabs are and is not drawn, because the tab in it is already drawn."
   },
   "home.palette.title": {
     "defaultMessage": "Add a block",

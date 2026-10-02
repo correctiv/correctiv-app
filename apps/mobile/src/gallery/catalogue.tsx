@@ -127,6 +127,27 @@ export interface Specimen {
 export interface Entry {
   /** The component's exported name, which is also its file name. */
   name: string;
+  /**
+   * The BLOCK this component draws, where a block draws one — and the only thing that
+   * says which family the entry belongs to, because the family is the block's and never
+   * declared here. `groups.ts` reads it through `categoryOf(block)`, so an entry cannot
+   * invent a family, cannot be filed under a family the core does not have, and cannot
+   * end up in two of them: it names one block or none.
+   *
+   * **A component two blocks share names one of them**, and the pair is in one family
+   * wherever that could matter — `media/MediaCard` draws the video rows of
+   * `gespraech-rail` and of `funfacts-rail`, both `medien` — so the grouping is the same
+   * answer whichever is named. What the entry says is which block the component was
+   * written for, which is the question a reader of the gallery is asking.
+   *
+   * **No entry for a component that is not a block's own drawing**, and that is the
+   * larger half of the file: buttons, cards, the rail and its tiles, the reader's
+   * document, the door and the recovery screen are what a block is made OF rather than
+   * what a block IS, and they go into the one `Bausteine` section instead of a family
+   * invented to hold them. `__tests__/gallery-groups.test.ts` takes the address against
+   * the core in both directions.
+   */
+  block?: string;
   /** One line, only where the specimen alone would mislead. */
   note?: string;
   /**
@@ -583,6 +604,7 @@ const LISTED = [
     entries: [
       {
         name: 'ArticleHero',
+        block: 'article-hero',
         pick: pickArticle((item) => <ArticleHero item={item} onPress={noop} />),
         note: 'The lead item. Reads the reading time off the item, and falls back to a fetch when it is missing.',
         specimens: [
@@ -595,6 +617,7 @@ const LISTED = [
       },
       {
         name: 'ArticleRow',
+        block: 'latest-research',
         pick: pickArticle((item) => <ArticleRow item={item} onPress={noop} />),
         specimens: [
           { label: 'default', node: <ArticleRow item={ARTICLE} onPress={noop} /> },
@@ -606,6 +629,7 @@ const LISTED = [
       },
       {
         name: 'FaktencheckRail',
+        block: 'faktencheck-rail',
         specimens: [
           { label: 'three items', node: <FaktencheckRail items={FACTCHECKS} onPress={noop} /> },
           { label: 'items={[]}', node: <FaktencheckRail items={[]} onPress={noop} /> },
@@ -618,21 +642,25 @@ const LISTED = [
     entries: [
       {
         name: 'HomeHeader',
+        block: 'home-header',
         specimens: [{ label: 'default', node: <HomeHeader instant={Date.now()} /> }],
       },
       {
         name: 'SpotlightBriefing',
+        block: 'spotlight-briefing',
         note: 'Loads the newsletter archive on first render, so this entry makes a request.',
         specimens: [{ label: 'default', node: <SpotlightBriefing onOpenArchive={noop} /> }],
       },
       {
         name: 'MediathekReihe',
+        block: 'mediathek-reihe',
         feature: 'video',
         note: 'Loads a video channel on first render, so this entry makes a request.',
         specimens: [{ label: 'default', node: <MediathekReihe onOpenMediathek={noop} /> }],
       },
       {
         name: 'BackstageTeaser',
+        block: 'backstage-teaser',
         feature: 'diary',
         specimens: [
           {
@@ -643,6 +671,7 @@ const LISTED = [
       },
       {
         name: 'CalloutTeaser',
+        block: 'callout-teaser',
         pick: pick<Callout>('callouts', (callout) => (
           <CalloutTeaser callout={callout} onPress={noop} />
         )),
@@ -657,13 +686,18 @@ const LISTED = [
       },
       {
         name: 'EarlyAccessCard',
+        block: 'early-access-card',
         feature: 'early-access',
         specimens: [
           { label: 'onPress', node: <EarlyAccessCard onPress={noop} /> },
           { label: 'without onPress', node: <EarlyAccessCard /> },
         ],
       },
-      { name: 'ImpactFooter', specimens: [{ label: 'default', node: <ImpactFooter /> }] },
+      {
+        name: 'ImpactFooter',
+        block: 'impact-footer',
+        specimens: [{ label: 'default', node: <ImpactFooter /> }],
+      },
     ],
   },
   {
@@ -671,14 +705,17 @@ const LISTED = [
     entries: [
       {
         name: 'SearchEntry',
+        block: 'search-entry',
         specimens: [{ label: 'default', node: <SearchEntry onPress={noop} /> }],
       },
       {
         name: 'TopicRail',
+        block: 'topic-rail',
         specimens: [{ label: 'default', node: <TopicRail onOpenTopic={noop} /> }],
       },
       {
         name: 'ProjectRow',
+        block: 'project-directory',
         specimens: [{ label: 'default', node: <ProjectRow project={PROJECT} onPress={noop} /> }],
       },
       {
@@ -702,6 +739,7 @@ const LISTED = [
     entries: [
       {
         name: 'LiveBanner',
+        block: 'live-radio-banner',
         note: 'Asks the station what is on air, so this entry makes a request.',
         specimens: [
           { label: 'default subtitle', node: <LiveBanner /> },
@@ -718,6 +756,7 @@ const LISTED = [
       },
       {
         name: 'MediaCard',
+        block: 'gespraech-rail',
         specimens: [
           {
             label: 'default',
@@ -731,6 +770,7 @@ const LISTED = [
       },
       {
         name: 'SeriesTile',
+        block: 'podcast-rail',
         pick: pick<PodcastSeries>('podcasts', (series) => (
           <SeriesTile series={series} onPress={noop} />
         )),
@@ -738,6 +778,7 @@ const LISTED = [
       },
       {
         name: 'EpisodeRow',
+        block: 'bonus-audio-list',
         specimens: [
           {
             label: 'default',
@@ -783,6 +824,7 @@ const LISTED = [
     entries: [
       {
         name: 'CalloutCard',
+        block: 'callout-list',
         pick: pick<Callout>('callouts', (callout) => (
           <CalloutCard callout={callout} onPress={noop} />
         )),
@@ -856,6 +898,7 @@ const LISTED = [
     entries: [
       {
         name: 'ClubCard',
+        block: 'profile-club-card',
         specimens: [
           {
             label: 'with memberSince',
@@ -875,6 +918,7 @@ const LISTED = [
       },
       {
         name: 'NavCard',
+        block: 'profile-area',
         specimens: [
           {
             label: 'default',
@@ -903,6 +947,7 @@ const LISTED = [
       },
       {
         name: 'SettingRow',
+        block: 'profile-newsletter',
         note: 'The switch reads two different props for its thumb on web; see TROUBLESHOOTING.md.',
         specimens: [
           {

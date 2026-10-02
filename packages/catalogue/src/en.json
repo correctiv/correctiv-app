@@ -456,6 +456,26 @@
   "home.allSpotlightIssues": {
     "defaultMessage": "All Spotlight issues"
   },
+  "home.category.club": {
+    "defaultMessage": "Club and profile",
+    "description": "The heading over the blocks a membership pays for and the ones that show it: early access, Backstage, and the profile’s own rows."
+  },
+  "home.category.faktencheck": {
+    "defaultMessage": "Fact checking"
+  },
+  "home.category.medien": {
+    "defaultMessage": "Audio and video"
+  },
+  "home.category.mitmachen": {
+    "defaultMessage": "Taking part and community"
+  },
+  "home.category.recherche": {
+    "defaultMessage": "News and investigations"
+  },
+  "home.category.struktur": {
+    "defaultMessage": "Structure and notices",
+    "description": "The heading over the blocks that build a screen’s frame rather than its content: the headers, the search field, the loading notice and the footer."
+  },
   "home.factCheckBadge": {
     "defaultMessage": "Fact check",
     "description": "The badge on a card in the home screen's fact-check rail. core.reader.factcheckBadge is the same word inside the article document, where it is uppercased."

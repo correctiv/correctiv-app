@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Seventy-two records shaped this repo. Read them when you want to know *why* something
+Seventy-three records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -76,7 +76,8 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0070](0070-a-left-rail-on-tablet.md) | A left rail on tablet | accepted; amends 0013 §1 for tablets — the system tab bar's phone affordances are traded for a layout that matches the reading column |
 | [0071](0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md) | Screens become documents, and the tab bar becomes one too | accepted, not built; answers 0054 §5 and its open questions — one document per screen under `data/layout/screens/`, the parser refuses a block on an undeclared screen, settings belong to a placement, a navigation document with Home fixed first, two to five visible tabs and an own "Mehr" menu, fetched with the bundled copy as the floor; notes that a live pin stores the post ID and stays the exception to the rule of 0057 §2 |
 | [0072](0072-features-are-released-by-a-commit-and-never-by-a-fetch.md) | Features are released by a commit and never by a fetch | accepted, not built; channel `release`/`preview` set by the host and fail-closed on native, three states `aus`/`vorschau`/`an`, data provenance as a ceiling, gated blocks omitted silently and labelled in the tools, `features.json` bundled and never fetched, separate from layout |
-| [0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md) | Every screen takes every block, and a block declares its category | accepted; supersedes 0071 §2 and 0054 §2 — the per-screen table is removed and every configurable screen may carry every block, each block declares one of six categories instead and the core exports the grouping a picker reads, the words for a category stay in the workbench, and four screen-title blocks keep a binding to their own screen |
+| [0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md) | Every screen takes every block, and a block declares its category | accepted; supersedes 0071 §2 and 0054 §2 — the per-screen table is removed and every configurable screen may carry every block, each block declares one of six categories instead and the core exports the grouping a picker reads, ~~the words for a category stay in the workbench~~ (struck by 0074, which moves them to the app because the gallery groups by them too), and four screen-title blocks keep a binding to their own screen |
+| [0074](0074-a-block-family-is-named-once-and-both-hosts-read-it.md) | A block's family is named once, and both hosts read it | accepted and built the same day; three decisions, moving the six German category names out of the workbench and into the app beside the blocks, because the component gallery groups by the same families and may not import the workbench (0040) while a German string in app source fails the localisation seam — the ids unchanged, one table for two hosts, one formatter the workbench may call, and a ratchet that reads both trees from the one side allowed to; amends 0073 §2's words only and strikes that one sentence there |
 
 Ten notes for readers of the older ones:
 

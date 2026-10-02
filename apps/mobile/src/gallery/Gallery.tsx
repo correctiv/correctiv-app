@@ -24,8 +24,10 @@
 import { router } from 'expo-router';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 
+import type { BlockCategory } from '@correctiv/app-core/lib/block-category';
 import type { ThemePreference } from '@correctiv/app-core/stores/settings';
 
+import { useCategoryLabel } from '@/lib/home/category-labels';
 import { Badge, Hairline, Overline, SafeAreaView, Typo } from '@/components/ui';
 import { FEATURES, featureState, limitReason } from '@correctiv/app-core/features/features';
 import { useAppSelector, useCoreActions, useTheme } from '@/lib/store/core';
@@ -33,6 +35,7 @@ import { useIsDark } from '@/lib/theme';
 
 import { CATALOGUE, componentId, type Entry, type Folder, type Specimen } from './catalogue';
 import { dataOptions, specimensFor, validChoice } from './data-pick';
+import { BAUSTEINE, galleryGroups } from './groups';
 
 const SETTINGS: ThemePreference[] = ['system', 'light', 'dark'];
 
@@ -42,9 +45,16 @@ const SPECIMEN_COUNT = CATALOGUE.reduce(
   0,
 );
 
-/** What the page says about itself, in each of the three states an address can ask for. */
+/**
+ * What the page says about itself, in each of the three states an address can ask for.
+ *
+ * The middle line names the grouping rather than counting it: a figure here would have to
+ * be kept in step with `BLOCK_CATEGORIES`, and ADR 0073 §2 refused a second list of
+ * families for exactly that reason. "Families, then building blocks" is true of whatever
+ * the core holds tomorrow.
+ */
 const BLURB = {
-  all: `${COMPONENT_COUNT} components from src/components, ${SPECIMEN_COUNT} specimens, grouped by folder. A page for developers, published like any other route.`,
+  all: `${COMPONENT_COUNT} components from src/components, ${SPECIMEN_COUNT} specimens, grouped by what each one is: the families a block belongs to, then the building blocks they are made of. A page for developers, published like any other route.`,
   one: 'One component of the catalogue. The reference has its props.',
   none: 'No component of that name. The link that sent you here is out of date.',
 };
@@ -386,6 +396,25 @@ function SeededNote() {
 }
 
 /**
+ * The heading over one section: a family a block belongs to, or the building blocks.
+ *
+ * **A component of its own, and the reason is a hook.** `useCategoryLabel` reads the app's
+ * `IntlProvider`, and React will not let a component call it once per section out of a map
+ * — the number of calls would change with the number of sections, which changes with the
+ * filter. So each heading is its own component, and the one section that has no family
+ * prints the constant beside it instead of asking for a label it does not have.
+ */
+function SectionHeading({ category }: { category: BlockCategory | undefined }) {
+  if (category !== undefined) return <FamilyHeading category={category} />;
+  return <Overline label={BAUSTEINE} color="accent" className="mt-s" />;
+}
+
+function FamilyHeading({ category }: { category: BlockCategory }) {
+  const name = useCategoryLabel(category);
+  return <Overline label={name} color="accent" className="mt-s" />;
+}
+
+/**
  * @param only One component, as `folder/name`. Everything, when absent.
  * @param bare Without the page's own furniture, for a frame that is 393px wide.
  * @param pick The data choice for the one component: `live` or `<domain>/<variant>`.
@@ -393,6 +422,10 @@ function SeededNote() {
 export function Gallery({ only, bare, pick }: { only?: string; bare?: boolean; pick?: string }) {
   const groups = shown(only);
   const found = groups.length > 0;
+  // Grouped by what each component is rather than by the folder it sits in: one section
+  // per family a block belongs to, in the core's order, and one for everything that is
+  // no block's own drawing. `groups.ts` holds the argument and reads `categoryOf`.
+  const sections = galleryGroups(groups);
   const seeded = seededByTheWorkbench();
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-canvas">
@@ -438,23 +471,32 @@ export function Gallery({ only, bare, pick }: { only?: string; bare?: boolean; p
           </Typo>
         ) : null}
 
-        {groups.map((group, g) => (
-          // The first folder sits under the page's own header, which is already a
-          // break; the gap that separates two folders would read as a hole there.
-          <View key={group.folder} className={g === 0 ? (bare ? '' : 'mt-l') : 'mt-4xl'}>
+        {sections.map((section, g) => (
+          // The first section sits under the page's own header, which is already a
+          // break; the gap that separates two sections would read as a hole there.
+          <View key={section.key} className={g === 0 ? (bare ? '' : 'mt-l') : 'mt-4xl'}>
             {bare ? null : (
               <>
                 <Hairline />
-                <Overline label={`components/${group.folder}`} color="accent" className="mt-s" />
+                <SectionHeading category={section.category} />
               </>
             )}
-            {group.entries.map((entry, i) => (
+            {section.entries.map((entry, i) => (
               <View key={entry.name} className={i === 0 ? (bare ? '' : 'mt-l') : 'mt-4xl'}>
-                {/* A rule above every component but the first of its folder. The
-                    folder already has one, and two hairlines with nothing between
+                {/* A rule above every component but the first of its section. The
+                    section already has one, and two hairlines with nothing between
                     them read as a mistake rather than as a boundary. */}
                 {i === 0 ? null : <Hairline className="mb-l" />}
                 {bare ? null : <Typo variant="headline-s">{entry.name}</Typo>}
+                {/* The block this component draws, where it is one. It is the same word
+                    the palette offers it under and the same id the layout document
+                    gives it, so a reader who has arranged a screen can find the
+                    component behind a block and vice versa. */}
+                {bare || entry.block === undefined ? null : (
+                  <Typo variant="text-s" color="on-canvas-muted" className="mt-4xs">
+                    {entry.block}
+                  </Typo>
+                )}
                 {entry.feature ? <FeatureMark feature={entry.feature} /> : null}
                 {entry.note ? (
                   <Typo variant="text-s" color="on-canvas-muted" className="mt-4xs">

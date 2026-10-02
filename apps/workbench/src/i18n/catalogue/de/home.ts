@@ -154,17 +154,20 @@ export const home: Record<string, string> = {
   'home.palette.title': 'Einen Block hinzufügen',
   'home.palette.lead': 'Der neue Block kommt {where}.',
   'home.palette.leadMore':
-    'Die Liste bietet jeden Block der App an, nach Gruppen sortiert. Jeder Block kann auf jedem Bildschirm stehen; nur die vier Titelzeilen bleiben bei ihrem eigenen Bildschirm. Wie das aussieht, sehen Sie im Rahmen daneben.',
+    'Das Regal bietet jeden Block der App an, nach Familien sortiert und so gezeichnet, wie er erscheint. Jeder Block kann auf jedem Bildschirm stehen; nur die vier Titelzeilen bleiben bei ihrem eigenen Bildschirm. Wie es aussieht, sehen Sie im Rahmen daneben.',
   'home.palette.addModule': '{name} hinzufügen. {what}',
+  'home.palette.tab.all': 'Alle',
+  'home.palette.tab.legend': 'In welcher Familie von Blöcken Sie suchen',
+  'home.palette.search.legend': 'Nach Name und Beschreibung suchen',
+  'home.palette.search': 'Name oder Beschreibung',
+  'home.palette.found': '{found} von {total} Blöcken passen.',
+  'home.palette.none': 'Kein Block passt zu „{query}“.',
 
-  // The headings the palette groups the blocks under (ADR 0073 §2). The ids are the
-  // app's vocabulary and these are the words a newsroom reads over each group.
-  'home.category.struktur': 'Aufbau und Hinweise',
-  'home.category.recherche': 'Nachrichten und Recherchen',
-  'home.category.faktencheck': 'Faktencheck',
-  'home.category.medien': 'Audio und Video',
-  'home.category.mitmachen': 'Mitmachen und Community',
-  'home.category.club': 'Club und Profil',
+  // The headings the palette groups the blocks under (ADR 0073 §2) are NO LONGER here:
+  // the component gallery groups by the same families and is the app's own page, so the
+  // words live in the app beside the blocks, in
+  // `apps/mobile/src/lib/home/category-labels.ts`, and their German with every other
+  // `home.*` string in `packages/catalogue/src/de/home.ts`.
 
   // What a block says instead of a drawing (`preview/home/HomeBlock.tsx`). Since ADR 0053
   // §1 the list shows no names, so the second of these carries the block's own name.

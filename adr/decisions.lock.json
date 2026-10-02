@@ -730,5 +730,13 @@
       "3": ["Four blocks stay bound to one screen, and they are the screen titles"],
       "4": ["One registry draws every screen, and a block's data comes with it"]
     }
+  },
+  "0074": {
+    "slugs": ["a-block-family-is-named-once-and-both-hosts-read-it"],
+    "decisions": {
+      "1": ["The words are the app's, beside the blocks"],
+      "2": ["A hook, because the workbench may not use the app's formatter"],
+      "3": ["Two hosts, one table, and the ratchet that keeps it one"]
+    }
   }
 }
