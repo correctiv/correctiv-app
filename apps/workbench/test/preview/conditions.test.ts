@@ -278,6 +278,7 @@ describe('whose screen the preview shows', () => {
 const pair = (): HomeLayout => {
   const parse = parseHomeLayout({
     version: HOME_LAYOUT_VERSION,
+    title: { de: 'Bildschirm' },
     sections: [{ id: 'hero', module: 'article-hero' }],
     moments: [
       {

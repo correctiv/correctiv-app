@@ -3,6 +3,10 @@ import type { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 import type { ComponentProps } from 'react';
 
+import { SCREEN_ICONS, type ScreenIcon } from './screenIcons';
+
+export { SCREEN_ICONS } from './screenIcons';
+
 /**
  * What a tab can be, declared where the app is
  * ([ADR 0071](../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
@@ -15,6 +19,14 @@ import type { ComponentProps } from 'react';
  *
  * The three bars (native, web, rail) draw the same labels and share nothing but this
  * file, which is why the labels live here and not in each of them.
+ *
+ * **The icons are `SCREEN_ICONS`, spread in rather than written out here** (ADR 0075 §4).
+ * The same key answers for a tab target and for a screen document, so the pairs live in
+ * one table, and the generator reads that table into the core so the parser knows which
+ * keys exist — a screen document naming an icon this build has would then be reported
+ * rather than drawn blank. The tab bar still reads them from here; it reads them from
+ * the screen's own document in ADR 0075 §5, which is what this spread is then replaced
+ * by.
  */
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
@@ -29,6 +41,13 @@ export interface TabTarget {
   readonly sf: Sf;
   readonly md: Md;
   readonly ionicon: { readonly active: IoniconName; readonly inactive: IoniconName };
+}
+
+/** One screen's icon out of the set, and the refusal of a key the set does not hold. */
+function iconOf(key: string): ScreenIcon {
+  const icon = SCREEN_ICONS[key];
+  if (!icon) throw new Error(`no screen icon is declared under \`${key}\``);
+  return icon;
 }
 
 /** The tab labels, in ENGLISH; the German ships in `packages/catalogue/src/de/ui.ts` (ADR 0026 §6). */
@@ -61,52 +80,16 @@ const COPY = defineMessages({
   },
 });
 
-const HOME: TabTarget = {
-  route: 'index',
-  label: COPY.home,
-  sf: { default: 'house', selected: 'house.fill' },
-  md: { default: 'home', selected: 'home' },
-  ionicon: { active: 'home', inactive: 'home-outline' },
-};
+const HOME: TabTarget = { route: 'index', label: COPY.home, ...iconOf('home') };
 
-const MORE: TabTarget = {
-  route: 'mehr',
-  label: COPY.more,
-  sf: { default: 'ellipsis.circle', selected: 'ellipsis.circle.fill' },
-  md: { default: 'more_horiz', selected: 'more_horiz' },
-  ionicon: { active: 'ellipsis-horizontal-circle', inactive: 'ellipsis-horizontal-circle-outline' },
-};
+const MORE: TabTarget = { route: 'mehr', label: COPY.more, ...iconOf('more') };
 
 /** What the navigation document may name, after Home. */
 export const DESTINATIONS: Readonly<Record<string, TabTarget>> = {
-  entdecken: {
-    route: 'entdecken',
-    label: COPY.discover,
-    sf: { default: 'safari', selected: 'safari.fill' },
-    md: { default: 'explore', selected: 'explore' },
-    ionicon: { active: 'compass', inactive: 'compass-outline' },
-  },
-  mediathek: {
-    route: 'mediathek',
-    label: COPY.mediathek,
-    sf: { default: 'play.circle', selected: 'play.circle.fill' },
-    md: { default: 'play_circle', selected: 'play_circle' },
-    ionicon: { active: 'play-circle', inactive: 'play-circle-outline' },
-  },
-  mitmachen: {
-    route: 'mitmachen',
-    label: COPY.participate,
-    sf: { default: 'person.2', selected: 'person.2.fill' },
-    md: { default: 'groups', selected: 'groups' },
-    ionicon: { active: 'people', inactive: 'people-outline' },
-  },
-  profil: {
-    route: 'profil',
-    label: COPY.profile,
-    sf: { default: 'person.crop.circle', selected: 'person.crop.circle.fill' },
-    md: { default: 'account_circle', selected: 'account_circle' },
-    ionicon: { active: 'person', inactive: 'person-outline' },
-  },
+  entdecken: { route: 'entdecken', label: COPY.discover, ...iconOf('compass') },
+  mediathek: { route: 'mediathek', label: COPY.mediathek, ...iconOf('play') },
+  mitmachen: { route: 'mitmachen', label: COPY.participate, ...iconOf('people') },
+  profil: { route: 'profil', label: COPY.profile, ...iconOf('person') },
 };
 
 /** The ids a navigation document may name: the parser's `known` set (ADR 0071 §6). */

@@ -182,15 +182,19 @@ describe('the document the editor writes', () => {
       // widths either side of the break. The longest line in the shipped document is
       // exactly `printWidth` without its trailing comma and breaks with it, so a printer
       // that forgets the comma is right on every document but this one.
-      { version: 3, sections: [], moments: [], editions: [] },
+      // A version 3 document has no words to write, which is the case `words: null` is:
+      // what the core hands back for a file written before ADR 0075.
+      { version: 3, words: null, sections: [], moments: [], editions: [] },
       {
         version: 3,
+        words: null,
         sections: [{ id: 'a', module: 'article-hero', hidden: true, settings: { pin: null } }],
         moments: [],
         editions: [],
       },
       {
         version: 3,
+        words: null,
         sections: [
           { id: 'callout-lifted', module: 'callout-teaser', hidden: true },
           { id: 'callout', module: 'callout-teaser' },
@@ -613,6 +617,9 @@ describe('the vocabulary the editor offers', () => {
   it('does not assume the moments are in time order', () => {
     const unsorted: HomeLayout = {
       version: HOME_LAYOUT_VERSION,
+      // About the day, so about no screen: the words are the newsroom's and this
+      // arrangement has none (ADR 0075 §3 is a document's, not a layout's).
+      words: null,
       sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
       // Written 15:00 before 11:00, and both touch `rail`.
       moments: [

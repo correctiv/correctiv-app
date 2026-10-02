@@ -64,9 +64,20 @@ const MEMBER = readerOf({
 const codes = (parse: { problems: readonly { code: LayoutProblemCode }[] }): string[] =>
   parse.problems.map((problem) => problem.code);
 
+/**
+ * The German every document in this file is called by.
+ *
+ * ADR 0075 §2 makes it the one word a screen document may not leave out, so a fixture that
+ * has none is a document with a fault in it — and a fault nobody meant to write is noise
+ * in a suite about the day. One constant rather than a literal per document: the words are
+ * not what any test below is about, and the two that are live in `screen-words.test.ts`.
+ */
+const TITLE = { de: 'Bildschirm' };
+
 const section = (over: Record<string, unknown> = {}) => ({ id: 'hero', module: 'a', ...over });
 const document = (sections: unknown[], over: Record<string, unknown> = {}) => ({
   version: HOME_LAYOUT_VERSION,
+  title: TITLE,
   sections,
   ...over,
 });
@@ -178,6 +189,7 @@ describe('a time of day, as the document writes it', () => {
 describe('the fold, which is the whole model', () => {
   const day = {
     version: HOME_LAYOUT_VERSION,
+    title: TITLE,
     sections: [
       { id: 'header', module: 'home-header' },
       { id: 'hero', module: 'article-hero', settings: { pin: 'https://example.org/a' } },
@@ -235,6 +247,7 @@ describe('the fold, which is the whole model', () => {
   it('merges settings key by key rather than replacing the object', () => {
     const merged = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
       moments: [{ at: '09:00', changes: [{ id: 'rail', settings: { count: 9 } }] }],
     });
@@ -257,9 +270,15 @@ describe('the fold, which is the whole model', () => {
    * it carries, so one carrying nothing is not a state of the screen.
    */
   it('renders a moment with no changes exactly as its absence', () => {
-    const without = read({ version: HOME_LAYOUT_VERSION, sections: day.sections, moments: [] });
+    const without = read({
+      version: HOME_LAYOUT_VERSION,
+      title: TITLE,
+      sections: day.sections,
+      moments: [],
+    });
     const withEmpty = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: day.sections,
       moments: [{ at: '07:00', changes: [] }, { at: '19:00' }],
     });
@@ -293,6 +312,7 @@ describe('the fold, which is the whole model', () => {
   it('reads moments written out of order as the same day', () => {
     const backwards = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: day.sections,
       moments: [...day.moments].reverse(),
     });
@@ -315,6 +335,9 @@ describe('the fold, which is the whole model', () => {
   it('does not assume the moments are in time order', () => {
     const unsorted: HomeLayout = {
       version: HOME_LAYOUT_VERSION,
+      // About the day, so about no screen: the words are the newsroom's and this
+      // arrangement has none (ADR 0075 §3 is a document's, not a layout's).
+      words: null,
       sections: [
         { id: 'a', module: 'x' },
         { id: 'b', module: 'x' },
@@ -338,6 +361,9 @@ describe('the fold, which is the whole model', () => {
   it('does not assume the moments are in time order, folding by instant either', () => {
     const unsorted: HomeLayout = {
       version: HOME_LAYOUT_VERSION,
+      // About the day, so about no screen: the words are the newsroom's and this
+      // arrangement has none (ADR 0075 §3 is a document's, not a layout's).
+      words: null,
       sections: [
         { id: 'a', module: 'x' },
         { id: 'b', module: 'x' },
@@ -364,6 +390,9 @@ describe('the fold, which is the whole model', () => {
   it('applies two moments on the same section by minute, not by array position', () => {
     const unsorted: HomeLayout = {
       version: HOME_LAYOUT_VERSION,
+      // About the day, so about no screen: the words are the newsroom's and this
+      // arrangement has none (ADR 0075 §3 is a document's, not a layout's).
+      words: null,
       sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
       // 15:00 written before 11:00, and both touch `rail`.
       moments: [
@@ -384,6 +413,9 @@ describe('the fold, which is the whole model', () => {
   it('applies two moments on the same section by minute, folding by instant too', () => {
     const unsorted: HomeLayout = {
       version: HOME_LAYOUT_VERSION,
+      // About the day, so about no screen: the words are the newsroom's and this
+      // arrangement has none (ADR 0075 §3 is a document's, not a layout's).
+      words: null,
       sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } }],
       moments: [
         { at: '15:00', minute: AT(15), changes: [{ id: 'rail', settings: { count: 2 } }] },
@@ -407,6 +439,7 @@ describe('nextChangeAfter, which is what a host sets a timer to', () => {
   const layout = () =>
     read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'a', module: 'x' }],
       moments: [
         { at: '11:00', changes: [] },
@@ -431,13 +464,18 @@ describe('nextChangeAfter, which is what a host sets a timer to', () => {
 
   /** No moments and no editions is no wake-up: a screen that never changes needs no timer. */
   it('answers with nothing when the document never changes', () => {
-    const flat = read({ version: HOME_LAYOUT_VERSION, sections: [{ id: 'a', module: 'x' }] });
+    const flat = read({
+      version: HOME_LAYOUT_VERSION,
+      title: TITLE,
+      sections: [{ id: 'a', module: 'x' }],
+    });
     expect(nextChangeAfter(flat, BERLIN('2026-09-03', 9))).toBeNull();
   });
 
   it('counts an edition’s start, its moments and its end', () => {
     const planned = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'a', module: 'x' }],
       editions: [
         {
@@ -469,6 +507,7 @@ describe('nextChangeAfter, which is what a host sets a timer to', () => {
   it('never answers further out than the next Berlin midnight', () => {
     const planned = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'a', module: 'x' }],
       editions: [{ id: 'weihnachten', from: '2026-12-24T00:00', until: '2026-12-27T00:00' }],
     });
@@ -486,6 +525,7 @@ describe('nextChangeAfter, which is what a host sets a timer to', () => {
   it('does not wait again for a day moment the repeated autumn hour has already passed', () => {
     const night = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'a', module: 'x' }],
       moments: [{ at: '02:30', changes: [{ id: 'a', hidden: true }] }],
     });
@@ -498,6 +538,7 @@ describe('nextChangeAfter, which is what a host sets a timer to', () => {
   it('does not wake for an edition’s moment after the edition is over', () => {
     const planned = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'a', module: 'x' }],
       editions: [
         {
@@ -574,6 +615,7 @@ describe('parseHomeLayout, on a document it cannot use at all', () => {
   it('reads a version 1 document and drops the sections that named dayparts', () => {
     const parse = parseHomeLayout({
       version: 1,
+      title: TITLE,
       sections: [
         { id: 'header', module: 'home-header' },
         { id: 'callout', module: 'callout-teaser', dayparts: ['midday'] },
@@ -890,6 +932,7 @@ describe('parseHomeLayout, on the moments', () => {
   const withMoments = (moments: unknown) =>
     parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'hero', module: 'article-hero' }],
       moments,
     });
@@ -992,6 +1035,7 @@ describe('parseHomeLayout, on the moments', () => {
   it('leaves a place holding what it inherited when its change is refused', () => {
     const parse = parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'hero', module: 'article-hero', settings: { pin: 'https://morning/' } }],
       moments: [
         {
@@ -1057,6 +1101,7 @@ describe('reportLayoutProblems', () => {
 describe('an edition, as the fold reads it', () => {
   const day = {
     version: HOME_LAYOUT_VERSION,
+    title: TITLE,
     sections: [
       { id: 'header', module: 'home-header' },
       { id: 'hero', module: 'article-hero', settings: { pin: 'https://example.org/day' } },
@@ -1282,6 +1327,7 @@ describe('parseHomeLayout, on the editions', () => {
   const withEditions = (editions: unknown) =>
     parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'hero', module: 'article-hero' }],
       editions,
     });
@@ -1542,6 +1588,7 @@ describe('an id that carries a line break or another control character', () => {
   it('refuses such a section, and names its place rather than its text', () => {
     const { layout, problems } = parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [
         { id: 'header', module: 'home-header' },
         { id: smuggled, module: 'article-hero' },
@@ -1555,6 +1602,7 @@ describe('an id that carries a line break or another control character', () => {
   it('refuses such an edition', () => {
     const { problems } = parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'header', module: 'home-header' }],
       editions: [{ id: smuggled, from: '2026-09-27T18:00', until: '2026-09-28T02:00' }],
     });
@@ -1564,6 +1612,7 @@ describe('an id that carries a line break or another control character', () => {
   it('still takes an id with spaces, umlauts and punctuation', () => {
     const { problems } = parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'Wahl-Abend: Ü 2026', module: 'home-header' }],
     });
     expect(problems).toEqual([]);

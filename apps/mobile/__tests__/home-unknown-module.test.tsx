@@ -14,6 +14,8 @@
 /** Two places this app holds a renderer for, and one it has never heard of. */
 jest.mock('@correctiv/app-core/data/layout/screens/home.json', () => ({
   version: 4,
+  title: { de: 'Home' },
+  icon: 'home',
   sections: [
     { id: 'header', module: 'home-header' },
     { id: 'quiz', module: 'quiz-of-the-day' },

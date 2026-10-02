@@ -1,5 +1,7 @@
 {
   "version": 4,
+  "title": { "de": "Entdecken" },
+  "icon": "compass",
   "sections": [
     { "id": "title", "module": "discover-header" },
     { "id": "search", "module": "search-entry" },

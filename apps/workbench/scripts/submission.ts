@@ -284,7 +284,7 @@ function readLayout(text: string): HomeLayout {
   } catch {
     // Fall through: the summary then reads as a document written from nothing.
   }
-  return { version: 0, sections: [], moments: [], editions: [] };
+  return { version: 0, words: null, sections: [], moments: [], editions: [] };
 }
 
 // --- printing text out of the document ---------------------------------------------
