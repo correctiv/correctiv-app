@@ -41,7 +41,7 @@ const COPY = defineMessages({
 
 /** The keycap inside `shell.boundary.lead`, at module scope so it is one component. */
 const kbd = (chunks: ReactNode[]) => (
-  <kbd className="rounded-s border border-stroke px-3xs font-mono text-s">{chunks}</kbd>
+  <kbd className="rounded-sm border border-stroke px-3xs font-mono text-s">{chunks}</kbd>
 );
 
 /**

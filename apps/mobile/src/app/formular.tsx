@@ -166,7 +166,7 @@ export default function FormularScreen() {
             {slides.map((s, i) => (
               <View
                 key={s.id}
-                className={['flex-1 rounded-s', i <= step ? 'bg-accent' : 'bg-stroke'].join(' ')}
+                className={['flex-1 rounded-sm', i <= step ? 'bg-accent' : 'bg-stroke'].join(' ')}
                 style={{ height: sizes.progressBar }}
               />
             ))}

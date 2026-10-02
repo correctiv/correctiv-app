@@ -80,7 +80,7 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
         href={href('/')}
         className="flex min-w-0 items-center gap-2xs rounded-md px-3xs text-m font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <span aria-hidden="true" className="size-[0.875rem] shrink-0 rounded-s bg-accent" />
+        <span aria-hidden="true" className="size-[0.875rem] shrink-0 rounded-sm bg-accent" />
         {/* The mark alone below `sm`. On a 390px screen the word is a fifth of
             the bar and the mark says the same thing. */}
         <span className="hidden truncate sm:inline">CORRECTIV</span>
@@ -116,7 +116,7 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
       >
         <SearchIcon aria-hidden="true" />
         <span className="hidden md:inline">{intl.formatMessage(COPY.searchShort)}</span>
-        <kbd className="hidden rounded-s border border-stroke px-3xs font-mono text-s md:inline">
+        <kbd className="hidden rounded-sm border border-stroke px-3xs font-mono text-s md:inline">
           ⌘K
         </kbd>
       </Button>

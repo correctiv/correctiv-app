@@ -63,7 +63,7 @@ export function MediaCard({ video, onPress }: { video: Video; onPress: (video: V
               <Ionicons name="play" size={22} color={colors['always-light']} />
             </View>
             {duration ? (
-              <View className="absolute bottom-2xs right-2xs rounded-s bg-always-dark/80 px-3xs">
+              <View className="absolute bottom-2xs right-2xs rounded-sm bg-always-dark/80 px-3xs">
                 <Typo variant="text-s" color="always-light" style={{ fontSize: 11 }}>
                   {duration}
                 </Typo>

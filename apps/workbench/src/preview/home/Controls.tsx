@@ -60,7 +60,7 @@ const CARD = 'rounded-md border border-stroke bg-canvas';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 /** `Edition.tsx` declares the same field against the same dock; one per file, as there. */
 const FIELD =
-  'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  'rounded-sm border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 /**
  * The controls' own words.

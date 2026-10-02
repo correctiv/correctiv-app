@@ -553,7 +553,7 @@ export function Timeline({
             const next = parseMinute(event.target.value);
             if (next !== null) goTo(next);
           }}
-          className="rounded-s border border-stroke bg-canvas px-3xs py-4xs font-mono text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-sm border border-stroke bg-canvas px-3xs py-4xs font-mono text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
       </label>
 
@@ -790,7 +790,7 @@ function Track({
             <span
               aria-hidden="true"
               className={cn(
-                'mt-4xs rounded-s bg-canvas px-4xs font-mono text-[0.6875rem] leading-none',
+                'mt-4xs rounded-sm bg-canvas px-4xs font-mono text-[0.6875rem] leading-none',
                 held.minute === point ? 'text-on-canvas' : 'text-on-canvas-muted',
               )}
             >

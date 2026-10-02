@@ -340,7 +340,7 @@ export function Settings({
             {SHORTCUTS.map(([key, what]) => (
               <div key={key} className="flex items-baseline gap-s">
                 <dt className="w-[3rem] shrink-0">
-                  <kbd className="rounded-s border border-stroke bg-surface px-3xs font-mono text-s">
+                  <kbd className="rounded-sm border border-stroke bg-surface px-3xs font-mono text-s">
                     {key}
                   </kbd>
                 </dt>

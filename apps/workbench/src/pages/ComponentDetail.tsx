@@ -647,7 +647,7 @@ function DataChoice({
       aria-pressed={selected}
       onClick={onPick}
       className={cn(
-        'flex flex-wrap items-center gap-2xs rounded-s px-2xs py-3xs text-left text-s',
+        'flex flex-wrap items-center gap-2xs rounded-sm px-2xs py-3xs text-left text-s',
         selected ? 'bg-surface font-medium text-on-canvas' : 'text-on-canvas-muted',
       )}
     >

@@ -17,7 +17,7 @@ const TOKENS = {
   'spacing-m': 24,
   'spacing-2xs': 6,
   'radius-md': 12,
-  'radius-s': 6,
+  'radius-sm': 6,
 };
 
 /** A minimal spec tree: one frame with two children. */

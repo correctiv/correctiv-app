@@ -1820,7 +1820,7 @@
                         "@spacing-4xs",
                         "@spacing-4xs"
                       ],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent",
                       "children": [
                         {
@@ -2140,7 +2140,7 @@
                             "@spacing-4xs",
                             "@spacing-4xs"
                           ],
-                          "radius": "@radius-s",
+                          "radius": "@radius-sm",
                           "fill": "@color-accent",
                           "children": [
                             {
@@ -2198,7 +2198,7 @@
                         "@spacing-4xs",
                         "@spacing-4xs"
                       ],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "children": [
                         {
                           "t": "ellipse",
@@ -2297,7 +2297,7 @@
                         "@spacing-4xs",
                         "@spacing-4xs"
                       ],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent-alternative",
                       "children": [
                         {
@@ -3107,7 +3107,7 @@
                             "@spacing-4xs",
                             "@spacing-4xs"
                           ],
-                          "radius": "@radius-s",
+                          "radius": "@radius-sm",
                           "children": [
                             {
                               "t": "ellipse",
@@ -3224,7 +3224,7 @@
                             "@spacing-4xs",
                             "@spacing-4xs"
                           ],
-                          "radius": "@radius-s",
+                          "radius": "@radius-sm",
                           "children": [
                             {
                               "t": "ellipse",
@@ -3357,7 +3357,7 @@
                                 0,
                                 0
                               ],
-                              "radius": "@radius-s",
+                              "radius": "@radius-sm",
                               "fill": "@color-always-dark/80",
                               "children": [
                                 {
@@ -3625,7 +3625,7 @@
                     "@spacing-4xs",
                     "@spacing-4xs"
                   ],
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "fill": "@color-accent-alternative",
                   "children": [
                     {
@@ -4177,7 +4177,7 @@
                         "@spacing-4xs",
                         "@spacing-4xs"
                       ],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent-alternative",
                       "children": [
                         {
@@ -4282,7 +4282,7 @@
                         "@spacing-4xs",
                         "@spacing-4xs"
                       ],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent-alternative",
                       "children": [
                         {
@@ -4618,7 +4618,7 @@
                       "dir": "V",
                       "w": 269,
                       "h": 4,
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "clip": true,
                       "fill": "@color-grey-250",
                       "children": [
@@ -4739,7 +4739,7 @@
                       "dir": "V",
                       "w": 269,
                       "h": 4,
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "clip": true,
                       "fill": "@color-grey-250",
                       "children": [
@@ -4821,7 +4821,7 @@
                   "dir": "V",
                   "w": "fill",
                   "h": 4,
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "clip": true,
                   "fill": "@color-stroke",
                   "children": [
@@ -4855,7 +4855,7 @@
                   "dir": "V",
                   "w": "fill",
                   "h": 4,
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "clip": true,
                   "fill": "@color-stroke",
                   "children": [
@@ -4889,7 +4889,7 @@
                   "dir": "V",
                   "w": "fill",
                   "h": 4,
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "clip": true,
                   "fill": "@color-stroke",
                   "children": [
@@ -5162,7 +5162,7 @@
                                 "@spacing-4xs",
                                 "@spacing-4xs"
                               ],
-                              "radius": "@radius-s",
+                              "radius": "@radius-sm",
                               "fill": "@color-accent",
                               "children": [
                                 {
@@ -5220,7 +5220,7 @@
                                 "@spacing-4xs",
                                 "@spacing-4xs"
                               ],
-                              "radius": "@radius-s",
+                              "radius": "@radius-sm",
                               "fill": "@color-accent",
                               "children": [
                                 {
@@ -5278,7 +5278,7 @@
                                 "@spacing-4xs",
                                 "@spacing-4xs"
                               ],
-                              "radius": "@radius-s",
+                              "radius": "@radius-sm",
                               "fill": "@color-accent",
                               "children": [
                                 {
@@ -14690,7 +14690,7 @@
     "spacing-3xl": 96,
     "spacing-4xl": 128,
     "radius-xs": 1,
-    "radius-s": 2,
+    "radius-sm": 2,
     "radius-md": 5,
     "text-article": 15.5,
     "text-s": 14,

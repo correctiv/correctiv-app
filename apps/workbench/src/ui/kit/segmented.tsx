@@ -95,7 +95,7 @@ export function Segmented({
             <span
               title={option.icon?.name}
               className={cn(
-                'block cursor-pointer rounded-s text-s font-medium transition-colors',
+                'block cursor-pointer rounded-sm text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
                 'px-xs py-3xs',
                 /*
