@@ -3,14 +3,17 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import {
-  DEFAULT_HOME_LAYOUT,
-  homeLayoutDocument,
   parseHomeLayout,
   reportLayoutProblems,
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
-import { SCREEN_DOCUMENTS, type ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
-import { fetchedHomeLayout, refreshHomeLayout } from '@correctiv/app-core/stores/homeLayout';
+import {
+  CONFIGURABLE_SCREENS,
+  SCREEN_DOCUMENTS,
+  screenDocumentOf,
+  type ConfigurableScreen,
+} from '@correctiv/app-core/lib/screen-layout';
+import { fetchedLayouts, refreshLayouts } from '@correctiv/app-core/stores/homeLayout';
 
 import { coreStore } from '@/lib/store/core';
 
@@ -47,10 +50,19 @@ const RENDERABLE: ReadonlySet<string> = new Set(Object.keys(HOME_MODULES));
 export const HOME_LAYOUT_OVERRIDE_KEY = 'workbench:home-layout';
 
 /**
- * The override as it stands, or null.
+ * The key a screen's override is read from: Home keeps the key it always had, every
+ * other screen takes `workbench:layout:<screen>`. Frame only: the app reads these, and
+ * which of them the workbench's editor writes is the workbench's business.
+ */
+export function layoutOverrideKey(screen: ConfigurableScreen): string {
+  return screen === 'home' ? HOME_LAYOUT_OVERRIDE_KEY : `workbench:layout:${screen}`;
+}
+
+/**
+ * A screen's override as it stands, or null.
  *
  * Text rather than a parsed value, because the text is what says whether anything
- * changed, and that is the question `homeLayout()` below asks on every render.
+ * changed, and that is the question `screenLayout()` below asks on every render.
  *
  * Guarded rather than platform-split. `localStorage` is a web thing and this file is
  * shared by all three targets; a `.web.ts` sibling would be a second copy of the parse
@@ -58,20 +70,22 @@ export const HOME_LAYOUT_OVERRIDE_KEY = 'workbench:home-layout';
  * browser with site data switched off throws on the accessor, and both answer the same
  * way here: there is no override, so the bundled document stands.
  */
-function overrideText(): string | null {
+function overrideText(screen: ConfigurableScreen): string | null {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null;
-    return window.localStorage.getItem(HOME_LAYOUT_OVERRIDE_KEY);
+    return window.localStorage.getItem(layoutOverrideKey(screen));
   } catch {
     return null;
   }
 }
 
 /**
- * Where the app fetches its home document from (ADR 0057 §4).
+ * Where the app fetches its screen documents from (ADR 0057 §4).
  *
- * The core's own `data/layout/screens/home.json`, which `.github/workflows/pages.yml` copies
- * beside the published site: the same file this build bundles, as `main` has it now.
+ * The files under the core's `data/layout/screens/`, joined into one document by
+ * `.github/workflows/pages.yml` and published beside the site: the same files this build
+ * bundles, as `main` has them now (ADR 0071 §1). `home.layout.json` stays published beside
+ * it for the builds that fetch only Home's document.
  * A constant because ADR 0057 §4 says the app holds the address, and the core's thunk
  * takes it as a parameter so that no address is typed in the core.
  *
@@ -84,14 +98,14 @@ function overrideText(): string | null {
  * GitHub Pages answers it with `access-control-allow-origin: *`, measured on
  * 2026-09-23, so the web target may fetch it from any origin, not only its own.
  */
-export const HOME_LAYOUT_URL = 'https://correctiv.github.io/correctiv-app/home.layout.json';
+export const LAYOUTS_URL = 'https://correctiv.github.io/correctiv-app/layout.json';
 
 /**
  * When this bundle was built, in ms since the epoch, or NaN when nobody said.
  *
  * `app.config.js` stamps `extra.builtAt` at every build and `expo-constants` embeds it,
  * so every export and native build carries it. The core draws a fetched copy only when
- * it was published at or after this moment (`fetchedHomeLayout` argues why). NaN draws
+ * it was published at or after this moment (`fetchedLayouts` argues why). NaN draws
  * none and fetches none: a build that cannot say when it was made cannot tell an older
  * published document from a newer one, and the bundle is the safe answer.
  *
@@ -101,14 +115,13 @@ export const HOME_LAYOUT_URL = 'https://correctiv.github.io/correctiv-app/home.l
  */
 export const BUILT_AT = Date.parse(String(Constants.expoConfig?.extra?.builtAt ?? ''));
 
-/** The fetched copy the core holds that is not older than this build, or null. */
+/** The fetched merged document the core holds that is not older than this build, or null. */
 function fetchedText(): string | null {
-  return fetchedHomeLayout(coreStore.getState().homeLayout, BUILT_AT);
+  return fetchedLayouts(coreStore.getState().homeLayout, BUILT_AT);
 }
 
-/** Never throws: an unparsable override is a document that is not an object (§9). */
-function documentFrom(text: string | null): unknown {
-  if (text === null) return homeLayoutDocument;
+/** Never throws: an unparsable text is a document that is not an object (§9). */
+function parseText(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
@@ -116,87 +129,96 @@ function documentFrom(text: string | null): unknown {
   }
 }
 
-let read: { text: string | null; layout: HomeLayout } | null = null;
+const read = new Map<
+  ConfigurableScreen,
+  { override: string | null; fetched: string | null; layout: HomeLayout }
+>();
+
+function parseScreen(document: unknown, screen: ConfigurableScreen) {
+  return parseHomeLayout(document, RENDERABLE, screen);
+}
+
+/** The screen's bundled document, which is always usable (ADR 0036 §10). */
+function bundled(screen: ConfigurableScreen): HomeLayout {
+  const { layout, problems } = parseScreen(SCREEN_DOCUMENTS[screen], screen);
+  reportLayoutProblems(problems);
+  return layout ?? { version: 0, sections: [], moments: [], editions: [] };
+}
 
 /**
- * The layout Home draws: the override if there is one, else the fetched copy, else the
- * bundled document.
+ * The layout a screen draws: its override if there is one, else its part of the fetched
+ * document, else the bundled document.
  *
  * **That order is the precedence, and each step down is a fallback, not a merge.** The
  * override is somebody in the workbench looking at a document on purpose, so it beats
  * what the phone fetched; the fetched copy is what the newsroom published, so it beats
  * what this build happened to compile in (ADR 0036 §4); and the bundle is §10's floor
  * under a first launch with no network. A copy published before this build was made is
- * not offered at all, which `fetchedHomeLayout` decides in the core.
+ * not offered at all, which `fetchedLayouts` decides in the core.
+ *
+ * **The fallback is per screen** (ADR 0071 §6). A fetched document that lacks a screen,
+ * or whose part for it does not parse or draws nothing, costs that screen its fetched
+ * copy and no other screen anything. A screen in it that this app does not declare is
+ * never read.
  *
  * **Once per document, not once per render**, which is what ADR 0036 §7's report is
  * worth. Strictly it is once per document per process: the cache below lives in memory,
  * so a relaunch reports the same document again, and so does a document that comes back
- * after another one was drawn in between (an override set and cleared). A report made during render is made again on every feed that lands, every pull
- * to refresh and every theme change — a log nobody can read and, once there is a
- * provider behind the port (#95), a quota spent on one typo. The cache is keyed on the
- * document's raw text, so a render re-parses only when the document actually changed,
- * and the value it returns is referentially stable in between, which is what
- * `useSyncExternalStore` requires of a snapshot.
+ * after another one was drawn in between (an override set and cleared). A report made
+ * during render is made again on every feed that lands, every pull to refresh and every
+ * theme change: a log nobody can read and, once there is a provider behind the port
+ * (#95), a quota spent on one typo. The cache is keyed on the raw texts, so a render
+ * re-parses only when a document actually changed, and the value it returns is
+ * referentially stable in between, which is what `useSyncExternalStore` requires of a
+ * snapshot.
  *
  * It is lazy rather than module scope for one reason: `configurePlatform()` runs in
  * `app/_layout.tsx`, and a report made while this module is being imported would go to
  * the core's default reporter, which reports nowhere. By the first render the host's is
  * registered.
- *
- * A document that does not parse at all costs the override and not the screen:
- * `DEFAULT_HOME_LAYOUT` is bundled and always usable, which is §10's promise and the
- * app's half of §9. A fetched copy cannot be that document, because the core refuses
- * one that does not parse before it keeps it.
  */
+export function screenLayout(screen: ConfigurableScreen): HomeLayout {
+  const override = overrideText(screen);
+  const fetched = fetchedText();
+  const held = read.get(screen);
+  if (held && held.override === override && held.fetched === fetched) return held.layout;
+
+  let layout: HomeLayout | null = null;
+  if (override !== null) {
+    // A document that does not parse costs the override and not the screen.
+    const parsed = parseScreen(parseText(override), screen);
+    reportLayoutProblems(parsed.problems);
+    layout = parsed.layout;
+  } else if (fetched !== null) {
+    const document = screenDocumentOf(parseText(fetched), screen);
+    if (document !== undefined) {
+      const parsed = parseScreen(document, screen);
+      reportLayoutProblems(parsed.problems);
+      if (parsed.layout && parsed.layout.sections.length > 0) layout = parsed.layout;
+    }
+  }
+  const result = layout ?? bundled(screen);
+  read.set(screen, { override, fetched, layout: result });
+  return result;
+}
+
+/** Home's layout: `screenLayout('home')`, kept under the name Home and its tests use. */
 export function homeLayout(): HomeLayout {
-  const text = overrideText() ?? fetchedText();
-  if (read && read.text === text) return read.layout;
-  const { layout, problems } = parseHomeLayout(documentFrom(text), RENDERABLE);
-  reportLayoutProblems(problems);
-  read = { text, layout: layout ?? DEFAULT_HOME_LAYOUT };
-  return read.layout;
-}
-
-const bundledByScreen = new Map<ConfigurableScreen, HomeLayout>();
-
-/**
- * The layout of a screen other than Home: the bundled document, read once.
- *
- * **Only the bundle, and that is the minimum rather than the decision.** Home's override,
- * its fetched copy and its stored one are one text each in the core (`stores/homeLayout`)
- * and one address on Pages, and they are Home's alone. A second screen that fetched would
- * need the store to hold a text per screen and the Pages workflow to publish the joined
- * document ADR 0071 §1 describes, which is a change to both and is made once, for every
- * screen, rather than first for this one. Until then an edit to such a screen reaches a
- * phone with the release, and Home's does not.
- *
- * Moments, conditions and audiences are in the document's grammar, so they work here
- * unchanged. A module the document names and this host cannot draw is dropped and reported
- * once, as Home's is.
- */
-export function bundledScreenLayout(screen: ConfigurableScreen): HomeLayout {
-  const held = bundledByScreen.get(screen);
-  if (held) return held;
-  const { layout, problems } = parseHomeLayout(SCREEN_DOCUMENTS[screen], RENDERABLE, screen);
-  reportLayoutProblems(problems);
-  const read = layout ?? { version: 0, sections: [], moments: [], editions: [] };
-  bundledByScreen.set(screen, read);
-  return read;
+  return screenLayout('home');
 }
 
 /**
- * When the document changes: the override, or the fetched copy.
+ * When a document changes: any override, or the fetched copy.
  *
  * The override changes by a `storage` event on the web target. The browser fires that
  * event in every same-origin document **except** the one that made the change, so a
  * write from the workbench arrives here and a write from this app would not. That
- * asymmetry is exactly right: nothing in the app writes this key. Everywhere else there
+ * asymmetry is exactly right: nothing in the app writes these keys. Everywhere else there
  * is no such event and no override.
  *
  * The fetched copy changes in the core's store, on every target. The store notifies on
  * every action, twice a second while audio plays, so the listener is called only when
- * the copy itself is a different string; `homeLayout()` would answer the same object
+ * the copy itself is a different string; `screenLayout()` would answer the same object
  * anyway, but not asking is cheaper than asking.
  */
 function subscribeToLayout(listener: () => void): () => void {
@@ -211,8 +233,9 @@ function subscribeToLayout(listener: () => void): () => void {
   if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
     return unsubscribeStore;
   }
+  const keys = new Set(CONFIGURABLE_SCREENS.map(layoutOverrideKey));
   const onStorage = (event: StorageEvent) => {
-    if (event.key === null || event.key === HOME_LAYOUT_OVERRIDE_KEY) listener();
+    if (event.key === null || keys.has(event.key)) listener();
   };
   window.addEventListener('storage', onStorage);
   return () => {
@@ -222,54 +245,63 @@ function subscribeToLayout(listener: () => void): () => void {
 }
 
 /**
- * The layout, re-read when somebody writes a new one.
+ * A screen's layout, re-read when somebody writes a new one or a fetch lands.
  *
  * `useSyncExternalStore` rather than state and an effect, because the document is not
  * this component's to own: it is read at render time from storage and from the store,
  * and the subscription exists only so that a screen already on the phone redraws
  * instead of waiting for a reload. The same function serves as the snapshot and as
- * the server snapshot — the static export prerenders each route, and there the bundled
+ * the server snapshot: the static export prerenders each route, and there the bundled
  * document is the only one there can be.
  */
+export function useScreenLayout(screen: ConfigurableScreen): HomeLayout {
+  const snapshot = () => screenLayout(screen);
+  return useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
+}
+
+/** Home's layout, re-read as `useScreenLayout` does. */
 export function useHomeLayout(): HomeLayout {
-  return useSyncExternalStore(subscribeToLayout, homeLayout, homeLayout);
+  return useScreenLayout('home');
 }
 
 /**
- * Whether the workbench is replacing the home document outright, right now, with one
+ * Whether the workbench is replacing any screen's document outright, right now, with one
  * that actually reads differently from what ships.
  *
  * **Not `overrideText() !== null` alone**, which was measured overcounting: a key that
  * cannot be parsed, or that parses to something `parseHomeLayout` refuses, is not drawn
- * at all — `homeLayout()` above falls back to `DEFAULT_HOME_LAYOUT` for exactly that
- * document, so the screen matches what ships while the key still holds text. So this
- * parses the override the same way `homeLayout()` does and compares the result to the
- * bundled document, rather than trusting presence.
+ * at all, since `screenLayout()` falls back to the bundle for exactly that document, so
+ * the screen matches what ships while the key still holds text. So this parses the
+ * override the same way and compares the result to the bundled document, rather than
+ * trusting presence.
  *
- * **Not a comparison against `homeLayout()`'s own answer either**, which can differ
+ * **Not a comparison against `screenLayout()`'s own answer either**, which can differ
  * from the bundle for a reason that is not a draft at all: ADR 0036 §4's fetched copy,
  * a newer document this build simply asked for. Comparing the override in isolation is
  * what keeps this from firing on that ordinary case.
  *
- * Exported beside the key for `lib/draftMarker.tsx`, the one caller with no business
- * asking anything else about the document.
+ * Exported for `lib/draftMarker.tsx`, the one caller with no business asking anything
+ * else about the document.
  */
 function overrideDiffers(): boolean {
-  const text = overrideText();
-  if (text === null) return false;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return false;
-  }
-  const { layout } = parseHomeLayout(parsed, RENDERABLE);
-  if (!layout) return false;
-  return JSON.stringify(layout) !== JSON.stringify(DEFAULT_HOME_LAYOUT);
+  return CONFIGURABLE_SCREENS.some((screen) => {
+    const text = overrideText(screen);
+    if (text === null) return false;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return false;
+    }
+    const { layout } = parseHomeLayout(parsed, RENDERABLE, screen);
+    if (!layout) return false;
+    const shipped = parseHomeLayout(SCREEN_DOCUMENTS[screen], undefined, screen).layout;
+    return JSON.stringify(layout) !== JSON.stringify(shipped);
+  });
 }
 
 /**
- * The same function serves as the snapshot and the server snapshot, as `useHomeLayout`
+ * The same function serves as the snapshot and the server snapshot, as `useScreenLayout`
  * above already does: the static export prerenders with no `window`, so `overrideText()`
  * answers `null` there on its own and this answers `false`.
  */
@@ -278,7 +310,7 @@ export function useHomeLayoutOverrideActive(): boolean {
 }
 
 /**
- * Fetch the home document at launch and on every return to the foreground (§5).
+ * Fetch the screen documents at launch and on every return to the foreground (§5).
  *
  * Called once, from the root layout, after persistence has hydrated: before that the
  * store does not yet hold the copy the last session kept, and a fetch that landed first
@@ -297,7 +329,7 @@ export function useHomeLayoutRefresh(ready: boolean): void {
     if (__DEV__ || !ready || !Number.isFinite(BUILT_AT)) return;
     const refresh = () => {
       void coreStore.dispatch(
-        refreshHomeLayout(HOME_LAYOUT_URL, { builtAt: BUILT_AT, renderable: RENDERABLE }),
+        refreshLayouts(LAYOUTS_URL, { builtAt: BUILT_AT, renderable: RENDERABLE }),
       );
     };
     refresh();

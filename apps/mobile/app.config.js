@@ -21,7 +21,7 @@
 // config was evaluated, which for `expo export` and a native build is the moment the
 // bundle was made. The app compares it with the `last-modified` of the home document
 // it fetches and draws the fetched copy only when that is not older than the build
-// (`packages/app-core/src/stores/homeLayout.ts`, `fetchedHomeLayout`), so an app update
+// (`packages/app-core/src/stores/homeLayout.ts`, `fetchedLayouts`), so an app update
 // or a local export of an edited document is not overridden by an older published one.
 // It reaches the app through `expo-constants`, which embeds this config at build time.
 //

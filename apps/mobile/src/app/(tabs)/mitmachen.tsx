@@ -1,5 +1,5 @@
 import { Screen } from '@/components/ui';
-import { bundledScreenLayout } from '@/lib/home/layout';
+import { useScreenLayout } from '@/lib/home/layout';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 
 /**
@@ -12,9 +12,10 @@ import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
  * §1). What each block renders, and its words, is `lib/home/modules.tsx`.
  */
 export default function MitmachenScreen() {
+  const layout = useScreenLayout('mitmachen');
   return (
     <Screen>
-      <ScreenBlocks screen="mitmachen" layout={bundledScreenLayout('mitmachen')} />
+      <ScreenBlocks screen="mitmachen" layout={layout} />
     </Screen>
   );
 }

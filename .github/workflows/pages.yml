@@ -126,17 +126,22 @@ jobs:
           cp -r apps/mobile/dist site/app
           echo "assembled $(find site -name '*.html' | wc -l) pages"
 
-      # The home document the app fetches (ADR 0036 §4, ADR 0057 §4): the core's own
-      # file, the same one the app bundles, published at <base>/home.layout.json. The
-      # app holds that address as HOME_LAYOUT_URL in apps/mobile/src/lib/home/layout.ts.
+      # The screen documents the app fetches (ADR 0036 §4, ADR 0057 §4, ADR 0071 §1): the
+      # core's files under data/layout/screens/, the same ones the app bundles, joined into
+      # ONE document at <base>/layout.json, so every screen arrives in the same state. The
+      # app holds that address as LAYOUTS_URL in apps/mobile/src/lib/home/layout.ts.
+      # <base>/home.layout.json stays, Home's file as it was, for the builds that fetch
+      # only that one.
       #
       # A step of its own, and it names the core's path and nothing else. That is what
       # keeps it on the right side of ADR 0040 §1: the document is the core's file, not
       # the workbench's output, and this step reads neither the app nor the workbench,
       # so the `independence` job in ci.yml, which deletes apps/workbench and rebuilds
       # the app, removes nothing this path touches.
-      - name: Publish the home document
-        run: cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json
+      - name: Publish the screen documents
+        run: |
+          npx tsx packages/app-core/scripts/join-screen-layouts.ts site/layout.json
+          cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json
 
       # Ways this deploy can be broken while both builds succeed, so each one
       # is read off the assembled files rather than assumed:
@@ -274,6 +279,12 @@ jobs:
           test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
           npx tsx packages/app-core/scripts/check-home-layout.ts site/home.layout.json || {
             echo "::error::site/home.layout.json is not a home layout the app would draw as written; the lines above name each problem."
+            exit 1
+          }
+
+          test -f site/layout.json || { echo "::error::site/layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
+          npx tsx packages/app-core/scripts/check-screen-layouts.ts site/layout.json || {
+            echo "::error::site/layout.json holds a screen the app would not draw as written; the lines above name each problem."
             exit 1
           }
 

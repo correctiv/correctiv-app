@@ -37,3 +37,30 @@ export const SCREEN_DOCUMENTS = {
   mitmachen: mitmachenDocument,
   profil: profilDocument,
 } satisfies Record<ConfigurableScreen, unknown>;
+
+/** The version of the envelope the deploy joins the screens into. Not a screen's `version`. */
+export const SCREEN_LAYOUTS_VERSION = 1;
+
+/**
+ * The published document: every screen's file under its screen id, joined and nothing
+ * else (ADR 0071 §1). Keys beside `screens` are reserved for what a later phase adds,
+ * the navigation first, and an app that does not know one ignores it.
+ */
+export function joinScreenDocuments(documents: Record<string, unknown>): {
+  version: number;
+  screens: Record<string, unknown>;
+} {
+  return { version: SCREEN_LAYOUTS_VERSION, screens: documents };
+}
+
+/**
+ * One screen's document out of a fetched joined one, or `undefined` when the body is not
+ * a joined document or does not carry that screen. Only the screens the caller asks for
+ * are read, so one this app does not know is ignored without being named.
+ */
+export function screenDocumentOf(body: unknown, screen: ConfigurableScreen): unknown {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const screens = (body as { screens?: unknown }).screens;
+  if (typeof screens !== 'object' || screens === null || Array.isArray(screens)) return undefined;
+  return Object.hasOwn(screens, screen) ? (screens as Record<string, unknown>)[screen] : undefined;
+}

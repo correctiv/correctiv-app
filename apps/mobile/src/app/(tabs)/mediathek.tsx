@@ -1,5 +1,5 @@
 import { Screen } from '@/components/ui';
-import { bundledScreenLayout } from '@/lib/home/layout';
+import { useScreenLayout } from '@/lib/home/layout';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 
 /**
@@ -15,9 +15,10 @@ import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
  * §1). What each block renders is `lib/home/modules.tsx`.
  */
 export default function MediathekScreen() {
+  const layout = useScreenLayout('mediathek');
   return (
     <Screen>
-      <ScreenBlocks screen="mediathek" layout={bundledScreenLayout('mediathek')} />
+      <ScreenBlocks screen="mediathek" layout={layout} />
     </Screen>
   );
 }

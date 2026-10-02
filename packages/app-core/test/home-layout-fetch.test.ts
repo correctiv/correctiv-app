@@ -8,11 +8,22 @@ import {
   HOME_LAYOUT_FLOOR_MS,
   HOME_LAYOUT_MAX_CHARS,
   PERSISTED_KEYS,
-  fetchedHomeLayout,
+  fetchedLayouts,
   homeLayoutActions,
-  refreshHomeLayout,
+  refreshLayouts,
 } from '../src/stores/homeLayout';
-import { HOME_LAYOUT_VERSION } from '../src/lib/home-layout';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+import { HOME_LAYOUT_VERSION, parseHomeLayout } from '../src/lib/home-layout';
+import {
+  CONFIGURABLE_SCREENS,
+  SCREEN_DOCUMENTS,
+  SCREEN_LAYOUTS_VERSION,
+  joinScreenDocuments,
+  screenDocumentOf,
+  type ConfigurableScreen,
+} from '../src/lib/screen-layout';
 import { persist, persisted } from '../src/stores/persist';
 import { createAppStore, type AppStore } from '../src/stores/store';
 
@@ -23,29 +34,34 @@ import { createAppStore, type AppStore } from '../src/stores/store';
  * The address, the build time and the modules a host can draw are the host's, so these
  * tests name their own.
  */
-const URL = 'https://example.test/home.layout.json';
+const URL = 'https://example.test/layout.json';
 const NOW = Date.parse('2026-09-23T08:00:00.000Z');
 /** This build, an hour before the tests' clock. */
 const BUILT_AT = NOW - 60 * 60 * 1000;
 /** A deploy after this build, and one before it. */
 const AFTER_BUILD = 'Wed, 23 Sep 2026 07:30:00 GMT';
 const BEFORE_BUILD = 'Wed, 23 Sep 2026 06:30:00 GMT';
-const RENDERABLE = new Set(['home-header', 'impact-footer']);
+const RENDERABLE = new Set(['home-header', 'impact-footer', 'participate-header']);
 const OPTIONS = { builtAt: BUILT_AT, renderable: RENDERABLE };
 
 const fetchMock = vi.mocked(fetchTextResponse);
 let store: AppStore;
 let reports: ErrorReport[];
 
-/** A document that is a layout, different from the bundled one so a test can tell. */
-const GOOD = JSON.stringify({
+/** What the deploy publishes: each screen's document under its id (ADR 0071 §1). */
+const joined = (screens: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
+  JSON.stringify({ version: SCREEN_LAYOUTS_VERSION, screens, ...extra });
+
+/** A layout different from the bundled one so a test can tell. */
+const HOME = {
   version: HOME_LAYOUT_VERSION,
   sections: [
     { id: 'header', module: 'home-header' },
     { id: 'impact', module: 'impact-footer' },
   ],
   moments: [],
-});
+};
+const GOOD = joined({ home: HOME });
 
 /** The response the host would get, with the date Pages would put on it. */
 function answer(body: string, lastModified: string | null = AFTER_BUILD) {
@@ -71,10 +87,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const refresh = () => store.dispatch(refreshHomeLayout(URL, OPTIONS));
+const refresh = () => store.dispatch(refreshLayouts(URL, OPTIONS));
 
 function held(): string | null {
-  return fetchedHomeLayout(store.getState().homeLayout, BUILT_AT);
+  return fetchedLayouts(store.getState().homeLayout, BUILT_AT);
 }
 
 /** Past the floor, so the next refresh fetches. */
@@ -99,13 +115,15 @@ describe('a document that is a layout', () => {
    * the document. A report here as well would be every problem twice.
    */
   it('is kept with a part the app cannot draw, and the part is left for the host to report', async () => {
-    const ahead = JSON.stringify({
-      version: HOME_LAYOUT_VERSION,
-      sections: [
-        { id: 'header', module: 'home-header' },
-        { id: 'quiz', module: 'quiz-of-the-day' },
-      ],
-      moments: [],
+    const ahead = joined({
+      home: {
+        version: HOME_LAYOUT_VERSION,
+        sections: [
+          { id: 'header', module: 'home-header' },
+          { id: 'quiz', module: 'quiz-of-the-day' },
+        ],
+        moments: [],
+      },
     });
     answer(ahead);
 
@@ -260,7 +278,7 @@ describe('a document that is worse than the copy it would replace', () => {
     await refresh();
 
     later();
-    answer(JSON.stringify(document));
+    answer(joined({ home: document }));
     expect(await refresh()).toBe('rejected');
 
     expect(held()).toBe(GOOD);
@@ -288,12 +306,7 @@ describe('a document that is worse than the copy it would replace', () => {
     await refresh();
 
     later();
-    const huge = JSON.stringify({
-      version: HOME_LAYOUT_VERSION,
-      sections: [{ id: 'header', module: 'home-header', settings: {} }],
-      moments: [],
-      padding: 'x'.repeat(HOME_LAYOUT_MAX_CHARS),
-    });
+    const huge = joined({ home: HOME }, { padding: 'x'.repeat(HOME_LAYOUT_MAX_CHARS) });
     answer(huge);
     expect(await refresh()).toBe('rejected');
 
@@ -310,6 +323,78 @@ describe('a document that is worse than the copy it would replace', () => {
     expect(reports).toEqual([
       { domain: 'layout', code: 'document-undated', context: { length: GOOD.length } },
     ]);
+  });
+});
+
+describe('a merged document with several screens', () => {
+  const MITMACHEN = {
+    version: HOME_LAYOUT_VERSION,
+    sections: [{ id: 'only', module: 'participate-header' }],
+    moments: [],
+  };
+
+  it('round-trips: stored as text, each screen read back out of it', async () => {
+    const text = joined({ home: HOME, mitmachen: MITMACHEN });
+    answer(text);
+    expect(await refresh()).toBe('stored');
+
+    const body = JSON.parse(held() as string);
+    expect(screenDocumentOf(body, 'home')).toEqual(HOME);
+    expect(screenDocumentOf(body, 'mitmachen')).toEqual(MITMACHEN);
+    expect(screenDocumentOf(body, 'entdecken')).toBeUndefined();
+  });
+
+  it("is kept when only some screens draw, the rest being the host's to fall back on", async () => {
+    answer(joined({ home: { version: HOME_LAYOUT_VERSION, sections: [] }, mitmachen: MITMACHEN }));
+    expect(await refresh()).toBe('stored');
+  });
+
+  it('ignores a screen this app does not know, without a report', async () => {
+    answer(joined({ home: HOME, game: { version: 1, nonsense: true } }));
+    expect(await refresh()).toBe('stored');
+    expect(reports).toEqual([]);
+    expect(screenDocumentOf(JSON.parse(held() as string), 'home' as ConfigurableScreen)).toEqual(
+      HOME,
+    );
+  });
+
+  it('is refused when none of the known screens draws anything', async () => {
+    answer(joined({ game: HOME }));
+    expect(await refresh()).toBe('rejected');
+    expect(held()).toBeNull();
+  });
+
+  it('is not a screen document when the body is a bare layout, as the old address serves', () => {
+    expect(screenDocumentOf(HOME, 'home')).toBeUndefined();
+    expect(screenDocumentOf(null, 'home')).toBeUndefined();
+    expect(screenDocumentOf({ screens: [HOME] }, 'home')).toBeUndefined();
+  });
+
+  it('leaves room for keys beside screens, such as a navigation', async () => {
+    answer(joined({ home: HOME }, { navigation: { version: 1, tabs: [] } }));
+    expect(await refresh()).toBe('stored');
+  });
+});
+
+describe('the published documents', () => {
+  it('joins every bundled screen under its id, so the files and the document agree', () => {
+    const document = JSON.parse(JSON.stringify(joinScreenDocuments({ ...SCREEN_DOCUMENTS })));
+    for (const screen of CONFIGURABLE_SCREENS) {
+      expect(screenDocumentOf(document, screen)).toEqual(SCREEN_DOCUMENTS[screen]);
+    }
+  });
+
+  it("keeps the old home address producing Home's own file, which older apps parse as a layout", () => {
+    const home = SCREEN_DOCUMENTS.home;
+    expect(parseHomeLayout(home).problems).toEqual([]);
+    const workflow = readFileSync(
+      fileURLToPath(new globalThis.URL('../../../.github/workflows/pages.yml', import.meta.url)),
+      'utf8',
+    );
+    expect(workflow).toContain(
+      'cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json',
+    );
+    expect(workflow).toContain('join-screen-layouts.ts site/layout.json');
   });
 });
 
@@ -345,11 +430,9 @@ describe('a document older than this build', () => {
     const exportedNow = NOW;
     answer(GOOD, 'Wed, 23 Sep 2026 05:13:15 GMT');
     expect(
-      await store.dispatch(
-        refreshHomeLayout(URL, { builtAt: exportedNow, renderable: RENDERABLE }),
-      ),
+      await store.dispatch(refreshLayouts(URL, { builtAt: exportedNow, renderable: RENDERABLE })),
     ).toBe('older-than-bundle');
-    expect(fetchedHomeLayout(store.getState().homeLayout, exportedNow)).toBeNull();
+    expect(fetchedLayouts(store.getState().homeLayout, exportedNow)).toBeNull();
   });
 });
 
@@ -373,7 +456,7 @@ describe('persistence', () => {
 
     const next = createAppStore();
     await persist(next, slices);
-    expect(fetchedHomeLayout(next.getState().homeLayout, BUILT_AT)).toBe(GOOD);
+    expect(fetchedLayouts(next.getState().homeLayout, BUILT_AT)).toBe(GOOD);
     // The stamp is not persisted: a launch is a new process, and it fetches.
     expect(next.getState().homeLayout.triedAt).toBeNull();
   });
