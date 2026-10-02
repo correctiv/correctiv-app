@@ -114,7 +114,7 @@ const COPY = defineMessages({
     id: 'navigation.invalid',
     defaultMessage: 'The app would not draw this bar: {codes}',
     description:
-      'Shown when the navigation is not valid. {codes} is a comma-separated list of the core’s problem codes, which are never translated.',
+      'Shown when the navigation is not valid, and the reason the Submit button in the header is switched off. {codes} is a comma-separated list of the core’s problem codes, which are never translated.',
   },
   copied: {
     id: 'navigation.copied',
@@ -167,7 +167,15 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
 
   useToolActions('navigation', {
     dirty,
-    blocked: problems.length > 0,
+    /*
+     * The reason, in the reader's language, and not a flag: the header's tooltip on a
+     * switched-off Submit says it. The codes travel with it rather than being looked
+     * up there, because only this tool knows which problem fired.
+     */
+    blocked:
+      problems.length > 0
+        ? intl.formatMessage(COPY.invalid, { codes: problems.map((p) => p.code).join(', ') })
+        : undefined,
     submit: offer
       ? {
           href: offer.href,

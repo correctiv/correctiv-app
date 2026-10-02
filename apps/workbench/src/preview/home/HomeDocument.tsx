@@ -999,7 +999,12 @@ export function HomeDocument({
 
   useToolActions('home', {
     dirty,
-    blocked: guarded,
+    /*
+     * The reason, in the reader's language, and not a flag: the header's tooltip on a
+     * switched-off Submit says it, which is where this sentence used to wait behind an
+     * ⓘ in this panel (`Controls.tsx`). Undefined while nothing blocks the tool.
+     */
+    blocked: guarded ? intl.formatMessage(CONTROLS_COPY.scenarioGuard) : undefined,
     submit: offer
       ? {
           href: offer.href,
@@ -1073,13 +1078,6 @@ export function HomeDocument({
         scenario={scenario}
         follow={follow}
         onFollow={setFollow}
-        submitHint={
-          guarded
-            ? CONTROLS_COPY.scenarioGuard
-            : offer && !offer.fits
-              ? CONTROLS_COPY.submitHintLong
-              : CONTROLS_COPY.submitHint
-        }
         /*
          * Where the document came from, and one sentence for an arrival that was nothing
          * (ADR 0076 §3). Both stand above the outcome because both are about the

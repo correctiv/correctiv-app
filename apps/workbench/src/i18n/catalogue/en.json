@@ -43,9 +43,13 @@
     "defaultMessage": "Submit",
     "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). The same word for every tool."
   },
+  "actions.submitOff": {
+    "defaultMessage": "Nothing to submit yet. Change something in this tool first.",
+    "description": "The tooltip on the submit button while the tool holds no changes, which is why it is switched off. Said in place of actions.submitTip rather than after it, because a reader who has just been told a button does nothing is not asking what it would do."
+  },
   "actions.submitTip": {
-    "defaultMessage": "Opens a new issue on GitHub with your change in it. A pull request is made from it automatically. This page stores no password and no token.",
-    "description": "The tooltip on the submit button: what happens after the click."
+    "defaultMessage": "Opens GitHub with your change filled in, or copies it to your clipboard when it is too long for a link. One click on “Create” submits it, and a pull request is made from it automatically. You need a GitHub account, and this page stores no password and no token.",
+    "description": "The tooltip on the submit button, and its accessible description: what happens after the click, and that a GitHub account is what it needs. The one explanation of a submission on this site, for every tool — a panel that carried its own said the same thing once per tool, which is the copy this replaced."
   },
   "actions.unchanged": {
     "defaultMessage": "Unchanged",
@@ -1541,7 +1545,7 @@
   },
   "home.document.scenarioGuard": {
     "defaultMessage": "Scenarios are examples. They are not submitted.",
-    "description": "Inside the ⓘ beside Submit while a scenario is open or the document still holds one, which is why the switched-off Submit and the switched-off Save in the header are off. Submitting or saving it would publish the example on every phone."
+    "description": "The tooltip on the Submit button in the header while a scenario is open or the document still holds one, which is why that button and the switched-off Save beside it are off. Submitting or saving it would publish the example on every phone."
   },
   "home.document.screen": {
     "defaultMessage": "Screen",
@@ -1575,20 +1579,8 @@
     "defaultMessage": "This draft came in a link. It is not saved on this machine: submit it, or reload to get your own document back.",
     "description": "Under the head of the layout tool, after a link with a draft in it was opened (ADR 0076 §3). Says the two things a person cannot see: where the document came from, and that nothing of it was written here."
   },
-  "home.document.submitAbout": {
-    "defaultMessage": "Submitting the change",
-    "description": "Names the ⓘ in the editor’s bar, which is what this ⓘ explains: what the Submit button in the header does with the change. The tooltip names the topic, as every ⓘ on this site does."
-  },
   "home.document.submitCopied": {
     "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."
-  },
-  "home.document.submitHint": {
-    "defaultMessage": "GitHub opens with your change filled in. One click on “Create” submits it. You need a GitHub account.",
-    "description": "Inside the ⓘ beside Submit, which is what the Submit button in the header does. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
-  },
-  "home.document.submitHintLong": {
-    "defaultMessage": "This change is too long for a link. The click copies it to your clipboard, and you paste it in on GitHub. You need a GitHub account.",
-    "description": "Stands in for home.document.submitHint inside the ⓘ when the change is too long to travel in the address, so it has to go by the clipboard."
   },
   "home.document.submitNoClipboard": {
     "defaultMessage": "The browser did not let this page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
@@ -2503,7 +2495,7 @@
   },
   "navigation.invalid": {
     "defaultMessage": "The app would not draw this bar: {codes}",
-    "description": "Shown when the navigation is not valid. {codes} is a comma-separated list of the core’s problem codes, which are never translated."
+    "description": "Shown when the navigation is not valid, and the reason the Submit button in the header is switched off. {codes} is a comma-separated list of the core’s problem codes, which are never translated."
   },
   "navigation.issue.heading": {
     "defaultMessage": "Changes to the navigation",
@@ -3931,14 +3923,6 @@
   "tools.strings.submitField": {
     "defaultMessage": "The changed texts",
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
-  },
-  "tools.strings.submitHint": {
-    "defaultMessage": "GitHub opens with your changed texts filled in. One click on “Create” submits them. You need a GitHub account.",
-    "description": "The one line under Submit texts. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English."
-  },
-  "tools.strings.submitHintLong": {
-    "defaultMessage": "These changes are too long for a link. The click copies them to your clipboard, and you paste them in on GitHub. You need a GitHub account.",
-    "description": "Stands in for tools.strings.submitHint when the changes are too long to travel in the address, so they go by the clipboard."
   },
   "tools.strings.submitNoClipboard": {
     "defaultMessage": "The browser did not let this page use the clipboard. Copy the changed texts from this field and paste them into the issue on GitHub.",

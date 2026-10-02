@@ -40,6 +40,19 @@ function mount(active: 'home' | 'navigation' | null, actions: ToolActions | null
 
 const q = (id: string) => container.querySelector<HTMLElement>(`[data-testid="${id}"]`);
 
+/**
+ * What the submit button describes itself with, read the way a screen reader would:
+ * through `aria-describedby`, which points at the sentence the tooltip draws. Both
+ * halves of that are what the check is about, so the test follows the reference
+ * rather than reading a prop, and a button that points at nothing reads as `null`.
+ */
+const described = (): string | null => {
+  const id = q('action-submit')?.getAttribute('aria-describedby');
+  // An attribute selector and not `#id`: `useId` writes `«:r1:»`, whose colons are a
+  // pseudo-class to the id form, and jsdom 20 has no `CSS.escape` to quote them with.
+  return id ? (container.querySelector(`[id="${id}"]`)?.textContent ?? null) : null;
+};
+
 afterEach(() => {
   act(() => root.unmount());
   container.remove();
@@ -81,15 +94,39 @@ describe('the header actions', () => {
     expect(discarded).toBe(true);
   });
 
-  it('switches save and submit off while blocked', () => {
+  /*
+   * Why a switched-off Submit says so, which is what the per-panel ⓘ was for: every
+   * tool used to carry its own paragraph explaining this button, next to a control
+   * that is not the one it describes. `blocked` is the tool's reason rather than a
+   * flag, and the button says it.
+   */
+  it('switches save and submit off while blocked, and says why', () => {
     mount('home', {
       dirty: true,
-      blocked: true,
+      blocked: 'Scenarios are examples. They are not submitted.',
       submit: { href: 'https://example.test/new' },
       save: { run: () => {} },
     });
     expect((q('action-save') as HTMLButtonElement).disabled).toBe(true);
     expect(q('action-submit')?.tagName).toBe('BUTTON');
+    expect(described()).toBe('Scenarios are examples. They are not submitted.');
+  });
+
+  it('says there is nothing to submit yet while the tool is clean', () => {
+    mount('home', { dirty: false, submit: null });
+    expect(described()).toBe('Nothing to submit yet. Change something in this tool first.');
+  });
+
+  /*
+   * The wrapper span is not decoration. `ui/kit/button.tsx` gives every button
+   * `disabled:pointer-events-none`, so a tooltip whose trigger is the disabled button
+   * opens for nobody — which would leave the reason above reachable by a screen
+   * reader and by nothing else.
+   */
+  it('puts the tooltip on a wrapper, because a disabled button takes no pointer events', () => {
+    mount('home', { dirty: false, submit: null });
+    const trigger = q('action-submit')?.closest('[data-state]');
+    expect(trigger?.tagName).toBe('SPAN');
   });
 
   /*
@@ -116,7 +153,7 @@ describe('the header actions', () => {
 
     act(() => root.unmount());
     container.remove();
-    mount('home', { dirty: true, blocked: true, share: { run: () => {} } });
+    mount('home', { dirty: true, blocked: 'Not now.', share: { run: () => {} } });
     expect((q('action-share') as HTMLButtonElement).disabled).toBe(true);
   });
 
