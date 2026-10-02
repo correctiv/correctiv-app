@@ -6,7 +6,7 @@ import {
 } from '@correctiv/app-core/lib/screen-layout';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
-import { SHIPPED } from './document';
+import { governs, SHIPPED } from './document';
 
 /**
  * What the screen editor knows about each screen: its name, where the frame goes to show
@@ -59,6 +59,15 @@ export function shippedOf(screen: ConfigurableScreen): HomeLayout {
     shipped.set(screen, layout);
   }
   return layout;
+}
+
+/**
+ * The configurable screen a frame route shows, or `null` for a route that is none (the
+ * article reader, settings…). The picker's way back: it takes the frame to a screen, this
+ * takes the editor to the screen the frame is on, so a tap inside the app is followed.
+ */
+export function screenOfRoute(route: string | undefined): ConfigurableScreen | null {
+  return CONFIGURABLE_SCREENS.find((of) => governs(route, SCREEN_ROUTES[of])) ?? null;
 }
 
 export function isScreen(value: string | null): value is ConfigurableScreen {

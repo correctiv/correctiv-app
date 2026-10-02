@@ -23,7 +23,8 @@ import {
   NAVIGATION_FILE,
   NAVIGATION_KEY,
 } from '../../src/preview/home/names';
-import { shippedOf, SCREEN_ROUTES } from '../../src/preview/home/screens';
+import { screenOfRoute, shippedOf, SCREEN_ROUTES } from '../../src/preview/home/screens';
+import { getLayout, getScreen, setLayout, setScreen } from '../../src/preview/home/store';
 import {
   barOf,
   checkNavigation,
@@ -84,6 +85,41 @@ describe('the screen picker and its palette', () => {
     expect(APP('lib/navigation/tabBar.ts')).toContain(`'${NAVIGATION_KEY}'`);
     for (const screen of CONFIGURABLE_SCREENS)
       expect(read(layoutFile(screen))).toBe(formatLayoutDocument(shippedOf(screen)));
+  });
+});
+
+describe('the editor follows the frame', () => {
+  it('maps the route of every configurable screen back to that screen, whatever the spelling', () => {
+    for (const screen of CONFIGURABLE_SCREENS) {
+      expect(screenOfRoute(SCREEN_ROUTES[screen])).toBe(screen);
+      expect(screenOfRoute(`${SCREEN_ROUTES[screen]}?x=1`)).toBe(screen);
+    }
+    expect(screenOfRoute('/index')).toBe('home');
+  });
+
+  it('answers null for a route that is no configurable screen, and for no route yet', () => {
+    for (const route of ['/artikel', '/einstellungen', '/gespeichert', '/entdecken/x', undefined])
+      expect(screenOfRoute(route)).toBeNull();
+  });
+
+  it('goes both ways without a loop: the picker’s screen is already the one its route maps to', () => {
+    setScreen('mitmachen');
+    expect(screenOfRoute(SCREEN_ROUTES[getScreen()])).toBe(getScreen());
+    const before = getScreen();
+    const followed = screenOfRoute(SCREEN_ROUTES.mitmachen);
+    if (followed) setScreen(followed);
+    expect(getScreen()).toBe(before);
+    setScreen('home');
+  });
+
+  it('keeps an unsaved draft per screen while the editor moves with the frame', () => {
+    setScreen('entdecken');
+    const draft = moved(shippedOf('entdecken'), shippedOf('entdecken').sections[0]!.id, 1);
+    setLayout(draft);
+    setScreen('mitmachen');
+    expect(getLayout()).not.toBe(draft);
+    setScreen('entdecken');
+    expect(getLayout()).toBe(draft);
   });
 });
 
