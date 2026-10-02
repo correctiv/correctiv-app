@@ -95,14 +95,30 @@ export function Segmented({
             <span
               title={option.icon?.name}
               className={cn(
-                'block cursor-pointer rounded-s px-xs py-3xs text-s font-medium transition-colors',
+                'block cursor-pointer rounded-s text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
                 /*
-                 * An icon segment is square and centres its one glyph, so a row of
-                 * five of them is the size of one wide button rather than five
-                 * narrow ones with the first glyph crowded against the left.
+                 * The padding belongs to one variant or the other, and never to
+                 * both.
+                 *
+                 * It was both: the base carried `px-xs py-3xs` and the icon
+                 * variant added `p-0`, and **the `p-0` did not win** — measured,
+                 * `padding-left` on an icon segment was 10px and its glyph sat
+                 * 4px right of the middle of its own box. `cn()` is
+                 * tailwind-merge, and tailwind-merge knows Tailwind's spacing
+                 * scale and not this theme's: `xs`, `2xs` and `s` are in no
+                 * conflict group it recognises, so `px-xs` is a class it cannot
+                 * reason about and `p-0` has nothing to displace. `lib/cn.ts`
+                 * names the same hazard for `text-s`; this is its second shape.
+                 *
+                 * So the two shapes choose their own padding rather than one
+                 * overriding the other, and an icon segment is a centred box of
+                 * exactly the same kind `ui/kit/button.tsx` is: one child, and
+                 * nothing beside it for a `justify` to argue with.
                  */
-                option.icon && 'grid size-[1.75rem] place-items-center p-0',
+                option.icon
+                  ? 'inline-flex size-[1.75rem] items-center justify-center'
+                  : 'px-xs py-3xs',
                 value === option.value
                   ? 'bg-accent text-white'
                   : 'text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
