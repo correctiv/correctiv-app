@@ -4,13 +4,13 @@ import { defineMessages } from 'react-intl';
 import api from 'virtual:api';
 import type { ApiComponent, ApiComponentGroup } from 'virtual:api';
 import { useWorkbenchIntl } from '../i18n/Localisation';
-import { useClipped } from '../components/clipped';
 import { directEntry, DRAWN_IDS } from '../components/direct';
 import { NOT_DRAWN } from '../components/direct-ids';
 import { DirectPreview } from '../components/DirectPreview';
 import { href, navigate } from '../router';
 import { Slot } from '../shell/slots';
 import { Badge } from '../ui/kit/badge';
+import { PreviewCard, type PreviewCardCrop } from '../ui/kit/PreviewCard';
 import { InfoTip } from '../ui/kit/info-tip';
 import { Segmented } from '../ui/kit/segmented';
 import { Filter, Source } from '../ui/Lookup';
@@ -145,12 +145,6 @@ const COPY = defineMessages({
     description:
       'The line under that badge when no more specific reason is recorded for this component in components/direct-ids.ts.',
   },
-  cardClipped: {
-    id: 'components.card.clipped',
-    defaultMessage: 'Clipped · {height} px tall',
-    description:
-      'Printed over the lower edge of a card that cannot show the whole of its component. {height} is the component’s real height in CSS pixels, measured in the browser. Read by eye only: the same fact is in the accessible name of the link over the drawing, components.card.specimens.clipped.',
-  },
   cardSpecimens: {
     id: 'components.card.specimens',
     defaultMessage: 'Every specimen of {name}',
@@ -161,7 +155,7 @@ const COPY = defineMessages({
     id: 'components.card.specimens.clipped',
     defaultMessage: 'Every specimen of {name}, which this card clips at {height} px',
     description:
-      'The same link as components.card.specimens, on a card that cannot show the whole component. {name} is the component’s name in the source and is not translated; {height} is the component’s real height in CSS pixels. It carries the fact that the note over the drawing states visually, because that note is hidden from a screen reader.',
+      'The same link as components.card.specimens, on a card that cannot show the whole component. {name} is the component’s name in the source and is not translated; {height} is the component’s real height in CSS pixels, which is the number kit.previewCard.clipped prints over the drawing and hides from the browser. This link is where that fact becomes actionable, which is why it carries it.',
   },
   cardNoDoc: {
     id: 'components.card.noDoc',
@@ -212,10 +206,6 @@ const editor = (chunks: ReactNode[]) => (
     {chunks}
   </a>
 );
-
-/** The card's box, which is `ui/CardGrid.tsx`'s without its single-link shape. */
-const CARD =
-  'flex h-full min-w-0 flex-col overflow-hidden rounded-md border border-stroke bg-surface transition-colors hover:border-stroke-strong';
 
 /**
  * `?c=ui/SectionCard` is the gallery's way back, and it lands on the component.
@@ -502,12 +492,26 @@ export function Components() {
  * undrawable it is the same statement forty times. Nothing is dashed, greyed out,
  * or shaped like a loading state.
  *
+ * **The shape is `ui/kit/PreviewCard.tsx`, and what this page adds is three
+ * things and nothing else**: the square rather than a height, the drawing at the
+ * component's own width with no scale, and a foot that says where the file is and
+ * how many props it takes. The block picker draws the same card with a fixed well
+ * and a scaled block in it, and the two had drifted into cards that disagreed
+ * about height, crop and type — which is a fault a review finds twice, once per
+ * page.
+ *
  * **The square is reserved and not measured**, and that is the part of the shape
  * that has to stay: 47 specimens settle at their own speeds, and a preview area
  * sized by its content would reflow the grid under a reader who was already
  * reading it. It is `aspect-ratio: 1` rather than a height in rem, so the
  * reserved box follows the column the grid gives it and there is no number here
- * to keep in step with the one in the grid above.
+ * to keep in step with the one in the grid above — which is also why this page
+ * passes no `previewHeight` and the picker does.
+ *
+ * **The bundle state is the card's own and stays here.** A component with no
+ * drawing of its own is a fact about this site's map of the app, and the card's
+ * `preview` region takes a node, so the square holds a badge instead of a specimen
+ * without the shared card knowing that either state exists.
  */
 function ComponentCard({
   id,
@@ -521,168 +525,112 @@ function ComponentCard({
   const intl = useWorkbenchIntl();
   const entry = directEntry(id);
   const route = `/components/${group}/${component.name}`;
-  const { stage, column, clipped, natural } = useClipped<HTMLDivElement, HTMLDivElement>();
+  // The card owns the crop and prints the note over the drawing; this page's own half is the
+  // link's name, which is where the height becomes something a reader can act on. It is handed
+  // the same measurement rather than measured again here, which is why the two cannot disagree
+  // about which cards are cutting something.
+  const link = (crop: PreviewCardCrop): ReactNode =>
+    entry === undefined ? null : (
+      /*
+        The way to the component's own page, over the drawing rather than on it.
+
+        This was a pill reading "All specimens", parked in the bottom-right corner on its own
+        opaque ground, and what it did there was cover the component: `ClubCard` lost the line
+        under the member's name, `CalloutCard` its progress bar, `SpotlightBriefing` an entry. A
+        control that hides the thing it is a control for is worse than no control, and the card
+        already says where it goes twice over — the component's name beside this is a link, and
+        the page's own prose says the component's page has every specimen.
+
+        An anchor and not a wrapper: a specimen contains `<button>`s of its own and an `<a>` around
+        one of those is invalid, so this sits over the drawing as a sibling instead. That also
+        stops a press landing on a specimen's own control, which on a card does nothing anybody
+        wants.
+
+        **It carries the crop**, because the note the card paints over the drawing is the one thing
+        on the card a reader cannot act on and this link is the act: the note is `aria-hidden`, and
+        what it says is in the name here, attached to the thing that resolves it.
+      */
+      <a
+        href={href(route)}
+        aria-label={
+          crop.clipped
+            ? intl.formatMessage(COPY.cardSpecimensClipped, {
+                name: component.name,
+                height: crop.height,
+              })
+            : intl.formatMessage(COPY.cardSpecimens, { name: component.name })
+        }
+        className="absolute inset-0 rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+      />
+    );
 
   return (
-    <div className={CARD}>
-      {/* Graph paper under the square, so a specimen that paints its own surface
-          reads as a thing standing on a stage rather than a box on a page. */}
-      <div
-        ref={stage}
-        className="stage-grid relative flex aspect-square shrink-0 flex-col overflow-hidden border-b border-stroke bg-canvas"
-      >
-        {entry === undefined ? (
-          <a
-            href={href(route)}
-            className="flex h-full flex-col items-center justify-center gap-2xs px-s text-center"
-          >
-            <Badge variant="outline">{intl.formatMessage(COPY.cardBundle)}</Badge>
-            <span className="text-s text-on-canvas-muted">
-              {/* A recorded reason wins, and `direct-ids.ts` says in its own header
-                  that one written there has to be a descriptor: this walk cannot see
-                  a string in a `Record`, so that file is where the rule has to be
-                  stated rather than enforced. */}
-              {NOT_DRAWN[id] ?? intl.formatMessage(COPY.cardBundleNote)}
-            </span>
-          </a>
-        ) : (
-          <>
-            {/*
-              CENTRE THE STAGE, NEVER THE SPECIMEN.
-
-              `my-auto` and not `justify-center`, and the difference is the whole
-              rule. Auto margins take the free space when there is some, which
-              centres a short component in the square — vertical position carries
-              no meaning for something that lives in a scrolling column, and a
-              row pinned to the top of a 340px square reads as adrift. When the
-              specimen is taller than the square there is no free space, the
-              margins resolve to zero, and the component is drawn from its top
-              edge and cut off at the bottom. `justify-content: center` would
-              instead split the overflow between the two edges and shave the top
-              off every tall component, which is the half a reader most needs.
-
-              `mx-auto w-full` is the horizontal half: the COLUMN is centred when
-              it is narrower than the card, and the column is full width today, so
-              nothing moves. What must never happen is the column shrinking to its
-              content, because then `ui/Badge` and `participate/ClaimStatusTag`
-              would appear centred when both say `self-start` in the app, and the
-              card would misdescribe them. A full-width column is also what shows
-              which components stretch and which hug.
-            */}
-            <div ref={column} className="mx-auto my-auto w-full">
-              <DirectPreview
-                specimens={entry.specimens.slice(0, 1)}
-                ground="canvas"
-                labels={false}
-              />
-            </div>
-            {/*
-              A CROP THAT SAYS IT IS ONE.
-
-              Without this the card passes a crop off as the whole component,
-              which is a quieter version of the lie ADR 0027 measured: a frame
-              that drew a 393pt phone and called it `Hairline`. It is a fade and
-              one line, painted over a region that is already cut, and it appears
-              only on the cards that are cutting something — on every card that
-              fits, nothing is drawn over the specimen at all.
-
-              Not scaled to fit, which was the other candidate: `LoginGate` is a
-              screen, and a screen shrunk into a card is an unreadable thumbnail
-              claiming a size the component has never had. The whole component is
-              on its own page, which is what the link below this covers the square
-              with.
-
-              Which components clip is measured and never listed: `clipped.ts`
-              says why, and the set moves with the grid, the window and the app.
-            */}
-            {clipped && (
-              <p
-                aria-hidden="true"
-                /* The fade reaches full canvas before the line starts, so the
-                   note is read against the page's own ground and not against
-                   whatever the component happens to be showing there. Above
-                   that it is a fade and nothing else: the point is that the
-                   component runs out of card, not that a band was painted. */
-                className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end bg-linear-to-t from-canvas from-40% to-transparent px-s pb-2xs pt-ml text-s text-on-canvas-muted tabular-nums"
-              >
-                {intl.formatMessage(COPY.cardClipped, { height: natural })}
-              </p>
-            )}
-            {/*
-              The way to the component's own page, over the drawing rather than on
-              it.
-
-              This was a pill reading "All specimens", parked in the bottom-right
-              corner on its own opaque ground, and what it did there was cover the
-              component: `ClubCard` lost the line under the member's name,
-              `CalloutCard` its progress bar, `SpotlightBriefing` an entry. A
-              control that hides the thing it is a control for is worse than no
-              control, and the card already says where it goes twice over — the
-              component's name below is a link, and the page's own prose says the
-              component's page has every specimen.
-
-              An anchor and not a wrapper: a specimen contains `<button>`s of its
-              own and an `<a>` around one of those is invalid, so this sits over
-              the drawing as a sibling instead. That also stops a press landing on
-              a specimen's own control, which on a card does nothing anybody wants.
-
-              It also carries the crop, because the marker above it is the one
-              thing on the card a reader cannot act on and this link is the act:
-              the note is `aria-hidden` and what it says is in the label here,
-              attached to the thing that resolves it.
-            */}
-            <a
-              href={href(route)}
-              aria-label={
-                clipped
-                  ? intl.formatMessage(COPY.cardSpecimensClipped, {
-                      name: component.name,
-                      height: natural,
-                    })
-                  : intl.formatMessage(COPY.cardSpecimens, { name: component.name })
-              }
-              className="absolute inset-0 rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-            />
-          </>
-        )}
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col p-sm">
-        <p className="flex min-w-0 flex-wrap items-center gap-2xs">
-          <a
-            href={href(route)}
-            className="font-mono text-headline-xs font-semibold text-on-canvas underline decoration-accent underline-offset-2"
-          >
-            {component.name}
-          </a>
-          {component.platform && (
-            /* The one thing about a component that changes what it is: this file
-               is the half Metro keeps for that platform, and the twin beside it
-               is the other. Written, not coloured. */
-            <Badge variant="outline" className="font-mono">
-              {component.platform}
-            </Badge>
-          )}
-        </p>
-
-        <p className="mt-3xs line-clamp-2 text-m leading-relaxed text-on-canvas-muted">
-          {/* The component's OWN prose, out of the app's source through TypeDoc. It
-              is a comment a developer wrote and stays English (ADR 0052 §1); what
-              stands in for a missing one is this site's sentence and does not. */}
-          {component.summary || (
-            <span className="italic">{intl.formatMessage(COPY.cardNoDoc)}</span>
-          )}
-        </p>
-
-        <p className="mt-auto flex items-baseline gap-s pt-s font-mono text-s text-on-canvas-muted">
-          <span className="min-w-0 flex-1 truncate" title={component.file}>
+    <PreviewCard
+      title={
+        <a
+          href={href(route)}
+          className="min-w-0 truncate font-mono text-headline-xs font-semibold text-on-canvas underline decoration-accent underline-offset-2"
+        >
+          {component.name}
+        </a>
+      }
+      titleExtra={
+        component.platform ? (
+          /* The one thing about a component that changes what it is: this file is the half
+             Metro keeps for that platform, and the twin beside it is the other. Written, not
+             coloured. */
+          <Badge variant="outline" className="font-mono">
+            {component.platform}
+          </Badge>
+        ) : null
+      }
+      description={
+        /* The component's OWN prose, out of the app's source through TypeDoc. It is a comment
+           a developer wrote and stays English (ADR 0052 §1); what stands in for a missing one
+           is this site's sentence and does not. */
+        component.summary || <span className="italic">{intl.formatMessage(COPY.cardNoDoc)}</span>
+      }
+      descriptionTitle={component.summary}
+      footer={
+        <>
+          <span className="min-w-0 flex-1 truncate font-mono" title={component.file}>
             {component.file}
           </span>
           <span className="shrink-0 tabular-nums">
             {intl.formatMessage(COPY.cardProps, { count: component.props.length })}
           </span>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+      overlay={link}
+      preview={
+        entry === undefined ? (
+          <BundleState id={id} route={route} />
+        ) : (
+          <DirectPreview specimens={entry.specimens.slice(0, 1)} ground="canvas" labels={false} />
+        )
+      }
+    />
+  );
+}
+
+/**
+ * A component this site does not draw, said in the square a drawing would have been in.
+ *
+ * A recorded reason wins, and `direct-ids.ts` says in its own header that one written there has
+ * to be a descriptor: the walk that holds literals cannot see a string in a `Record`, so that
+ * file is where the rule has to be stated rather than enforced.
+ */
+function BundleState({ id, route }: { id: string; route: string }) {
+  const intl = useWorkbenchIntl();
+  return (
+    <a
+      href={href(route)}
+      className="flex h-full flex-col items-center justify-center gap-2xs px-s text-center"
+    >
+      <Badge variant="outline">{intl.formatMessage(COPY.cardBundle)}</Badge>
+      <span className="text-s text-on-canvas-muted">
+        {NOT_DRAWN[id] ?? intl.formatMessage(COPY.cardBundleNote)}
+      </span>
+    </a>
   );
 }

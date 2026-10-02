@@ -41,6 +41,21 @@ import { code } from '../source.ts';
 const read = (path: string): string => code(readFileSync(join(ROOT, path), 'utf8'));
 
 const PALETTE = read('apps/workbench/src/preview/home/Palette.tsx');
+/*
+ * The card the picker draws its blocks in, beside the one the component page draws its
+ * components in.
+ *
+ * The card used to be the picker's own markup, and the component page had a second one that had
+ * drifted away from it: a ratio against a square, a different name size, a crop note on one and
+ * not the other. So the shape moved to `ui/kit/PreviewCard.tsx` and both pages are its callers,
+ * which means the assertions about a card's shape belong to the card and the ones about this
+ * shelf belong to the picker. The two are read together for the same reason `direct.test.ts`
+ * reads a page beside its card: a check pointed at one file alone would pass while the other
+ * grew a shape of its own back.
+ */
+const CARD = read('apps/workbench/src/ui/kit/PreviewCard.tsx');
+const PAGE_CARD = read('apps/workbench/src/pages/Components.tsx');
+const CLIPPED = read('apps/workbench/src/components/clipped.ts');
 const OFFERED = read('apps/workbench/src/preview/home/offered.ts');
 const APP_LABELS = read('apps/mobile/src/lib/home/category-labels.ts');
 const APP_GERMAN = read('packages/catalogue/src/de/home.ts');
@@ -322,47 +337,136 @@ describe('the marks and the verbs they carry', () => {
      * shape that answers it — a well across the top, in the app's own width, scaled to the
      * card, with the cut-off softened.
      */
-    // The well spans the card and has a ratio rather than a fixed height, which is what makes
-    // every card in a row the same height whatever a block measures.
-    expect(PALETTE).toMatch(/aspectRatio: PREVIEW_RATIO/);
-    expect(PALETTE).toMatch(/const PREVIEW_RATIO = 16 \/ 10/);
+    // The well is a FIXED height and not a ratio. A ratio is a function of the column, so the
+    // same block was drawn 300px tall at two columns and 244px at three, and a card beside
+    // another could be 56px taller: the height fault the other three parts of this shape exist
+    // to answer, arriving from the one thing in it that was still measuring.
+    expect(PALETTE).toMatch(/const PREVIEW_HEIGHT = 15 \* 16/);
+    expect(PALETTE).toContain('previewHeight={PREVIEW_HEIGHT}');
+    expect(PALETTE).not.toMatch(/aspect[Rr]atio/);
     // Scaled from the device's real width to the well's own width, and the scale is `fit()`'s
     // so it can never exceed one (ADR 0045 §3: a block drawn larger than the phone draws it
     // is a lie about the thing being placed).
-    expect(PALETTE).toMatch(/return \[fit\(room, deviceWidth\)\.scale, measured\]/);
-    expect(PALETTE).toMatch(/transform: `scale\(\$\{scale\}\)`/);
-    // Measured, not guessed: a card at two columns is wider than one at three, and a fixed
-    // thumbnail width is legible in one and a smudge in the other. The observer is on the
-    // WELL and not on the drawing inside it, whose `clientWidth` is the device's own 393
-    // whatever the scale — which is what the first version watched, and every card came out
-    // unscaled and clipped.
-    expect(PALETTE).toMatch(/new ResizeObserver\(\(\) => setRoom\(node\.clientWidth\)\)/);
-    expect(PALETTE).toMatch(/ref=\{measured\}[\s\S]{0,400}?aspectRatio: PREVIEW_RATIO/);
+    expect(CARD).toMatch(/fit\(room > 0 \? room : null, appWidth\)/);
+    expect(CARD).toMatch(/transform: `scale\(\$\{fitted\.scale\}\)`/);
+    // Measured on the WELL and not on the drawing inside it, whose `clientWidth` is the
+    // device's own 393 whatever the scale — which is what the first version watched, and every
+    // card came out unscaled and clipped. `room` is the stage's own width, read by the observer
+    // that already answers whether the well is cropping.
+    expect(CLIPPED).toContain('room: stageElement.clientWidth');
+    expect(CARD).toContain('room > 0 ? room : null');
     // The fade, which is the difference between a crop that reads as a crop and a line drawn
-    // through whatever happened to be there.
-    expect(PALETTE).toMatch(/from-canvas to-transparent/);
+    // through whatever happened to be there, and only where there is a crop: a band painted over
+    // a drawing that fits is a band painted on nothing.
+    expect(CARD).toMatch(/from-canvas to-transparent/);
+    expect(CARD).toMatch(/\{clipped \? \(/);
     // And a ground behind it, so a block that draws almost nothing here is a quiet card
     // rather than one that looks like it failed to load.
-    expect(PALETTE).toMatch(/overflow-hidden bg-canvas/);
+    expect(PALETTE).toMatch(/bg-canvas/);
+  });
+
+  it('centres a block that draws less than the well, which was the empty half of a card', () => {
+    /**
+     * Three cards on the „Alle" shelf were a line of text at the top of an empty box: the
+     * screen title, the offline note and the search entry, all of which draw a row or two.
+     * Pinned to the top of the well they read as cards that failed to load, and a reader had
+     * no way to tell those from a card whose block had not arrived.
+     *
+     * Auto margins and not `justify-content: center`: they take the free space when there is
+     * some, so a short drawing is centred, and resolve to zero when there is none, so a tall
+     * one keeps its top edge and is cut off below — the half of it a reader most needs.
+     */
+    expect(CARD).toContain('mx-auto my-auto w-full');
+    expect(CARD).not.toContain('justify-center');
+    // And the box the margins are asked about is the height the drawing is PAINTED at. A
+    // scaled drawing's layout box is still 393 × 484 while it is painted at 393 × 244, and
+    // auto margins read the layout box — so centring on it would push a scaled drawing a
+    // hundred pixels too low and crop the wrong end of it.
+    expect(CARD).toMatch(/style=\{fitted === null \? undefined : \{ height: painted \}\}/);
+  });
+
+  it('draws the card once, and both pages are its callers', () => {
+    /**
+     * The whole of this card work in one assertion: a design review found the picker and the
+     * component page drawing the same shape two ways — a ratio against a square, one crop note
+     * between them, two name sizes — and the fix is that there is one card and two callers. A
+     * page that built its own again would satisfy every assertion above and be the fault this
+     * was made to end, so both halves are held: the card is used, and neither page draws a well
+     * of its own.
+     */
+    expect(PALETTE).toContain('<PreviewCard');
+    expect(PAGE_CARD).toContain('<PreviewCard');
+    expect(PALETTE).not.toContain('stage-grid');
+    expect(PAGE_CARD).not.toContain('stage-grid');
+    // And the card takes the device's own width as the width to draw at, rather than taking a
+    // scale: `fit()` is `preview/home/fit.ts`'s, the one place ADR 0045 §3's cap is written.
+    expect(PALETTE).toContain('appWidth={deviceWidth}');
   });
 
   it('holds every card in a row to the same height, in four ways', () => {
     // One line for the name, two RESERVED for the sentence, and the mark as a chip rather
     // than a paragraph — the third of those was the height fault: a card with a feature mark
     // was half again as tall as its neighbours because the mark printed two or three lines.
-    expect(PALETTE).toMatch(/className="truncate text-m font-semibold text-on-canvas"/);
+    expect(PALETTE).toMatch(/className="min-w-0 truncate text-m font-semibold text-on-canvas"/);
     // `min-h-[2lh]` and not only the clamp: `line-clamp-2` holds the long sentences to two
     // and lets the short ones stand at one, which measured as rows of 318px beside rows of
     // 337px in the same grid. Reserving both lines is what makes the rows equal by
     // construction rather than by the grid's mercy.
-    expect(PALETTE).toMatch(/line-clamp-2 min-h-\[2lh\]/);
+    expect(CARD).toMatch(/line-clamp-2 min-h-\[2lh\]/);
     expect(PALETTE).toMatch(/<FeatureChip feature=\{MODULE_FEATURES\[module\]\?\.feature\}/);
     // `h-full` on the card and the grid above it, so the row equalises rather than each card
     // reporting its own height.
-    expect(PALETTE).toMatch(/flex h-full w-full flex-col/);
-    // `mt-auto` on the chip pins every card's foot to the same line whatever is above it, so
-    // a marked card and an unmarked one are the same height.
-    expect(PALETTE).toMatch(/<FeatureChip[^>]*className="mt-auto"/);
+    expect(CARD).toMatch(/flex h-full min-w-0 flex-col/);
+    // `mt-auto` on the foot pins every card's foot to the same line whatever is above it, so
+    // a marked card and an unmarked one are the same height. The chip carries `ml-auto`
+    // instead, which puts it at the right of the foot beside the family badge — `mt-auto` on a
+    // chip that is not the only thing in the foot would push that foot a row further down.
+    // And the foot RESERVES two lines whatever is in it, which is the fourth half: the picker's
+    // foot holds two optional things, and a card carrying „Vorschau" stood 387px beside its
+    // neighbours at 376px before the reservation. `mt-auto` pins the foot to the bottom; only
+    // the reservation stops a taller foot from making the card taller, which is this card's whole
+    // subject one region lower.
+    expect(CARD).toMatch(/mt-auto flex min-h-\[2lh\] min-w-0 items-baseline/);
+    expect(PALETTE).toMatch(/<FeatureChip[^>]*className="ml-auto"/);
+  });
+
+  it('is one grid for the whole shelf, so no family leaves an orphan row', () => {
+    /**
+     * The grid broke twice and both times at a family boundary. It was one `<ul>` per family,
+     * and a family holds whatever blocks the app happens to have in it — four in `struktur`,
+     * nine in `medien` — so a family of four at three columns is a row of three and an orphan,
+     * then the next family begins a row lower at whatever height its own cards came out at.
+     * Measured: the second row held `Impact` alone and the row below it started again.
+     *
+     * That is the second list of the families a grid keeps for itself, and the one answer is a
+     * single list. What is lost is the heading over each family, and what replaces it is the
+     * family on the card itself, in the foot — where the tab row above does not already say
+     * it, which is on „Alle" and while a search spans every family.
+     */
+    expect(PALETTE).toMatch(/groups\.flatMap\(\(\{ category, blocks \}\) =>/);
+    // One `<ul>`, and no `<section>` per family to hold a second one.
+    expect(PALETTE.match(/<ul/g) ?? []).toHaveLength(1);
+    expect(PALETTE).not.toContain('<section key={category}>');
+    // The badge's own rule, both halves: drawn where the tab does not name the family, and
+    // taken from the app's table so a card and its tab cannot disagree about it.
+    expect(PALETTE).toMatch(/nameFamily=\{searching \|\| tab === FIRST_TAB\}/);
+    expect(PALETTE).toMatch(/nameFamily \? \(\s*<Badge variant="outline"/);
+    expect(PALETTE).toContain('<FamilyName category={category} />');
+  });
+
+  it('scrolls the shelf under a head that stays, rather than clipping it at the panel edge', () => {
+    // Thirty-two cards are taller than any window, so the shelf has to scroll. It was the whole
+    // panel that scrolled, which took the search field and the tab row off the top of it, so a
+    // person who had scrolled to „Club und Profil" could not narrow what they were looking at
+    // without scrolling back and starting again.
+    expect(PALETTE).toMatch(
+      /className="flex max-h-\[85vh\] w-\[min\(80rem,94vw\)\] flex-col overflow-hidden"/,
+    );
+    expect(PALETTE).toContain('<div className="min-h-0 flex-1 overflow-y-auto">');
+    // `min-h-0` is the half that makes it work: a flex child defaults to `min-height: auto` and
+    // would take the height of its content rather than the height left over, so the shelf would
+    // push the head up and out of the panel instead of scrolling inside it.
+    expect(PALETTE).toMatch(/@container mt-s flex min-h-0 flex-1 flex-col gap-s/);
   });
 
   it('puts the whole card behind one button and keeps the sentence whole for a reader', () => {
@@ -372,8 +476,14 @@ describe('the marks and the verbs they carry', () => {
     // The description is clamped to two lines for the eye and read in full twice over for
     // everyone else: the `title` under the pointer and the button's accessible name, which
     // carries the whole sentence rather than the two lines that fit.
-    expect(PALETTE).toMatch(/title=\{sentence\}/);
+    expect(PALETTE).toMatch(/description=\{sentence\}/);
     expect(PALETTE).toMatch(/what: sentence/);
+    // A string description carries its own full text into the card's `title`, so the sentence a
+    // reader cannot see is still there under a pointer — and it is the card, not the picker,
+    // that knows a string needs no second answer for it.
+    expect(CARD).toMatch(
+      /title=\{typeof description === 'string' \? description : descriptionTitle\}/,
+    );
   });
 
   it('keeps the family tabs on one row that scrolls rather than wrapping', () => {
@@ -389,10 +499,11 @@ describe('the marks and the verbs they carry', () => {
     const picker = PALETTE.slice(PALETTE.indexOf('function BlockPicker'));
     expect(picker.indexOf('COPY.searchLegend')).toBeLessThan(picker.indexOf('COPY.familyLegend'));
     // And three columns at the dialog's width, two below it, asked of the container rather
-    // than the window: the dialog is `min(64rem, 94vw)`, so a viewport query would answer
-    // for a width the cards are not laid out in.
-    expect(PALETTE).toMatch(
-      /@container grid grid-cols-1 gap-xs @min-\[34rem\]:grid-cols-2 @min-\[52rem\]:grid-cols-3/,
+    // than the window: the dialog is `min(80rem, 94vw)`, so a viewport query would answer for
+    // a width the cards are not laid out in — it is 80rem on a 1600px screen and on a 1000px
+    // one, and the second of those wants two columns.
+    expect(PALETTE.replace(/\s+/g, ' ')).toMatch(
+      /'@container mt-s grid grid-cols-1 gap-xs', '@min-\[34rem\]:grid-cols-2 @min-\[52rem\]:grid-cols-3'/,
     );
   });
 

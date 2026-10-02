@@ -100,10 +100,16 @@ which is one `lg=` away from being German throughout. It is the same seam
 alternative; the honest fix, if it is ever wanted, is for `AppEnvironment` to take the
 locale as the prop it already takes for the appearance.
 
-**The gallery's headings are German while its own furniture is English.** The gallery is a
-developer page whose specimens carry the app's real copy, so the headings join the
-specimens rather than the furniture; `Gallery.tsx` is developer-only for the same reason
-and says so.
+**The gallery's headings are ~~German while its own furniture is English~~ English, like the
+rest of its furniture.** Wrong on the day it was written, 2026-10-02, and struck here rather
+than left standing as a cost somebody had chosen: a design review of the grouped gallery found
+the mixture — an English heading and lede, a German family heading, English again under it — and
+read it as a page nobody had given a language. The table is unchanged and still the app's; what
+changed is which half of it this page prints. `Gallery.tsx` asks `categoryName` and gets the
+descriptors' English `defaultMessage`, where the newsroom's picker asks `useCategoryLabel` and
+gets the German that ships: one table, two readers, and `lib/home/category-labels.ts` says why
+that is not a second copy of it. The specimens keep the app's real German copy, which is content
+here and always was (`Gallery.tsx` is developer-only for the same reason and says so).
 
 ## What this retires
 

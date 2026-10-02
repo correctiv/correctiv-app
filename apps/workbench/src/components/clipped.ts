@@ -37,8 +37,37 @@ export function clips(content: number, stage: number): boolean {
 export interface Clipped {
   /** True while the specimen is taller than the square it is drawn in. */
   clipped: boolean;
-  /** The specimen's own height in CSS pixels, which is what the crop hides. */
+  /**
+   * The specimen's own height in CSS pixels, which is what the crop hides.
+   *
+   * **`offsetHeight` and not the rectangle's height**, because a card that scales its
+   * drawing has two heights and the one a reader is told is the larger of them. The card in
+   * `ui/kit/PreviewCard.tsx` puts `transform: scale` on the drawing so a block is recognisable
+   * at a card's width; the rectangle then measures the scaled height, which is a number about
+   * the card rather than about the component. `offsetHeight` is the layout box, which a
+   * transform does not touch, so „484 px hoch" means 484 pixels of app either way.
+   */
   natural: number;
+  /**
+   * The height the specimen is PAINTED at, which is the one a crop is measured against.
+   *
+   * Equal to `natural` wherever nothing is scaled — which is every card the component page
+   * draws, and all but the block picker's.
+   */
+  painted: number;
+  /**
+   * The stage's own width in CSS pixels: the room a card has to draw in.
+   *
+   * **`clientWidth` and not the rectangle's width**, because it is the content box and that is
+   * what a drawing laid out at `100%` lands in. Zero before the first layout, which `fit()`
+   * reads as "not measured yet" rather than as no room at all.
+   *
+   * It is here because this is the observer that already watches the stage: a card that has to
+   * know how wide its well is to scale what it draws into it is asking about the same two boxes
+   * in the same pass, and a second observer per card would be a second answer that can arrive a
+   * frame apart from the first.
+   */
+  room: number;
 }
 
 /**
@@ -59,7 +88,12 @@ export interface Clipped {
 export function useClipped<S extends HTMLElement, C extends HTMLElement>() {
   const stage = useRef<S>(null);
   const column = useRef<C>(null);
-  const [state, setState] = useState<Clipped>({ clipped: false, natural: 0 });
+  const [state, setState] = useState<Clipped>({
+    clipped: false,
+    natural: 0,
+    painted: 0,
+    room: 0,
+  });
 
   useLayoutEffect(() => {
     const stageElement = stage.current;
@@ -67,11 +101,22 @@ export function useClipped<S extends HTMLElement, C extends HTMLElement>() {
     if (!stageElement || !columnElement) return;
 
     const measure = () => {
-      const natural = Math.round(columnElement.getBoundingClientRect().height);
+      const painted = Math.round(columnElement.getBoundingClientRect().height);
+      const natural = columnElement.offsetHeight;
       const box = Math.round(stageElement.getBoundingClientRect().height);
-      const next = { natural, clipped: clips(natural, box) };
+      const next = {
+        natural,
+        painted,
+        room: stageElement.clientWidth,
+        clipped: clips(painted, box),
+      };
       setState((previous) =>
-        previous.natural === next.natural && previous.clipped === next.clipped ? previous : next,
+        previous.natural === next.natural &&
+        previous.painted === next.painted &&
+        previous.room === next.room &&
+        previous.clipped === next.clipped
+          ? previous
+          : next,
       );
     };
 

@@ -1,5 +1,5 @@
 import { Plus, Search } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
@@ -22,6 +22,8 @@ import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
 import { InfoTip } from '../../ui/kit/info-tip';
 import { Segmented } from '../../ui/kit/segmented';
+import { Badge } from '../../ui/kit/badge';
+import { PreviewCard } from '../../ui/kit/PreviewCard';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +33,6 @@ import {
 } from '../../ui/kit/dialog';
 import { FeatureChip } from '../features/Mark';
 import { moduleLabel } from './document';
-import { fit } from './fit';
 import { HomeBlock } from './HomeBlock';
 import {
   familyTabs,
@@ -74,8 +75,17 @@ import {
  * a size a shelf can hold. Recognition is the whole job here — "that is the one with the red
  * live banner" — so the drawing has to be big enough to recognise, which a 132px column down
  * the left of a card was not: measured in a design review, a headline at that scale is two
- * grey pixels, and the card's own words were carrying the whole decision. `Specimen` below
- * says how the card is built and why every height in it is fixed.
+ * grey pixels, and the card's own words were carrying the whole decision. The card itself is
+ * `ui/kit/PreviewCard.tsx`, which the component page already drew and which this shelf's copy
+ * of had drifted away from; `Specimen` below says what a block's card adds and why every
+ * height in it is fixed.
+ *
+ * **One grid for the whole shelf, and the family on the card.** It was one `<ul>` per family,
+ * which is a second list of the families a grid keeps for itself: a family of four is a row of
+ * three and an orphan, and the next family starts a row lower at its own height. So the family
+ * is a badge in each card's foot where the tab row above does not already say it — on „Alle"
+ * and while a search spans all of them — which is the only place in the dialog where the two
+ * halves of the answer could otherwise disagree.
  *
  * **Where the words come from, which is the one thing in this file that is not this site's.**
  * The six family names are the APP's, in `lib/home/category-labels.ts`, because the app's own
@@ -273,8 +283,16 @@ export function InsertMark({
         widths where it has to. The other half of the width is three columns of about 390px,
         which puts a card's drawing within 1% of the phone's own 393px — legible as the block
         rather than as a hint of one.
+
+        **A column, and the body scrolls under a head that does not.** `overflow-hidden` here
+        displaces the primitive's own `overflow-y-auto`, and the shelf below is given the scroll:
+        a shelf of thirty-two cards is taller than any window, and scrolling the whole panel took
+        the search field and the tabs with it, so a person who had scrolled to „Club und Profil"
+        could not narrow what they were looking at without starting again. `max-h-[85vh]` is the
+        primitive's own and is left in place; `flex flex-col` and `min-h-0` are what let the one
+        region below take the rest of the panel and scroll inside it.
       */}
-      <DialogContent className="w-[min(80rem,94vw)]">
+      <DialogContent className="flex max-h-[85vh] w-[min(80rem,94vw)] flex-col overflow-hidden">
         <div className="flex items-center gap-2xs">
           <DialogTitle className="text-l font-semibold text-on-canvas">
             {intl.formatMessage(COPY.title)}
@@ -294,17 +312,26 @@ export function InsertMark({
           and it is also what puts the APP's provider over everything below, which is
           where the six family names are formatted against and the only place in this
           file that they can be.
+
+          **The wrapper is the reason the shelf scrolls**, and it is not decoration. The box
+          `AppEnvironment` ends in carries the app's own `flex: 1` and nothing else, and a flex
+          item will not shrink below its content without a `min-h-0` somewhere above it — so
+          with `AppHost` as a direct child of the panel, the shelf took the height of all
+          thirty-two cards, the panel clipped it, and the dialog's scroll was the one that never
+          got used. The wrapper is that `min-h-0`.
         */}
-        <AppHost>
-          <BlockPicker
-            screen={screen}
-            deviceWidth={deviceWidth}
-            onPick={(module) => {
-              onAdd(module);
-              setOpen(false);
-            }}
-          />
-        </AppHost>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <AppHost>
+            <BlockPicker
+              screen={screen}
+              deviceWidth={deviceWidth}
+              onPick={(module) => {
+                onAdd(module);
+                setOpen(false);
+              }}
+            />
+          </AppHost>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -351,7 +378,7 @@ function BlockPicker({
   const { found, of } = matchCount(groups, screen);
 
   return (
-    <div className="@container mt-s flex flex-col gap-s">
+    <div className="@container mt-s flex min-h-0 flex-1 flex-col gap-s">
       {/*
         The search field and the tab row are on two lines rather than one.
 
@@ -411,46 +438,62 @@ function BlockPicker({
         ]}
       />
 
-      {searching ? (
-        <p className="text-s text-on-canvas-muted">
-          {found === 0
-            ? intl.formatMessage(COPY.none, { query: query.trim() })
-            : intl.formatMessage(COPY.found, { found, total: of })}
-        </p>
-      ) : null}
+      {/*
+        ONE GRID, and the head that scrolls it.
 
-      {groups.map(({ category, blocks }) => (
-        <section key={category}>
-          {/*
-            The heading is drawn while a search is running and hidden while a tab is
-            chosen, because then the tab already says it. A shelf that repeated its own tab
-            over every group would be saying it twice for no second answer.
-          */}
-          {searching ? (
-            <h3 className="mb-2xs text-s font-semibold text-on-canvas-muted">
-              <FamilyName category={category} />
-            </h3>
-          ) : null}
-          {/*
-            **Three columns at the dialog's width, two below it, and the grid asks the dialog
-            rather than the window.** The dialog is `min(80rem, 94vw)`, so a viewport query
-            would answer for a width this shelf does not have: it is 80rem on a 1600px screen
-            and on a 1000px one, and the second of those wants two columns. `@container` on the
-            wrapper above is the width the cards are actually laid out in.
-          */}
-          <ul className="@container grid grid-cols-1 gap-xs @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3">
-            {blocks.map((module) => (
+        **It was one `<ul>` per family, and that is what broke the grid.** A family holds
+        whatever the app's blocks happen to be — four in `struktur`, nine in `medien` — so a
+        family of four at three columns is a row of three and an orphan, then the next family
+        starts on a line of its own. That is not a fault of the cards; it is the second list of
+        families a grid draws for itself. Measured on the shelf this replaces, the second row
+        held `Impact` alone and the row below it began again with the next family, at a
+        different height.
+
+        **One grid, one family per card, and the heading goes where it can be honest.** The
+        family is on the card itself, in the foot, on every card where the tab row above does
+        not already say it: on „Alle" and while a search is running, which is exactly the two
+        cases where the tab is not naming a card's family. On a family's own tab the badge is
+        gone, because the tab says it thirty times already.
+      */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {searching ? (
+          <p className="text-s text-on-canvas-muted">
+            {found === 0
+              ? intl.formatMessage(COPY.none, { query: query.trim() })
+              : intl.formatMessage(COPY.found, { found, total: of })}
+          </p>
+        ) : null}
+
+        {/*
+          **Three columns at the dialog's width, two below it, and the grid asks the dialog
+          rather than the window.** The dialog is `min(80rem, 94vw)`, so a viewport query
+          would answer for a width this shelf does not have: it is 80rem on a 1600px screen
+          and on a 1000px one, and the second of those wants two columns. `@container` on the
+          wrapper above is the width the cards are actually laid out in.
+        */}
+        <ul
+          className={cn(
+            '@container mt-s grid grid-cols-1 gap-xs',
+            '@min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3',
+          )}
+        >
+          {groups.flatMap(({ category, blocks }) =>
+            blocks.map((module) => (
               <Specimen
                 key={module}
                 module={module}
+                category={category}
+                /* The badge is the tab's to say, or this card's. `all` names no family and a
+                   search spans all of them, so both answer no and both carry the badge. */
+                nameFamily={searching || tab === FIRST_TAB}
                 deviceWidth={deviceWidth}
                 screen={screen}
                 onPick={() => onPick(module)}
               />
-            ))}
-          </ul>
-        </section>
-      ))}
+            )),
+          )}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -468,96 +511,79 @@ function FamilyName({ category }: { category: BlockCategory }) {
 }
 
 /**
- * The proportions of the drawing at the top of a card, as one number.
+ * How tall a card's well is, in CSS pixels.
  *
- * **16:10 rather than the phone's own 393×852.** A phone is 1:2.2, so a card drawn at that
- * ratio is a column: three columns of an 80rem dialog are about 390px, and a 1:2.2 well would
- * be 860px tall, taller than the dialog and one card per screen. The shelf wants the top of
- * the block — the hero image, the rail's first tile, the headline — and 16:10 is roughly where
- * that ends. The crop with the fade below is what makes the cut a decision rather than a
- * truncation.
+ * **A fixed height rather than the phone's own 393×852, and rather than a ratio.** A phone is
+ * 1:2.2, so a card drawn at that ratio is a column: three columns of an 80rem dialog are about
+ * 390px, and a 1:2.2 well would be 860px tall, taller than the dialog and one card per screen.
+ * The shelf wants the top of the block — the hero image, the rail's first tile, the headline —
+ * and 15rem is roughly where that ends.
+ *
+ * **Fixed rather than 16:10, which is what it was.** A ratio is a function of the column, so
+ * the same block was drawn in a 300px well at two columns and a 244px one at three, and a card
+ * could be 56px taller than the one beside it. The crop and the note above it are what make the
+ * cut a decision rather than a truncation; a height that moves with the column is a second
+ * thing varying for no second answer. It is one number and not one per caller, because
+ * `ui/kit/PreviewCard.tsx` reserves a square for the component page for a reason of its own and
+ * a height for everything else.
  */
-const PREVIEW_RATIO = 16 / 10;
+const PREVIEW_HEIGHT = 15 * 16;
 
 /**
- * The scale a card's drawing is drawn at, which is the one measurement a card takes.
+ * One module: a drawing of it across the top, its name, what it does, and which family and
+ * which build it is in.
  *
- * **The well is measured and not the drawing inside it.** The first version of this put the
- * observer on the transformed child, whose `clientWidth` is the device's own 393 whatever the
- * scale, so the scale came out as one on every card and the drawing was clipped rather than
- * shrunk — visible in the first screenshot of the redesign, where three cards in a row showed
- * the top-left corner of a phone-width block and its text cut off at the card's edge.
- * `HomeBlock` measures its own shell for the same reason and in the same words.
+ * **The card is `ui/kit/PreviewCard.tsx`, and what this adds is a block in it.** The component
+ * page's card already had the shape — a drawing over a reserved box, a name, a clamped sentence
+ * and a foot — and the picker had a second copy that had drifted: a ratio where the other page
+ * reserves a square, a name at a different size, a chip in the foot and nothing at all saying
+ * which family a block is in. Two cards that answer the same question and disagree about height
+ * and type is a fault a design review finds once per page, so the shape is one and this file
+ * says what a block's card says on top of it.
  *
- * **A ref callback rather than a mount-only effect**, as in `HomeBlock.tsx`: an effect keyed
- * on `[]` captures the node of the first render and goes on watching it after React has
- * replaced it, so a card's scale freezes at whatever it measured while another tab was open.
- * A ref callback cannot go stale, because React calls it with the node and calls the returned
- * cleanup when that node goes.
+ * **Drawing on top, at the card's own width, and the words under it.** It was a 132px thumbnail
+ * down the left with the name beside it, which failed a design review on what is really one
+ * fault: the picture was too small to recognise, so it was decoration and the card's words were
+ * carrying the whole decision. At three columns a card is about 390px of drawing instead of 132 —
+ * legible as a shape and as a headline — and `HomeBlock` lays the block out at the device's real
+ * width and scales the result, so the proportions, the type sizes and the rails are the ones the
+ * phone has (ADR 0045 §3). The scale belongs to the card, measured on the well rather than on
+ * the drawing inside it — whose `clientWidth` is the device's own 393 whatever the scale, so
+ * watching it gave every card a scale of one and a drawing cropped rather than shrunk — and
+ * capped at one by `fit()` for ADR 0045 §3: a card wider than the phone would otherwise draw the
+ * block larger than the app ever has it, which is a lie about the thing being placed.
  *
- * **Capped at one**, by `fit()` and ADR 0045 §3: a card wider than the phone would otherwise
- * draw the block larger than the app ever has it, which is a lie about the thing being
- * placed. Three columns of an 80rem dialog come to about 390px against a 393px phone, so the
- * cap never bites here — which is exactly why it belongs in the helper rather than in the
- * arithmetic above.
- */
-function useWellScale(deviceWidth: number): [number, (node: HTMLDivElement | null) => void] {
-  const [room, setRoom] = useState<number | null>(null);
-  const measured = useCallback((node: HTMLDivElement | null) => {
-    if (node === null) return;
-    const observer = new ResizeObserver(() => setRoom(node.clientWidth));
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  return [fit(room, deviceWidth).scale, measured];
-}
-
-/**
- * One module: a drawing of it across the top, its name, what it does, and whether this build
- * draws it at all.
+ * **One ground for the card and the drawing in it**, `bg-canvas`, over the shared card's own
+ * `bg-surface`. It was `bg-surface` over a `bg-canvas` well, which put a step across the card
+ * where the fade ended: the drawing faded into the well's ground, the text below sat on another
+ * one, and the band between read as a rule the card had not asked for. `Segmented`'s own row is
+ * the same arrangement one dialog further out — canvas on canvas, a border between — so this is
+ * the shape the site already draws a panel in.
  *
- * **Drawing on top, at the card's own width, and the words under it.** It was a 132px
- * thumbnail down the left with the name beside it, which failed a design review on what is
- * really one fault: the picture was too small to recognise, so it was decoration and the
- * card's words were carrying the whole decision. At three columns a card is about 390px of
- * drawing instead of 132 — legible as a shape and as a headline — and `HomeBlock` lays the
- * block out at the device's real width and scales the result, so the proportions, the type
- * sizes and the rails are the ones the phone has (ADR 0045 §3).
- *
- * **One height per row, and every height in it is a decision rather than a measurement.**
- * Three of the four things that used to vary are fixed: the well is a ratio, the name is one
- * line (`truncate`), and the sentence is two (`line-clamp-2`). The fourth was the feature
- * mark, which printed two or three lines under one card and made that card taller than its
- * neighbours; `FeatureChip` is one line for that reason. What is left is `mt-auto` on the
- * chip, which pins every card's foot to the same line whatever is above it — so a marked card
- * and an unmarked one are the same height, and so are two cards whose sentences are one line
- * and two.
- *
- * **One ground for the card and the drawing in it**, `bg-canvas`, separated by its border
- * rather than by a colour. It was `bg-surface` over a `bg-canvas` well, which put a step
- * across the card where the fade ended: the drawing faded into the well's ground, the text
- * below sat on another one, and the band between read as a rule the card had not asked for.
- * `Segmented`'s own row is the same arrangement one dialog further out — canvas on canvas, a
- * border between — so this is the shape the site already draws a panel in.
- *
- * **The button is a sheet over the whole card**, which is what makes the whole card the
- * target, and **it is over the drawing rather than around it**. Wrapped, the app's own
- * pressables end up inside this one. Measured: nine of the modules carry pressables of their
- * own, so clicking the picture of the lead article added nothing at all, and clicking
- * "Teilnehmen" inside the callout closed the dialog and added nothing, silently. React
- * reported `<button> cannot be a descendant of <button>` on every open, and nothing in this
- * repository could see it — `workbench:renders` fails on a console error but never opens a
- * dialog. So the drawing is `inert`: out of the tab order, out of the accessibility tree and
- * deaf to the pointer, which also takes the picker from thirty-nine tabbable things down to
- * one per card. The button comes first in the markup so `peer-*` can style the card behind it.
+ * **The button is a sheet over the whole card**, which is what makes the whole card the target,
+ * and **it is over the card rather than around it**. Wrapped, the app's own pressables end up
+ * inside this one. Measured: nine of the modules carry pressables of their own, so clicking the
+ * picture of the lead article added nothing at all, and clicking "Teilnehmen" inside the callout
+ * closed the dialog and added nothing, silently. React reported `<button> cannot be a descendant
+ * of <button>` on every open, and nothing in this repository could see it — `workbench:renders`
+ * fails on a console error but never opens a dialog. So the card is `inert`: out of the tab
+ * order, out of the accessibility tree and deaf to the pointer, which also takes the picker from
+ * thirty-nine tabbable things down to one per card. The button comes first in the markup so
+ * `peer-*` can style the card behind it.
  */
 function Specimen({
   module,
+  category,
+  nameFamily,
   deviceWidth,
   screen,
   onPick,
 }: {
   module: string;
+  /** The family the core filed this block under, for the badge in the foot. */
+  category: BlockCategory;
+  /** Whether the tab row above already names the family, in which case the badge says it twice. */
+  nameFamily: boolean;
   deviceWidth: number;
   screen: ConfigurableScreen;
   onPick: () => void;
@@ -566,7 +592,6 @@ function Specimen({
   const { label, what } = moduleLabel(module);
   const section: HomeSection = { id: `palette-${module}`, module };
   const sentence = intl.formatMessage(what);
-  const [scale, measured] = useWellScale(deviceWidth);
 
   return (
     <li className="relative">
@@ -575,6 +600,11 @@ function Specimen({
         onClick={onPick}
         className="peer absolute inset-0 z-10 rounded-md focus-visible:outline-none"
       >
+        {/*
+          The card's whole sentence in one name. The drawing under it is `inert`, so this is the
+          only thing a screen reader reaches on the card, and it carries what the two clamped
+          lines above it drop.
+        */}
         <span className="sr-only">
           {intl.formatMessage(COPY.addModule, {
             name: say(intl, label),
@@ -582,82 +612,44 @@ function Specimen({
           })}
         </span>
       </button>
-      <div
+      <PreviewCard
         // eslint-disable-next-line react/no-unknown-property
         inert
-        className={cn(
-          'flex h-full w-full flex-col overflow-hidden rounded-md border border-stroke bg-canvas',
-          'peer-hover:border-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
-        )}
-      >
-        {/*
-          **The well.** A block that draws almost nothing here — „CORRECTIV im Gespräch" is
-          the plain case — left a card whose only content was a line of small text at the top
-          of an empty box, which reads as a card that failed to load. A fixed ratio over a
-          ground means such a card is a quiet card: the same shape, the same size, nothing
-          drawn, and the name under it says what it is.
-        */}
-        <div
-          ref={measured}
-          className="relative w-full shrink-0 overflow-hidden bg-canvas"
-          style={{ aspectRatio: PREVIEW_RATIO }}
-        >
-          <div
-            style={{
-              width: deviceWidth,
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-            }}
-          >
-            <HomeBlock section={section} deviceWidth={deviceWidth} screen={screen} />
-          </div>
-          {/*
-            **A fade rather than a cut.** The well is shorter than most blocks, so the last
-            row of pixels is a hard horizontal line through whatever was there — a headline
-            chopped in half, a rail's second tile sliced. Fading the last third into the card
-            says "there is more below" and costs one gradient.
-          */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-canvas to-transparent"
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-3xs p-xs">
-          <span className="truncate text-m font-semibold text-on-canvas" title={say(intl, label)}>
+        className="bg-canvas peer-hover:border-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent"
+        previewHeight={PREVIEW_HEIGHT}
+        appWidth={deviceWidth}
+        title={
+          <span className="min-w-0 truncate text-m font-semibold text-on-canvas">
             {say(intl, label)}
           </span>
-          {/*
-            Two lines, not one and not all of it. One line cut „Das Datum, die Begr…“ short
-            of saying what the block is for; unclamped it is three lines on the long ones and
-            one on the short, which is the height fault again. The whole sentence is the
-            `title` under the pointer and the button's accessible name above, so nothing is
-            lost to a reader who cannot see it — the arrangement `Components.tsx` already
-            uses for a card of this shape.
-          */}
-          {/*
-            **Two lines reserved, not two lines allowed.** `line-clamp-2` alone holds the long
-            sentences to two and lets the short ones stand at one, which measured as rows of
-            318px beside rows of 337px in the same grid: the grid equalises a row's height, so
-            the row is as tall as its tallest card and the card that needed one line drew a
-            gap above its chip. `min-h-[2lh]` reserves both lines whatever the sentence is,
-            which is what makes every card in the row the same height by construction rather
-            than by the grid's mercy.
-          */}
-          <span
-            className="line-clamp-2 min-h-[2lh] text-s leading-snug text-on-canvas-muted"
-            title={sentence}
-          >
-            {sentence}
-          </span>
-          {/*
-            ADR 0072 §5: the mark stays on the card whatever this build would do with the
-            block. A shelf that hid the video row would hide the fact that there is one. One
-            line, and the whole sentence behind it in the chip's own tooltip.
-          */}
-          <FeatureChip feature={MODULE_FEATURES[module]?.feature} className="mt-auto" />
-        </div>
-      </div>
+        }
+        description={sentence}
+        footer={
+          <>
+            {/*
+              Which family the block is in, and only where the tab row does not say it: on „Alle"
+              and while a search spans every family. It was a heading over each family's own grid,
+              which is what broke the grid — a family of four is a row of three and an orphan. The
+              badge carries the app's word, the same one the tab beside it is drawn from, so a
+              card and its tab cannot disagree about what family a block is in.
+            */}
+            {nameFamily ? (
+              <Badge variant="outline" className="shrink-0 font-normal">
+                <FamilyName category={category} />
+              </Badge>
+            ) : null}
+            {/*
+              ADR 0072 §5: the mark stays on the card whatever this build would do with the block.
+              A shelf that hid the video row would hide the fact that there is one. One word, and
+              the whole sentence behind it in the chip's own tooltip. `ml-auto` pins it to the
+              right of the foot, so a card with a family badge and a card with only this one are
+              the same shape rather than one badge wider than the other.
+            */}
+            <FeatureChip feature={MODULE_FEATURES[module]?.feature} className="ml-auto" />
+          </>
+        }
+        preview={<HomeBlock section={section} deviceWidth={deviceWidth} screen={screen} />}
+      />
     </li>
   );
 }
