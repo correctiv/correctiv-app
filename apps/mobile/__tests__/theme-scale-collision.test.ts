@@ -42,13 +42,14 @@
  *
  * This is the only place with a Tailwind compiler that has no workbench dependency,
  * and the collision is a property of the shared theme, not of either app
- * (`apps/mobile/__tests__/no-workbench-dependency.test.ts`). It reads
+ * (`apps/mobile/__tests__/no-workbench-dependency.test.ts`). It compiles
  * `packages/design-tokens/theme.standalone.css`, which is what
- * `apps/workbench/src/styles/app.css` imports and the same theme with the `light`
- * and `dark` variant definitions spelled out — `theme.css` alone aborts under plain
- * Tailwind with `Cannot use @variant with unknown variant: light`, since Uniwind is
- * what supplies those in the app. A key the generator renames therefore fails here
- * whether or not anybody opens a browser.
+ * `apps/workbench/src/styles/app.css` imports, and reads the scale keys out of the
+ * `theme.css` that file imports — the same theme with the `light` and `dark` variant
+ * definitions spelled out, because `theme.css` alone aborts under plain Tailwind with
+ * `Cannot use @variant with unknown variant: light`, since Uniwind is what supplies
+ * those in the app. A key the generator renames therefore fails here whether or not
+ * anybody opens a browser.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -89,6 +90,16 @@ const PREFIXES: Record<string, string[]> = {
   container: ['max-w-'],
 };
 
+/**
+ * The theme's own defaults, the two names that carry no key.
+ *
+ * `--radius: initial` and `--spacing: 0.125rem` are the fallbacks every utility of that
+ * namespace falls back on, so they cannot collide with anything and have nothing to ask.
+ * Listed rather than tolerated, because the point of the classification below is that
+ * every property in the `@theme` block lands in exactly one of the three lists.
+ */
+const DEFAULTS = new Set(['radius', 'spacing']);
+
 async function compilerFor(css: string, base: string) {
   return await compile(css, {
     base,
@@ -120,16 +131,64 @@ function propertiesSetting(css: string, className: string): string[] {
   return [...out].sort();
 }
 
-/** `--<namespace>-<key>` in the generated theme, as [namespace, key]. */
-function declaredScales(css: string): [string, string][] {
-  return (
-    [...css.matchAll(/^\s*--([a-z0-9-]+)-([a-z0-9-]+):/gm)]
-      .map((match) => [match[1], match[2]] as [string, string])
-      // `--color-*` is a list of names, not a scale of steps, and `bg-canvas` is a
-      // token rather than a collision; `--shadow-*` would be the same.
-      .filter(([namespace]) => namespace in PREFIXES)
-  );
+/**
+ * The custom properties in the theme's `@theme` block, by name and without the `--`.
+ *
+ * The block only, not the whole file: the `@layer theme` blocks below restate the same
+ * colours under `@variant`, and none of them declares a scale.
+ *
+ * Names, not split into namespace and key, because a text file cannot. A headline size
+ * and a role colour both hold two hyphens of their own, and a regex that guesses where
+ * the namespace ends reads `--text-headline-xs` as a namespace called `text-headline`
+ * and drops all six headline sizes on the floor. The namespace comes from `PREFIXES`
+ * instead, which is a list somebody wrote rather than one a greedy match invented.
+ */
+function declaredProperties(css: string): string[] {
+  const block = css.slice(css.indexOf('@theme {'), css.indexOf('\n}'));
+  return [...block.matchAll(/^\s*--([a-z0-9-]+):/gm)].map((match) => match[1]);
 }
+
+/**
+ * Every property in the block, sorted into the three things it can be.
+ *
+ * `unexplained` is the interesting one: a scale the generator adds later, a second
+ * default, a typo — anything that is neither a key of a checked namespace, nor one of
+ * the two defaults, nor excused. It is empty today and the assertion below holds it
+ * there, which is what stops a new scale from being added and never checked.
+ */
+function classify(properties: string[]): {
+  scales: [string, string][];
+  excused: string[];
+  unexplained: string[];
+} {
+  const scales: [string, string][] = [];
+  const excused: string[] = [];
+  const unexplained: string[] = [];
+  for (const name of properties) {
+    const namespace = Object.keys(PREFIXES).find((ns) => name.startsWith(`${ns}-`));
+    if (namespace !== undefined) {
+      scales.push([namespace, name.slice(namespace.length + 1)]);
+    } else if (DEFAULTS.has(name) || [...NOT_SCALES].some((ns) => name.startsWith(`${ns}-`))) {
+      excused.push(name);
+    } else {
+      unexplained.push(name);
+    }
+  }
+  return { scales, excused, unexplained };
+}
+
+/**
+ * Namespaces the theme declares that this does NOT ask about, each with its reason.
+ *
+ * `--color-*` is a list of role names, not a scale of steps: `bg-canvas` is a token
+ * rather than a step of anything, and a token named after a Tailwind colour is an
+ * override the theme is for. A second entry here would be a decision to leave a scale
+ * unchecked, and it would have to be argued in the record rather than in a list.
+ *
+ * Held as a list rather than folded into the filter in `classify`, because a namespace
+ * excused here and no longer declared is a stale list, and both directions are asserted.
+ */
+const NOT_SCALES = new Set(['color']);
 
 /**
  * A theme of one colliding key, written as CSS text rather than as a file beside
@@ -144,7 +203,8 @@ const COLLIDING_THEME = "@import 'tailwindcss';\n@theme { --radius-s: 0.125rem; 
 
 describe('a theme scale key may not name a Tailwind built-in utility', () => {
   const theme = readFileSync(join(TOKENS_PKG, 'theme.css'), 'utf8');
-  const scales = declaredScales(theme);
+  const properties = declaredProperties(theme);
+  const { scales, excused, unexplained } = classify(properties);
 
   /**
    * One compile of the theme and one of Tailwind's default, and every key answered
@@ -180,6 +240,18 @@ describe('a theme scale key may not name a Tailwind built-in utility', () => {
     // below is then vacuously true.
     expect(new Set(scales.map(([namespace]) => namespace))).toEqual(new Set(Object.keys(PREFIXES)));
     expect(scales.length).toBeGreaterThan(30);
+
+    // And the other half of the same floor: every property in the `@theme` block has to
+    // be one of the three things a property can be here. A scale the generator grows
+    // later is `unexplained` until somebody names it, so it cannot be added and left
+    // unchecked.
+    expect(unexplained).toEqual([]);
+
+    // The excuse list in both directions: a namespace excused and no longer declared is
+    // a stale list, which is how `--color-*` would quietly stop being true.
+    expect(
+      [...NOT_SCALES].filter((ns) => !excused.some((name) => name.startsWith(`${ns}-`))),
+    ).toEqual([]);
   });
 
   /**
