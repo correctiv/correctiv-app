@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Seventy-five records shaped this repo. Read them when you want to know *why* something
+Seventy-six records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
