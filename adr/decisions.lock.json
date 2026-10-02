@@ -721,5 +721,14 @@
       "6": ["The release file is a commit, is bundled, and is never fetched"],
       "7": ["Release and layout are separate files with separate writers"]
     }
+  },
+  "0073": {
+    "slugs": ["every-screen-takes-every-block-and-a-block-declares-its-category"],
+    "decisions": {
+      "1": ["Every configurable screen may carry every block"],
+      "2": ["A block declares a category, and the workbench says what the category is called"],
+      "3": ["Four blocks stay bound to one screen, and they are the screen titles"],
+      "4": ["One registry draws every screen, and a block's data comes with it"]
+    }
   }
 }

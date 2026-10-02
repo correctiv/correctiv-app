@@ -12,9 +12,9 @@ import { governs, SHIPPED } from './document';
  * What the screen editor knows about each screen: its name, where the frame goes to show
  * it, and the document the app ships for it.
  *
- * The palette is not here. Which blocks a screen offers is `blocksFor(screen)` in the
- * app (`apps/mobile/src/lib/home/screens.ts`, ADR 0054 §2), read where the palette is
- * drawn, so this file holds no second list of blocks.
+ * The palette is not here. Which blocks a screen offers, and in which groups, is
+ * `blocksByCategory(screen)` in the core (ADR 0073 §2), read where the palette is drawn,
+ * so this file holds no second list of blocks.
  */
 
 export { CONFIGURABLE_SCREENS, type ConfigurableScreen };

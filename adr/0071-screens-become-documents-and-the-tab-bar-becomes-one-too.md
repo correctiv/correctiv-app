@@ -42,12 +42,15 @@ rewrites, because the parser is the core's.
 
 ### 2. The parser refuses a block on a screen it does not declare
 
-This is the half ADR 0054 §5 deliberately left unwritten. A block's declaration already
+This is the half ADR 0054 §5 deliberately left unwritten. ~~A block's declaration already
 names the screens it may appear on (ADR 0054 §2), and the parser now holds a document to it:
 a block on a screen it does not declare is refused by the same rules and with the same
-smallest-possible loss ADR 0039 §6 gave a fault, not by drawing it anyway. The bundled
-copies are held to it by a test, so a committed document that the parser would refuse does
-not reach a release.
+smallest-possible loss ADR 0039 §6 gave a fault, not by drawing it anyway.~~ Struck: every
+configurable screen takes every block, so there is no declaration left to hold a document
+to — [ADR 0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
+§1. The refusal survives for the four blocks that print a screen's own title (§3 there),
+with the same code and the same smallest-possible loss. The bundled copies are held to it
+by a test, so a committed document that the parser would refuse does not reach a release.
 
 The moments, conditions and audiences of ADR 0039 and ADR 0060 apply to every screen with
 no change to their meaning, because they were written about a block and a reader, not about

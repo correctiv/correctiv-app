@@ -51,13 +51,20 @@ jest.mock('@/lib/feeds/useFeed', () => ({
 }));
 
 /**
- * Stubbed for the reason `home-timed.test.tsx` stubs them: both lazy-load on first use,
+ * Stubbed for the reason `home-timed.test.tsx` stubs them: they lazy-load on first use,
  * and a thunk that lands after the test body is an update outside `act`.
+ *
+ * The radio and the podcast library joined the list with ADR 0073: a Mediathek block
+ * placed on Home is drawn here now, and the hook it calls is the same one the Mediathek
+ * screen calls — which is the property that record is about, and the reason these two are
+ * stubbed rather than the block being left out of the case.
  */
 jest.mock('@/lib/store/core', () => ({
   ...jest.requireActual<typeof import('@/lib/store/core')>('@/lib/store/core'),
   useSpotlight: () => ({ issues: [], status: 'idle', recent: [] }),
   useVideoChannel: () => ({ videos: [], status: 'idle', error: null }),
+  useRadioStation: () => ({ nowPlaying: null, listeners: null, status: 'idle' }),
+  usePodcastLibrary: () => ({ series: [], status: 'idle' }),
 }));
 
 import { act } from 'react-test-renderer';
@@ -72,7 +79,7 @@ import { readerOf } from '@correctiv/app-core/lib/home-audience';
 import { sessionActions } from '@correctiv/app-core/stores/session';
 import type { Entitlement } from '@correctiv/app-core/types/models';
 import { HOME_MODULE_AUDIENCES, MODULE_CONDITIONS } from '@/lib/home/conditions';
-import { MODULE_SCREENS } from '@/lib/home/screens';
+import { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS } from '@/lib/home/blocks';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { resetStore } from '@correctiv/app-core/stores/store';
@@ -86,7 +93,11 @@ import HomeScreen from '@/app/(tabs)/index';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { HOME_MODULES, LIFTED_CALLOUT, placeTestID } from '@/lib/home/modules';
 import { coreStore } from '@/lib/store/core';
-import { SCREEN_DOCUMENTS } from '@correctiv/app-core/lib/screen-layout';
+import {
+  CONFIGURABLE_SCREENS,
+  SCREEN_DOCUMENTS,
+  type ConfigurableScreen,
+} from '@correctiv/app-core/lib/screen-layout';
 
 const DOCUMENT_PATH = join(
   __dirname,
@@ -193,25 +204,44 @@ describe('the shipped home document', () => {
   });
 
   /**
-   * The two halves of ADR 0054 §2, and they are why that record could give the palette a
-   * second list to read without giving it a list that can fall behind.
+   * The two halves ADR 0054 §2 bought, kept by ADR 0073 §2 with the category in the place
+   * the list of screens used to be.
    *
-   * The first half is the one a type cannot see. Every module has to say where it
-   * belongs, so a block written and never declared is a block the editor offers on no
-   * screen at all — which would look exactly like the module having been forgotten, and
-   * is the failure the declaration exists to make loud.
+   * The first half is the one a type cannot see. Every block has to say which family it
+   * is in, so a block written and never declared is a block no picker offers at all —
+   * which would look exactly like the module having been forgotten, and is the failure
+   * the declaration exists to make loud. It is also the ratchet under the categories: a
+   * block added without one cannot reach a newsroom in a group nobody chose.
    */
-  it('has every module declare at least one screen', () => {
+  it('has every module declare a category', () => {
     const undeclared = Object.keys(HOME_MODULES).filter(
-      (module) => (MODULE_SCREENS[module]?.length ?? 0) === 0,
+      (module) => !Object.hasOwn(MODULE_CATEGORIES, module),
     );
     expect(undeclared).toEqual([]);
   });
 
   /** And the other direction: a declaration for a block this app cannot draw. */
-  it('declares screens only for modules it can draw', () => {
-    const undrawable = Object.keys(MODULE_SCREENS).filter((module) => !(module in HOME_MODULES));
+  it('declares categories only for modules it can draw', () => {
+    const undrawable = Object.keys(MODULE_CATEGORIES).filter((module) => !(module in HOME_MODULES));
     expect(undrawable).toEqual([]);
+  });
+
+  /**
+   * ADR 0073 §3, from the side that is easy to let grow: the restriction is four blocks
+   * and the reason is that each prints a screen's own title. A fifth one arriving is a
+   * decision, so it fails here until somebody writes it down in both places.
+   */
+  it('binds only the screen titles to a screen, and binds each to one it can be on', () => {
+    expect(Object.keys(SCREEN_BOUND_BLOCKS).sort()).toEqual([
+      'discover-header',
+      'home-header',
+      'mediathek-header',
+      'participate-header',
+    ]);
+    const unknown = Object.entries(SCREEN_BOUND_BLOCKS).filter(
+      ([module, screen]) => !(module in HOME_MODULES) || !CONFIGURABLE_SCREENS.includes(screen),
+    );
+    expect(unknown).toEqual([]);
   });
 
   /**
@@ -375,11 +405,24 @@ describe('the shipped Entdecken document', () => {
     expect(missing.map((section) => `${section.id} → ${section.module}`)).toEqual([]);
   });
 
-  it('is refused on Home, which is what makes it a document of its own', () => {
+  /**
+   * ADR 0073 §3, which is all that is left of ADR 0071 §2's refusal: the document as a
+   * whole is no longer Entdecken's alone, and the one thing in it that cannot move is the
+   * heading that says which screen this is.
+   */
+  it('keeps only its own title off Home, and lets the rest of it through', () => {
     const onHome = parseHomeLayout(SCREEN_DOCUMENTS.entdecken, undefined, 'home');
-    expect(onHome.problems.map((problem) => problem.code)).toContain(
-      'section-module-not-on-screen',
-    );
+    expect(onHome.problems).toEqual([
+      {
+        code: 'section-module-not-on-screen',
+        context: { id: 'title', module: 'discover-header', screen: 'home' },
+      },
+    ]);
+    expect(onHome.layout?.sections.map((section) => section.module)).toEqual([
+      'search-entry',
+      'topic-rail',
+      'project-directory',
+    ]);
   });
 });
 
@@ -432,11 +475,11 @@ describe('what Mitmachen draws', () => {
     expect(renderedText(tree)).toContain('Mitmachen');
   });
 
-  it('is refused on Home, which is what makes it a document of its own', () => {
+  it('keeps only its own title off Home', () => {
     const onHome = parseHomeLayout(SCREEN_DOCUMENTS.mitmachen, undefined, 'home');
-    expect(onHome.problems.map((problem) => problem.code)).toContain(
-      'section-module-not-on-screen',
-    );
+    expect(onHome.problems.map((problem) => problem.context.module)).toEqual([
+      'participate-header',
+    ]);
   });
 });
 
@@ -447,10 +490,83 @@ describe('what Profil draws', () => {
     expect(renderedText(tree)).toContain('Profil');
   });
 
-  it('is refused on Home, which is what makes it a document of its own', () => {
+  /**
+   * The one bundled document with no title block of its own, so after ADR 0073 §1 there
+   * is nothing in it a document of Home may not carry. That used to be a refusal and the
+   * test said it was "what makes it a document of its own", which was never true: what
+   * makes it one is that the Profil screen reads it (§1 of ADR 0071).
+   */
+  it('reads cleanly on Home as well, since nothing in it is a screen title', () => {
     const onHome = parseHomeLayout(SCREEN_DOCUMENTS.profil, undefined, 'home');
-    expect(onHome.problems.map((problem) => problem.code)).toContain(
-      'section-module-not-on-screen',
+    expect(onHome.problems).toEqual([]);
+    expect(onHome.layout?.sections.map((section) => section.module)).toEqual([
+      'profile-club-card',
+      'profile-membership',
+      'profile-impact',
+      'profile-area',
+      'profile-newsletter',
+    ]);
+  });
+});
+
+/**
+ * ADR 0073 §1, which is the whole point of the record: the newsroom may put any block on
+ * any configurable screen, and the app draws it there. Rendered rather than only parsed,
+ * because the question underneath the decision was whether a block carries its screen
+ * around with it — the data each one needs is loaded by the hook it calls, on first use,
+ * so it does not (`lib/store/core.ts`, `useLazyLoad`).
+ */
+describe('a block placed on a screen it was not written for', () => {
+  const placed = (screen: ConfigurableScreen, ...modules: string[]) =>
+    parseHomeLayout(
+      {
+        version: 4,
+        sections: modules.map((module) => ({ id: module, module })),
+        moments: [],
+      },
+      new Set(Object.keys(HOME_MODULES)),
+      screen,
     );
+
+  it('draws the Mediathek’s blocks on Home', () => {
+    const parse = placed('home', 'live-radio-banner', 'podcast-rail', 'bonus-audio-list');
+    expect(parse.problems).toEqual([]);
+
+    const tree = render(<ScreenBlocks screen="home" layout={parse.layout!} />);
+    expect(renderedPlaces(tree)).toEqual(['live-radio-banner', 'podcast-rail', 'bonus-audio-list']);
+    const text = renderedText(tree);
+    expect(text).toContain('Salon5 Radio');
+    expect(text).toContain('Aus dem Backstage');
+  });
+
+  it('draws a Home block on the Mediathek', () => {
+    const parse = placed('mediathek', 'article-hero', 'latest-research', 'impact-footer');
+    expect(parse.problems).toEqual([]);
+
+    const tree = render(<ScreenBlocks screen="mediathek" layout={parse.layout!} />);
+    expect(renderedPlaces(tree)).toEqual(['article-hero', 'latest-research', 'impact-footer']);
+    expect(renderedText(tree)).toContain('Recherche 1');
+  });
+
+  it('still refuses a module no renderer answers to', () => {
+    const parse = placed('home', 'quiz');
+    expect(parse.problems).toEqual([
+      { code: 'module-unrecognised', context: { id: 'quiz', module: 'quiz' } },
+    ]);
+    expect(parse.layout?.sections).toEqual([]);
+  });
+
+  /** And the four that stay put, each refused on every screen that is not its own. */
+  it('refuses another screen’s title, on every screen but its own', () => {
+    for (const [module, own] of Object.entries(SCREEN_BOUND_BLOCKS)) {
+      for (const screen of CONFIGURABLE_SCREENS) {
+        const codes = placed(screen, module).problems.map((problem) => problem.code);
+        expect({ module, screen, codes }).toEqual({
+          module,
+          screen,
+          codes: screen === own ? [] : ['section-module-not-on-screen'],
+        });
+      }
+    }
   });
 });

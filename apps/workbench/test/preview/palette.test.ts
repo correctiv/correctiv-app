@@ -9,7 +9,15 @@ import { floorFaults } from '@correctiv/prose-and-code';
 import { ROOT } from '../../plugin/collect.ts';
 import { de } from '../../src/i18n/catalogue/de';
 import { say } from '../../src/i18n/messages';
-import { blockName, MODULE_LABELS, SHIPPED, whereAt } from '../../src/preview/home/document';
+import { BLOCK_CATEGORIES } from '@correctiv/app-core/lib/block-category';
+
+import {
+  blockName,
+  CATEGORY_LABELS,
+  MODULE_LABELS,
+  SHIPPED,
+  whereAt,
+} from '../../src/preview/home/document';
 import { code } from '../source.ts';
 
 /**
@@ -21,12 +29,14 @@ import { code } from '../source.ts';
  * that the shipped document names every renderer was retired rather than replaced,
  * because a module waiting in a palette stopped being a module nobody can reach.
  *
- * ADR 0054 §2 moves it one step: the palette is the blocks that declare the screen being
- * edited, `blocksFor('home')`. That is the second list ADR 0046 §1 said it did not have,
- * and what stands in for its absence is `apps/mobile/__tests__/home-layout.test.tsx`
- * failing in both directions — a module with no declaration, and a declaration for no
- * module. Neither half is readable from here, which is why this file asserts the wiring
- * and that file asserts the pair.
+ * ADR 0054 §2 moved it one step and ADR 0073 §1 moved it back past where it started: the
+ * palette is every block the app has, bar the four that print another screen's title,
+ * grouped by the category each one declares. The grouping is the core's
+ * (`blocksByCategory`), so this site still keeps no list of blocks, and what stands in
+ * for the list's absence is `apps/mobile/__tests__/home-layout.test.tsx` failing in both
+ * directions — a block with no category, and a category for no block. Neither half is
+ * readable from here, which is why this file asserts the wiring and that file asserts
+ * the pair.
  *
  * The naming is a pure function and is run here. The wiring is read as text, which is the
  * weaker half — it catches a line deleted or moved and not a mark drawn in the wrong
@@ -134,11 +144,39 @@ describe('the palette is the registry', () => {
    * what changed is which of the app's files answers, and that the screen it asks for is
    * written rather than implied.
    */
-  it('reads the app’s own declaration and keeps no list beside it', () => {
-    expect(PALETTE).toMatch(/import \{ blocksFor \} from '@\/lib\/home\/screens'/);
-    expect(PALETTE).toMatch(/blocksFor\(screen\)/);
-    expect(PALETTE).not.toMatch(/blocksFor\('home'\)/);
+  it('reads the core’s grouping and keeps no list beside it', () => {
+    expect(PALETTE).toMatch(
+      /import \{ blocksByCategory \} from '@correctiv\/app-core\/lib\/block-category'/,
+    );
+    expect(PALETTE).toMatch(/blocksByCategory\(screen\)/);
+    expect(PALETTE).not.toMatch(/blocksByCategory\('home'\)/);
     expect(PALETTE).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
+  });
+
+  it('draws a heading per category out of the words table, and spells none itself', () => {
+    // ADR 0073 §2's seam: the category is the app's vocabulary, the heading over it is
+    // this site's word for it. A literal here would be German in a `.tsx` file, which
+    // `test/rendered-literals.test.ts` fails on — but only for a string it can see, and a
+    // heading built out of the id (`category`) would read `faktencheck` to a newsroom and
+    // trip nothing at all.
+    expect(PALETTE).toMatch(/intl\.formatMessage\(CATEGORY_LABELS\[category\]\)/);
+    expect(PALETTE).not.toMatch(/>\{category\}</);
+  });
+
+  it('gives every category in the core’s order a word, and invents none', () => {
+    expect(Object.keys(CATEGORY_LABELS).sort()).toEqual([...BLOCK_CATEGORIES].sort());
+    const german = createIntl({ locale: 'de', defaultLocale: 'en', messages: de });
+    for (const category of BLOCK_CATEGORIES) {
+      const word = german.formatMessage(CATEGORY_LABELS[category]);
+      expect(word).not.toBe('');
+      // A missing entry in the catalogue falls through to the English `defaultMessage`,
+      // which is the failure this is here for: the heading a newsroom reads is German.
+      expect(word).not.toBe(
+        createIntl({ locale: 'en', defaultLocale: 'en' }).formatMessage(CATEGORY_LABELS[category]),
+      );
+      // And not the id itself, which is what a lazy label would be.
+      expect(word).not.toBe(category);
+    }
   });
 
   it('gives every module in that table words a newsroom can read', () => {

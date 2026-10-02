@@ -3,13 +3,12 @@
  *
  * [ADR 0054](../../../../adr/0054-a-block-declares-where-it-may-appear.md) §5 left the
  * parser half open while one screen existed. A screen's document is now keyed by this id,
- * and `parseHomeLayout` takes the screen it is reading so that it can refuse a block the
- * app declares for other screens only. Moments, conditions and audiences
+ * and `parseHomeLayout` takes the screen it is reading. Moments, conditions and audiences
  * (ADR 0039, ADR 0060) are part of the document's grammar, so they apply to every screen.
  *
- * The type is the core's because the parser is; the declaration of which block belongs
- * where stays in the app (`apps/mobile/src/lib/home/screens.ts`) and arrives through
- * `module-screens.generated.ts`.
+ * **Which blocks a screen takes is no longer a question about the screen**: every screen
+ * takes every block (ADR 0073 §1), bar the four that print another screen's title. That
+ * is `block-category.ts` beside this file.
  */
 
 import entdeckenDocument from '../data/layout/screens/entdecken.json';

@@ -95,7 +95,7 @@ import {
 } from './berlin-time';
 import { audienceOf, isAudience, reaches, type Audience, type Reader } from './home-audience';
 import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
-import { MODULE_SCREENS } from './module-screens.generated';
+import { mayAppearOn } from './block-category';
 import { SCREEN_DOCUMENTS, type ConfigurableScreen } from './screen-layout';
 
 /**
@@ -442,9 +442,11 @@ export function minuteOfDay(now: number | Date): MinuteOfDay {
  * modules a host can DRAW is the host's. The two are separate questions and the parser
  * asks them separately.
  *
- * `screen` is the screen the document arranges (ADR 0054 §5). A block the app declares
- * for other screens only is refused here with `section-module-not-on-screen`; a module
- * with no declaration at all is left to `renderable`, as the grammar tests rely on.
+ * `screen` is the screen the document arranges. Every screen takes every block since
+ * [ADR 0073](../../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
+ * §1, so what is refused here with `section-module-not-on-screen` is only one of the four
+ * blocks that print another screen's own title (§3, `SCREEN_BOUND_BLOCKS`); a module with
+ * no declaration at all is left to `renderable`, as the grammar tests rely on.
  */
 export function parseHomeLayout(
   input: unknown,
@@ -548,8 +550,7 @@ function parseSection(
     return null;
   }
 
-  const declared = Object.hasOwn(MODULE_SCREENS, module) ? MODULE_SCREENS[module] : undefined;
-  if (declared && !declared.includes(screen)) {
+  if (!mayAppearOn(module, screen)) {
     problems.push({ code: 'section-module-not-on-screen', context: { id, module, screen } });
     return null;
   }

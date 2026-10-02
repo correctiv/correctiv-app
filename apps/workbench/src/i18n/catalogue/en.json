@@ -1495,6 +1495,26 @@
     "defaultMessage": "{day}, today",
     "description": "The accessible name of the column for today in the week or month under the frame. {day} is the date already spelled by the browser, as “Monday, 28 September”."
   },
+  "home.category.club": {
+    "defaultMessage": "Club and profile",
+    "description": "The heading over the blocks a membership pays for and the ones that show it: early access, Backstage, and the profile’s own rows."
+  },
+  "home.category.faktencheck": {
+    "defaultMessage": "Fact checking"
+  },
+  "home.category.medien": {
+    "defaultMessage": "Audio and video"
+  },
+  "home.category.mitmachen": {
+    "defaultMessage": "Taking part and community"
+  },
+  "home.category.recherche": {
+    "defaultMessage": "News and investigations"
+  },
+  "home.category.struktur": {
+    "defaultMessage": "Structure and notices",
+    "description": "The heading over the blocks that build a screen’s frame rather than its content: the headers, the search field, the loading notice and the footer."
+  },
   "home.document.field": {
     "defaultMessage": "The change",
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
@@ -1770,7 +1790,7 @@
     "description": "The one line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
   },
   "home.palette.leadMore": {
-    "defaultMessage": "The list offers every block that fits this screen. How it looks, you see in the frame beside it.",
+    "defaultMessage": "The list offers every block the app has, in groups. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.",
     "description": "Behind the ⓘ beside the palette dialog’s heading, home.palette.title."
   },
   "home.palette.title": {
@@ -2095,7 +2115,7 @@
     "description": "The last paragraph under the drawing. <code> marks an import path, which stays as it is written."
   },
   "insideCore.alt.lede": {
-    "defaultMessage": "<code>packages/app-core</code>, 81 TypeScript files. Imports point down the stack. Layers from the top:",
+    "defaultMessage": "<code>packages/app-core</code>, 82 TypeScript files. Imports point down the stack. Layers from the top:",
     "description": "The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.alt.lib": {
@@ -2155,7 +2175,7 @@
     "description": "The line beside the two small chips reading string and DOM. <file> marks a type name in monospace, which stays as it is written."
   },
   "insideCore.files": {
-    "defaultMessage": "81 TypeScript files",
+    "defaultMessage": "82 TypeScript files",
     "description": "The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English."
   },
   "insideCore.imports": {
@@ -2163,7 +2183,7 @@
     "description": "The label on the long arrow down the left edge, set on its side. It is as long as the stack is tall, about 500 units, so length is not the constraint here."
   },
   "insideCore.lede": {
-    "defaultMessage": "81 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
+    "defaultMessage": "82 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
     "description": "The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.lib": {
