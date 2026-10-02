@@ -48,8 +48,12 @@ a block on a screen it does not declare is refused by the same rules and with th
 smallest-possible loss ADR 0039 §6 gave a fault, not by drawing it anyway.~~ Struck: every
 configurable screen takes every block, so there is no declaration left to hold a document
 to — [ADR 0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
-§1. The refusal survives for the four blocks that print a screen's own title (§3 there),
-with the same code and the same smallest-possible loss. The bundled copies are held to it
+§1. ~~The refusal survives for the four blocks that print a screen's own title (§3 there),
+with the same code and the same smallest-possible loss.~~ It does not survive at all:
+ADR 0073 §3 is struck in turn and the code with it, because one header block prints the
+title of whatever screen it is on
+— [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+§6. The bundled copies are held to it
 by a test, so a committed document that the parser would refuse does not reach a release.
 
 The moments, conditions and audiences of ADR 0039 and ADR 0060 apply to every screen with
@@ -71,9 +75,13 @@ declared a second time (ADR 0054 §2).
 ### 4. The tab bar is a navigation document, and the fixed first entry is Home
 
 The tab bar is a document of its own, `packages/app-core/src/data/layout/navigation.json`: an
-ordered list of entries, each naming a destination the app declares. The app declares what
+ordered list of entries, each naming a destination the app declares. ~~The app declares what
 can be a destination, with its screen, icon, label as a message and the feature it belongs
-to ([ADR 0072](0072-features-are-released-by-a-commit-and-never-by-a-fetch.md)); the document
+to ([ADR 0072](0072-features-are-released-by-a-commit-and-never-by-a-fetch.md));~~ Struck
+for the icon and the label: they are properties of the screen's own document, localised, and
+the app declares the route and the set of icons a document may name
+— [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+§3 to §5. The feature a destination belongs to is still the app's (ADR 0072). The document
 chooses and orders. Home is always the first entry and cannot be taken out, because it is the
 one screen that is the app's answer to "where am I" and the floor under every fallback in §6.
 

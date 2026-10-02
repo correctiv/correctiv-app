@@ -738,5 +738,21 @@
       "2": ["A hook, because the workbench may not use the app's formatter"],
       "3": ["Two hosts, one table, and the ratchet that keeps it one"]
     }
+  },
+  "0075": {
+    "slugs": ["a-document-carries-its-own-words-and-a-screen-says-what-it-is-called"],
+    "decisions": {
+      "1": ["A document may carry words, and a word is a localised text"],
+      "2": [
+        "German is required, every other language is optional, and a gap is a mark and never a fault"
+      ],
+      "3": ["A screen document carries its own title, its tab label and its icon"],
+      "4": ["An icon is a key out of a set the app declares"],
+      "5": [
+        "The navigation document keeps placement and order, and the words come from the screens"
+      ],
+      "6": ["One header block prints the screen's own words, and the four bound headers go"],
+      "7": ["What a custom screen must satisfy, and why it is not a tab"]
+    }
   }
 }
