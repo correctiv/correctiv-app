@@ -812,6 +812,40 @@ describe('parseHomeLayout, on the settings a module understands', () => {
   });
 
   /**
+   * A `text` where a `count` belongs is a value no spec admits, and refusing it costs the
+   * place — never the key alone.
+   *
+   * [ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+   * §1: the parser knows which keys are words, so a word where a count belongs is the same
+   * refusal as a string there. Taking the key out and keeping the place would leave a
+   * document that says something this app cannot draw looking like one that merely left it
+   * out, which is the quiet failure the dropped section exists to prevent.
+   *
+   * In a moment it is the one change that goes, for the reason ADR 0039 §6 gives: the
+   * other changes at that minute are instructions about other places.
+   */
+  it('refuses a word where a count belongs, in a place and in a change alike', () => {
+    const rail = (settings: unknown) =>
+      section({ id: 'rail', module: 'faktencheck-rail', settings });
+    const parse = parseHomeLayout(
+      document([
+        section({ id: 'header', module: 'home-header' }),
+        rail({ count: { de: 'Mitmachen' } }),
+      ]),
+    );
+    expect(parse.layout?.sections.map((s) => s.id)).toEqual(['header']);
+    expect(codes(parse)).toEqual(['section-setting-invalid']);
+
+    const moment = parseHomeLayout(
+      document([rail({ count: 3 })], {
+        moments: [{ at: '09:00', changes: [{ id: 'rail', settings: { count: { de: 'Vier' } } }] }],
+      }),
+    );
+    expect(codes(moment)).toEqual(['change-setting-invalid']);
+    expect(moment.layout?.moments[0]?.changes).toEqual([]);
+  });
+
+  /**
    * The rule the brief asked for: a setting a module does not understand is REPORTED,
    * and the rest of the screen survives.
    *

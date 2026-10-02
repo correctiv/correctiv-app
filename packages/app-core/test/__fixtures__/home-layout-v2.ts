@@ -15,6 +15,10 @@
  * settings table, which is generated from the app's modules and which a version 2 app
  * carries its own copy of; a key added there later is one the version 2 app would refuse,
  * and the tests using this fixture only use settings that existed at fbb2756.
+ *
+ * The one exception, and it is there because the live type this file imports grew a kind
+ * rather than because the copy was refreshed: `holds` below carries a `case 'text'`, and
+ * what it answers is what the switch answered at fbb2756. The argument is in the case.
  */
 
 import { MODULE_SETTINGS, type SettingSpec } from '../../src/lib/home-settings';
@@ -410,6 +414,15 @@ function holds(spec: SettingSpec, value: unknown): boolean {
     case 'category':
     case 'tag':
       return value === null || (typeof value === 'number' && Number.isInteger(value) && value > 0);
+    case 'text':
+      // The one line this file carries that fbb2756 did not, and it changes nothing. The
+      // switch above is exhaustive over the live `SettingSpec` this file imports, and
+      // [ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+      // §1 added a fifth kind to it. What the shipped parser did with a kind it did not
+      // know was fall out of this switch, and the caller read that as a value it cannot
+      // read — which is what `false` says here, so a word where a count belongs still
+      // costs its place in an app that never heard of words.
+      return false;
   }
 }
 
