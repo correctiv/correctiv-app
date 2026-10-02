@@ -90,7 +90,8 @@ jobs:
     if: >-
       github.event_name == 'issues'
       && (startsWith(github.event.issue.title, '[startseite]')
-      || startsWith(github.event.issue.title, '[texte]'))
+      || startsWith(github.event.issue.title, '[texte]')
+      || startsWith(github.event.issue.title, '[layout]'))
       && !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -141,7 +142,8 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch'
       || ((startsWith(github.event.issue.title, '[startseite]')
-      || startsWith(github.event.issue.title, '[texte]'))
+      || startsWith(github.event.issue.title, '[texte]')
+      || startsWith(github.event.issue.title, '[layout]'))
       && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -178,7 +180,7 @@ jobs:
             const quote = await import(
               pathToFileURL(`${process.env.GITHUB_WORKSPACE}/apps/workbench/scripts/submission-quote.mjs`).href
             );
-            const PREFIXES = ['[startseite]', '[texte]'];
+            const PREFIXES = ['[startseite]', '[texte]', '[layout]'];
             const temp = process.env.RUNNER_TEMP;
             const refuse = (reason, log) => {
               fs.writeFileSync(`${temp}/submission-error.txt`, reason);
@@ -305,6 +307,14 @@ jobs:
             npx tsx packages/app-core/scripts/check-home-layout.ts
           xargs -0 -a "$RUNNER_TEMP/submission-files.txt" npx oxfmt --check
 
+      # The layout kind's file: the parser judged it in the step before, and the formatter
+      # has the last word on how it is printed.
+      - name: Check the written layout
+        if: steps.apply.outputs.kind == 'layout'
+        run: |
+          set -euo pipefail
+          xargs -0 -a "$RUNNER_TEMP/submission-files.txt" npx oxfmt --check
+
       # The catalogue's own test formats every message in every language and holds the
       # German's arguments to the English's, which is more than the validator asks.
       - name: Check the written texts
@@ -331,6 +341,7 @@ jobs:
           echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
           case "$KIND" in
             home) MESSAGE="Home layout: submitted in #${ISSUE}" ;;
+            layout) MESSAGE="Layout: submitted in #${ISSUE}" ;;
             strings) MESSAGE="German strings: submitted in #${ISSUE}" ;;
             *) echo "::error::unknown kind"; exit 1 ;;
           esac
@@ -381,6 +392,10 @@ jobs:
             const KINDS = {
               home: {
                 title: 'Startseite',
+                checked: 'Die App liest das Dokument ohne Probleme, und die Datei ist so formatiert, wie `oxfmt` sie schreibt.',
+              },
+              layout: {
+                title: 'Layout',
                 checked: 'Die App liest das Dokument ohne Probleme, und die Datei ist so formatiert, wie `oxfmt` sie schreibt.',
               },
               strings: {

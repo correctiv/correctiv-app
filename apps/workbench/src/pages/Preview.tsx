@@ -9,6 +9,7 @@ import { namesFrame } from '../preview/store';
 import { usePreview } from '../preview/Preview';
 import { governs } from '../preview/home/document';
 import { HomeDocument } from '../preview/home/HomeDocument';
+import { NavigationEditor } from '../preview/navigation/NavigationEditor';
 import { useScenario } from '../preview/home/Scenario';
 import { Timeline } from '../preview/home/Timeline';
 import {
@@ -197,6 +198,10 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
           outline={preview.outlineSection}
           scenario={scenario}
         />
+      </Slot>
+
+      <Slot id="navigation">
+        <NavigationEditor onReload={preview.onReload} />
       </Slot>
 
       {/* Two marks on the rail, and nothing on the other five. A tool whose

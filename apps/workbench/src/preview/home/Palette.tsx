@@ -14,6 +14,7 @@ import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 // declaration against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in
 // both directions, which is what ADR 0046 §1's "no second list to forget" became.
 import { blocksFor } from '@/lib/home/screens';
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
@@ -113,12 +114,15 @@ const COPY = defineMessages({
 export function InsertMark({
   where,
   deviceWidth,
+  screen,
   onAdd,
 }: {
   /** Said in words, for the dialog and for the mark's own label: "at the top", "after X". */
   where: string;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
+  /** The screen being edited: the palette offers the blocks that declare it (ADR 0054 §2). */
+  screen: ConfigurableScreen;
   onAdd: (module: string) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -209,14 +213,14 @@ export function InsertMark({
         */}
         <AppHost>
           <ul className="mt-s grid grid-cols-1 gap-xs sm:grid-cols-2">
-            {/* The screen this tool edits. One value today, and the reason it is written
-                rather than left implicit is ADR 0054 §2: the second screen should be a
-                change to this line and not a discovery about what the palette meant. */}
-            {blocksFor('home').map((module) => (
+            {/* The blocks that declare the screen being edited (ADR 0054 §2), which is
+                what the second screen was always going to change on this line. */}
+            {blocksFor(screen).map((module) => (
               <Specimen
                 key={module}
                 module={module}
                 deviceWidth={deviceWidth}
+                screen={screen}
                 onPick={() => {
                   onAdd(module);
                   setOpen(false);
@@ -247,10 +251,12 @@ export function InsertMark({
 function Specimen({
   module,
   deviceWidth,
+  screen,
   onPick,
 }: {
   module: string;
   deviceWidth: number;
+  screen: ConfigurableScreen;
   onPick: () => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -303,7 +309,7 @@ function Specimen({
           </span>
         </div>
         <div className={cn('w-full overflow-hidden bg-canvas', SPECIMEN)}>
-          <HomeBlock section={section} deviceWidth={deviceWidth} />
+          <HomeBlock section={section} deviceWidth={deviceWidth} screen={screen} />
         </div>
       </div>
     </li>

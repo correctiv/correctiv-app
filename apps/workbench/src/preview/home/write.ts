@@ -4,17 +4,15 @@ import {
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
 
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+
 import docsModule from 'virtual:docs';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
-import { issueAddress, issueFor } from '../submission';
-import {
-  differs,
-  formatLayoutDocument,
-  HOME_LAYOUT_ENDPOINT,
-  HOME_LAYOUT_KEY,
-  SHIPPED,
-} from './document';
+import { issueAddress, issueFor, layoutPayload } from '../submission';
+import { differs, formatLayoutDocument, HOME_LAYOUT_ENDPOINT } from './document';
+import { layoutKey } from './names';
+import { SCREEN_NAMES, shippedOf } from './screens';
 
 /**
  * The three ways a change leaves the page: into the running app, into a GitHub issue that
@@ -40,10 +38,10 @@ import {
  * that is written once and then matches for ever is a state nobody can see and nobody
  * clears.
  */
-export function publish(layout: HomeLayout): void {
+export function publish(layout: HomeLayout, screen: ConfigurableScreen = 'home'): void {
   try {
-    if (!differs(layout)) window.localStorage.removeItem(HOME_LAYOUT_KEY);
-    else window.localStorage.setItem(HOME_LAYOUT_KEY, formatLayoutDocument(layout));
+    if (!differs(layout, shippedOf(screen))) window.localStorage.removeItem(layoutKey(screen));
+    else window.localStorage.setItem(layoutKey(screen), formatLayoutDocument(layout));
   } catch {
     // Site data switched off. Nothing can be previewed, and nothing may throw.
   }
@@ -56,13 +54,14 @@ export function publish(layout: HomeLayout): void {
  * the editor's vocabulary cannot express a broken document, so opening on one would give
  * a person a list they can move around and never make valid.
  */
-export function restore(): HomeLayout {
+export function restore(screen: ConfigurableScreen = 'home'): HomeLayout {
+  const shipped = shippedOf(screen);
   try {
-    const raw = window.localStorage.getItem(HOME_LAYOUT_KEY);
-    if (raw === null) return SHIPPED;
-    return restorable(JSON.parse(raw)) ?? SHIPPED;
+    const raw = window.localStorage.getItem(layoutKey(screen));
+    if (raw === null) return shipped;
+    return restorable(JSON.parse(raw), screen) ?? shipped;
   } catch {
-    return SHIPPED;
+    return shipped;
   }
 }
 
@@ -77,8 +76,11 @@ export function restore(): HomeLayout {
  * other problem still refuses, and so does a version from a later editor, whose document
  * this one may not be able to write back whole.
  */
-export function restorable(document: unknown): HomeLayout | null {
-  const { layout, problems } = parseHomeLayout(document);
+export function restorable(
+  document: unknown,
+  screen: ConfigurableScreen = 'home',
+): HomeLayout | null {
+  const { layout, problems } = parseHomeLayout(document, undefined, screen);
   if (!layout) return null;
   const older = layout.version < HOME_LAYOUT_VERSION;
   const only = problems.every((problem) => older && problem.code === 'version-unknown');
@@ -133,12 +135,25 @@ const COPY = {
     description:
       'The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list.',
   }),
+  issueHeadingScreen: wbMessage({
+    id: 'home.issue.headingScreen',
+    defaultMessage: 'Changes to the {screen} screen',
+    description:
+      'The title of the GitHub issue Submit changes opens for a screen other than Home, after a fixed tag in square brackets that is not translated. {screen} is the screen’s own name, such as Entdecken, which is not translated either. home.issue.heading is the same sentence for Home.',
+  }),
   issueLead: wbMessage({
     id: 'home.issue.lead',
     defaultMessage:
       'This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.',
     description:
       'The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English.',
+  }),
+  issueLeadLayout: wbMessage({
+    id: 'home.issue.leadLayout',
+    defaultMessage:
+      'This change to a screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.',
+    description:
+      'The first paragraph of the GitHub issue Submit changes opens for a screen other than Home, above the document. home.issue.lead is the same sentence for Home. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English.',
   }),
   issueHelp: wbMessage({
     id: 'home.issue.help',
@@ -180,9 +195,13 @@ export const canSave: boolean = import.meta.env.DEV;
  * person reads follow the language setting without this module importing React.
  * `nav.ts` passes a formatter the same way and for the same reason.
  */
-export async function save(layout: HomeLayout, format: Format): Promise<SaveResult> {
+export async function save(
+  layout: HomeLayout,
+  format: Format,
+  screen: ConfigurableScreen = 'home',
+): Promise<SaveResult> {
   try {
-    const response = await fetch(HOME_LAYOUT_ENDPOINT, {
+    const response = await fetch(`${HOME_LAYOUT_ENDPOINT}?screen=${screen}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: formatLayoutDocument(layout),
@@ -233,16 +252,32 @@ export interface Submit {
   body: string;
 }
 
-export function submission(layout: HomeLayout, format: Format): Submit {
+export function submission(
+  layout: HomeLayout,
+  format: Format,
+  screen: ConfigurableScreen = 'home',
+): Submit {
   // Minified: the printed document spends most of its address on indentation, measured
   // at 2,112 against 1,320 encoded characters for the shipped day. CI prints it again
   // with `formatLayoutDocument`, so what reaches the repository is formatted either way,
   // and one line of JSON is still readable to a maintainer looking at the issue.
   const payload = JSON.stringify(JSON.parse(formatLayoutDocument(layout)));
-  const issue = issueFor('home', payload, {
-    heading: format(COPY.issueHeading),
-    lead: format(COPY.issueLead),
-  });
+  // Home keeps its own kind and its bare document; every other screen goes in an envelope
+  // that names it, because the payload is all the workflow reads (ADR 0061 §2).
+  const home = screen === 'home';
+  const name = SCREEN_NAMES[screen];
+  const issue = issueFor(
+    home ? 'home' : 'layout',
+    home ? payload : layoutPayload(screen, payload),
+    {
+      heading: home
+        ? format(COPY.issueHeading)
+        : format(COPY.issueHeadingScreen, {
+            screen: typeof name === 'string' ? name : format(name),
+          }),
+      lead: format(home ? COPY.issueLead : COPY.issueLeadLayout),
+    },
+  );
   const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));
   return { href, fits, body: issue.body };
 }

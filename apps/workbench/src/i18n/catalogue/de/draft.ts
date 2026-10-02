@@ -5,7 +5,7 @@
 export const draft: Record<string, string> = {
   'draft.active': 'Entwurf aktiv',
   'draft.stringsChanged': '{count, plural, one {# Text geändert} other {# Texte geändert}}',
-  'draft.layoutChanged': 'Startseite geändert',
+  'draft.layoutChanged': 'Bildschirm-Layout geändert',
   'draft.discardStrings': 'Texte verwerfen',
-  'draft.discardLayout': 'Startseite verwerfen',
+  'draft.discardLayout': 'Bildschirm-Layouts verwerfen',
 };

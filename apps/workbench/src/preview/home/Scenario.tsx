@@ -9,7 +9,7 @@ import { Select } from '../../ui/kit/select';
 import { layoutOf, SCENARIOS, scenarioNamed, type Scenario } from '../scenarios';
 import type { PreviewState } from '../state';
 import { arriving, entering, exiting, heldOf, leaving, loading, type Held } from './scenario';
-import { getLayout, setLayout } from './store';
+import { getLayout, setLayout, setScreen } from './store';
 
 /**
  * Everything the scenario list says, in ENGLISH; the German that ships is
@@ -115,6 +115,8 @@ export function useScenario(
     const entered = scenarioNamed(to);
     const layout = entered ? layoutOf(entered) : null;
     if (!entered || !layout) return;
+    // A scenario is Home's document: it is never loaded over another screen's.
+    setScreen('home');
     const arrival = arriving(getLayout(), layout);
     if (arrival === 'load') setLayout(layout);
     if (arrival === 'ask') setAsking(entered);
@@ -138,11 +140,13 @@ export function useScenario(
         return;
       }
       held.current ??= heldOf(state);
+      setScreen('home');
       onChange(entering(scenario, state, arriving(getLayout(), layout)));
     },
     replace: () => {
       const layout = asking ? layoutOf(asking) : null;
       if (asking && layout) {
+        setScreen('home');
         setLayout(layout);
         // Its time and session only now, once the person has said to load it.
         onChange(loading(asking));

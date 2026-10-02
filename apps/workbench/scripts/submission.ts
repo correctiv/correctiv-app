@@ -74,6 +74,7 @@ export type RefusalCode =
   | 'not-json'
   | 'refused'
   | 'unchanged'
+  | 'layout-target'
   | 'not-wordings'
   | 'texts-too-large'
   | 'texts-refused'
@@ -136,6 +137,8 @@ export function refusalText(refusal: Refusal): string {
       return `Die App würde dieses Dokument nicht so zeichnen, wie es geschrieben ist. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'unchanged':
       return 'Die eingereichte Startseite ist dieselbe, die schon im Repository steht. Es gibt nichts zu ändern.';
+    case 'layout-target':
+      return `Der Block im Issue ist kein Dokument, wie die Workbench es für einen Bildschirm oder die Navigation schreibt: Erwartet ist ein Objekt mit \`target\` und \`document\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'not-wordings':
       return `Der Block im Issue ist keine Liste von Texten, wie die Workbench sie schreibt: Erwartet ist ein Objekt aus Text-ID und deutschem Wortlaut, mit mindestens einem Eintrag. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'texts-too-large':
@@ -265,7 +268,7 @@ export function applyHome(payload: string, current: string): AppliedHome {
 }
 
 /** Every module the app can draw, as the editor names them. */
-const RENDERABLE: ReadonlySet<string> = new Set(Object.keys(MODULE_LABELS));
+export const RENDERABLE: ReadonlySet<string> = new Set(Object.keys(MODULE_LABELS));
 
 /** What the repository holds now, or an empty day if it holds nothing readable. */
 function readLayout(text: string): HomeLayout {

@@ -7,6 +7,5 @@
     { "id": "atlas", "module": "atlas-card" },
     { "id": "tip", "module": "tip-card" },
     { "id": "community", "module": "community-note" }
-  ],
-  "moments": []
+  ]
 }

@@ -115,7 +115,7 @@ export const home: Record<string, string> = {
   'home.timeline.dayAfter': 'Der Tag danach',
   'home.timeline.zoom': 'Zeitraum',
   'home.timeline.zoomHelp':
-    'Woche und Monat zeigen jede Ausgabe als Balken. Klicken Sie auf einen Tag, um ihn im Rahmen zu sehen, und auf einen Balken, um seine Ausgabe zu bearbeiten. Ist das „Startseiten-Layout“ offen, legt Ziehen über mehrere Tage eine Ausgabe für diese Tage an. Mit der Tastatur: Die Pfeiltasten wählen einen Tag, Umschalt und Pfeiltaste erweitern die Auswahl, die Eingabetaste legt die Ausgabe an.',
+    'Woche und Monat zeigen jede Ausgabe als Balken. Klicken Sie auf einen Tag, um ihn im Rahmen zu sehen, und auf einen Balken, um seine Ausgabe zu bearbeiten. Ist das „Bildschirm-Layout“ offen, legt Ziehen über mehrere Tage eine Ausgabe für diese Tage an. Mit der Tastatur: Die Pfeiltasten wählen einen Tag, Umschalt und Pfeiltaste erweitern die Auswahl, die Eingabetaste legt die Ausgabe an.',
   'home.timeline.zoomDay': 'Tag',
   'home.timeline.zoomWeek': 'Woche',
   'home.timeline.zoomMonth': 'Monat',
@@ -157,6 +157,13 @@ export const home: Record<string, string> = {
   'home.document.rule':
     'Ein Moment enthält nur, was sich zu dieser Uhrzeit ändert. Alles andere bleibt wie vorher.',
   'home.document.follow': 'Den Rahmen zu dem Block scrollen, auf den Sie zeigen',
+  'home.document.screen': 'Bildschirm',
+  'home.document.screenLocked':
+    'Ein Szenario ist ein Dokument der Startseite, deshalb bleibt der Bildschirm auf Home, solange eines offen ist.',
+  'home.screen.home': 'Home',
+  'home.issue.headingScreen': 'Änderungen am Bildschirm {screen}',
+  'home.issue.leadLayout':
+    'Diese Änderung an einem Bildschirm kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
   'home.document.revert': 'Änderungen verwerfen',
   'home.document.submit': 'Änderungen einreichen',
   'home.document.submitHint':
