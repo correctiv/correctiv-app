@@ -94,7 +94,7 @@ import {
   type Instant,
 } from './berlin-time';
 import { audienceOf, isAudience, reaches, type Audience, type Reader } from './home-audience';
-import { MODULE_SETTINGS, type SettingSpec } from './home-settings';
+import { faultOf, MODULE_SETTINGS, type LocalisedText, type SettingFault } from './home-settings';
 import { mayAppearOn } from './block-category';
 import { SCREEN_DOCUMENTS, type ConfigurableScreen } from './screen-layout';
 
@@ -147,8 +147,13 @@ export const MINUTES_IN_DAY = 24 * 60;
  * item it is ADR 0036 §3's "no override, so the rule runs", which is the thing an editor
  * needs to be able to say back. `home-settings.ts` is where a module declares which keys
  * it understands and what each one may hold.
+ *
+ * The one value that is not a scalar is the `text` setting's (ADR 0075 §1): a word is an
+ * object keyed by language, so the type has grown rather than the parser having found
+ * something to flatten. Everything below that reads a value still answers for all of them —
+ * `null` stays a value and not an absence, and a change still merges key by key.
  */
-export type SettingValue = string | number | boolean | null;
+export type SettingValue = string | number | boolean | null | LocalisedText;
 export type ModuleSettings = Readonly<Record<string, SettingValue>>;
 
 /**
@@ -297,6 +302,13 @@ const EDITION_KEYS: Record<Exclude<keyof HomeEdition, 'start' | 'end'>, true> = 
  * and not what to say about it. `context` is what was already in hand — an index, an id,
  * a time, the offending name — and matches `ErrorReport['context']` so it can be handed
  * over unchanged.
+ *
+ * The five text codes are one code per rule
+ * ([ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §1) rather than one code for all of them, because a newsroom holding a refused document
+ * cannot act on "invalid" and can act on "the language `fr` is not one this app knows".
+ * They come from `faultOf` in `home-settings.ts`, which is where the rules live; this file
+ * only says where the setting was found.
  */
 export type LayoutProblemCode =
   | 'document-not-an-object'
@@ -314,6 +326,11 @@ export type LayoutProblemCode =
   | 'section-settings-invalid'
   | 'section-setting-unknown'
   | 'section-setting-invalid'
+  | 'section-setting-language-unknown'
+  | 'section-setting-german-missing'
+  | 'section-setting-too-long'
+  | 'section-setting-control-character'
+  | 'section-setting-line-break'
   | 'module-unrecognised'
   | 'moments-not-an-array'
   | 'moment-not-an-object'
@@ -333,6 +350,11 @@ export type LayoutProblemCode =
   | 'change-settings-invalid'
   | 'change-setting-unknown'
   | 'change-setting-invalid'
+  | 'change-setting-language-unknown'
+  | 'change-setting-german-missing'
+  | 'change-setting-too-long'
+  | 'change-setting-control-character'
+  | 'change-setting-line-break'
   | 'editions-not-an-array'
   | 'edition-not-an-object'
   | 'edition-id-invalid'
@@ -608,6 +630,42 @@ function parseAudiences(
 const REFUSED = Symbol('settings refused');
 
 /**
+ * Which half of the document a setting was found in, and so which half of the vocabulary
+ * its fault is reported in.
+ */
+type SettingWhere = 'section' | 'change';
+
+/**
+ * The code each fault is reported under, per half of the vocabulary.
+ *
+ * One table, because the fault names are in `home-settings.ts` and the codes are here:
+ * this file owns where a setting was found, that package owns what may be in one. A
+ * setting nobody understands and a value a spec refuses are both reported — and both cost
+ * their own section (ADR 0036 §6, and the reason under the drop), so the answer to either
+ * is that the place is gone and the rest of the screen is not.
+ */
+const SETTING_FAULT_CODES: Readonly<
+  Record<SettingWhere, Readonly<Record<SettingFault, LayoutProblemCode>>>
+> = {
+  section: {
+    invalid: 'section-setting-invalid',
+    'text-language-unknown': 'section-setting-language-unknown',
+    'text-german-missing': 'section-setting-german-missing',
+    'text-too-long': 'section-setting-too-long',
+    'text-control-character': 'section-setting-control-character',
+    'text-line-break': 'section-setting-line-break',
+  },
+  change: {
+    invalid: 'change-setting-invalid',
+    'text-language-unknown': 'change-setting-language-unknown',
+    'text-german-missing': 'change-setting-german-missing',
+    'text-too-long': 'change-setting-too-long',
+    'text-control-character': 'change-setting-control-character',
+    'text-line-break': 'change-setting-line-break',
+  },
+};
+
+/**
  * A settings object against what its module understands, or `REFUSED`.
  *
  * `undefined` in and `undefined` out is the common case and the short line in the
@@ -618,7 +676,7 @@ function parseSettings(
   raw: unknown,
   module: string,
   id: string,
-  where: 'section' | 'change',
+  where: SettingWhere,
   problems: LayoutProblem[],
   /** Which edition the change is in, when it is in one; nothing for the day. */
   scope: Readonly<Record<string, string>> = {},
@@ -646,9 +704,14 @@ function parseSettings(
       refused = true;
       continue;
     }
-    if (!holds(spec, value)) {
+    const fault = faultOf(spec, value);
+    if (fault) {
+      // A word where a count belongs is reported like any other value a spec refuses, and
+      // not quietly taken out of the settings: the place is gone either way, and a
+      // document that says something the app cannot draw must not be able to look like one
+      // that merely left it out (ADR 0036 §6).
       problems.push({
-        code: where === 'section' ? 'section-setting-invalid' : 'change-setting-invalid',
+        code: SETTING_FAULT_CODES[where][fault],
         context: { ...scope, id, key, type: typeOf(value) },
       });
       refused = true;
@@ -659,27 +722,6 @@ function parseSettings(
 
   if (refused) return REFUSED;
   return Object.keys(out).length === 0 ? undefined : out;
-}
-
-/** Whether a value is one the spec's kind admits. */
-function holds(spec: SettingSpec, value: unknown): boolean {
-  switch (spec.kind) {
-    case 'article':
-      // `null` is the value that means ADR 0036 §3's rule runs, not an absent setting.
-      return value === null || (typeof value === 'string' && value.length > 0);
-    case 'count':
-      return (
-        typeof value === 'number' &&
-        Number.isInteger(value) &&
-        value >= spec.min &&
-        value <= spec.max
-      );
-    case 'category':
-    case 'tag':
-      // A WordPress term id, or `null` for "no term"; never `0` and never a slug, which
-      // is editable where an id is not (`data/feeds.config.ts`).
-      return value === null || (typeof value === 'number' && Number.isInteger(value) && value > 0);
-  }
 }
 
 /**
