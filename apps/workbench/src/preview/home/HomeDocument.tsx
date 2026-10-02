@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import {
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -27,11 +26,9 @@ import {
   type Audience,
 } from '@correctiv/app-core/lib/home-audience';
 import {
-  MINUTES_IN_DAY,
   stateAtInstant,
   type HomeChange,
   type HomeEdition,
-  type HomeLayout,
   type HomeSection,
   type MinuteOfDay,
 } from '@correctiv/app-core/lib/home-layout';
@@ -57,12 +54,11 @@ import { DEFAULT_DEVICE, preset } from '../devices';
 import { entitlementIn, sessionSnapshot, subscribeSession } from '../frame/seed';
 import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
 import { InsertMark } from './Palette';
 import { EDITION_COPY, EditionHead, inkOf, nameOf, Warning } from './Edition';
-import { openedAt, parseMinute, playheadFrom, STEP, timeAt } from './minutes';
+import { openedAt, playheadFrom, timeAt } from './minutes';
 import {
   changedAt,
   changeHeldAt,
@@ -97,15 +93,10 @@ import {
   type SettingSpec,
 } from './document';
 import { guarded as isGuarded } from './scenario';
-import { ScenarioBar, type ScenarioControl } from './Scenario';
-import {
-  CONFIGURABLE_SCREENS,
-  isScreen,
-  screenOfRoute,
-  SCREEN_NAMES,
-  SCREEN_ROUTES,
-  shippedOf,
-} from './screens';
+import { CONTROLS_COPY, EditorBar, PointChip } from './Controls';
+import { GUTTER, rowWidth } from './fit';
+import type { ScenarioControl } from './Scenario';
+import { screenOfRoute, SCREEN_ROUTES, shippedOf, type ConfigurableScreen } from './screens';
 import { getLayout, getScreen, setLayout, setScreen, subscribeLayout } from './store';
 import { copyNow } from '../clipboard';
 import { canSave, publish, save, submission, type SaveResult } from './write';
@@ -183,43 +174,6 @@ import { canSave, publish, save, submission, type SaveResult } from './write';
  * name for.
  */
 const COPY = defineMessages({
-  rule: {
-    id: 'home.document.rule',
-    defaultMessage:
-      'A moment holds only what changes at that time. Everything else carries on as before.',
-    description:
-      'Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state.',
-  },
-  follow: {
-    id: 'home.document.follow',
-    defaultMessage: 'Scroll the frame to the block you point at',
-  },
-  screen: {
-    id: 'home.document.screen',
-    defaultMessage: 'Screen',
-    description:
-      'The label of the picker at the top of the layout tool, which chooses which of the app’s screens is being edited. One word, beside a drop-down.',
-  },
-  screenLocked: {
-    id: 'home.document.screenLocked',
-    defaultMessage: 'A scenario is a Home document, so the screen stays on Home while one is open.',
-    description:
-      'Under the screen picker while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens.',
-  },
-  submitHint: {
-    id: 'home.document.submitHint',
-    defaultMessage:
-      'GitHub opens with your change filled in. One click on “Create” submits it. You need a GitHub account.',
-    description:
-      'The one line under Submit changes. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English.',
-  },
-  submitHintLong: {
-    id: 'home.document.submitHintLong',
-    defaultMessage:
-      'This change is too long for a link. The click copies it to your clipboard, and you paste it in on GitHub. You need a GitHub account.',
-    description:
-      'Stands in for home.document.submitHint when the change is too long to travel in the address, so it has to go by the clipboard.',
-  },
   submitCopied: {
     id: 'home.document.submitCopied',
     defaultMessage: 'The change is on your clipboard. Paste it into the issue on GitHub.',
@@ -235,58 +189,11 @@ const COPY = defineMessages({
     description:
       'The name read out for the field that holds the issue’s text when the clipboard was refused.',
   },
-  scenarioGuard: {
-    id: 'home.document.scenarioGuard',
-    defaultMessage: 'Scenarios are examples. They are not submitted.',
-    description:
-      'Under the switched-off Submit changes, and under the switched-off Save on a dev server, while a scenario is open or the document still holds one. Submitting or saving it would publish the example on every phone.',
-  },
   refused: {
     id: 'home.document.refused',
     defaultMessage: 'refused',
     description:
       'The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated.',
-  },
-
-  midnight: {
-    id: 'home.point.midnight',
-    defaultMessage: 'midnight',
-    description:
-      'Stands where a time of day would, for the end of the last stretch of the day. Reads inside home.point.startLead and home.point.span.',
-  },
-  pointStart: {
-    id: 'home.point.start',
-    defaultMessage: 'The day’s start',
-    description:
-      'Names the point being edited when it is the document itself rather than one of its moments.',
-  },
-  pointStartLead: {
-    id: 'home.point.startLead',
-    defaultMessage: 'from midnight until {until}',
-    description:
-      'Beside the day’s start, the way home.point.span stands beside a moment: how long it lasts. {until} is the time the first moment takes over, as 18:30, or the word for midnight where there is none. That every moment builds on it is behind the ⓘ beside it, home.document.rule.',
-  },
-  pointTime: {
-    id: 'home.point.time',
-    defaultMessage: 'The time of this moment',
-    description: 'The label of the time field at the head of the editor. Read aloud, not drawn.',
-  },
-  pointSpan: {
-    id: 'home.point.span',
-    defaultMessage:
-      'until {until} · {changes, plural, =0 {nothing changes here yet} other {# changed here}}',
-    description:
-      'Beside the time field: how long this moment lasts and how much it changes. {until} is when the next point takes over, as 18:30, or the word for midnight; {changes} is how many blocks this moment differs on.',
-  },
-  pointRemove: {
-    id: 'home.point.remove',
-    defaultMessage: 'Remove the moment at {time}',
-    description:
-      'The accessible name of the button that deletes the moment being edited. {time} is its time of day, as 18:30.',
-  },
-  noMoments: {
-    id: 'home.point.noMoments',
-    defaultMessage: 'This day has no moments. The home screen looks the same all day.',
   },
 
   rowOff: {
@@ -494,24 +401,6 @@ interface Carry {
   y: number;
 }
 
-/** The dock's ground is `surface`, so a card inside it steps back to `canvas`. */
-const CARD = 'rounded-md border border-stroke bg-canvas';
-
-/**
- * The strip down the left of every block, which is the one thing the list keeps that the
- * app has not got.
- *
- * ADR 0053 §1 makes the list the screen, and the hazard that comes with it is a list that
- * is mistaken for the app — the frame is a foot to the right and it is the one that
- * answers a tap. So the column is not flush with the panel: it stands beside a gutter
- * carrying the handle and the two marks a person may not have to hover to see, and that
- * gutter is what says, without a word, that this is an editor rather than a screen.
- *
- * A number because the block column is sized against it: `wide` below is the phone plus
- * this, so a drawing at a scale of 1 leaves the marks their own room instead of standing
- * under them.
- */
-const GUTTER = 26;
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
@@ -575,8 +464,6 @@ export function HomeDocument({
    */
   const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
   const copyField = useRef<HTMLTextAreaElement>(null);
-  const screenSelectId = useId();
-  const submitHintId = useId();
   /**
    * Whether the frame scrolls to the block under the pointer.
    *
@@ -1044,98 +931,63 @@ export function HomeDocument({
   return (
     <>
       {/*
-        The document's own bar: first in the panel, and held at the top of it while the list
-        scrolls. It says whether the document differs from the file, offers the way back to
-        the file, and offers the way out (ADR 0061 §1). It used to sit under the whole list,
-        which put the one action that matters a scroll away from every block it was about.
-
-        `sticky` against the panel's own scroller, and the only sticky thing in it, so the
-        warning in `ui/Lookup.tsx` about a second sticky row inside something already fixed
-        does not apply. The negative margins take back the panel's padding, so the bar spans
-        the panel and its border meets both edges.
-
-        Two rows at the panel's width, and that is what keeps Back to the file apart from
-        Submit changes: one throws work away, the other sends it, and an outline button
-        beside a filled one at the same size reads as "pick either". So the status and the
-        way back share the first row, and Submit changes has the second to itself, at the
-        panel's full width, with the one line that says what it does under it.
+        The document's own bar and the point's chip. `Controls.tsx` holds both and
+        says why they are a file of their own; what the panel needs from here is the
+        state they draw, and the two callbacks they call back into.
       */}
-      <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
-        <div className="flex items-center gap-xs">
-          <label htmlFor={screenSelectId} className="shrink-0 text-s text-on-canvas">
-            {intl.formatMessage(COPY.screen)}
-          </label>
-          <Select
-            id={screenSelectId}
-            className="flex-1"
-            value={screen}
-            disabled={guarded}
-            onValueChange={(value) => {
-              if (!isScreen(value)) return;
-              setScreen(value);
-              onChange({ route: SCREEN_ROUTES[value] });
-            }}
-            options={CONFIGURABLE_SCREENS.map((of) => ({
-              value: of,
-              label: say(intl, SCREEN_NAMES[of]),
-            }))}
-          />
-        </div>
-        {guarded && <p className={NOTE}>{intl.formatMessage(COPY.screenLocked)}</p>}
-        {screen === 'home' && <ScenarioBar control={scenario} />}
-        <p id={submitHintId} className={NOTE}>
-          {intl.formatMessage(
-            guarded
-              ? COPY.scenarioGuard
-              : offer && !offer.fits
-                ? COPY.submitHintLong
-                : COPY.submitHint,
-          )}
-        </p>
-
-        {offer && copied !== null && (
-          <div className="flex flex-col gap-xs">
-            <output className="flex items-start gap-xs text-s text-on-canvas">
-              {copied === 'copied' && (
-                <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
-              )}
-              <span className="min-w-0">
-                {intl.formatMessage(
-                  copied === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+      <EditorBar
+        screen={screen}
+        guarded={guarded}
+        onScreen={(next) => {
+          setScreen(next);
+          onChange({ route: SCREEN_ROUTES[next] });
+        }}
+        scenario={scenario}
+        follow={follow}
+        onFollow={setFollow}
+        submitHint={
+          guarded
+            ? CONTROLS_COPY.scenarioGuard
+            : offer && !offer.fits
+              ? CONTROLS_COPY.submitHintLong
+              : CONTROLS_COPY.submitHint
+        }
+        outcome={
+          offer && copied !== null ? (
+            <div className="flex flex-col gap-xs">
+              <output className="flex items-start gap-xs text-s text-on-canvas">
+                {copied === 'copied' && (
+                  <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
                 )}
-              </span>
-            </output>
-            {copied === 'no-clipboard' && (
-              <textarea
-                ref={copyField}
-                readOnly
-                aria-label={intl.formatMessage(COPY.documentField)}
-                value={offer.body}
-                rows={8}
-                onFocus={(event) => event.currentTarget.select()}
-                className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      <label className="flex items-center gap-2xs text-s text-on-canvas">
-        <input
-          type="checkbox"
-          checked={follow}
-          onChange={(event) => setFollow(event.target.checked)}
-          className="size-[0.875rem] shrink-0 accent-accent"
-        />
-        {intl.formatMessage(COPY.follow)}
-      </label>
+                <span className="min-w-0">
+                  {intl.formatMessage(
+                    copied === 'copied' ? COPY.submitCopied : COPY.submitNoClipboard,
+                  )}
+                </span>
+              </output>
+              {copied === 'no-clipboard' && (
+                <textarea
+                  ref={copyField}
+                  readOnly
+                  aria-label={intl.formatMessage(COPY.documentField)}
+                  value={offer.body}
+                  rows={8}
+                  onFocus={(event) => event.currentTarget.select()}
+                  className={cn(FIELD, 'font-mono text-[0.75rem] leading-snug')}
+                />
+              )}
+            </div>
+          ) : null
+        }
+      />
 
       {target.edition === null ? (
-        <PointHead
+        <PointChip
           layout={layout}
           point={point}
           span={span}
           changes={moment?.changes.length ?? 0}
+          landsOn={EDITION_COPY.landsOnDay}
           onMove={(to) => {
             if (point === null) return;
             setLayout(movedMoment(layout, point, to));
@@ -1188,8 +1040,13 @@ export function HomeDocument({
            * otherwise stand in a row half again its size with the controls floating out in
            * the empty half. `Stage.tsx` centres the device frame with `m-auto` for the same
            * reason, and this is the list's version of it.
+           *
+           * `rowWidth`, which is also what `shell/views.ts` sizes the panel by — the panel
+           * opens at the row's width, so at its default the row fills it and `fit()`'s
+           * centring has nothing to centre. A person who drags the panel wider gets the
+           * centring back, which is the case the rule was written for.
            */
-          style={{ maxWidth: deviceWidth + GUTTER }}
+          style={{ maxWidth: rowWidth(deviceWidth) }}
         >
           {layout.sections.map((section, index) => (
             <Row
@@ -1281,107 +1138,6 @@ export function HomeDocument({
         </p>
       )}
     </>
-  );
-}
-
-/**
- * Which point is being edited, how long it lasts, and what can be done to it.
- *
- * The day's start is not a moment and the head says so rather than dressing it up as
- * one: it cannot be moved, because there is nothing before midnight for it to inherit
- * from, and it cannot be removed, because it is the document.
- */
-function PointHead({
-  layout,
-  point,
-  span,
-  changes,
-  onMove,
-  onRemove,
-}: {
-  layout: HomeLayout;
-  point: Point;
-  span: { from: number; to: number };
-  changes: number;
-  onMove: (to: MinuteOfDay) => void;
-  onRemove: () => void;
-}) {
-  const intl = useWorkbenchIntl();
-  const until =
-    span.to === MINUTES_IN_DAY ? intl.formatMessage(COPY.midnight) : formatTimeOfDay(span.to);
-
-  return (
-    <div className={cn(CARD, 'flex flex-wrap items-center gap-xs p-xs')}>
-      {point === null ? (
-        <>
-          <span className="text-m font-semibold text-on-canvas">
-            {intl.formatMessage(COPY.pointStart)}
-          </span>
-          <span className={NOTE}>
-            {intl.formatMessage(COPY.pointStartLead, { until })}{' '}
-            <RuleTip about={intl.formatMessage(COPY.pointStart)} />
-          </span>
-        </>
-      ) : (
-        <>
-          <label className="flex items-center gap-2xs">
-            <span className="sr-only">{intl.formatMessage(COPY.pointTime)}</span>
-            <input
-              type="time"
-              step={STEP * 60}
-              value={formatTimeOfDay(point)}
-              onChange={(event) => {
-                const next = parseMinute(event.target.value);
-                if (next !== null) onMove(next);
-              }}
-              className={cn(FIELD, 'font-mono text-m font-semibold')}
-            />
-          </label>
-          <span className={NOTE}>
-            {intl.formatMessage(COPY.pointSpan, { until, changes })}{' '}
-            <RuleTip about={intl.formatMessage(COPY.pointTime)} />
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="ml-auto size-[2rem]"
-            aria-label={intl.formatMessage(COPY.pointRemove, { time: formatTimeOfDay(point) })}
-            onClick={onRemove}
-          >
-            <Trash2 aria-hidden="true" />
-          </Button>
-        </>
-      )}
-      {point === null && layout.moments.length === 0 && (
-        <span className={cn(NOTE, 'w-full')}>{intl.formatMessage(COPY.noMoments)}</span>
-      )}
-      {/*
-        Which layer an edit lands on, said every time and not only when it is an edition:
-        a line that appears only sometimes is a line nobody learns to look for (ADR 0059
-        §2). `Edition.tsx` says the other half of it.
-      */}
-      <span className="w-full text-s font-medium text-on-canvas">
-        {intl.formatMessage(EDITION_COPY.landsOnDay)}
-      </span>
-    </div>
-  );
-}
-
-/**
- * The rule that makes the rest legible and that nothing on screen states: a moment holds
- * the difference and not the state.
- *
- * It was the one sentence left above the editor, out of four. The other three described
- * the track, the list and the frame, which a reader is looking at while they read that
- * they are looking at them. This one is background, which is wanted once, so it waits in
- * the head of the point it is about.
- */
-function RuleTip({ about }: { about: string }) {
-  const intl = useWorkbenchIntl();
-  return (
-    <InfoTip about={about} align="end">
-      <p>{intl.formatMessage(COPY.rule)}</p>
-    </InfoTip>
   );
 }
 

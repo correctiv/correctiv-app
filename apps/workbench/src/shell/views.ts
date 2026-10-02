@@ -66,6 +66,15 @@ export type ViewKind =
   | 'preview'
   | 'not-found';
 
+/**
+ * A docked width for the right panel, as `react-resizable-panels` spells one.
+ *
+ * **A number is pixels and a string is a percentage**, which is the library's own
+ * rule and the one `ui/kit/resizable.tsx` repeats: `defaultSize={38}` is
+ * thirty-eight pixels and renders as a sliver rather than as an error.
+ */
+export type PanelWidth = number | string;
+
 export interface ViewDeclaration {
   kind: ViewKind;
   /**
@@ -85,7 +94,25 @@ export interface ViewDeclaration {
   /** The rail and the panel are named this; `null` exactly when `sections` is empty. */
   panelTitle: WorkbenchMessage | null;
   /** Docked width. A heading list wants a fifth, a console wants a third. */
-  panelWidth: '19%' | '24%' | '31%';
+  panelWidth: PanelWidth;
+  /**
+   * The docked width for a particular tool of this view, where a tool wants one
+   * of its own.
+   *
+   * **A share of the window is the wrong unit for a tool whose content has a
+   * natural size.** The layout editor draws a column at the phone's own width
+   * (ADR 0045 §3), so its width is a fact about the drawing rather than about the
+   * window: thirty-one per cent of a 1440px window is right and thirty-one per cent
+   * of a 2560px one is a column with a phone in the middle of it. It is a pixel
+   * width for that reason, and `test/shell/panel-width.test.ts` holds the number
+   * against the three things it is made of: the phone's width, the gutter beside
+   * the drawing, and the panel's own padding.
+   *
+   * **The tool's default, not its width.** Whoever drags the handle says where
+   * the panel goes for good: `App.tsx` remembers that and asks here only when
+   * nothing has been dragged.
+   */
+  toolWidth?: Partial<Record<SectionId, PanelWidth>>;
   /** Whether the header's context bar is filled by this view. */
   contextBar: boolean;
   /** Whether the status line is this view's rather than the file or the title. */
@@ -279,6 +306,11 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
 
   preview: {
     kind: 'preview',
+    // Ten tools, and the layout editor is the one that draws a column at the
+    // phone's own width, so it asks for pixels rather than a share. What it is
+    // made of is in `test/shell/panel-width.test.ts`, which holds the number
+    // against the phone's width, the gutter and the padding.
+    toolWidth: { home: 443 },
     sections: [
       'appearance',
       'state',
@@ -304,6 +336,18 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
     fullWhenNarrow: true,
   },
 };
+
+/**
+ * The width the panel opens at for the tool that is showing, or for the view's
+ * own default when that tool has none.
+ *
+ * **A shut panel has no tool**, so it answers with the view's default: a panel
+ * whose first tool wants its own width should not open wider than it needs just
+ * because the panel was closed.
+ */
+export function panelWidthOf(view: ViewDeclaration, tool: SectionId | null): PanelWidth {
+  return (tool === null ? undefined : view.toolWidth?.[tool]) ?? view.panelWidth;
+}
 
 export interface ResolvedView {
   view: ViewDeclaration;

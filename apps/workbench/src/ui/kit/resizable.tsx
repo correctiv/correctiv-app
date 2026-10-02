@@ -8,6 +8,7 @@ import {
 } from 'react-resizable-panels';
 
 import { cn } from '../../lib/cn';
+import type { PanelWidth } from '../../shell/views';
 
 /** What `panelRef` hands back: `collapse`, `expand`, `resize`, `isCollapsed`. */
 export type PanelHandle = PanelImperativeHandle;
@@ -56,8 +57,10 @@ export const ResizablePanel = Panel;
 export function usePanelState(
   ref: RefObject<PanelHandle | null>,
   open: boolean,
-  width: () => string,
+  width: () => PanelWidth,
   active: boolean,
+  /** A change re-applies the width, for a caller whose width follows the tool. */
+  whenever?: unknown,
 ): void {
   useEffect(() => {
     if (!active) return;
@@ -81,9 +84,10 @@ export function usePanelState(
     apply();
     return () => cancelAnimationFrame(frame);
     // `width` is read at apply time, so a new closure each render must not
-    // re-run this: what it returns is the same string.
+    // re-run this: what it returns is the same size. `whenever` is the one thing
+    // that may change it, and the caller passes the tool for that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, open, ref]);
+  }, [active, open, ref, whenever]);
 }
 
 export function useDragging(): boolean {
