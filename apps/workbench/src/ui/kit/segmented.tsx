@@ -97,28 +97,23 @@ export function Segmented({
               className={cn(
                 'block cursor-pointer rounded-s text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
+                'px-xs py-3xs',
                 /*
-                 * The padding belongs to one variant or the other, and never to
-                 * both.
+                 * An icon segment is a centred box of exactly the same kind
+                 * `ui/kit/button.tsx` is: one child, and nothing beside it for a
+                 * `justify` to argue with.
                  *
-                 * It was both: the base carried `px-xs py-3xs` and the icon
-                 * variant added `p-0`, and **the `p-0` did not win** — measured,
-                 * `padding-left` on an icon segment was 10px and its glyph sat
-                 * 4px right of the middle of its own box. `cn()` is
-                 * tailwind-merge, and tailwind-merge knows Tailwind's spacing
-                 * scale and not this theme's: `xs`, `2xs` and `s` are in no
-                 * conflict group it recognises, so `px-xs` is a class it cannot
-                 * reason about and `p-0` has nothing to displace. `lib/cn.ts`
-                 * names the same hazard for `text-s`; this is its second shape.
-                 *
-                 * So the two shapes choose their own padding rather than one
-                 * overriding the other, and an icon segment is a centred box of
-                 * exactly the same kind `ui/kit/button.tsx` is: one child, and
-                 * nothing beside it for a `justify` to argue with.
+                 * The `p-0` is the base padding being taken back, and it wins —
+                 * measured, it did not: `padding-left` on an icon segment was
+                 * 10px and its glyph sat 4px right of the middle of its own box,
+                 * because `cn()` is tailwind-merge and knew Tailwind's spacing
+                 * scale and not this theme's, so `px-xs` was a class it had no
+                 * opinion about and `p-0` had nothing to displace. `lib/cn.ts`
+                 * names the theme's scales now and this is its second shape,
+                 * after the `text-s` of issue #249; one fix, both shapes, and
+                 * the two variants choose their own padding no longer.
                  */
-                option.icon
-                  ? 'inline-flex size-[1.75rem] items-center justify-center'
-                  : 'px-xs py-3xs',
+                option.icon && 'inline-flex size-[1.75rem] items-center justify-center p-0',
                 value === option.value
                   ? 'bg-accent text-white'
                   : 'text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
