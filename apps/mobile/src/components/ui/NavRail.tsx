@@ -1,82 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { defineMessages, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
 import { Pressable, View } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { tabReachable } from '@/lib/features';
-import { useReachable } from '@/lib/store/core';
+import { tabBar } from '@/lib/navigation/tabBar';
+import { TAB_TARGETS } from '@/lib/tabTargets';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 import { ScaledText } from './ScaledText';
-
-/**
- * The same five ids are declared in `_layout.tsx` and `_layout.web.tsx`.
- * `i18n:extract --throws` fails on one id carrying two different
- * descriptions or defaults, so these are copied verbatim.
- */
-const COPY = defineMessages({
-  home: { id: 'ui.tabHome', defaultMessage: 'Home' },
-  discover: {
-    id: 'ui.tabDiscover',
-    defaultMessage: 'Discover',
-    description:
-      'A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens.',
-  },
-  mediathek: { id: 'ui.tabMediathek', defaultMessage: 'Mediathek' },
-  participate: {
-    id: 'ui.tabParticipate',
-    defaultMessage: 'Take part',
-    description:
-      'A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens.',
-  },
-  profile: {
-    id: 'ui.tabProfile',
-    defaultMessage: 'Profile',
-    description:
-      'A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens.',
-  },
-});
-
-/**
- * The five tab triggers for the rail, in tab order.
- *
- * Icons are Ionicons — the app's own vocabulary — not SF Symbols or Material
- * Symbols. On a tablet the rail is a layout element, not a phone tab bar,
- * and the app's icons are the consistent choice. See ADR 0070 §3.
- */
-const TABS = [
-  {
-    name: 'index',
-    icon: 'home',
-    inactiveIcon: 'home-outline',
-    message: COPY.home,
-  },
-  {
-    name: 'entdecken',
-    icon: 'compass',
-    inactiveIcon: 'compass-outline',
-    message: COPY.discover,
-  },
-  {
-    name: 'mediathek',
-    icon: 'play-circle',
-    inactiveIcon: 'play-circle-outline',
-    message: COPY.mediathek,
-  },
-  {
-    name: 'mitmachen',
-    icon: 'people',
-    inactiveIcon: 'people-outline',
-    message: COPY.participate,
-  },
-  {
-    name: 'profil',
-    icon: 'person',
-    inactiveIcon: 'person-outline',
-    message: COPY.profile,
-  },
-] as const;
 
 export type NavRailProps = {
   /** The active tab's route name. */
@@ -107,7 +39,7 @@ export type NavRailProps = {
 export function NavRail({ active, onSelect, insets }: NavRailProps) {
   const intl = useIntl();
   const colors = useColors();
-  const reachable = useReachable();
+  const { bar } = tabBar();
   const top = insets?.top ?? 0;
   const bottom = insets?.bottom ?? 0;
   return (
@@ -121,13 +53,14 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
     >
       <View className="flex-1 justify-between">
         <View style={{ gap: spacingPx['2xs'] }}>
-          {TABS.filter((tab) => tabReachable(tab.name, reachable)).map((tab) => {
-            const selected = active === tab.name;
+          {bar.tabs.map((name) => {
+            const tab = TAB_TARGETS[name]!;
+            const selected = active === name;
             const tint = selected ? colors.accent : colors['on-canvas-muted'];
             return (
               <Pressable
-                key={tab.name}
-                onPress={() => onSelect(tab.name)}
+                key={name}
+                onPress={() => onSelect(name)}
                 className="items-center justify-center"
                 style={{
                   minHeight: sizes.tapTarget,
@@ -135,10 +68,14 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
                   paddingHorizontal: spacingPx['3xs'],
                 }}
                 accessibilityRole="tab"
-                accessibilityLabel={intl.formatMessage(tab.message)}
+                accessibilityLabel={intl.formatMessage(tab.label)}
                 accessibilityState={{ selected }}
               >
-                <Ionicons name={selected ? tab.icon : tab.inactiveIcon} size={24} color={tint} />
+                <Ionicons
+                  name={selected ? tab.ionicon.active : tab.ionicon.inactive}
+                  size={24}
+                  color={tint}
+                />
                 <ScaledText
                   numberOfLines={1}
                   accessibilityElementsHidden
@@ -151,7 +88,7 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
                     textAlign: 'center',
                   }}
                 >
-                  {intl.formatMessage(tab.message)}
+                  {intl.formatMessage(tab.label)}
                 </ScaledText>
               </Pressable>
             );

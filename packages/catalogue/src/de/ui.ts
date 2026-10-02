@@ -1,6 +1,6 @@
 /**
  * German for the `ui.*` ids: the design system, where a primitive carries a word
- * of its own, and the five tab labels the two tab bars share.
+ * of its own, and the tab labels the tab bars share.
  */
 export const ui: Record<string, string> = {
   'ui.back': 'Zurück',
@@ -9,5 +9,6 @@ export const ui: Record<string, string> = {
   'ui.tabMediathek': 'Mediathek',
   'ui.tabParticipate': 'Mitmachen',
   'ui.tabProfile': 'Profil',
+  'ui.tabMore': 'Mehr',
   'ui.previewDraft': 'Entwurfsvorschau, nicht die veröffentlichte App',
 };

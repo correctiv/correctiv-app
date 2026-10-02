@@ -1015,6 +1015,10 @@
   "ui.tabMediathek": {
     "defaultMessage": "Mediathek"
   },
+  "ui.tabMore": {
+    "defaultMessage": "More",
+    "description": "The last tab when the bar has more destinations than it can show, and the heading of the screen that lists the rest. One short word."
+  },
   "ui.tabParticipate": {
     "defaultMessage": "Take part",
     "description": "A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens."
