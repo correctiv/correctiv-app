@@ -137,7 +137,7 @@ export function ResizableHandle({
       {...props}
     >
       {withHandle && (
-        <span className="z-10 flex h-[1.5rem] w-[0.75rem] items-center justify-center rounded-s border border-stroke bg-surface">
+        <span className="z-10 flex h-[1.5rem] w-[0.75rem] items-center justify-center rounded-sm border border-stroke bg-surface">
           <GripVertical className="size-[0.625rem] text-on-canvas-muted" aria-hidden="true" />
         </span>
       )}

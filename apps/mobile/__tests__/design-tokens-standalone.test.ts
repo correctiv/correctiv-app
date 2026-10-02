@@ -139,12 +139,17 @@ describe('the standalone theme, as a consumer outside this repo sees it', () => 
   });
 
   /**
-   * There is deliberately no `rounded-s` collision check here.
+   * There is deliberately no `rounded-s` collision check HERE.
    *
    * One was written and then removed: it passed whether or not `--radius: initial`
    * was in the theme, because `build()` emits only the candidates it is handed and
-   * the duplicate side utility never arises on this path. A green assertion that
-   * cannot fail is worse than none — the real guard is in tokens.test.ts, and that
-   * one was confirmed red against a generator that stops emitting the line.
+   * the duplicate side utility never arises on this path — this file imports the
+   * theme alone, and the workbench, which is where the collision was measured, adds
+   * an `@theme` of its own after it. A green assertion that cannot fail is worse
+   * than none.
+   *
+   * The guard is `theme-scale-collision.test.ts`, which asks the question the other
+   * way round: it compiles every scale key against Tailwind's DEFAULT theme rather
+   * than against this one, so it does not depend on which consumer is looking.
    */
 });

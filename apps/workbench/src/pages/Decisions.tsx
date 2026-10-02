@@ -28,7 +28,7 @@ import { useSections } from '../ui/useSections';
 const FIGURE = 'whitespace-nowrap font-mono tabular-nums';
 
 const LINK =
-  'rounded-s underline decoration-accent underline-offset-2 hover:text-on-canvas-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  'rounded-sm underline decoration-accent underline-offset-2 hover:text-on-canvas-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 /** What a record chip adds to the kit's outline badge, which it otherwise is. */
 const CHIP_LINK =
@@ -528,7 +528,7 @@ function StandingMark({ standing, className }: { standing: Standing; className?:
  */
 function Caveat({ text }: { text: string }) {
   return (
-    <span className="inline-flex items-center gap-3xs rounded-s bg-accent-alternative px-3xs py-4xs text-s font-medium text-neutral-700">
+    <span className="inline-flex items-center gap-3xs rounded-sm bg-accent-alternative px-3xs py-4xs text-s font-medium text-neutral-700">
       <TriangleAlert aria-hidden="true" className="size-[0.875rem] shrink-0" />
       {text}
     </span>

@@ -308,7 +308,7 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
           {result.ok ? (
             <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
           ) : (
-            <span className="shrink-0 rounded-s bg-red-500 px-3xs font-mono text-[0.75rem] font-semibold uppercase text-white">
+            <span className="shrink-0 rounded-sm bg-red-500 px-3xs font-mono text-[0.75rem] font-semibold uppercase text-white">
               {intl.formatMessage(COPY.refused)}
             </span>
           )}

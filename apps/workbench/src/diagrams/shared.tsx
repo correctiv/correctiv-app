@@ -163,7 +163,7 @@ export const SCROLL_BOX = cn(
  * expo.ts` took the whole page sideways in a 375px window.
  */
 export const PROSE_CODE =
-  '[&_code]:rounded-s [&_code]:border [&_code]:border-stroke [&_code]:bg-canvas [&_code]:px-3xs [&_code]:font-mono [&_code]:text-[0.875em] [&_code]:[overflow-wrap:anywhere]';
+  '[&_code]:rounded-sm [&_code]:border [&_code]:border-stroke [&_code]:bg-canvas [&_code]:px-3xs [&_code]:font-mono [&_code]:text-[0.875em] [&_code]:[overflow-wrap:anywhere]';
 
 /*
  * The page around the drawings.

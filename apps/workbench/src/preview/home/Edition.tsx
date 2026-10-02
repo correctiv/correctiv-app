@@ -190,7 +190,7 @@ function pinsAnything(edition: HomeEdition): boolean {
  */
 export function Warning({ children }: { children: ReactNode }) {
   return (
-    <p className="flex items-start gap-2xs rounded-s border border-stroke-strong p-2xs text-s leading-relaxed text-on-canvas">
+    <p className="flex items-start gap-2xs rounded-sm border border-stroke-strong p-2xs text-s leading-relaxed text-on-canvas">
       <TriangleAlert aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
       <span className="min-w-0">{children}</span>
     </p>
@@ -198,7 +198,7 @@ export function Warning({ children }: { children: ReactNode }) {
 }
 
 const FIELD =
-  'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  'rounded-sm border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 
 /**
@@ -352,7 +352,7 @@ function EditionDetails({
     <div className="flex w-[24rem] max-w-full flex-col gap-xs">
       <div className="flex flex-wrap items-baseline gap-2xs">
         <span className="text-m font-semibold text-on-canvas">{nameOf(edition)}</span>
-        <code className="ml-auto rounded-s border border-stroke px-3xs font-mono text-[0.8125rem] text-on-canvas-muted">
+        <code className="ml-auto rounded-sm border border-stroke px-3xs font-mono text-[0.8125rem] text-on-canvas-muted">
           {edition.id}
         </code>
       </div>

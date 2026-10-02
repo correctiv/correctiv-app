@@ -64,7 +64,7 @@ const S = {
   sm: px('spacing-sm'),
   m: px('spacing-m'),
 };
-const R = { xs: px('radius-xs'), s: px('radius-s'), md: px('radius-md') };
+const R = { xs: px('radius-xs'), sm: px('radius-sm'), md: px('radius-md') };
 
 const specs = JSON.parse(
   typographyTs.slice(typographyTs.indexOf('{'), typographyTs.lastIndexOf('}') + 1),
@@ -310,7 +310,7 @@ const KIT = [
         cross: 'CENTER',
         gap: S['3xs'],
         pad: [S['2xs'], S['2xs'], S['4xs'], S['4xs']],
-        radius: R.s,
+        radius: R.sm,
         children: children,
       };
       if (surface !== null) option.fill = surface;

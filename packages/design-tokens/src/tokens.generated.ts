@@ -96,7 +96,7 @@ export const spacingPx = {
 } as const;
 export const radiusPx = {
   "xs": 1,
-  "s": 2,
+  "sm": 2,
   "md": 5
 } as const;
 export const fontSizePx = {

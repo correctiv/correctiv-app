@@ -33,7 +33,7 @@ const COPY = defineMessages({
 
 /** Shared by the three drag handles, which differ only in edge and cursor. */
 const HANDLE =
-  'absolute bg-transparent after:absolute after:inset-0 after:m-auto after:rounded-s after:bg-stroke-strong hover:after:bg-accent';
+  'absolute bg-transparent after:absolute after:inset-0 after:m-auto after:rounded-sm after:bg-stroke-strong hover:after:bg-accent';
 
 interface Props {
   state: PreviewState;

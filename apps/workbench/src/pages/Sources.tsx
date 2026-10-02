@@ -68,10 +68,10 @@ const FIGURE = 'whitespace-nowrap font-mono tabular-nums';
  * disclosure button past the right edge of the scroll box.
  */
 const CODE =
-  'rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-[0.8125rem] wrap-anywhere';
+  'rounded-sm border border-stroke bg-surface px-3xs py-4xs font-mono text-[0.8125rem] wrap-anywhere';
 
 const LINK =
-  'rounded-s underline decoration-accent underline-offset-2 hover:text-on-canvas-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  'rounded-sm underline decoration-accent underline-offset-2 hover:text-on-canvas-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 /** What a question chip adds to the kit's outline badge, which it otherwise is. */
 const CHIP_LINK =

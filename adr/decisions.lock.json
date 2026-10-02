@@ -764,5 +764,13 @@
         "The button is in the header with the other words, and what came of the click is said in the panel"
       ]
     }
+  },
+  "0077": {
+    "slugs": ["a-scale-key-may-not-name-a-tailwind-utility"],
+    "decisions": {
+      "1": ["The rule"],
+      "2": ["Why the name, and not the line that was supposed to save it"],
+      "3": ["Where the rename could not reach"]
+    }
   }
 }

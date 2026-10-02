@@ -34,9 +34,9 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * where that costs something. Three namespaces are deliberately absent, and
  * `test/cn.test.ts` says so against the merge rather than in a comment alone:
  * `--tracking-*` and `--font-weight-*`, whose keys Tailwind knows in full, and
- * `--radius-*`, where two of the three names (`xs`, `md`) are Tailwind's own and the
- * third — `rounded-s` — is the START SIDE in Tailwind v4, not a radius, so it is a class
- * the merge already has a group for. See the note on `RADII` below.
+ * `--radius-*`, where all three names (`xs`, `sm`, `md`) are Tailwind's own, so
+ * `cn('rounded-full', 'rounded-sm')` displaces without being told. See the note
+ * on `RADII` below.
  */
 export const TEXT_SIZES: readonly string[] = Object.keys(fontSizePx).map((key) =>
   /*
@@ -56,15 +56,14 @@ export const SPACING_SCALE: readonly string[] = Object.keys(spacingPx);
  * `--radius-xs … --radius-md`, read out so `test/cn.test.ts` can hold the theme, and
  * deliberately NOT given to the merge.
  *
- * `xs` and `md` are Tailwind v4 radius values already, so `cn('rounded-full',
- * 'rounded-xs')` displaces without being told. `s` cannot be registered at all: in
- * Tailwind v4 `rounded-s` is the start side, a class of its own with a group in the
- * merge, and the theme's `--radius-s` emits the same class name beside it — two rules,
- * `border-radius: var(--radius-s)` and `border-start-*-radius: var(--radius)`, which
- * `--radius: initial` leaves at zero. That is a collision in the theme and not in the
- * merge, and it is worth a record of its own; what matters here is that adding `s` to
- * the radius scale changes nothing measurable, so it is left out rather than pretended
- * at.
+ * All three are Tailwind v4 radius values already, so `cn('rounded-full',
+ * 'rounded-sm')` displaces without being told. The middle one used to be `s`, which
+ * could not be registered at all: in Tailwind v4 `rounded-s` is the start side, a class
+ * of its own with a group in the merge, and the theme's `--radius-s` emitted the same
+ * class name beside it — two rules, `border-radius` and `border-start-*-radius`, for
+ * one name. That is a collision in the theme and not in the merge, which is why the
+ * token was renamed `sm` there rather than taught to the merge
+ * ([ADR 0077](../../../../adr/0077-a-scale-key-may-not-name-a-tailwind-utility.md)).
  */
 export const RADII: readonly string[] = Object.keys(radiusPx);
 
