@@ -212,7 +212,7 @@ describe('the summary a reviewer reads', () => {
     const summary = summariseHome(SHIPPED, after);
     const lines = summary.split('\n').filter((line) => line.startsWith('- '));
     expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain('ist verschoben, jetzt an Stelle 7 von 12.');
+    expect(lines[0]).toContain('ist verschoben, jetzt an Stelle 8 von 13.');
   });
 
   it('says what a pin is, by the article’s title', () => {
@@ -246,7 +246,7 @@ describe('the summary a reviewer reads', () => {
     };
     const summary = summariseHome(SHIPPED, after);
     expect(summary).toContain('„Backstage“ (`backstage`) ist entfernt.');
-    expect(summary).toContain('„Faktenchecks“ (`fact-checks-2`) ist neu, an Stelle 12 von 12.');
+    expect(summary).toContain('„Faktenchecks“ (`fact-checks-2`) ist neu, an Stelle 13 von 13.');
   });
 
   it('names an edition added, with its span', () => {
@@ -356,7 +356,7 @@ describe('what the review of #252 got through', () => {
     const onlyHeader = { ...SHIPPED, sections: [SHIPPED.sections[0]], moments: [] };
     const warned = summariseHome(SHIPPED, onlyHeader);
     expect(warned).toContain('keinen Inhalt');
-    expect(warned).toContain('**Achtung: Von 12 Blöcken sind nur 1 übrig.**');
+    expect(warned).toContain('**Achtung: Von 13 Blöcken sind nur 1 übrig.**');
     expect(warned.indexOf('Achtung')).toBeLessThan(warned.indexOf('### Was sich'));
     expect(summariseHome(SHIPPED, EDITED)).not.toContain('Achtung');
   });

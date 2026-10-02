@@ -12,6 +12,7 @@
     { "id": "callout", "module": "callout-teaser" },
     { "id": "mediathek", "module": "mediathek-reihe" },
     { "id": "backstage", "module": "backstage-teaser" },
+    { "id": "tip", "module": "tip-card" },
     { "id": "impact", "module": "impact-footer" }
   ],
   "moments": [

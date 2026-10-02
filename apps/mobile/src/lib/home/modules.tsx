@@ -572,10 +572,10 @@ const AtlasCardModule: HomeModule = ({ section }) => {
   );
 };
 
-const TipCardModule: HomeModule = ({ section }) => {
+const TipCardModule: HomeModule = ({ section, screen }) => {
   const intl = useIntl();
   return (
-    <Place section={section} className="mt-m">
+    <Place section={section} className={screen === 'home' ? 'mt-l' : 'mt-m'}>
       <SectionCard label={intl.formatMessage(PARTICIPATE_COPY.tipLabel)} tone="surface">
         <Typo variant="headline-xs">{intl.formatMessage(PARTICIPATE_COPY.tipHeading)}</Typo>
         <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">

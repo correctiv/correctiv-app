@@ -55,6 +55,9 @@ import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
  * that block: the same composition on Entdecken as on Home, placed there by the newsroom
  * and not by the default document, whose Entdecken is the screen as it was drawn before
  * it was a document. Its settings are its placement's own (ADR 0071 §3).
+ *
+ * The tip card is the second: Mitmachen stays out of the release channel until beabee is
+ * live, and the WhatsApp tip line needs no beabee, so Home carries it too.
  */
 export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen[]>> = {
   'home-header': ['home'],
@@ -82,7 +85,7 @@ export const MODULE_SCREENS: Readonly<Record<string, readonly ConfigurableScreen
   'callout-list': ['mitmachen'],
   'faktenforum-card': ['mitmachen'],
   'atlas-card': ['mitmachen'],
-  'tip-card': ['mitmachen'],
+  'tip-card': ['home', 'mitmachen'],
   'community-note': ['mitmachen'],
   'profile-club-card': ['profil'],
   'profile-membership': ['profil'],
