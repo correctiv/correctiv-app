@@ -143,6 +143,25 @@ describe('the screen switcher', () => {
     ).toEqual(['mediathek']);
   });
 
+  /*
+   * Every segment of this switcher is an icon, so the `p-0` that takes the base padding
+   * back is the whole of its geometry: measured, `padding-left` on a segment was 10px
+   * and its glyph sat 4px right of the middle of its own box, because the merge knew
+   * Tailwind's spacing scale and not this theme's. `test/cn.test.ts` holds that fix from
+   * the merge's side; this holds it from the one place a reader would have seen it.
+   */
+  it('takes the base padding back on an icon segment', () => {
+    draw(bar());
+    const paint = [...container.querySelectorAll<HTMLElement>('span[title]')].map(
+      (span) => span.className,
+    );
+    expect(paint.length).toBeGreaterThan(0);
+    for (const classes of paint) {
+      expect(classes).toContain('p-0');
+      expect(classes).not.toContain('px-xs');
+    }
+  });
+
   it('puts the name on the paint as well, for a pointer rather than a screen reader', () => {
     draw(bar());
     const titles = [...container.querySelectorAll('span[title]')].map((span) =>
