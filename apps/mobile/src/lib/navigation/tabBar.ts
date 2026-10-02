@@ -4,13 +4,20 @@ import {
   reportNavigationProblems,
   type TabBarChoice,
 } from '@correctiv/app-core/lib/navigation';
-import { navigationDocumentOf } from '@correctiv/app-core/lib/screen-layout';
+import {
+  navigationDocumentOf,
+  parseScreenDocument,
+  screenDocumentOf,
+  SCREEN_DOCUMENTS,
+  type ConfigurableScreen,
+  type ScreenWords,
+} from '@correctiv/app-core/lib/screen-layout';
 import { fetchedLayouts } from '@correctiv/app-core/stores/homeLayout';
 
 import { BUILT_AT } from '@/lib/home/layout';
 import { tabReachable } from '@/lib/features';
 import { coreStore } from '@/lib/store/core';
-import { KNOWN_DESTINATIONS, TAB_ROUTES } from '@/lib/tabTargets';
+import { KNOWN_DESTINATIONS, TAB_ROUTES, TAB_TARGETS } from '@/lib/tabTargets';
 
 /**
  * Where a navigation somebody is looking at arrives, as opposed to one a phone draws:
@@ -29,21 +36,33 @@ function overrideDocument(): unknown {
   }
 }
 
-function fetchedDocument(): unknown {
+/**
+ * The fetched document this process reads, parsed once, or `undefined` when there is
+ * none this build may draw.
+ *
+ * **One copy, because the entries and the words come out of it together**
+ * ([ADR 0075](../../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §5). The navigation below is read out of this body and so is every screen's name, so
+ * there is no moment at which the bar shows a tab the last fetch added under the name
+ * the one before it had. It is not a second fetch either: `fetchedLayouts` answers out
+ * of the copy the core already holds.
+ */
+function fetchedBody(): unknown {
   const text = fetchedLayouts(coreStore.getState().homeLayout, BUILT_AT);
   if (text === null) return undefined;
   try {
-    return navigationDocumentOf(JSON.parse(text));
+    return JSON.parse(text) as unknown;
   } catch {
     return undefined;
   }
 }
 
-function compute(): TabBarChoice {
+function chooseBar(body: unknown): TabBarChoice {
   const state = coreStore.getState();
   const reachable = (tab: string) => tabReachable(tab, (id) => isReachable(state, id));
+  const fetched = body === undefined ? undefined : navigationDocumentOf(body);
   let choice: TabBarChoice | null = null;
-  for (const candidate of [overrideDocument(), fetchedDocument()]) {
+  for (const candidate of [overrideDocument(), fetched]) {
     if (candidate === undefined) continue;
     const tried = chooseTabBar({ candidate, known: KNOWN_DESTINATIONS, reachable });
     reportNavigationProblems(tried.problems);
@@ -55,7 +74,47 @@ function compute(): TabBarChoice {
   return choice ?? chooseTabBar({ known: KNOWN_DESTINATIONS, reachable });
 }
 
-let frozen: TabBarChoice | null = null;
+/**
+ * What one screen is called, out of the fetched copy if it carries that screen and out
+ * of the bundled document otherwise.
+ *
+ * **The fallback is per screen**, which is the rule ADR 0071 §6 already has for a
+ * screen's sections: a fetched document that lacks a screen, or whose words for it are
+ * refused, costs that screen its fetched name and no other screen anything. A title is
+ * the one word a document may not leave out (ADR 0075 §2), so a refused one falls all
+ * the way back to the bundled document rather than leaving the bar with a blank tab.
+ *
+ * **Nothing is reported here.** The same documents are read again, problems and all, by
+ * `screenLayout()` when the screen itself is drawn; reporting them a second time from
+ * the bar would be the same typo twice in a log and, once there is a provider behind
+ * the port, twice in a quota.
+ */
+function wordsOf(body: unknown, screen: ConfigurableScreen): ScreenWords | null {
+  const fetched = body === undefined ? undefined : screenDocumentOf(body, screen);
+  if (fetched !== undefined) {
+    const { words } = parseScreenDocument(fetched);
+    if (words !== null) return words;
+  }
+  return parseScreenDocument(SCREEN_DOCUMENTS[screen]).words;
+}
+
+/** The bar and the words of every route on it, taken together out of one document. */
+interface TabBarDecision {
+  readonly choice: TabBarChoice;
+  readonly words: Readonly<Record<string, ScreenWords | null>>;
+}
+
+function decide(): TabBarDecision {
+  const body = fetchedBody();
+  const words: Record<string, ScreenWords | null> = {};
+  for (const route of TAB_ROUTES) {
+    const screen = TAB_TARGETS[route]?.screen;
+    if (screen !== undefined) words[route] = wordsOf(body, screen);
+  }
+  return { choice: chooseBar(body), words };
+}
+
+let frozen: TabBarDecision | null = null;
 
 /**
  * The tab bar this process draws, decided on the first call and never again.
@@ -72,8 +131,24 @@ let frozen: TabBarChoice | null = null;
  * not declare, or leaves fewer than two tabs after gating falls through to the next.
  */
 export function tabBar(): TabBarChoice {
-  frozen ??= compute();
-  return frozen;
+  frozen ??= decide();
+  return frozen.choice;
+}
+
+/**
+ * What each route's screen calls itself, frozen with the bar.
+ *
+ * Raw words rather than drawn ones: a language is chosen when something is rendered,
+ * and `lib/navigation/tabWords.ts` is where that happens for all three bars. Frozen
+ * with the entries for the reason above — the triggers are fixed before the navigator
+ * mounts, so a word that arrived later would belong to a bar that cannot change.
+ *
+ * A route with no screen of its own ("Mehr") is absent rather than null: the app names
+ * it, and a `null` here would read as a screen whose document was refused.
+ */
+export function tabScreenWords(): Readonly<Record<string, ScreenWords | null>> {
+  frozen ??= decide();
+  return frozen.words;
 }
 
 /** Test seam: forget the decision so the next call takes it again. */

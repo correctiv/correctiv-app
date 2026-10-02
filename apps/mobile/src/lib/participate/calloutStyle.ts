@@ -41,7 +41,7 @@ const COPY = defineMessages({
     id: 'callout.crowdnewsroom.cta',
     defaultMessage: 'Take part',
     description:
-      "The button on a CrowdNewsroom callout, on the card on the participation tab and on the teaser on the home screen. On the card it is replaced by `callout.contributeAgain` once this person has contributed. One of five ids reading ‘Take part’: the survey's button is `callout.survey.cta`, the detail screen's is `callout.detail.cta`, the tab is `ui.tabParticipate` and the screen heading is `participate.title`.",
+      "The button on a CrowdNewsroom callout, on the card on the participation tab and on the teaser on the home screen. On the card it is replaced by `callout.contributeAgain` once this person has contributed. One of four ids reading ‘Take part’: the survey's button is `callout.survey.cta`, the detail screen's is `callout.detail.cta`, and the screen heading is `participate.title`. The tab bar says it too and is no longer an id at all: it draws the screen document's own title.",
   },
   crowdnewsroomCount: {
     id: 'callout.crowdnewsroom.count',

@@ -5,7 +5,8 @@ import { Pressable, View } from 'react-native';
 
 import { Card, Hairline, Screen, Typo } from '@/components/ui';
 import { tabBar } from '@/lib/navigation/tabBar';
-import { TAB_TARGETS } from '@/lib/tabTargets';
+import { useTabWords } from '@/lib/navigation/tabWords';
+import { MORE_LABEL } from '@/lib/tabTargets';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -21,13 +22,15 @@ export default function MehrScreen() {
   const intl = useIntl();
   const colors = useColors();
   const { bar } = tabBar();
+  // A row says what its screen's own document calls it (ADR 0075 §3): a screen off the
+  // bar keeps its name, and this list is one of the two places that reads it.
+  const words = useTabWords();
   return (
     <Screen>
-      <Typo variant="headline-xl">{intl.formatMessage(TAB_TARGETS['mehr']!.label)}</Typo>
+      <Typo variant="headline-xl">{intl.formatMessage(MORE_LABEL)}</Typo>
       <Card className="mt-m">
         {bar.more.map((route, index) => {
-          const target = TAB_TARGETS[route]!;
-          const label = intl.formatMessage(target.label);
+          const { label, icon } = words[route]!;
           return (
             <View key={route}>
               {index > 0 ? <Hairline /> : null}
@@ -37,7 +40,7 @@ export default function MehrScreen() {
                 onPress={() => router.navigate(`/(tabs)/${route}` as never)}
                 className="flex-row items-center py-s active:opacity-80"
               >
-                <Ionicons name={target.ionicon.inactive} size={24} color={colors['on-canvas']} />
+                <Ionicons name={icon.ionicon.inactive} size={24} color={colors['on-canvas']} />
                 <Typo variant="text-m" className="ml-s flex-1">
                   {label}
                 </Typo>

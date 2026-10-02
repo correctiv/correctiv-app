@@ -1,7 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { withoutComments } from '@correctiv/prose-and-code';
+import { de } from '@correctiv/catalogue';
+import { resolveText } from '@correctiv/app-core/lib/home-settings';
+import {
+  CONFIGURABLE_SCREENS,
+  parseScreenDocument,
+  screenTabLabelOf,
+  SCREEN_DOCUMENTS,
+  type ConfigurableScreen,
+} from '@correctiv/app-core/lib/screen-layout';
+import { floorFaults, withoutComments } from '@correctiv/prose-and-code';
+
+import { TAB_TARGETS } from '../src/lib/tabTargets';
 
 /**
  * The five German words `LABELS_FIT_UP_TO` was measured against, pinned.
@@ -13,10 +24,13 @@ import { withoutComments } from '@correctiv/prose-and-code';
  * ([ADR 0034](../../../adr/0034-one-component-for-the-two-sided-row.md)).
  *
  * **So it goes wrong the way AGENTS.md's "facts that expire" describes**, and
- * faster than most: renaming a tab is a one-line edit in a catalogue file that
- * nothing connects to a threshold measured on an emulator, and a second language
- * moves it without touching this app's German at all. Nothing about the resulting
- * bar looks wrong in `npm run check`, in a typecheck, or at 100 %.
+ * faster than it used to. A rename was a one-line edit in a catalogue file that
+ * nothing connected to a threshold measured on an emulator; since
+ * [ADR 0075](../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §5 the words are in the screens' own documents and a rename is a `[layout]`
+ * submission, so it need not pass a developer at all. A second language moves the
+ * number without touching this app's German either way. Nothing about the
+ * resulting bar looks wrong in `npm run check`, in a typecheck, or at 100 %.
  *
  * This is the check that ships with the fact. It cannot re-measure — no test can
  * put five words on a 1080 px bar and look at them — so it holds the INPUTS to the
@@ -33,12 +47,12 @@ import { withoutComments } from '@correctiv/prose-and-code';
  * its reason, the limits are written at the assertions, and it was proved by
  * breaking it.
  */
-const MEASURED_LABELS: Record<string, string> = {
-  'ui.tabHome': 'Home',
-  'ui.tabDiscover': 'Entdecken',
-  'ui.tabMediathek': 'Mediathek',
-  'ui.tabParticipate': 'Mitmachen',
-  'ui.tabProfile': 'Profil',
+const MEASURED_LABELS: Record<ConfigurableScreen, string> = {
+  home: 'Home',
+  entdecken: 'Entdecken',
+  mediathek: 'Mediathek',
+  mitmachen: 'Mitmachen',
+  profil: 'Profil',
 };
 
 /** The threshold those five words produced, as `_layout.tsx` must still spell it. */
@@ -46,37 +60,48 @@ const MEASURED_THRESHOLD = '1.3';
 
 const SRC = join(__dirname, '..', 'src');
 const TABS_LAYOUT = join(SRC, 'app', '(tabs)', '_layout.tsx');
-/** Where the labels are declared, for all three bars (ADR 0071 §4). */
-const TAB_TARGETS = join(SRC, 'lib', 'tabTargets.ts');
 /**
- * The German left this app for a package in
- * [ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §1, so the first read
- * below reaches out of the workspace. The second reads this host's own store
- * binding, because §4 made the language a thing the host says rather than a
- * constant anybody could read off the core.
+ * The language the bar renders in, which the host says rather than the core
+ * ([ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §4), and the store
+ * binding that has to reach for it.
  */
-const GERMAN_UI = join(SRC, '..', '..', '..', 'packages', 'catalogue', 'src', 'de', 'ui.ts');
 const SHIPPED = join(SRC, 'lib', 'locale.ts');
 const STORE = join(SRC, 'lib', 'store', 'core.ts');
 
 const read = (path: string) => withoutComments(readFileSync(path, 'utf8'));
 
-/** `'ui.tabHome': 'Home',` in the German catalogue, as a record of what ships. */
-function germanLabels(source: string): Record<string, string> {
-  const entries = [...source.matchAll(/'(ui\.tab\w+)': '([^']*)'/g)];
-  return Object.fromEntries(entries.map(([, id, german]) => [id, german]));
+/**
+ * What the bar puts under a screen's icon, out of the document the build bundles.
+ *
+ * The real path and not a regular expression over the JSON: the tab label defaults
+ * to the title (ADR 0075 §3), the language is resolved with a fallback to German
+ * (§2), and a check that read the file would be measuring a key rather than the
+ * word a reader sees.
+ */
+function germanTabLabel(screen: ConfigurableScreen): string | null {
+  const text = screenTabLabelOf(parseScreenDocument(SCREEN_DOCUMENTS[screen]).words);
+  return text === null ? null : resolveText(text, 'de');
+}
+
+/** Which screen each tab draws its words out of, by route (`index` is Home's file). */
+function screensOnTheBar(): ConfigurableScreen[] {
+  return Object.values(TAB_TARGETS)
+    .map((target) => target.screen)
+    .filter((screen): screen is ConfigurableScreen => screen !== undefined);
 }
 
 describe('the tab labels the 1.3 threshold was measured against', () => {
   it('reads the files it is checking (guards against a silently empty parse)', () => {
-    // Every assertion below is over a regular expression against source. A moved
-    // file or a renamed key empties the match rather than breaking it, and an
-    // empty record agrees with an empty record.
-    expect(Object.keys(germanLabels(read(GERMAN_UI)))).toHaveLength(6);
+    // The assertions below are over source and over five bundled documents. A moved
+    // file or a renamed key empties the match rather than breaking it, and an empty
+    // record agrees with an empty record.
+    expect(
+      floorFaults({
+        'bundled screen documents': { found: CONFIGURABLE_SCREENS.length, atLeast: 5 },
+      }),
+    ).toEqual([]);
     expect(read(TABS_LAYOUT)).toContain('LABELS_FIT_UP_TO');
-    // The third file this reads, added with the locale assertion below and named
-    // here for the same reason as the other two: a moved file empties a match
-    // rather than breaking it.
+    // The two files the locale assertion below reads, named here for the same reason.
     expect(read(SHIPPED)).toContain('SHIPPED_LOCALE');
     expect(read(STORE)).toContain('createAppStore');
   });
@@ -85,21 +110,26 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
     // The whole point of the file. `Mitmachen` becoming `Engagieren` is nine
     // characters where there were nine, and `Mediathek` becoming `Audio & Video`
     // is not — and nothing else in the repository would notice either.
-    // "Mehr" is the sixth, and four letters shorter than the widest of the five.
-    const { 'ui.tabMore': more, ...five } = germanLabels(read(GERMAN_UI));
-    expect(five).toEqual(MEASURED_LABELS);
-    expect(more).toBe('Mehr');
+    expect(
+      Object.fromEntries(CONFIGURABLE_SCREENS.map((screen) => [screen, germanTabLabel(screen)])),
+    ).toEqual(MEASURED_LABELS);
   });
 
-  it('declares those five ids in the tab bar itself', () => {
-    // The other end of the same string. A tab renamed in `_layout.tsx` takes a new
-    // id with it, the catalogue keeps the old one, and the assertion above would
-    // pass while the bar drew something nobody measured.
-    // "Mehr" is the sixth label, drawn only when the bar overflows. It is one short word,
-    // and it replaces a tab rather than adding one, so the bar is never wider than five.
-    const declared = [...read(TAB_TARGETS).matchAll(/id: '(ui\.tab\w+)'/g)].map(([, id]) => id);
+  it('draws those five documents and no others, and names the sixth label itself', () => {
+    // The other end of the same string. A tab pointed at another screen takes that
+    // screen's title with it, the five documents keep theirs, and the assertion
+    // above would pass while the bar drew something nobody measured.
+    expect(screensOnTheBar().sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
 
-    expect(declared.sort()).toEqual([...Object.keys(MEASURED_LABELS), 'ui.tabMore'].sort());
+    // "Mehr" is the sixth label, drawn only when the bar overflows. It is one short
+    // word, four letters shorter than the widest of the five, and it replaces a tab
+    // rather than adding one, so the bar is never wider than five. It is also the
+    // ONLY tab word left in the catalogue: the five went into their documents with
+    // ADR 0075 §5, and an id the catalogue kept beside them would be a second answer
+    // to one question — the day they disagreed the tab would say one thing and the
+    // screen's heading another.
+    expect(Object.keys(de).filter((id) => id.startsWith('ui.tab'))).toEqual(['ui.tabMore']);
+    expect(de['ui.tabMore']).toBe('Mehr');
   });
 
   it('still carries the threshold those five words produced', () => {
@@ -122,14 +152,16 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
      * can be looked at, and this host names `'de'` at construction. A registry that
      * grows now says nothing about the bar; the host's own line says everything.
      *
+     * It matters to a document's words exactly as it mattered to a catalogue's:
+     * `resolveText` answers in the locale it is given and falls back to German
+     * (ADR 0075 §2), so an English build draws whatever English a document carries
+     * and the five words above stop being the five words.
+     *
      * So this reads the one place the app names its shipped language. It read the
      * store binding first, and a cold review showed the hole: any second object in
      * that file holding `locale: 'de'` — a fixture, a default, a comment's leftover
      * — answered for the real one. `lib/locale.ts` holds one export and nothing
      * else, so the substring and the declaration are the same thing.
-     *
-     * If somebody ships English, the five words are not the five words any more and
-     * 1.3 is a number nobody measured.
      */
     expect(read(SHIPPED)).toMatch(/export const SHIPPED_LOCALE: Locale = 'de';/);
 
@@ -171,5 +203,9 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
  *    pixel.
  *  - **Anything about a second device.** The number is a property of 1080 px as
  *    much as of the words, and no test in this repository can see a screen width.
+ *  - **Anything about a document published after this build.** The words are the
+ *    newsroom's now (ADR 0075 §5) and this reads the five the build bundles. The
+ *    bar a phone draws tomorrow is whatever was submitted, which is what the
+ *    check in the workbench is for and not what a test here can reach.
  */
 export {};

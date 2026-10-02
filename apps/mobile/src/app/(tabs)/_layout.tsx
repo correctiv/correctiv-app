@@ -1,11 +1,10 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useIntl } from 'react-intl';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RailTabs } from '@/lib/navigation/railTabs';
 import { declaredTabRoutes, tabBar } from '@/lib/navigation/tabBar';
-import { TAB_TARGETS } from '@/lib/tabTargets';
+import { useTabWords } from '@/lib/navigation/tabWords';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, useColors } from '@/lib/theme';
 
@@ -56,13 +55,24 @@ const IS_IOS = Platform.OS === 'ios';
  * Re-measure it rather than trust it: it is a property of these five German words
  * at this screen width, and renaming a tab or shipping a second language moves it.
  *
+ * **And the words are the newsroom's now**
+ * ([ADR 0075](../../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §5), which is what makes that sentence worth more than it was. A rename used to
+ * be a developer's edit in a catalogue file; it is a `[layout]` submission today,
+ * so the five words can move without anybody who has ever seen this constant being
+ * in the room. The warning ADR 0075's own open question 5 names is this one, and
+ * the check from Schritt 7 of the plan is where a bar that has outgrown 1.3 is
+ * meant to be said out loud to the person typing it.
+ *
  * **`__tests__/tab-bar-labels.test.ts` is what makes that sentence able to fail.**
  * It cannot re-measure — no test can put five words on a 1080 px bar and look at
- * them — so it pins the inputs instead: the five German strings in the catalogue,
- * the five ids declared below, this number as written here, and that one language
- * ships. When it goes red the number is not wrong, it is no longer known to be
- * right, and the answer is `OUT=out/a11y bash screens/tools/tour-a11y.sh` rather
- * than an edit to the test. The one input it cannot see is the screen width.
+ * them — so it pins the inputs instead: the five German titles in the five bundled
+ * screen documents, the screens the bar declares, this number as written here, and
+ * that one language ships. When it goes red the number is not wrong, it is no
+ * longer known to be right, and the answer is
+ * `OUT=out/a11y bash screens/tools/tour-a11y.sh` rather than an edit to the test.
+ * The two inputs it cannot see are the screen width and a document somebody
+ * published after this build.
  */
 const LABELS_FIT_UP_TO = 1.3;
 
@@ -101,13 +111,14 @@ const LABELS_FIT_UP_TO = 1.3;
 const ANDROID_TAB_BAR_HEIGHT = 80;
 
 export default function TabsLayout() {
-  const intl = useIntl();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, fontScale } = useWindowDimensions();
   // Decided once per process: the navigator cannot change its triggers without losing the
   // state of every tab, so a fetched navigation applies on the next start (ADR 0071 §6).
   const { bar } = tabBar();
+  // The same copy of the document the entries came from (ADR 0075 §5).
+  const words = useTabWords();
   // Hidden is how a native tab is withheld: the navigator treats it as protected, so its
   // address resolves to not-found as well (ADR 0072 §5). An overflow entry is hidden too,
   // and Mehr opens it by route.
@@ -178,11 +189,11 @@ export default function TabsLayout() {
       labelVisibilityMode={labelVisibilityMode}
     >
       {declaredTabRoutes(bar).map((route) => {
-        const target = TAB_TARGETS[route]!;
+        const word = words[route]!;
         return (
           <NativeTabs.Trigger key={route} name={route} hidden={hidden(route)}>
-            <NativeTabs.Trigger.Label>{intl.formatMessage(target.label)}</NativeTabs.Trigger.Label>
-            <NativeTabs.Trigger.Icon sf={target.sf} md={target.md} />
+            <NativeTabs.Trigger.Label>{word.label}</NativeTabs.Trigger.Label>
+            <NativeTabs.Trigger.Icon sf={word.icon.sf} md={word.icon.md} />
           </NativeTabs.Trigger>
         );
       })}

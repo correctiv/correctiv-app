@@ -1,77 +1,52 @@
-import type { Ionicons } from '@expo/vector-icons';
-import type { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
-import type { ComponentProps } from 'react';
 
-import { SCREEN_ICONS, type ScreenIcon } from './screenIcons';
-
-export { SCREEN_ICONS } from './screenIcons';
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 /**
- * What a tab can be, declared where the app is
+ * What a tab can be, declared where the app is: the route file it is, and the screen
+ * whose document says what it is called. The navigation document in the core only
+ * chooses among these ids and orders them
  * ([ADR 0071](../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
- * §4): the route, its label as a message, its icon in each platform's vocabulary. The
- * navigation document in the core only chooses among these ids and orders them.
+ * §4).
  *
- * The feature a destination belongs to is `TAB_FEATURES` in `features.ts`, which is
- * where `feature-gating.test.ts` holds it against `features.json`; it is not repeated
- * here, so there is one place to be wrong.
+ * **The words and the icon left this table**
+ * ([ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §5). A destination used to declare its label as a message and its icon in each
+ * platform's vocabulary; both now come out of the screen's own document, because a
+ * screen that is not on the bar still has a name and the newsroom means to change it
+ * without waiting for a release. `lib/navigation/tabWords.ts` is where a bar reads
+ * them, out of the one copy of the document the entries come from, and
+ * `screenIcons.ts` is still where the icon a key names is declared.
  *
- * The three bars (native, web, rail) draw the same labels and share nothing but this
- * file, which is why the labels live here and not in each of them.
- *
- * **The icons are `SCREEN_ICONS`, spread in rather than written out here** (ADR 0075 §4).
- * The same key answers for a tab target and for a screen document, so the pairs live in
- * one table, and the generator reads that table into the core so the parser knows which
- * keys exist — a screen document naming an icon this build has would then be reported
- * rather than drawn blank. The tab bar still reads them from here; it reads them from
- * the screen's own document in ADR 0075 §5, which is what this spread is then replaced
- * by.
+ * What is left here is placement: which route files exist, which of them a document
+ * may name, and which screen each one draws. The feature a destination belongs to is
+ * `TAB_FEATURES` in `features.ts`, which is where `feature-gating.test.ts` holds it
+ * against `features.json`; it is not repeated here, so there is one place to be wrong.
  */
-
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
-type IconProps = ComponentProps<typeof NativeTabs.Trigger.Icon>;
-type Sf = Extract<NonNullable<Extract<IconProps, { sf?: unknown }>['sf']>, { selected: unknown }>;
-type Md = Extract<NonNullable<Extract<IconProps, { md?: unknown }>['md']>, { selected: unknown }>;
-
 export interface TabTarget {
   /** The route file under `app/(tabs)/`, which is also the id the document names. */
   readonly route: string;
-  readonly label: MessageDescriptor;
-  readonly sf: Sf;
-  readonly md: Md;
-  readonly ionicon: { readonly active: IoniconName; readonly inactive: IoniconName };
+  /**
+   * The screen whose document carries this tab's label and icon, absent for a tab that
+   * is the app's own rather than the newsroom's.
+   *
+   * The route and the screen are the same word for the four destinations and are not
+   * for Home, whose route file is `index.tsx` and whose document is `home.json`. "Mehr"
+   * has no document at all: it is the screen the app draws when the bar overflows
+   * (ADR 0071 §5), so its word stays a message below.
+   */
+  readonly screen?: ConfigurableScreen;
 }
 
-/** One screen's icon out of the set, and the refusal of a key the set does not hold. */
-function iconOf(key: string): ScreenIcon {
-  const icon = SCREEN_ICONS[key];
-  if (!icon) throw new Error(`no screen icon is declared under \`${key}\``);
-  return icon;
-}
-
-/** The tab labels, in ENGLISH; the German ships in `packages/catalogue/src/de/ui.ts` (ADR 0026 §6). */
+/**
+ * The one label of the bar that is the app's, in ENGLISH; the German ships in
+ * `packages/catalogue/src/de/ui.ts` (ADR 0026 §6).
+ *
+ * The other five left the catalogue with ADR 0075 §5: a screen's tab label is in the
+ * screen's document now, and an id the catalogue carries beside it would be a second
+ * answer to one question.
+ */
 const COPY = defineMessages({
-  home: { id: 'ui.tabHome', defaultMessage: 'Home' },
-  discover: {
-    id: 'ui.tabDiscover',
-    defaultMessage: 'Discover',
-    description:
-      'A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens.',
-  },
-  mediathek: { id: 'ui.tabMediathek', defaultMessage: 'Mediathek' },
-  participate: {
-    id: 'ui.tabParticipate',
-    defaultMessage: 'Take part',
-    description:
-      'A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens.',
-  },
-  profile: {
-    id: 'ui.tabProfile',
-    defaultMessage: 'Profile',
-    description:
-      'A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens.',
-  },
   more: {
     id: 'ui.tabMore',
     defaultMessage: 'More',
@@ -80,16 +55,19 @@ const COPY = defineMessages({
   },
 });
 
-const HOME: TabTarget = { route: 'index', label: COPY.home, ...iconOf('home') };
+/** What "Mehr" is called, for the bars and for the screen itself. */
+export const MORE_LABEL: MessageDescriptor = COPY.more;
 
-const MORE: TabTarget = { route: 'mehr', label: COPY.more, ...iconOf('more') };
+const HOME: TabTarget = { route: 'index', screen: 'home' };
+
+const MORE: TabTarget = { route: 'mehr' };
 
 /** What the navigation document may name, after Home. */
 export const DESTINATIONS: Readonly<Record<string, TabTarget>> = {
-  entdecken: { route: 'entdecken', label: COPY.discover, ...iconOf('compass') },
-  mediathek: { route: 'mediathek', label: COPY.mediathek, ...iconOf('play') },
-  mitmachen: { route: 'mitmachen', label: COPY.participate, ...iconOf('people') },
-  profil: { route: 'profil', label: COPY.profile, ...iconOf('person') },
+  entdecken: { route: 'entdecken', screen: 'entdecken' },
+  mediathek: { route: 'mediathek', screen: 'mediathek' },
+  mitmachen: { route: 'mitmachen', screen: 'mitmachen' },
+  profil: { route: 'profil', screen: 'profil' },
 };
 
 /** The ids a navigation document may name: the parser's `known` set (ADR 0071 §6). */
