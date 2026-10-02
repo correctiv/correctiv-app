@@ -443,6 +443,7 @@ describe('what Entdecken draws', () => {
       parseHomeLayout(
         {
           version: 4,
+          title: { de: 'Bildschirm' },
           sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count } }],
           moments: [],
         },
@@ -521,6 +522,7 @@ describe('a block placed on a screen it was not written for', () => {
     parseHomeLayout(
       {
         version: 4,
+        title: { de: 'Bildschirm' },
         sections: modules.map((module) => ({ id: module, module })),
         moments: [],
       },

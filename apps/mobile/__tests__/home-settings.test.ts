@@ -19,10 +19,13 @@ import {
   renderCatalogue,
 } from '../scripts/generate-home-settings.mjs';
 import { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS } from '@/lib/home/blocks';
+import { SCREEN_ICONS } from '@/lib/screenIcons';
 import {
   MODULE_CATEGORIES as CATEGORIES_ARTEFACT,
   SCREEN_BOUND_BLOCKS as BOUND_ARTEFACT,
+  SCREEN_ICONS as ICONS_ARTEFACT,
 } from '@correctiv/app-core/lib/block-catalogue.generated';
+import { SCREEN_ICON_FALLBACK } from '@correctiv/app-core/lib/screen-layout';
 import { HOME_MODULE_AUDIENCES } from '@/lib/home/conditions';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 
@@ -270,7 +273,7 @@ describe('the category a block declares beside itself', () => {
 
   it('keeps the generated table current', () => {
     expect(readFileSync(CATALOGUE_OUT, 'utf8')).toBe(
-      renderCatalogue(MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS),
+      renderCatalogue(MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS, SCREEN_ICONS),
     );
   });
 
@@ -294,18 +297,130 @@ describe('the category a block declares beside itself', () => {
     // The floor the settings' `render` has, for the same reason one level along: every
     // tool that offers a block reads this, so an empty one is a palette with nothing in
     // it and a roll-call that agrees with every registry it is compared against.
-    expect(() => renderCatalogue({}, {})).toThrow(/no block at all/);
+    expect(() => renderCatalogue({}, {}, SCREEN_ICONS)).toThrow(/no block at all/);
   });
 
   it('writes an empty binding table rather than refusing one', () => {
-    expect(renderCatalogue({ quiz: 'medien' }, {})).toContain(
+    expect(renderCatalogue({ quiz: 'medien' }, {}, SCREEN_ICONS)).toContain(
       'SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = {}',
     );
   });
 
   it('refuses a name it cannot write into a source file as it stands', () => {
-    expect(() => renderCatalogue({ "x': 'medien', 'evil": 'medien' }, {})).toThrow(/plain one/);
-    expect(() => renderCatalogue({ quiz: "med'ien" }, {})).toThrow(/plain one/);
-    expect(() => renderCatalogue({ quiz: 'medien' }, { quiz: "ho'me" })).toThrow(/plain one/);
+    expect(() => renderCatalogue({ "x': 'medien', 'evil": 'medien' }, {}, SCREEN_ICONS)).toThrow(
+      /plain one/,
+    );
+    expect(() => renderCatalogue({ quiz: "med'ien" }, {}, SCREEN_ICONS)).toThrow(/plain one/);
+    expect(() => renderCatalogue({ quiz: 'medien' }, { quiz: "ho'me" }, SCREEN_ICONS)).toThrow(
+      /plain one/,
+    );
+  });
+});
+
+/**
+ * The same artefact's third table: the icons a screen may be given
+ * ([ADR 0075](../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §4).
+ *
+ * **It is declared in a file of its own, and that is the reason for the fourth question
+ * below.** `tabTargets.ts` is where ADR 0071 §4 put a destination's icon, but it imports
+ * `react-intl` and calls `defineMessages` at module scope, so Node's type stripping cannot
+ * load it — and the generator would then be dead while every check above stayed green
+ * (pitfall 7, and the same seam `src/lib/home/settings.ts` says in its own head). So the
+ * declaration sits in `src/lib/screenIcons.ts`, types and nothing else, and `tabTargets.ts`
+ * reads the icons out of it: one table, one crossing, and the core asks this generator
+ * about keys it can report rather than about names a phone cannot draw.
+ */
+describe('the icon a screen declares beside itself', () => {
+  const DECLARATIONS = resolve(APP, 'src/lib/screenIcons.ts');
+
+  it('is the table the core reads, and carries the declared values', () => {
+    expect(ICONS_ARTEFACT).toEqual(SCREEN_ICONS);
+  });
+
+  /**
+   * The ratchet ADR 0075 §4 argues for: a fixed set, because every choice has to exist
+   * natively on both platforms. A free string renders on Android, is blank on iOS, and the
+   * newsroom finds out from a reader — so a key missing one of its six names is a blank
+   * somewhere, and the types in the declaration cannot see it because the generator writes
+   * plain strings into a file the core reads.
+   */
+  it('gives every key all three platform names, and names the fallback out of its own set', () => {
+    for (const [key, icon] of Object.entries(SCREEN_ICONS)) {
+      const pairs = [icon.sf, icon.md, icon.ionicon] as ReadonlyArray<Record<string, string>>;
+      for (const pair of pairs) {
+        for (const name of Object.values(pair)) {
+          expect({ key, name: typeof name }).toEqual({ key, name: 'string' });
+          expect(name.length).toBeGreaterThan(0);
+        }
+      }
+      expect(Object.keys(icon.sf)).toEqual(['default', 'selected']);
+      expect(Object.keys(icon.md)).toEqual(['default', 'selected']);
+      expect(Object.keys(icon.ionicon)).toEqual(['active', 'inactive']);
+    }
+    expect(SCREEN_ICONS[SCREEN_ICON_FALLBACK]).toBeDefined();
+  });
+
+  it('keeps the declaration file loadable by the generator (types and nothing else)', () => {
+    const source = withoutComments(readFileSync(DECLARATIONS, 'utf8'));
+    const statements = [...source.matchAll(/^\s*(?:import|export)\b[^;]*?\bfrom\b/gm)].map(
+      ([match]) => match.trim().replace(/\s+/g, ' '),
+    );
+    expect(statements.filter((one) => !/^(?:import|export) type\b/.test(one))).toEqual([]);
+    expect(source).not.toMatch(/^\s*import\s*['"]/m);
+    expect(source).not.toMatch(/\b(?:require|import)\s*\(/);
+    expect(statements.length).toBeGreaterThan(0);
+  });
+
+  it('refuses to write a table with no icon in it', () => {
+    // The floor the categories have, for the same reason: the app draws the fallback out
+    // of this set, so an empty one is an icon nothing can draw.
+    expect(() => renderCatalogue({ quiz: 'medien' }, {}, {})).toThrow(/no screen icon at all/);
+  });
+
+  /**
+   * `name()` cannot write these, which is the whole reason `platformName()` exists: an SF
+   * Symbol and a Material name are spelled with dots and underscores (`person.2.fill`,
+   * `more_horiz`), and escaping them into a valid file would declare an icon nobody chose.
+   */
+  it('refuses a platform name that is not a plain one, in every of the six', () => {
+    const icon = (over: Record<string, unknown>) => ({
+      ...SCREEN_ICONS.home,
+      ...over,
+    });
+    expect(() =>
+      renderCatalogue(
+        { quiz: 'medien' },
+        {},
+        { quiz: icon({ sf: { default: "a'", selected: 'b' } }) },
+      ),
+    ).toThrow(/plain one/);
+    expect(() =>
+      renderCatalogue(
+        { quiz: 'medien' },
+        {},
+        { quiz: icon({ md: { default: 'a', selected: 'a b' } }) },
+      ),
+    ).toThrow(/plain one/);
+    expect(() =>
+      renderCatalogue(
+        { quiz: 'medien' },
+        {},
+        { quiz: icon({ ionicon: { active: '', inactive: 'home-outline' } }) },
+      ),
+    ).toThrow(/plain one/);
+    expect(() =>
+      renderCatalogue(
+        { quiz: 'medien' },
+        {},
+        { quiz: icon({ sf: { default: '.house', selected: 'b' } }) },
+      ),
+    ).toThrow(/plain one/);
+  });
+
+  it('writes what it read, which is what the artefact above is compared to', () => {
+    expect(renderCatalogue({ quiz: 'medien' }, {}, { quiz: SCREEN_ICONS.home })).toContain(
+      "sf: { default: 'house', selected: 'house.fill' }",
+    );
   });
 });

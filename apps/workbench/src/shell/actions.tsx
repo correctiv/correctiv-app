@@ -20,9 +20,9 @@ import type { SectionId } from './views';
  */
 export interface ToolActions {
   /**
-   * Whether the tool holds changes. Submit, save and discard are switched off without
-   * it, and are still drawn: a button that appears only when there is something to do
-   * moves every other control in the bar each time somebody types.
+   * Whether the tool holds changes. Submit, save, share and discard are switched off
+   * without it, and are still drawn: a button that appears only when there is something to
+   * do moves every other control in the bar each time somebody types.
    */
   dirty: boolean;
   /** How many things changed, where the tool counts; the header says "changed" otherwise. */
@@ -35,6 +35,12 @@ export interface ToolActions {
    * nothing it may send; the button is then drawn disabled.
    */
   submit?: { href: string; onClick?: () => void } | null;
+  /**
+   * Hands the tool's draft over as a link (ADR 0076). `run` builds it and puts it on the
+   * clipboard; what came of that is the tool's own news, in its own panel, because a
+   * sentence about a link does not belong in a header that is 32 pixels tall.
+   */
+  share?: { run: () => void };
   /** The dev server's save. Absent on the published site, on every tool alike. */
   save?: { run: () => void; busy?: boolean };
   /** Puts the tool's changes back to what ships. */
@@ -85,6 +91,7 @@ function drawsTheSame(a: Entry | undefined, b: Entry | undefined): boolean {
     a.count === b.count &&
     a.blocked === b.blocked &&
     (a.submit?.href ?? null) === (b.submit?.href ?? null) &&
+    (a.share === undefined) === (b.share === undefined) &&
     (a.save === undefined) === (b.save === undefined) &&
     a.save?.busy === b.save?.busy &&
     (a.discard === undefined) === (b.discard === undefined)

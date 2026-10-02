@@ -201,6 +201,19 @@ export const home: Record<string, string> = {
   'home.document.field': 'Die Änderung',
   'home.document.refused': 'abgelehnt',
 
+  // Der geteilte Entwurf: ein Link, der ihn trägt, und woher das Dokument kam (ADR 0076).
+  'home.document.shareCopied':
+    'Der Link liegt in der Zwischenablage. Öffnen Sie ihn selbst, um zu sehen, was die Person sehen wird, der Sie ihn schicken.',
+  'home.document.shareNoClipboard':
+    'Der Browser hat den Zugriff auf die Zwischenablage nicht erlaubt. Kopieren Sie den Link aus diesem Feld.',
+  'home.document.shareTooLong':
+    'Dieser Entwurf ist zu lang zum Teilen als Link: {link} Zeichen, und bei {limit} Zeichen hört ein Link auf, brauchbar zu sein. Reichen Sie ihn stattdessen ein — das öffnet GitHub mit der Änderung darin.',
+  'home.document.shareField': 'Der Link',
+  'home.document.sharedHeld':
+    'Dieser Entwurf ist über einen Link gekommen. Er ist auf diesem Rechner nicht gespeichert: Reichen Sie ihn ein, oder laden Sie neu, um Ihr eigenes Dokument zurückzubekommen.',
+  'home.document.sharedDamaged':
+    'Dieser Link enthält keinen Entwurf, den dieses Werkzeug öffnen kann, deshalb wurde er weggelassen. Das Werkzeug ist unverändert.',
+
   // The head of the editor: which point is in effect, and what can be done to it.
   'home.point.midnight': 'Mitternacht',
   'home.point.start': 'Der Beginn des Tages',

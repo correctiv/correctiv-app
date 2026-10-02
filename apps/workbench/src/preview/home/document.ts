@@ -43,6 +43,7 @@ import {
 import {
   settingsFor,
   type CountSetting,
+  type LocalisedText,
   type SettingSpec,
 } from '@correctiv/app-core/lib/home-settings';
 
@@ -2135,6 +2136,36 @@ function momentEntries(
 }
 
 /**
+ * A word a screen is called by, as the document writes it: one entry per language.
+ *
+ * Straight from `Object.entries`, because `parseScreenDocument` hands the core's own order
+ * to us — German first and then `TEXT_LANGUAGES` — rather than the order the file happened
+ * to be written in, and that is what makes this printer's output stable whatever an
+ * editor did to the source. `undefined` is dropped for the same reason a pin's absent
+ * value is: a language nobody has translated is not a line in the file.
+ */
+function wordEntries(text: LocalisedText): Obj {
+  return obj(Object.entries(text).filter(([, value]) => value !== undefined));
+}
+
+/**
+ * The screen's own words, in ADR 0075 §3's order, and only the ones that are there.
+ *
+ * `tabLabel` is left out when the document names none, which is every bundled document and
+ * the point of the field: §3 has it fall back to the title so nobody types the word twice,
+ * and writing the fallback back into the file would do exactly the typing twice, one step
+ * later. `icon` is written for the same reason a section's `hidden` is — a word the
+ * document carries is a fact about the screen, and `null` is not a fact anybody chose.
+ */
+function wordsEntries(words: HomeLayout['words']): (readonly [string, unknown])[] {
+  if (words === null) return [];
+  const entries: (readonly [string, unknown])[] = [['title', wordEntries(words.title)]];
+  if (words.tabLabel !== undefined) entries.push(['tabLabel', wordEntries(words.tabLabel)]);
+  if (words.icon !== undefined) entries.push(['icon', words.icon]);
+  return entries;
+}
+
+/**
  * An edition, in the order ADR 0059 §3 writes one: who, what it is called, when, what it
  * starts as, and what changes inside it.
  *
@@ -2171,10 +2202,17 @@ export function formatLayoutDocument(layout: HomeLayout): string {
   const order = new Map(layout.sections.map((section, index) => [section.id, index]));
   const modules = new Map(layout.sections.map((section) => [section.id, section.module]));
 
-  const entries: (readonly [string, unknown])[] = [
-    ['version', layout.version],
-    ['sections', layout.sections.map(sectionEntries)],
-  ];
+  const entries: (readonly [string, unknown])[] = [['version', layout.version]];
+  /*
+   * Beside `sections`, before them, because the document writes its words there and
+   * ADR 0075 §3 puts them there for the same reason editions' keys sit at the top level:
+   * a version 4 app reads the words, and one that does not know them draws the places and
+   * nothing else. Written even though nothing in the editor changes them yet, because the
+   * printer's job is to reproduce the document rather than to print what it can change —
+   * a title dropped on Save is a screen the newsroom has just renamed to nothing.
+   */
+  entries.push(...wordsEntries(layout.words));
+  entries.push(['sections', layout.sections.map(sectionEntries)]);
   /*
    * Who each place is for, beside the sections rather than inside them (ADR 0060 §6): an
    * older app never reads this key and draws the place for everybody, where a key inside a

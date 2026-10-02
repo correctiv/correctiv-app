@@ -20,6 +20,7 @@
 import { readFileSync } from 'node:fs';
 
 import { parseHomeLayout } from '../src/lib/home-layout';
+import { parseScreenDocument } from '../src/lib/screen-layout';
 
 const path = process.argv[2];
 if (!path) {
@@ -39,13 +40,26 @@ const { layout, problems } = parseHomeLayout(document);
 for (const problem of problems)
   console.error(`${path}: ${problem.code} ${JSON.stringify(problem.context)}`);
 
-if (!layout || layout.sections.length === 0 || problems.length > 0) {
+/*
+ * The screen's three words, parsed by their own function (ADR 0075 §3) and refused on
+ * their own terms, for the reason this script is stricter than the app: what it reads is
+ * about to be published, and a screen with no title is a tab bar with no word on it.
+ * `parseHomeLayout` keeps the arrangement of a document whose title it could not read
+ * (ADR 0036 §7), which is right for a phone and not for a publish.
+ */
+const named = parseScreenDocument(document);
+for (const problem of named.problems)
+  console.error(`${path}: ${problem.code} ${JSON.stringify(problem.context)}`);
+
+if (!layout || layout.sections.length === 0 || problems.length > 0 || named.words === null) {
   console.error(
-    `${path}: refused: ${layout ? `${layout.sections.length} sections` : 'not a layout'}, ${problems.length} problems`,
+    `${path}: refused: ${layout ? `${layout.sections.length} sections` : 'not a layout'}, ` +
+      `${problems.length} problems, ${named.problems.length} word problems`,
   );
   process.exit(1);
 }
 
 console.log(
-  `${path}: ${layout.sections.length} sections, ${layout.moments.length} moments, no problems`,
+  `${path}: ${layout.sections.length} sections, ${layout.moments.length} moments, ` +
+    `${JSON.stringify(named.words.title.de)}, no problems`,
 );

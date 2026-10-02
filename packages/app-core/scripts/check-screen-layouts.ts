@@ -14,6 +14,7 @@ import { parseNavigation } from '../src/lib/navigation';
 import {
   CONFIGURABLE_SCREENS,
   navigationDocumentOf,
+  parseScreenDocument,
   screenDocumentOf,
 } from '../src/lib/screen-layout';
 
@@ -42,11 +43,24 @@ for (const screen of CONFIGURABLE_SCREENS) {
   const { layout, problems } = parseHomeLayout(document, undefined, screen);
   for (const problem of problems)
     console.error(`${path}: ${screen}: ${problem.code} ${JSON.stringify(problem.context)}`);
-  if (!layout || layout.sections.length === 0 || problems.length > 0) {
+  /*
+   * The words, parsed by their own function and refused on their own terms, because the
+   * arrangement is not the whole of what is about to be published (ADR 0075 §3). The
+   * layout above already carries the same faults, so this is not a second reading that can
+   * disagree with the first — it is the strict half of the pair: `parseHomeLayout` keeps a
+   * screen whose title it could not read (ADR 0036 §7), and a publish does not.
+   */
+  const named = parseScreenDocument(document);
+  for (const problem of named.problems)
+    console.error(`${path}: ${screen}: ${problem.code} ${JSON.stringify(problem.context)}`);
+  if (!layout || layout.sections.length === 0 || problems.length > 0 || named.words === null) {
     console.error(`${path}: ${screen}: refused`);
     failed = true;
   } else {
-    console.log(`${path}: ${screen}: ${layout.sections.length} sections, no problems`);
+    console.log(
+      `${path}: ${screen}: ${layout.sections.length} sections, ` +
+        `${JSON.stringify(named.words.title.de)}, no problems`,
+    );
   }
 }
 const navigation = navigationDocumentOf(body);

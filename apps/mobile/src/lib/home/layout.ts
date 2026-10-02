@@ -142,7 +142,7 @@ function parseScreen(document: unknown, screen: ConfigurableScreen) {
 function bundled(screen: ConfigurableScreen): HomeLayout {
   const { layout, problems } = parseScreen(SCREEN_DOCUMENTS[screen], screen);
   reportLayoutProblems(problems);
-  return layout ?? { version: 0, sections: [], moments: [], editions: [] };
+  return layout ?? { version: 0, words: null, sections: [], moments: [], editions: [] };
 }
 
 /**

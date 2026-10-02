@@ -148,6 +148,18 @@ export const CATALOGUE_OUT = resolve(
 );
 
 /**
+ * The fourth declaration file, in the same artefact: the icons a screen may be given.
+ *
+ * ADR 0075 §4. The same crossing for the same reason — the parser has to know which icon
+ * keys exist to report one it does not have — and the same script, so there is one
+ * command to forget and one drift check that fails when it is forgotten. Why this
+ * artefact rather than the settings' is that a screen's words are not a block's settings
+ * (ADR 0075 §3): the core reads both tables out of one module because one generator
+ * writes them, not because a screen is a block.
+ */
+const ICON_DECLARATIONS = resolve(APP, 'src/lib/screenIcons.ts');
+
+/**
  * A path as this repository spells one: from the root, with `/` on every OS.
  *
  * @param {string} path
@@ -165,6 +177,7 @@ const fromRoot = (path) => relative(REPO, path).split(sep).join('/');
  */
 const DECLARATIONS_LABEL = fromRoot(DECLARATIONS);
 const AUDIENCE_DECLARATIONS_LABEL = fromRoot(AUDIENCE_DECLARATIONS);
+const ICONS_LABEL = fromRoot(ICON_DECLARATIONS);
 
 /**
  * A name from the declarations, as a single-quoted TypeScript string, or a refusal.
@@ -191,6 +204,32 @@ function name(value, what, from = DECLARATIONS_LABEL) {
       `${SCRIPT}: ${from} declares ${what} spelled \`${value}\`. ` +
         `A name goes into a source file as it is written, so it has to be a plain one: ` +
         `a letter, then letters, digits and hyphens.`,
+    );
+  }
+  return `'${value}'`;
+}
+
+/**
+ * A platform's icon name, as a single-quoted TypeScript string, or a refusal.
+ *
+ * `name()` above cannot write these: an SF Symbol and a Material name are spelled with
+ * dots and underscores, which the identifier rule that keeps a module name out of a
+ * syntax error would refuse. The rule here is the same idea loosened exactly that far —
+ * a letter, then letters, digits, dots, underscores and hyphens — so a quote, a space or a
+ * bracket still stops the generator where the declaration is rather than being escaped
+ * into a valid file that declares an icon nobody chose. Empty is refused with the rest: a
+ * blank icon renders on no platform at all, which is the failure ADR 0075 §4 is about.
+ *
+ * @param {string} value
+ * @param {string} what
+ * @returns {string}
+ */
+function platformName(value, what) {
+  if (!/^[a-z][\w.-]*$/i.test(value)) {
+    throw new Error(
+      `${SCRIPT}: ${ICONS_LABEL} declares ${what} spelled \`${value}\`. ` +
+        `A platform's icon name goes into a source file as it is written, so it has to ` +
+        `be a plain one: a letter, then letters, digits, dots, underscores and hyphens.`,
     );
   }
   return `'${value}'`;
@@ -320,23 +359,30 @@ export const MODULE_AUDIENCES: Readonly<Record<string, Audience>> = ${body};
 /**
  * The block catalogue's artefact, which the drift check compares the same way.
  *
- * Two tables in one file because they are declared in one file and read together: a
- * picker asks for the category and the parser asks for the binding, and neither of them
- * wants to learn which of two generated modules to import.
+ * Three tables in one file because one generator writes them and a caller that wants
+ * "what can this screen hold and what may it be called" reaches one module for it. The
+ * first two are declared in one file and read together; the third is declared in another
+ * (ADR 0075 §4) and lands here because the alternative is a second generator to forget.
  *
  * An empty categories table is refused for the settings' reason one step along: every
  * tool that offers a block reads this, so an empty one is a palette with nothing in it
  * and a roll-call that agrees with every registry. The bound table may be empty, which
- * is a release where no block is tied to a screen.
+ * is a release where no block is tied to a screen. The icon table may not: a screen with
+ * no icon to choose from has a picker with nothing in it, and the app draws the fallback
+ * out of it (ADR 0075 §4).
  *
  * @param {Readonly<Record<string, string>>} categories
  * @param {Readonly<Record<string, string>>} bound
+ * @param {Readonly<Record<string, import('@correctiv/app-core/lib/screen-layout').ScreenIcon>>} icons
  * @returns {string}
  */
-export function renderCatalogue(categories, bound) {
+export function renderCatalogue(categories, bound, icons) {
   const from = fromRoot(BLOCK_DECLARATIONS);
   if (Object.keys(categories).length === 0) {
     throw new Error(`${SCRIPT}: ${from} declares no block at all`);
+  }
+  if (Object.keys(icons).length === 0) {
+    throw new Error(`${SCRIPT}: ${ICONS_LABEL} declares no screen icon at all`);
   }
   /**
    * One table of block to plain name, as a TypeScript object literal.
@@ -351,11 +397,38 @@ export function renderCatalogue(categories, bound) {
     );
     return rows.length === 0 ? '{}' : `{\n${rows.join('\n')}\n}`;
   };
+  /**
+   * One table of icon key to the three native names, as a TypeScript object literal.
+   *
+   * Written field by field rather than through `JSON.stringify`, because every name here
+   * goes into a source file unescaped — and a platform's vocabulary is spelled with dots
+   * and underscores (`person.2.fill`, `more_horiz`), which is why `name()` above cannot
+   * write them and this does. All six names are checked, so a typo is a refusal here
+   * rather than a blank tab on one platform (ADR 0075 §4's whole argument).
+   *
+   * @param {Readonly<Record<string, import('@correctiv/app-core/lib/screen-layout').ScreenIcon>>} entries
+   * @returns {string}
+   */
+  const iconTable = (entries) => {
+    const rows = Object.entries(entries).map(([key, icon]) => {
+      const states = (/** @type {string} */ first, /** @type {string} */ second) =>
+        `{ default: ${platformName(first, 'a default')}, selected: ${platformName(second, 'a selected')} }`;
+      return [
+        `  ${name(key, 'a screen icon', ICONS_LABEL)}: {`,
+        `    sf: ${states(icon.sf.default, icon.sf.selected)},`,
+        `    md: ${states(icon.md.default, icon.md.selected)},`,
+        `    ionicon: { active: ${platformName(icon.ionicon.active, 'an active')}, ` +
+          `inactive: ${platformName(icon.ionicon.inactive, 'an inactive')} },`,
+        '  },',
+      ].join('\n');
+    });
+    return `{\n${rows.join('\n')}\n}`;
+  };
   return `// AUTO-GENERATED by ${SCRIPT} — do not edit by hand.
-// Source: ${from} · Regenerate: ${COMMAND}
+// Source: ${from} · ${ICONS_LABEL} · Regenerate: ${COMMAND}
 
 import type { BlockCategory } from './block-category';
-import type { ConfigurableScreen } from './screen-layout';
+import type { ConfigurableScreen, ScreenIcon } from './screen-layout';
 
 /**
  * Block name, as the document writes it, to the family it belongs to. Every block the
@@ -372,6 +445,18 @@ export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = ${tabl
  * refuses the rest with \`section-module-not-on-screen\` (ADR 0073 §3).
  */
 export const SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = ${table(bound, 'a screen')};
+
+/**
+ * Icon key, as a screen document names it, to the three native names it is drawn with.
+ * The set a document may choose out of (ADR 0075 §4), and the list the workbench's picker
+ * reads rather than inventing a second one. A key that is not here is reported by the
+ * parser and dropped, and the screen draws the fallback beside it in \`screen-layout.ts\`.
+ *
+ * Declared in \`${ICONS_LABEL}\` — in a file of its own because the generator reads it by
+ * importing it under Node's type stripping, and that leaves no room for an ordinary
+ * import. ADR 0075 §4.
+ */
+export const SCREEN_ICONS: Readonly<Record<string, ScreenIcon>> = ${iconTable(icons)};
 `;
 }
 
@@ -396,14 +481,16 @@ async function main() {
   const audiences = (await import(pathToFileURL(AUDIENCE_DECLARATIONS).href)).HOME_MODULE_AUDIENCES;
   writeFileSync(AUDIENCES_OUT, renderAudiences(audiences));
   const blocks = await import(pathToFileURL(BLOCK_DECLARATIONS).href);
+  const icons = (await import(pathToFileURL(ICON_DECLARATIONS).href)).SCREEN_ICONS;
   writeFileSync(
     CATALOGUE_OUT,
-    renderCatalogue(blocks.MODULE_CATEGORIES, blocks.SCREEN_BOUND_BLOCKS),
+    renderCatalogue(blocks.MODULE_CATEGORIES, blocks.SCREEN_BOUND_BLOCKS, icons),
   );
   console.log(
     `${fromRoot(CATALOGUE_OUT)}: ${Object.keys(blocks.MODULE_CATEGORIES).length} blocks in ` +
       `${new Set(Object.values(blocks.MODULE_CATEGORIES)).size} categories, ` +
-      `${Object.keys(blocks.SCREEN_BOUND_BLOCKS).length} bound to a screen`,
+      `${Object.keys(blocks.SCREEN_BOUND_BLOCKS).length} bound to a screen, ` +
+      `${Object.keys(icons).length} screen icons`,
   );
   console.log(`${fromRoot(AUDIENCES_OUT)}: ${Object.keys(audiences).length} default audiences`);
   const settings = Object.values(table).reduce((total, specs) => total + specs.length, 0);

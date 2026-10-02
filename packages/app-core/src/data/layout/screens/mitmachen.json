@@ -1,5 +1,7 @@
 {
   "version": 4,
+  "title": { "de": "Mitmachen" },
+  "icon": "people",
   "sections": [
     { "id": "title", "module": "participate-header" },
     { "id": "callouts", "module": "callout-list" },
