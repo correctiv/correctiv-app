@@ -30,6 +30,9 @@ import { useDocumentTitle } from '@/lib/navigation/documentTitle';
  * addressed with. `componentId` in `gallery/catalogue.tsx` is the shape of it, and
  * the reference resolves the same two parts to its own rows.
  *
+ * `p` is the data choice for that one component, `live` or `<domain>/<variant>`
+ * (`gallery/data-pick.tsx`); anything the component does not offer is ignored.
+ *
  * `bare` is for the frame that reference draws in each of its rows: 393 pixels
  * wide, one component in it, and the surrounding page already saying everything
  * this page's header says. It is a display, so it takes no chrome.
@@ -38,6 +41,12 @@ export default function GalleryRoute() {
   // English, like the page's own heading and everything else on it: this one is
   // read by developers and designers rather than by readers (AGENTS.md, Language).
   useDocumentTitle('Component gallery');
-  const { c, bare } = useLocalSearchParams<{ c?: string; bare?: string }>();
-  return <Gallery only={typeof c === 'string' && c ? c : undefined} bare={bare === '1'} />;
+  const { c, bare, p } = useLocalSearchParams<{ c?: string; bare?: string; p?: string }>();
+  return (
+    <Gallery
+      only={typeof c === 'string' && c ? c : undefined}
+      bare={bare === '1'}
+      pick={typeof p === 'string' && p ? p : undefined}
+    />
+  );
 }

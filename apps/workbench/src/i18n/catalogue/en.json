@@ -51,6 +51,22 @@
     "defaultMessage": "Components",
     "description": "The first step of that trail, which is the name of the page it links to. components.title is that page’s own heading and reads the same in English; the two move together and are two entries because one is a heading and one is a link in a trail."
   },
+  "components.detail.data": {
+    "defaultMessage": "Data",
+    "description": "The heading over the choice of which data the component is drawn with."
+  },
+  "components.detail.data.live": {
+    "defaultMessage": "Live",
+    "description": "Heading of the group holding the current fetch, and the badge on its option. The word is the provenance `live` of ADR 0072."
+  },
+  "components.detail.data.sample": {
+    "defaultMessage": "Example",
+    "description": "Heading of the group of named sample variants, and the badge on each of them. The provenance `sample` of ADR 0072."
+  },
+  "components.detail.data.specimens": {
+    "defaultMessage": "Specimens of the catalogue",
+    "description": "The option that draws the component with its own specimens, which is the default."
+  },
   "components.detail.device": {
     "defaultMessage": "Device",
     "description": "The label over the select that picks the size the app is framed at. frame.device is the same word on the preview’s own bar, where it is read aloud rather than drawn."

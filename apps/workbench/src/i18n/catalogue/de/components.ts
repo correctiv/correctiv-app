@@ -93,6 +93,10 @@ export const components: Record<string, string> = {
   'components.detail.props.none': 'Keine.',
   'components.detail.prop.optional': 'optional',
   'components.detail.prop.noProse': 'Kein Prosatext.',
+  'components.detail.data': 'Daten',
+  'components.detail.data.specimens': 'Muster des Katalogs',
+  'components.detail.data.live': 'Live',
+  'components.detail.data.sample': 'Beispiel',
   'components.detail.inherits':
     'Dazu alles aus {types}. Das gehört nicht zu diesem Repository und wird hier nur genannt, nicht aufgelistet.',
 };

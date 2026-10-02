@@ -77,9 +77,14 @@ import {
   Thumbnail,
   Typo,
 } from '@/components/ui';
+import type { Callout } from '@correctiv/app-core/data/callouts';
+import type { Claim } from '@correctiv/app-core/data/claims';
+import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
+
 import { sizes, typography, type TypoVariant } from '@/lib/theme';
 
 import type { ComponentId } from './components.generated';
+import { pick, pickArticle, type DataPick } from './data-pick';
 import {
   ARTICLE,
   ARTICLE_BARE,
@@ -130,6 +135,12 @@ export interface Entry {
    * draw it, so a person can still look at what they cannot ship.
    */
   feature?: string;
+  /**
+   * Where the component takes a model the core has sample variants of, the picker the
+   * gallery and the workbench's component page offer (`data-pick.tsx`). Absent, the entry
+   * has no choice and draws `specimens`.
+   */
+  pick?: DataPick;
   /**
    * `readonly`, and so is `Folder['entries']`, because `LISTED` below is a
    * `const` assertion and a const-asserted array is a readonly tuple. That is
@@ -572,6 +583,7 @@ const LISTED = [
     entries: [
       {
         name: 'ArticleHero',
+        pick: pickArticle((item) => <ArticleHero item={item} onPress={noop} />),
         note: 'The lead item. Reads the reading time off the item, and falls back to a fetch when it is missing.',
         specimens: [
           {
@@ -583,6 +595,7 @@ const LISTED = [
       },
       {
         name: 'ArticleRow',
+        pick: pickArticle((item) => <ArticleRow item={item} onPress={noop} />),
         specimens: [
           { label: 'default', node: <ArticleRow item={ARTICLE} onPress={noop} /> },
           {
@@ -630,6 +643,9 @@ const LISTED = [
       },
       {
         name: 'CalloutTeaser',
+        pick: pick<Callout>('callouts', (callout) => (
+          <CalloutTeaser callout={callout} onPress={noop} />
+        )),
         feature: 'callouts',
         specimens: [
           {
@@ -715,6 +731,9 @@ const LISTED = [
       },
       {
         name: 'SeriesTile',
+        pick: pick<PodcastSeries>('podcasts', (series) => (
+          <SeriesTile series={series} onPress={noop} />
+        )),
         specimens: [{ label: 'default', node: <SeriesTile series={SERIES} onPress={noop} /> }],
       },
       {
@@ -764,6 +783,9 @@ const LISTED = [
     entries: [
       {
         name: 'CalloutCard',
+        pick: pick<Callout>('callouts', (callout) => (
+          <CalloutCard callout={callout} onPress={noop} />
+        )),
         feature: 'callouts',
         specimens: [
           {
@@ -775,6 +797,7 @@ const LISTED = [
       },
       {
         name: 'ClaimStatusTag',
+        pick: pick<Claim>('claims', (claim) => <ClaimStatusTag claim={claim} />),
         feature: 'faktenforum',
         specimens: CLAIMS.map((claim) => ({
           label: `status="${claim.status}"`,

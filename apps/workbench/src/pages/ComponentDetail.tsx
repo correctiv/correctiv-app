@@ -5,6 +5,7 @@ import { defineMessages } from 'react-intl';
 import api from 'virtual:api';
 import type { ApiComponent } from 'virtual:api';
 import { useWorkbenchIntl } from '../i18n/Localisation';
+import { dataOptions, specimensFor, validChoice } from '@/gallery/data-pick';
 import { directEntry } from '../components/direct';
 import { NOT_DRAWN } from '../components/direct-ids';
 import { DirectPreview } from '../components/DirectPreview';
@@ -125,6 +126,29 @@ const COPY = defineMessages({
     defaultMessage:
       'Two renderings of one component. If they differ, that is a finding, not a flaw. On purpose, nothing compares them automatically.',
   },
+  dataTitle: {
+    id: 'components.detail.data',
+    defaultMessage: 'Data',
+    description: 'The heading over the choice of which data the component is drawn with.',
+  },
+  dataSpecimens: {
+    id: 'components.detail.data.specimens',
+    defaultMessage: 'Specimens of the catalogue',
+    description:
+      'The option that draws the component with its own specimens, which is the default.',
+  },
+  dataLive: {
+    id: 'components.detail.data.live',
+    defaultMessage: 'Live',
+    description:
+      'Heading of the group holding the current fetch, and the badge on its option. The word is the provenance `live` of ADR 0072.',
+  },
+  dataSample: {
+    id: 'components.detail.data.sample',
+    defaultMessage: 'Example',
+    description:
+      'Heading of the group of named sample variants, and the badge on each of them. The provenance `sample` of ADR 0072.',
+  },
   frameHolds: {
     id: 'components.detail.frameHolds',
     defaultMessage: 'The frame holds <strong>{build}</strong>.',
@@ -235,6 +259,9 @@ export function ComponentDetail({
   const rows =
     groups.find((g) => g.name === group)?.components.filter((c) => c.name === name) ?? [];
   const entry = directEntry(id);
+  const options = entry === undefined ? null : dataOptions(entry);
+  const choice =
+    entry === undefined ? undefined : validChoice(entry, address.rest.get('p') ?? undefined);
 
   const device = readDevice(address.rest.get('d'));
   const rendering: Rendering =
@@ -325,7 +352,7 @@ export function ComponentDetail({
           */
           <div className={cn('min-h-0 flex-1 p-m', !asPage && 'overflow-auto')}>
             <div className="mx-auto" style={{ maxWidth: size.w === 0 ? undefined : size.w }}>
-              {entry.specimens.map((specimen) => (
+              {specimensFor(entry, choice).map((specimen) => (
                 <section key={specimen.label} className="mb-m last:mb-0">
                   <h2 className="mb-2xs font-mono text-s text-on-canvas-muted">{specimen.label}</h2>
                   <div className="overflow-hidden rounded-md border border-stroke">
@@ -354,8 +381,8 @@ export function ComponentDetail({
           <div ref={stage} className="relative flex min-h-0 flex-1 overflow-auto p-m">
             <div className="m-auto">
               <AppFrame
-                key={`${id}-${device}-${reloads}`}
-                route={`/gallery?c=${id}&bare=1`}
+                key={`${id}-${device}-${reloads}-${choice ?? ''}`}
+                route={`/gallery?c=${id}&bare=1` + (choice ? `&p=${choice}` : '')}
                 title={intl.formatMessage(COPY.frameTitle, { name })}
                 size={size.w === 0 ? { w: box.w || 393, h: box.h || 640 } : size}
                 scale={size.w === 0 ? 1 : scale}
@@ -444,6 +471,37 @@ export function ComponentDetail({
               ),
             })}
           </p>
+        )}
+        {options !== null && (
+          <div className="flex flex-col gap-2xs">
+            <p className={NOTE}>{intl.formatMessage(COPY.dataTitle)}</p>
+            <DataChoice
+              label={intl.formatMessage(COPY.dataSpecimens)}
+              selected={choice === undefined}
+              onPick={() => setRest({ p: null })}
+            />
+            {(['live', 'sample'] as const).map((kind) => {
+              const items = options.filter((o) => o.kind === kind);
+              if (items.length === 0) return null;
+              const word = intl.formatMessage(kind === 'live' ? COPY.dataLive : COPY.dataSample);
+              return (
+                <div key={kind} className="flex flex-col gap-3xs">
+                  <p className={NOTE}>{word}</p>
+                  {items.map((o) => (
+                    <DataChoice
+                      key={o.value}
+                      label={o.name}
+                      note={o.note}
+                      badge={word}
+                      provenance={o.provenance}
+                      selected={choice === o.value}
+                      onPick={() => setRest({ p: o.value })}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         )}
       </Slot>
 
@@ -562,6 +620,39 @@ function Props({ row, split }: { row: ApiComponent; split: boolean }) {
         </p>
       )}
     </div>
+  );
+}
+
+/** One row of the data choice: a badge for where the data comes from, then its name. */
+function DataChoice({
+  label,
+  note,
+  badge,
+  provenance,
+  selected,
+  onPick,
+}: {
+  label: string;
+  note?: string;
+  badge?: string;
+  provenance?: 'live' | 'sample';
+  selected: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onPick}
+      className={cn(
+        'flex flex-wrap items-center gap-2xs rounded-s px-2xs py-3xs text-left text-s',
+        selected ? 'bg-surface font-medium text-on-canvas' : 'text-on-canvas-muted',
+      )}
+    >
+      {badge && <Badge variant={provenance === 'live' ? 'accent' : 'outline'}>{badge}</Badge>}
+      <span className="font-mono">{label}</span>
+      {note && <span className="w-full text-on-canvas-muted">{note}</span>}
+    </button>
   );
 }
 
