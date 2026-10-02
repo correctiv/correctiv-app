@@ -160,10 +160,6 @@ export const tools: Record<string, string> = {
   'tools.strings.refused': 'Nichts wurde geschrieben. {ids}',
   'tools.strings.saveFailed': 'Der Dev-Server hat nicht geantwortet: {detail}',
   'tools.strings.copy': 'Änderungen kopieren',
-  'tools.strings.submitHint':
-    'GitHub öffnet sich mit Ihren geänderten Texten. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
-  'tools.strings.submitHintLong':
-    'Diese Änderungen sind zu lang für einen Link. Der Klick kopiert sie in die Zwischenablage, auf GitHub fügen Sie sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'tools.strings.submitCopied':
     'Die geänderten Texte liegen in der Zwischenablage. Fügen Sie sie auf GitHub in das Issue ein.',
   'tools.strings.submitNoClipboard':

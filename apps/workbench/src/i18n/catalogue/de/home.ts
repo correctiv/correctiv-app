@@ -104,6 +104,21 @@ export const home: Record<string, string> = {
   'home.setting.faktencheckRail.count.what': 'Die Reihe, die seitlich scrollt.',
   'home.setting.unknown.what': 'Keine Beschreibung dafür.',
 
+  // --- a word, which is the fifth kind of setting -------------------------------
+  //
+  // The field, the count and the mark on the block card. ADR 0075 §2: Deutsch ist
+  // Pflicht, jede andere Sprache darf fehlen, und eine Lücke ist eine Marke und kein
+  // Fehler. „{language}“ ist der Eigenname der Sprache in der Sprache der Leserin
+  // („Englisch“ hier, „English“ dort), nicht der Name der Sprache als Datenpunkt.
+  'home.setting.text.charsLeft':
+    '{count, plural, =0 {Keine Zeichen mehr} one {Noch ein Zeichen} other {Noch # Zeichen}}',
+  'home.setting.text.missing': '{language} fehlt',
+  'home.setting.text.aboutLanguage':
+    'Dieses Feld schreibt die Sprache, in der diese Workbench gerade läuft. Deutsch ist Pflicht, jede andere Sprache darf fehlen. Eine fehlende Übersetzung ist eine Marke und kein Fehler.',
+  'home.setting.text.bound': 'Höchstens {count} Zeichen.',
+  'home.setting.text.boundMultiline':
+    'Höchstens {count} Zeichen. Der Text darf über mehrere Zeilen laufen.',
+
   // --- where an insertion mark puts a block -------------------------------------
   //
   // Dropped into the middle of a sentence, so lower case and no full stop. The
@@ -188,12 +203,7 @@ export const home: Record<string, string> = {
   'home.issue.headingScreen': 'Änderungen am Bildschirm {screen}',
   'home.issue.leadLayout':
     'Diese Änderung an einem Bildschirm kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
-  'home.document.submitAbout': 'Die Änderung einreichen',
-  'home.document.submitHint':
-    'GitHub öffnet sich mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.scenarioGuard': 'Szenarien sind Beispiele. Sie werden nicht eingereicht.',
-  'home.document.submitHintLong':
-    'Diese Änderung ist zu lang für einen Link. Der Klick kopiert sie in die Zwischenablage, auf GitHub fügen Sie sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.submitCopied':
     'Die Änderung liegt in der Zwischenablage. Fügen Sie sie auf GitHub in das Issue ein.',
   'home.document.submitNoClipboard':

@@ -9,7 +9,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
-import type { HomeLayout } from '@correctiv/app-core/lib/home-layout';
+import type { HomeLayout, SettingValue } from '@correctiv/app-core/lib/home-layout';
 import {
   useEffect,
   useMemo,
@@ -79,6 +79,7 @@ import {
   removed,
   settingLabel,
   settingsFor,
+  sameSettingValue,
   spanOf,
   strandingAudiences,
   takenAudiences,
@@ -97,6 +98,7 @@ import {
 } from './document';
 import { guarded as isGuarded } from './scenario';
 import { CONTROLS_COPY, EditorBar, PointChip } from './Controls';
+import { TextSetting } from './TextSetting';
 import { GUTTER, rowWidth } from './fit';
 import type { ScenarioControl } from './Scenario';
 import { screenOfRoute, SCREEN_ROUTES, shippedOf, type ConfigurableScreen } from './screens';
@@ -999,7 +1001,12 @@ export function HomeDocument({
 
   useToolActions('home', {
     dirty,
-    blocked: guarded,
+    /*
+     * The reason, in the reader's language, and not a flag: the header's tooltip on a
+     * switched-off Submit says it, which is where this sentence used to wait behind an
+     * ⓘ in this panel (`Controls.tsx`). Undefined while nothing blocks the tool.
+     */
+    blocked: guarded ? intl.formatMessage(CONTROLS_COPY.scenarioGuard) : undefined,
     submit: offer
       ? {
           href: offer.href,
@@ -1073,13 +1080,6 @@ export function HomeDocument({
         scenario={scenario}
         follow={follow}
         onFollow={setFollow}
-        submitHint={
-          guarded
-            ? CONTROLS_COPY.scenarioGuard
-            : offer && !offer.fits
-              ? CONTROLS_COPY.submitHintLong
-              : CONTROLS_COPY.submitHint
-        }
         /*
          * Where the document came from, and one sentence for an arrival that was nothing
          * (ADR 0076 §3). Both stand above the outcome because both are about the
@@ -1415,7 +1415,7 @@ function Row({
   screen: ConfigurableScreen;
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
-  onSetting: (key: string, value: string | number | null | undefined) => void;
+  onSetting: (key: string, value: SettingValue | undefined) => void;
   /** Whether the reader in the frame is in this block's audience (ADR 0060 §4). */
   reaches: boolean;
   /**
@@ -1934,7 +1934,7 @@ function Details({
   specs: readonly SettingSpec[];
   /** No change here is for the framed reader, so the settings are switched off. */
   locked: boolean;
-  onSetting: (key: string, value: string | number | null | undefined) => void;
+  onSetting: (key: string, value: SettingValue | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
   const { label, what } = moduleLabel(section.module);
@@ -2026,11 +2026,14 @@ function Setting({
    */
   inEdition: boolean;
   disabled: boolean;
-  onSet: (value: string | number | null | undefined) => void;
+  onSet: (value: SettingValue | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
   const { label, what } = settingLabel(module, spec);
-  const setHere = layered && value !== inherited;
+  // `sameSettingValue` and not `!==`, because the fifth kind's value is an object: two
+  // readings of the same word are the same word, and a badge that lit for every one of
+  // them would say the moment sets something it does not.
+  const setHere = layered && !sameSettingValue(value, inherited);
 
   return (
     <div
@@ -2057,6 +2060,19 @@ function Setting({
         />
       ) : spec.kind === 'category' || spec.kind === 'tag' ? (
         <Term
+          spec={spec}
+          value={value}
+          disabled={disabled}
+          label={say(intl, label)}
+          onSet={onSet}
+        />
+      ) : spec.kind === 'text' ? (
+        /*
+         * One field for the language this workbench is in, and a mark on the others
+         * (ADR 0075 §2). It is a file of its own because this one cannot be rendered by a
+         * test at all, which `./TextSetting.tsx` says in full.
+         */
+        <TextSetting
           spec={spec}
           value={value}
           disabled={disabled}

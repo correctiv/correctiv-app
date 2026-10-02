@@ -13,24 +13,31 @@ import {
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
 import { readerOf } from '@correctiv/app-core/lib/home-audience';
-import { MODULE_SETTINGS } from '@correctiv/app-core/lib/home-settings';
+import {
+  MODULE_SETTINGS,
+  type LocalisedText,
+  type TextSetting as TextSpec,
+} from '@correctiv/app-core/lib/home-settings';
 
 import { ROOT } from '../../plugin/collect.ts';
 import { SOURCES } from '../../content/sources.manifest.ts';
 import {
   changedAt,
+  charsLeft,
   decidedAt,
   differs,
   editionHue,
   editionsOn,
   effectiveAt,
   formatLayoutDocument,
+  holdsWord,
   HOME_LAYOUT_ENDPOINT,
   HOME_LAYOUT_KEY,
   HOME_TIME_KEY,
   inheritedAt,
   inheritedFor,
   added,
+  languagesMissing,
   mintId,
   moduleLabel,
   MODULE_LABELS,
@@ -43,6 +50,7 @@ import {
   SETTING_LABELS,
   settingLabel,
   SHIPPED,
+  sameSettingValue,
   spanOf,
   targetAt,
   withEdition,
@@ -55,6 +63,8 @@ import {
   withoutEdition,
   withoutMoment,
   withSetting,
+  withWord,
+  wordsOf,
   writeHidden,
   writeSetting,
 } from '../../src/preview/home/document';
@@ -175,6 +185,17 @@ describe('the document the editor writes', () => {
       withHidden(SHIPPED, AT(11), 'mediathek', true),
       withSetting(SHIPPED, null, 'hero', 'pin', 'https://correctiv.org/x/'),
       withSetting(SHIPPED, AT(14), 'fact-checks', 'count', 3),
+      // A word as a setting's value, which is the one value the printer hands to
+      // `JSON.stringify` unless `printableValue` catches it. No module declares a `text`
+      // yet, so this case exists because the fixture above does: without it, a printer
+      // that wrote `{"de":"Mitmachen"}` where oxfmt writes `{ "de": "Mitmachen" }` would
+      // meet nothing to be wrong about.
+      withSetting(SHIPPED, null, 'hero', 'title', { de: 'Mitmachen', en: 'Take part' }),
+      // And the case next to it: one language over the print width, so the group has to
+      // break rather than run past the line.
+      withSetting(SHIPPED, null, 'hero', 'title', {
+        de: 'Ein Titel, der länger ist als die Zeile, in der er steht, damit der Umbau hier greift',
+      }),
       lifted,
       withHidden(lifted, AT(6, 30), 'briefing', true),
       withoutMoment(withoutMoment(SHIPPED, AT(11)), AT(14)),
@@ -753,6 +774,137 @@ describe('the words an editor reads', () => {
   });
 });
 
+/**
+ * A `text` setting is a word, and the editor's half of ADR 0075 §2 is in these six
+ * functions rather than in the field that draws them (`TextSetting.tsx`).
+ *
+ * **No module declares a `text` yet** — step 4 of the plan is what puts one on a block — so
+ * the declaration here is a fixture, and the field's own rendering is
+ * `test/preview/text-setting.test.tsx`. What this file holds is the rules, and that is
+ * where they belong: `HomeDocument.tsx` cannot be rendered by a test at all, so a rule kept
+ * in the component beside the field would only be reachable through it.
+ */
+describe('a word, the fifth kind of setting', () => {
+  /** A title-shaped declaration: one line, 80 characters, the block's own German. */
+  const TITLE: TextSpec = {
+    key: 'title',
+    kind: 'text',
+    maxChars: 80,
+    fallback: { de: 'Mitmachen' },
+  };
+  /** The same text declared as a paragraph, which is what `multiline` is for. */
+  const PARAGRAPH: TextSpec = { ...TITLE, key: 'intro', multiline: true };
+  const PIN = MODULE_SETTINGS['article-hero']?.find((spec) => spec.kind === 'article');
+
+  const MITMACHEN: LocalisedText = { de: 'Mitmachen' };
+
+  it('shows the document’s words, or the block’s own where the document says none', () => {
+    expect(wordsOf(TITLE, { de: 'Aktuell' })).toEqual({ de: 'Aktuell' });
+    expect(wordsOf(TITLE, undefined)).toEqual({ de: 'Mitmachen' });
+    expect(wordsOf(TITLE, null)).toEqual({ de: 'Mitmachen' });
+    // A block with no words of its own says so with `null`, the same answer a pin gives and
+    // for the same reason.
+    expect(wordsOf({ ...TITLE, fallback: null }, undefined)).toBeNull();
+    // The four other kinds have no words, and `null` is what keeps a caller from reading a
+    // language out of something that is not one.
+    expect(wordsOf(PIN!, 'https://correctiv.org/x/')).toBeNull();
+  });
+
+  it('writes one language and leaves the rest of the word standing', () => {
+    expect(withWord(MITMACHEN, 'en', 'Take part')).toEqual({ de: 'Mitmachen', en: 'Take part' });
+    expect(withWord({ de: 'Mitmachen', en: 'Take part' }, 'de', 'Dabei sein')).toEqual({
+      de: 'Dabei sein',
+      en: 'Take part',
+    });
+    // A field nobody has typed in sends the value the document already holds, and that has
+    // to come back as itself rather than as a second copy of it.
+    expect(withWord(MITMACHEN, 'de', 'Mitmachen')).toEqual(MITMACHEN);
+  });
+
+  it('takes a language out when a field is emptied, and the word with it when it is German', () => {
+    // The other language first: emptying English leaves a word the document may carry.
+    expect(withWord({ de: 'Mitmachen', en: 'Take part' }, 'en', '  ')).toEqual(MITMACHEN);
+    // And then the German. A word without one is `text-german-missing`, and a fault in a
+    // setting takes the whole place with it (`home-layout.ts`), so the editor writes
+    // nothing rather than a document whose block has vanished from the app.
+    expect(withWord({ de: 'Mitmachen', en: 'Take part' }, 'de', '')).toBeUndefined();
+    expect(withWord(MITMACHEN, 'de', '   ')).toBeUndefined();
+    expect(withWord(null, 'de', '')).toBeUndefined();
+  });
+
+  it('counts a blank word as a missing one, which is what the app draws', () => {
+    // `resolveText` falls back rather than drawing an empty heading and `faultOf` refuses a
+    // blank German, so a mark about spaces is a mark about the same gap.
+    expect(holdsWord(MITMACHEN, 'de')).toBe(true);
+    expect(holdsWord({ de: '  ' }, 'de')).toBe(false);
+    expect(holdsWord({ de: 'Mitmachen', en: '' }, 'en')).toBe(false);
+    expect(holdsWord(null, 'en')).toBe(false);
+  });
+
+  it('names the languages the word does not carry, and never the one being written', () => {
+    expect(languagesMissing(MITMACHEN, 'de')).toEqual(['en']);
+    expect(languagesMissing({ de: 'Mitmachen', en: 'Take part' }, 'de')).toEqual([]);
+    expect(languagesMissing(MITMACHEN, 'en')).toEqual([]);
+    // A document carrying its English and no German, read in English: the field writes the
+    // German and marks it missing, rather than showing an empty field to be filled.
+    expect(languagesMissing({ en: 'Take part' }, 'en')).toEqual(['de']);
+    expect(languagesMissing(null, 'de')).toEqual(['en']);
+  });
+
+  it('asks the declaration for the bound, and for the line rule with it', () => {
+    expect(charsLeft('', TITLE)).toBe(80);
+    expect(charsLeft('Mitmachen', TITLE)).toBe(71);
+    // No bound of its own means the core's own, which is what `textBoundOf` fills in rather
+    // than what this tool would guess at.
+    expect(charsLeft('', { key: 'x', kind: 'text', fallback: null })).toBe(120);
+    expect(PARAGRAPH.multiline).toBe(true);
+  });
+
+  it('compares two readings of a word by value, and the four other kinds as before', () => {
+    // The reason this is not `===`: the parser hands this tool a fresh object per parse, so
+    // identity would call every word a change and write a moment for a word nobody touched.
+    expect(sameSettingValue(MITMACHEN, { de: 'Mitmachen' })).toBe(true);
+    expect(sameSettingValue(MITMACHEN, { de: 'Mitmachen', en: 'Take part' })).toBe(false);
+    expect(sameSettingValue(MITMACHEN, { de: 'Mitmachen', en: undefined })).toBe(true);
+    expect(sameSettingValue(3, 3)).toBe(true);
+    expect(sameSettingValue(3, '3')).toBe(false);
+    expect(sameSettingValue(null, null)).toBe(true);
+    expect(sameSettingValue(undefined, undefined)).toBe(true);
+    expect(sameSettingValue(MITMACHEN, 'Mitmachen')).toBe(false);
+  });
+
+  it('writes a word into the document, prints it, and writes no moment for it twice', () => {
+    const named = withSetting(SHIPPED, null, 'hero', 'title', MITMACHEN);
+    expect(named.sections.find((section) => section.id === 'hero')?.settings?.title).toEqual(
+      MITMACHEN,
+    );
+    // The printer's object branch, which nothing else reaches: a setting whose value is a
+    // word is the one value that is not a scalar.
+    expect(formatLayoutDocument(named)).toContain('"title": { "de": "Mitmachen" }');
+
+    // And the model's own promise, on the fifth kind: a moment that restates what it
+    // inherits is taken out again rather than written. Asserted on the moment's changes
+    // rather than on the layout's identity, because `settled()` rebuilds the moments after
+    // the edited one whatever it does with this one.
+    const withPoint = withMoment(named, AT(9));
+    expect(
+      momentAt(withSetting(withPoint, AT(9), 'hero', 'title', MITMACHEN), AT(9))?.changes,
+    ).toEqual([]);
+    const written = withSetting(withPoint, AT(9), 'hero', 'title', {
+      de: 'Mitmachen',
+      en: 'Take part',
+    });
+    expect(written.moments[0]?.changes[0]?.settings?.title).toEqual({
+      de: 'Mitmachen',
+      en: 'Take part',
+    });
+    // A different German is a change, because it is a different word.
+    expect(
+      withSetting(withPoint, AT(9), 'hero', 'title', { de: 'Aktuell' }).moments[0]?.changes[0]
+        ?.settings?.title,
+    ).toEqual({ de: 'Aktuell' });
+  });
+});
 /**
  * The article picker says it is sample data, and it says it from the inventory.
  *

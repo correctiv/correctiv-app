@@ -27,8 +27,19 @@ export interface ToolActions {
   dirty: boolean;
   /** How many things changed, where the tool counts; the header says "changed" otherwise. */
   count?: number;
-  /** Why submit and save are off although the tool is dirty, for a screen reader. */
-  blocked?: boolean;
+  /**
+   * Why submit and save are off although the tool holds changes, **in the reader's
+   * language**, because the submit button's tooltip says it while they are off
+   * (`ui/ToolActions.tsx`). A boolean left a disabled button whose only reason
+   * lived in the panel, which is the half a reader cannot reach from the header.
+   *
+   * A formatted string rather than a descriptor, for `String(Problem)`: the tools
+   * already hand this registry their wording of results, and a reason with a code
+   * list in it has to be formatted by the tool that knows the codes. Undefined
+   * while nothing blocks the tool, and the tooltip then says what a clean tool has
+   * instead.
+   */
+  blocked?: string;
   /**
    * Submit is a link, because the click leaves for GitHub in a new tab and only a link
    * opens one without a popup blocker in the way (ADR 0061 §1). `null` while there is

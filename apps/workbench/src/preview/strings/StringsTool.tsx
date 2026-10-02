@@ -181,20 +181,6 @@ const COPY = defineMessages({
     defaultMessage: 'Copy changes',
     description: 'Copies the changed German to the clipboard as JSON, id to wording.',
   },
-  submitHint: {
-    id: 'tools.strings.submitHint',
-    defaultMessage:
-      'GitHub opens with your changed texts filled in. One click on “Create” submits them. You need a GitHub account.',
-    description:
-      'The one line under Submit texts. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English.',
-  },
-  submitHintLong: {
-    id: 'tools.strings.submitHintLong',
-    defaultMessage:
-      'These changes are too long for a link. The click copies them to your clipboard, and you paste them in on GitHub. You need a GitHub account.',
-    description:
-      'Stands in for tools.strings.submitHint when the changes are too long to travel in the address, so they go by the clipboard.',
-  },
   submitCopied: {
     id: 'tools.strings.submitCopied',
     defaultMessage: 'The changed texts are on your clipboard. Paste them into the issue on GitHub.',
@@ -304,7 +290,6 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
   /** Only for changes too long for the address: whether the click put them on the clipboard. */
   const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
   const copyField = useRef<HTMLTextAreaElement>(null);
-  const submitHintId = useId();
   useEffect(() => {
     if (copied === 'no-clipboard') copyField.current?.focus();
   }, [copied]);
@@ -524,9 +509,12 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
           <p className="text-s font-medium text-on-canvas">
             {intl.formatMessage(COPY.changes, { count: changed })}
           </p>
-          <p id={submitHintId} className={NOTE}>
-            {intl.formatMessage(offer.fits ? COPY.submitHint : COPY.submitHintLong)}
-          </p>
+          {/*
+            What the Submit button in the header does with these changes is said by
+            that button, once for every tool (`ui/ToolActions.tsx`). It was a line
+            here in this tool's own words, over a card the reader has to scroll to,
+            naming a button that is not in this panel.
+          */}
           {copied !== null && (
             <div className="flex flex-col gap-xs">
               <output className="flex items-start gap-xs text-s text-on-canvas">

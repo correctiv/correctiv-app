@@ -50,9 +50,10 @@ import {
  *
  * **Nothing is hidden behind a gesture.** Every control keeps a name, a tooltip and
  * a focus ring: the five screens are radios named by the screen they switch to and
- * not five anonymous glyphs, the GitHub paragraph waits behind an ⓘ that names the
- * button it describes, the checkbox is a pressed button that says what it does, and
- * the chip says which way round it is.
+ * not five anonymous glyphs, the checkbox is a pressed button that says what it does,
+ * and the chip says which way round it is. What Submit does is not here at all: that
+ * button is in the header, so its explanation and the reason it is off are on it
+ * (`ui/ToolActions.tsx`), which is where this bar's own ⓘ used to point.
  */
 
 /** The card's ground is `surface`, so a card inside the dock steps back to `canvas`. */
@@ -67,9 +68,9 @@ const FIELD =
  *
  * **Exported under this name rather than as `COPY`**, because `HomeDocument.tsx`
  * has a `COPY` of its own for the blocks and for the clipboard outcome, and because
- * the panel chooses which of the three messages about submitting the ⓘ opens on —
- * a question about the document rather than about the bar. `Edition.tsx`'s
- * `EDITION_COPY` and the drawings' `ARTICLE_PATH_COPY` are the same arrangement.
+ * the panel hands the header the reason its Submit is switched off — a question about
+ * the document rather than about the bar. `Edition.tsx`'s `EDITION_COPY` and the
+ * drawings' `ARTICLE_PATH_COPY` are the same arrangement.
  */
 export const CONTROLS_COPY = defineMessages({
   screen: {
@@ -90,31 +91,18 @@ export const CONTROLS_COPY = defineMessages({
     description:
       'The tooltip, and the accessible name, of the button in the editor’s bar that switches following the pointer on and off. It was a checkbox with this sentence beside it, which took a row of the panel that the block list wanted.',
   },
-  submitAbout: {
-    id: 'home.document.submitAbout',
-    defaultMessage: 'Submitting the change',
-    description:
-      'Names the ⓘ in the editor’s bar, which is what this ⓘ explains: what the Submit button in the header does with the change. The tooltip names the topic, as every ⓘ on this site does.',
-  },
-  submitHint: {
-    id: 'home.document.submitHint',
-    defaultMessage:
-      'GitHub opens with your change filled in. One click on “Create” submits it. You need a GitHub account.',
-    description:
-      'Inside the ⓘ beside Submit, which is what the Submit button in the header does. “Create” is GitHub’s own button on the page that opens, which GitHub labels in English, so it stays in English.',
-  },
-  submitHintLong: {
-    id: 'home.document.submitHintLong',
-    defaultMessage:
-      'This change is too long for a link. The click copies it to your clipboard, and you paste it in on GitHub. You need a GitHub account.',
-    description:
-      'Stands in for home.document.submitHint inside the ⓘ when the change is too long to travel in the address, so it has to go by the clipboard.',
-  },
+  /**
+   * Why Submit in the header is switched off while a scenario is open or the
+   * document still holds one, in the reader's language, handed to the header rather
+   * than drawn here. It was the text behind this bar's own ⓘ, which described a
+   * button that is not in this panel — the sentence belongs on the button now, and a
+   * scenario is the one reason this tool has for switching it off.
+   */
   scenarioGuard: {
     id: 'home.document.scenarioGuard',
     defaultMessage: 'Scenarios are examples. They are not submitted.',
     description:
-      'Inside the ⓘ beside Submit while a scenario is open or the document still holds one, which is why the switched-off Submit and the switched-off Save in the header are off. Submitting or saving it would publish the example on every phone.',
+      'The tooltip on the Submit button in the header while a scenario is open or the document still holds one, which is why that button and the switched-off Save beside it are off. Submitting or saving it would publish the example on every phone.',
   },
 
   midnight: {
@@ -214,7 +202,6 @@ export function EditorBar({
   scenario,
   follow,
   onFollow,
-  submitHint,
   notice,
   outcome,
 }: {
@@ -225,12 +212,6 @@ export function EditorBar({
   scenario: ScenarioControl;
   follow: boolean;
   onFollow: (next: boolean) => void;
-  /**
-   * Which of the three messages about submitting goes in the ⓘ, chosen by the
-   * caller because it is the caller that knows whether a scenario is open and how
-   * long the change is.
-   */
-  submitHint: MessageDescriptor;
   /**
    * What the bar has to say about the document itself rather than about a control: where
    * it came from, if it came in a link (ADR 0076 §3). A row of its own above the
@@ -279,31 +260,23 @@ export function EditorBar({
         */}
         {screen === 'home' && <ScenarioBar control={scenario} />}
         {/*
-          What Submit in the header does, which was a permanent paragraph. It is
-          about a button that is not here, so the ⓘ names that button rather than the
-          editor — the same shape as the ⓘ beside the tokens tool's Copy CSS.
-        */}
-        <InfoTip
-          about={intl.formatMessage(CONTROLS_COPY.submitAbout)}
-          align="end"
-          className="ml-auto"
-        >
-          <p data-testid="submit-hint">{intl.formatMessage(submitHint)}</p>
-        </InfoTip>
-        {/*
           Whether the frame follows the pointer, as the pressed state of a button
           rather than as a checked box with a sentence beside it. The variant carries
           the pressed state as well as `aria-pressed`, because an outline button
           tinted with `surface` would be tinted the dock's own ground and so would
           look exactly like the off state — the measure tool's outline button is the
           same argument.
+
+          `ml-auto` is the row's spacer and stands where the submit ⓘ stood: this
+          toggle is the last thing in the row and has to stay at the right end of it
+          rather than sitting beside the scenario chip.
         */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant={follow ? 'default' : 'outline'}
               size="icon"
-              className="size-[1.75rem]"
+              className="ml-auto size-[1.75rem]"
               aria-pressed={follow}
               aria-label={intl.formatMessage(CONTROLS_COPY.follow)}
               onClick={() => onFollow(!follow)}

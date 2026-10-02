@@ -12,7 +12,7 @@ import { MINUTES_IN_DAY, type HomeLayout } from '@correctiv/app-core/lib/home-la
 import { Localisation } from '../../src/i18n/Localisation';
 import { TooltipProvider } from '../../src/ui/kit/tooltip';
 import { SOURCE_LANGUAGE } from '../../src/i18n/language';
-import { CONTROLS_COPY, EditorBar, PointChip } from '../../src/preview/home/Controls';
+import { EditorBar, PointChip } from '../../src/preview/home/Controls';
 import { EDITION_COPY } from '../../src/preview/home/Edition';
 import type { Point } from '../../src/preview/home/document';
 import { SCREEN_NAMES } from '../../src/preview/home/screens';
@@ -25,8 +25,8 @@ import type { ScenarioControl } from '../../src/preview/home/Scenario';
  * **What it holds.** Three things that can go quietly. The screen switcher is five
  * RADIOS named by the screen they switch to and not five anonymous glyph buttons, so
  * a screen reader says „Mediathek“ where it used to say „radio button“. The GitHub
- * paragraph is not in the markup at all, because it waits behind an ⓘ about the
- * button it describes. And the point's card is a chip that is shut until it is asked
+ * paragraph is not here at all, ⓘ or no ⓘ, because the button it describes is in the
+ * header and says it. And the point's card is a chip that is shut until it is asked
  * for, which is the whole of the height it used to take.
  *
  * **Why this file exists at all.** `HomeDocument.tsx` cannot be rendered by a test:
@@ -106,7 +106,6 @@ function bar(over: Partial<Parameters<typeof EditorBar>[0]> = {}): ReactNode {
       scenario={SCENARIO}
       follow
       onFollow={() => {}}
-      submitHint={CONTROLS_COPY.submitHint}
       {...over}
     />
   );
@@ -240,25 +239,38 @@ describe('the scroll-follow toggle', () => {
   });
 });
 
+/**
+ * What the GitHub paragraph became.
+ *
+ * **This bar carries no ⓘ about Submit at all now**, and that is the point of the
+ * block: the sentence was about a button in the header, so it is on that button
+ * (`ui/ToolActions.tsx`), together with the reason the button is off, which is the
+ * only part a reader of this panel could not reach. So these assert what is NOT
+ * here — the ⓘ, its heading and its three variants — and `test/shell/actions.test.tsx`
+ * holds the button's own half, which is where the words went.
+ */
 describe('what the GitHub paragraph became', () => {
-  it('is not in the markup, because the ⓘ has not been pressed', () => {
+  it('is nowhere in this panel, ⓘ or no ⓘ', () => {
     draw(bar());
-    expect(container.textContent).not.toContain('GitHub opens');
+    expect(container.textContent).not.toContain('GitHub');
     expect(container.textContent).not.toContain('GitHub account');
+    expect(container.querySelector('[data-testid="submit-hint"]')).toBeNull();
   });
 
-  it('is behind an ⓘ named after the button it describes', () => {
+  it('left no ⓘ behind it either', () => {
     draw(bar());
-    expect(container.querySelector('button[title*="Submitting the change"]')).not.toBeNull();
+    expect(container.querySelector('button[title*="Submitting the change"]')).toBeNull();
+    // The row draws the screen switcher, the scenario chip and the follow toggle and
+    // nothing else, so the ⓘ that stood between them is gone rather than moved.
+    expect(container.querySelectorAll('[data-testid="scenario-bar"]')).toHaveLength(1);
   });
 
-  it('is whichever of the three the panel says it is, and all three reach it', () => {
-    for (const [index, id] of (
-      ['submitHint', 'submitHintLong', 'scenarioGuard'] as const
-    ).entries()) {
-      draw(bar({ submitHint: CONTROLS_COPY[id], guarded: index === 2 }));
-      expect(container.querySelector('button[title*="Submitting the change"]')).not.toBeNull();
-    }
+  it('keeps the follow toggle at the right end of the row, where the ⓘ stood', () => {
+    draw(bar());
+    // `ml-auto` is the spacer and it moved onto the toggle with the ⓘ gone; without it
+    // the row would end at the scenario chip and the toggle would sit in the middle.
+    const toggle = byTestId('follow-toggle');
+    expect(toggle.className).toContain('ml-auto');
   });
 });
 

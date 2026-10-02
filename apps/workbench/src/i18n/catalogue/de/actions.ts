@@ -6,7 +6,8 @@ export const actions: Record<string, string> = {
   'actions.group': 'Änderungen des geöffneten Werkzeugs',
   'actions.submit': 'Einreichen',
   'actions.submitTip':
-    'Öffnet auf GitHub ein neues Issue mit Ihrer Änderung. Daraus entsteht automatisch ein Pull Request. Diese Seite speichert kein Passwort und keinen Token.',
+    'Öffnet GitHub mit Ihrer Änderung, oder legt sie in die Zwischenablage, wenn sie zu lang für einen Link ist. Ein Klick auf „Create“ reicht sie ein, daraus entsteht automatisch ein Pull Request. Dafür brauchen Sie ein GitHub-Konto; diese Seite speichert kein Passwort und keinen Token.',
+  'actions.submitOff': 'Noch nichts einzureichen. Ändern Sie zuerst etwas in diesem Werkzeug.',
   'actions.share': 'Link teilen',
   'actions.shareTip':
     'Kopiert einen Link, der diesen Entwurf auf einem anderen Rechner öffnet. Ein Entwurf ist kein Geheimnis: Alles, was er enthält, landet beim Einreichen in einem öffentlichen GitHub-Issue.',
