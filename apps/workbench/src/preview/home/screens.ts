@@ -52,6 +52,12 @@ export const SCREEN_ROUTES: Readonly<Record<ConfigurableScreen, string>> = {
  * The mark each screen wears in the editor's screen switcher, and the app tab's
  * own name for the same mark beside it.
  *
+ * **Not the core's `SCREEN_ICONS`**, which is the same word for a different thing: that
+ * one is the keys a screen document may name and the six native names behind each
+ * (ADR 0075 §4), it holds the app's own "Mehr" and a fallback this map has no row for,
+ * and it carries no component. This one is what a screen looks like *here*. Two names,
+ * two tables, and the test below reads the app's own declaration to hold them together.
+ *
  * **The same icons as the app's tab bar, in the kit's own set.** `tabTargets.ts`
  * in the app declares three spellings of every tab icon — SF Symbols, Material
  * and Ionicons — because three platforms draw three, and it is the Ionicons name

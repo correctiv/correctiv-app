@@ -96,7 +96,13 @@ import {
 import { audienceOf, isAudience, reaches, type Audience, type Reader } from './home-audience';
 import { faultOf, MODULE_SETTINGS, type LocalisedText, type SettingFault } from './home-settings';
 import { mayAppearOn } from './block-category';
-import { SCREEN_DOCUMENTS, type ConfigurableScreen } from './screen-layout';
+import {
+  parseScreenDocument,
+  SCREEN_DOCUMENTS,
+  type ConfigurableScreen,
+  type ScreenProblemCode,
+  type ScreenWords,
+} from './screen-layout';
 
 /**
  * The version this app was written against.
@@ -242,6 +248,16 @@ export interface HomeEdition {
 
 export interface HomeLayout {
   readonly version: number;
+  /**
+   * What this screen is called, and what its bar shows — `null` when the document's title
+   * was refused (ADR 0075 §2).
+   *
+   * Part of the layout rather than a third thing beside it, because it is the same
+   * document's: the printer writes it back out of here, so a document that arrived with
+   * its words is not silently written without them, and the words arrive with the
+   * sections rather than in a fetch of their own (ADR 0075 §5).
+   */
+  readonly words: ScreenWords | null;
   /** Ordered: the host draws them in this order and adds no order of its own. */
   readonly sections: readonly HomeSection[];
   /** In time order, whatever order the document wrote them in. */
@@ -309,6 +325,11 @@ const EDITION_KEYS: Record<Exclude<keyof HomeEdition, 'start' | 'end'>, true> = 
  * cannot act on "invalid" and can act on "the language `fr` is not one this app knows".
  * They come from `faultOf` in `home-settings.ts`, which is where the rules live; this file
  * only says where the setting was found.
+ *
+ * {@link ScreenProblemCode} is here for the same reason and not merged into it: a screen's
+ * three words are read by `parseScreenDocument`, which has its own vocabulary because it
+ * answers about a word rather than about a place, and one report list cannot carry two
+ * unions the callers read separately.
  */
 export type LayoutProblemCode =
   | 'document-not-an-object'
@@ -368,7 +389,8 @@ export type LayoutProblemCode =
   | 'edition-until-invalid'
   | 'edition-span-in-gap'
   | 'edition-span-empty'
-  | 'edition-changes-invalid';
+  | 'edition-changes-invalid'
+  | ScreenProblemCode;
 
 export interface LayoutProblem {
   readonly code: LayoutProblemCode;
@@ -469,6 +491,14 @@ export function minuteOfDay(now: number | Date): MinuteOfDay {
  * §1, so what is refused here with `section-module-not-on-screen` is only one of the four
  * blocks that print another screen's own title (§3, `SCREEN_BOUND_BLOCKS`); a module with
  * no declaration at all is left to `renderable`, as the grammar tests rely on.
+ *
+ * **A screen's three words are read here, and a title that was refused does not refuse the
+ * layout** ([ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §3). That is the one place this function is gentler than `parseScreenDocument`, and it is
+ * ADR 0036 §7 rather than a second decision: the layout is what this function returns, a
+ * layout with places in it draws, and the word it could not read is reported beside the
+ * places in one list. A caller that wants the strict reading is a publish — the two scripts
+ * under `scripts/`, which refuse a document that parsed with any problem at all.
  */
 export function parseHomeLayout(
   input: unknown,
@@ -497,6 +527,15 @@ export function parseHomeLayout(
     problems.push({ code: 'version-unknown', context: { version, expected: HOME_LAYOUT_VERSION } });
   }
 
+  /*
+   * Before the sections, because the document writes its words before its places and a
+   * report reads better in the order the file is written in. `problems` takes a
+   * `ScreenProblem` unchanged: the code is a `LayoutProblemCode` above, and the two
+   * interfaces are the same shape.
+   */
+  const words = parseScreenDocument(input);
+  problems.push(...words.problems);
+
   const parsed: HomeSection[] = [];
   const taken = new Set<string>();
   sections.forEach((raw, index) => {
@@ -511,6 +550,7 @@ export function parseHomeLayout(
   return {
     layout: {
       version,
+      words: words.words,
       sections: parsed.map((section) => {
         const audience = held.get(section.id);
         return audience === undefined ? section : { ...section, audience };
@@ -1471,6 +1511,7 @@ const bundled = parseHomeLayout(homeLayoutDocument);
  */
 export const DEFAULT_HOME_LAYOUT: HomeLayout = bundled.layout ?? {
   version: HOME_LAYOUT_VERSION,
+  words: null,
   sections: [],
   moments: [],
   editions: [],

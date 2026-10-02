@@ -52,9 +52,20 @@ let reports: ErrorReport[];
 const joined = (screens: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
   JSON.stringify({ version: SCREEN_LAYOUTS_VERSION, screens, ...extra });
 
+/**
+ * The German every document below is called by.
+ *
+ * ADR 0075 §2 makes it the one word a screen document may not leave out, so a fixture
+ * without one is refused for a reason the assertion here is not about — and the counts in
+ * `document-draws-nothing` are the whole point of those cases. What a screen is CALLED is
+ * `test/screen-words.test.ts`.
+ */
+const TITLE = { de: 'Bildschirm' };
+
 /** A layout different from the bundled one so a test can tell. */
 const HOME = {
   version: HOME_LAYOUT_VERSION,
+  title: TITLE,
   sections: [
     { id: 'header', module: 'home-header' },
     { id: 'impact', module: 'impact-footer' },
@@ -118,6 +129,7 @@ describe('a document that is a layout', () => {
     const ahead = joined({
       home: {
         version: HOME_LAYOUT_VERSION,
+        title: TITLE,
         sections: [
           { id: 'header', module: 'home-header' },
           { id: 'quiz', module: 'quiz-of-the-day' },
@@ -210,12 +222,12 @@ describe('a document that is worse than the copy it would replace', () => {
   const worse: [string, unknown, ErrorReport[]][] = [
     [
       'no sections at all',
-      { version: HOME_LAYOUT_VERSION, sections: [] },
+      { version: HOME_LAYOUT_VERSION, title: TITLE, sections: [] },
       [{ domain: 'layout', code: 'document-draws-nothing', context: { problems: 0 } }],
     ],
     [
       'a version from the future and no sections',
-      { version: 99, sections: [] },
+      { version: 99, title: TITLE, sections: [] },
       [
         {
           domain: 'layout',
@@ -227,7 +239,7 @@ describe('a document that is worse than the copy it would replace', () => {
     ],
     [
       'sections that are not sections',
-      { version: HOME_LAYOUT_VERSION, sections: [1, 2, { id: 'x' }] },
+      { version: HOME_LAYOUT_VERSION, title: TITLE, sections: [1, 2, { id: 'x' }] },
       [
         { domain: 'layout', code: 'section-not-an-object', context: { index: 0, type: 'number' } },
         { domain: 'layout', code: 'section-not-an-object', context: { index: 1, type: 'number' } },
@@ -243,6 +255,7 @@ describe('a document that is worse than the copy it would replace', () => {
       'only modules this app cannot draw',
       {
         version: HOME_LAYOUT_VERSION,
+        title: TITLE,
         sections: [{ id: 'quiz', module: 'quiz-of-the-day' }],
         moments: [],
       },
@@ -329,6 +342,7 @@ describe('a document that is worse than the copy it would replace', () => {
 describe('a merged document with several screens', () => {
   const MITMACHEN = {
     version: HOME_LAYOUT_VERSION,
+    title: TITLE,
     sections: [{ id: 'only', module: 'participate-header' }],
     moments: [],
   };
@@ -345,7 +359,12 @@ describe('a merged document with several screens', () => {
   });
 
   it("is kept when only some screens draw, the rest being the host's to fall back on", async () => {
-    answer(joined({ home: { version: HOME_LAYOUT_VERSION, sections: [] }, mitmachen: MITMACHEN }));
+    answer(
+      joined({
+        home: { version: HOME_LAYOUT_VERSION, title: TITLE, sections: [] },
+        mitmachen: MITMACHEN,
+      }),
+    );
     expect(await refresh()).toBe('stored');
   });
 

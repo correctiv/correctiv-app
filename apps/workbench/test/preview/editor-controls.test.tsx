@@ -60,7 +60,13 @@ const SCENARIO: ScenarioControl = {
 };
 
 /** A day that changes at nothing, so the chip has no moments to count. */
-const DAY: HomeLayout = { version: 1, sections: [], moments: [], editions: [] };
+const DAY: HomeLayout = {
+  version: 1,
+  words: null,
+  sections: [],
+  moments: [],
+  editions: [],
+};
 
 let container: HTMLDivElement;
 let root: Root;

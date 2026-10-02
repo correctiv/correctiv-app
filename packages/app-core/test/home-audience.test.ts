@@ -51,6 +51,16 @@ const NOBODY = readerOf(null);
 
 const sorted = (reader: ReadonlySet<Audience>) => [...reader].sort();
 
+/**
+ * The German every document in this file is called by.
+ *
+ * ADR 0075 §2 makes it the one word a screen document may not leave out, so a fixture
+ * without one is a document with a fault in it — and the frozen parsers below are asked
+ * about the key they have never heard of rather than about this one, which is why the two
+ * documents handed to them deliberately carry no title.
+ */
+const TITLE = { de: 'Bildschirm' };
+
 /** A parse that is expected to be clean, as a layout, so a test can fold it. */
 function read(input: unknown): HomeLayout {
   const parse = parseHomeLayout(input);
@@ -136,6 +146,7 @@ describe('the grammar, on a section and on a change', () => {
     audiences?: unknown,
   ) => ({
     version: HOME_LAYOUT_VERSION,
+    title: TITLE,
     sections,
     ...(audiences === undefined ? {} : { audiences }),
     moments,
@@ -254,6 +265,7 @@ describe('the fold, with the reader as its third parameter', () => {
   const evening = () =>
     read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [
         { id: 'hero', module: 'article-hero' },
         { id: 'early', module: 'early-access-card' },
@@ -304,6 +316,7 @@ describe('the fold, with the reader as its third parameter', () => {
   it('filters an edition with the same clause, one level up', () => {
     const layout = read({
       version: HOME_LAYOUT_VERSION,
+      title: TITLE,
       sections: [{ id: 'hero', module: 'article-hero' }],
       editions: [
         {

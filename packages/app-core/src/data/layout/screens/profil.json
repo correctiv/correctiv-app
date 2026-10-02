@@ -1,5 +1,7 @@
 {
   "version": 4,
+  "title": { "de": "Profil" },
+  "icon": "person",
   "sections": [
     { "id": "club", "module": "profile-club-card" },
     { "id": "membership", "module": "profile-membership" },

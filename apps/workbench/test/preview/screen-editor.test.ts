@@ -99,22 +99,33 @@ describe('the screen picker and its palette', () => {
 describe('the screen switcher’s icons', () => {
   /**
    * The Ionicons name the app's own tab bar gives each screen, read out of the app's
-   * file as text — the app is not importable from Node and its icon components are
+   * files as text — the app is not importable from Node and its icon components are
    * React Native's, so the name is the part that can be compared.
    *
-   * Read out of `DESTINATIONS` rather than out of the whole file: the label table above
-   * it has a `home:` of its own, and a search for `home: {` in the file at large finds
-   * that one first.
+   * **Out of two files, because the app keeps it in two** (ADR 0075 §4): a screen id is
+   * mapped to an icon KEY in `DESTINATIONS`, and the key is declared with its six native
+   * names in `screenIcons.ts`, which the generator reads by importing it under Node's
+   * type stripping. Read either half alone and the answer is a name or a key rather than
+   * the mark the tab bar actually draws.
+   *
+   * `DESTINATIONS` rather than the whole of `tabTargets.ts`: the label table above it has
+   * a `home:` of its own, and a search for `home:` in the file at large finds that one
+   * first.
    */
   function appIonicon(screen: string): string | null {
-    const table = /export const DESTINATIONS[\s\S]*?\n};/.exec(APP('lib/tabTargets.ts'))![0];
+    const destinations = /export const DESTINATIONS[\s\S]*?\n};/.exec(APP('lib/tabTargets.ts'))![0];
+    const key = new RegExp(`\\n {2}${screen}: \\{[^}]*\\.\\.\\.iconOf\\('(\\w+)'\\) \\}`).exec(
+      destinations,
+    );
+    if (key === null) return null;
+    const icons = /export const SCREEN_ICONS[\s\S]*?\n};/.exec(APP('lib/screenIcons.ts'))![0];
     /*
      * `[{ ]active` and not `active`: `inactive:` ends in it, and a search without
      * the leading character reads `compass-outline` where it means `compass`.
      */
     const at = new RegExp(
-      `${screen}:\\s*\\{[\\s\\S]*?ionicon:\\s*\\{[^}]*[{ ]active:\\s*'([^']+)'`,
-    ).exec(table);
+      `\\n {2}${key[1]}: \\{[\\s\\S]*?ionicon: \\{[^}]*[{ ]active: '([^']+)'`,
+    ).exec(icons);
     return at === null ? null : at[1]!;
   }
 
@@ -189,7 +200,7 @@ describe('the navigation editor', () => {
 
   it('names exactly the destinations the app declares', () => {
     const section = /export const DESTINATIONS[\s\S]*?\n};/.exec(APP('lib/tabTargets.ts'))![0];
-    const ids = [...section.matchAll(/^ {2}(\w+): \{$/gm)].map((match) => match[1]);
+    const ids = [...section.matchAll(/^ {2}(\w+): \{ route:/gm)].map((match) => match[1]);
     expect(Object.keys(DESTINATION_NAMES).sort()).toEqual(ids.sort());
   });
 
