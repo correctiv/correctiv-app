@@ -92,6 +92,41 @@ describe('the header actions', () => {
     expect(q('action-submit')?.tagName).toBe('BUTTON');
   });
 
+  /*
+   * The share button (ADR 0076 §5), and the three things about it that are decisions
+   * rather than code: the seam is optional, so a tool with no draft to hand over does not
+   * draw it at all; it follows the others and is disabled rather than hidden, because a
+   * button that comes and goes moves every other control in the bar each time somebody
+   * types; and a blocked tool cannot hand out a link to a change it will not let anybody
+   * submit.
+   */
+  it('draws the share button for a tool that fills the seam, and only then', () => {
+    mount('home', { dirty: true, save: { run: () => {} } });
+    expect(q('action-share')).toBeNull();
+
+    act(() => root.unmount());
+    container.remove();
+    mount('home', { dirty: true, share: { run: () => {} } });
+    expect(q('action-share')?.tagName).toBe('BUTTON');
+  });
+
+  it('keeps the share button disabled while the tool is clean and while it is blocked', () => {
+    mount('home', { dirty: false, share: { run: () => {} } });
+    expect((q('action-share') as HTMLButtonElement).disabled).toBe(true);
+
+    act(() => root.unmount());
+    container.remove();
+    mount('home', { dirty: true, blocked: true, share: { run: () => {} } });
+    expect((q('action-share') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('hands the click to the tool, which is what builds the link', () => {
+    let shared = 0;
+    mount('home', { dirty: true, share: { run: () => (shared += 1) } });
+    act(() => q('action-share')!.click());
+    expect(shared).toBe(1);
+  });
+
   it('removes the actions when the tool unmounts', () => {
     mount('home', { dirty: true, discard: () => {} });
     expect(q('tool-actions')).not.toBeNull();

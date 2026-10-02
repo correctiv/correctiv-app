@@ -34,6 +34,7 @@ import { sectionTestId } from './home/names';
 import { addLog, clearLogs, getLogs, subscribeLogs } from './logs';
 import { HOST_DEVICE } from './devices';
 import { fitScale, STAGE_ROOM } from './scale';
+import { arriveFrom } from './arrive';
 import { frameSize, type PreviewState } from './state';
 import { getState, set, start, subscribe } from './store';
 import type { ToolBindings } from './ui/Panels';
@@ -155,6 +156,22 @@ export function usePreview() {
       release();
       uninstall();
     };
+  }, []);
+
+  /*
+   * A draft out of the address, once, on arrival (ADR 0076 §3).
+   *
+   * **The address is read here, synchronously, and not from the store.** The effect above
+   * has taken it by the time this one runs — both are on mount, and the store's is first —
+   * and the page writes the address back on the render after that (`started` says why in
+   * full, and the hour in a link died there once). So the parameter is on `location.hash`
+   * until the page decides otherwise, and every line between here and there is a chance to
+   * lose a draft somebody was sent. Reading a string and then handing it over is what
+   * keeps the rest of this safe: the bytes are in hand before anything can move, and what
+   * happens to them is `./arrive.ts`'s, which can be asked in a test and this cannot.
+   */
+  useEffect(() => {
+    void arriveFrom(location.hash);
   }, []);
 
   /*
