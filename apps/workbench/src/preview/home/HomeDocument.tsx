@@ -101,7 +101,14 @@ import {
 import { guarded as isGuarded } from './scenario';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
 import { layoutFile } from './names';
-import { CONFIGURABLE_SCREENS, isScreen, SCREEN_NAMES, SCREEN_ROUTES, shippedOf } from './screens';
+import {
+  CONFIGURABLE_SCREENS,
+  isScreen,
+  screenOfRoute,
+  SCREEN_NAMES,
+  SCREEN_ROUTES,
+  shippedOf,
+} from './screens';
 import { getLayout, getScreen, setLayout, setScreen, subscribeLayout } from './store';
 import { copyNow } from '../clipboard';
 import { canSave, publish, save, submission, type SaveResult } from './write';
@@ -1018,6 +1025,21 @@ export function HomeDocument({
    * ordinary one that can be submitted.
    */
   const guarded = isGuarded(state.scenario, layout);
+  /**
+   * The editor follows the frame: a tap inside the app moves `state.route` (the shell's poll
+   * writes back every route the frame has moved to), and a route that is a configurable
+   * screen opens that screen's document. Keyed on the route alone, so the picker, which
+   * sets the screen first and the route after, finds the screen already there and the
+   * loop closes. Documents are held per screen in `./store.ts`, so a draft is kept.
+   * A route that is no screen (the reader, settings) leaves the editor where it is.
+   */
+  useEffect(() => {
+    if (guarded) return;
+    const of = screenOfRoute(state.route);
+    if (of) setScreen(of);
+    // `guarded` is deliberately not a dependency: only a route change is a move.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.route]);
   /** Where Submit changes goes, or nothing while there is nothing to submit. */
   const offer =
     dirty && !guarded
