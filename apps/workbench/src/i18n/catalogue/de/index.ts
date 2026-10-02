@@ -19,7 +19,6 @@ import { design } from './design';
 import { devices } from './devices';
 import { diagrams } from './diagrams';
 import { documentFrame } from './document';
-import { draft } from './draft';
 import { drawing } from './drawing';
 import { edition } from './edition';
 import { features } from './features';
@@ -55,7 +54,6 @@ export const de: Record<string, string> = {
   ...devices,
   ...diagrams,
   ...documentFrame,
-  ...draft,
   ...drawing,
   ...edition,
   ...features,

@@ -10,5 +10,4 @@ export const ui: Record<string, string> = {
   'ui.tabParticipate': 'Mitmachen',
   'ui.tabProfile': 'Profil',
   'ui.tabMore': 'Mehr',
-  'ui.previewDraft': 'Entwurfsvorschau, nicht die veröffentlichte App',
 };

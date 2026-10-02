@@ -19,6 +19,10 @@
     "defaultMessage": "Changes of the open tool",
     "description": "The accessible name of the group of buttons at the right end of the header."
   },
+  "actions.previewTip": {
+    "defaultMessage": "The preview shows this draft, not the published app.",
+    "description": "The tooltip on the change status while the open tool holds changes: says the device frame draws the unpublished edit."
+  },
   "actions.save": {
     "defaultMessage": "Save",
     "description": "On a dev server only: writes the change into your own checkout. The same word for every tool."
@@ -960,18 +964,6 @@
   "document.source.generated": {
     "defaultMessage": "A program writes this page: <fileLink>{file}</fileLink> in the repository. It runs when the site is built, so there is nothing here to edit.",
     "description": "The line at the foot of the one document that is generated rather than read. {file} is the path of the PROGRAM and is not translated; <fileLink> is the link to it. document.source offers every other document as a file to edit, and offering this one would be an invitation to type into an output."
-  },
-  "draft.active": {
-    "defaultMessage": "Draft active",
-    "description": "The badge on the draft marker, shown beside the device frame while a string or the home layout holds an unpublished edit in this browser."
-  },
-  "draft.layoutChanged": {
-    "defaultMessage": "screen layout changed",
-    "description": "Part of the draft marker’s sentence: the home document differs from the file the app ships. home.document.changed is the same word inside the home tool."
-  },
-  "draft.stringsChanged": {
-    "defaultMessage": "{count, plural, one {# text changed} other {# texts changed}}",
-    "description": "Part of the draft marker’s sentence: how many app strings have an edited German wording in this browser. {count} is that number, drawn inline by the plural rule. tools.strings.changes counts the same thing inside the strings tool and reads the same in English."
   },
   "drawing.failed": {
     "defaultMessage": "Did not render: {message}",
