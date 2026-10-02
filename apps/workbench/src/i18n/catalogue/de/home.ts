@@ -188,6 +188,7 @@ export const home: Record<string, string> = {
   'home.issue.headingScreen': 'Änderungen am Bildschirm {screen}',
   'home.issue.leadLayout':
     'Diese Änderung an einem Bildschirm kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
+  'home.document.submitAbout': 'Die Änderung einreichen',
   'home.document.submitHint':
     'GitHub öffnet sich mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.scenarioGuard': 'Szenarien sind Beispiele. Sie werden nicht eingereicht.',
@@ -204,9 +205,14 @@ export const home: Record<string, string> = {
   'home.point.midnight': 'Mitternacht',
   'home.point.start': 'Der Beginn des Tages',
   'home.point.startLead': 'von Mitternacht bis {until}',
+  'home.point.startUntil': 'bis {until}',
   'home.point.time': 'Die Uhrzeit dieses Moments',
   'home.point.span':
     'bis {until} · {changes, plural, =0 {hier ändert sich noch nichts} one {# Änderung hier} other {# Änderungen hier}}',
+  'home.point.open':
+    'Der bearbeitete Punkt: {point}. Seine Uhrzeit, seine Regel und das, was damit geht, einblenden.',
+  'home.point.close':
+    'Der bearbeitete Punkt: {point}. Seine Uhrzeit, seine Regel und das, was damit geht, ausblenden.',
   'home.point.remove': 'Den Moment um {time} entfernen',
   'home.point.noMoments':
     'Dieser Tag hat keine Momente. Die Startseite sieht den ganzen Tag gleich aus.',

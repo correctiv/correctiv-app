@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
@@ -22,7 +22,7 @@ const COPY = defineMessages({
     id: 'scenarios.label',
     defaultMessage: 'Scenario',
     description:
-      'The label of the select that opens a named example of the home screen, such as the election night, in the editor and the frame.',
+      'The name of the select that opens a named example of the home screen, such as the election night, in the editor and the frame. Read aloud rather than drawn: the select stands in a row of the editor’s bar beside the screen switcher, where its own label would take a row to itself, and the trigger carries the open scenario’s name.',
   },
   none: {
     id: 'scenarios.none',
@@ -160,21 +160,26 @@ export function useScenario(
 
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 
-/** The list, what the open scenario shows, and the question when opening one would cost work. */
+/**
+ * The list, what the open scenario shows, and the question when opening one would cost work.
+ *
+ * **A chip beside the screen switcher, not a labelled row of its own.** It lost the
+ * visible "Scenario" label to the editor's bar, which has room for one row: the
+ * trigger says the open scenario's name, or "None", which is what the label was
+ * for, and `aria-label` keeps the group's name for a screen reader and the title
+ * for a pointer. What a scenario is stays behind the ⓘ as it was.
+ */
 export function ScenarioBar({ control }: { control: ScenarioControl }) {
   const intl = useWorkbenchIntl();
-  const selectId = useId();
+  const label = intl.formatMessage(COPY.label);
   const { open, asking } = control;
 
   return (
-    <div className="flex flex-col gap-2xs" data-testid="scenario-bar">
-      <div className="flex items-center gap-xs">
-        <label htmlFor={selectId} className="shrink-0 text-s text-on-canvas">
-          {intl.formatMessage(COPY.label)}
-        </label>
+    <div className="flex min-w-0 flex-1 flex-col gap-2xs" data-testid="scenario-bar">
+      <div className="flex min-w-0 items-center gap-3xs">
         <Select
-          id={selectId}
-          className="flex-1"
+          aria-label={label}
+          className="min-w-0 max-w-[9rem]"
           value={open?.name ?? ''}
           onValueChange={(value) => control.choose(value || null)}
           options={[

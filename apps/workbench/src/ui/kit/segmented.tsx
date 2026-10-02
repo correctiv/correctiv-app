@@ -7,6 +7,16 @@ export interface SegmentedOption {
   label: ReactNode;
   /** One segment that cannot be chosen while the rest can: `an` for a feature with sample data only. */
   disabled?: boolean;
+  /**
+   * The name of this option, when `label` is an icon rather than words.
+   *
+   * **A radio whose only child is a glyph announces "radio button, not selected"
+   * and stops**, which is a switch five people cannot tell apart. `icon: true`
+   * says the segment is drawn square and takes its name from here instead, so the
+   * icon is paint and this is the name — with a tooltip beside it, because the
+   * name a screen reader gets is not one a sighted reader of an icon does.
+   */
+  icon?: { name: string };
 }
 
 interface Props {
@@ -106,12 +116,41 @@ export function Segmented({
               checked={value === option.value}
               onChange={() => onChange(option.value)}
               disabled={option.disabled}
+              /*
+                The name, on the input rather than on the paint beside it: a
+                `sr-only` span inside the label would be announced as part of the
+                label, which a screen reader reads before the role, and the icon
+                after it adds nothing. This way the radio says what it is on its
+                own, which is also what `title` below gives the pointer.
+              */
+              aria-label={option.icon?.name}
               className="peer sr-only"
             />
             <span
+              title={option.icon?.name}
               className={cn(
-                'block cursor-pointer whitespace-nowrap rounded-s px-xs py-3xs text-s font-medium transition-colors',
+                // `whitespace-nowrap` and not only under `scroll`: a two-word option
+                // that breaks across lines reads as a hyphenation bug in German, and the
+                // wrapping row this replaced is what made it a question. Cheap everywhere.
+                'block cursor-pointer whitespace-nowrap rounded-s text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
+                'px-xs py-3xs',
+                /*
+                 * An icon segment is a centred box of exactly the same kind
+                 * `ui/kit/button.tsx` is: one child, and nothing beside it for a
+                 * `justify` to argue with.
+                 *
+                 * The `p-0` is the base padding being taken back, and it wins —
+                 * measured, it did not: `padding-left` on an icon segment was
+                 * 10px and its glyph sat 4px right of the middle of its own box,
+                 * because `cn()` is tailwind-merge and knew Tailwind's spacing
+                 * scale and not this theme's, so `px-xs` was a class it had no
+                 * opinion about and `p-0` had nothing to displace. `lib/cn.ts`
+                 * names the theme's scales now and this is its second shape,
+                 * after the `text-s` of issue #249; one fix, both shapes, and
+                 * the two variants choose their own padding no longer.
+                 */
+                option.icon && 'inline-flex size-[1.75rem] items-center justify-center p-0',
                 value === option.value
                   ? 'bg-accent text-white'
                   : 'text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
