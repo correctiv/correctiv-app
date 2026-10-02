@@ -33,6 +33,7 @@ export type SectionId =
   | 'appearance'
   | 'state'
   | 'home'
+  | 'navigation'
   | 'console'
   | 'tokens'
   | 'measure'
@@ -131,7 +132,18 @@ export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
     description:
       'The preview tool onto the framed app’s own store. sources.column.state is the same word as the first column of the sources board and means something else there: the condition a content source is in.',
   }),
-  home: wbMessage({ id: 'shell.section.home', defaultMessage: 'Home layout' }),
+  home: wbMessage({
+    id: 'shell.section.home',
+    defaultMessage: 'Screen layout',
+    description:
+      'The preview tool that arranges the blocks of one of the app’s screens, Home and the others. The id is older than the second screen.',
+  }),
+  navigation: wbMessage({
+    id: 'shell.section.navigation',
+    defaultMessage: 'Navigation',
+    description:
+      'The preview tool that edits the app’s tab bar: its entries, their order and when “Mehr” takes over.',
+  }),
   console: wbMessage({ id: 'shell.section.console', defaultMessage: 'Console' }),
   tokens: wbMessage({ id: 'shell.section.tokens', defaultMessage: 'Tokens' }),
   measure: wbMessage({ id: 'shell.section.measure', defaultMessage: 'Measure' }),
@@ -260,7 +272,17 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
 
   preview: {
     kind: 'preview',
-    sections: ['appearance', 'state', 'home', 'console', 'tokens', 'measure', 'inspect', 'strings'],
+    sections: [
+      'appearance',
+      'state',
+      'home',
+      'navigation',
+      'console',
+      'tokens',
+      'measure',
+      'inspect',
+      'strings',
+    ],
     panelTitle: wbMessage({
       id: 'shell.panel.tools',
       defaultMessage: 'Tools',

@@ -926,7 +926,7 @@
     "description": "The badge on the draft marker, shown beside the device frame while a string or the home layout holds an unpublished edit in this browser."
   },
   "draft.discardLayout": {
-    "defaultMessage": "Discard home screen",
+    "defaultMessage": "Discard screen layouts",
     "description": "Button on the draft marker. The same action as “Discard changes” in the home tool (home.document.revert): puts the home document back to the shipped file."
   },
   "draft.discardStrings": {
@@ -934,7 +934,7 @@
     "description": "Button on the draft marker. The same action as “Discard all” in the strings tool (tools.strings.discard): puts every edited German wording back to the catalogue."
   },
   "draft.layoutChanged": {
-    "defaultMessage": "home screen changed",
+    "defaultMessage": "screen layout changed",
     "description": "Part of the draft marker’s sentence: the home document differs from the file the app ships. home.document.changed is the same word inside the home tool."
   },
   "draft.stringsChanged": {
@@ -1391,7 +1391,8 @@
     "description": "Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
   },
   "home.document.save": {
-    "defaultMessage": "Save to the repository"
+    "defaultMessage": "Save to the repository",
+    "description": "On a dev server only: writes the open screen’s document into the checkout. navigation.save is the same for the tab bar."
   },
   "home.document.saveNote": {
     "defaultMessage": "On a dev server, Save writes <code>{file}</code> in your own checkout. It refuses anything the core cannot read. This is a shortcut for developers. The way to a pull request is Submit changes.",
@@ -1400,6 +1401,14 @@
   "home.document.scenarioGuard": {
     "defaultMessage": "Scenarios are examples. They are not submitted.",
     "description": "Under the switched-off Submit changes, and under the switched-off Save on a dev server, while a scenario is open or the document still holds one. Submitting or saving it would publish the example on every phone."
+  },
+  "home.document.screen": {
+    "defaultMessage": "Screen",
+    "description": "The label of the picker at the top of the layout tool, which chooses which of the app’s screens is being edited. One word, beside a drop-down."
+  },
+  "home.document.screenLocked": {
+    "defaultMessage": "A scenario is a Home document, so the screen stays on Home while one is open.",
+    "description": "Under the screen picker while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens."
   },
   "home.document.submit": {
     "defaultMessage": "Submit changes",
@@ -1424,11 +1433,16 @@
     "description": "Behind the ⓘ beside Submit changes: what happens after the click."
   },
   "home.document.unchanged": {
-    "defaultMessage": "unchanged"
+    "defaultMessage": "unchanged",
+    "description": "The word beside Submit changes while the document is the file. home.document.changed is its opposite; navigation.unchanged is the same for the tab bar."
   },
   "home.issue.heading": {
     "defaultMessage": "Changes to the home screen",
     "description": "The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+  },
+  "home.issue.headingScreen": {
+    "defaultMessage": "Changes to the {screen} screen",
+    "description": "The title of the GitHub issue Submit changes opens for a screen other than Home, after a fixed tag in square brackets that is not translated. {screen} is the screen’s own name, such as Entdecken, which is not translated either. home.issue.heading is the same sentence for Home."
   },
   "home.issue.help": {
     "defaultMessage": "The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",
@@ -1437,6 +1451,10 @@
   "home.issue.lead": {
     "defaultMessage": "This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
     "description": "The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
+  },
+  "home.issue.leadLayout": {
+    "defaultMessage": "This change to a screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
+    "description": "The first paragraph of the GitHub issue Submit changes opens for a screen other than Home, above the document. home.issue.lead is the same sentence for Home. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
   },
   "home.module.articleHero": {
     "defaultMessage": "Lead article"
@@ -1749,6 +1767,10 @@
   "home.save.written": {
     "defaultMessage": "Written to {path}.",
     "description": "Confirms that the dev server wrote the document. {path} is the repository path it wrote, or home.save.repository where the server named none."
+  },
+  "home.screen.home": {
+    "defaultMessage": "Home",
+    "description": "The app’s first screen, in the screen picker of the layout tool. The same word as frame.pages.home, which names it in the page picker."
   },
   "home.setHere": {
     "defaultMessage": "set here",
@@ -2224,6 +2246,118 @@
   "nav.title.notFound": {
     "defaultMessage": "Not found",
     "description": "The browser tab on an address this site answers with its 404 body."
+  },
+  "navigation.add": {
+    "defaultMessage": "Add {name}",
+    "description": "The accessible name of a button. {name} is the screen’s own name, such as Entdecken."
+  },
+  "navigation.available": {
+    "defaultMessage": "Not on the bar",
+    "description": "The heading above the screens the app declares that the bar does not list."
+  },
+  "navigation.behindMore": {
+    "defaultMessage": "behind “Mehr”: {names}",
+    "description": "After the bar, when entries overflow. {names} is a comma-separated list of screens’ own names. “Mehr” is the overflow tab’s name and stays."
+  },
+  "navigation.changed": {
+    "defaultMessage": "changed",
+    "description": "Beside the tool’s buttons when the navigation differs from the file. home.document.changed is the same word."
+  },
+  "navigation.copied": {
+    "defaultMessage": "The change was too long for the link and is on your clipboard. Paste it into the issue.",
+    "description": "Shown after Submit changes when the change had to go by the clipboard."
+  },
+  "navigation.entries": {
+    "defaultMessage": "Entries",
+    "description": "The heading above the list of tabs, in order. One word."
+  },
+  "navigation.homeFixed": {
+    "defaultMessage": "always first",
+    "description": "Beside Home in the list of tabs: it cannot be moved or removed."
+  },
+  "navigation.invalid": {
+    "defaultMessage": "The app would not draw this bar: {codes}",
+    "description": "Shown when the navigation is not valid. {codes} is a comma-separated list of the core’s problem codes, which are never translated."
+  },
+  "navigation.issue.heading": {
+    "defaultMessage": "Changes to the navigation",
+    "description": "The title of the GitHub issue Submit changes opens for the tab bar, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+  },
+  "navigation.issue.help": {
+    "defaultMessage": "The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",
+    "description": "Stands in the body of the GitHub issue instead of the change, when it is too long to go in the address. “Create” is GitHub’s own button and stays in English."
+  },
+  "navigation.issue.lead": {
+    "defaultMessage": "This change to the navigation comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
+    "description": "The first paragraph of the GitHub issue, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
+  },
+  "navigation.lastTab": {
+    "defaultMessage": "A bar needs at least {min} tabs, Home included, so the last entry stays.",
+    "description": "Shown when the only entry after Home cannot be removed. {min} is a number."
+  },
+  "navigation.lead": {
+    "defaultMessage": "The tab bar of the app. Home is always the first entry. The frame reloads after every change, because the app reads the navigation once when it starts.",
+    "description": "The one paragraph at the top of the navigation tool."
+  },
+  "navigation.maxTabs": {
+    "defaultMessage": "Tabs before “Mehr”",
+    "description": "The label of the drop-down that sets the most tabs shown. “Mehr” is the name of the overflow tab in the app and is not translated."
+  },
+  "navigation.maxTabsNote": {
+    "defaultMessage": "Counts “Mehr” as one of them. With more entries than this, the surplus goes behind “Mehr”. At least {min} and at most {max}.",
+    "description": "Under the drop-down. “Mehr” is the overflow tab’s name in the app and stays. {min} and {max} are numbers."
+  },
+  "navigation.maxTabsOption": {
+    "defaultMessage": "{count} tabs",
+    "description": "One option of the drop-down. {count} is a number from 2 to 5."
+  },
+  "navigation.moveDown": {
+    "defaultMessage": "Move {name} down",
+    "description": "The accessible name of a button. {name} is the screen’s own name, such as Entdecken."
+  },
+  "navigation.moveUp": {
+    "defaultMessage": "Move {name} up",
+    "description": "The accessible name of a button. {name} is the screen’s own name, such as Entdecken."
+  },
+  "navigation.refused": {
+    "defaultMessage": "refused",
+    "description": "The badge before a refusal from the dev server. home.document.refused is the same word."
+  },
+  "navigation.remove": {
+    "defaultMessage": "Take {name} off the tab bar",
+    "description": "The accessible name of a button. {name} is the screen’s own name, such as Entdecken."
+  },
+  "navigation.result": {
+    "defaultMessage": "The bar shows",
+    "description": "The label before the tabs the bar will draw, in order, such as Home · Entdecken · Mehr."
+  },
+  "navigation.revert": {
+    "defaultMessage": "Discard changes",
+    "description": "Puts the navigation back to the file. home.document.revert is the same action for a screen."
+  },
+  "navigation.save": {
+    "defaultMessage": "Save to the repository",
+    "description": "On a dev server only: writes the navigation into the checkout. home.document.save is the same for a screen."
+  },
+  "navigation.save.http": {
+    "defaultMessage": "HTTP {status}",
+    "description": "Stands in for a refusal the server sent no sentence with. {status} is the numeric status."
+  },
+  "navigation.save.refused": {
+    "defaultMessage": "{said} ({codes})",
+    "description": "A refusal that came with codes. {said} is the dev server’s own sentence, which is not translated; {codes} is a comma-separated list of the core’s problem codes, which are never translated."
+  },
+  "navigation.save.written": {
+    "defaultMessage": "Written to {path}.",
+    "description": "Confirms that the dev server wrote the navigation. {path} is the repository path it wrote."
+  },
+  "navigation.submit": {
+    "defaultMessage": "Submit changes",
+    "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed."
+  },
+  "navigation.unchanged": {
+    "defaultMessage": "unchanged",
+    "description": "Beside the tool’s buttons when the navigation is the file. home.document.unchanged is the same word."
   },
   "preview.frame.booting": {
     "defaultMessage": "Booting the app…",
@@ -2718,13 +2852,18 @@
     "description": "The component view’s tool for the size a component is drawn at. frame.device is the select on the bar above the app and reads the same in English."
   },
   "shell.section.home": {
-    "defaultMessage": "Home layout"
+    "defaultMessage": "Screen layout",
+    "description": "The preview tool that arranges the blocks of one of the app’s screens, Home and the others. The id is older than the second screen."
   },
   "shell.section.inspect": {
     "defaultMessage": "Inspect"
   },
   "shell.section.measure": {
     "defaultMessage": "Measure"
+  },
+  "shell.section.navigation": {
+    "defaultMessage": "Navigation",
+    "description": "The preview tool that edits the app’s tab bar: its entries, their order and when “Mehr” takes over."
   },
   "shell.section.props": {
     "defaultMessage": "Props"

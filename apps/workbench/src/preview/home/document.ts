@@ -1869,8 +1869,8 @@ export function editionHue(id: string): number {
  * leave a diff. It also cannot be wrong about a field somebody adds later, the way a
  * hand-written comparison of four keys was wrong the day a fifth arrived.
  */
-export function differs(layout: HomeLayout): boolean {
-  return formatLayoutDocument(layout) !== formatLayoutDocument(SHIPPED);
+export function differs(layout: HomeLayout, shipped: HomeLayout = SHIPPED): boolean {
+  return formatLayoutDocument(layout) !== formatLayoutDocument(shipped);
 }
 
 /**
@@ -1885,9 +1885,14 @@ export function differs(layout: HomeLayout): boolean {
  * cannot be a per-section comparison: a section that moved makes its neighbour move too,
  * and an editor who lifted one block should not be told they changed four.
  */
-export function changedAt(layout: HomeLayout, instant: Instant, reader: Reader): readonly string[] {
+export function changedAt(
+  layout: HomeLayout,
+  instant: Instant,
+  reader: Reader,
+  shipped: HomeLayout = SHIPPED,
+): readonly string[] {
   const before = new Map(
-    stateAtInstant(SHIPPED, instant, reader).map((section, index) => [
+    stateAtInstant(shipped, instant, reader).map((section, index) => [
       section.id,
       { section, index },
     ]),
@@ -2191,17 +2196,21 @@ export {
  * load settles, and it answers false: an absent control that appears is a smaller
  * surprise than a control that appears and then goes.
  *
- * One route today, and a list here rather than in the shell for the reason ADR 0042's
+ * **`screenRoute` is the screen the editor has open** (`./screens.ts`'s `SCREEN_ROUTES`):
+ * the track edits that screen's document, so it is drawn on that screen's route and on no
+ * other, and Home's remains the default. The rest of this paragraph was written when there
+ * was one route, and is kept for the reason it gives: a list here rather than in the shell for the reason ADR 0042's
  * "What is still open" gives: when a second screen becomes a document, the answer has to
  * come from the document, not from a third copy of the fact ADR 0036 §14 spent a decision
  * making singular. This is the document's file, which is the nearest thing to that
  * available while there is one.
  */
-export function governs(route: string | undefined): boolean {
+export function governs(route: string | undefined, screenRoute = '/'): boolean {
   if (route === undefined) return false;
   // Query and hash are the app's business, and `/` and `/index` are one screen: Expo
   // Router serves the home route under both spellings and the frame reports whichever
   // it navigated with.
   const path = route.split(/[?#]/)[0].replace(/\/+$/, '');
+  if (screenRoute !== '/') return path === screenRoute;
   return path === '' || path === '/index';
 }

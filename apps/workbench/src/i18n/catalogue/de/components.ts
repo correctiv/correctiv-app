@@ -38,7 +38,7 @@ export const components: Record<string, string> = {
   // The link carries the tool's own name, `shell.section.home`. A second name for
   // one surface would read, to somebody following the link, as a second surface.
   'components.modules':
-    'Die Blöcke der Startseite stehen nicht hier. Sie gehören zu einem Bildschirm und sind keine Komponenten der App. Sie finden jeden davon mit seinen Einstellungen im <editor>Startseiten-Layout</editor> neben der laufenden App.',
+    'Die Blöcke der Startseite stehen nicht hier. Sie gehören zu einem Bildschirm und sind keine Komponenten der App. Sie finden jeden davon mit seinen Einstellungen im <editor>Bildschirm-Layout</editor> neben der laufenden App.',
 
   'components.filter': 'Ordner, Komponenten und Props filtern',
   'components.filter.placeholder': 'Filtern, zum Beispiel Typo, onPress oder reader',

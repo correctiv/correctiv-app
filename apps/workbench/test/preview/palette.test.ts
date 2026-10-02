@@ -136,7 +136,8 @@ describe('the palette is the registry', () => {
    */
   it('reads the app’s own declaration and keeps no list beside it', () => {
     expect(PALETTE).toMatch(/import \{ blocksFor \} from '@\/lib\/home\/screens'/);
-    expect(PALETTE).toMatch(/blocksFor\('home'\)/);
+    expect(PALETTE).toMatch(/blocksFor\(screen\)/);
+    expect(PALETTE).not.toMatch(/blocksFor\('home'\)/);
     expect(PALETTE).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
   });
 

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { Plugin } from 'vite';
 
 import { collectDocs, ROOT } from './collect.ts';
-import { homeLayoutEndpoint } from './home-layout.ts';
+import { homeLayoutEndpoint, navigationEndpoint } from './home-layout.ts';
 import { stringsEndpoint } from './strings.ts';
 
 const MODULE_ID = 'virtual:docs';
@@ -95,6 +95,7 @@ export function docsPlugin(): Plugin {
       // `plugin/home-layout.ts` is what they refuse and why; `plugin/strings.ts` is
       // the German of the strings tool (ADR 0056 §8), on the same terms.
       server.middlewares.use(homeLayoutEndpoint(server));
+      server.middlewares.use(navigationEndpoint(server));
       server.middlewares.use(stringsEndpoint());
     },
 

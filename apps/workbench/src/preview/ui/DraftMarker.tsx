@@ -9,9 +9,8 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
-import { differs, SHIPPED } from '../home/document';
 import type { ScenarioControl } from '../home/Scenario';
-import { getLayout, setLayout, subscribeLayout } from '../home/store';
+import { changedScreens, discardScreens, subscribeLayout } from '../home/store';
 import { discardDraft, draftCount, subscribeDraftChange } from '../strings/draft';
 import { EDITED_LOCALE } from '../strings/names';
 
@@ -39,7 +38,7 @@ const COPY = defineMessages({
   },
   layoutChanged: {
     id: 'draft.layoutChanged',
-    defaultMessage: 'home screen changed',
+    defaultMessage: 'screen layout changed',
     description:
       'Part of the draft marker’s sentence: the home document differs from the file the app ships. home.document.changed is the same word inside the home tool.',
   },
@@ -51,7 +50,7 @@ const COPY = defineMessages({
   },
   discardLayout: {
     id: 'draft.discardLayout',
-    defaultMessage: 'Discard home screen',
+    defaultMessage: 'Discard screen layouts',
     description:
       'Button on the draft marker. The same action as “Discard changes” in the home tool (home.document.revert): puts the home document back to the shipped file.',
   },
@@ -93,8 +92,8 @@ export function DraftMarker({ scenario }: { scenario: ScenarioControl }) {
     () => draftCount(SHIPPED_DE),
     () => draftCount(SHIPPED_DE),
   );
-  const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
-  const layoutChanged = differs(layout);
+  const layoutChanged =
+    useSyncExternalStore(subscribeLayout, changedScreens, changedScreens) !== '';
 
   if (stringsChanged === 0 && !layoutChanged) return null;
 
@@ -128,7 +127,7 @@ export function DraftMarker({ scenario }: { scenario: ScenarioControl }) {
               // The same order “Back to the file” uses in the home tool: the document
               // first, and out of the scenario with it, so a scenario left open is not
               // loaded straight back over the shipped file this just restored.
-              setLayout(SHIPPED);
+              discardScreens();
               if (scenario.open) scenario.close();
             }}
           >

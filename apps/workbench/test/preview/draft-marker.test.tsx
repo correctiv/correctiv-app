@@ -178,20 +178,20 @@ describe('a string draft (§7 of ADR 0056)', () => {
 describe('the home layout (ADR 0036 §4, ADR 0045)', () => {
   const edited: HomeLayout = { ...SHIPPED, sections: [] };
 
-  it('says the home screen changed once the document differs from the shipped file', () => {
+  it('says the screen layout changed once the document differs from the shipped file', () => {
     mount(scenarioControl());
     act(() => setLayout(edited));
 
     expect(container.textContent).toContain('Draft active');
-    expect(container.textContent).toContain('home screen changed');
+    expect(container.textContent).toContain('screen layout changed');
   });
 
   it('goes away once discarded, through the home tool’s own action', () => {
     mount(scenarioControl());
     act(() => setLayout(edited));
-    expect(container.textContent).toContain('home screen changed');
+    expect(container.textContent).toContain('screen layout changed');
 
-    click(button('Discard home screen'));
+    click(button('Discard screen layouts'));
 
     expect(getLayout()).toBe(SHIPPED);
     expect(container.textContent).toBe('');
@@ -203,7 +203,7 @@ describe('the home layout (ADR 0036 §4, ADR 0045)', () => {
     mount(scenarioControl({ open, close: () => (closed = true) }));
     act(() => setLayout(edited));
 
-    click(button('Discard home screen'));
+    click(button('Discard screen layouts'));
 
     expect(closed).toBe(true);
   });
@@ -218,9 +218,9 @@ describe('both at once', () => {
     });
 
     expect(container.textContent).toContain('1 text changed');
-    expect(container.textContent).toContain('home screen changed');
+    expect(container.textContent).toContain('screen layout changed');
     // Two distinct accessible names, not one button doing double duty.
     expect(() => button('Discard texts')).not.toThrow();
-    expect(() => button('Discard home screen')).not.toThrow();
+    expect(() => button('Discard screen layouts')).not.toThrow();
   });
 });

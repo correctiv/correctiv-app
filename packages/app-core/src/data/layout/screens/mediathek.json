@@ -7,6 +7,5 @@
     { "id": "gespraech", "module": "gespraech-rail" },
     { "id": "funfacts", "module": "funfacts-rail" },
     { "id": "bonus", "module": "bonus-audio-list" }
-  ],
-  "moments": []
+  ]
 }

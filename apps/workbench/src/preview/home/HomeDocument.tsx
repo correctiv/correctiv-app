@@ -55,6 +55,7 @@ import { DEFAULT_DEVICE, preset } from '../devices';
 import { entitlementIn, sessionSnapshot, subscribeSession } from '../frame/seed';
 import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
 import { InsertMark } from './Palette';
@@ -67,7 +68,6 @@ import {
   editableAt,
   differs,
   formatTimeOfDay,
-  HOME_LAYOUT_FILE,
   inheritedAt,
   added,
   moduleLabel,
@@ -78,7 +78,6 @@ import {
   removed,
   settingLabel,
   settingsFor,
-  SHIPPED,
   spanOf,
   strandingAudiences,
   takenAudiences,
@@ -97,7 +96,9 @@ import {
 } from './document';
 import { guarded as isGuarded } from './scenario';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
-import { getLayout, setLayout, subscribeLayout } from './store';
+import { layoutFile } from './names';
+import { CONFIGURABLE_SCREENS, isScreen, SCREEN_NAMES, SCREEN_ROUTES, shippedOf } from './screens';
+import { getLayout, getScreen, setLayout, setScreen, subscribeLayout } from './store';
 import { copyNow } from '../clipboard';
 import { canSave, publish, save, submission, type SaveResult } from './write';
 
@@ -185,6 +186,18 @@ const COPY = defineMessages({
     id: 'home.document.follow',
     defaultMessage: 'Scroll the frame to the block you point at',
   },
+  screen: {
+    id: 'home.document.screen',
+    defaultMessage: 'Screen',
+    description:
+      'The label of the picker at the top of the layout tool, which chooses which of the app’s screens is being edited. One word, beside a drop-down.',
+  },
+  screenLocked: {
+    id: 'home.document.screenLocked',
+    defaultMessage: 'A scenario is a Home document, so the screen stays on Home while one is open.',
+    description:
+      'Under the screen picker while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens.',
+  },
   revert: {
     id: 'home.document.revert',
     defaultMessage: 'Discard changes',
@@ -226,14 +239,24 @@ const COPY = defineMessages({
     description:
       'The name read out for the field that holds the issue’s text when the clipboard was refused.',
   },
-  save: { id: 'home.document.save', defaultMessage: 'Save to the repository' },
+  save: {
+    id: 'home.document.save',
+    defaultMessage: 'Save to the repository',
+    description:
+      'On a dev server only: writes the open screen’s document into the checkout. navigation.save is the same for the tab bar.',
+  },
   changed: {
     id: 'home.document.changed',
     defaultMessage: 'changed',
     description:
       'The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
   },
-  unchanged: { id: 'home.document.unchanged', defaultMessage: 'unchanged' },
+  unchanged: {
+    id: 'home.document.unchanged',
+    defaultMessage: 'unchanged',
+    description:
+      'The word beside Submit changes while the document is the file. home.document.changed is its opposite; navigation.unchanged is the same for the tab bar.',
+  },
   submitNote: {
     id: 'home.document.submitNote',
     defaultMessage:
@@ -525,6 +548,9 @@ export function HomeDocument({
 }) {
   const intl = useWorkbenchIntl();
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
+  /** The screen whose document that is, and the file the app ships for it. */
+  const screen = useSyncExternalStore(subscribeLayout, getScreen, getScreen);
+  const shipped = shippedOf(screen);
   /**
    * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the session the framed app holds,
    * read out of the storage the two share and followed as it changes, whether a fixture
@@ -542,6 +568,7 @@ export function HomeDocument({
   const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
   const copyField = useRef<HTMLTextAreaElement>(null);
   const dirtyStatusId = useId();
+  const screenSelectId = useId();
   const submitHintId = useId();
   const saveGuardId = useId();
   /**
@@ -701,7 +728,7 @@ export function HomeDocument({
    * every successful save leaves behind, because saving is what makes the two the same
    * — the file changes, Vite reloads the page, and the override is then a copy of it.
    */
-  useEffect(() => publish(getLayout()), []);
+  useEffect(() => publish(getLayout(), getScreen()), []);
 
   /*
    * A save message is about the document that was saved, so it goes when the document
@@ -920,9 +947,9 @@ export function HomeDocument({
     target.edition === null
       ? inheritedAt(layout, target.point, reader)
       : inheritedFor(layout, playhead.instant, target, reader);
-  const edited = changedAt(layout, playhead.instant, reader);
+  const edited = changedAt(layout, playhead.instant, reader, shipped);
   const decided = decidedAt(layout, playhead.instant, reader);
-  const dirty = differs(layout);
+  const dirty = differs(layout, shipped);
   /**
    * Whether this document is a scenario, open or kept after leaving it (`./scenario.ts`).
    *
@@ -938,7 +965,7 @@ export function HomeDocument({
   /** Where Submit changes goes, or nothing while there is nothing to submit. */
   const offer =
     dirty && !guarded
-      ? submission(layout, (message, values) => intl.formatMessage(message, values))
+      ? submission(layout, (message, values) => intl.formatMessage(message, values), screen)
       : null;
 
   /**
@@ -982,7 +1009,28 @@ export function HomeDocument({
         panel's full width, with the one line that says what it does under it.
       */}
       <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-xs">
-        <ScenarioBar control={scenario} />
+        <div className="flex items-center gap-xs">
+          <label htmlFor={screenSelectId} className="shrink-0 text-s text-on-canvas">
+            {intl.formatMessage(COPY.screen)}
+          </label>
+          <Select
+            id={screenSelectId}
+            className="flex-1"
+            value={screen}
+            disabled={guarded}
+            onValueChange={(value) => {
+              if (!isScreen(value)) return;
+              setScreen(value);
+              onChange({ route: SCREEN_ROUTES[value] });
+            }}
+            options={CONFIGURABLE_SCREENS.map((of) => ({
+              value: of,
+              label: say(intl, SCREEN_NAMES[of]),
+            }))}
+          />
+        </div>
+        {guarded && <p className={NOTE}>{intl.formatMessage(COPY.screenLocked)}</p>}
+        {screen === 'home' && <ScenarioBar control={scenario} />}
         <div className="flex flex-wrap items-center gap-xs">
           <span id={dirtyStatusId} className={cn(NOTE, 'mr-auto')}>
             {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
@@ -994,7 +1042,7 @@ export function HomeDocument({
             onClick={() => {
               // The file, and out of the scenario with it: "Discard changes" is the way
               // back to what readers see, and a scenario left open would be loaded again.
-              setLayout(SHIPPED);
+              setLayout(shipped);
               if (scenario.open) scenario.close();
             }}
           >
@@ -1170,12 +1218,14 @@ export function HomeDocument({
               last={index === layout.sections.length - 1}
               changed={edited.includes(section.id)}
               deviceWidth={drawing ? deviceWidth : null}
+              screen={screen}
               follow={follow}
               before={
                 carried === null ? (
                   <InsertMark
                     where={whereAt(intl, layout, index)}
                     deviceWidth={deviceWidth}
+                    screen={screen}
                     onAdd={(module) => setLayout(added(layout, index, module))}
                   />
                 ) : null
@@ -1185,6 +1235,7 @@ export function HomeDocument({
                   <InsertMark
                     where={whereAt(intl, layout, layout.sections.length)}
                     deviceWidth={deviceWidth}
+                    screen={screen}
                     onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
                   />
                 ) : null
@@ -1242,16 +1293,18 @@ export function HomeDocument({
               disabled={!dirty || guarded}
               aria-describedby={guarded ? saveGuardId : undefined}
               onClick={() =>
-                void save(layout, (message, values) => intl.formatMessage(message, values)).then(
-                  setResult,
-                )
+                void save(
+                  layout,
+                  (message, values) => intl.formatMessage(message, values),
+                  screen,
+                ).then(setResult)
               }
             >
               <Save aria-hidden="true" />
               {intl.formatMessage(COPY.save)}
             </Button>
             <InfoTip about={intl.formatMessage(COPY.save)}>
-              <p>{intl.formatMessage(COPY.saveNote, { code, file: HOME_LAYOUT_FILE })}</p>
+              <p>{intl.formatMessage(COPY.saveNote, { code, file: layoutFile(screen) })}</p>
             </InfoTip>
           </div>
           {guarded && (
@@ -1424,6 +1477,7 @@ function Row({
   last,
   changed: isChanged,
   deviceWidth,
+  screen,
   follow,
   before,
   after,
@@ -1468,6 +1522,8 @@ function Row({
    * drawing that has no width. `HomeBlock.tsx` says what the width is for.
    */
   deviceWidth: number | null;
+  /** The screen being edited, for the drawing of a block that sits on more than one. */
+  screen: ConfigurableScreen;
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: string | number | null | undefined) => void;
@@ -1760,7 +1816,12 @@ function Row({
           behind the rail whether or not it is open, and nothing is drawn while it is shut.
         */}
             {deviceWidth !== null && (
-              <HomeBlock section={section} deviceWidth={deviceWidth} absent={!forReader} />
+              <HomeBlock
+                section={section}
+                deviceWidth={deviceWidth}
+                absent={!forReader}
+                screen={screen}
+              />
             )}
 
             {/*

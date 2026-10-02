@@ -5,6 +5,5 @@
     { "id": "search", "module": "search-entry" },
     { "id": "topics", "module": "topic-rail" },
     { "id": "projects", "module": "project-directory" }
-  ],
-  "moments": []
+  ]
 }

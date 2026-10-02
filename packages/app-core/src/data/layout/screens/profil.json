@@ -6,6 +6,5 @@
     { "id": "impact", "module": "profile-impact" },
     { "id": "area", "module": "profile-area" },
     { "id": "newsletter", "module": "profile-newsletter" }
-  ],
-  "moments": []
+  ]
 }

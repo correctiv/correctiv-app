@@ -29,6 +29,7 @@ import { insideCore } from './insideCore';
 import { landing } from './landing';
 import { measured } from './measured';
 import { nav } from './nav';
+import { navigation } from './navigation';
 import { preview } from './preview';
 import { reference } from './reference';
 import { scenarios } from './scenarios';
@@ -62,6 +63,7 @@ export const de: Record<string, string> = {
   ...landing,
   ...measured,
   ...nav,
+  ...navigation,
   ...preview,
   ...reference,
   ...scenarios,

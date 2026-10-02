@@ -13,7 +13,7 @@
  * loads this file with `tsx` in Node, and so do the tests.
  */
 
-import { HOME_LAYOUT_FILE } from './home/names';
+import { HOME_LAYOUT_FILE, LAYOUT_DIR } from './home/names';
 import { GERMAN_CATALOGUE_DIR } from './strings/names';
 
 /**
@@ -41,6 +41,17 @@ export const SUBMISSION_KINDS = {
   home: {
     prefix: '[startseite]',
     file: HOME_LAYOUT_FILE,
+    built: true,
+  },
+  /**
+   * Every document of the layout directory except Home's: the other screens' and the
+   * navigation. The payload is an envelope, `{ target, document }`, whose `target` is a
+   * screen id or `navigation`, so one kind and one workflow step carry both and the issue
+   * still decides no path (ADR 0071 §1, §4; ADR 0061 §2).
+   */
+  layout: {
+    prefix: '[layout]',
+    dir: LAYOUT_DIR,
     built: true,
   },
   /**
@@ -73,6 +84,14 @@ export const SUBMISSION_FENCE = 'json';
  * under the signed-out edge, with room for a longer title. ADR 0061 §6.
  */
 export const SUBMISSION_ADDRESS_LIMIT = 4000;
+
+/**
+ * The payload of a `layout` submission: the document, named by what it is for.
+ * `payload` is the document already printed on one line.
+ */
+export function layoutPayload(target: string, payload: string): string {
+  return `{"target":${JSON.stringify(target)},"document":${payload}}`;
+}
 
 export interface Issue {
   title: string;

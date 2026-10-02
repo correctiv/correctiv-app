@@ -4,6 +4,7 @@ import { defineMessages } from 'react-intl';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
+import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 import { sameSection } from './section';
 
@@ -107,7 +108,12 @@ const mono = (chunks: ReactNode[]) => <span className="font-mono">{chunks}</span
  * ports, which `AppEnvironment` refuses for reasons of its own. What makes it
  * honest is that the empty row is visibly empty next to a frame that is not.
  */
-function Block({ section, deviceWidth, absent = false }: HomeBlockProps): ReactNode {
+function Block({
+  section,
+  deviceWidth,
+  absent = false,
+  screen = 'home',
+}: HomeBlockProps): ReactNode {
   const intl = useWorkbenchIntl();
   /** The room this row has, in CSS pixels, and the drawing's own unscaled height. */
   const [room, setRoom] = useState<number | null>(null);
@@ -262,7 +268,7 @@ function Block({ section, deviceWidth, absent = false }: HomeBlockProps): ReactN
             {/* `Date.now()`, not the playhead: "What it is handed" above still holds — this
                 reads the clock once, at whatever moment something else causes a render,
                 the same as any other value here, rather than being wired to it. */}
-            <Module section={section} instant={Date.now()} screen="home" />
+            <Module section={section} instant={Date.now()} screen={screen} />
           </DrawnBoundary>
         </div>
       </div>
@@ -313,6 +319,8 @@ interface HomeBlockProps {
   deviceWidth: number;
   /** Whether the reader in the frame is outside the block's audience, so it is not drawn there. */
   absent?: boolean;
+  /** The screen the block is drawn on: a block that sits on two of them may draw differently on each. */
+  screen?: ConfigurableScreen;
 }
 
 /**
@@ -323,6 +331,7 @@ function same(before: HomeBlockProps, after: HomeBlockProps): boolean {
   return (
     before.deviceWidth === after.deviceWidth &&
     before.absent === after.absent &&
+    before.screen === after.screen &&
     sameSection(before.section, after.section)
   );
 }

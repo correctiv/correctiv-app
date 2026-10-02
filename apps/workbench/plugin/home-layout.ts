@@ -5,7 +5,12 @@ import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 
 import { ROOT } from './collect.ts';
-import { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_FILE } from '../src/preview/home/names.ts';
+import {
+  HOME_LAYOUT_ENDPOINT,
+  layoutFile,
+  NAVIGATION_ENDPOINT,
+  NAVIGATION_FILE,
+} from '../src/preview/home/names.ts';
 
 /**
  * The first thing the workbench writes back into the repository, and only in development.
@@ -63,8 +68,6 @@ import { HOME_LAYOUT_ENDPOINT, HOME_LAYOUT_FILE } from '../src/preview/home/name
  * section off and save an empty home screen; that is a document somebody meant, and a
  * reviewer sees it in the diff.
  */
-
-const FILE = HOME_LAYOUT_FILE;
 
 /** 64 KiB. Sixty times the shipped document, and a bound on a socket that never ends. */
 const LIMIT = 64 * 1024;
@@ -165,6 +168,15 @@ export async function read(req: AsyncIterable<unknown>, limit = LIMIT): Promise<
 
 type Parse = typeof import('@correctiv/app-core/lib/home-layout');
 type Document = typeof import('../src/preview/home/document.ts');
+type Screens = typeof import('@correctiv/app-core/lib/screen-layout');
+type Navigation = typeof import('../src/preview/navigation/document.ts');
+
+/** The `screen` of a request's query: Home when it names none, null when it names a screen there is not. */
+function screenOf(url: string, screens: readonly string[]): string | null {
+  const named = new URL(url, 'http://localhost').searchParams.get('screen');
+  if (named === null) return 'home';
+  return screens.includes(named) ? named : null;
+}
 
 export function homeLayoutEndpoint(server: ViteDevServer) {
   return async function middleware(
@@ -194,11 +206,25 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     const { parseHomeLayout } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/home-layout',
     )) as Parse;
+    const { CONFIGURABLE_SCREENS } = (await server.ssrLoadModule(
+      '@correctiv/app-core/lib/screen-layout',
+    )) as Screens;
+    const screen = screenOf(req.url ?? '', CONFIGURABLE_SCREENS);
+    if (screen === null) {
+      return answer(res, 400, {
+        code: 'unknown-screen',
+        error: 'That is not a screen with a document.',
+      });
+    }
     const { formatLayoutDocument } = (await server.ssrLoadModule(
       '/src/preview/home/document.ts',
     )) as Document;
 
-    const { layout, problems } = parseHomeLayout(input);
+    const { layout, problems } = parseHomeLayout(
+      input,
+      undefined,
+      screen as Parameters<typeof parseHomeLayout>[2],
+    );
     if (!layout || problems.length > 0) {
       return answer(res, 400, {
         error: 'The core refused the document.',
@@ -209,7 +235,50 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     // Printed from the parse rather than written as it arrived, so the file on disk is
     // formatted whatever reached the socket, and `npm run check` has nothing to say
     // about a document this endpoint wrote.
-    writeFileSync(join(ROOT, FILE), formatLayoutDocument(layout), 'utf8');
-    return answer(res, 200, { path: FILE });
+    const file = layoutFile(screen);
+    writeFileSync(join(ROOT, file), formatLayoutDocument(layout), 'utf8');
+    return answer(res, 200, { path: file });
+  };
+}
+
+/**
+ * The navigation's save, the second document this middleware family writes. The same
+ * refusals, and the core's parser judges: `parseNavigation` with the destinations the
+ * app declares, so a tab it cannot open is refused here and not on a phone.
+ */
+export function navigationEndpoint(server: ViteDevServer) {
+  return async function middleware(
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: () => void,
+  ): Promise<void> {
+    if ((req.url ?? '').split('?')[0] !== NAVIGATION_ENDPOINT) return next();
+    if (refused(req, res)) return;
+
+    const body = await read(req);
+    if (body === null) {
+      return answer(res, 413, { code: 'too-large', error: 'The document is larger than 64 KiB.' });
+    }
+    let input: unknown;
+    try {
+      input = JSON.parse(body);
+    } catch (error) {
+      return answer(res, 400, {
+        error: `That is not JSON: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
+
+    const { checkNavigation, formatNavigationDocument } = (await server.ssrLoadModule(
+      '/src/preview/navigation/document.ts',
+    )) as Navigation;
+    const { navigation, problems } = checkNavigation(input);
+    if (!navigation) {
+      return answer(res, 400, {
+        error: 'The core refused the document.',
+        problems: problems.map((problem) => ({ code: problem.code, context: problem.context })),
+      });
+    }
+    writeFileSync(join(ROOT, NAVIGATION_FILE), formatNavigationDocument(navigation), 'utf8');
+    return answer(res, 200, { path: NAVIGATION_FILE });
   };
 }

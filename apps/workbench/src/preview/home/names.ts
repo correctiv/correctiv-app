@@ -61,6 +61,40 @@ export const HOME_LAYOUT_ENDPOINT = '/__workbench/home-layout';
 export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/layout/screens/home.json';
 
 /**
+ * Where the app looks for a screen's document: Home keeps the key it always had, every
+ * other screen takes `workbench:layout:<screen>`.
+ *
+ * The same rule as `layoutOverrideKey()` in `apps/mobile/src/lib/home/layout.ts`, spelled
+ * a second time for the reason `HOME_LAYOUT_KEY` is, and held to it by
+ * `test/preview/screen-editor.test.ts`. A string and not the core's screen type, so that
+ * this leaf keeps importing nothing.
+ */
+export function layoutKey(screen: string): string {
+  return screen === 'home' ? HOME_LAYOUT_KEY : `workbench:layout:${screen}`;
+}
+
+/**
+ * Where the app looks for a navigation somebody else wrote: the second seam of its kind.
+ * The same string as `NAVIGATION_OVERRIDE_KEY` in `apps/mobile/src/lib/navigation/tabBar.ts`.
+ * The app reads it once, so the frame reloads when it changes.
+ */
+export const NAVIGATION_KEY = 'workbench:navigation';
+
+/** The directory the layout documents live in: `data/layout/`, with `screens/` and the navigation under it. */
+export const LAYOUT_DIR = 'packages/app-core/src/data/layout';
+
+/** Where a screen's document lives in the repository, spelled once for every writer. */
+export function layoutFile(screen: string): string {
+  return `${LAYOUT_DIR}/screens/${screen}.json`;
+}
+
+/** Where the navigation document lives in the repository. */
+export const NAVIGATION_FILE = `${LAYOUT_DIR}/navigation.json`;
+
+/** The dev server's save for a navigation, beside `HOME_LAYOUT_ENDPOINT`. */
+export const NAVIGATION_ENDPOINT = '/__workbench/navigation';
+
+/**
  * The address a section gets in the rendered tree, spelled a second time.
  *
  * The same string `placeTestID` in `apps/mobile/src/lib/home/modules.tsx` writes onto
