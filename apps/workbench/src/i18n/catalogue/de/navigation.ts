@@ -18,11 +18,6 @@ export const navigation: Record<string, string> = {
   'navigation.lastTab':
     'Eine Leiste braucht mindestens {min} Tabs, Home eingerechnet. Der letzte Eintrag bleibt deshalb.',
   'navigation.invalid': 'Die App würde diese Leiste nicht zeichnen: {codes}',
-  'navigation.changed': 'geändert',
-  'navigation.unchanged': 'unverändert',
-  'navigation.revert': 'Änderungen verwerfen',
-  'navigation.submit': 'Änderungen einreichen',
-  'navigation.save': 'Ins Repository speichern',
   'navigation.copied':
     'Die Änderung war zu lang für den Link und liegt in der Zwischenablage. Fügen Sie sie in das Issue ein.',
   'navigation.refused': 'abgelehnt',

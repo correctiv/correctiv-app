@@ -176,8 +176,6 @@ export const home: Record<string, string> = {
   'home.issue.headingScreen': 'Änderungen am Bildschirm {screen}',
   'home.issue.leadLayout':
     'Diese Änderung an einem Bildschirm kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
-  'home.document.revert': 'Änderungen verwerfen',
-  'home.document.submit': 'Änderungen einreichen',
   'home.document.submitHint':
     'GitHub öffnet sich mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'home.document.scenarioGuard': 'Szenarien sind Beispiele. Sie werden nicht eingereicht.',
@@ -188,13 +186,6 @@ export const home: Record<string, string> = {
   'home.document.submitNoClipboard':
     'Der Browser hat den Zugriff auf die Zwischenablage nicht erlaubt. Kopieren Sie die Änderung aus diesem Feld und fügen Sie sie auf GitHub in das Issue ein.',
   'home.document.field': 'Die Änderung',
-  'home.document.save': 'Ins Repository speichern',
-  'home.document.changed': 'geändert',
-  'home.document.unchanged': 'unverändert',
-  'home.document.submitNote':
-    '„Änderungen einreichen“ öffnet auf GitHub ein neues Issue mit Ihrer Änderung. Daraus entsteht automatisch ein Pull Request. In der App erscheint die Änderung, sobald jemand sie geprüft und übernommen hat. Diese Seite speichert kein Passwort und keinen Token.',
-  'home.document.saveNote':
-    'Auf einem Entwicklungsserver schreibt Speichern <code>{file}</code> in Ihren eigenen Checkout. Was der Core nicht lesen kann, weist es zurück. Das ist eine Abkürzung für Entwickler. Der Weg zum Pull Request ist „Änderungen einreichen“.',
   'home.document.refused': 'abgelehnt',
 
   // The head of the editor: which point is in effect, and what can be done to it.

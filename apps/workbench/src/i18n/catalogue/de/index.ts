@@ -8,6 +8,7 @@
  * [ADR 0040](../../../../../../adr/0040-the-app-does-not-depend-on-the-workbench.md)).
  * What is shared is the shape, not the strings.
  */
+import { actions } from './actions';
 import { articlePath } from './articlePath';
 import { components } from './components';
 import { conditions } from './conditions';
@@ -43,6 +44,7 @@ import { strings } from './strings';
 import { tools } from './tools';
 
 export const de: Record<string, string> = {
+  ...actions,
   ...articlePath,
   ...components,
   ...conditions,

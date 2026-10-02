@@ -13,10 +13,6 @@ export const features: Record<string, string> = {
   'features.sampleOnly': 'Nur Beispieldaten, höchstens Vorschau.',
   'features.noData': 'liest keine Daten',
   'features.groupCeiling': 'Die Gruppe steht niedriger, deshalb ist „An“ hier nicht wählbar.',
-  'features.changed': 'ausprobiert',
-  'features.unchanged': 'wie freigegeben',
-  'features.revert': 'Änderungen verwerfen',
-  'features.submit': 'Freigabe einreichen',
   'features.copied':
     'Die Änderung war zu lang für den Link und liegt in der Zwischenablage. Fügen Sie sie in das Issue ein.',
   'features.issue.heading': 'Freigabe von Features',

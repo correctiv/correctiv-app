@@ -1,4 +1,3 @@
-import { RotateCcw, Trash2 } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -8,10 +7,8 @@ import type { StringEntry } from 'virtual:strings';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
-import { Button } from '../../ui/kit/button';
-import type { ScenarioControl } from '../home/Scenario';
-import { changedScreens, discardScreens, subscribeLayout } from '../home/store';
-import { discardDraft, draftCount, subscribeDraftChange } from '../strings/draft';
+import { changedScreens, subscribeLayout } from '../home/store';
+import { draftCount, subscribeDraftChange } from '../strings/draft';
 import { EDITED_LOCALE } from '../strings/names';
 
 /**
@@ -41,18 +38,6 @@ const COPY = defineMessages({
     defaultMessage: 'screen layout changed',
     description:
       'Part of the draft marker’s sentence: the home document differs from the file the app ships. home.document.changed is the same word inside the home tool.',
-  },
-  discardStrings: {
-    id: 'draft.discardStrings',
-    defaultMessage: 'Discard texts',
-    description:
-      'Button on the draft marker. The same action as “Discard all” in the strings tool (tools.strings.discard): puts every edited German wording back to the catalogue.',
-  },
-  discardLayout: {
-    id: 'draft.discardLayout',
-    defaultMessage: 'Discard screen layouts',
-    description:
-      'Button on the draft marker. The same action as “Discard changes” in the home tool (home.document.revert): puts the home document back to the shipped file.',
   },
 });
 
@@ -84,7 +69,7 @@ const SHIPPED_DE: Readonly<Record<string, string>> = Object.fromEntries(
  * key: there is exactly one "Alle verwerfen" and one "Back to the file", each told
  * from a second place.
  */
-export function DraftMarker({ scenario }: { scenario: ScenarioControl }) {
+export function DraftMarker() {
   const intl = useWorkbenchIntl();
 
   const stringsChanged = useSyncExternalStore(
@@ -106,35 +91,13 @@ export function DraftMarker({ scenario }: { scenario: ScenarioControl }) {
       <Badge variant="accent">{intl.formatMessage(COPY.active)}</Badge>
 
       {stringsChanged > 0 && (
-        <>
-          <span className="text-s text-on-canvas">
-            {intl.formatMessage(COPY.stringsChanged, { count: stringsChanged })}
-          </span>
-          <Button variant="outline" size="sm" onClick={discardDraft}>
-            <Trash2 aria-hidden="true" />
-            {intl.formatMessage(COPY.discardStrings)}
-          </Button>
-        </>
+        <span className="text-s text-on-canvas">
+          {intl.formatMessage(COPY.stringsChanged, { count: stringsChanged })}
+        </span>
       )}
 
       {layoutChanged && (
-        <>
-          <span className="text-s text-on-canvas">{intl.formatMessage(COPY.layoutChanged)}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // The same order “Back to the file” uses in the home tool: the document
-              // first, and out of the scenario with it, so a scenario left open is not
-              // loaded straight back over the shipped file this just restored.
-              discardScreens();
-              if (scenario.open) scenario.close();
-            }}
-          >
-            <RotateCcw aria-hidden="true" />
-            {intl.formatMessage(COPY.discardLayout)}
-          </Button>
-        </>
+        <span className="text-s text-on-canvas">{intl.formatMessage(COPY.layoutChanged)}</span>
       )}
     </div>
   );
