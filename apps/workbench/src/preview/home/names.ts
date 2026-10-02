@@ -80,6 +80,24 @@ export function layoutKey(screen: string): string {
  */
 export const NAVIGATION_KEY = 'workbench:navigation';
 
+/**
+ * Where the app looks for the feature states somebody is trying out: the third seam of its
+ * kind. The same string as `PREVIEW_FEATURES_KEY` in `apps/mobile/src/lib/channel.ts`. The
+ * app reads it once, so the frame reloads when it changes, and its store drops it in a
+ * release channel (ADR 0072 §6).
+ */
+export const FEATURES_KEY = 'workbench:features';
+
+/**
+ * Which channel the frame shows: only `release` is ever written, because the app can lower
+ * its channel with it and never raise it. The same string as `PREVIEW_CHANNEL_KEY` in
+ * `apps/mobile/src/lib/channel.ts`.
+ */
+export const CHANNEL_KEY = 'workbench:channel';
+
+/** Where the release file lives in the repository. A commit is the only way it changes (ADR 0072 §6). */
+export const FEATURES_FILE = 'packages/app-core/src/features/features.json';
+
 /** The directory the layout documents live in: `data/layout/`, with `screens/` and the navigation under it. */
 export const LAYOUT_DIR = 'packages/app-core/src/data/layout';
 

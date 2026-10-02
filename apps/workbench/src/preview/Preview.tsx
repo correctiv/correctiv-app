@@ -27,6 +27,7 @@ import { audit, setOutline, type Finding } from './frame/measure';
 import { waitReady } from './frame/ready';
 import { applyFixture, ensureOnboarded, holdTheDoorOpen } from './frame/seed';
 import { apply as applyHomeTime } from './home/clock';
+import { apply as applyChannel, type FrameChannel } from './frame/channel';
 import { apply as applyLocale } from './frame/locale';
 import { apply as applyTokens, type Scheme } from './frame/tokens';
 import { sectionTestId } from './home/names';
@@ -195,6 +196,8 @@ export function usePreview() {
    * another boot.
    */
   const built = useRef<Locale | null | undefined>(undefined);
+  /** The channel the frame was last booted in, for the same reason as `built`. */
+  const builtChannel = useRef<FrameChannel | null | undefined>(undefined);
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
@@ -226,6 +229,11 @@ export function usePreview() {
     const relanguage = built.current !== undefined && built.current !== state.lang;
     applyLocale(state.lang);
     built.current = state.lang;
+    // The channel and the feature states are construction state in the app too, so a change
+    // of either is a reload, and both are written before the frame is pointed anywhere.
+    const rechannel = builtChannel.current !== undefined && builtChannel.current !== state.channel;
+    applyChannel(state.channel);
+    builtChannel.current = state.channel;
 
     // No fixture means leave the storage alone, which is what the plain demo
     // asks for: `/preview` with no `s` is the link `RELEASE.md` hands out,
@@ -256,19 +264,21 @@ export function usePreview() {
       ensureOnboarded(window.localStorage);
     }
 
-    const moving = reseed || relanguage || frameRoute(frame.contentWindow) !== state.route;
+    const moving =
+      reseed || relanguage || rechannel || frameRoute(frame.contentWindow) !== state.route;
     if (moving) clearLogs();
 
     // A reseed has to reload, because the fixture is read while the app mounts, and a
     // change of language has to for the same reason one turn earlier: the locale is
     // construction state. Everything else prefers the router: it keeps the screen's
     // state, it is faster, and in a development build it is the only thing that works.
-    if (!reseed && !relanguage && driveRoute(frame.contentWindow, state.route)) return;
+    if (!reseed && !relanguage && !rechannel && driveRoute(frame.contentWindow, state.route))
+      return;
     if (!moving) return;
 
     document.body.dataset.state = 'loading';
     navigate(frame, state.route);
-  }, [started, shape, state.route, state.seed, state.lang, loaded]);
+  }, [started, shape, state.route, state.seed, state.lang, state.channel, loaded]);
 
   /** The appearance setting, re-applied after every load because a reload resets it. */
   useEffect(() => {
@@ -347,17 +357,24 @@ export function usePreview() {
    * `pageshow` writes it back for a document restored from the back/forward cache, which
    * is the one of `pagehide`'s three cases that returns.
    */
+  useEffect(() => () => applyChannel(null), []);
   useEffect(() => () => applyLocale(null), []);
   useEffect(() => {
-    const hide = () => applyLocale(null);
-    const show = () => applyLocale(state.lang);
+    const hide = () => {
+      applyLocale(null);
+      applyChannel(null);
+    };
+    const show = () => {
+      applyLocale(state.lang);
+      applyChannel(state.channel);
+    };
     window.addEventListener('pagehide', hide);
     window.addEventListener('pageshow', show);
     return () => {
       window.removeEventListener('pagehide', hide);
       window.removeEventListener('pageshow', show);
     };
-  }, [state.lang]);
+  }, [state.lang, state.channel]);
 
   useEffect(
     () => applyTokens(win(), state.overrides, textPass),

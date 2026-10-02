@@ -59,9 +59,11 @@ describe('the two ends of the language seam', () => {
       'const relanguage = built.current !== undefined && built.current !== state.lang;',
     );
     expect(preview).toContain(
-      'if (!reseed && !relanguage && driveRoute(frame.contentWindow, state.route)) return;',
+      'if (!reseed && !relanguage && !rechannel && driveRoute(frame.contentWindow, state.route))\n      return;',
     );
-    expect(preview).toContain('}, [started, shape, state.route, state.seed, state.lang, loaded]);');
+    expect(preview).toContain(
+      '}, [started, shape, state.route, state.seed, state.lang, state.channel, loaded]);',
+    );
   });
 
   it('does not boot the frame before the store has read the address', () => {
@@ -70,7 +72,9 @@ describe('the two ends of the language seam', () => {
     // route or shape and the link shows nothing.
     const preview = source('apps/workbench/src/preview/Preview.tsx');
     expect(preview).toContain('if (!started) return;');
-    expect(preview).toContain('}, [started, shape, state.route, state.seed, state.lang, loaded]);');
+    expect(preview).toContain(
+      '}, [started, shape, state.route, state.seed, state.lang, state.channel, loaded]);',
+    );
 
     // And the page's own write, which is where this spelling comes from.
     expect(source('apps/workbench/src/pages/Preview.tsx')).toContain(

@@ -341,6 +341,32 @@ export function effectiveState(
   return leastOf(declared, data, groupState, ...required);
 }
 
+export type LimitReason = 'declared' | 'data' | 'group' | 'requires' | 'unknown';
+
+/**
+ * What holds a feature below `an`, or null when nothing does. The tools label a feature
+ * with it (ADR 0072 §5), so the reason is told once and from the same minimum
+ * `effectiveState` takes: the first of data, group, declared, requires that is lowest.
+ */
+export function limitReason(
+  registry: FeatureRegistry,
+  id: string,
+  override: FeatureOverride | null = null,
+): LimitReason | null {
+  const feature = registry.features.find((f) => f.id === id);
+  const group = feature && registry.groups.find((g) => g.id === feature.group);
+  if (!feature || !group) return 'unknown';
+  const effective = effectiveState(registry, id, override);
+  if (effective === 'an') return null;
+  const groupState = group.locked ? group.state : (override?.groups?.[group.id] ?? group.state);
+  const declared = group.locked ? feature.state : (override?.features?.[id] ?? feature.state);
+  // On a tie the cause that cannot be fixed by editing the file wins: sample data first.
+  if (RANK[dataCeiling(feature)] === RANK[effective]) return 'data';
+  if (RANK[groupState] === RANK[effective]) return 'group';
+  if (RANK[declared] === RANK[effective]) return 'declared';
+  return 'requires';
+}
+
 export function reachableIn(channel: Channel, state: FeatureState): boolean {
   return state === 'an' || (state === 'vorschau' && channel === 'preview');
 }

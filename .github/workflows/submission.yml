@@ -91,7 +91,8 @@ jobs:
       github.event_name == 'issues'
       && (startsWith(github.event.issue.title, '[startseite]')
       || startsWith(github.event.issue.title, '[texte]')
-      || startsWith(github.event.issue.title, '[layout]'))
+      || startsWith(github.event.issue.title, '[layout]')
+      || startsWith(github.event.issue.title, '[freigabe]'))
       && !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -143,7 +144,8 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || ((startsWith(github.event.issue.title, '[startseite]')
       || startsWith(github.event.issue.title, '[texte]')
-      || startsWith(github.event.issue.title, '[layout]'))
+      || startsWith(github.event.issue.title, '[layout]')
+      || startsWith(github.event.issue.title, '[freigabe]'))
       && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -180,7 +182,7 @@ jobs:
             const quote = await import(
               pathToFileURL(`${process.env.GITHUB_WORKSPACE}/apps/workbench/scripts/submission-quote.mjs`).href
             );
-            const PREFIXES = ['[startseite]', '[texte]', '[layout]'];
+            const PREFIXES = ['[startseite]', '[texte]', '[layout]', '[freigabe]'];
             const temp = process.env.RUNNER_TEMP;
             const refuse = (reason, log) => {
               fs.writeFileSync(`${temp}/submission-error.txt`, reason);
@@ -315,6 +317,14 @@ jobs:
           set -euo pipefail
           xargs -0 -a "$RUNNER_TEMP/submission-files.txt" npx oxfmt --check
 
+      # The release file: states only, judged by the core's parser and by both ceilings in
+      # the step that wrote it; the formatter has the last word.
+      - name: Check the written release file
+        if: steps.apply.outputs.kind == 'features'
+        run: |
+          set -euo pipefail
+          xargs -0 -a "$RUNNER_TEMP/submission-files.txt" npx oxfmt --check
+
       # The catalogue's own test formats every message in every language and holds the
       # German's arguments to the English's, which is more than the validator asks.
       - name: Check the written texts
@@ -342,6 +352,7 @@ jobs:
           case "$KIND" in
             home) MESSAGE="Home layout: submitted in #${ISSUE}" ;;
             layout) MESSAGE="Layout: submitted in #${ISSUE}" ;;
+            features) MESSAGE="Features: submitted in #${ISSUE}" ;;
             strings) MESSAGE="German strings: submitted in #${ISSUE}" ;;
             *) echo "::error::unknown kind"; exit 1 ;;
           esac
@@ -397,6 +408,10 @@ jobs:
               layout: {
                 title: 'Layout',
                 checked: 'Die App liest das Dokument ohne Probleme, und die Datei ist so formatiert, wie `oxfmt` sie schreibt.',
+              },
+              features: {
+                title: 'Freigabe',
+                checked: 'Die App liest die Datei ohne Probleme, kein Feature steht über seinen Daten oder seiner Gruppe, und die Datei ist so formatiert, wie `oxfmt` sie schreibt.',
               },
               strings: {
                 title: 'Texte',

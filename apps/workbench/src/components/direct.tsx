@@ -36,6 +36,11 @@ export const CATALOGUE_ENTRIES: { id: string; entry: DirectEntry }[] = CATALOGUE
 
 const BY_ID = new Map(CATALOGUE_ENTRIES.map(({ id, entry }) => [id, entry]));
 
+/** The feature a component belongs to (ADR 0072 §5), also where this site cannot draw it. */
+export function featureOf(id: string): string | undefined {
+  return BY_ID.get(id)?.feature;
+}
+
 /** The specimens for `group/name`, or nothing where this site cannot draw it. */
 export function directEntry(id: string): DirectEntry | undefined {
   if (id in NOT_DRAWN) return undefined;

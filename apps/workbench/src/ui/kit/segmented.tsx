@@ -5,6 +5,8 @@ import { cn } from '../../lib/cn';
 export interface SegmentedOption {
   value: string;
   label: ReactNode;
+  /** One segment that cannot be chosen while the rest can: `an` for a feature with sample data only. */
+  disabled?: boolean;
 }
 
 interface Props {
@@ -69,6 +71,7 @@ export function Segmented({
               value={option.value}
               checked={value === option.value}
               onChange={() => onChange(option.value)}
+              disabled={option.disabled}
               className="peer sr-only"
             />
             <span
@@ -78,6 +81,8 @@ export function Segmented({
                 value === option.value
                   ? 'bg-accent text-white'
                   : 'text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
+                option.disabled &&
+                  'cursor-not-allowed line-through opacity-50 hover:bg-transparent',
               )}
             >
               {option.label}

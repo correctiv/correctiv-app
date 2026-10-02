@@ -27,7 +27,7 @@ import { Platform, Pressable, ScrollView, View } from 'react-native';
 import type { ThemePreference } from '@correctiv/app-core/stores/settings';
 
 import { Badge, Hairline, Overline, SafeAreaView, Typo } from '@/components/ui';
-import { featureState } from '@correctiv/app-core/features/features';
+import { FEATURES, featureState, limitReason } from '@correctiv/app-core/features/features';
 import { useAppSelector, useCoreActions, useTheme } from '@/lib/store/core';
 import { useIsDark } from '@/lib/theme';
 
@@ -114,6 +114,14 @@ function Surface({
   );
 }
 
+const REASONS = {
+  declared: 'held back by the release file',
+  data: 'sample data only',
+  group: 'its group is held back',
+  requires: 'a feature it needs is held back',
+  unknown: 'no such feature is declared',
+} as const;
+
 /**
  * What a release build would do with this component, when it would not draw it.
  *
@@ -122,10 +130,12 @@ function Surface({
  */
 function FeatureMark({ feature }: { feature: string }) {
   const state = useAppSelector((s) => featureState(s, feature));
+  const override = useAppSelector((s) => s.features.override);
   if (state === 'an') return null;
+  const reason = limitReason(FEATURES, feature, override);
   return (
     <Typo variant="text-s" color="accent" className="mt-4xs">
-      {`Feature "${feature}" is ${state}: ${state === 'vorschau' ? 'preview builds only' : 'in no build'}.`}
+      {`Feature "${feature}" is ${state}: ${state === 'vorschau' ? 'preview builds only' : 'in no build'}${reason ? ` (${REASONS[reason]})` : ''}.`}
     </Typo>
   );
 }

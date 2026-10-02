@@ -14,6 +14,7 @@ import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 // declaration against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in
 // both directions, which is what ADR 0046 §1's "no second list to forget" became.
 import { blocksFor } from '@/lib/home/screens';
+import { MODULE_FEATURES } from '@/lib/features';
 import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 import { AppHost } from '../../components/AppHost';
@@ -26,6 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../ui/kit/dialog';
+import { FeatureMark } from '../features/Mark';
 import { moduleLabel } from './document';
 import { HomeBlock } from './HomeBlock';
 
@@ -307,6 +309,7 @@ function Specimen({
           <span className="text-s leading-relaxed text-on-canvas-muted">
             {intl.formatMessage(what)}
           </span>
+          <FeatureMark feature={MODULE_FEATURES[module]?.feature} />
         </div>
         <div className={cn('w-full overflow-hidden bg-canvas', SPECIMEN)}>
           <HomeBlock section={section} deviceWidth={deviceWidth} screen={screen} />

@@ -22,6 +22,7 @@ import { Separator } from '../../ui/kit/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { Pages } from './Pages';
 import { deviceOption, DEVICES, HOST_DEVICE } from '../devices';
+import { isFrameChannel } from '../frame/channel';
 import { isLocale, LOCALES } from '../frame/locale';
 import { governs } from '../home/document';
 import { ROUTES } from '../routes';
@@ -112,6 +113,24 @@ const COPY = defineMessages({
     defaultMessage: 'As it ships',
     description:
       'The one option of the app-language select that is a word rather than a locale code: leave the app in the language it ships, which is what an address naming no language asks for.',
+  },
+  channel: {
+    id: 'frame.channel',
+    defaultMessage: 'Channel',
+    description:
+      'The accessible name of the select that chooses which build the framed app pretends to be: the preview, which reaches features marked vorschau, or the release, which a store build is and which reaches only what is on. The bar carries no labels above its fields.',
+  },
+  channelPreview: {
+    id: 'frame.channel.preview',
+    defaultMessage: 'Preview build',
+    description:
+      'An option of the channel select: the build this site frames by default, which reaches features that are on and features that are in preview.',
+  },
+  channelRelease: {
+    id: 'frame.channel.release',
+    defaultMessage: 'Release build',
+    description:
+      'An option of the channel select: what a store build shows, which reaches only features that are on. Choosing it reloads the frame.',
   },
   zoom: {
     id: 'frame.zoom',
@@ -450,6 +469,17 @@ export function Toolbar({
         options={[
           { value: '', label: intl.formatMessage(COPY.languageShipped) },
           ...LOCALES.map((code) => ({ value: code, label: code })),
+        ]}
+      />
+
+      <Select
+        className={cn('shrink-0', !moreOpen && 'max-sm:hidden')}
+        aria-label={intl.formatMessage(COPY.channel)}
+        value={state.channel ?? ''}
+        onValueChange={(channel) => onChange({ channel: isFrameChannel(channel) ? channel : null })}
+        options={[
+          { value: '', label: intl.formatMessage(COPY.channelPreview) },
+          { value: 'release', label: intl.formatMessage(COPY.channelRelease) },
         ]}
       />
 

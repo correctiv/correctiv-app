@@ -7,6 +7,7 @@ import {
   FEATURES_PROBLEMS,
   featureState,
   isReachable,
+  limitReason,
   parseFeatureOverride,
   parseFeatures,
   type FeatureRegistry,
@@ -265,5 +266,16 @@ describe('search entries', () => {
     const callouts = searchProjectHits('Zukunft', (id) => isReachable(release, id));
     expect(callouts).toEqual([]);
     expect(searchProjectHits('Zukunft').map((h) => h.id)).toEqual(['ss-zukunft']);
+  });
+});
+
+describe('limitReason', () => {
+  it('names what holds a feature below `an`, and nothing for one that is `an`', () => {
+    expect(limitReason(REGISTRY, 'live')).toBeNull();
+    expect(limitReason(REGISTRY, 'off')).toBe('declared');
+    expect(limitReason(REGISTRY, 'sampled')).toBe('data');
+    expect(limitReason(REGISTRY, 'in-held')).toBe('group');
+    expect(limitReason(REGISTRY, 'needs-sampled')).toBe('requires');
+    expect(limitReason(REGISTRY, 'nobody')).toBe('unknown');
   });
 });

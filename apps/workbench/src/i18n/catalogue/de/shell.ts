@@ -15,6 +15,7 @@ export const shell: Record<string, string> = {
   'shell.section.state': 'State',
   'shell.section.home': 'Bildschirm-Layout',
   'shell.section.navigation': 'Navigation',
+  'shell.section.features': 'Features',
   'shell.section.console': 'Konsole',
   'shell.section.tokens': 'Tokens',
   'shell.section.measure': 'Messen',

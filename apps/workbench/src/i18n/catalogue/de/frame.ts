@@ -32,6 +32,9 @@ export const frame: Record<string, string> = {
   // The language of the app in the frame, not this site's, which is in the settings
   // dialog. The two values beside this select are `de` and `en`, so they are not ids.
   'frame.language': 'Sprache der App',
+  'frame.channel': 'Kanal',
+  'frame.channel.preview': 'Vorschau-Build',
+  'frame.channel.release': 'Release-Build',
   'frame.language.shipped': 'Wie ausgeliefert',
 
   'frame.zoom': 'Zoom',

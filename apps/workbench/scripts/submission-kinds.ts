@@ -19,6 +19,7 @@ import {
   type Tree,
 } from './submission-strings.ts';
 import { applyLayout, mayWriteLayout, targetFile } from './submission-layout.ts';
+import { applyFeatures, mayWriteFeatures } from './submission-features.ts';
 import { applyHome, readSubmission, Refusal } from './submission.ts';
 
 export type { Change, Repo, Tree } from './submission-strings.ts';
@@ -80,6 +81,21 @@ export const KINDS: Readonly<Record<SubmissionKind, KindEntry | null>> = {
         : [`expected exactly ${file} to change, not ${describe(changes)}`];
     },
   },
+  features: {
+    apply: (payload, repo) => {
+      const { file, content, summary } = applyFeatures(payload, repo);
+      return { files: [{ path: file, content }], summary, format: false };
+    },
+    // One file, the release file, modified.
+    verify: (_payload, changes) =>
+      changes.length === 1 &&
+      changes[0]!.status === ' M' &&
+      changes[0]!.path === SUBMISSION_KINDS.features.file
+        ? []
+        : [
+            `expected exactly ${SUBMISSION_KINDS.features.file} to change, not ${describe(changes)}`,
+          ],
+  },
   strings: {
     apply: (payload, repo) => ({ ...applyStrings(payload, repo), format: true }),
     verify: verifyStrings,
@@ -101,6 +117,7 @@ function describe(changes: readonly Change[]): string {
  */
 export function mayWrite(kind: SubmissionKind, path: string): boolean {
   if (kind === 'home') return path === SUBMISSION_KINDS.home.file;
+  if (kind === 'features') return mayWriteFeatures(path);
   return kind === 'layout' ? mayWriteLayout(path) : CATALOGUE_FILE.test(path);
 }
 

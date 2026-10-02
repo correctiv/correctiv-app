@@ -9,6 +9,7 @@ import { namesFrame } from '../preview/store';
 import { usePreview } from '../preview/Preview';
 import { governs } from '../preview/home/document';
 import { HomeDocument } from '../preview/home/HomeDocument';
+import { FeaturesEditor } from '../preview/features/FeaturesEditor';
 import { NavigationEditor } from '../preview/navigation/NavigationEditor';
 import { useScenario } from '../preview/home/Scenario';
 import { Timeline } from '../preview/home/Timeline';
@@ -202,6 +203,10 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
 
       <Slot id="navigation">
         <NavigationEditor onReload={preview.onReload} />
+      </Slot>
+
+      <Slot id="features">
+        <FeaturesEditor onReload={preview.onReload} />
       </Slot>
 
       {/* Two marks on the rail, and nothing on the other five. A tool whose

@@ -21,6 +21,7 @@ import { documentFrame } from './document';
 import { draft } from './draft';
 import { drawing } from './drawing';
 import { edition } from './edition';
+import { features } from './features';
 import { fixtures } from './fixtures';
 import { frame } from './frame';
 import { handbook } from './handbook';
@@ -55,6 +56,7 @@ export const de: Record<string, string> = {
   ...draft,
   ...drawing,
   ...edition,
+  ...features,
   ...fixtures,
   ...frame,
   ...handbook,
