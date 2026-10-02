@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  dataCeiling,
   effectiveState,
   FEATURES,
   FEATURES_PROBLEMS,
@@ -25,12 +26,18 @@ const REGISTRY: FeatureRegistry = {
     { id: 'held', state: 'vorschau' },
   ],
   features: [
-    { id: 'reader', group: 'core', state: 'an', provenance: 'live' },
-    { id: 'live', group: 'open', state: 'an', provenance: 'live' },
-    { id: 'sampled', group: 'open', state: 'an', provenance: 'sample' },
-    { id: 'in-held', group: 'held', state: 'an', provenance: 'live' },
-    { id: 'needs-sampled', group: 'open', state: 'an', provenance: 'live', requires: ['sampled'] },
-    { id: 'off', group: 'open', state: 'aus', provenance: 'live' },
+    { id: 'reader', group: 'core', state: 'an', sources: ['articles'] },
+    { id: 'live', group: 'open', state: 'an', sources: ['articles', 'projects'] },
+    { id: 'sampled', group: 'open', state: 'an', sources: ['callouts', 'claims'] },
+    { id: 'in-held', group: 'held', state: 'an', sources: ['articles'] },
+    {
+      id: 'needs-sampled',
+      group: 'open',
+      state: 'an',
+      sources: ['articles'],
+      requires: ['sampled'],
+    },
+    { id: 'off', group: 'open', state: 'aus' },
   ],
 };
 
@@ -49,7 +56,7 @@ describe('the bundled release file', () => {
 
   it('never commits an `an` the data cannot carry', () => {
     const faulty = FEATURES.features.filter(
-      (feature) => feature.provenance === 'sample' && feature.state === 'an',
+      (feature) => dataCeiling(feature) === 'vorschau' && feature.state === 'an',
     );
     expect(faulty.map((feature) => feature.id)).toEqual([]);
   });
@@ -76,6 +83,30 @@ describe('the bundled release file', () => {
     const reached = FEATURES.features.filter((f) => isReachable(state, f.id));
     expect(reached.map((f) => f.id)).toEqual(
       FEATURES.features.filter((f) => featureState(state, f.id) !== 'aus').map((f) => f.id),
+    );
+  });
+});
+
+describe('the data ceiling', () => {
+  it('is `vorschau` only for a feature that reads sources and every one is a sample', () => {
+    expect(dataCeiling({ sources: ['callouts', 'claims'] })).toBe('vorschau');
+    expect(dataCeiling({ sources: ['callouts', 'articles'] })).toBe('an');
+    expect(dataCeiling({ sources: [] })).toBe('an');
+    expect(dataCeiling({})).toBe('an');
+  });
+
+  it('is derived, so a source turning live lifts every feature that reads it', () => {
+    expect(FEATURES.features.filter((f) => dataCeiling(f) === 'vorschau').map((f) => f.id)).toEqual(
+      [
+        'callouts',
+        'faktenforum',
+        'abriss-atlas',
+        'early-access',
+        'diary',
+        'bonus-audio',
+        'events',
+        'quarterly-report',
+      ],
     );
   });
 });
@@ -140,7 +171,7 @@ describe('the store', () => {
 describe('parseFeatures', () => {
   const doc = (extra: Record<string, unknown> = {}) => ({
     groups: [{ id: 'g', state: 'an' }],
-    features: [{ id: 'f', group: 'g', state: 'an', provenance: 'live', ...extra }],
+    features: [{ id: 'f', group: 'g', state: 'an', sources: ['articles'], ...extra }],
   });
 
   it('reads a well-formed document', () => {
@@ -168,7 +199,7 @@ describe('parseFeatures', () => {
     ]);
   });
 
-  it('refuses a locked group that is not `an`, a duplicate id and a bad provenance', () => {
+  it('refuses a locked group that is not `an`, a duplicate id and a bad source list', () => {
     const locked = parseFeatures({
       groups: [{ id: 'g', state: 'vorschau', locked: true }],
       features: [],
@@ -183,8 +214,11 @@ describe('parseFeatures', () => {
         ],
       }).problems.map((p) => p.code),
     ).toEqual(['id-duplicate']);
-    expect(parseFeatures(doc({ provenance: 'real' })).problems.map((p) => p.code)).toEqual([
-      'provenance-invalid',
+    expect(parseFeatures(doc({ sources: 'articles' })).problems.map((p) => p.code)).toEqual([
+      'sources-invalid',
+    ]);
+    expect(parseFeatures(doc({ sources: ['nowhere'] })).problems.map((p) => p.code)).toEqual([
+      'sources-unknown',
     ]);
   });
 
@@ -195,8 +229,8 @@ describe('parseFeatures', () => {
     const cyclic = parseFeatures({
       groups: [{ id: 'g', state: 'an' }],
       features: [
-        { id: 'a', group: 'g', state: 'an', provenance: 'live', requires: ['b'] },
-        { id: 'b', group: 'g', state: 'an', provenance: 'live', requires: ['a'] },
+        { id: 'a', group: 'g', state: 'an', requires: ['b'] },
+        { id: 'b', group: 'g', state: 'an', requires: ['a'] },
       ],
     });
     expect(cyclic.problems.map((p) => p.code)).toEqual(['requires-cycle', 'requires-cycle']);

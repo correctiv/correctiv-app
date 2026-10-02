@@ -23,13 +23,12 @@
  * claim per name, and the shape of that table is what makes adding a variant
  * without saying what it is for a compile error rather than a review question.
  *
- * **Nothing here says where a specimen CAME FROM.** Whether a source is live or
- * sample is a fact about the source, and `features/features.ts` says the same
- * thing about itself: the `Provenance` it carries per feature is the stand-in
- * until the sources declare it, and it is to be derived from them rather than
- * from what a row claims. A property on every variant would be a second answer
- * to one question, and the two answers would part.
+ * **A variant does not say where it came from; its domain does.** Every domain under
+ * `data/samples/` is a sample by construction, so the summary carries
+ * `provenance: 'sample'` once, per domain (ADR 0072 §4), and not a property per
+ * specimen, which would be a second answer to one question.
  */
+import type { Provenance } from '../../features/sources';
 
 /** A variant's name: ASCII kebab-case, which is what a URL can carry. */
 export type SampleVariantName = string;
@@ -124,6 +123,7 @@ export function sampleDomain<const Id extends string, V extends readonly SampleV
  */
 export interface SampleDomainSummary {
   readonly id: string;
+  readonly provenance: Provenance;
   readonly variants: readonly SampleVariant[];
   /** The variant with this name, or nothing. For a name from outside. */
   find(name: SampleVariantName): SampleVariant | undefined;
@@ -142,6 +142,7 @@ export function summarise<V extends readonly SampleVariant[]>(
 ): SampleDomainSummary {
   return {
     id: domain.id,
+    provenance: 'sample',
     variants: domain.variants,
     find: (name) => domain.variants.find((variant) => variant.name === name),
   };
