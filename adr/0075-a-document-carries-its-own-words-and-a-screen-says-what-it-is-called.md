@@ -152,6 +152,13 @@ does not refuse the document. An older app meeting a newer document is exactly t
 `navigation.json` keeps its three keys: `version`, `tabs`, `maxTabs`. Which screens are on
 the bar, in what order, and where "Mehr" begins. Nothing else.
 
+**A screen's placement is one of three, and which one is the newsroom's.** On the bar; behind
+"Mehr", which ADR 0071 §5 makes a threshold the document sets rather than a constant; or off
+the bar entirely, where a link block, a deep link or "Mehr" itself reaches it and a tab does
+not. Off the bar is not a fourth state a screen has to be marked for: a screen that the
+document does not put on the bar is off it, and the name it keeps there is why §3 puts the
+words in the screen's own document.
+
 What moves is on the app's side of the seam, not the document's: `DESTINATIONS` in
 `tabTargets.ts` stops declaring a label and an icon and keeps the route, the feature stays
 `TAB_FEATURES` (ADR 0072), and the four `ui.tab*` ids leave the catalogue, Home's included.
