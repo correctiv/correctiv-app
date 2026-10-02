@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import { useIntl } from 'react-intl';
 import { useWindowDimensions, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { railScreenOptions, renderRailTabBar } from '@/lib/navigation/railTabs';
 import { declaredTabRoutes, tabBar } from '@/lib/navigation/tabBar';
-import { TAB_TARGETS } from '@/lib/tabTargets';
+import { useTabWords } from '@/lib/navigation/tabWords';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
@@ -56,11 +55,12 @@ function tabIcon(active: IoniconName, inactive: IoniconName) {
 }
 
 export default function TabsLayout() {
-  const intl = useIntl();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { bar } = tabBar();
+  // The same copy of the document the entries came from (ADR 0075 §5).
+  const words = useTabWords();
   const routes = declaredTabRoutes(bar);
   const barHeight = TAB_BAR_HEIGHT + insets.bottom;
 
@@ -113,7 +113,7 @@ export default function TabsLayout() {
         }}
       >
         {routes.map((route) => {
-          const target = TAB_TARGETS[route]!;
+          const word = words[route]!;
           // In the bar, or reachable from "Mehr" without a button, or not there at all.
           const shown = bar.tabs.includes(route);
           const behindMore = bar.more.includes(route);
@@ -122,8 +122,8 @@ export default function TabsLayout() {
               <Tabs.Screen
                 name={route}
                 options={{
-                  title: intl.formatMessage(target.label),
-                  tabBarIcon: tabIcon(target.ionicon.active, target.ionicon.inactive),
+                  title: word.label,
+                  tabBarIcon: tabIcon(word.icon.ionicon.active, word.icon.ionicon.inactive),
                   ...(shown ? null : { href: null }),
                 }}
               />

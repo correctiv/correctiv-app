@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { blocksByCategory, blocksFor } from '@correctiv/app-core/lib/block-category';
-import { CONFIGURABLE_SCREENS } from '@correctiv/app-core/lib/screen-layout';
+import {
+  CONFIGURABLE_SCREENS,
+  parseScreenDocument,
+  SCREEN_DOCUMENTS,
+  type ConfigurableScreen,
+} from '@correctiv/app-core/lib/screen-layout';
 import { MAX_TABS, MIN_TABS } from '@correctiv/app-core/lib/navigation';
 
 import { ROOT } from '../../plugin/collect.ts';
@@ -98,33 +103,29 @@ describe('the screen picker and its palette', () => {
 
 describe('the screen switcher’s icons', () => {
   /**
-   * The Ionicons name the app's own tab bar gives each screen, read out of the app's
-   * files as text — the app is not importable from Node and its icon components are
-   * React Native's, so the name is the part that can be compared.
+   * The Ionicons name the app's own tab bar gives each screen.
    *
-   * **Out of two files, because the app keeps it in two** (ADR 0075 §4): a screen id is
-   * mapped to an icon KEY in `DESTINATIONS`, and the key is declared with its six native
-   * names in `screenIcons.ts`, which the generator reads by importing it under Node's
-   * type stripping. Read either half alone and the answer is a name or a key rather than
-   * the mark the tab bar actually draws.
+   * **Out of two places, because the answer is in two** (ADR 0075 §4 and §5): the KEY is
+   * in the screen's own document now, which is data this half of the repository may read
+   * outright, and the key is declared with its six native names in the app's
+   * `screenIcons.ts`, which only text can reach — the app is not importable from Node
+   * and its icon components are React Native's. Read either half alone and the answer is
+   * a name or a key rather than the mark the tab bar actually draws.
    *
-   * `DESTINATIONS` rather than the whole of `tabTargets.ts`: the label table above it has
-   * a `home:` of its own, and a search for `home:` in the file at large finds that one
-   * first.
+   * It used to read `DESTINATIONS` in `tabTargets.ts` for the key. That table declared a
+   * destination's icon until ADR 0075 §5 took the words and the icon out of the app, so
+   * reading it now would be reading a table that no longer answers the question.
    */
-  function appIonicon(screen: string): string | null {
-    const destinations = /export const DESTINATIONS[\s\S]*?\n};/.exec(APP('lib/tabTargets.ts'))![0];
-    const key = new RegExp(`\\n {2}${screen}: \\{[^}]*\\.\\.\\.iconOf\\('(\\w+)'\\) \\}`).exec(
-      destinations,
-    );
-    if (key === null) return null;
+  function appIonicon(screen: ConfigurableScreen): string | null {
+    const key = parseScreenDocument(SCREEN_DOCUMENTS[screen]).words?.icon;
+    if (key === undefined) return null;
     const icons = /export const SCREEN_ICONS[\s\S]*?\n};/.exec(APP('lib/screenIcons.ts'))![0];
     /*
      * `[{ ]active` and not `active`: `inactive:` ends in it, and a search without
      * the leading character reads `compass-outline` where it means `compass`.
      */
     const at = new RegExp(
-      `\\n {2}${key[1]}: \\{[\\s\\S]*?ionicon: \\{[^}]*[{ ]active: '([^']+)'`,
+      `\\n {2}${key}: \\{[\\s\\S]*?ionicon: \\{[^}]*[{ ]active: '([^']+)'`,
     ).exec(icons);
     return at === null ? null : at[1]!;
   }
@@ -136,24 +137,20 @@ describe('the screen switcher’s icons', () => {
 
   it('draws the app’s own tab icon for each of them', () => {
     // The editor's switcher stands in for the app's tab bar, so a screen marked
-    // differently in the two is a mark somebody has to learn twice. Home is the tab
-    // bar's first entry rather than a row of `DESTINATIONS`, so it is read apart.
+    // differently in the two is a mark somebody has to learn twice. Home is no longer
+    // read apart: its icon is in its document like every other screen's (ADR 0075 §3),
+    // where it used to be the tab bar's fixed first entry and nothing else.
     // One object per screen rather than an `expect` each, as `tool-panel.test.tsx`
     // does it: a failure names every screen whose mark has drifted, and they drift
-    // together, because the drift is a rename in the app's file.
+    // together, because the drift is one rename.
     expect(
       Object.fromEntries(
-        CONFIGURABLE_SCREENS.filter((of) => of !== 'home').map((of) => [
+        CONFIGURABLE_SCREENS.map((of) => [
           of,
           SCREEN_ICONS[of].ionicon === appIonicon(of) ? 'the app’s mark' : SCREEN_ICONS[of].ionicon,
         ]),
       ),
-    ).toEqual(
-      Object.fromEntries(
-        CONFIGURABLE_SCREENS.filter((of) => of !== 'home').map((of) => [of, 'the app’s mark']),
-      ),
-    );
-    expect(SCREEN_ICONS.home.ionicon).toBe('home');
+    ).toEqual(Object.fromEntries(CONFIGURABLE_SCREENS.map((of) => [of, 'the app’s mark'])));
   });
 });
 

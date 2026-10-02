@@ -455,9 +455,9 @@ interface Carry {
 }
 
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
-const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
+const CODE = 'rounded-sm border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
-  'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+  'rounded-sm border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 /**
  * The address this draft is handed over as, and how long it came out.
@@ -1315,7 +1315,7 @@ export function HomeDocument({
           {result.ok ? (
             <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
           ) : (
-            <span className="shrink-0 rounded-s bg-red-500 px-3xs font-mono text-[0.75rem] font-semibold uppercase text-white">
+            <span className="shrink-0 rounded-sm bg-red-500 px-3xs font-mono text-[0.75rem] font-semibold uppercase text-white">
               {intl.formatMessage(COPY.refused)}
             </span>
           )}
@@ -1987,7 +1987,7 @@ function Here() {
   const intl = useWorkbenchIntl();
 
   return (
-    <span className="rounded-s bg-accent px-3xs py-4xs text-[0.6875rem] font-semibold uppercase text-white">
+    <span className="rounded-sm bg-accent px-3xs py-4xs text-[0.6875rem] font-semibold uppercase text-white">
       {intl.formatMessage(COPY.setHere)}
     </span>
   );

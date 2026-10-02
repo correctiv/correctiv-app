@@ -345,7 +345,7 @@ export function Calendar({
         {widened && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 rounded-s bg-accent/20 ring-2 ring-inset ring-accent"
+            className="pointer-events-none absolute inset-y-0 rounded-sm bg-accent/20 ring-2 ring-inset ring-accent"
             style={{
               left: `${(days.indexOf(first) / n) * 100}%`,
               width: `${((days.indexOf(last) - days.indexOf(first) + 1) / n) * 100}%`,

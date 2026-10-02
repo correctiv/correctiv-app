@@ -209,12 +209,17 @@ describe('web target', () => {
     expect(offenders.map((f) => relative(SRC, f))).toEqual([]);
   });
 
-  it('declares the tab labels once, in lib/tabTargets.ts, for all three bars', () => {
+  it('declares the one tab label it owns once, in lib/tabTargets.ts, for all three bars', () => {
     // The bars used to write their five labels out twice and this compared the copies.
-    // They now draw from one declaration (ADR 0071 §4), so what is held is that the
-    // declaration is read and that neither layout grows a set of its own again.
-    // Five destinations and "Mehr"; an empty parse would equal nothing here.
-    expect(tabLabels('lib/tabTargets.ts')).toHaveLength(6);
+    // They then drew from one declaration (ADR 0071 §4), and since ADR 0075 §5 five of
+    // the six are not declared in this app at all: a tab says what its screen's own
+    // document calls it. "Mehr" is the one left, because it is the screen the app draws
+    // when the bar overflows and nobody arranges it (ADR 0071 §5).
+    //
+    // So what is held is that the one message is declared in the one file and that
+    // neither layout grows a set of its own again — a `defineMessages` in a bar is the
+    // shape the five came back in.
+    expect(tabLabels('lib/tabTargets.ts')).toEqual(['more: ui.tabMore = More']);
     for (const layout of ['app/(tabs)/_layout.tsx', 'app/(tabs)/_layout.web.tsx']) {
       expect(readFileSync(resolve(SRC, layout), 'utf8')).not.toContain('defineMessages');
     }

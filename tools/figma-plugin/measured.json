@@ -250,7 +250,7 @@
                   "w": "hug",
                   "h": 25,
                   "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "fill": "@color-accent-alternative",
                   "children": [
                     {
@@ -400,7 +400,7 @@
               "w": "hug",
               "h": 25,
               "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-              "radius": "@radius-s",
+              "radius": "@radius-sm",
               "fill": "@color-accent",
               "children": [
                 {
@@ -942,7 +942,7 @@
                   "w": "hug",
                   "h": 25,
                   "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "fill": "@color-accent",
                   "children": [
                     {
@@ -990,7 +990,7 @@
               "w": "hug",
               "h": 25,
               "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-              "radius": "@radius-s",
+              "radius": "@radius-sm",
               "children": [
                 {
                   "t": "ellipse",
@@ -1081,7 +1081,7 @@
               "w": "hug",
               "h": 25,
               "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-              "radius": "@radius-s",
+              "radius": "@radius-sm",
               "fill": "@color-accent-alternative",
               "children": [
                 {
@@ -1886,7 +1886,7 @@
                   "w": "hug",
                   "h": 25,
                   "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "children": [
                     {
                       "t": "ellipse",
@@ -1993,7 +1993,7 @@
                   "w": "hug",
                   "h": 25,
                   "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "children": [
                     {
                       "t": "ellipse",
@@ -2100,7 +2100,7 @@
                   "w": "hug",
                   "h": 25,
                   "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                  "radius": "@radius-s",
+                  "radius": "@radius-sm",
                   "children": [
                     {
                       "t": "ellipse",
@@ -2230,7 +2230,7 @@
                       "x": 142,
                       "y": 72,
                       "pad": ["@spacing-3xs", "@spacing-3xs", 0, 0],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-always-dark/80",
                       "children": [
                         {
@@ -2477,7 +2477,7 @@
           "w": "hug",
           "h": 25,
           "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-          "radius": "@radius-s",
+          "radius": "@radius-sm",
           "fill": "@color-accent-alternative",
           "children": [
             {
@@ -2981,7 +2981,7 @@
               "w": "hug",
               "h": 25,
               "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-              "radius": "@radius-s",
+              "radius": "@radius-sm",
               "fill": "@color-accent-alternative",
               "children": [
                 {
@@ -3071,7 +3071,7 @@
               "w": "hug",
               "h": 25,
               "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-              "radius": "@radius-s",
+              "radius": "@radius-sm",
               "fill": "@color-accent-alternative",
               "children": [
                 {
@@ -3374,7 +3374,7 @@
             "dir": "V",
             "w": 269,
             "h": 4,
-            "radius": "@radius-s",
+            "radius": "@radius-sm",
             "clip": true,
             "fill": "@color-grey-250",
             "children": [
@@ -3485,7 +3485,7 @@
             "dir": "V",
             "w": 269,
             "h": 4,
-            "radius": "@radius-s",
+            "radius": "@radius-sm",
             "clip": true,
             "fill": "@color-grey-250",
             "children": [
@@ -3627,7 +3627,7 @@
           "dir": "V",
           "w": "fill",
           "h": 4,
-          "radius": "@radius-s",
+          "radius": "@radius-sm",
           "clip": true,
           "fill": "@color-stroke",
           "children": [
@@ -3656,7 +3656,7 @@
           "dir": "V",
           "w": "fill",
           "h": 4,
-          "radius": "@radius-s",
+          "radius": "@radius-sm",
           "clip": true,
           "fill": "@color-stroke",
           "children": [
@@ -3685,7 +3685,7 @@
           "dir": "V",
           "w": "fill",
           "h": 4,
-          "radius": "@radius-s",
+          "radius": "@radius-sm",
           "clip": true,
           "fill": "@color-stroke",
           "children": [
@@ -4041,7 +4041,7 @@
         "w": "hug",
         "h": 25,
         "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-        "radius": "@radius-s",
+        "radius": "@radius-sm",
         "fill": "@color-accent",
         "children": [
           {
@@ -4062,7 +4062,7 @@
         "w": "hug",
         "h": 25,
         "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-        "radius": "@radius-s",
+        "radius": "@radius-sm",
         "fill": "@color-accent-alternative",
         "children": [
           {
@@ -4083,7 +4083,7 @@
         "w": "hug",
         "h": 25,
         "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-        "radius": "@radius-s",
+        "radius": "@radius-sm",
         "fill": "@color-grey-250",
         "children": [
           {
@@ -4104,7 +4104,7 @@
         "w": "hug",
         "h": 25,
         "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-        "radius": "@radius-s",
+        "radius": "@radius-sm",
         "children": [
           {
             "t": "ellipse",
@@ -4573,7 +4573,7 @@
                       "w": "hug",
                       "h": 25,
                       "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent",
                       "children": [
                         {
@@ -4621,7 +4621,7 @@
                       "w": "hug",
                       "h": 25,
                       "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent",
                       "children": [
                         {
@@ -4669,7 +4669,7 @@
                       "w": "hug",
                       "h": 25,
                       "pad": ["@spacing-2xs", "@spacing-2xs", "@spacing-4xs", "@spacing-4xs"],
-                      "radius": "@radius-s",
+                      "radius": "@radius-sm",
                       "fill": "@color-accent",
                       "children": [
                         {

@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIntl } from 'react-intl';
 import { Pressable, View } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { tabBar } from '@/lib/navigation/tabBar';
-import { TAB_TARGETS } from '@/lib/tabTargets';
+import { useTabWords } from '@/lib/navigation/tabWords';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 import { ScaledText } from './ScaledText';
@@ -23,7 +22,7 @@ export type NavRailProps = {
  * The tablet navigation rail: five tab triggers, each an icon over its label as in
  * the phone bar, plus the mini player.
  *
- * The label is the phone bar's: the same `tab.message`, `SourceSans3_600SemiBold` at 11,
+ * The label is the phone bar's: the same `useTabWords()`, `SourceSans3_600SemiBold` at 11,
  * the accent colour and a filled glyph when active. It stays on one line and is not
  * shortened: "Mitmachen", the widest, measures about 44 px at 1 and 51 px at the
  * largest in-app step (1.15) of the 80 px a tab has. Only a system font scale near 1.8
@@ -37,9 +36,9 @@ export type NavRailProps = {
  * navigator, left of the screens.
  */
 export function NavRail({ active, onSelect, insets }: NavRailProps) {
-  const intl = useIntl();
   const colors = useColors();
   const { bar } = tabBar();
+  const words = useTabWords();
   const top = insets?.top ?? 0;
   const bottom = insets?.bottom ?? 0;
   return (
@@ -54,7 +53,7 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
       <View className="flex-1 justify-between">
         <View style={{ gap: spacingPx['2xs'] }}>
           {bar.tabs.map((name) => {
-            const tab = TAB_TARGETS[name]!;
+            const word = words[name]!;
             const selected = active === name;
             const tint = selected ? colors.accent : colors['on-canvas-muted'];
             return (
@@ -68,11 +67,11 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
                   paddingHorizontal: spacingPx['3xs'],
                 }}
                 accessibilityRole="tab"
-                accessibilityLabel={intl.formatMessage(tab.label)}
+                accessibilityLabel={word.label}
                 accessibilityState={{ selected }}
               >
                 <Ionicons
-                  name={selected ? tab.ionicon.active : tab.ionicon.inactive}
+                  name={selected ? word.icon.ionicon.active : word.icon.ionicon.inactive}
                   size={24}
                   color={tint}
                 />
@@ -88,7 +87,7 @@ export function NavRail({ active, onSelect, insets }: NavRailProps) {
                     textAlign: 'center',
                   }}
                 >
-                  {intl.formatMessage(tab.label)}
+                  {word.label}
                 </ScaledText>
               </Pressable>
             );

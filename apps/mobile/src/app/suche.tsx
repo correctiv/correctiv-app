@@ -122,7 +122,7 @@ export default function SucheScreen() {
           autoFocus
           autoCorrect={false}
           returnKeyType="search"
-          className="rounded-s bg-surface px-s py-xs"
+          className="rounded-sm bg-surface px-s py-xs"
           style={[typography['text-m'], { color: colors['on-canvas'], minHeight: sizes.tapTarget }]}
         />
       </ScreenHeader>

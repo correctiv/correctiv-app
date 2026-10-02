@@ -283,7 +283,7 @@ transcription of something else.
 ### What it recovers, measured on 2026-09-10
 
 **Geometry, exactly.** For `ui/Badge` the measurement reproduced the hand-written
-description without a difference: padding `[2xs, 2xs, 4xs, 4xs]`, `radius-s`, size
+description without a difference: padding `[2xs, 2xs, 4xs, 4xs]`, `radius-sm`, size
 11, tracking 3.64 % — the same number `kit.mjs` computes as `0.4 / 11` — and the
 live tone's seven-pixel dot as an ellipse with `spacing-3xs` beside it.
 

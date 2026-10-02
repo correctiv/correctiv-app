@@ -84,7 +84,7 @@ function Appearance() {
             accessibilityLabel={`Appearance: ${value}`}
             accessibilityState={{ selected: setting === value }}
             className={[
-              'rounded-s px-s py-2xs active:opacity-80',
+              'rounded-sm px-s py-2xs active:opacity-80',
               setting === value ? 'bg-accent' : 'bg-surface border border-stroke',
             ].join(' ')}
           >
@@ -112,7 +112,7 @@ function Surface({
   return (
     <View
       className={[
-        'mt-2xs rounded-s border border-stroke p-s',
+        'mt-2xs rounded-sm border border-stroke p-s',
         surface === 'canvas' ? 'bg-canvas' : 'bg-surface',
       ].join(' ')}
     >

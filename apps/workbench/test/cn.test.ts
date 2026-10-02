@@ -170,16 +170,17 @@ describe('the scales cn knows', () => {
   });
 
   /*
-   * The radius scale is the third, and it is here rather than in the block above because
-   * two of its three names are Tailwind's own and the third is a class of another kind
-   * altogether: in Tailwind v4 `rounded-s` is the START SIDE, not a radius, so it is not
-   * a key a merge can be taught. The theme's `--radius-s` emits that same class name
-   * beside it — two rules, and `--radius: initial` leaves the side at zero — which is a
-   * collision in the theme, not in the merge, and is worth a record of its own.
+   * The radius scale is the third, and all three of its names are Tailwind's own: `xs`,
+   * `sm` and `md`. The middle one was `s` until ADR 0077, which renamed it because in
+   * Tailwind v4 `rounded-s` is the START SIDE — a class of another kind, with a group of
+   * its own in the merge, so it could never be taught here. The theme emitted that same
+   * class name for the token beside it, and two rules for one class is a collision in the
+   * theme; this is what says the scale is spelt the way Tailwind spells it now.
    */
   it('needs no configuration for a radius scale Tailwind spells the same way', () => {
     expect([...RADII].sort()).toEqual([...declared('radius')].sort());
     expect(cn('rounded-full', 'rounded-xs')).toBe('rounded-xs');
+    expect(cn('rounded', 'rounded-sm')).toBe('rounded-sm');
     expect(cn('rounded', 'rounded-md')).toBe('rounded-md');
   });
 

@@ -132,7 +132,13 @@ export function Segmented({
                 // `whitespace-nowrap` and not only under `scroll`: a two-word option
                 // that breaks across lines reads as a hyphenation bug in German, and the
                 // wrapping row this replaced is what made it a question. Cheap everywhere.
-                'block cursor-pointer whitespace-nowrap rounded-s text-s font-medium transition-colors',
+                //
+                // **Kept through the radius rename** (#332), which rewrote this line to take
+                // `rounded-sm` and took the `whitespace-nowrap` with it: the option's own words
+                // are the one thing in a tab row that must not break, and „Mitmachen und
+                // Community" is two words because the German is. `rounded-sm` is the step this
+                // theme's own scale now answers to.
+                'block cursor-pointer whitespace-nowrap rounded-sm text-s font-medium transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-accent',
                 'px-xs py-3xs',
                 /*

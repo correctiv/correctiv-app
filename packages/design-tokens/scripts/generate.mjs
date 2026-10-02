@@ -177,15 +177,50 @@ function round(n) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The one token name this bridge renames, and why it cannot be left alone.
+ *
+ * `tokens/theme.css` is vendored byte-identical from wp-design-tokens, so the
+ * design system spells its small radius `--var-radius-s` and that name cannot be
+ * changed there — not by this script, not by anybody else until upstream does.
+ * What this bridge controls is the name the token reaches TAILWIND under, and
+ * `s` is not available: in Tailwind v4 `rounded-sm` is the logical START SIDE
+ * (`border-start-*-radius`), a utility of its own with a group in the merge. A
+ * theme that declares `--radius-s` emits `.rounded-sm { border-radius }` beside
+ * Tailwind's `.rounded-sm { border-start-start-radius }` — one class, two rules,
+ * two meanings, and no test on the token's value can see it because the value is
+ * right. Measured on 2026-10-02: the workbench, whose own `@theme` re-declares
+ * `--radius`, compiled both rules for every one of its seven `rounded-sm` call
+ * sites.
+ *
+ * `sm` is Tailwind's own spelling of the same step, so the scale becomes `xs sm
+ * md` — three names that need no explaining, and the same two the spacing scale
+ * already carries (`--spacing-s` and `--spacing-sm` are both real there).
+ *
+ * `--radius: initial` below is the other half and stays: it removes the bare
+ * form of all ten side utilities, which no rename of ours can do. It is also not
+ * enough on its own, and the reason is above — a consumer that declares its own
+ * `--radius` gets the side utilities back whatever the package says.
+ * `apps/mobile/__tests__/theme-scale-collision.test.ts` is what holds the naming.
+ */
+const RADIUS_KEYS = { s: 'sm' };
+
+/** The `--var-radius-*` a key in the generated theme came from. */
+const RADIUS_SOURCE = Object.fromEntries(
+  Object.entries(RADIUS_KEYS).map(([source, generated]) => [generated, source]),
+);
+
+/**
  * The scales every artefact is built from. Each is a slice of the flat map, keyed
  * by whatever follows the prefix.
  */
 function groupScales(vars) {
   /** Everything under one `--var-` prefix, with the prefix stripped off the keys. */
-  function byPrefix(prefix, transform = (x) => x) {
+  function byPrefix(prefix, transform = (x) => x, rename = {}) {
     const out = {};
     for (const [k, v] of Object.entries(vars)) {
-      if (k.startsWith(prefix)) out[k.slice(prefix.length)] = transform(v);
+      if (!k.startsWith(prefix)) continue;
+      const key = k.slice(prefix.length);
+      out[rename[key] ?? key] = transform(v);
     }
     return out;
   }
@@ -213,7 +248,7 @@ function groupScales(vars) {
     // (emphasis, alternative, grey-100..700). `var()` references are already
     // resolved by parseVars, so every value here is a hex.
     tokenColors: byPrefix('--var-color-'),
-    radius: byPrefix('--var-radius-', toPx), // xs, s, md
+    radius: byPrefix('--var-radius-', toPx, RADIUS_KEYS), // xs, sm, md
     durationsMs: byPrefix('--var-duration-', toMs), // fast, slow
     leading: byPrefix('--var-leading-', (v) => parseFloat(v)), // unitless
     letterSpacingPx: byPrefix('--var-letter-spacing-', toNumberPx),
@@ -551,16 +586,19 @@ function renderThemeCss(vars, scales, colors, colorsDark) {
   // One array per group; the groups are separated by a blank line in the output.
   const themeEntries = [
     // Tailwind's DEFAULT radius, cleared. Without this line v4 also emits a BARE
-    // form of each logical side utility — `rounded-s` for the start side, `-e`,
-    // `-t`, `-b`, `-l`, `-r`, `-ss`, `-se`, `-es`, `-ee` — and this scale has a
-    // token called `s`. Both rules were emitted and both applied: every Badge, the
-    // search field and the duration chip on a video thumbnail had 4px leading
-    // corners and 2px trailing ones, past a green build, because `--radius-s` still
-    // held the right value and still emitted a correct rule of its own.
+    // form of each logical side utility — `rounded-sm` for the start side, `-e`,
+    // `-t`, `-b`, `-l`, `-r`, `-ss`, `-se`, `-es`, `-ee` — so every one of those
+    // ten class names exists whether this design system has a token for it or not,
+    // and the app would be carrying ten radii nobody chose.
     //
-    // Clearing the DEFAULT removes the bare form for ALL ten names, so no radius
-    // token can collide this way — including ones the design system has not added
-    // yet. `apps/mobile/__tests__/tokens.test.ts` fails if this line goes, and it
+    // This is the app's line, and it holds in the app: the app imports nothing
+    // else, so `--radius` stays cleared and the ten never arrive. It does NOT
+    // hold for a consumer with a `@theme` of its own — the workbench declares
+    // `--radius: 0.375rem` after this file, and the bare side utilities come back
+    // with it. That is why the radius scale is RENAMED rather than relying on
+    // this line (see RADIUS_KEYS above): a name cannot collide, while a variable
+    // one consumer may set is not a guarantee.
+    // `apps/mobile/__tests__/tokens.test.ts` fails if this line goes, and it
     // asserts the LINE rather than relying on its drift check: once this generator
     // stops emitting the line, the committed file agrees with it again and drift
     // sees nothing.
@@ -570,7 +608,9 @@ function renderThemeCss(vars, scales, colors, colorsDark) {
     // apps/mobile/__tests__/no-numeric-utilities.test.ts.
     [`  --spacing: ${raw('--var-spacing')};`],
     Object.keys(spacingTokens).map((k) => `  --spacing-${k}: ${raw(`--var-spacing-${k}`)};`),
-    Object.keys(radius).map((k) => `  --radius-${k}: ${raw(`--var-radius-${k}`)};`),
+    Object.keys(radius).map(
+      (k) => `  --radius-${k}: ${raw(`--var-radius-${RADIUS_SOURCE[k] ?? k}`)};`,
+    ),
     // `text-m`, not `text-text-m`: the token names carry their own `text-` prefix
     // and Tailwind's font-size namespace supplies one too.
     Object.keys(fontSizePx).map(

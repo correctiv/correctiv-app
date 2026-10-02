@@ -67,7 +67,7 @@ export function Badge({ label, tone = 'emphasis', className }: BadgeProps) {
   return (
     <View
       className={[
-        'flex-row items-center self-start rounded-s px-2xs py-4xs',
+        'flex-row items-center self-start rounded-sm px-2xs py-4xs',
         SURFACE[tone],
         className ?? '',
       ].join(' ')}

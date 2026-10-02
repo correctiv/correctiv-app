@@ -76,18 +76,24 @@ function readArtefacts(): Record<Artefact, string> {
 const COMMITTED = readArtefacts();
 
 describe('token bridge', () => {
-  it("clears Tailwind's default radius, so a token cannot collide with a side utility", () => {
+  it("clears Tailwind's default radius, so the app carries no radius nobody chose", () => {
     /**
      * Without this line Tailwind v4 also emits a BARE form of each logical side
-     * utility — `rounded-s` for the start side — and this scale has a token called
-     * `s`. Both rules were emitted and both applied: every Badge, the search field
-     * and the duration chip on a video thumbnail had 4px leading corners and 2px
-     * trailing ones. Nothing errored, and no assertion about `--radius-s` can catch
-     * it, because that token still holds the right value and still emits a correct
-     * rule of its own. This is the line that resolves it; the collision comes back
-     * silently if it goes.
+     * utility — `rounded-s` for the start side, and `-e`, `-t`, `-b`, `-l`, `-r`,
+     * `-ss`, `-se`, `-es`, `-ee` — so the app carries ten radii the design system
+     * never chose, whatever its own scale says. In the app that is all this line
+     * ever had to do, and it is what it does: the app imports nothing after this
+     * file.
      *
-     * Drift cannot stand in for this: drop the line from the generator and the
+     * What it is NOT is a guarantee to a consumer. The workbench declares its own
+     * `--radius` in an `@theme` after this import, the bare side utilities come
+     * back with it, and the radius token named `s` was one of the ten that arrived
+     * — measured on 2026-10-02, two rules for one class name at seven call sites.
+     * So the token was renamed `sm` (ADR 0077) and
+     * `apps/mobile/__tests__/theme-scale-collision.test.ts` holds the naming; this
+     * line stays because a name cannot collide but a variable a consumer sets can.
+     *
+     * Drift cannot stand in for it: drop the line from the generator and the
      * committed file agrees with the generator again on the next `npm run tokens`.
      */
     expect(COMMITTED['theme.css']).toContain('--radius: initial;');

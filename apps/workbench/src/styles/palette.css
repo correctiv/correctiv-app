@@ -143,10 +143,20 @@
  * landing's H1 no longer fits `max-w-content` on two lines and breaks with one
  * word alone on the third. The gain at the top of the scale came from the
  * tracking and the leading, not from the size.
+ *
+ * **The radius names here are Tailwind's and not the package's.** This block
+ * restates the same five steps the package has three of, so the two above it are
+ * spelled the way the theme spells them and the two above those are Tailwind's
+ * own — which is what the small one has to be called. It was written `--radius-s`
+ * for the step this file means, which is the package's `sm`: `s` is a class of
+ * another kind in Tailwind v4 (the logical start side), so the package's radius
+ * token no longer carries that name and a value written under it overrides
+ * nothing at all. `apps/mobile/__tests__/theme-scale-collision.test.ts` is what
+ * holds the naming; see ADR 0077.
  */
 :root {
   --radius-xs: 0.25rem;
-  --radius-s: 0.375rem;
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;

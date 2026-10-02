@@ -60,7 +60,7 @@ export function CalloutCard({
       </Typo>
 
       <View
-        className="mt-s overflow-hidden rounded-s bg-stroke"
+        className="mt-s overflow-hidden rounded-sm bg-stroke"
         style={{ height: sizes.progressBar }}
       >
         <View className="h-full bg-on-surface" style={{ width: `${percent}%` }} />

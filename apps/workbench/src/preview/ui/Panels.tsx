@@ -424,7 +424,7 @@ interface Props {
 const CARD = 'rounded-md border border-stroke bg-canvas';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 /** An identifier in a sentence. A border rather than a fill, so it reads on both grounds. */
-const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
+const CODE = 'rounded-sm border border-stroke px-3xs font-mono text-[0.8125rem]';
 const SEG = 'inline-flex flex-wrap gap-4xs rounded-md border border-stroke bg-canvas p-4xs';
 
 /**
@@ -451,7 +451,7 @@ const b = (chunks: ReactNode[]) => <b className="font-semibold text-on-canvas">{
  */
 function segment(on: boolean): string {
   return cn(
-    'rounded-s px-xs py-3xs text-s font-medium transition-colors',
+    'rounded-sm px-xs py-3xs text-s font-medium transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
     on ? 'bg-accent text-white' : 'text-on-canvas-muted hover:bg-surface hover:text-on-canvas',
   );
@@ -872,7 +872,7 @@ export function Console({ status, logs, onClearLogs }: Props) {
             <div key={entry.id} className="flex min-w-0 items-baseline gap-xs px-3xs py-4xs">
               <span
                 className={cn(
-                  'shrink-0 rounded-s px-3xs font-mono text-[0.75rem] font-semibold uppercase',
+                  'shrink-0 rounded-sm px-3xs font-mono text-[0.75rem] font-semibold uppercase',
                   entry.level === 'error'
                     ? 'bg-red-500 text-white'
                     : 'bg-yellow-400 text-neutral-700',
@@ -951,7 +951,7 @@ export function Tokens({ tools }: Props) {
                 type="color"
                 value={value}
                 onChange={(e) => setToken(token, e.target.value)}
-                className="size-[1.25rem] shrink-0 cursor-pointer rounded-s border border-stroke bg-canvas p-0"
+                className="size-[1.25rem] shrink-0 cursor-pointer rounded-sm border border-stroke bg-canvas p-0"
               />
               <code className="min-w-0 flex-1 truncate font-mono text-s text-on-canvas">
                 --color-{token}

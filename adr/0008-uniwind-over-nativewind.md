@@ -88,15 +88,25 @@ system has a radius token called `s`. Both rules were emitted and both applied: 
 Badge, the search field and the duration chip on a video thumbnail got 4 px leading
 corners and 2 px trailing ones. Nothing errored, and a token test cannot see it
 because `--radius-s` still holds the right value and still emits a correct rule.
-`--radius: initial` clears the DEFAULT key that generates the bare form of every
+~~`--radius: initial` clears the DEFAULT key that generates the bare form of every
 side utility, which resolves it for all ten names at once — including ones the design
 system has not added yet. A test asserts that line is still emitted, because the
-collision returns silently without it and no assertion about `--radius-s` can see it.
+collision returns silently without it and no assertion about `--radius-s` can see it.~~
+The line stays and its assertion stays; what retires is that it resolves the collision
+by itself. It is one consumer's import order, and a consumer with a `@theme` of its
+own — the workbench, which declares `--radius` — gets the bare side utilities back and
+had both rules again at every `rounded-s` on the site, measured 2026-10-02.
+[ADR 0077](0077-a-scale-key-may-not-name-a-tailwind-utility.md) §2.
 
-The first attempt at that guard refused any radius token named after a side, on the
+~~The first attempt at that guard refused any radius token named after a side, on the
 theory that `--radius: initial` would not save them. It would; the guard would have
 thrown on a plausible future `--var-radius-l` and pushed the next person to either
-rename a design token or delete the line that does the actual work.
+rename a design token or delete the line that does the actual work.~~
+It was right about the guard and wrong about the alternative: a name cannot collide,
+where a variable one consumer may set is not a guarantee, and the token has been
+renamed instead. The guard kept is the narrower one — a key is refused only when the
+class it names is a Tailwind utility of ANOTHER KIND, not when it is one Tailwind
+happens to have. [ADR 0077](0077-a-scale-key-may-not-name-a-tailwind-utility.md) §1.
 
 **Third-party components need wrapping.** Only `react-native` imports are rewritten,
 so `react-native-safe-area-context`'s `SafeAreaView` and `react-native-webview`'s

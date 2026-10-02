@@ -299,7 +299,7 @@ const FIGURES: { id: string; label: MessageDescriptor; value: number }[] = [
 
 /** The row a directory of this repository gets, and the box its name sits in. */
 const ROW = 'grid gap-2xs py-s md:grid-cols-[16rem_1fr] md:gap-m';
-const PATH = 'rounded-s border border-stroke bg-surface px-3xs py-4xs font-mono text-s';
+const PATH = 'rounded-sm border border-stroke bg-surface px-3xs py-4xs font-mono text-s';
 const WHAT = 'max-w-content text-m leading-relaxed text-on-canvas-muted';
 
 /**

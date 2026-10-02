@@ -102,7 +102,7 @@
   },
   "callout.crowdnewsroom.cta": {
     "defaultMessage": "Take part",
-    "description": "The button on a CrowdNewsroom callout, on the card on the participation tab and on the teaser on the home screen. On the card it is replaced by `callout.contributeAgain` once this person has contributed. One of five ids reading ‘Take part’: the survey's button is `callout.survey.cta`, the detail screen's is `callout.detail.cta`, the tab is `ui.tabParticipate` and the screen heading is `participate.title`."
+    "description": "The button on a CrowdNewsroom callout, on the card on the participation tab and on the teaser on the home screen. On the card it is replaced by `callout.contributeAgain` once this person has contributed. One of four ids reading ‘Take part’: the survey's button is `callout.survey.cta`, the detail screen's is `callout.detail.cta`, and the screen heading is `participate.title`. The tab bar says it too and is no longer an id at all: it draws the screen document's own title."
   },
   "callout.detail.contributed": {
     "defaultMessage": "✓ You have contributed already, thank you! More tips are welcome."
@@ -285,7 +285,7 @@
   },
   "discover.title": {
     "defaultMessage": "Discover",
-    "description": "The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room."
+    "description": "The heading of the Discover screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room."
   },
   "faktenforum.lead": {
     "defaultMessage": "The community checks claims together with the CORRECTIV newsroom. Have a look at what is being worked on."
@@ -675,7 +675,7 @@
   },
   "participate.title": {
     "defaultMessage": "Take part",
-    "description": "The heading of the participation screen. ui.tabParticipate is the same word on the tab bar, where it has far less room, and three callout buttons say it too."
+    "description": "The heading of the participation screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and three callout buttons say it too."
   },
   "player.changeSpeed": {
     "defaultMessage": "Change the speed"
@@ -843,7 +843,7 @@
   },
   "profile.title": {
     "defaultMessage": "Profile",
-    "description": "The heading of the profile screen. ui.tabProfile is the same word on the tab bar, where it has far less room."
+    "description": "The heading of the profile screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room."
   },
   "project.comingSoon": {
     "defaultMessage": "Coming soon"
@@ -1021,27 +1021,9 @@
     "defaultMessage": "Back",
     "description": "The way back out of a screen, in the header. form.back is the same word inside the participation form, where it steps back one page rather than leaving."
   },
-  "ui.tabDiscover": {
-    "defaultMessage": "Discover",
-    "description": "A tab on the tab bar, where there is room for one short word. discover.title is the same word as the heading of the screen it opens."
-  },
-  "ui.tabHome": {
-    "defaultMessage": "Home"
-  },
-  "ui.tabMediathek": {
-    "defaultMessage": "Mediathek"
-  },
   "ui.tabMore": {
     "defaultMessage": "More",
     "description": "The last tab when the bar has more destinations than it can show, and the heading of the screen that lists the rest. One short word."
-  },
-  "ui.tabParticipate": {
-    "defaultMessage": "Take part",
-    "description": "A tab on the tab bar, where there is room for one short word. participate.title is the same word as the heading of the screen it opens."
-  },
-  "ui.tabProfile": {
-    "defaultMessage": "Profile",
-    "description": "A tab on the tab bar, where there is room for one short word. profile.title is the same word as the heading of the screen it opens."
   },
   "video.cardLabel": {
     "defaultMessage": "Video: {title}",

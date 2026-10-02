@@ -10,7 +10,7 @@ const COPY = defineMessages({
     id: 'profile.title',
     defaultMessage: 'Profile',
     description:
-      'The heading of the profile screen. ui.tabProfile is the same word on the tab bar, where it has far less room.',
+      'The heading of the profile screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room.',
   },
 });
 

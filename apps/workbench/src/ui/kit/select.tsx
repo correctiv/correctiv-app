@@ -135,7 +135,7 @@ export function Select({
                  */
                 textValue={option.label}
                 className={cn(
-                  'relative flex cursor-pointer select-none items-start rounded-s py-3xs pr-l pl-xs',
+                  'relative flex cursor-pointer select-none items-start rounded-sm py-3xs pr-l pl-xs',
                   'text-s leading-snug text-on-canvas outline-none',
                   'data-[highlighted]:bg-surface data-[state=checked]:font-medium',
                   'data-[disabled]:cursor-default data-[disabled]:text-on-canvas-muted',

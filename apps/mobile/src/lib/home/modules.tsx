@@ -123,7 +123,7 @@ const COPY = defineMessages({
     id: 'discover.title',
     defaultMessage: 'Discover',
     description:
-      'The heading of the Discover screen. ui.tabDiscover is the same word on the tab bar, where it has far less room.',
+      'The heading of the Discover screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room.',
   },
   liveSubtitle: {
     id: 'mediathek.liveSubtitle',
@@ -152,7 +152,7 @@ const PARTICIPATE_COPY = defineMessages({
     id: 'participate.title',
     defaultMessage: 'Take part',
     description:
-      'The heading of the participation screen. ui.tabParticipate is the same word on the tab bar, where it has far less room, and three callout buttons say it too.',
+      'The heading of the participation screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and three callout buttons say it too.',
   },
   lead: {
     id: 'participate.lead',
