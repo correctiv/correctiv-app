@@ -54,7 +54,7 @@ const SPECIMEN_COUNT = CATALOGUE.reduce(
  * the core holds tomorrow.
  */
 const BLURB = {
-  all: `${COMPONENT_COUNT} components from src/components, ${SPECIMEN_COUNT} specimens, grouped by what each one is: the families a block belongs to, then the building blocks they are made of. The grouping and this page's own words are English, because it is a page for developers; the specimens carry the app's real German copy, which is content here. Published like any other route.`,
+  all: `${COMPONENT_COUNT} components from src/components, ${SPECIMEN_COUNT} specimens, grouped by block family, then building blocks.`,
   one: 'One component of the catalogue. The reference has its props.',
   none: 'No component of that name. The link that sent you here is out of date.',
 };
