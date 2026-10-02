@@ -91,25 +91,37 @@ standing where the list of screens stood.
 
 ### 3. Four blocks stay bound to one screen, and they are the screen titles
 
-`home-header`, `discover-header`, `mediathek-header` and `participate-header` each print
+~~`home-header`, `discover-header`, `mediathek-header` and `participate-header` each print
 the name of the screen they sit on. "Mediathek" at the top of Home is a heading that lies
 about where the reader is, and that is not an arrangement the editor should be able to
 save. `home-header` is the same argument from the other end: it is the app's answer to
-"where am I", which ADR 0071 §4 makes the floor under every fallback.
+"where am I", which ADR 0071 §4 makes the floor under every fallback.~~ Struck: one
+`screen-header` block prints the title of whatever screen it is on, read out of that
+screen's own document, so no word is baked into a block to lie about where the reader is
+— [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md).
+The argument is right about the four blocks as they were written and is left intact for
+that reason.
 
-They are declared in `SCREEN_BOUND_BLOCKS`, a table of four, and the parser refuses one
+~~They are declared in `SCREEN_BOUND_BLOCKS`, a table of four, and the parser refuses one
 elsewhere with `section-module-not-on-screen` — the same code ADR 0071 §2 introduced,
 kept because the fault it names is still exactly that. **A block absent from the table is
 free.** The default takes no maintenance; the restriction is the thing that has to be
-argued for, which is the opposite of the arrangement this record replaces.
+argued for, which is the opposite of the arrangement this record replaces.~~ Struck with
+it: the table and the problem code go, and §1's "every screen may carry every block" is
+left with no exception to maintain
+— [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md).
 
-**A generic per-screen title block was the alternative and is refused.** Its title would
+~~**A generic per-screen title block was the alternative and is refused.** Its title would
 have to be a setting, and a setting carrying a heading puts German prose into the layout
 document — ADR 0057 §2 keeps the document to structure and never content, and ADR 0062
 exists because a wording change is a different kind of submission from a layout change.
 The four headers also differ in more than their word: Home's carries the date, the
 greeting and the search, Mitmachen's an introduction under the title. One block with four
-shapes and a prose setting is more mechanism than four declarations.
+shapes and a prose setting is more mechanism than four declarations.~~ Struck, and this is
+the paragraph that was wrong rather than overtaken: ADR 0057 §2's claim is about an
+article, and "never content" is a wider rule than that record states. The four shapes are
+four settings of one block
+— [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md).
 
 ### 4. One registry draws every screen, and a block's data comes with it
 
@@ -135,7 +147,8 @@ about documentation rules and it is the same argument).
 first time they disagreed the newsroom would be told by a parse error that a block it had
 just placed was not allowed where the palette had offered it.
 
-**A generic title block.** Refused in §3, on ADR 0057 §2 rather than on taste.
+~~**A generic title block.** Refused in §3, on ADR 0057 §2 rather than on taste.~~ Struck:
+it is the decision now, and §3 is struck with it ([ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md) §6).
 
 **Categories as a list per block.** Refused in §2: a block in two tabs is a block whose
 tab a person has to guess.
@@ -162,8 +175,10 @@ parser cannot help, and the honest answer is that the frame is the check.
 ## What this retires
 
 **ADR 0071 §2, the sentence that the parser refuses a block on a screen it does not
-declare.** Struck there. The mechanism survives for the four blocks of §3 above and the
-problem code is unchanged; what is gone is the table it read.
+declare.** Struck there. ~~The mechanism survives for the four blocks of §3 above and the
+problem code is unchanged;~~ (the mechanism and `section-module-not-on-screen` are gone too,
+with §3 — [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md) §6)
+what is gone is the table it read.
 
 **ADR 0054 §2, "A block names the screens it may appear on, and it may name more than
 one".** Struck there. Its §1 (the declaration belongs to the block and not to the
