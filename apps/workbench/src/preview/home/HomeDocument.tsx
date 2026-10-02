@@ -4,10 +4,7 @@ import {
   Check,
   Eye,
   EyeOff,
-  GitPullRequest,
   GripVertical,
-  RotateCcw,
-  Save,
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
@@ -52,6 +49,7 @@ import { scroller } from '../scroller';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
+import { useToolActions } from '../../shell/actions';
 import { InfoTip } from '../../ui/kit/info-tip';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { Select } from '../../ui/kit/select';
@@ -100,7 +98,6 @@ import {
 } from './document';
 import { guarded as isGuarded } from './scenario';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
-import { layoutFile } from './names';
 import {
   CONFIGURABLE_SCREENS,
   isScreen,
@@ -209,18 +206,6 @@ const COPY = defineMessages({
     description:
       'Under the screen picker while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens.',
   },
-  revert: {
-    id: 'home.document.revert',
-    defaultMessage: 'Discard changes',
-    description:
-      'Throws away every edit of this session and goes back to the document as the repository has it.',
-  },
-  submit: {
-    id: 'home.document.submit',
-    defaultMessage: 'Submit changes',
-    description:
-      'The editor’s primary action, on the published site and on a dev server alike. It opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed.',
-  },
   submitHint: {
     id: 'home.document.submitHint',
     defaultMessage:
@@ -249,37 +234,6 @@ const COPY = defineMessages({
     defaultMessage: 'The change',
     description:
       'The name read out for the field that holds the issue’s text when the clipboard was refused.',
-  },
-  save: {
-    id: 'home.document.save',
-    defaultMessage: 'Save to the repository',
-    description:
-      'On a dev server only: writes the open screen’s document into the checkout. navigation.save is the same for the tab bar.',
-  },
-  changed: {
-    id: 'home.document.changed',
-    defaultMessage: 'changed',
-    description:
-      'The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English.',
-  },
-  unchanged: {
-    id: 'home.document.unchanged',
-    defaultMessage: 'unchanged',
-    description:
-      'The word beside Submit changes while the document is the file. home.document.changed is its opposite; navigation.unchanged is the same for the tab bar.',
-  },
-  submitNote: {
-    id: 'home.document.submitNote',
-    defaultMessage:
-      'Submit changes opens a new issue on GitHub with your change in it. A pull request is then made from the issue automatically. Your change reaches the app once someone has checked and merged it. This page stores no password and no token.',
-    description: 'Behind the ⓘ beside Submit changes: what happens after the click.',
-  },
-  saveNote: {
-    id: 'home.document.saveNote',
-    defaultMessage:
-      'On a dev server, Save writes <code>{file}</code> in your own checkout. It refuses anything the core cannot read. This is a shortcut for developers. The way to a pull request is Submit changes.',
-    description:
-      'Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face.',
   },
   scenarioGuard: {
     id: 'home.document.scenarioGuard',
@@ -563,15 +517,6 @@ const CODE = 'rounded-s border border-stroke px-3xs font-mono text-[0.8125rem]';
 const FIELD =
   'rounded-s border border-stroke bg-canvas px-3xs py-4xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
-/**
- * The monospace run inside the two notes and the sample-data sentence.
- *
- * At module scope, the way `./HomeBlock.tsx` has its one tag: a component defined
- * during a render is a new component on every render, which is what
- * `react/no-unstable-nested-components` is about.
- */
-const code = (chunks: ReactNode[]) => <code className={CODE}>{chunks}</code>;
-
 export function HomeDocument({
   state,
   onChange,
@@ -630,10 +575,8 @@ export function HomeDocument({
    */
   const [copied, setCopied] = useState<'copied' | 'no-clipboard' | null>(null);
   const copyField = useRef<HTMLTextAreaElement>(null);
-  const dirtyStatusId = useId();
   const screenSelectId = useId();
   const submitHintId = useId();
-  const saveGuardId = useId();
   /**
    * Whether the frame scrolls to the block under the pointer.
    *
@@ -1046,6 +989,37 @@ export function HomeDocument({
       ? submission(layout, (message, values) => intl.formatMessage(message, values), screen)
       : null;
 
+  useToolActions('home', {
+    dirty,
+    blocked: guarded,
+    submit: offer
+      ? {
+          href: offer.href,
+          // Too long for the address: the link carries a request to paste, and this
+          // puts the change where the paste will find it, inside the same click.
+          onClick: () => {
+            if (!offer.fits) setCopied(copyNow(offer.body) ? 'copied' : 'no-clipboard');
+          },
+        }
+      : null,
+    save: canSave
+      ? {
+          run: () =>
+            void save(
+              layout,
+              (message, values) => intl.formatMessage(message, values),
+              screen,
+            ).then(setResult),
+        }
+      : undefined,
+    discard: () => {
+      // The file, and out of the scenario with it: discarding is the way back to what
+      // readers see, and a scenario left open would be loaded again.
+      setLayout(shipped);
+      if (scenario.open) scenario.close();
+    },
+  });
+
   /**
    * How far each row is drawn from where the document lays it out, while a block is carried.
    *
@@ -1109,71 +1083,6 @@ export function HomeDocument({
         </div>
         {guarded && <p className={NOTE}>{intl.formatMessage(COPY.screenLocked)}</p>}
         {screen === 'home' && <ScenarioBar control={scenario} />}
-        <div className="flex flex-wrap items-center gap-xs">
-          <span id={dirtyStatusId} className={cn(NOTE, 'mr-auto')}>
-            {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!dirty}
-            onClick={() => {
-              // The file, and out of the scenario with it: "Discard changes" is the way
-              // back to what readers see, and a scenario left open would be loaded again.
-              setLayout(shipped);
-              if (scenario.open) scenario.close();
-            }}
-          >
-            <RotateCcw aria-hidden="true" />
-            {intl.formatMessage(COPY.revert)}
-          </Button>
-        </div>
-        {/*
-          A link and not a button, although it looks like one: the click leaves for GitHub in a
-          new tab, and a link is what a browser lets open a tab without a popup blocker in the
-          way. There is no step between the click and GitHub any more (ADR 0061 §1), so what the
-          person needs to know is the one line under it, said before they press.
-
-          Unchanged, it is a disabled button instead, because a link cannot be disabled and a
-          link to an issue that would change nothing is the one thing this must not offer.
-        */}
-        <div className="flex items-center gap-xs">
-          {offer ? (
-            <Button asChild size="sm" className="min-w-0 flex-1">
-              <a
-                href={offer.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-describedby={submitHintId}
-                onClick={() => {
-                  // Too long for the address: the link carries a request to paste, and this
-                  // puts the change where the paste will find it, inside the same click.
-                  if (!offer.fits) setCopied(copyNow(offer.body) ? 'copied' : 'no-clipboard');
-                }}
-              >
-                <GitPullRequest aria-hidden="true" />
-                {intl.formatMessage(COPY.submit)}
-              </a>
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              className="min-w-0 flex-1"
-              disabled
-              data-testid="submit-disabled"
-              // "unchanged" above it is why it is off, or the line under it for a scenario; a
-              // disabled button says nothing of itself.
-              aria-describedby={guarded ? submitHintId : dirtyStatusId}
-            >
-              <GitPullRequest aria-hidden="true" />
-              {intl.formatMessage(COPY.submit)}
-            </Button>
-          )}
-          {/* What happens after the click, for whoever wants to know, behind the ⓘ. */}
-          <InfoTip about={intl.formatMessage(COPY.submit)} side="bottom" align="end">
-            <p>{intl.formatMessage(COPY.submitNote)}</p>
-          </InfoTip>
-        </div>
         <p id={submitHintId} className={NOTE}>
           {intl.formatMessage(
             guarded
@@ -1353,45 +1262,6 @@ export function HomeDocument({
           ))}
         </ol>
       </AppHost>
-
-      {/*
-        On a dev server, Save, and what it does behind the ⓘ beside it. `canSave` is
-        `import.meta.env.DEV`, so the published site offers no Save and says nothing about
-        one, which is the shape the Tokens tool already has for a thing it cannot write.
-      */}
-      {canSave && (
-        <div className="flex flex-col gap-2xs">
-          <div className="flex items-center gap-xs">
-            <Button
-              variant="outline"
-              size="sm"
-              // Guarded as Submit changes is: Save writes the file every phone gets once it is
-              // committed, so a scenario saved by accident is the election night shipped by
-              // accident. Promoting one on purpose is copying its file (ADR 0036 §12).
-              disabled={!dirty || guarded}
-              aria-describedby={guarded ? saveGuardId : undefined}
-              onClick={() =>
-                void save(
-                  layout,
-                  (message, values) => intl.formatMessage(message, values),
-                  screen,
-                ).then(setResult)
-              }
-            >
-              <Save aria-hidden="true" />
-              {intl.formatMessage(COPY.save)}
-            </Button>
-            <InfoTip about={intl.formatMessage(COPY.save)}>
-              <p>{intl.formatMessage(COPY.saveNote, { code, file: layoutFile(screen) })}</p>
-            </InfoTip>
-          </div>
-          {guarded && (
-            <p id={saveGuardId} className={NOTE}>
-              {intl.formatMessage(COPY.scenarioGuard)}
-            </p>
-          )}
-        </div>
-      )}
 
       {/*
         A refusal is a red fill with white text, not red text on the canvas. That is what

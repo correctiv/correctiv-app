@@ -137,7 +137,7 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
         content it might obscure.
       */}
       <div className="flex h-full min-h-0 flex-col gap-xs">
-        <DraftMarker scenario={scenario} />
+        <DraftMarker />
         <div className="min-h-0 flex-1">
           <Stage
             state={state}

@@ -1,14 +1,4 @@
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  GitPullRequest,
-  Lock,
-  Plus,
-  RotateCcw,
-  Save,
-  X,
-} from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Lock, Plus, X } from 'lucide-react';
 import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -18,6 +8,7 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { say } from '../../i18n/messages';
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
+import { useToolActions } from '../../shell/actions';
 import { Select } from '../../ui/kit/select';
 import { copyNow } from '../clipboard';
 import { SCREEN_NAMES } from '../home/screens';
@@ -125,36 +116,6 @@ const COPY = defineMessages({
     description:
       'Shown when the navigation is not valid. {codes} is a comma-separated list of the core’s problem codes, which are never translated.',
   },
-  changed: {
-    id: 'navigation.changed',
-    defaultMessage: 'changed',
-    description:
-      'Beside the tool’s buttons when the navigation differs from the file. home.document.changed is the same word.',
-  },
-  unchanged: {
-    id: 'navigation.unchanged',
-    defaultMessage: 'unchanged',
-    description:
-      'Beside the tool’s buttons when the navigation is the file. home.document.unchanged is the same word.',
-  },
-  revert: {
-    id: 'navigation.revert',
-    defaultMessage: 'Discard changes',
-    description:
-      'Puts the navigation back to the file. home.document.revert is the same action for a screen.',
-  },
-  submit: {
-    id: 'navigation.submit',
-    defaultMessage: 'Submit changes',
-    description:
-      'Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed.',
-  },
-  save: {
-    id: 'navigation.save',
-    defaultMessage: 'Save to the repository',
-    description:
-      'On a dev server only: writes the navigation into the checkout. home.document.save is the same for a screen.',
-  },
   copied: {
     id: 'navigation.copied',
     defaultMessage:
@@ -203,6 +164,23 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
   const bar = barOf(navigation);
   const offer = dirty && problems.length === 0 ? submitNavigation(navigation, format) : null;
   const rest = unused(navigation);
+
+  useToolActions('navigation', {
+    dirty,
+    blocked: problems.length > 0,
+    submit: offer
+      ? {
+          href: offer.href,
+          onClick: () => {
+            if (!offer.fits) setCopied(copyNow(offer.body));
+          },
+        }
+      : null,
+    save: canSave
+      ? { run: () => void saveNavigation(navigation, format).then(setResult) }
+      : undefined,
+    discard: () => setNavigation(SHIPPED_NAVIGATION),
+  });
 
   return (
     <div className="flex flex-col gap-s" data-testid="navigation-editor">
@@ -324,58 +302,6 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-xs border-t border-stroke pt-xs">
-        <span className={cn(NOTE, 'mr-auto')}>
-          {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!dirty}
-          onClick={() => setNavigation(SHIPPED_NAVIGATION)}
-        >
-          <RotateCcw aria-hidden="true" />
-          {intl.formatMessage(COPY.revert)}
-        </Button>
-      </div>
-      <div className="flex items-center gap-xs">
-        {offer ? (
-          <Button asChild size="sm" className="min-w-0 flex-1">
-            <a
-              href={offer.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                if (!offer.fits) setCopied(copyNow(offer.body));
-              }}
-            >
-              <GitPullRequest aria-hidden="true" />
-              {intl.formatMessage(COPY.submit)}
-            </a>
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            className="min-w-0 flex-1"
-            disabled
-            data-testid="navigation-submit-disabled"
-          >
-            <GitPullRequest aria-hidden="true" />
-            {intl.formatMessage(COPY.submit)}
-          </Button>
-        )}
-        {canSave && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!dirty || problems.length > 0}
-            onClick={() => void saveNavigation(navigation, format).then(setResult)}
-          >
-            <Save aria-hidden="true" />
-            {intl.formatMessage(COPY.save)}
-          </Button>
-        )}
-      </div>
       {copied && <p className={NOTE}>{intl.formatMessage(COPY.copied)}</p>}
       {result && (
         <p className="flex items-start gap-xs text-s text-on-canvas">

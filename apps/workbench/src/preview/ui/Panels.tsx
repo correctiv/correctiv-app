@@ -6,7 +6,6 @@ import {
   ExternalLink,
   OctagonAlert,
   Play,
-  RotateCcw,
   TriangleAlert,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -23,6 +22,7 @@ import type { PreviewState, ThemeSetting } from '../state';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
+import { useToolActions } from '../../shell/actions';
 import { Button } from '../../ui/kit/button';
 import { InfoTip } from '../../ui/kit/info-tip';
 import { Segmented } from '../../ui/kit/segmented';
@@ -202,11 +202,6 @@ const COPY = defineMessages({
     defaultMessage: 'changed',
     description:
       'A badge on a colour row whose value has been overridden. tools.tokens.changedCount counts the same rows at the foot of the tool; home.document.changed and home.row.changed are the same word in the home tool and read the same in English.',
-  },
-  resetOverrides: {
-    id: 'tools.tokens.reset',
-    defaultMessage: 'Reset overrides',
-    description: 'Puts every colour back to the palette’s own value, in this scheme.',
   },
   copyCss: {
     id: 'tools.tokens.copy',
@@ -921,6 +916,12 @@ export function Tokens({ tools }: Props) {
   const { scheme, tokens } = tools;
   const changed = TOKENS.filter((t) => tokens.overrides[t]?.[scheme]);
 
+  useToolActions('tokens', {
+    dirty: changed.length > 0,
+    count: changed.length,
+    discard: () => tokens.set({}),
+  });
+
   const setToken = (token: (typeof TOKENS)[number], value: string | null) => {
     const next: Overrides = { ...tokens.overrides, [token]: { ...tokens.overrides[token] } };
     if (value) next[token]![scheme] = value;
@@ -965,15 +966,6 @@ export function Tokens({ tools }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-xs">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!changed.length}
-          onClick={() => tokens.set({})}
-        >
-          <RotateCcw aria-hidden="true" />
-          {intl.formatMessage(COPY.resetOverrides)}
-        </Button>
         <Button
           variant="outline"
           size="sm"

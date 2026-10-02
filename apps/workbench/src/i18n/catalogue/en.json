@@ -1,4 +1,44 @@
 {
+  "actions.changed": {
+    "defaultMessage": "Changed",
+    "description": "Beside the buttons, for a tool that does not count and holds changes."
+  },
+  "actions.count": {
+    "defaultMessage": "{count, plural, =0 {No changes} one {# change} other {# changes}}",
+    "description": "Beside the buttons, for a tool that counts its changes. {count} is that number."
+  },
+  "actions.discard": {
+    "defaultMessage": "Discard",
+    "description": "Puts everything the open tool changed back to what ships. The same word for every tool; there is no separate undo."
+  },
+  "actions.discardTip": {
+    "defaultMessage": "Puts every change of this tool back to what ships.",
+    "description": "The tooltip on the discard button."
+  },
+  "actions.group": {
+    "defaultMessage": "Changes of the open tool",
+    "description": "The accessible name of the group of buttons at the right end of the header."
+  },
+  "actions.save": {
+    "defaultMessage": "Save",
+    "description": "On a dev server only: writes the change into your own checkout. The same word for every tool."
+  },
+  "actions.saveTip": {
+    "defaultMessage": "On a dev server, writes the change into your own checkout. A shortcut for developers; the way to a pull request is Submit.",
+    "description": "The tooltip on the save button."
+  },
+  "actions.submit": {
+    "defaultMessage": "Submit",
+    "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). The same word for every tool."
+  },
+  "actions.submitTip": {
+    "defaultMessage": "Opens a new issue on GitHub with your change in it. A pull request is made from it automatically. This page stores no password and no token.",
+    "description": "The tooltip on the submit button: what happens after the click."
+  },
+  "actions.unchanged": {
+    "defaultMessage": "Unchanged",
+    "description": "Beside the buttons, while the open tool holds no changes."
+  },
   "articlePath.lede": {
     "defaultMessage": "Five rungs, tried in order; the first that answers wins. The snapshot built into the app comes first, because the promise is that an article opens without Wi-Fi. The cache behind the second and the fifth rung has three limits. What reaches the screen is one string, handed to a WebView.",
     "description": "The paragraph under that heading. A rung is this drawing’s own word for one step of the cascade in packages/app-core/src/articles/load.ts."
@@ -925,14 +965,6 @@
     "defaultMessage": "Draft active",
     "description": "The badge on the draft marker, shown beside the device frame while a string or the home layout holds an unpublished edit in this browser."
   },
-  "draft.discardLayout": {
-    "defaultMessage": "Discard screen layouts",
-    "description": "Button on the draft marker. The same action as “Discard changes” in the home tool (home.document.revert): puts the home document back to the shipped file."
-  },
-  "draft.discardStrings": {
-    "defaultMessage": "Discard texts",
-    "description": "Button on the draft marker. The same action as “Discard all” in the strings tool (tools.strings.discard): puts every edited German wording back to the catalogue."
-  },
   "draft.layoutChanged": {
     "defaultMessage": "screen layout changed",
     "description": "Part of the draft marker’s sentence: the home document differs from the file the app ships. home.document.changed is the same word inside the home tool."
@@ -1049,10 +1081,6 @@
     "defaultMessage": "Ends at (Berlin time)",
     "description": "The label of the field for the date and time the edition ends. At that minute it is already over, which “ends at” says without a note. An end at or before the start is not taken, and the field springs back."
   },
-  "features.changed": {
-    "defaultMessage": "tried out",
-    "description": "Beside the tool’s buttons when states are being tried that differ from the release file."
-  },
   "features.copied": {
     "defaultMessage": "The change was too long for the link and is on your clipboard. Paste it into the issue.",
     "description": "Shown after Submit release when the change had to go by the clipboard."
@@ -1121,10 +1149,6 @@
     "defaultMessage": "reads no data",
     "description": "Where the sources of a feature would be listed, and it reads none."
   },
-  "features.revert": {
-    "defaultMessage": "Discard changes",
-    "description": "Puts the states back to the release file. navigation.revert is the same action for the tab bar."
-  },
   "features.sampleOnly": {
     "defaultMessage": "Example data only, preview at most.",
     "description": "The warning under a feature whose every data source is a sample. “On” cannot be chosen for it (ADR 0072 §4)."
@@ -1148,14 +1172,6 @@
   "features.state.vorschau": {
     "defaultMessage": "Preview",
     "description": "One segment of the three-state switch: reachable in the preview channel, not in a release build. The state is called vorschau in features.json."
-  },
-  "features.submit": {
-    "defaultMessage": "Submit release",
-    "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request that changes features.json (ADR 0061). Disabled while nothing has changed."
-  },
-  "features.unchanged": {
-    "defaultMessage": "as released",
-    "description": "Beside the tool’s buttons when the states are those of the release file."
   },
   "fixtures.bigType": {
     "defaultMessage": "Largest text scale"
@@ -1487,10 +1503,6 @@
     "defaultMessage": "{day}, today",
     "description": "The accessible name of the column for today in the week or month under the frame. {day} is the date already spelled by the browser, as “Monday, 28 September”."
   },
-  "home.document.changed": {
-    "defaultMessage": "changed",
-    "description": "The word beside Submit changes while the document differs from the file. home.row.changed is the badge on a single block’s row and tools.tokens.changed the badge on an overridden colour; all three read the same in English."
-  },
   "home.document.field": {
     "defaultMessage": "The change",
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
@@ -1502,21 +1514,9 @@
     "defaultMessage": "refused",
     "description": "The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated."
   },
-  "home.document.revert": {
-    "defaultMessage": "Discard changes",
-    "description": "Throws away every edit of this session and goes back to the document as the repository has it."
-  },
   "home.document.rule": {
     "defaultMessage": "A moment holds only what changes at that time. Everything else carries on as before.",
     "description": "Behind the ⓘ in the head of the point being edited, and the one rule that makes the rest legible: a moment holds the difference from the point before it rather than the whole state."
-  },
-  "home.document.save": {
-    "defaultMessage": "Save to the repository",
-    "description": "On a dev server only: writes the open screen’s document into the checkout. navigation.save is the same for the tab bar."
-  },
-  "home.document.saveNote": {
-    "defaultMessage": "On a dev server, Save writes <code>{file}</code> in your own checkout. It refuses anything the core cannot read. This is a shortcut for developers. The way to a pull request is Submit changes.",
-    "description": "Says what Save does before anybody presses it, on a dev server only. The tag wraps {file}, the repository path of the document, drawn in a monospace face."
   },
   "home.document.scenarioGuard": {
     "defaultMessage": "Scenarios are examples. They are not submitted.",
@@ -1529,10 +1529,6 @@
   "home.document.screenLocked": {
     "defaultMessage": "A scenario is a Home document, so the screen stays on Home while one is open.",
     "description": "Under the screen picker while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens."
-  },
-  "home.document.submit": {
-    "defaultMessage": "Submit changes",
-    "description": "The editor’s primary action, on the published site and on a dev server alike. It opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed."
   },
   "home.document.submitCopied": {
     "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."
@@ -1547,14 +1543,6 @@
   },
   "home.document.submitNoClipboard": {
     "defaultMessage": "The browser did not let this page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
-  },
-  "home.document.submitNote": {
-    "defaultMessage": "Submit changes opens a new issue on GitHub with your change in it. A pull request is then made from the issue automatically. Your change reaches the app once someone has checked and merged it. This page stores no password and no token.",
-    "description": "Behind the ⓘ beside Submit changes: what happens after the click."
-  },
-  "home.document.unchanged": {
-    "defaultMessage": "unchanged",
-    "description": "The word beside Submit changes while the document is the file. home.document.changed is its opposite; navigation.unchanged is the same for the tab bar."
   },
   "home.issue.heading": {
     "defaultMessage": "Changes to the home screen",
@@ -2439,10 +2427,6 @@
     "defaultMessage": "behind “Mehr”: {names}",
     "description": "After the bar, when entries overflow. {names} is a comma-separated list of screens’ own names. “Mehr” is the overflow tab’s name and stays."
   },
-  "navigation.changed": {
-    "defaultMessage": "changed",
-    "description": "Beside the tool’s buttons when the navigation differs from the file. home.document.changed is the same word."
-  },
   "navigation.copied": {
     "defaultMessage": "The change was too long for the link and is on your clipboard. Paste it into the issue.",
     "description": "Shown after Submit changes when the change had to go by the clipboard."
@@ -2511,14 +2495,6 @@
     "defaultMessage": "The bar shows",
     "description": "The label before the tabs the bar will draw, in order, such as Home · Entdecken · Mehr."
   },
-  "navigation.revert": {
-    "defaultMessage": "Discard changes",
-    "description": "Puts the navigation back to the file. home.document.revert is the same action for a screen."
-  },
-  "navigation.save": {
-    "defaultMessage": "Save to the repository",
-    "description": "On a dev server only: writes the navigation into the checkout. home.document.save is the same for a screen."
-  },
   "navigation.save.http": {
     "defaultMessage": "HTTP {status}",
     "description": "Stands in for a refusal the server sent no sentence with. {status} is the numeric status."
@@ -2530,14 +2506,6 @@
   "navigation.save.written": {
     "defaultMessage": "Written to {path}.",
     "description": "Confirms that the dev server wrote the navigation. {path} is the repository path it wrote."
-  },
-  "navigation.submit": {
-    "defaultMessage": "Submit changes",
-    "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). Disabled while nothing has changed."
-  },
-  "navigation.unchanged": {
-    "defaultMessage": "unchanged",
-    "description": "Beside the tool’s buttons when the navigation is the file. home.document.unchanged is the same word."
   },
   "preview.frame.booting": {
     "defaultMessage": "Booting the app…",
@@ -3762,10 +3730,6 @@
     "defaultMessage": "Copy changes",
     "description": "Copies the changed German to the clipboard as JSON, id to wording."
   },
-  "tools.strings.discard": {
-    "defaultMessage": "Discard all",
-    "description": "Throws every change away and puts the frame back to the catalogue."
-  },
   "tools.strings.edited": {
     "defaultMessage": "edited",
     "description": "A badge on an id whose German differs from the catalogue in this browser. One word, lower case."
@@ -3878,10 +3842,6 @@
     "defaultMessage": "Back to the catalogue",
     "description": "Puts this one id’s German back to what the repository has."
   },
-  "tools.strings.save": {
-    "defaultMessage": "Save to the catalogue",
-    "description": "Writes the changed German into packages/catalogue/src/de/ through the dev server. Only offered in development."
-  },
   "tools.strings.saveFailed": {
     "defaultMessage": "The dev server did not answer: {detail}",
     "description": "After a save that got no answer. {detail} is the browser’s own error text."
@@ -3901,10 +3861,6 @@
   "tools.strings.shown": {
     "defaultMessage": "{shown} of {total}",
     "description": "Beside the filter. {shown} is how many rows the list prints, {total} how many match the filter."
-  },
-  "tools.strings.submit": {
-    "defaultMessage": "Submit texts",
-    "description": "Opens a new GitHub issue carrying the changed German, which a workflow turns into a pull request. A link styled as a button."
   },
   "tools.strings.submitCopied": {
     "defaultMessage": "The changed texts are on your clipboard. Paste them into the issue on GitHub.",
@@ -3926,10 +3882,6 @@
     "defaultMessage": "The browser did not let this page use the clipboard. Copy the changed texts from this field and paste them into the issue on GitHub.",
     "description": "After Submit texts, when the changes were too long for the link and the browser refused the clipboard."
   },
-  "tools.strings.submitNote": {
-    "defaultMessage": "Submit texts opens a new issue on GitHub with your changed German in it. A pull request is then made from the issue automatically, which may change these wordings and nothing else. They reach the app once someone has checked and merged it. This page stores no password and no token.",
-    "description": "Behind the ⓘ beside Submit texts: what happens after the click."
-  },
   "tools.strings.writtenIn": {
     "defaultMessage": "Written in {place}. Changing the English is a change to the code.",
     "description": "Under the English wording. {place} is a repository path and a line, such as apps/mobile/src/app/index.tsx:12, and stays as it is."
@@ -3949,10 +3901,6 @@
   "tools.tokens.lede": {
     "defaultMessage": "Overriding the <b>{scheme}</b> scheme, which is the one the app is painting with.",
     "description": "The first line of the tokens tool. {scheme} is “light” or “dark”, the name of the palette, drawn in bold and not translated."
-  },
-  "tools.tokens.reset": {
-    "defaultMessage": "Reset overrides",
-    "description": "Puts every colour back to the palette’s own value, in this scheme."
   },
   "tools.tokens.text": {
     "defaultMessage": "Text too",

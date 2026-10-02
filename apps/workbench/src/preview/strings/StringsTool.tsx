@@ -1,4 +1,4 @@
-import { Check, Copy, GitPullRequest, Languages, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Check, Copy, Languages, RotateCcw } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -9,7 +9,6 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { Button } from '../../ui/kit/button';
-import { InfoTip } from '../../ui/kit/info-tip';
 import type { Status } from '../api';
 import { copyNow } from '../clipboard';
 import type { Pick } from '../frame/locate';
@@ -17,6 +16,7 @@ import { DRAFT_DISCARD_EVENT, publishable, publishDraft, restoreDraft, type Draf
 import { buildIndex, resolve, type Resolution } from './match';
 import { EDITED_LOCALE } from './names';
 import { problemText } from './problems';
+import { useToolActions } from '../../shell/actions';
 import { saveWordings, type SaveOutcome } from './save';
 import { stringsSubmission } from './submit';
 import { checkWording, type WordingProblem } from './validate';
@@ -133,12 +133,6 @@ const COPY = defineMessages({
     description:
       'Over the save and copy buttons. {count} is how many ids have German in this browser that differs from the catalogue.',
   },
-  save: {
-    id: 'tools.strings.save',
-    defaultMessage: 'Save to the catalogue',
-    description:
-      'Writes the changed German into packages/catalogue/src/de/ through the dev server. Only offered in development.',
-  },
   saved: {
     id: 'tools.strings.saved',
     defaultMessage: 'Written to {paths}.',
@@ -187,17 +181,6 @@ const COPY = defineMessages({
     defaultMessage: 'Copy changes',
     description: 'Copies the changed German to the clipboard as JSON, id to wording.',
   },
-  discard: {
-    id: 'tools.strings.discard',
-    defaultMessage: 'Discard all',
-    description: 'Throws every change away and puts the frame back to the catalogue.',
-  },
-  submit: {
-    id: 'tools.strings.submit',
-    defaultMessage: 'Submit texts',
-    description:
-      'Opens a new GitHub issue carrying the changed German, which a workflow turns into a pull request. A link styled as a button.',
-  },
   submitHint: {
     id: 'tools.strings.submitHint',
     defaultMessage:
@@ -229,12 +212,6 @@ const COPY = defineMessages({
     defaultMessage: 'The changed texts',
     description:
       'The name read out for the field that holds the issue’s text when the clipboard was refused.',
-  },
-  submitNote: {
-    id: 'tools.strings.submitNote',
-    defaultMessage:
-      'Submit texts opens a new issue on GitHub with your changed German in it. A pull request is then made from the issue automatically, which may change these wordings and nothing else. They reach the app once someone has checked and merged it. This page stores no password and no token.',
-    description: 'Behind the ⓘ beside Submit texts: what happens after the click.',
   },
   filter: {
     id: 'tools.strings.filter',
@@ -416,6 +393,29 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
     setResult({ ok: outcome.kind === 'saved', text: outcomeText(intl, outcome) });
   };
 
+  const discardAll = () => {
+    setDraft({});
+    setResult(null);
+    setCopied(null);
+  };
+
+  useToolActions('strings', {
+    dirty: changed > 0,
+    count: changed,
+    submit: offer
+      ? {
+          href: offer.href,
+          onClick: () => {
+            // Too long for the address: the link carries a request to paste, and this
+            // puts the changes where the paste will find them, inside the same click.
+            if (!offer.fits) setCopied(copyNow(offer.body) ? 'copied' : 'no-clipboard');
+          },
+        }
+      : null,
+    save: import.meta.env.DEV ? { run: () => void save() } : undefined,
+    discard: discardAll,
+  });
+
   return (
     <div className="flex flex-col gap-s">
       <div>
@@ -524,33 +524,6 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
           <p className="text-s font-medium text-on-canvas">
             {intl.formatMessage(COPY.changes, { count: changed })}
           </p>
-          {/*
-            A link styled as a button, as the home tool's Submit changes is and for its reason
-            (ADR 0061 §1): the click leaves for GitHub in a new tab, and a link is what a
-            browser opens a tab for without a popup blocker in the way. It is only here while
-            something has changed, so it never offers an issue that would change nothing.
-          */}
-          <div className="flex items-center gap-xs">
-            <Button asChild size="sm" className="min-w-0 flex-1">
-              <a
-                href={offer.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-describedby={submitHintId}
-                onClick={() => {
-                  // Too long for the address: the link carries a request to paste, and this
-                  // puts the changes where the paste will find them, inside the same click.
-                  if (!offer.fits) setCopied(copyNow(offer.body) ? 'copied' : 'no-clipboard');
-                }}
-              >
-                <GitPullRequest aria-hidden="true" />
-                {intl.formatMessage(COPY.submit)}
-              </a>
-            </Button>
-            <InfoTip about={intl.formatMessage(COPY.submit)} side="bottom" align="end">
-              <p>{intl.formatMessage(COPY.submitNote)}</p>
-            </InfoTip>
-          </div>
           <p id={submitHintId} className={NOTE}>
             {intl.formatMessage(offer.fits ? COPY.submitHint : COPY.submitHintLong)}
           </p>
@@ -580,12 +553,6 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
             </div>
           )}
           <div className="flex flex-wrap gap-xs">
-            {import.meta.env.DEV && (
-              <Button variant="outline" size="sm" onClick={() => void save()}>
-                <Save aria-hidden="true" />
-                {intl.formatMessage(COPY.save)}
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
@@ -595,18 +562,6 @@ export function StringsTool({ status, picking, setPicking, pick }: Props) {
             >
               <Copy aria-hidden="true" />
               {intl.formatMessage(COPY.copy)}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDraft({});
-                setResult(null);
-                setCopied(null);
-              }}
-            >
-              <Trash2 aria-hidden="true" />
-              {intl.formatMessage(COPY.discard)}
             </Button>
           </div>
         </div>

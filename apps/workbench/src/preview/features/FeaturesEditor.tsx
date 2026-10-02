@@ -1,4 +1,4 @@
-import { GitPullRequest, Lock, RotateCcw, TriangleAlert } from 'lucide-react';
+import { Lock, TriangleAlert } from 'lucide-react';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -7,7 +7,7 @@ import type { FeatureState } from '@correctiv/app-core/features/features';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
-import { Button } from '../../ui/kit/button';
+import { useToolActions } from '../../shell/actions';
 import { Segmented } from '../../ui/kit/segmented';
 import { copyNow } from '../clipboard';
 import {
@@ -100,29 +100,6 @@ const COPY = defineMessages({
     description:
       'Under a feature whose group is not on: a group is the ceiling of its members. “On” is the switch’s own segment, features.state.an.',
   },
-  changed: {
-    id: 'features.changed',
-    defaultMessage: 'tried out',
-    description:
-      'Beside the tool’s buttons when states are being tried that differ from the release file.',
-  },
-  unchanged: {
-    id: 'features.unchanged',
-    defaultMessage: 'as released',
-    description: 'Beside the tool’s buttons when the states are those of the release file.',
-  },
-  revert: {
-    id: 'features.revert',
-    defaultMessage: 'Discard changes',
-    description:
-      'Puts the states back to the release file. navigation.revert is the same action for the tab bar.',
-  },
-  submit: {
-    id: 'features.submit',
-    defaultMessage: 'Submit release',
-    description:
-      'Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request that changes features.json (ADR 0061). Disabled while nothing has changed.',
-  },
   copied: {
     id: 'features.copied',
     defaultMessage:
@@ -161,6 +138,19 @@ export function FeaturesEditor({ onReload }: { onReload: () => void }) {
   };
   const dirty = featuresDiffer(SHIPPED_FEATURES, draft);
   const offer = dirty ? submitFeatures(draft, format) : null;
+
+  useToolActions('features', {
+    dirty,
+    submit: offer
+      ? {
+          href: offer.href,
+          onClick: () => {
+            if (!offer.fits) setCopied(copyNow(offer.body));
+          },
+        }
+      : null,
+    discard: () => setFeatures(NO_DRAFT),
+  });
 
   return (
     <div className="flex flex-col gap-s" data-testid="features-editor">
@@ -263,47 +253,6 @@ export function FeaturesEditor({ onReload }: { onReload: () => void }) {
         </section>
       ))}
 
-      <div className="flex flex-wrap items-center gap-xs border-t border-stroke pt-xs">
-        <span className={cn(NOTE, 'mr-auto')}>
-          {intl.formatMessage(dirty ? COPY.changed : COPY.unchanged)}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={draft === NO_DRAFT || (!draft.groups && !draft.features)}
-          onClick={() => setFeatures(NO_DRAFT)}
-        >
-          <RotateCcw aria-hidden="true" />
-          {intl.formatMessage(COPY.revert)}
-        </Button>
-      </div>
-      <div className="flex items-center gap-xs">
-        {offer ? (
-          <Button asChild size="sm" className="min-w-0 flex-1">
-            <a
-              href={offer.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                if (!offer.fits) setCopied(copyNow(offer.body));
-              }}
-            >
-              <GitPullRequest aria-hidden="true" />
-              {intl.formatMessage(COPY.submit)}
-            </a>
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            className="min-w-0 flex-1"
-            disabled
-            data-testid="features-submit-disabled"
-          >
-            <GitPullRequest aria-hidden="true" />
-            {intl.formatMessage(COPY.submit)}
-          </Button>
-        )}
-      </div>
       {copied && <p className={NOTE}>{intl.formatMessage(COPY.copied)}</p>}
     </div>
   );

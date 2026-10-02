@@ -7,6 +7,7 @@ import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Button } from './kit/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 import { href } from '../router';
+import { ToolActions } from './ToolActions';
 
 /**
  * Everything this bar says, in ENGLISH; the German that ships is
@@ -101,6 +102,10 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
       <div className="flex min-w-0 flex-1 flex-wrap items-center max-sm:order-last max-sm:basis-full max-sm:pt-4xs">
         {children}
       </div>
+
+      {/* The open tool's save, submit and discard: always here, right-aligned, so a
+          hand finds them in the same place whichever tool is open. */}
+      <ToolActions />
 
       <Button
         variant="outline"

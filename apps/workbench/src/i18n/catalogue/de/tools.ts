@@ -66,7 +66,6 @@ export const tools: Record<string, string> = {
 
   'tools.tokens.lede': 'Überschrieben wird das Schema <b>{scheme}</b>, das die App gerade zeigt.',
   'tools.tokens.changed': 'geändert',
-  'tools.tokens.reset': 'Überschreibungen zurücksetzen',
   'tools.tokens.copy': 'CSS kopieren',
   'tools.tokens.changedCount': '{count} geändert',
   'tools.tokens.text': 'Text auch',
@@ -150,7 +149,6 @@ export const tools: Record<string, string> = {
     'Das Deutsche verwendet diese Platzhalter anders als das Englische: {names}',
   'tools.strings.problem.unknown': 'Diese ID gibt es im Katalog nicht.',
   'tools.strings.changes': '{count, plural, one {# Text geändert} other {# Texte geändert}}',
-  'tools.strings.save': 'In den Katalog schreiben',
   'tools.strings.saved': 'Geschrieben nach {paths}.',
   'tools.strings.savedStale':
     'Geschrieben nach {paths}. Die Liste ließ sich nicht neu aufbauen, führen Sie vor dem nächsten Blick darauf npm run workbench:strings aus.',
@@ -162,8 +160,6 @@ export const tools: Record<string, string> = {
   'tools.strings.refused': 'Nichts wurde geschrieben. {ids}',
   'tools.strings.saveFailed': 'Der Dev-Server hat nicht geantwortet: {detail}',
   'tools.strings.copy': 'Änderungen kopieren',
-  'tools.strings.discard': 'Alle verwerfen',
-  'tools.strings.submit': 'Texte einreichen',
   'tools.strings.submitHint':
     'GitHub öffnet sich mit Ihren geänderten Texten. Ein Klick auf „Create“ reicht sie ein. Dafür brauchen Sie ein GitHub-Konto.',
   'tools.strings.submitHintLong':
@@ -173,8 +169,6 @@ export const tools: Record<string, string> = {
   'tools.strings.submitNoClipboard':
     'Der Browser hat den Zugriff auf die Zwischenablage nicht erlaubt. Kopieren Sie die geänderten Texte aus diesem Feld und fügen Sie sie auf GitHub in das Issue ein.',
   'tools.strings.submitField': 'Die geänderten Texte',
-  'tools.strings.submitNote':
-    '„Texte einreichen“ öffnet auf GitHub ein neues Issue mit Ihrem geänderten Deutsch. Daraus entsteht automatisch ein Pull Request, der diese Wortlaute ändern darf und sonst nichts. In der App erscheinen sie, sobald jemand ihn geprüft und übernommen hat. Diese Seite speichert kein Passwort und keinen Token.',
   'tools.strings.filter': 'Text suchen',
   'tools.strings.shown': '{shown} von {total}',
   // The issue Texte einreichen opens (`preview/strings/submit.ts`). „Create“ is GitHub's own

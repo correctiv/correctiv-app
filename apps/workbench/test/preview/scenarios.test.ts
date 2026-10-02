@@ -349,12 +349,10 @@ describe('the editor’s two ways out, as HomeDocument.tsx wires them', () => {
     expect(offer.replace(/\s+/g, ' ')).toContain('dirty && !guarded ?');
   });
 
-  it('switches Save off for a guarded document, and says why under it', () => {
-    const save = between('{canSave && (', '</Button>');
-    expect(/disabled=\{!dirty \|\| guarded\}/.test(save)).toBe(true);
-    const block = between('{canSave && (', 'A refusal is a red fill');
-    expect(block).toContain('{guarded && (');
-    expect(block).toContain('COPY.scenarioGuard');
+  it('registers the guard with the header, which switches Save and Submit off for it', () => {
+    const registration = between('useToolActions(', '});');
+    expect(registration).toContain('blocked: guarded');
+    expect(between('{guarded && <p', '</p>')).toContain('screenLocked');
   });
 });
 
