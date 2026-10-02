@@ -1049,6 +1049,114 @@
     "defaultMessage": "Ends at (Berlin time)",
     "description": "The label of the field for the date and time the edition ends. At that minute it is already over, which “ends at” says without a note. An end at or before the start is not taken, and the field springs back."
   },
+  "features.changed": {
+    "defaultMessage": "tried out",
+    "description": "Beside the tool’s buttons when states are being tried that differ from the release file."
+  },
+  "features.copied": {
+    "defaultMessage": "The change was too long for the link and is on your clipboard. Paste it into the issue.",
+    "description": "Shown after Submit release when the change had to go by the clipboard."
+  },
+  "features.feature": {
+    "defaultMessage": "Feature {name}",
+    "description": "The accessible name of the switch of one feature. {name} is the feature’s id from features.json, which is an identifier and is never translated."
+  },
+  "features.group": {
+    "defaultMessage": "Group {name}",
+    "description": "The accessible name of the switch of one group. {name} is the group’s id from features.json, which is an identifier and is never translated."
+  },
+  "features.groupCeiling": {
+    "defaultMessage": "The group is lower, so “On” cannot be chosen here.",
+    "description": "Under a feature whose group is not on: a group is the ceiling of its members. “On” is the switch’s own segment, features.state.an."
+  },
+  "features.issue.heading": {
+    "defaultMessage": "Release decision for features",
+    "description": "The title of the GitHub issue Submit release opens for the feature states, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+  },
+  "features.issue.help": {
+    "defaultMessage": "The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",
+    "description": "Stands in the body of the GitHub issue instead of the release decision, when the states are too long to go in the address. “Create” is GitHub’s own button and stays in English."
+  },
+  "features.issue.lead": {
+    "defaultMessage": "This release decision comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
+    "description": "The first paragraph of the GitHub issue, above the states. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
+  },
+  "features.lead": {
+    "defaultMessage": "What a build may let a reader reach. A group is the ceiling of its features. Changes here are tried out in the frame, which reloads; releasing them is a submission that becomes a pull request.",
+    "description": "The one paragraph at the top of the feature tool."
+  },
+  "features.locked": {
+    "defaultMessage": "always on",
+    "description": "Beside a group that cannot be switched: it is the core of the app, and neither a commit’s mistake nor an override can turn it down."
+  },
+  "features.mark.aus": {
+    "defaultMessage": "Off: no build draws it.",
+    "description": "The mark on a block or a component whose feature is `aus`, which is reachable nowhere. features.mark.reason.* is read right after it and says what holds it back."
+  },
+  "features.mark.reason.data": {
+    "defaultMessage": "It reads sample data only.",
+    "description": "The reason after a mark: every data source of the feature is a stand-in file, which caps it at `vorschau` (ADR 0072 §4)."
+  },
+  "features.mark.reason.declared": {
+    "defaultMessage": "The release file holds it back.",
+    "description": "The reason after a mark: features.json itself says `vorschau` or `aus` for this feature."
+  },
+  "features.mark.reason.group": {
+    "defaultMessage": "Its group is held back.",
+    "description": "The reason after a mark: the feature’s group is lower than the feature, and a group is the ceiling of its members."
+  },
+  "features.mark.reason.requires": {
+    "defaultMessage": "A feature it needs is held back.",
+    "description": "The reason after a mark: another feature this one requires is lower than it is."
+  },
+  "features.mark.reason.unknown": {
+    "defaultMessage": "No feature of this name is declared.",
+    "description": "The reason after a mark: the id is not in features.json, so it is reachable nowhere."
+  },
+  "features.mark.vorschau": {
+    "defaultMessage": "Preview only: a release build does not draw it.",
+    "description": "The mark on a block or a component whose feature is `vorschau`: the preview channel reaches it and a store build does not. features.mark.reason.* is read right after it and says what holds it back."
+  },
+  "features.noData": {
+    "defaultMessage": "reads no data",
+    "description": "Where the sources of a feature would be listed, and it reads none."
+  },
+  "features.revert": {
+    "defaultMessage": "Discard changes",
+    "description": "Puts the states back to the release file. navigation.revert is the same action for the tab bar."
+  },
+  "features.sampleOnly": {
+    "defaultMessage": "Example data only, preview at most.",
+    "description": "The warning under a feature whose every data source is a sample. “On” cannot be chosen for it (ADR 0072 §4)."
+  },
+  "features.source.live": {
+    "defaultMessage": "Live",
+    "description": "The badge on a data source that is read from the outside world. features.source.sample is its opposite. The gallery uses the same word."
+  },
+  "features.source.sample": {
+    "defaultMessage": "Example",
+    "description": "The badge on a data source that is a checked-in stand-in for an API that does not exist yet. features.source.live is its opposite. The gallery says Beispiel for it."
+  },
+  "features.state.an": {
+    "defaultMessage": "On",
+    "description": "One segment of the three-state switch: reachable in every build. Not selectable while the data is sample only or while the group is lower."
+  },
+  "features.state.aus": {
+    "defaultMessage": "Off",
+    "description": "One segment of the three-state switch: the feature is reachable in no build. features.state.vorschau and features.state.an are the other two."
+  },
+  "features.state.vorschau": {
+    "defaultMessage": "Preview",
+    "description": "One segment of the three-state switch: reachable in the preview channel, not in a release build. The state is called vorschau in features.json."
+  },
+  "features.submit": {
+    "defaultMessage": "Submit release",
+    "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request that changes features.json (ADR 0061). Disabled while nothing has changed."
+  },
+  "features.unchanged": {
+    "defaultMessage": "as released",
+    "description": "Beside the tool’s buttons when the states are those of the release file."
+  },
   "fixtures.bigType": {
     "defaultMessage": "Largest text scale"
   },
@@ -1119,6 +1227,18 @@
   },
   "fixtures.submitted.hint": {
     "defaultMessage": "The form shows its thank-you instead of the questions."
+  },
+  "frame.channel": {
+    "defaultMessage": "Channel",
+    "description": "The accessible name of the select that chooses which build the framed app pretends to be: the preview, which reaches features marked vorschau, or the release, which a store build is and which reaches only what is on. The bar carries no labels above its fields."
+  },
+  "frame.channel.preview": {
+    "defaultMessage": "Preview build",
+    "description": "An option of the channel select: the build this site frames by default, which reaches features that are on and features that are in preview."
+  },
+  "frame.channel.release": {
+    "defaultMessage": "Release build",
+    "description": "An option of the channel select: what a store build shows, which reaches only features that are on. Choosing it reloads the frame."
   },
   "frame.copied": {
     "defaultMessage": "Copied",
@@ -2910,6 +3030,10 @@
   "shell.section.device": {
     "defaultMessage": "Device",
     "description": "The component view’s tool for the size a component is drawn at. frame.device is the select on the bar above the app and reads the same in English."
+  },
+  "shell.section.features": {
+    "defaultMessage": "Features",
+    "description": "The preview tool that shows which features a build reaches, tries other states in the frame and submits a release decision (ADR 0072)."
   },
   "shell.section.home": {
     "defaultMessage": "Screen layout",

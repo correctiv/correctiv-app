@@ -13,7 +13,7 @@
  * loads this file with `tsx` in Node, and so do the tests.
  */
 
-import { HOME_LAYOUT_FILE, LAYOUT_DIR } from './home/names';
+import { FEATURES_FILE, HOME_LAYOUT_FILE, LAYOUT_DIR } from './home/names';
 import { GERMAN_CATALOGUE_DIR } from './strings/names';
 
 /**
@@ -52,6 +52,17 @@ export const SUBMISSION_KINDS = {
   layout: {
     prefix: '[layout]',
     dir: LAYOUT_DIR,
+    built: true,
+  },
+  /**
+   * The release file, one file and states only: the payload is the document, and the
+   * workflow changes the `state` of entries that already exist and nothing else. A release
+   * decision is its own kind and not a target of `layout`, because the two have separate
+   * writers on purpose (ADR 0072 §7) and a reviewer should see which one a pull request is.
+   */
+  features: {
+    prefix: '[freigabe]',
+    file: FEATURES_FILE,
     built: true,
   },
   /**

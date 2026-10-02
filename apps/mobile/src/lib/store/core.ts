@@ -71,7 +71,7 @@ import {
   textSizeFollowsSystem,
 } from '@correctiv/app-core/stores/settings';
 import { isReachable } from '@correctiv/app-core/features/features';
-import { CHANNEL, previewFeatureOverride } from '@/lib/channel';
+import { CHANNEL, previewFeatureOverride, storeChannel } from '@/lib/channel';
 import { previewLocale, SHIPPED_LOCALE } from '@/lib/locale';
 import {
   fetchIssues,
@@ -182,7 +182,7 @@ export const coreStore = createAppStore({
    * web export are `preview`. The override is read once, here, and the store drops it
    * outside `preview`.
    */
-  channel: CHANNEL,
+  channel: storeChannel(CHANNEL),
   featureOverride: previewFeatureOverride(),
 });
 

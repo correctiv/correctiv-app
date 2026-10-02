@@ -34,6 +34,7 @@ export type SectionId =
   | 'state'
   | 'home'
   | 'navigation'
+  | 'features'
   | 'console'
   | 'tokens'
   | 'measure'
@@ -143,6 +144,12 @@ export const SECTION_TITLES: Record<SectionId, WorkbenchMessage> = {
     defaultMessage: 'Navigation',
     description:
       'The preview tool that edits the app’s tab bar: its entries, their order and when “Mehr” takes over.',
+  }),
+  features: wbMessage({
+    id: 'shell.section.features',
+    defaultMessage: 'Features',
+    description:
+      'The preview tool that shows which features a build reaches, tries other states in the frame and submits a release decision (ADR 0072).',
   }),
   console: wbMessage({ id: 'shell.section.console', defaultMessage: 'Console' }),
   tokens: wbMessage({ id: 'shell.section.tokens', defaultMessage: 'Tokens' }),
@@ -277,6 +284,7 @@ export const VIEWS: Record<ViewKind, ViewDeclaration> = {
       'state',
       'home',
       'navigation',
+      'features',
       'console',
       'tokens',
       'measure',

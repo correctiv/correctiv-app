@@ -75,6 +75,8 @@ export type RefusalCode =
   | 'refused'
   | 'unchanged'
   | 'layout-target'
+  | 'features-payload'
+  | 'features-refused'
   | 'not-wordings'
   | 'texts-too-large'
   | 'texts-refused'
@@ -139,6 +141,10 @@ export function refusalText(refusal: Refusal): string {
       return 'Die eingereichte Startseite ist dieselbe, die schon im Repository steht. Es gibt nichts zu ändern.';
     case 'layout-target':
       return `Der Block im Issue ist kein Dokument, wie die Workbench es für einen Bildschirm oder die Navigation schreibt: Erwartet ist ein Objekt mit \`target\` und \`document\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'features-payload':
+      return `Der Block im Issue ist keine Freigabe, wie die Workbench sie schreibt: Erwartet ist ein Objekt mit \`groups\` und/oder \`features\`, je aus Feature-ID und Zustand (\`aus\`, \`vorschau\` oder \`an\`). Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'features-refused':
+      return `Diese Freigabe lässt sich so nicht übernehmen. Geändert wurde nichts. Ein Feature mit nur Beispieldaten darf höchstens Vorschau sein, und kein Feature steht über seiner Gruppe.${detail}${items}`;
     case 'not-wordings':
       return `Der Block im Issue ist keine Liste von Texten, wie die Workbench sie schreibt: Erwartet ist ein Objekt aus Text-ID und deutschem Wortlaut, mit mindestens einem Eintrag. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'texts-too-large':

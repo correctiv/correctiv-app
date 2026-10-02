@@ -4,6 +4,7 @@ import type { Locale } from '@correctiv/app-core/stores/settings';
 
 import type { ShellAddress } from '../shell/address';
 import { DEFAULT_DEVICE, DEVICES, HOST_DEVICE, preset } from './devices';
+import { isFrameChannel, type FrameChannel } from './frame/channel';
 import { isLocale } from './frame/locale';
 import { TOKENS, type Overrides, type Scheme } from './frame/tokens';
 import { isSpan, type Span } from './home/calendar';
@@ -41,6 +42,13 @@ export interface PreviewState {
    * other keys added since the original five.
    */
   lang: Locale | null;
+  /**
+   * `release` to see what a store build shows, or `null` for the build's own channel:
+   * `ch=release`. Like `lang` it is construction state in the app, so changing it reloads
+   * the frame, and `frame/channel.ts` is the writer. It can only lower the channel
+   * (ADR 0072 §2).
+   */
+  channel: FrameChannel | null;
   /** A storage fixture applied before the frame boots; see `frame/seed.ts`. */
   seed: string | null;
   /**
@@ -111,6 +119,7 @@ export const INITIAL: PreviewState = {
   h: preset(DEFAULT_DEVICE).h,
   theme: null,
   lang: null,
+  channel: null,
   seed: null,
   scenario: null,
   time: null,
@@ -166,6 +175,7 @@ export function fromAddress(address: ShellAddress): PreviewState {
     // stale link should still open, and a code the app has no catalogue for would give
     // it a provider with nothing in it rather than a setting that visibly failed.
     lang: isLocale(lang) ? lang : null,
+    channel: isFrameChannel(p.get('ch')) ? 'release' : null,
     // Written beside `sc`, the address wins over the scenario, an empty one included: `s=`
     // is somebody saying "no fixture", which a scenario's default must not overrule.
     seed: p.has('s') ? p.get('s') || null : (scenario?.session ?? null),
@@ -224,6 +234,7 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   }
   if (state.theme) p.set('t', state.theme);
   if (state.lang) p.set('lg', state.lang);
+  if (state.channel) p.set('ch', state.channel);
   const scenario = scenarioNamed(state.scenario);
   if (scenario) p.set('sc', scenario.name);
   unlessDefault(p, 's', state.seed, scenario?.session ?? null);

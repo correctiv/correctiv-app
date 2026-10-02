@@ -61,6 +61,34 @@ export const CHANNEL: Channel = channelFor(__DEV__, Platform.OS);
  */
 export const PREVIEW_FEATURES_KEY = 'workbench:features';
 
+/**
+ * Where the workbench says "show me what the release build shows". Same seam, same one
+ * origin on the web, same single read while the store is built.
+ */
+export const PREVIEW_CHANNEL_KEY = 'workbench:channel';
+
+/**
+ * The channel the store is built for: the build's own, lowered to `release` when the frame
+ * asks for it and never raised.
+ *
+ * **Only the value `release` counts**, and only as a way down: whatever is stored, a
+ * `release` build stays `release` (it returns `base` untouched), so a native build, which has
+ * no `localStorage` to hold the key, and a store build that somehow had one, cannot reach a
+ * feature through it. Fail-closed stays the whole rule (ADR 0072 §2).
+ */
+export function lowerChannel(base: Channel, stored: string | null): Channel {
+  return base === 'preview' && stored === 'release' ? 'release' : base;
+}
+
+export function storeChannel(base: Channel = CHANNEL): Channel {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return base;
+    return lowerChannel(base, window.localStorage.getItem(PREVIEW_CHANNEL_KEY));
+  } catch {
+    return base;
+  }
+}
+
 export function previewFeatureOverride(): FeatureOverride | null {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null;

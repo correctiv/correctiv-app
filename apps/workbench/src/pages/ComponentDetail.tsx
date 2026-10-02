@@ -6,7 +6,8 @@ import api from 'virtual:api';
 import type { ApiComponent } from 'virtual:api';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { dataOptions, specimensFor, validChoice } from '@/gallery/data-pick';
-import { directEntry } from '../components/direct';
+import { directEntry, featureOf } from '../components/direct';
+import { FeatureMark } from '../preview/features/Mark';
 import { NOT_DRAWN } from '../components/direct-ids';
 import { DirectPreview } from '../components/DirectPreview';
 import { cn } from '../lib/cn';
@@ -342,6 +343,7 @@ export function ComponentDetail({
             </ol>
           </nav>
         )}
+        {!full && <FeatureMark feature={featureOf(id)} className="shrink-0 px-m pb-xs" />}
 
         {rendering === 'direct' && entry !== undefined ? (
           /*
