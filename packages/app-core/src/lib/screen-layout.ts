@@ -27,7 +27,7 @@ import mediathekDocument from '../data/layout/screens/mediathek.json';
 import { SCREEN_ICONS } from './block-catalogue.generated';
 import {
   faultOf,
-  TEXT_LANGUAGES,
+  inLanguageOrder,
   type LocalisedText,
   type SettingFault,
   type TextSetting,
@@ -262,24 +262,6 @@ function typeOf(value: unknown): string {
   if (value === null) return 'null';
   if (Array.isArray(value)) return 'array';
   return typeof value;
-}
-
-/**
- * A word as the core holds it: German first, then the other languages this build knows.
- *
- * The order a document wrote them in is not the order anything should read them in, and a
- * word handed straight on to a printer would print in whatever order a hand wrote it — so
- * the same two languages would print differently depending on which editor saved last.
- * `TEXT_LANGUAGES` is that order, and `faultOf` has already refused every key that is not
- * one of them, so rebuilding the object from it loses nothing.
- */
-function inLanguageOrder(written: Readonly<Record<string, string>>): LocalisedText {
-  const out: Record<string, string | undefined> = {};
-  for (const language of TEXT_LANGUAGES) {
-    const value = written[language];
-    if (value !== undefined) out[language] = value;
-  }
-  return out as LocalisedText;
 }
 
 /**

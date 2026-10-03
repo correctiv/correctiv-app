@@ -20,6 +20,7 @@ import { say } from '../../i18n/messages';
 import { conditionOf } from './Conditions';
 import { moduleLabel } from './document';
 import { fit } from './fit';
+import { shippedOf } from './screens';
 
 /**
  * The two things a row says instead of a drawing, in ENGLISH; the German that ships is
@@ -268,7 +269,16 @@ function Block({
             {/* `Date.now()`, not the playhead: "What it is handed" above still holds — this
                 reads the clock once, at whatever moment something else causes a render,
                 the same as any other value here, rather than being wired to it. */}
-            <Module section={section} instant={Date.now()} screen={screen} />
+            {/* The screen's own words, which `screen-header` prints (ADR 0075 §6). The
+                shipped document's and not the one being edited: this tool arranges the
+                blocks of a screen and the words beside them are the Screens tool's, so
+                there is one answer here until that tool can change them. */}
+            <Module
+              section={section}
+              instant={Date.now()}
+              screen={screen}
+              words={shippedOf(screen).words}
+            />
           </DrawnBoundary>
         </div>
       </div>

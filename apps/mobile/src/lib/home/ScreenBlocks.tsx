@@ -20,6 +20,10 @@ import { useReachable, useSession } from '@/lib/store/core';
  *
  * `reachable` drops a block of a feature this build cannot reach without a trace: the
  * document stays valid, so the same file is right in the preview (ADR 0072 §5).
+ *
+ * The screen's words go down with the places because they came up together: `screen-header`
+ * prints the title out of the same parsed document the sections are in (ADR 0075 §5, §6),
+ * so a document that arrives while a screen is open changes both at once or neither.
  */
 export function ScreenBlocks({
   screen,
@@ -42,7 +46,13 @@ export function ScreenBlocks({
       {sections.map((section) => {
         const Module = HOME_MODULES[section.module];
         return Module ? (
-          <Module key={section.id} section={section} instant={instant} screen={screen} />
+          <Module
+            key={section.id}
+            section={section}
+            instant={instant}
+            screen={screen}
+            words={layout.words}
+          />
         ) : null;
       })}
     </>

@@ -12,7 +12,15 @@
 
 /** Blocks of every configurable screen, by the name the layout document uses. Core blocks name `reader`. */
 export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string }>> = {
-  'home-header': { feature: 'reader' },
+  /*
+   * One block on every screen now (ADR 0075 §6), so one feature, and it is the core's own
+   * rather than Entdecken's: the four it replaced named the feature of the screen they
+   * were bound to, and a header that can stand anywhere cannot carry one screen's gate
+   * without taking the heading off the others. A screen whose feature is off is not
+   * reachable at all (`TAB_FEATURES`, `ROUTE_FEATURES`), which is where that question is
+   * answered.
+   */
+  'screen-header': { feature: 'reader' },
   'feed-status': { feature: 'reader' },
   'article-hero': { feature: 'reader' },
   'spotlight-briefing': { feature: 'spotlight' },
@@ -23,17 +31,14 @@ export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string
   'mediathek-reihe': { feature: 'video' },
   'backstage-teaser': { feature: 'diary' },
   'impact-footer': { feature: 'reader' },
-  'discover-header': { feature: 'discover' },
   'search-entry': { feature: 'search' },
   'topic-rail': { feature: 'discover' },
   'project-directory': { feature: 'discover' },
-  'mediathek-header': { feature: 'reader' },
   'live-radio-banner': { feature: 'live-radio' },
   'podcast-rail': { feature: 'podcasts' },
   'gespraech-rail': { feature: 'video' },
   'funfacts-rail': { feature: 'video' },
   'bonus-audio-list': { feature: 'bonus-audio' },
-  'participate-header': { feature: 'reader' },
   'callout-list': { feature: 'callouts' },
   'faktenforum-card': { feature: 'faktenforum' },
   'atlas-card': { feature: 'abriss-atlas' },

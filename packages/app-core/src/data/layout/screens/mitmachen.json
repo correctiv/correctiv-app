@@ -3,7 +3,16 @@
   "title": { "de": "Mitmachen" },
   "icon": "people",
   "sections": [
-    { "id": "title", "module": "participate-header" },
+    {
+      "id": "title",
+      "module": "screen-header",
+      "settings": {
+        "intro": {
+          "de": "Recherchen entstehen mit Ihnen. Ihre Hinweise, Beobachtungen und Prüfungen machen sie erst möglich.",
+          "en": "Investigations are made with you. Your tips, your observations and your checks are what make them possible."
+        }
+      }
+    },
     { "id": "callouts", "module": "callout-list" },
     { "id": "faktenforum", "module": "faktenforum-card" },
     { "id": "atlas", "module": "atlas-card" },

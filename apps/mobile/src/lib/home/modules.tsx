@@ -6,7 +6,13 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { Instant } from '@correctiv/app-core/lib/berlin-time';
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 import { leadItem, ruleOf } from '@correctiv/app-core/lib/home-rules';
-import { itemCount, pinnedItem } from '@correctiv/app-core/lib/home-settings';
+import {
+  flagSet,
+  itemCount,
+  pinnedItem,
+  resolveText,
+  textOf,
+} from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { atlasStats } from '@correctiv/app-core/data/abriss-atlas';
 import { claims } from '@correctiv/app-core/data/claims';
@@ -15,7 +21,11 @@ import { bonusMedia, type BonusMedia } from '@correctiv/app-core/data/backstage'
 import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
 import type { YoutubeKey } from '@correctiv/app-core/stores/media';
 import type { Video } from '@correctiv/app-core/types/models';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+import {
+  screenTitleOf,
+  type ConfigurableScreen,
+  type ScreenWords,
+} from '@correctiv/app-core/lib/screen-layout';
 import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
 import type { NewsletterKey } from '@correctiv/app-core/stores/settings';
@@ -27,8 +37,8 @@ import { FaktencheckRail } from '@/components/feed/FaktencheckRail';
 import { BackstageTeaser } from '@/components/home/BackstageTeaser';
 import { CalloutTeaser } from '@/components/home/CalloutTeaser';
 import { EarlyAccessCard } from '@/components/home/EarlyAccessCard';
-import { HomeHeader } from '@/components/home/HomeHeader';
 import { ImpactFooter } from '@/components/home/ImpactFooter';
+import { Masthead } from '@/components/home/Masthead';
 import { MediathekReihe } from '@/components/home/MediathekReihe';
 import { SpotlightBriefing } from '@/components/home/SpotlightBriefing';
 import { ClubCard } from '@/components/profile/ClubCard';
@@ -57,6 +67,10 @@ import {
 import {
   FACT_CHECK_CATEGORY,
   FACT_CHECK_COUNT,
+  HEADER_DATE,
+  HEADER_INTRO,
+  HEADER_MARK,
+  HEADER_SEARCH,
   HERO_CATEGORY,
   HERO_PIN,
   RESEARCH_CATEGORY,
@@ -119,12 +133,6 @@ const COPY = defineMessages({
   factChecks: { id: 'home.factChecks', defaultMessage: 'Fact checks' },
   viewAll: { id: 'home.viewAll', defaultMessage: 'See all' },
   viewEverything: { id: 'home.viewEverything', defaultMessage: 'See everything' },
-  discoverTitle: {
-    id: 'discover.title',
-    defaultMessage: 'Discover',
-    description:
-      'The heading of the Discover screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room.',
-  },
   liveSubtitle: {
     id: 'mediathek.liveSubtitle',
     defaultMessage: '24/7 from Bottrop, by young people for young people',
@@ -148,17 +156,6 @@ const COPY = defineMessages({
  * can reach one ("1 Behauptungen").
  */
 const PARTICIPATE_COPY = defineMessages({
-  screenTitle: {
-    id: 'participate.title',
-    defaultMessage: 'Take part',
-    description:
-      'The heading of the participation screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and three callout buttons say it too.',
-  },
-  lead: {
-    id: 'participate.lead',
-    defaultMessage:
-      'Investigations are made with you. Your tips, your observations and your checks are what make them possible.',
-  },
   activeCallouts: { id: 'participate.activeCallouts', defaultMessage: 'Open callouts' },
   forumHeading: { id: 'participate.forumHeading', defaultMessage: 'Checking claims together' },
   forumLead: {
@@ -256,9 +253,20 @@ export interface HomeModuleProps {
    * The instant the fold drew this render at — the screen's `useHomeInstant(layout)`,
    * passed down rather than re-read, so that a module reading the time agrees with the
    * one that decided whether it appears at all (#254). Most modules have no use for it;
-   * `HomeHeaderModule` is the one that does.
+   * `ScreenHeaderModule` is the one that does.
    */
   readonly instant: Instant;
+  /**
+   * What the screen this placement is on is called, out of the same parsed document the
+   * placement came from (ADR 0075 §5) — `null` when that document's title was refused.
+   *
+   * A parameter rather than a second read of the layout for the reason `instant` is one:
+   * a block that fetched the words itself could draw a heading belonging to a document
+   * other than the one that put it there. `ScreenHeaderModule` is the only module that
+   * reads it, and it is on every module's props because the props are the seam and not a
+   * list of who happens to use what.
+   */
+  readonly words: ScreenWords | null;
 }
 
 /** A renderer for one place. Returns null when it has nothing to show. */
@@ -292,11 +300,65 @@ function openCallout(entry: { slug: string }): void {
   router.push({ pathname: '/aufruf/[slug]', params: { slug: entry.slug } });
 }
 
-const HomeHeaderModule: HomeModule = ({ section, instant }) => (
-  <Place section={section}>
-    <HomeHeader instant={instant} />
-  </Place>
-);
+/**
+ * The top of a screen: its name, or the mark in place of it, and whatever the document
+ * asks for beside them.
+ *
+ * **One block where there were four** (ADR 0075 §6). `home-header`, `discover-header`,
+ * `mediathek-header` and `participate-header` each printed one screen's name out of the
+ * catalogue, which is why each was bound to its screen: "Mediathek" at the top of Home
+ * was a heading that lied about where the reader was. This one reads the name out of the
+ * document of the screen it is standing on, so it cannot lie, and `SCREEN_BOUND_BLOCKS`
+ * went with the lie it was there to prevent.
+ *
+ * **What the four differed in is the settings and nothing else**, which is the test that
+ * this is one block rather than four with a shared name: Home's mark and date, Mitmachen's
+ * introduction under the title, and the plain title Entdecken and Mediathek draw. The five
+ * bundled documents therefore render exactly as they did, byte for byte, which is ADR 0075
+ * §6's own condition on this change.
+ *
+ * **The spacing is the renderer's** (ADR 0036 §1): a title on its own keeps the gap under
+ * it that the block below expects, and a title that is followed by something of its own —
+ * an introduction, the search — takes the gap from that instead. The newsroom chooses what
+ * the header says, not what it is worth in pixels.
+ */
+const ScreenHeaderModule: HomeModule = ({ section, words, instant }) => {
+  const locale = useLocale();
+  const title = screenTitleOf(words);
+  const intro = textOf(section.settings, HEADER_INTRO);
+  const search = flagSet(section.settings, HEADER_SEARCH);
+  const field = search ? (
+    <View className="mt-s">
+      <SearchEntry onPress={() => router.push('/suche')} />
+    </View>
+  ) : null;
+
+  if (flagSet(section.settings, HEADER_MARK)) {
+    return (
+      <Place section={section}>
+        <Masthead instant={instant} date={flagSet(section.settings, HEADER_DATE)} />
+        {field}
+      </Place>
+    );
+  }
+
+  // A screen whose document carries no readable title has no heading to draw and no word
+  // to put in its place: ADR 0039 §6's smallest possible loss is this place and not the
+  // screen under it.
+  if (title === null) return null;
+
+  return (
+    <Place section={section} className={intro === null && !search ? 'mb-s' : undefined}>
+      <Typo variant="headline-xl">{resolveText(title, locale)}</Typo>
+      {intro !== null && (
+        <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
+          {resolveText(intro, locale)}
+        </Typo>
+      )}
+      {field}
+    </Place>
+  );
+};
 
 /**
  * What the screen says about its own feeds: a line when the articles came out of the
@@ -461,15 +523,6 @@ const ImpactFooterModule: HomeModule = ({ section }) => (
  * same one with names on it.
  */
 
-const DiscoverHeaderModule: HomeModule = ({ section }) => {
-  const intl = useIntl();
-  return (
-    <Place section={section} className="mb-s">
-      <Typo variant="headline-xl">{intl.formatMessage(COPY.discoverTitle)}</Typo>
-    </Place>
-  );
-};
-
 const SearchEntryModule: HomeModule = ({ section }) => (
   <Place section={section}>
     <SearchEntry onPress={() => router.push('/suche')} />
@@ -516,18 +569,6 @@ const ProjectDirectoryModule: HomeModule = ({ section }) => {
  * the element to its `Place`. Each gate that was an inline `reachable(...)` is the block's
  * entry in `MODULE_FEATURES` now.
  */
-
-const ParticipateHeaderModule: HomeModule = ({ section }) => {
-  const intl = useIntl();
-  return (
-    <Place section={section}>
-      <Typo variant="headline-xl">{intl.formatMessage(PARTICIPATE_COPY.screenTitle)}</Typo>
-      <Typo variant="text-m" color="on-canvas-muted" className="mt-2xs">
-        {intl.formatMessage(PARTICIPATE_COPY.lead)}
-      </Typo>
-    </Place>
-  );
-};
 
 const CalloutListModule: HomeModule = ({ section }) => {
   const intl = useIntl();
@@ -641,12 +682,6 @@ function openProjectCard(project: Project) {
  * the margin each one carried moved from the element to its `Place`. The `reachable(...)`
  * test each section made is `MODULE_FEATURES` now, applied by `ScreenBlocks`.
  */
-
-const MediathekHeaderModule: HomeModule = ({ section }) => (
-  <Place section={section} className="mb-s">
-    <Typo variant="headline-xl">{MEDIATHEK}</Typo>
-  </Place>
-);
 
 const LiveRadioBannerModule: HomeModule = ({ section }) => {
   const intl = useIntl();
@@ -1160,7 +1195,7 @@ const ProfileNewsletterModule: HomeModule = ({ section }) => {
 
 /** Module name, as the document writes it, to the thing that draws it. */
 export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
-  'home-header': HomeHeaderModule,
+  'screen-header': ScreenHeaderModule,
   'feed-status': FeedStatusModule,
   'article-hero': ArticleHeroModule,
   'spotlight-briefing': SpotlightBriefingModule,
@@ -1171,17 +1206,14 @@ export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'mediathek-reihe': MediathekModule,
   'backstage-teaser': BackstageModule,
   'impact-footer': ImpactFooterModule,
-  'discover-header': DiscoverHeaderModule,
   'search-entry': SearchEntryModule,
   'topic-rail': TopicRailModule,
   'project-directory': ProjectDirectoryModule,
-  'mediathek-header': MediathekHeaderModule,
   'live-radio-banner': LiveRadioBannerModule,
   'podcast-rail': PodcastRailModule,
   'gespraech-rail': GespraechRailModule,
   'funfacts-rail': FunfactsRailModule,
   'bonus-audio-list': BonusAudioListModule,
-  'participate-header': ParticipateHeaderModule,
   'callout-list': CalloutListModule,
   'faktenforum-card': FaktenforumCardModule,
   'atlas-card': AtlasCardModule,

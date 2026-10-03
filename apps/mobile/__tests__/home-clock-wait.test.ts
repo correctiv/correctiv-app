@@ -16,7 +16,7 @@ const TIMER_MAX = 2 ** 31 - 1;
 
 const christmas = parseHomeLayout({
   version: 3,
-  sections: [{ id: 'header', module: 'home-header' }],
+  sections: [{ id: 'header', module: 'screen-header' }],
   editions: [{ id: 'weihnachten', from: '2026-12-24T00:00', until: '2026-12-27T00:00' }],
 }).layout!;
 
@@ -50,7 +50,7 @@ describe('the wait until Home next changes', () => {
   it('still wakes at Berlin midnight for a document with no moments and no editions', () => {
     const flat = parseHomeLayout({
       version: 3,
-      sections: [{ id: 'header', module: 'home-header' }],
+      sections: [{ id: 'header', module: 'screen-header' }],
     }).layout!;
     const now = berlinInstant('2026-09-23', 12 * 60)!;
     const wait = msUntilNextChange(flat, now);

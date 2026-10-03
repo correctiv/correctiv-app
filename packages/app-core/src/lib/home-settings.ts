@@ -70,6 +70,14 @@
  * language is optional, because a required field somebody has to get past gets filled with
  * the German, and then nothing distinguishes a translation from a placeholder. So `faultOf`
  * refuses English that is absent and not English that is missing.
+ *
+ * ## And a sixth, which is the smallest a setting gets
+ *
+ * {@link FlagSetting} is on or off. It arrived with the screen header (ADR 0075 §6), whose
+ * three questions beside the words — mark instead of title, date, search — each have two
+ * answers. It is declared rather than worked around because both ways around it tell a lie
+ * about the document: a `count` bounded to 0 and 1 is a number nobody means, and a key
+ * whose presence is the answer makes "off" and "never asked" the same file.
  */
 
 import { MODULE_SETTINGS } from './home-settings.generated';
@@ -119,6 +127,24 @@ export interface TagSetting {
   readonly key: string;
   readonly kind: 'tag';
   readonly fallback: number | null;
+}
+
+/**
+ * Something a block either does or does not do, with no third answer.
+ *
+ * The kind the screen header asked for (ADR 0075 §6): whether the mark stands in for the
+ * title, whether the date is printed, whether the search is offered. Each of those is a
+ * question with two answers, and the alternatives are worse in the same way — a count
+ * bounded to 0 and 1 is a number nobody means, and leaving the key out to mean "no" makes
+ * "off" and "never asked" the same document.
+ *
+ * `fallback` is what the block draws for a document that sets nothing, so the bundled
+ * documents can leave off every switch whose answer is already the one they want.
+ */
+export interface FlagSetting {
+  readonly key: string;
+  readonly kind: 'flag';
+  readonly fallback: boolean;
 }
 
 /**
@@ -241,6 +267,28 @@ export function isTextLanguage(language: string): boolean {
  * with it, which is what the parser's refusal of a blank German is for — German is the one
  * language that may not be blank, because it is the one this falls back to.
  */
+/**
+ * A word as the core holds it: German first, then the other languages this build knows.
+ *
+ * The order a document wrote them in is not the order anything should read them in, and a
+ * word handed straight on to a printer would print in whatever order a hand wrote it — so
+ * the same two languages would print differently depending on which editor saved last.
+ * {@link TEXT_LANGUAGES} is that order, and {@link faultOf} has already refused every key
+ * that is not one of them, so rebuilding the object from it loses nothing.
+ *
+ * Here rather than beside either of its two callers: a screen's three words and a block's
+ * `intro` are the same kind of value and would otherwise print in two orders, which is
+ * the thing this exists to stop.
+ */
+export function inLanguageOrder(written: Readonly<Record<string, string>>): LocalisedText {
+  const out: Record<string, string | undefined> = {};
+  for (const language of TEXT_LANGUAGES) {
+    const value = written[language];
+    if (value !== undefined) out[language] = value;
+  }
+  return out as LocalisedText;
+}
+
 export function resolveText(text: LocalisedText, locale: Locale): string {
   const own = text[locale];
   return own === undefined || own.length === 0 ? text.de : own;
@@ -251,6 +299,7 @@ export type SettingSpec =
   | CountSetting
   | CategorySetting
   | TagSetting
+  | FlagSetting
   | TextSetting;
 
 /**
@@ -294,6 +343,10 @@ export function faultOf(spec: SettingSpec, value: unknown): SettingFault | null 
       return value === null || (typeof value === 'number' && Number.isInteger(value) && value > 0)
         ? null
         : 'invalid';
+    case 'flag':
+      // No `null` here, unlike every kind above: those three use it to say "no term" and
+      // "no pin", and a switch has that answer already.
+      return typeof value === 'boolean' ? null : 'invalid';
     case 'text':
       return textFaultOf(spec, value);
   }
@@ -374,4 +427,33 @@ export function termOf(settings: Held, spec: CategorySetting | TagSetting): numb
 export function itemCount(settings: Held, spec: CountSetting): number {
   const held = settings?.[spec.key];
   return typeof held === 'number' ? held : spec.fallback;
+}
+
+/** Whether a switch is on: what the document says, or what the block does by itself. */
+export function flagSet(settings: Held, spec: FlagSetting): boolean {
+  const held = settings?.[spec.key];
+  return typeof held === 'boolean' ? held : spec.fallback;
+}
+
+/** The words a place says, as the document holds them, or the block's own. */
+export function textOf(settings: Held, spec: TextSetting): LocalisedText | null {
+  const held = settings?.[spec.key];
+  return isLocalisedText(held) ? held : spec.fallback;
+}
+
+/**
+ * Whether a held value is a word, asked of a value `parseHomeLayout` has already judged.
+ *
+ * The same seam the two accessors above cross with a `typeof`, and it takes a line rather
+ * than a cast because a word is an object: a cast would hand a module whatever the
+ * document wrote under that key, and the point of asking is that the module then draws a
+ * string.
+ */
+function isLocalisedText(held: unknown): held is LocalisedText {
+  return (
+    typeof held === 'object' &&
+    held !== null &&
+    !Array.isArray(held) &&
+    typeof (held as { de?: unknown }).de === 'string'
+  );
 }

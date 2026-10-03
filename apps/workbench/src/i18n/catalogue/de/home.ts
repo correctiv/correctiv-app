@@ -13,7 +13,7 @@ export const home: Record<string, string> = {
   // two are the names of a CORRECTIV product and a CORRECTIV newsletter. A
   // translation of one of them would rename the thing rather than translate a label.
   'home.module.header': 'Kopfzeile',
-  'home.module.header.what': 'Das Datum, die Begrüßung und die Suche.',
+  'home.module.header.what': 'Der Titel des Bildschirms, und was Sie daneben einschalten.',
   'home.module.feedStatus': 'Lade- und Offline-Hinweis',
   'home.module.feedStatus.what':
     'Erscheint nur, solange Inhalte laden oder wenn die App ihre mitgelieferten Inhalte zeigt.',
@@ -36,16 +36,12 @@ export const home: Record<string, string> = {
   'home.module.backstage.what': 'Das Redaktionstagebuch, mit einem Link dorthin.',
   'home.module.impact': 'Impact',
   'home.module.impact.what': 'Was die Recherchen verändert haben, und ein Dankeschön.',
-  'home.module.discoverHeader': 'Entdecken-Titel',
-  'home.module.discoverHeader.what': 'Die Überschrift des Entdecken-Bildschirms.',
   'home.module.searchEntry': 'Sucheinstieg',
   'home.module.searchEntry.what': 'Das Feld, das die Suche öffnet.',
   'home.module.topicRail': 'Themenleiste',
   'home.module.topicRail.what': 'Die Themen mit eigenem Feed, als Reihe von Chips.',
   'home.module.projectDirectory': 'Projektverzeichnis',
   'home.module.projectDirectory.what': 'Die Projekte und Produkte von CORRECTIV, nach Gruppen.',
-  'home.module.mediathekHeader': 'Mediathek-Titel',
-  'home.module.mediathekHeader.what': 'Die Überschrift des Mediathek-Bildschirms.',
   'home.module.liveRadioBanner': 'Live-Radio',
   'home.module.liveRadioBanner.what': 'Das Salon5-Radio mit dem, was gerade läuft.',
   'home.module.podcastRail': 'Podcast-Reihe',
@@ -56,9 +52,6 @@ export const home: Record<string, string> = {
   'home.module.funfactsRail.what': 'Die neuesten FunFacts-Videos.',
   'home.module.bonusAudioList': 'Backstage-Audio',
   'home.module.bonusAudioList.what': 'Die Bonus-Tonspuren des Clubs, als Liste.',
-  'home.module.participateHeader': 'Mitmachen-Titel',
-  'home.module.participateHeader.what':
-    'Die Überschrift des Mitmachen-Bildschirms, mit Einleitung.',
   'home.module.calloutList': 'Aufrufe',
   'home.module.calloutList.what': 'Alle offenen Aufrufe, als Karten.',
   'home.module.faktenforumCard': 'Faktenforum-Karte',
@@ -82,7 +75,19 @@ export const home: Record<string, string> = {
   'home.module.profileNewsletter.what': 'Die Newsletter zum Ein- und Ausschalten.',
   'home.module.unknown.what': 'Für diesen Block gibt es noch keine Beschreibung.',
 
-  // --- the three settings under a block -----------------------------------------
+  // --- the settings under a block ------------------------------------------------
+  'home.setting.screenHeader.mark': 'Wortmarke statt Titel zeigen',
+  'home.setting.screenHeader.mark.what':
+    'Die Wortmarke CORRECTIV mit einer Linie darunter, wie auf dem Home-Bildschirm.',
+  'home.setting.screenHeader.intro': 'Der Satz unter dem Titel',
+  'home.setting.screenHeader.intro.what':
+    'Eine Zeile dazu, wofür der Bildschirm da ist. Leer lässt sie weg.',
+  'home.setting.screenHeader.date': 'Das heutige Datum zeigen',
+  'home.setting.screenHeader.date.what':
+    'Neben der Wortmarke, damit der Bildschirm sich wie die Ausgabe von heute liest.',
+  'home.setting.screenHeader.search': 'Die Suche anbieten',
+  'home.setting.screenHeader.search.what':
+    'Das Feld unter der Kopfzeile, das den Suchbildschirm öffnet.',
   'home.setting.articleHero.pin': 'Welcher Artikel führt',
   'home.setting.articleHero.pin.what':
     'Der angeheftete, oder die neueste Recherche, wenn keiner angeheftet ist.',
@@ -169,7 +174,7 @@ export const home: Record<string, string> = {
   'home.palette.title': 'Einen Block hinzufügen',
   'home.palette.lead': 'Der neue Block kommt {where}.',
   'home.palette.leadMore':
-    'Das Regal bietet jeden Block der App an, nach Familien sortiert und so gezeichnet, wie er erscheint. Jeder Block kann auf jedem Bildschirm stehen; nur die vier Titelzeilen bleiben bei ihrem eigenen Bildschirm. Wie es aussieht, sehen Sie im Rahmen daneben.',
+    'Das Regal bietet jeden Block der App an, nach Familien sortiert und so gezeichnet, wie er erscheint. Jeder Block kann auf jedem Bildschirm stehen, die Kopfzeile eingeschlossen: Sie druckt den Titel des Bildschirms, auf dem sie steht. Wie es aussieht, sehen Sie im Rahmen daneben.',
   'home.palette.addModule': '{name} hinzufügen. {what}',
   'home.palette.tab.all': 'Alle',
   'home.palette.tab.legend': 'In welcher Familie von Blöcken Sie suchen',

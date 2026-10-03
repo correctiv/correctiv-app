@@ -52,7 +52,7 @@ function places(tree: ReturnType<typeof render>): string[] {
 }
 
 describe('the tip line in the release channel', () => {
-  const home = parseHomeLayout(SCREEN_DOCUMENTS.home, undefined, 'home');
+  const home = parseHomeLayout(SCREEN_DOCUMENTS.home);
 
   it('is a clean placement on Home, near the end', () => {
     expect(home.problems).toEqual([]);

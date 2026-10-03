@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { blocksByCategory, blocksFor } from '@correctiv/app-core/lib/block-category';
+import { allBlocks, blocksByCategory } from '@correctiv/app-core/lib/block-category';
 import {
   CONFIGURABLE_SCREENS,
   parseScreenDocument,
@@ -59,34 +59,32 @@ describe('the screen picker and its palette', () => {
     expect(Object.keys(SCREEN_ROUTES).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
   });
 
-  it('offers each screen every block, and its shipped blocks are among them', () => {
+  it('offers one palette to every screen, with each one’s shipped blocks among them', () => {
+    const palette = allBlocks();
+    expect(palette.length).toBeGreaterThan(20);
     for (const screen of CONFIGURABLE_SCREENS) {
-      const palette = blocksFor(screen);
-      expect(palette.length).toBeGreaterThan(20);
       for (const section of shippedOf(screen).sections) expect(palette).toContain(section.module);
     }
   });
 
   /**
    * ADR 0073 §1, which is the product decision this editor exists to serve: the pairs
-   * below were each impossible before it, and the only thing a screen still does not
-   * offer is another screen's own title (§3).
+   * below were each impossible before it. ADR 0075 §6 finished it — the four titles were
+   * the last thing a screen was not offered, and the one header that replaced them prints
+   * the name of wherever it is put.
    */
-  it('offers a block of every screen on every other, bar the screen titles', () => {
-    expect(blocksFor('home')).toContain('live-radio-banner');
-    expect(blocksFor('home')).toContain('podcast-rail');
-    expect(blocksFor('mediathek')).toContain('article-hero');
-    expect(blocksFor('profil')).toContain('faktencheck-rail');
-    expect(blocksFor('home')).not.toContain('mediathek-header');
-    expect(blocksFor('mediathek')).toContain('mediathek-header');
+  it('offers a block of every screen on every other, the header included', () => {
+    expect(allBlocks()).toContain('live-radio-banner');
+    expect(allBlocks()).toContain('podcast-rail');
+    expect(allBlocks()).toContain('article-hero');
+    expect(allBlocks()).toContain('faktencheck-rail');
+    expect(allBlocks()).toContain('screen-header');
   });
 
   it('names every block a palette can offer, and puts it in exactly one group', () => {
-    for (const screen of CONFIGURABLE_SCREENS) {
-      for (const module of blocksFor(screen)) expect(MODULE_LABELS[module]).toBeDefined();
-      const groups = blocksByCategory(screen);
-      expect(groups.flatMap((group) => group.blocks).sort()).toEqual([...blocksFor(screen)].sort());
-    }
+    for (const module of allBlocks()) expect(MODULE_LABELS[module]).toBeDefined();
+    const groups = blocksByCategory();
+    expect(groups.flatMap((group) => group.blocks).sort()).toEqual([...allBlocks()].sort());
   });
 
   it('writes each screen to its own file and its own preview key, spelled as the app spells them', () => {
@@ -285,12 +283,13 @@ describe('the layout submission', () => {
     expect(
       refusal(() => applyLayout(layoutPayload('navigation', '{"version":1,"tabs":[]}'), repo)),
     ).toBe('refused');
-    // Another screen's own title is the parser's to refuse, and after ADR 0073 §1 it is
-    // the only block that still is: `article-hero` here would now be accepted.
-    const foreign = JSON.parse(same) as { sections: { id: string; module: string }[] };
-    foreign.sections[0]!.module = 'home-header';
+    // A module the app holds no renderer for, which is what `module-unrecognised` says
+    // and the last of what this kind refuses. What it used to refuse as well — another
+    // screen's own title — is gone with ADR 0075 §6's one header.
+    const unknown = JSON.parse(same) as { sections: { id: string; module: string }[] };
+    unknown.sections[0]!.module = 'quiz-of-the-day';
     expect(
-      refusal(() => applyLayout(layoutPayload('entdecken', JSON.stringify(foreign)), repo)),
+      refusal(() => applyLayout(layoutPayload('entdecken', JSON.stringify(unknown)), repo)),
     ).toBe('refused');
   });
 

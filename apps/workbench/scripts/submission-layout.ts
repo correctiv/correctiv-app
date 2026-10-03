@@ -96,7 +96,7 @@ export function applyLayout(payload: string, repo: Repo): AppliedLayout {
   }
 
   const screen = target as (typeof SCREENS)[number];
-  const { layout, problems } = parseHomeLayout(document, RENDERABLE, screen);
+  const { layout, problems } = parseHomeLayout(document, RENDERABLE);
   if (!layout || layout.sections.length === 0 || problems.length > 0) {
     const codes = [...new Set(problems.map((problem) => problem.code))].join(', ');
     throw new Refusal('refused', codes || 'kein Dokument mit Blöcken');

@@ -9,6 +9,10 @@
  * picker asks on top of them — **which family** and **which of them matches what was
  * typed** — as functions with no React in them, so a test can ask them.
  *
+ * **No screen is a parameter anywhere in this file.** It took one until ADR 0075 §6, whose
+ * one header block made the shelf the same list everywhere; keeping it would have been a
+ * function asking for a question it does not ask.
+ *
  * **`'all'` is a tab and not a family.** It is the one value here that the core does not
  * name, and it is kept out of `BlockCategory` on purpose: a category is a thing a block
  * declares, and "all of them" declares nothing. It is the tab somebody opens the dialog on,
@@ -25,7 +29,6 @@ import {
   type BlockCategory,
   type BlockGroup,
 } from '@correctiv/app-core/lib/block-category';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 /** The family on show, or every family there is. */
 export type PickerTab = BlockCategory | 'all';
@@ -34,25 +37,26 @@ export type PickerTab = BlockCategory | 'all';
 export const FIRST_TAB = 'all';
 
 /**
- * The families a screen offers, in the core's own order.
+ * The families the picker offers, in the core's own order.
  *
- * A family with nothing left for this screen is not in it: the four screen titles are bound
- * to their own screen (ADR 0073 §3), so a palette on Home has five families and one on the
- * Mediathek has six, and `blocksByCategory` is what has already dropped the sixth where it
- * would be empty.
+ * **The same list on every screen**, and it stopped being a per-screen list with ADR 0075
+ * §6: the four screen titles were what `blocksByCategory` dropped where a screen had none of
+ * them, and one header that prints the title of wherever it stands is offered everywhere. So
+ * a family with nothing in it cannot arise here any more, and neither can the sixth family
+ * that the Mediathek had and the others did not.
  */
-export function familyTabs(screen: ConfigurableScreen): BlockCategory[] {
-  return blocksByCategory(screen).map((group) => group.category);
+export function familyTabs(): BlockCategory[] {
+  return blocksByCategory().map((group) => group.category);
 }
 
-/** The tabs a screen offers, with "all" in front of the families. */
-export function tabsFor(screen: ConfigurableScreen): PickerTab[] {
-  return [FIRST_TAB, ...familyTabs(screen)];
+/** The tabs the picker offers, with "all" in front of the families. */
+export function tabsFor(): PickerTab[] {
+  return [FIRST_TAB, ...familyTabs()];
 }
 
-/** Whether a value off storage is a tab this screen has. Anything else is `all`. */
-export function isTab(value: string | null, screen: ConfigurableScreen): value is PickerTab {
-  return tabsFor(screen).some((tab) => tab === value);
+/** Whether a value off storage is a tab there is. Anything else is `all`. */
+export function isTab(value: string | null): value is PickerTab {
+  return tabsFor().some((tab) => tab === value);
 }
 
 /**
@@ -64,12 +68,11 @@ export function isTab(value: string | null, screen: ConfigurableScreen): value i
  * the app's catalogues both, which is why a test can call it with two strings.
  */
 export function groupsShown(
-  screen: ConfigurableScreen,
   tab: PickerTab,
   query: string,
   words: (module: string) => string,
 ): readonly BlockGroup[] {
-  const groups = blocksByCategory(screen);
+  const groups = blocksByCategory();
   if (matchesNothing(query)) return tab === FIRST_TAB ? groups : groups.filter(byCategory(tab));
   return groups
     .map((group) => ({
@@ -86,15 +89,12 @@ export function matchesNothing(query: string): boolean {
 
 /**
  * What a search counts, said above the results: how many blocks it found, and out of how
- * many this screen offers. A search that silently narrows the grid to one card leaves the
+ * many the picker holds. A search that silently narrows the grid to one card leaves the
  * person wondering whether the others are gone.
  */
-export function matchCount(
-  groups: readonly BlockGroup[],
-  screen: ConfigurableScreen,
-): { found: number; of: number } {
+export function matchCount(groups: readonly BlockGroup[]): { found: number; of: number } {
   const found = groups.reduce((n, group) => n + group.blocks.length, 0);
-  return { found, of: blocksByCategory(screen).reduce((n, group) => n + group.blocks.length, 0) };
+  return { found, of: blocksByCategory().reduce((n, group) => n + group.blocks.length, 0) };
 }
 
 const byCategory = (category: BlockCategory) => (group: BlockGroup) => group.category === category;
@@ -130,8 +130,8 @@ function fold(text: string): string {
  * Where the last tab is remembered, for as long as the tab is open.
  *
  * **`sessionStorage` and not `localStorage`**, because this is a person coming back to the
- * same task: somebody who opened the Mediathe's palette, looked at Audio und Video and
- * walked away should find it there next time they arrange that screen. It is forgotten when
+ * same task: somebody who opened the Mediathek's palette, looked at Audio und Video and
+ * walked away should find it there next time they arrange something. It is forgotten when
  * the tab is closed, which is the day the arrangement stops being the thing in front of
  * them.
  *
@@ -148,10 +148,10 @@ function fold(text: string): string {
 export const TAB_KEY = 'workbench:palette.tab';
 
 /** The tab to open on, and `all` whenever storage says nothing or something else. */
-export function readTab(screen: ConfigurableScreen): PickerTab {
+export function readTab(): PickerTab {
   try {
     const stored = globalThis.sessionStorage?.getItem(TAB_KEY) ?? null;
-    return isTab(stored, screen) ? stored : FIRST_TAB;
+    return isTab(stored) ? stored : FIRST_TAB;
   } catch {
     return FIRST_TAB;
   }

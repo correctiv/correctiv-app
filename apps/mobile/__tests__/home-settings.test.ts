@@ -18,11 +18,10 @@ import {
   renderAudiences,
   renderCatalogue,
 } from '../scripts/generate-home-settings.mjs';
-import { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS } from '@/lib/home/blocks';
+import { MODULE_CATEGORIES } from '@/lib/home/blocks';
 import { SCREEN_ICONS } from '@/lib/screenIcons';
 import {
   MODULE_CATEGORIES as CATEGORIES_ARTEFACT,
-  SCREEN_BOUND_BLOCKS as BOUND_ARTEFACT,
   SCREEN_ICONS as ICONS_ARTEFACT,
 } from '@correctiv/app-core/lib/block-catalogue.generated';
 import { SCREEN_ICON_FALLBACK } from '@correctiv/app-core/lib/screen-layout';
@@ -261,25 +260,26 @@ describe('the audiences a module declares beside itself', () => {
 });
 
 /**
- * The third artefact: a block's category, and the few blocks bound to one screen
- * ([ADR 0073](../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)).
+ * The third artefact: a block's category
+ * ([ADR 0073](../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
+ * §2).
  *
- * The categories table is floored and the bound one is not, and the asymmetry is the
- * decision rather than an oversight: a release in which no block is tied to a screen is a
- * legal one, and a release in which no block has a family is a picker with nothing in it.
+ * It carried a second table, the blocks bound to one screen, and that table is gone with
+ * [ADR 0075](../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §6's single header. The floor under the categories stays and says why: a release in
+ * which no block has a family is a picker with nothing in it.
  */
 describe('the category a block declares beside itself', () => {
   const DECLARATIONS = resolve(APP, 'src/lib/home/blocks.ts');
 
   it('keeps the generated table current', () => {
     expect(readFileSync(CATALOGUE_OUT, 'utf8')).toBe(
-      renderCatalogue(MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS, SCREEN_ICONS),
+      renderCatalogue(MODULE_CATEGORIES, SCREEN_ICONS),
     );
   });
 
   it('is the table the core reads, and carries the declared values', () => {
     expect(CATEGORIES_ARTEFACT).toEqual(MODULE_CATEGORIES);
-    expect(BOUND_ARTEFACT).toEqual(SCREEN_BOUND_BLOCKS);
   });
 
   it('keeps the declaration file loadable by the generator (types and nothing else)', () => {
@@ -297,23 +297,21 @@ describe('the category a block declares beside itself', () => {
     // The floor the settings' `render` has, for the same reason one level along: every
     // tool that offers a block reads this, so an empty one is a palette with nothing in
     // it and a roll-call that agrees with every registry it is compared against.
-    expect(() => renderCatalogue({}, {}, SCREEN_ICONS)).toThrow(/no block at all/);
+    expect(() => renderCatalogue({}, SCREEN_ICONS)).toThrow(/no block at all/);
   });
 
-  it('writes an empty binding table rather than refusing one', () => {
-    expect(renderCatalogue({ quiz: 'medien' }, {}, SCREEN_ICONS)).toContain(
-      'SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = {}',
-    );
+  it('writes no table of blocks bound to a screen at all', () => {
+    // The replacement for "writes an empty binding table rather than refusing one". ADR
+    // 0075 §6 took the mechanism, not just its last four rows, so the ratchet is that the
+    // artefact cannot grow the name back without somebody deciding to.
+    expect(renderCatalogue({ quiz: 'medien' }, SCREEN_ICONS)).not.toContain('SCREEN_BOUND_BLOCKS');
   });
 
   it('refuses a name it cannot write into a source file as it stands', () => {
-    expect(() => renderCatalogue({ "x': 'medien', 'evil": 'medien' }, {}, SCREEN_ICONS)).toThrow(
+    expect(() => renderCatalogue({ "x': 'medien', 'evil": 'medien' }, SCREEN_ICONS)).toThrow(
       /plain one/,
     );
-    expect(() => renderCatalogue({ quiz: "med'ien" }, {}, SCREEN_ICONS)).toThrow(/plain one/);
-    expect(() => renderCatalogue({ quiz: 'medien' }, { quiz: "ho'me" }, SCREEN_ICONS)).toThrow(
-      /plain one/,
-    );
+    expect(() => renderCatalogue({ quiz: "med'ien" }, SCREEN_ICONS)).toThrow(/plain one/);
   });
 });
 
@@ -375,7 +373,7 @@ describe('the icon a screen declares beside itself', () => {
   it('refuses to write a table with no icon in it', () => {
     // The floor the categories have, for the same reason: the app draws the fallback out
     // of this set, so an empty one is an icon nothing can draw.
-    expect(() => renderCatalogue({ quiz: 'medien' }, {}, {})).toThrow(/no screen icon at all/);
+    expect(() => renderCatalogue({ quiz: 'medien' }, {})).toThrow(/no screen icon at all/);
   });
 
   /**
@@ -389,37 +387,30 @@ describe('the icon a screen declares beside itself', () => {
       ...over,
     });
     expect(() =>
-      renderCatalogue(
-        { quiz: 'medien' },
-        {},
-        { quiz: icon({ sf: { default: "a'", selected: 'b' } }) },
-      ),
+      renderCatalogue({ quiz: 'medien' }, { quiz: icon({ sf: { default: "a'", selected: 'b' } }) }),
     ).toThrow(/plain one/);
     expect(() =>
       renderCatalogue(
         { quiz: 'medien' },
-        {},
         { quiz: icon({ md: { default: 'a', selected: 'a b' } }) },
       ),
     ).toThrow(/plain one/);
     expect(() =>
       renderCatalogue(
         { quiz: 'medien' },
-        {},
         { quiz: icon({ ionicon: { active: '', inactive: 'home-outline' } }) },
       ),
     ).toThrow(/plain one/);
     expect(() =>
       renderCatalogue(
         { quiz: 'medien' },
-        {},
         { quiz: icon({ sf: { default: '.house', selected: 'b' } }) },
       ),
     ).toThrow(/plain one/);
   });
 
   it('writes what it read, which is what the artefact above is compared to', () => {
-    expect(renderCatalogue({ quiz: 'medien' }, {}, { quiz: SCREEN_ICONS.home })).toContain(
+    expect(renderCatalogue({ quiz: 'medien' }, { quiz: SCREEN_ICONS.home })).toContain(
       "sf: { default: 'house', selected: 'house.fill' }",
     );
   });

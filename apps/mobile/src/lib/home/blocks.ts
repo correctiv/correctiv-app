@@ -1,6 +1,5 @@
 /**
- * What each block IS — the family it belongs to — and the few that are bound to one
- * screen, declared where the blocks are written.
+ * What each block IS — the family it belongs to — declared where the blocks are written.
  *
  * [ADR 0073](../../../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
  * §1 replaced the table this file used to hold. Until then every block named the screens
@@ -17,11 +16,11 @@
  * workbench's, in `apps/workbench/src/preview/home/document.ts`, which is ADR 0054 §3
  * unchanged — the app declares what a thing is, the workbench says what it is called.
  *
- * **A screen for the handful that are bound to one** (§3). Four blocks print a screen's
- * own title, and "Mediathek" at the top of Home would be a heading that lies about where
- * the reader is. That is a restriction on four blocks rather than a table over all of
- * them, and a block missing from it is free, which is the direction that now takes no
- * maintenance.
+ * **And nothing else.** §3 kept one exception, `SCREEN_BOUND_BLOCKS`: four blocks each
+ * printed one screen's name, and "Mediathek" at the top of Home would have been a heading
+ * that lies about where the reader is. ADR 0075 §6 replaced all four with `screen-header`,
+ * which prints the title of whatever screen it is on and therefore cannot lie, so the
+ * table and the parser's refusal under it are gone and §1 holds with no exception left.
  *
  * This file is also the app's roll-call of blocks: `MODULE_CATEGORIES` has an entry per
  * block, asserted against `modules.tsx` in both directions by
@@ -32,11 +31,10 @@
  *
  * `settings.ts` gives the reason about itself: a declaration a generator reads by
  * importing it must hold no React and import nothing at a path Node cannot resolve. This
- * file imports two types and nothing else, which is what keeps that door open.
+ * file imports one type and nothing else, which is what keeps that door open.
  */
 
 import type { BlockCategory } from '@correctiv/app-core/lib/block-category';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 /**
  * Block name, as the document writes it, to the family it belongs to.
@@ -55,12 +53,9 @@ import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
  * categories themselves is `BLOCK_CATEGORIES` in the core.
  */
 export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = {
-  'home-header': 'struktur',
+  'screen-header': 'struktur',
   'feed-status': 'struktur',
-  'discover-header': 'struktur',
   'search-entry': 'struktur',
-  'mediathek-header': 'struktur',
-  'participate-header': 'struktur',
   'impact-footer': 'struktur',
 
   'article-hero': 'recherche',
@@ -92,30 +87,4 @@ export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = {
   'profile-impact': 'club',
   'profile-area': 'club',
   'profile-newsletter': 'club',
-};
-
-/**
- * The blocks that belong to one screen and to no other, and the screen each one is.
- *
- * Four, and all four for one reason: each prints the NAME of the screen it sits on.
- * `mediathek-header` draws the word "Mediathek" and nothing else, so on Home it would be
- * a heading saying the reader is somewhere they are not. `home-header` is the same
- * argument from the other end — it is the app's answer to "where am I", which ADR 0071 §4
- * makes the floor under every fallback, and a second one further down a screen is not an
- * arrangement anybody wants to be able to save.
- *
- * **A generic title block was considered and refused**, and ADR 0073 §3 is where. Its
- * title would have to be a setting, and a setting carrying a heading puts German prose
- * into the layout document, which ADR 0057 §2 keeps free of content. The four headers
- * also differ in more than their word: Home's carries the date, the greeting and the
- * search, Mitmachen's an introduction under the title.
- *
- * A block that is not in here may be placed on every configurable screen. That is the
- * default, so this table only ever grows by somebody deciding it should.
- */
-export const SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = {
-  'home-header': 'home',
-  'discover-header': 'entdecken',
-  'mediathek-header': 'mediathek',
-  'participate-header': 'mitmachen',
 };

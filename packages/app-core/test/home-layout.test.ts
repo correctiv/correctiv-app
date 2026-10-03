@@ -191,7 +191,7 @@ describe('the fold, which is the whole model', () => {
     version: HOME_LAYOUT_VERSION,
     title: TITLE,
     sections: [
-      { id: 'header', module: 'home-header' },
+      { id: 'header', module: 'screen-header' },
       { id: 'hero', module: 'article-hero', settings: { pin: 'https://example.org/a' } },
       { id: 'lifted', module: 'callout-teaser', hidden: true },
       { id: 'rail', module: 'faktencheck-rail', settings: { count: 4 } },
@@ -617,7 +617,7 @@ describe('parseHomeLayout, on a document it cannot use at all', () => {
       version: 1,
       title: TITLE,
       sections: [
-        { id: 'header', module: 'home-header' },
+        { id: 'header', module: 'screen-header' },
         { id: 'callout', module: 'callout-teaser', dayparts: ['midday'] },
       ],
     });
@@ -631,7 +631,7 @@ describe('parseHomeLayout, on a section it cannot use', () => {
   it('drops the bad one and keeps the good ones, in order', () => {
     const parse = parseHomeLayout(
       document([
-        section({ id: 'header', module: 'home-header' }),
+        section({ id: 'header', module: 'screen-header' }),
         { id: 'broken' },
         section({ id: 'hero', module: 'article-hero' }),
       ]),
@@ -735,55 +735,42 @@ describe('parseHomeLayout, on a section it cannot use', () => {
   });
 
   /**
-   * ADR 0073 §1 against the real declarations: `article-hero` and `faktencheck-rail` are
-   * nobody's alone any more, so a document carrying them reads on either screen. What
-   * ADR 0071 §2's refusal has shrunk to is §3's four screen titles, and `discover-header`
-   * is the one in this case. No entry is rewritten for the test.
+   * ADR 0073 §1 against the real declarations, and ADR 0075 §6 is what let the last word
+   * of it go: `article-hero`, `faktencheck-rail` and the header are nobody's alone, so a
+   * document carrying all three reads the same wherever it is read. The parser is not
+   * told which screen it is reading at all now, which is the strongest form the decision
+   * can take: there is no screen for a refusal to be about.
    */
-  it('takes an ordinary block on any screen, and refuses another screen’s title', () => {
+  it('takes every block, the header included, with no screen to be refused on', () => {
     const doc = document([
       section({ id: 'hero', module: 'article-hero' }),
-      section({ id: 'title', module: 'discover-header' }),
+      section({ id: 'title', module: 'screen-header' }),
       section({ id: 'rail', module: 'faktencheck-rail' }),
     ]);
 
-    const home = parseHomeLayout(doc, undefined, 'home');
-    expect(home.layout?.sections.map((s) => s.id)).toEqual(['hero', 'rail']);
-    expect(home.problems).toEqual([
-      {
-        code: 'section-module-not-on-screen',
-        context: { id: 'title', module: 'discover-header', screen: 'home' },
-      },
-    ]);
-
-    const discover = parseHomeLayout(doc, undefined, 'entdecken');
-    expect(discover.layout?.sections.map((s) => s.id)).toEqual(['hero', 'title', 'rail']);
-    expect(discover.problems).toEqual([]);
+    const parse = parseHomeLayout(doc);
+    expect(parse.layout?.sections.map((s) => s.id)).toEqual(['hero', 'title', 'rail']);
+    expect(parse.problems).toEqual([]);
   });
 
   /**
-   * The half of ADR 0073 §1 that is the product decision itself, read at the parser:
-   * every screen takes every block that is not one of the four titles, and the proof
-   * worth having is the pair that was impossible before — the Mediathek's live radio on
-   * Home, and Home's lead article on the Mediathek.
+   * The half of ADR 0073 §1 that is the product decision itself, read at the parser. The
+   * proof worth having is the pair that was impossible before — the Mediathek's live
+   * radio on Home, and Home's lead article on the Mediathek — and that is one parse now
+   * rather than one per screen.
    */
-  it('lets every screen carry every block but the four titles', () => {
-    for (const screen of CONFIGURABLE_SCREENS) {
-      const doc = document([
-        section({ id: 'radio', module: 'live-radio-banner' }),
-        section({ id: 'hero', module: 'article-hero' }),
-        section({ id: 'club', module: 'profile-club-card' }),
-      ]);
-      expect({ screen, problems: parseHomeLayout(doc, undefined, screen).problems }).toEqual({
-        screen,
-        problems: [],
-      });
-    }
+  it('carries the blocks of every screen in one document', () => {
+    const doc = document([
+      section({ id: 'radio', module: 'live-radio-banner' }),
+      section({ id: 'hero', module: 'article-hero' }),
+      section({ id: 'club', module: 'profile-club-card' }),
+    ]);
+    expect(parseHomeLayout(doc).problems).toEqual([]);
   });
 
   it('holds every bundled screen to its own declarations', () => {
     for (const screen of CONFIGURABLE_SCREENS) {
-      const parse = parseHomeLayout(SCREEN_DOCUMENTS[screen], undefined, screen);
+      const parse = parseHomeLayout(SCREEN_DOCUMENTS[screen]);
       expect({ screen, problems: parse.problems }).toEqual({ screen, problems: [] });
       expect(parse.layout?.sections.length).toBeGreaterThan(0);
     }
@@ -792,12 +779,8 @@ describe('parseHomeLayout, on a section it cannot use', () => {
   it('gives a block on two screens its own settings on each', () => {
     const rail = (count: number) =>
       document([section({ id: 'rail', module: 'faktencheck-rail', settings: { count } })]);
-    expect(parseHomeLayout(rail(3), undefined, 'home').layout?.sections[0]?.settings).toEqual({
-      count: 3,
-    });
-    expect(parseHomeLayout(rail(5), undefined, 'entdecken').layout?.sections[0]?.settings).toEqual({
-      count: 5,
-    });
+    expect(parseHomeLayout(rail(3)).layout?.sections[0]?.settings).toEqual({ count: 3 });
+    expect(parseHomeLayout(rail(5)).layout?.sections[0]?.settings).toEqual({ count: 5 });
   });
 
   it('takes every module name as written when it is told nothing', () => {
@@ -871,7 +854,7 @@ describe('parseHomeLayout, on the settings a module understands', () => {
       section({ id: 'rail', module: 'faktencheck-rail', settings });
     const parse = parseHomeLayout(
       document([
-        section({ id: 'header', module: 'home-header' }),
+        section({ id: 'header', module: 'screen-header' }),
         rail({ count: { de: 'Mitmachen' } }),
       ]),
     );
@@ -900,7 +883,7 @@ describe('parseHomeLayout, on the settings a module understands', () => {
   it('drops the section carrying an unknown setting, reports it, and keeps the rest', () => {
     const parse = parseHomeLayout(
       document([
-        section({ id: 'header', module: 'home-header' }),
+        section({ id: 'header', module: 'screen-header' }),
         hero({ pin: 'https://example.org/a', tone: 'loud' }),
         section({ id: 'impact', module: 'impact-footer' }),
       ]),
@@ -1103,7 +1086,7 @@ describe('an edition, as the fold reads it', () => {
     version: HOME_LAYOUT_VERSION,
     title: TITLE,
     sections: [
-      { id: 'header', module: 'home-header' },
+      { id: 'header', module: 'screen-header' },
       { id: 'hero', module: 'article-hero', settings: { pin: 'https://example.org/day' } },
       { id: 'lifted', module: 'callout-teaser', hidden: true },
       { id: 'briefing', module: 'spotlight-briefing' },
@@ -1545,25 +1528,41 @@ describe('a version 3 document, read by an app written for version 2', () => {
     ],
   };
 
-  it('is reported for its number and nothing else', () => {
+  /**
+   * The number, and the header's two switches beside it.
+   *
+   * `screen-header` arrived with ADR 0075 §6 carrying settings of a kind this app has no
+   * word for, and a place whose settings it cannot read costs the place (ADR 0036 §6). So
+   * the report says which document it is looking at and which one place it lost, and the
+   * edition — the thing this whole fixture exists for — costs it nothing at all.
+   */
+  it('is reported for its number and for the header it cannot read', () => {
     const parse = v2.parseHomeLayout(planned);
     expect(parse.problems).toEqual([
       { code: 'version-unknown', context: { version: HOME_LAYOUT_VERSION, expected: 2 } },
+      { code: 'section-setting-invalid', context: { id: 'header', key: 'mark', type: 'boolean' } },
+      { code: 'section-setting-invalid', context: { id: 'header', key: 'date', type: 'boolean' } },
     ]);
   });
 
   /**
-   * Every minute of the day, in the older app, is the day this app draws with no edition.
+   * Every minute of the day, in the older app, is the day this app draws with no edition —
+   * and the one place it does not draw is the header, which it cannot read.
    *
    * For a paying member, because a version 2 app knows no audience and so draws every
    * block for everybody; since ADR 0060 the early-access card is for paying members by its
-   * module's default, and that is the one reader for whom the two apps agree on it.
+   * module's default, and that is the one reader for whom the two apps agree on it. The
+   * header is compared out of the way rather than excused: a reader of that app sees no
+   * masthead at the top of Home, which is what a block it has never heard of costs, and
+   * ADR 0036 §7 says the cost is one place and not the screen.
    */
   it('draws the ordinary day, the evening of the edition included', () => {
     const old = v2.parseHomeLayout(planned).layout!;
     const now = read(planned);
     for (let minute = 0; minute < 24 * 60; minute += 5) {
-      expect(v2.sectionsAt(old, minute)).toEqual(sectionsAt(now, minute, MEMBER));
+      expect(v2.sectionsAt(old, minute)).toEqual(
+        sectionsAt(now, minute, MEMBER).filter((section) => section.module !== 'screen-header'),
+      );
     }
     // And during the edition the two apps disagree, which is the cost §5 accepts.
     const eight = BERLIN('2026-09-27', 20);
@@ -1590,7 +1589,7 @@ describe('an id that carries a line break or another control character', () => {
       version: HOME_LAYOUT_VERSION,
       title: TITLE,
       sections: [
-        { id: 'header', module: 'home-header' },
+        { id: 'header', module: 'screen-header' },
         { id: smuggled, module: 'article-hero' },
       ],
     });
@@ -1603,7 +1602,7 @@ describe('an id that carries a line break or another control character', () => {
     const { problems } = parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
       title: TITLE,
-      sections: [{ id: 'header', module: 'home-header' }],
+      sections: [{ id: 'header', module: 'screen-header' }],
       editions: [{ id: smuggled, from: '2026-09-27T18:00', until: '2026-09-28T02:00' }],
     });
     expect(problems).toEqual([{ code: 'id-unsafe', context: { of: 'edition', index: 0 } }]);
@@ -1613,7 +1612,7 @@ describe('an id that carries a line break or another control character', () => {
     const { problems } = parseHomeLayout({
       version: HOME_LAYOUT_VERSION,
       title: TITLE,
-      sections: [{ id: 'Wahl-Abend: Ü 2026', module: 'home-header' }],
+      sections: [{ id: 'Wahl-Abend: Ü 2026', module: 'screen-header' }],
     });
     expect(problems).toEqual([]);
   });

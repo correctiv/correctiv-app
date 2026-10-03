@@ -40,7 +40,7 @@ for (const screen of CONFIGURABLE_SCREENS) {
     failed = true;
     continue;
   }
-  const { layout, problems } = parseHomeLayout(document, undefined, screen);
+  const { layout, problems } = parseHomeLayout(document);
   for (const problem of problems)
     console.error(`${path}: ${screen}: ${problem.code} ${JSON.stringify(problem.context)}`);
   /*

@@ -342,12 +342,17 @@ describe('what an older app does with what the editor writes', () => {
    * The review of #250, item 4: a version 3 app drops a section carrying a key it does not
    * know, so taking early access's default off with one word removed the card for every
    * reader of an older app. The audiences of places sit beside the sections now.
+   *
+   * The two `section-setting-invalid` beside the version are the header's switches, which
+   * that app has no setting kind for (ADR 0075 §6) and which cost it the header and
+   * nothing else — the same smallest measure, on a place this test is not about.
    */
   it('keeps a place an editor chose an audience for, in an app that knows none', () => {
+    const READS = ['version-unknown', 'section-setting-invalid', 'section-setting-invalid'];
     for (const audience of ['everyone', 'free-members'] as const) {
       const printed = formatLayoutDocument(withAudience(SHIPPED, 'early-access', audience));
       const read = older.parseHomeLayout(JSON.parse(printed));
-      expect(read.problems.map((problem) => problem.code)).toEqual(['version-unknown']);
+      expect(read.problems.map((problem) => problem.code)).toEqual(READS);
       expect(read.layout?.sections.map((section) => section.id)).toContain('early-access');
     }
     const callout = formatLayoutDocument(withAudience(SHIPPED, 'callout', 'paying-members'));

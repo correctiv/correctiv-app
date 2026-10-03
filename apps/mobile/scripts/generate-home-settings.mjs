@@ -134,12 +134,12 @@ const AUDIENCE_DECLARATIONS = resolve(APP, 'src/lib/home/conditions.ts');
 export const AUDIENCES_OUT = resolve(REPO, 'packages/app-core/src/lib/home-audience.generated.ts');
 
 /**
- * The third declaration file and its artefact: what family each block is in, and the few
- * blocks bound to one screen.
+ * The third declaration file and its artefact: what family each block is in.
  *
- * ADR 0073 §1 and §2. The parser has to know the bound ones to refuse a document that
- * places one elsewhere, and every tool that offers a block has to know its category.
- * Same crossing, same script, same drift check.
+ * ADR 0073 §2, and §1 without the exception it kept: every tool that offers a block has
+ * to know its category, and since ADR 0075 §6 there is no table of blocks bound to one
+ * screen left for the parser to hold a document to. Same crossing, same script, same
+ * drift check.
  */
 const BLOCK_DECLARATIONS = resolve(APP, 'src/lib/home/blocks.ts');
 export const CATALOGUE_OUT = resolve(
@@ -267,6 +267,45 @@ function renderSpec(spec) {
     }
     return `{ key: ${name(spec.key, 'a setting key')}, kind: '${spec.kind}', fallback: ${spec.fallback} }`;
   }
+  if (spec.kind === 'flag') {
+    /*
+     * Read as `unknown` because the check is a RUNTIME one: this script imports the
+     * declaration under Node's type stripping, so what arrives here is whatever the file
+     * holds and not what it says it holds. Narrowing a `boolean` against `typeof` would
+     * leave the branch unreachable to the type checker and the guard in place for the
+     * value that actually turns up.
+     */
+    const key = spec.key;
+    const fallback = /** @type {unknown} */ (spec.fallback);
+    if (typeof fallback !== 'boolean') {
+      throw new Error(
+        `${SCRIPT}: ${DECLARATIONS_LABEL} gives '${key}' a fallback that is not on or off`,
+      );
+    }
+    return `{ key: ${name(key, 'a setting key')}, kind: 'flag', fallback: ${fallback} }`;
+  }
+  if (spec.kind === 'text') {
+    /*
+     * The two optional fields are written only when the declaration set them, so the
+     * artefact says what the declaration says and the core fills in the rest
+     * (`textBoundOf`). A default is one fact in one place either way, and a generator
+     * that spelled out 120 would be the second.
+     */
+    if (spec.fallback !== null) {
+      throw new Error(
+        `${SCRIPT}: ${DECLARATIONS_LABEL} gives '${spec.key}' words to fall back to, which ` +
+          `this script cannot write: a word is an object of strings and every one of them ` +
+          `would have to be escaped into a source file. Teach \`renderSpec\` to quote one ` +
+          `the day a block wants default words.`,
+      );
+    }
+    return (
+      `{ key: ${name(spec.key, 'a setting key')}, kind: 'text'` +
+      (spec.maxChars === undefined ? '' : `, maxChars: ${spec.maxChars}`) +
+      (spec.multiline === undefined ? '' : `, multiline: ${spec.multiline}`) +
+      `, fallback: null }`
+    );
+  }
   throw new Error(
     `${SCRIPT}: ${DECLARATIONS_LABEL} declares a setting of kind ` +
       `'${/** @type {{ kind: string }} */ (spec).kind}', which this script cannot write. ` +
@@ -359,24 +398,22 @@ export const MODULE_AUDIENCES: Readonly<Record<string, Audience>> = ${body};
 /**
  * The block catalogue's artefact, which the drift check compares the same way.
  *
- * Three tables in one file because one generator writes them and a caller that wants
- * "what can this screen hold and what may it be called" reaches one module for it. The
- * first two are declared in one file and read together; the third is declared in another
- * (ADR 0075 §4) and lands here because the alternative is a second generator to forget.
+ * Two tables in one file because one generator writes them and a caller that wants "what
+ * can a screen hold and what may it be called" reaches one module for it. The first is
+ * declared beside the blocks, the second in a file of its own (ADR 0075 §4), and it lands
+ * here because the alternative is a second generator to forget.
  *
  * An empty categories table is refused for the settings' reason one step along: every
  * tool that offers a block reads this, so an empty one is a palette with nothing in it
- * and a roll-call that agrees with every registry. The bound table may be empty, which
- * is a release where no block is tied to a screen. The icon table may not: a screen with
- * no icon to choose from has a picker with nothing in it, and the app draws the fallback
- * out of it (ADR 0075 §4).
+ * and a roll-call that agrees with every registry. The icon table may not be empty
+ * either: a screen with no icon to choose from has a picker with nothing in it, and the
+ * app draws the fallback out of it (ADR 0075 §4).
  *
  * @param {Readonly<Record<string, string>>} categories
- * @param {Readonly<Record<string, string>>} bound
  * @param {Readonly<Record<string, import('@correctiv/app-core/lib/screen-layout').ScreenIcon>>} icons
  * @returns {string}
  */
-export function renderCatalogue(categories, bound, icons) {
+export function renderCatalogue(categories, icons) {
   const from = fromRoot(BLOCK_DECLARATIONS);
   if (Object.keys(categories).length === 0) {
     throw new Error(`${SCRIPT}: ${from} declares no block at all`);
@@ -428,7 +465,7 @@ export function renderCatalogue(categories, bound, icons) {
 // Source: ${from} · ${ICONS_LABEL} · Regenerate: ${COMMAND}
 
 import type { BlockCategory } from './block-category';
-import type { ConfigurableScreen, ScreenIcon } from './screen-layout';
+import type { ScreenIcon } from './screen-layout';
 
 /**
  * Block name, as the document writes it, to the family it belongs to. Every block the
@@ -438,13 +475,6 @@ import type { ConfigurableScreen, ScreenIcon } from './screen-layout';
  * are: the core cannot import the app. ADR 0073 §2.
  */
 export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = ${table(categories, 'a category')};
-
-/**
- * The few blocks bound to one screen, and the screen each one is. A block that is not
- * here may be placed on every configurable screen, which is ADR 0073 §1; the parser
- * refuses the rest with \`section-module-not-on-screen\` (ADR 0073 §3).
- */
-export const SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = ${table(bound, 'a screen')};
 
 /**
  * Icon key, as a screen document names it, to the three native names it is drawn with.
@@ -482,14 +512,10 @@ async function main() {
   writeFileSync(AUDIENCES_OUT, renderAudiences(audiences));
   const blocks = await import(pathToFileURL(BLOCK_DECLARATIONS).href);
   const icons = (await import(pathToFileURL(ICON_DECLARATIONS).href)).SCREEN_ICONS;
-  writeFileSync(
-    CATALOGUE_OUT,
-    renderCatalogue(blocks.MODULE_CATEGORIES, blocks.SCREEN_BOUND_BLOCKS, icons),
-  );
+  writeFileSync(CATALOGUE_OUT, renderCatalogue(blocks.MODULE_CATEGORIES, icons));
   console.log(
     `${fromRoot(CATALOGUE_OUT)}: ${Object.keys(blocks.MODULE_CATEGORIES).length} blocks in ` +
       `${new Set(Object.values(blocks.MODULE_CATEGORIES)).size} categories, ` +
-      `${Object.keys(blocks.SCREEN_BOUND_BLOCKS).length} bound to a screen, ` +
       `${Object.keys(icons).length} screen icons`,
   );
   console.log(`${fromRoot(AUDIENCES_OUT)}: ${Object.keys(audiences).length} default audiences`);

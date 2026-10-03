@@ -425,7 +425,7 @@ describe('the vocabulary the editor offers', () => {
       expect(() => added(SHIPPED, 0, bad)).toThrow(/module name/);
     }
     // And the shape every real module has still passes.
-    for (const good of ['callout-teaser', 'home-header', 'x', 'x-2']) {
+    for (const good of ['callout-teaser', 'screen-header', 'x', 'x-2']) {
       expect(() => mintId(SHIPPED, good)).not.toThrow();
     }
   });

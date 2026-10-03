@@ -10,10 +10,12 @@ import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 
 // The app's own declaration, carried into the core and grouped there (ADR 0073 §2). The
 // palette was `HOME_MODULES` itself (ADR 0046 §1), then the blocks that declared the
-// screen being edited (ADR 0054 §2); it is now every block but the four bound to another
-// screen's title, in the categories the core groups them into. What holds the declaration
-// against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in both
-// directions, which is what ADR 0046 §1's "no second list to forget" became.
+// screen being edited (ADR 0054 §2), then every block but the four bound to another
+// screen's title; since ADR 0075 §6 replaced those four with one header that prints the
+// title of wherever it stands, it is every block, in the categories the core groups them
+// into — and it no longer depends on which screen is being edited. What holds the
+// declaration against the registry is `apps/mobile/__tests__/home-layout.test.tsx`, in
+// both directions, which is what ADR 0046 §1's "no second list to forget" became.
 import { useCategoryLabel } from '@/lib/home/category-labels';
 import { MODULE_FEATURES } from '@/lib/features';
 import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
@@ -145,7 +147,7 @@ const COPY = defineMessages({
   leadMore: {
     id: 'home.palette.leadMore',
     defaultMessage:
-      'The shelf holds every block the app has, sorted into families and drawn as it will appear. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.',
+      'The shelf holds every block the app has, sorted into families and drawn as it will appear. Any block may stand on any screen, the header included: it prints the title of the screen it is on. How it looks, you see in the frame beside it.',
     description: 'Behind the ⓘ beside the palette dialog’s heading, home.palette.title.',
   },
   addModule: {
@@ -202,7 +204,7 @@ export function InsertMark({
   where: string;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
-  /** The screen being edited: every block but another screen's title (ADR 0073 §1, §3). */
+  /** The screen being edited, which the specimens draw on; the list itself is the same everywhere. */
   screen: ConfigurableScreen;
   onAdd: (module: string) => void;
 }) {
@@ -304,7 +306,6 @@ export function InsertMark({
         <DialogDescription className="mt-3xs text-s leading-relaxed text-on-canvas-muted">
           {intl.formatMessage(COPY.lead, { where })}
         </DialogDescription>
-
         {/*
           One environment for the whole palette rather than one per specimen, the same
           arrangement the list uses and for the same reason. It is mounted only while the
@@ -331,7 +332,7 @@ export function InsertMark({
               }}
             />
           </AppHost>
-        </div>
+        </div>{' '}
       </DialogContent>
     </Dialog>
   );
@@ -355,7 +356,7 @@ function BlockPicker({
 }) {
   const intl = useWorkbenchIntl();
   // Read once per open, so the tab somebody chose last time is where the dialog starts.
-  const [tab, setTab] = useState<PickerTab>(() => readTab(screen));
+  const [tab, setTab] = useState<PickerTab>(() => readTab());
   const [query, setQuery] = useState('');
 
   /**
@@ -374,8 +375,8 @@ function BlockPicker({
   }, [intl]);
 
   const searching = !matchesNothing(query);
-  const groups = groupsShown(screen, tab, query, words);
-  const { found, of } = matchCount(groups, screen);
+  const groups = groupsShown(tab, query, words);
+  const { found, of } = matchCount(groups);
 
   return (
     <div className="@container mt-s flex min-h-0 flex-1 flex-col gap-s">
@@ -431,7 +432,7 @@ function BlockPicker({
         }}
         options={[
           { value: FIRST_TAB, label: intl.formatMessage(COPY.all) },
-          ...familyTabs(screen).map((category) => ({
+          ...familyTabs().map((category) => ({
             value: category,
             label: <FamilyName category={category} />,
           })),

@@ -94,12 +94,16 @@ import {
   type Instant,
 } from './berlin-time';
 import { audienceOf, isAudience, reaches, type Audience, type Reader } from './home-audience';
-import { faultOf, MODULE_SETTINGS, type LocalisedText, type SettingFault } from './home-settings';
-import { mayAppearOn } from './block-category';
+import {
+  faultOf,
+  inLanguageOrder,
+  MODULE_SETTINGS,
+  type LocalisedText,
+  type SettingFault,
+} from './home-settings';
 import {
   parseScreenDocument,
   SCREEN_DOCUMENTS,
-  type ConfigurableScreen,
   type ScreenProblemCode,
   type ScreenWords,
 } from './screen-layout';
@@ -340,7 +344,6 @@ export type LayoutProblemCode =
   | 'section-id-invalid'
   | 'id-unsafe'
   | 'section-module-invalid'
-  | 'section-module-not-on-screen'
   | 'section-id-duplicate'
   | 'section-unknown-key'
   | 'section-hidden-invalid'
@@ -486,11 +489,14 @@ export function minuteOfDay(now: number | Date): MinuteOfDay {
  * modules a host can DRAW is the host's. The two are separate questions and the parser
  * asks them separately.
  *
- * `screen` is the screen the document arranges. Every screen takes every block since
+ * **It does not ask which screen the document arranges**, and that is the whole of what
  * [ADR 0073](../../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
- * §1, so what is refused here with `section-module-not-on-screen` is only one of the four
- * blocks that print another screen's own title (§3, `SCREEN_BOUND_BLOCKS`); a module with
- * no declaration at all is left to `renderable`, as the grammar tests rely on.
+ * §1 said and §3 held back: every screen takes every block. The four blocks that each
+ * printed one screen's name were the exception, and
+ * [ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §6 replaced them with one header that prints the title of whatever screen it is on, so
+ * the restriction has nothing left to restrict. A module this host cannot draw is left to
+ * `renderable`, as the grammar tests rely on.
  *
  * **A screen's three words are read here, and a title that was refused does not refuse the
  * layout** ([ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
@@ -500,11 +506,7 @@ export function minuteOfDay(now: number | Date): MinuteOfDay {
  * places in one list. A caller that wants the strict reading is a publish — the two scripts
  * under `scripts/`, which refuse a document that parsed with any problem at all.
  */
-export function parseHomeLayout(
-  input: unknown,
-  renderable?: ReadonlySet<string>,
-  screen: ConfigurableScreen = 'home',
-): HomeLayoutParse {
+export function parseHomeLayout(input: unknown, renderable?: ReadonlySet<string>): HomeLayoutParse {
   const problems: LayoutProblem[] = [];
 
   if (!isRecord(input)) {
@@ -539,7 +541,7 @@ export function parseHomeLayout(
   const parsed: HomeSection[] = [];
   const taken = new Set<string>();
   sections.forEach((raw, index) => {
-    const section = parseSection(raw, index, taken, renderable, screen, problems);
+    const section = parseSection(raw, index, taken, renderable, problems);
     if (!section) return;
     taken.add(section.id);
     parsed.push(section);
@@ -568,7 +570,6 @@ function parseSection(
   index: number,
   taken: ReadonlySet<string>,
   renderable: ReadonlySet<string> | undefined,
-  screen: ConfigurableScreen,
   problems: LayoutProblem[],
 ): HomeSection | null {
   if (!isRecord(raw)) {
@@ -609,11 +610,6 @@ function parseSection(
 
   if (hidden !== undefined && typeof hidden !== 'boolean') {
     problems.push({ code: 'section-hidden-invalid', context: { id, type: typeOf(hidden) } });
-    return null;
-  }
-
-  if (!mayAppearOn(module, screen)) {
-    problems.push({ code: 'section-module-not-on-screen', context: { id, module, screen } });
     return null;
   }
 
@@ -757,7 +753,17 @@ function parseSettings(
       refused = true;
       continue;
     }
-    out[key] = value as SettingValue;
+    /*
+     * A word is rebuilt in the core's language order, the way a screen's three words are
+     * (`inLanguageOrder`). Both are the same kind of value and a printer writes both, so
+     * holding them in two orders is the same document printing two ways depending on
+     * which editor saved last — which is the one thing the editor's own printer exists to
+     * stop (ADR 0075 §6's byte-identical documents are measured on that printer).
+     */
+    out[key] =
+      spec.kind === 'text'
+        ? inLanguageOrder(value as Readonly<Record<string, string>>)
+        : (value as SettingValue);
   }
 
   if (refused) return REFUSED;

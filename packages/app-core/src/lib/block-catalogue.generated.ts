@@ -2,7 +2,7 @@
 // Source: apps/mobile/src/lib/home/blocks.ts · apps/mobile/src/lib/screenIcons.ts · Regenerate: npm run home-settings
 
 import type { BlockCategory } from './block-category';
-import type { ConfigurableScreen, ScreenIcon } from './screen-layout';
+import type { ScreenIcon } from './screen-layout';
 
 /**
  * Block name, as the document writes it, to the family it belongs to. Every block the
@@ -12,12 +12,9 @@ import type { ConfigurableScreen, ScreenIcon } from './screen-layout';
  * are: the core cannot import the app. ADR 0073 §2.
  */
 export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = {
-  'home-header': 'struktur',
+  'screen-header': 'struktur',
   'feed-status': 'struktur',
-  'discover-header': 'struktur',
   'search-entry': 'struktur',
-  'mediathek-header': 'struktur',
-  'participate-header': 'struktur',
   'impact-footer': 'struktur',
   'article-hero': 'recherche',
   'latest-research': 'recherche',
@@ -44,18 +41,6 @@ export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = {
   'profile-impact': 'club',
   'profile-area': 'club',
   'profile-newsletter': 'club',
-};
-
-/**
- * The few blocks bound to one screen, and the screen each one is. A block that is not
- * here may be placed on every configurable screen, which is ADR 0073 §1; the parser
- * refuses the rest with `section-module-not-on-screen` (ADR 0073 §3).
- */
-export const SCREEN_BOUND_BLOCKS: Readonly<Record<string, ConfigurableScreen>> = {
-  'home-header': 'home',
-  'discover-header': 'entdecken',
-  'mediathek-header': 'mediathek',
-  'participate-header': 'mitmachen',
 };
 
 /**

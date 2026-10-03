@@ -17,7 +17,7 @@ jest.mock('@correctiv/app-core/data/layout/screens/home.json', () => ({
   title: { de: 'Home' },
   icon: 'home',
   sections: [
-    { id: 'header', module: 'home-header' },
+    { id: 'header', module: 'screen-header' },
     { id: 'quiz', module: 'quiz-of-the-day' },
     { id: 'impact', module: 'impact-footer' },
   ],
