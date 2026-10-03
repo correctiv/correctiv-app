@@ -5,7 +5,7 @@ import { defineMessages } from 'react-intl';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { useActiveActions } from '../shell/actions';
 import { Button } from './kit/button';
-import { Popover, PopoverContent, PopoverTrigger } from './kit/popover';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from './kit/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 import { useHeaderDensity } from './header-row';
 
@@ -156,6 +156,24 @@ export function ToolActions() {
   const originNoteId = useId();
   /** The warning the reader has folded away, by its own text. */
   const [read, setRead] = useState<string | null>(null);
+  /**
+   * Whether the reader asked for the too-long notice by pressing the Share button.
+   *
+   * **A warning is a state, and a popover wants an act.** `shell/actions.tsx` carries
+   * the notice as a field beside the button, so a tool with any other reason to publish
+   * one — a limit that moved, a second editor, a restored session — would have the panel
+   * open under a header nobody pressed, which is the banner #337's before-picture is.
+   * So the panel opens on `asked` AND on there being something to say, and `asked` is
+   * set in the button's own `onClick`: a click, and Enter or Space because the button
+   * is a `<button>` and both of those are clicks.
+   *
+   * Measured rather than argued, and the measurement is the other half of the claim:
+   * at 1280, 1600 and 2000 pixels a plain load of a draft too long to share opens
+   * nothing, and the panel opens on a real press of the button every time. What #337's
+   * picture shows is this panel with the state forced, which is what a panel that opens
+   * on a field rather than on a press looks like.
+   */
+  const [asked, setAsked] = useState(false);
   /** Above the early return below with the other two, because a hook may not follow one. */
   const density = useHeaderDensity();
   if (actions === null) return null;
@@ -266,13 +284,25 @@ export function ToolActions() {
 
       {share !== undefined && (
         <Popover
-          open={warning !== null}
+          /*
+           * `asked &&` and not the warning alone, for the reason `asked` gives. A second
+           * half is that this is the only panel on this bar not opened by its own trigger:
+           * the tooltip trigger is the same span, so Radix's Popover would take the space
+           * bar on the wrapper and open a panel nobody asked about. What opens this one is
+           * the button's press.
+           */
+          open={asked && warning !== null}
           /*
            * Escape and a click outside have to fold it as well as close it. `open` is
-           * this file's own, so closing without setting `read` would open the very
-           * next thing it was asked to draw.
+           * this file's own, so closing without setting `read` would open the very next
+           * thing it was asked to draw. `asked` goes down with it, so the next press is
+           * the next question.
            */
-          onOpenChange={(open) => !open && setRead(warning?.text ?? null)}
+          onOpenChange={(open) => {
+            if (open) return;
+            setAsked(false);
+            setRead(warning?.text ?? null);
+          }}
         >
           <Tooltip>
             {/*
@@ -289,7 +319,17 @@ export function ToolActions() {
                     variant="outline"
                     size={compact ? 'icon' : 'sm'}
                     disabled={!live}
-                    onClick={share.run}
+                    /*
+                     * The press, and not the Popover trigger around it: the panel is told
+                     * what the reader asked for here, so a tool's news cannot open a panel
+                     * under a header nobody pressed. `share.run` still runs on every press,
+                     * whatever comes back — the address is on the clipboard long before a
+                     * notice is drawn.
+                     */
+                    onClick={() => {
+                      setAsked(true);
+                      share.run();
+                    }}
                     aria-label={intl.formatMessage(COPY.share)}
                     data-testid="action-share"
                     className={compact ? 'size-[2rem]' : undefined}
@@ -313,13 +353,31 @@ export function ToolActions() {
             text is the same, because that is a fact about the bar and not about the
             tool: a tool that cleared its own news would clear it on every render.
           */}
+          {/*
+            **The pointer and the width are what make this a popover.** #337's
+            before-picture is this sentence as a full-width strip under the header with
+            nothing pointing at the button, and the two words that would have said which
+            control it was about are the two that were given up to keep the bar in one row.
+            `w-[20rem]` keeps the panel to the width of a tooltip over a control, and the
+            arrow is Radix's own, in the panel's fill and its border, so it costs no
+            measurement — it sits at the trigger's centre by arithmetic.
+          */}
           {warning && (
-            <PopoverContent side="bottom" align="end">
+            <PopoverContent
+              side="bottom"
+              align="end"
+              sideOffset={6}
+              className="w-[20rem] max-w-[min(20rem,calc(100vw-1.5rem))]"
+            >
               <ShareNotice
                 text={warning.text}
                 submit={warning.submit}
-                onFold={() => setRead(warning.text)}
+                onFold={() => {
+                  setAsked(false);
+                  setRead(warning.text);
+                }}
               />
+              <PopoverArrow className="fill-canvas stroke-stroke" />
             </PopoverContent>
           )}
         </Popover>
@@ -508,7 +566,14 @@ export function ShareNotice({
   const intl = useWorkbenchIntl();
   return (
     <div className="flex flex-col gap-xs">
-      <p className="text-s leading-relaxed text-on-canvas">{text}</p>
+      {/*
+        The sentence, and at most two lines of it: it is about a button 32 pixels high, so
+        five lines of it over that button is a paragraph in the header. `line-clamp-2` is
+        the measure that says so, and the sentence in `preview/home/HomeDocument.tsx` was
+        shortened to fit it — the count and the limit are its numbers and it still says
+        what they are.
+      */}
+      <p className="line-clamp-2 text-s leading-relaxed text-on-canvas">{text}</p>
       <div className="flex items-center gap-xs">
         {submit && (
           <Button asChild variant="outline" size="sm">

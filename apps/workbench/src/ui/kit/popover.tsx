@@ -24,6 +24,19 @@ export const PopoverTrigger = PopoverPrimitive.Trigger;
 export const PopoverAnchor = PopoverPrimitive.Anchor;
 export const PopoverClose = PopoverPrimitive.Close;
 
+/**
+ * The pointer, for a panel that says what a control just did.
+ *
+ * **Only where the panel is about the control under it.** A menu of choices hangs off
+ * its button without one, because nothing about a list of options needs to be said about
+ * the button; a panel that answers the reader — what came of the click, or why nothing
+ * did — reads as a banner hanging under the whole bar without it, which is what #338's
+ * before-picture shows: a sentence under the header with nothing pointing at the control
+ * it is about. Radix draws it inside the panel's own edge, so it takes the panel's fill
+ * and its border and needs no measurement of its own.
+ */
+export const PopoverArrow = PopoverPrimitive.Arrow;
+
 export function PopoverContent({
   className,
   align = 'start',

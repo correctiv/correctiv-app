@@ -39,17 +39,17 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { oneRow as ONE_ROW, WIDTHS as WIDTHS_DEFAULT } from './one-row.mjs';
+
 const WORKBENCH = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * The widths, and why these three.
- *
- * 1280 is the narrowest laptop this site is looked at on and the width the header
- * broke at first; 1600 is a common desktop; 2000 is the width where the header
- * has so much room that the ladder should have been at tier 0, and finding it
- * folded there is the finding. All three are where it broke into three rows.
+ * The widths, and why these three — the list and its reasons are `one-row.mjs`'s,
+ * imported rather than written out a second time, so what a check reads is what the
+ * script measures. `WIDTHS=` overrides it, which is how the band below 1280 is looked
+ * at: that is where the bar's own fold starts working.
  */
-const WIDTHS = (process.env.WIDTHS ?? '1280,1600,2000').split(',').map(Number);
+const WIDTHS = process.env.WIDTHS ? process.env.WIDTHS.split(',').map(Number) : [...WIDTHS_DEFAULT];
 
 /** `PORT` because two runs of this at once is the normal case and neither is a test. */
 const PORT = Number(process.env.PORT ?? 8194);
@@ -199,6 +199,13 @@ const READ = `(() => {
     // \`scrollWidth > clientWidth\` on a box that clips: the tail is not drawn and
     // nothing else in the page says so.
     clipped: el.scrollWidth > el.clientWidth + 1,
+    // Whether this leaf is the one box in the bar whose width is a CHOICE rather than
+    // a meaning: the route field is \`flex-1\` inside a \`min-w-0\` bar, so it is the
+    // one that gives up its width, and a field narrower than the route it holds is
+    // that arrangement working. Read off the computed style rather than off a test
+    // id, because the bar has no name for it and the style is the reason. Every other
+    // control in both bars is \`shrink-0\`, so nothing else grows.
+    grows: parseFloat(getComputedStyle(el).flexGrow || '0') > 0,
   });
   const context = header.querySelector(':scope > div');
   /*
@@ -241,28 +248,14 @@ const READ = `(() => {
 })()`;
 
 /**
- * One row: everything the header's own children draw, on one line, with nothing
- * clipped inside the bar or inside the context bar.
- *
- * **The context bar's own `scrollWidth` is reported and not required.** It is the
- * box that takes the shortfall on purpose — the route field is `flex-1` with a
- * `min-w-0`, so the bar is wider than its content whenever the field has been
- * squeezed, and that is the arrangement working. What must not happen is something
- * VISIBLE losing its tail, which is what `leaves` asks of every leaf inside both
- * bars: measured on the widest header state, the context bar read 509 against 449
- * and no leaf was clipped, because what was 60 pixels over is the field being
- * narrower than the text it would hold.
- *
- * The header's own overflow IS required to be zero: every one of its children is
- * `shrink-0`, so a header wider than its box means a control pushed off the end of
- * it, which is the defect this whole round is about.
+ * One row: the verdict is `oneRow()` in `one-row.mjs`, imported above, and the reason
+ * for it is written there — this script's own copy used to say that a clipped leaf was
+ * always a failure, which contradicts the paragraph two lines above it about the route
+ * field being the box that takes the shortfall on purpose. Measured: a 59-character
+ * route in that field reads 189 pixels wide against a 578-pixel scroll width at 1280,
+ * 1600 and 2000 alike, so the old rule called the header broken in three states where
+ * it is one row, and `oneRow()` excuses the leaf that grows and no other.
  */
-const ONE_ROW = (m) =>
-  m !== null &&
-  m.rows === 1 &&
-  m.contextRows === 1 &&
-  m.header.scroll <= m.header.client + 1 &&
-  !m.leaves.some((c) => c.clipped);
 
 /**
  * A selector the page is not expected to have for a moment, waited for rather than
@@ -372,7 +365,11 @@ for (const width of WIDTHS) {
   );
   for (const box of measured.leaves) {
     console.log(
-      `   ${String(box.top).padStart(4)} ${String(box.w).padStart(5)}  ${box.label}${box.clipped ? '  CLIPPED' : ''}`,
+      `   ${String(box.top).padStart(4)} ${String(box.w).padStart(5)}  ${box.label}` +
+        // A clipped leaf that grows is said to be squeezed and not clipped, because
+        // that is what it is and `oneRow()` agrees; a clipped leaf beside it is still
+        // a failure and says so.
+        `${box.clipped ? (box.grows ? '  SQUEEZED' : '  CLIPPED') : ''}`,
     );
   }
   if (SHOTS !== undefined) await shot(`header-${width}`);

@@ -222,7 +222,7 @@ export const home: Record<string, string> = {
   'home.document.shareNoClipboard':
     'Der Browser hat den Zugriff auf die Zwischenablage nicht erlaubt. Kopieren Sie den Link aus diesem Feld.',
   'home.document.shareTooLong':
-    'Dieser Entwurf ist zu lang zum Teilen als Link: {link} Zeichen, und bei {limit} Zeichen hört ein Link auf, brauchbar zu sein. Reichen Sie ihn stattdessen ein — das öffnet GitHub mit der Änderung darin.',
+    'Zu lang als Link: {link} Zeichen statt {limit}. Reichen Sie ihn ein.',
   'home.document.shareField': 'Der Link',
   'home.document.sharedHeld':
     'Dieser Entwurf ist über einen Link gekommen. Er ist auf diesem Rechner nicht gespeichert: Reichen Sie ihn ein, oder laden Sie neu, um Ihr eigenes Dokument zurückzubekommen.',
