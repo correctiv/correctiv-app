@@ -229,10 +229,9 @@ const COPY = defineMessages({
   },
   shareTooLong: {
     id: 'home.document.shareTooLong',
-    defaultMessage:
-      'This draft is too long to share as a link: {link} characters, where a link stops being usable at {limit}. Submit it instead — that opens GitHub with the change in it.',
+    defaultMessage: 'Too long as a link: {link} characters, not {limit}. Submit it instead.',
     description:
-      'After Share link, when the address came out longer than the measured limit (ADR 0076 §2). {link} is how long that address was and {limit} the limit, both as plain numbers, because the sentence says which of the two is the rule. The second sentence names no button: the one that submits is called Einreichen here and Submit in English, and a sentence that quoted one of those would be wrong in the other language.',
+      'After Share link, when the address came out longer than the measured limit (ADR 0076 §2). Drawn in the popover at the Share button, over a bar 32 pixels high, and read there and nowhere else — so it is two short lines and not a paragraph, which is why the numbers lead and the way out is one clause. {link} is how long that address was and {limit} the limit, both as plain numbers, because the sentence says which of the two is the rule. The second sentence names no button: the one that submits is called Einreichen here and Submit in English, and a sentence that quoted one of those would be wrong in the other language.',
   },
   shareLinkField: {
     id: 'home.document.shareField',
