@@ -1011,6 +1011,17 @@ export function HomeDocument({
      * ⓘ in this panel (`Controls.tsx`). Undefined while nothing blocks the tool.
      */
     blocked: guarded ? intl.formatMessage(CONTROLS_COPY.scenarioGuard) : undefined,
+    /*
+     * Where this document came from, in the reader's language, and it is the whole
+     * of what the panel's paragraph said (ADR 0076 §3): three words in the bar,
+     * `Aus Link`, with the sentence nobody can see — that nothing was written
+     * here — in the tooltip. #323 took the draft paragraphs out of the panels
+     * and this one came back in through the same door, so it goes out the same.
+     */
+    origin:
+      incoming || notice !== null
+        ? intl.formatMessage(notice === 'damaged' ? COPY.sharedDamaged : COPY.sharedHeld)
+        : undefined,
     submit: offer
       ? {
           href: offer.href,
@@ -1035,9 +1046,32 @@ export function HomeDocument({
      * A link that carries the draft, and nothing else (ADR 0076). Switched off for a
      * scenario for the reason Submit is: a scenario is an example with a date made up for
      * it, and a link to one would land the reader in a document they cannot submit and do
-     * not know why they cannot.
+     * not know why they cannot. Not switched off while the tool is clean, because the
+     * whole of this bar's arrangement is that a control does not come and go.
+     *
+     * `warning` is the one thing about sharing the header draws itself, because it
+     * is about this button: a draft too long for the address cannot be shared at
+     * all, and the sentence saying so opens at the button rather than standing in
+     * the panel for as long as the draft lives. The link beside it is the address
+     * Submit already opens, put there because the sentence tells the reader to
+     * submit — and absent while `offer` is, which is the same sentence saying
+     * there is nothing to submit and therefore nothing to hand over instead.
      */
-    share: guarded ? undefined : { run: () => void share() },
+    share: guarded
+      ? undefined
+      : {
+          run: () => void share(),
+          warning:
+            linked?.kind === 'too-long'
+              ? {
+                  text: intl.formatMessage(COPY.shareTooLong, {
+                    link: linked.length,
+                    limit: SHARE_ADDRESS_LIMIT,
+                  }),
+                  submit: offer === null ? undefined : { href: offer.href },
+                }
+              : undefined,
+        },
     discard: () => {
       // The file, and out of the scenario with it: discarding is the way back to what
       // readers see, and a scenario left open would be loaded again.
@@ -1084,19 +1118,6 @@ export function HomeDocument({
         scenario={scenario}
         follow={follow}
         onFollow={setFollow}
-        /*
-         * Where the document came from, and one sentence for an arrival that was nothing
-         * (ADR 0076 §3). Both stand above the outcome because both are about the
-         * document rather than about the way out of it, and because the one that matters
-         * most says something nobody can see: this machine holds nothing of it.
-         */
-        notice={
-          incoming || notice !== null ? (
-            <p className={NOTE} data-testid="shared-hint">
-              {intl.formatMessage(notice === 'damaged' ? COPY.sharedDamaged : COPY.sharedHeld)}
-            </p>
-          ) : undefined
-        }
         outcome={
           <>
             {offer && copied !== null && (
@@ -1133,8 +1154,12 @@ export function HomeDocument({
              * submission's field for the same reason and in the same way: the clipboard is
              * a thing the browser may refuse, and the address is still there to be copied
              * by hand (ADR 0076 §2).
+             *
+             * The one outcome that is NOT here is a draft too long for the address: that
+             * one opens at the Share button, because it is about that button and it is
+             * over as soon as the reader has acted on it.
              */}
-            {linked !== null && (
+            {linked !== null && linked.kind !== 'too-long' && (
               <div className="flex flex-col gap-xs">
                 <output
                   className="flex items-start gap-xs text-s text-on-canvas"
@@ -1146,11 +1171,6 @@ export function HomeDocument({
                   <span className="min-w-0">
                     {linked.kind === 'copied' && intl.formatMessage(COPY.shareCopied)}
                     {linked.kind === 'no-clipboard' && intl.formatMessage(COPY.shareNoClipboard)}
-                    {linked.kind === 'too-long' &&
-                      intl.formatMessage(COPY.shareTooLong, {
-                        link: linked.length,
-                        limit: SHARE_ADDRESS_LIMIT,
-                      })}
                   </span>
                 </output>
                 {linked.kind === 'no-clipboard' && (

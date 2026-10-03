@@ -15,9 +15,17 @@
     "defaultMessage": "Puts every change of this tool back to what ships.",
     "description": "The tooltip on the discard button."
   },
+  "actions.fromLink": {
+    "defaultMessage": "From a link",
+    "description": "Beside the change status, for a draft that arrived in a link and is not on this machine (ADR 0076 §3). Three words where there used to be a paragraph: what it is, and the tooltip says the half nobody can see, which is that nothing was written here."
+  },
   "actions.group": {
     "defaultMessage": "Changes of the open tool",
     "description": "The accessible name of the group of buttons at the right end of the header."
+  },
+  "actions.more": {
+    "defaultMessage": "The other actions for this tool",
+    "description": "The accessible name of the ⋯ that stands in for the actions the header had no room for. Named after what it holds rather than after the icon, because an icon named \"more\" is not a name a screen reader can use."
   },
   "actions.previewTip": {
     "defaultMessage": "The preview shows this draft, not the published app.",
@@ -39,6 +47,14 @@
     "defaultMessage": "Copies a link that opens this draft on somebody else’s machine. A draft is not a secret: everything it carries goes into a public GitHub issue the moment somebody submits it.",
     "description": "The tooltip on the share button. The second sentence is the whole argument for putting the draft in the link rather than hiding it: the submission path is public, so a link is not a smaller disclosure than submitting is."
   },
+  "actions.shareWarningClose": {
+    "defaultMessage": "Fold this away",
+    "description": "The button that closes the popover at the Share button without touching the draft. One press, and it stays folded while the warning is the same one."
+  },
+  "actions.shareWarningSubmit": {
+    "defaultMessage": "Submit it instead",
+    "description": "The link inside the popover at the Share button, for a draft too long to travel in a link. The same address the Submit button beside it opens, put here because the warning above it says to submit rather than to share."
+  },
   "actions.submit": {
     "defaultMessage": "Submit",
     "description": "Opens a prefilled GitHub issue in a new tab, which a workflow turns into a pull request (ADR 0061). The same word for every tool."
@@ -48,8 +64,8 @@
     "description": "The tooltip on the submit button while the tool holds no changes, which is why it is switched off. Said in place of actions.submitTip rather than after it, because a reader who has just been told a button does nothing is not asking what it would do."
   },
   "actions.submitTip": {
-    "defaultMessage": "Opens GitHub with your change filled in, or copies it to your clipboard when it is too long for a link. One click on “Create” submits it, and a pull request is made from it automatically. You need a GitHub account, and this page stores no password and no token.",
-    "description": "The tooltip on the submit button, and its accessible description: what happens after the click, and that a GitHub account is what it needs. The one explanation of a submission on this site, for every tool — a panel that carried its own said the same thing once per tool, which is the copy this replaced."
+    "defaultMessage": "Opens GitHub with your change filled in. One click on “Create” submits it; it needs a GitHub account, and no token is kept here.",
+    "description": "The tooltip on the submit button, and its accessible description: what happens after the click, what it needs and what this site keeps. The one explanation of a submission on this site, for every tool — a panel that carried its own said the same thing once per tool, which is the copy this replaced. Two sentences, and it has to stay two: at 22rem this was seven lines of tooltip over a 32-pixel bar."
   },
   "actions.unchanged": {
     "defaultMessage": "Unchanged",

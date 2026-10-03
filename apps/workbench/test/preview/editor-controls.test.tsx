@@ -111,6 +111,39 @@ function bar(over: Partial<Parameters<typeof EditorBar>[0]> = {}): ReactNode {
   );
 }
 
+/**
+ * The bar draws no paragraph, and why that is a claim rather than an accident.
+ *
+ * **This bar had a `notice` slot, and what went in it is now three words in the
+ * header.** The sentence said a draft had arrived in a link and that this machine
+ * holds nothing of it (ADR 0076 §3) — a permanent paragraph above the block list,
+ * which is a sentence everybody reads once and then never again, and it pushes the
+ * work down. #323 took the draft paragraphs out of the panels and this one came back
+ * through the same door in #331, so it goes out the same way: `Aus Link` beside the
+ * change status, and the sentence behind it in the tooltip
+ * (`test/shell/actions.test.tsx` holds the bar's half).
+ *
+ * **Asserted on the paragraphs and not on the slot.** A check for `notice=` would
+ * read the prop list of a component nobody can render from here — `HomeDocument.tsx`
+ * is the caller and it cannot be rendered at all, which is why this file exists — and
+ * would be a check that a renamed prop passes. A `<p>` is what a reader would see, and
+ * this asks whether any is there at all.
+ */
+describe("the panel's bar", () => {
+  it('draws no paragraph of its own while the screen is unlocked', () => {
+    draw(bar());
+    expect(container.querySelectorAll('p')).toHaveLength(0);
+  });
+
+  it('draws the one paragraph a locked screen needs, and no other', () => {
+    draw(bar({ guarded: true }));
+    const said = [...container.querySelectorAll('p')].map((p) => p.textContent);
+    expect(said).toEqual([
+      'A scenario is a Home document, so the screen stays on Home while one is open.',
+    ]);
+  });
+});
+
 describe('the screen switcher', () => {
   it('is one radio group with a segment for every screen the core configures', () => {
     draw(bar());

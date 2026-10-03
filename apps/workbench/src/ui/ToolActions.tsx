@@ -1,11 +1,13 @@
-import { GitPullRequest, Link, RotateCcw, Save } from 'lucide-react';
-import { useId } from 'react';
+import { GitPullRequest, Link, MoreHorizontal, RotateCcw, Save, X } from 'lucide-react';
+import { useId, useState, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { useActiveActions } from '../shell/actions';
 import { Button } from './kit/button';
+import { Popover, PopoverContent, PopoverTrigger } from './kit/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
+import { useHeaderDensity } from './header-row';
 
 /**
  * Everything the actions say, in ENGLISH; the German that ships is
@@ -27,9 +29,9 @@ const COPY = defineMessages({
   submitTip: {
     id: 'actions.submitTip',
     defaultMessage:
-      'Opens GitHub with your change filled in, or copies it to your clipboard when it is too long for a link. One click on “Create” submits it, and a pull request is made from it automatically. You need a GitHub account, and this page stores no password and no token.',
+      'Opens GitHub with your change filled in. One click on “Create” submits it; it needs a GitHub account, and no token is kept here.',
     description:
-      'The tooltip on the submit button, and its accessible description: what happens after the click, and that a GitHub account is what it needs. The one explanation of a submission on this site, for every tool — a panel that carried its own said the same thing once per tool, which is the copy this replaced.',
+      'The tooltip on the submit button, and its accessible description: what happens after the click, what it needs and what this site keeps. The one explanation of a submission on this site, for every tool — a panel that carried its own said the same thing once per tool, which is the copy this replaced. Two sentences, and it has to stay two: at 22rem this was seven lines of tooltip over a 32-pixel bar.',
   },
   submitOff: {
     id: 'actions.submitOff',
@@ -94,6 +96,30 @@ const COPY = defineMessages({
     defaultMessage: 'Unchanged',
     description: 'Beside the buttons, while the open tool holds no changes.',
   },
+  fromLink: {
+    id: 'actions.fromLink',
+    defaultMessage: 'From a link',
+    description:
+      'Beside the change status, for a draft that arrived in a link and is not on this machine (ADR 0076 §3). Three words where there used to be a paragraph: what it is, and the tooltip says the half nobody can see, which is that nothing was written here.',
+  },
+  more: {
+    id: 'actions.more',
+    defaultMessage: 'The other actions for this tool',
+    description:
+      'The accessible name of the ⋯ that stands in for the actions the header had no room for. Named after what it holds rather than after the icon, because an icon named "more" is not a name a screen reader can use.',
+  },
+  shareWarningSubmit: {
+    id: 'actions.shareWarningSubmit',
+    defaultMessage: 'Submit it instead',
+    description:
+      'The link inside the popover at the Share button, for a draft too long to travel in a link. The same address the Submit button beside it opens, put here because the warning above it says to submit rather than to share.',
+  },
+  shareWarningClose: {
+    id: 'actions.shareWarningClose',
+    defaultMessage: 'Fold this away',
+    description:
+      'The button that closes the popover at the Share button without touching the draft. One press, and it stays folded while the warning is the same one.',
+  },
 });
 
 /**
@@ -114,16 +140,32 @@ const COPY = defineMessages({
  * why is a dead end. The wrapper `<span>` is what makes it reachable at all: the
  * button has `disabled:pointer-events-none`, so a tooltip on it alone would open for
  * nobody. `test/shell/actions.test.tsx` holds both halves.
+ *
+ * **What the bar gives up when it runs out of room** is `ui/header-row.tsx`'s
+ * decision, read here rather than made here: from tier 2 the three labels beside
+ * the icons go and the tooltip carries them, and at tier 3 the two rarely pressed
+ * actions go behind one `⋯`. Submit keeps its label at every tier, because it is
+ * the button the bar exists for and an icon alone is a guess.
  */
 export function ToolActions() {
   const intl = useWorkbenchIntl();
   const actions = useActiveActions();
   /** Above the early return below, because a hook may not follow one. */
   const submitNoteId = useId();
+  /** The same for the sentence behind "From a link", which is drawn beside it. */
+  const originNoteId = useId();
+  /** The warning the reader has folded away, by its own text. */
+  const [read, setRead] = useState<string | null>(null);
+  /** Above the early return below with the other two, because a hook may not follow one. */
+  const density = useHeaderDensity();
   if (actions === null) return null;
 
-  const { dirty, count, blocked, submit, share, save, discard } = actions;
+  const { dirty, count, blocked, origin, submit, share, save, discard } = actions;
   const live = dirty && blocked === undefined;
+  /** Icon and no label from tier 2 on: the tooltip beside it says what it is. */
+  const compact = density >= 2;
+  /** Save and Discard behind the `⋯` at the tightest tier. */
+  const folded = density >= 3;
   /**
    * What a switched-off Submit says, ready for the tooltip and for the description a
    * screen reader reads: the tool's own reason, or the one this file has for a clean
@@ -134,13 +176,22 @@ export function ToolActions() {
   const offReason = blocked ?? intl.formatMessage(COPY.submitOff);
   /** The one sentence this button says, in the tooltip and to a screen reader. */
   const submitNote = live ? intl.formatMessage(COPY.submitTip) : offReason;
+  /** A draft too long to travel in a link, until the reader folds it away. */
+  const warning =
+    share?.warning !== undefined && share.warning.text !== read ? share.warning : null;
 
   return (
     <div
       role="toolbar"
       aria-label={intl.formatMessage(COPY.group)}
       data-testid="tool-actions"
-      className="flex shrink-0 items-center gap-xs"
+      /*
+        `flex-nowrap` for the same reason the header above it has it, and `min-w-0`
+        so this group is the one that gives up its width: a bar of controls that
+        wraps moves every control after the wrap, and the button that moved is a
+        button a hand misses.
+      */
+      className="flex min-w-0 shrink-0 flex-nowrap items-center gap-xs"
     >
       <Tooltip>
         <TooltipTrigger asChild>
@@ -159,58 +210,161 @@ export function ToolActions() {
         )}
       </Tooltip>
 
-      {discard && (
+      {/*
+        Where this draft came from, and it is three words because the panel's
+        paragraph about it is what #323 took away: a permanent sentence above a
+        block list is read once and then ignored, and it pushes the work down.
+        Beside the change status, which is the only other thing here that is about
+        the draft rather than about the way out of it.
+
+        **The sentence is read out rather than hovered for**, on the same grounds
+        as Submit's beside it and by the same shape: a status nobody can be told
+        the half of that matters is a status that reads as decoration. A `<span>`
+        with no `tabIndex`, because there is nothing here to press and
+        `jsx-a11y` is right that a non-interactive element in the tab order is a
+        stop nobody asked for — the sentence is in the tree either way.
+      */}
+      {origin !== undefined && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              className="text-s text-on-canvas-muted"
+              data-testid="tool-actions-origin"
+              aria-describedby={originNoteId}
+            >
+              {intl.formatMessage(COPY.fromLink)}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{origin}</TooltipContent>
+          <span id={originNoteId} className="sr-only">
+            {origin}
+          </span>
+        </Tooltip>
+      )}
+
+      {discard && !folded && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              size="sm"
+              size={compact ? 'icon' : 'sm'}
               disabled={!dirty}
               onClick={discard}
+              aria-label={intl.formatMessage(COPY.discard)}
               data-testid="action-discard"
+              className={compact ? 'size-[2rem]' : undefined}
             >
               <RotateCcw aria-hidden="true" />
-              {intl.formatMessage(COPY.discard)}
+              {!compact && intl.formatMessage(COPY.discard)}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{intl.formatMessage(COPY.discardTip)}</TooltipContent>
+          <TooltipContent side="bottom">
+            {compact ? intl.formatMessage(COPY.discard) : intl.formatMessage(COPY.discardTip)}
+          </TooltipContent>
         </Tooltip>
       )}
 
       {share !== undefined && (
+        <Popover
+          open={warning !== null}
+          /*
+           * Escape and a click outside have to fold it as well as close it. `open` is
+           * this file's own, so closing without setting `read` would open the very
+           * next thing it was asked to draw.
+           */
+          onOpenChange={(open) => !open && setRead(warning?.text ?? null)}
+        >
+          <Tooltip>
+            {/*
+              One button, two triggers. The popover is anchored at the button that
+              was pressed and the tooltip says what the button does, so the element
+              both of them hang off is a span around it rather than the button: a
+              `disabled` one takes no pointer events, and a trigger that cannot be
+              pointed at opens for nobody.
+            */}
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <span className="inline-flex" data-testid="share-anchor">
+                  <Button
+                    variant="outline"
+                    size={compact ? 'icon' : 'sm'}
+                    disabled={!live}
+                    onClick={share.run}
+                    aria-label={intl.formatMessage(COPY.share)}
+                    data-testid="action-share"
+                    className={compact ? 'size-[2rem]' : undefined}
+                  >
+                    <Link aria-hidden="true" />
+                    {!compact && intl.formatMessage(COPY.share)}
+                  </Button>
+                </span>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {compact ? intl.formatMessage(COPY.share) : intl.formatMessage(COPY.shareTip)}
+            </TooltipContent>
+          </Tooltip>
+          {/*
+            What the last share click came to, when it came to nothing. It opens
+            here rather than standing in the panel, because the thing it reports is
+            about this button and it is over as soon as the reader has acted on it.
+            Dismissed and folded by the reader and by nothing else — a new warning
+            opens it again, and one that is already folded stays folded while the
+            text is the same, because that is a fact about the bar and not about the
+            tool: a tool that cleared its own news would clear it on every render.
+          */}
+          {warning && (
+            <PopoverContent side="bottom" align="end">
+              <ShareNotice
+                text={warning.text}
+                submit={warning.submit}
+                onFold={() => setRead(warning.text)}
+              />
+            </PopoverContent>
+          )}
+        </Popover>
+      )}
+
+      {save && !folded && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              size="sm"
-              disabled={!live}
-              onClick={share.run}
-              data-testid="action-share"
+              size={compact ? 'icon' : 'sm'}
+              disabled={!live || save.busy}
+              onClick={save.run}
+              aria-label={intl.formatMessage(COPY.save)}
+              data-testid="action-save"
+              className={compact ? 'size-[2rem]' : undefined}
             >
-              <Link aria-hidden="true" />
-              {intl.formatMessage(COPY.share)}
+              <Save aria-hidden="true" />
+              {!compact && intl.formatMessage(COPY.save)}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{intl.formatMessage(COPY.shareTip)}</TooltipContent>
+          <TooltipContent side="bottom">
+            {compact ? intl.formatMessage(COPY.save) : intl.formatMessage(COPY.saveTip)}
+          </TooltipContent>
         </Tooltip>
       )}
 
-      {save && (
-        <Tooltip>
-          <TooltipTrigger asChild>
+      {/* Whatever tier 3 could not keep on the bar, and no more than that. */}
+      {folded && (
+        <Popover>
+          <PopoverTrigger asChild>
             <Button
-              variant="outline"
-              size="sm"
-              disabled={!live || save.busy}
-              onClick={save.run}
-              data-testid="action-save"
+              variant="ghost"
+              size="icon"
+              aria-label={intl.formatMessage(COPY.more)}
+              data-testid="action-more"
+              className="size-[2rem]"
             >
-              <Save aria-hidden="true" />
-              {intl.formatMessage(COPY.save)}
+              <MoreHorizontal aria-hidden="true" />
             </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{intl.formatMessage(COPY.saveTip)}</TooltipContent>
-        </Tooltip>
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="end">
+            <OverflowActions discard={discard} save={save} live={live} />
+          </PopoverContent>
+        </Popover>
       )}
 
       {submit !== undefined && (
@@ -251,12 +405,13 @@ export function ToolActions() {
             </span>
           </TooltipTrigger>
           {/*
-            `max-w-[22rem]`, because this is the one tooltip on this site that has
-            to say two things at once — what the click does and that a GitHub account
-            is what it needs — and the kit's tooltip has no width of its own, so four
-            sentences ran the length of a 1600-pixel window and off its right edge.
+            `max-w-[26rem]` and `leading-relaxed`, because this is the one tooltip on
+            this site that has to carry two sentences: what the click does, and what
+            it needs. The kit's tooltip has no width of its own, so the sentence ran
+            the length of a 1600-pixel window and off its right edge, and at 22rem
+            the same two sentences were four lines high over a 32-pixel bar.
           */}
-          <TooltipContent side="bottom" className="max-w-[22rem] leading-relaxed">
+          <TooltipContent side="bottom" className="max-w-[26rem] leading-relaxed">
             {submitNote}
           </TooltipContent>
           {/*
@@ -273,5 +428,155 @@ export function ToolActions() {
         </Tooltip>
       )}
     </div>
+  );
+}
+
+/**
+ * What the `⋯` holds: the two actions the bar had no room for.
+ *
+ * **A component of its own, and the reason is the test.** A `Popover` is a Radix
+ * primitive on `@floating-ui`, and rendering one in this repository's jsdom costs
+ * seconds per open and taxes every test after it — measured, not guessed: an empty
+ * `Popover` with `open` took 1.2 s and the next test 4 s. What has to be checked is
+ * that the menu holds both actions, with their names and their buttons wired, and
+ * none of that is Radix's. So the list is here, the `⋯` and the popover around it
+ * are one line above it, and `test/shell/actions.test.tsx` renders this.
+ */
+export function OverflowActions({
+  discard,
+  save,
+  live,
+}: {
+  discard?: () => void;
+  save?: { run: () => void; busy?: boolean };
+  /** Whether the tool holds a change that may be saved, which is the bar's own word. */
+  live: boolean;
+}) {
+  const intl = useWorkbenchIntl();
+  return (
+    <div className="flex flex-col gap-2xs">
+      {discard && (
+        <MenuAction
+          label={intl.formatMessage(COPY.discard)}
+          tip={intl.formatMessage(COPY.discardTip)}
+          testId="action-discard"
+          onClick={discard}
+        >
+          <RotateCcw aria-hidden="true" />
+        </MenuAction>
+      )}
+      {save && (
+        <MenuAction
+          label={intl.formatMessage(COPY.save)}
+          tip={intl.formatMessage(COPY.saveTip)}
+          testId="action-save"
+          onClick={save.run}
+          disabled={!live || save.busy}
+        >
+          <Save aria-hidden="true" />
+        </MenuAction>
+      )}
+    </div>
+  );
+}
+
+/**
+ * What a draft too long for the address is told, where it is told it: at the Share
+ * button, over the panel it used to stand in.
+ *
+ * **A component of its own for the reason `OverflowActions` gives** — Radix's
+ * `Popover` around it, and this is the part of it that is ours. The sentence is the
+ * tool's own, because it is the only one that knows how many characters there were;
+ * the way out is the address Submit already opens, and it is here because the
+ * sentence tells the reader to submit rather than to share.
+ *
+ * `onFold` and not `PopoverClose`, because the popover's `open` is decided by whether
+ * a warning is unread: closing it without saying so would open the next thing it was
+ * asked to draw.
+ */
+export function ShareNotice({
+  text,
+  submit,
+  onFold,
+}: {
+  /** The tool's sentence, in the reader's language. */
+  text: string;
+  /** Where to submit instead, while there is anywhere to submit to. */
+  submit?: { href: string };
+  onFold: () => void;
+}) {
+  const intl = useWorkbenchIntl();
+  return (
+    <div className="flex flex-col gap-xs">
+      <p className="text-s leading-relaxed text-on-canvas">{text}</p>
+      <div className="flex items-center gap-xs">
+        {submit && (
+          <Button asChild variant="outline" size="sm">
+            <a
+              href={submit.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="share-warning-submit"
+            >
+              <GitPullRequest aria-hidden="true" />
+              {intl.formatMessage(COPY.shareWarningSubmit)}
+            </a>
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={intl.formatMessage(COPY.shareWarningClose)}
+          data-testid="share-warning-close"
+          className="size-[1.75rem]"
+          onClick={onFold}
+        >
+          <X aria-hidden="true" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One action inside the `⋯`, with the same words the button it replaces had.
+ *
+ * The tooltip is not lost with the button, because a menu item that says only
+ * "Verwerfen" is a menu item whose second half — that it puts every change back to
+ * what ships — was on the button and has now nowhere else to be. So the row carries
+ * the name and the tooltip carries what the button's tooltip carried.
+ */
+function MenuAction({
+  label,
+  tip,
+  onClick,
+  disabled,
+  testId,
+  children,
+}: {
+  label: string;
+  tip: string;
+  onClick: () => void;
+  disabled?: boolean;
+  testId: string;
+  children: ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={disabled}
+          onClick={onClick}
+          data-testid={testId}
+          className="justify-start"
+        >
+          {children}
+          {label}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{tip}</TooltipContent>
+    </Tooltip>
   );
 }
