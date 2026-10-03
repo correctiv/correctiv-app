@@ -77,11 +77,19 @@ block could go in two families it is filed under the one somebody arranging a sc
 reach for first.
 
 **The words are the workbench's**, which is ADR 0054 §3 unchanged and the line that
-matters most here: the app declares what a thing is, the workbench says what it is called.
-A category id is the app's vocabulary and the same in every language; the German heading
-is a descriptor in `apps/workbench/src/preview/home/document.ts` and its string is in that
-site's own catalogue (ADR 0050, ADR 0052). Nothing in `packages/app-core` holds a label
-for one.
+matters most here: the app declares what a thing is, ~~the workbench says what it is
+called. A category id is the app's vocabulary and the same in every language; the German
+heading is a descriptor in `apps/workbench/src/preview/home/document.ts` and its string is
+in that site's own catalogue~~ (ADR 0050, ADR 0052). Nothing in `packages/app-core` holds a
+label for one.
+
+That sentence is **struck by [ADR
+0074](0074-a-block-family-is-named-once-and-both-hosts-read-it.md)**, which moved the words
+to `apps/mobile/src/lib/home/category-labels.ts` because the app's own component gallery
+groups by the same families and may not read this site (ADR 0040). The reasoning around the
+strike stands: the core still holds no label, and a category id is still the app's
+vocabulary in every language. What was wrong is the conclusion that the words must follow
+the id to the workbench, which followed from there being one host that grouped by them.
 
 **The ratchet is the roll-call.** `MODULE_CATEGORIES` has an entry per block and
 `apps/mobile/__tests__/home-layout.test.tsx` fails in both directions — a block with no
@@ -179,6 +187,12 @@ declare.** Struck there. ~~The mechanism survives for the four blocks of §3 abo
 problem code is unchanged;~~ (the mechanism and `section-module-not-on-screen` are gone too,
 with §3 — [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md) §6)
 what is gone is the table it read.
+
+**One sentence of §2 above, the words being the workbench's.** Struck by
+[ADR 0074](0074-a-block-family-is-named-once-and-both-hosts-read-it.md), which is the only
+part of this record that has moved on: the six German names are in the app beside the
+blocks, because the component gallery groups by the same families and cannot import the
+workbench. Nothing else in this record is affected.
 
 **ADR 0054 §2, "A block names the screens it may appear on, and it may name more than
 one".** Struck there. Its §1 (the declaration belongs to the block and not to the

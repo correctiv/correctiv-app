@@ -56,7 +56,6 @@ export const components: Record<string, string> = {
 
   'components.card.bundle': 'Im Bundle der App gezeichnet',
   'components.card.bundleNote': 'Ihre Seite zeichnet sie in der ausgelieferten App.',
-  'components.card.clipped': 'Beschnitten · {height} px hoch',
   'components.card.specimens': 'Alle Exemplare von {name}',
   'components.card.specimens.clipped':
     'Alle Exemplare von {name}; diese Karte beschneidet die Komponente bei {height} px',

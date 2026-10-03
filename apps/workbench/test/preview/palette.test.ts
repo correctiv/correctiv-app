@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { createIntl } from 'react-intl';
@@ -10,14 +10,9 @@ import { ROOT } from '../../plugin/collect.ts';
 import { de } from '../../src/i18n/catalogue/de';
 import { say } from '../../src/i18n/messages';
 import { BLOCK_CATEGORIES } from '@correctiv/app-core/lib/block-category';
+import { CATEGORY_LABELS } from '../../../mobile/src/lib/home/category-labels';
 
-import {
-  blockName,
-  CATEGORY_LABELS,
-  MODULE_LABELS,
-  SHIPPED,
-  whereAt,
-} from '../../src/preview/home/document';
+import { blockName, MODULE_LABELS, SHIPPED, whereAt } from '../../src/preview/home/document';
 import { code } from '../source.ts';
 
 /**
@@ -46,6 +41,24 @@ import { code } from '../source.ts';
 const read = (path: string): string => code(readFileSync(join(ROOT, path), 'utf8'));
 
 const PALETTE = read('apps/workbench/src/preview/home/Palette.tsx');
+/*
+ * The card the picker draws its blocks in, beside the one the component page draws its
+ * components in.
+ *
+ * The card used to be the picker's own markup, and the component page had a second one that had
+ * drifted away from it: a ratio against a square, a different name size, a crop note on one and
+ * not the other. So the shape moved to `ui/kit/PreviewCard.tsx` and both pages are its callers,
+ * which means the assertions about a card's shape belong to the card and the ones about this
+ * shelf belong to the picker. The two are read together for the same reason `direct.test.ts`
+ * reads a page beside its card: a check pointed at one file alone would pass while the other
+ * grew a shape of its own back.
+ */
+const CARD = read('apps/workbench/src/ui/kit/PreviewCard.tsx');
+const PAGE_CARD = read('apps/workbench/src/pages/Components.tsx');
+const CLIPPED = read('apps/workbench/src/components/clipped.ts');
+const OFFERED = read('apps/workbench/src/preview/home/offered.ts');
+const APP_LABELS = read('apps/mobile/src/lib/home/category-labels.ts');
+const APP_GERMAN = read('packages/catalogue/src/de/home.ts');
 const PANEL = read('apps/workbench/src/preview/home/HomeDocument.tsx');
 const BLOCK = read('apps/workbench/src/preview/home/HomeBlock.tsx');
 const APP_CHECK = read('apps/mobile/__tests__/home-layout.test.tsx');
@@ -65,6 +78,8 @@ describe('the files this reads', () => {
     expect(
       floorFaults({
         'preview/home/Palette.tsx': { found: PALETTE.length, atLeast: 2000 },
+        'preview/home/offered.ts': { found: OFFERED.length, atLeast: 1000 },
+        'lib/home/category-labels.ts': { found: APP_LABELS.length, atLeast: 1000 },
         'preview/home/HomeDocument.tsx': { found: PANEL.length, atLeast: 8000 },
         'preview/home/HomeBlock.tsx': { found: BLOCK.length, atLeast: 1000 },
         'apps/mobile/__tests__/home-layout.test.tsx': { found: APP_CHECK.length, atLeast: 500 },
@@ -145,38 +160,121 @@ describe('the palette is the registry', () => {
    * written rather than implied.
    */
   it('reads the core’s grouping and keeps no list beside it', () => {
-    expect(PALETTE).toMatch(
-      /import \{ blocksByCategory \} from '@correctiv\/app-core\/lib\/block-category'/,
+    // **The grouping moved into `./offered.ts`** when the palette grew tabs, and this
+    // asserts it where it now lives rather than where it used to: the dialog reads the
+    // three functions that answer "which family" and "which of them matches", and none of
+    // them is a list. The screen is still an argument — a palette on the Mediathek is not a
+    // palette on Home, and the argument is how the four screen titles stay off the others.
+    expect(OFFERED).toMatch(
+      /import \{[^}]*blocksByCategory[^}]*\} from '@correctiv\/app-core\/lib\/block-category'/,
     );
-    expect(PALETTE).toMatch(/blocksByCategory\(screen\)/);
-    expect(PALETTE).not.toMatch(/blocksByCategory\('home'\)/);
-    expect(PALETTE).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
+    expect(OFFERED).toMatch(/blocksByCategory\(screen\)/);
+    expect(OFFERED).not.toMatch(/blocksByCategory\('home'\)/);
+    expect(`${PALETTE}\n${OFFERED}`).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
+    expect(PALETTE).not.toMatch(/MODULE_CATEGORIES/);
   });
 
-  it('draws a heading per category out of the words table, and spells none itself', () => {
-    // ADR 0073 §2's seam: the category is the app's vocabulary, the heading over it is
-    // this site's word for it. A literal here would be German in a `.tsx` file, which
-    // `test/rendered-literals.test.ts` fails on — but only for a string it can see, and a
-    // heading built out of the id (`category`) would read `faktencheck` to a newsroom and
-    // trip nothing at all.
-    expect(PALETTE).toMatch(/intl\.formatMessage\(CATEGORY_LABELS\[category\]\)/);
+  it('draws the family names out of the app’s table, and spells none itself', () => {
+    // ADR 0073 §2's seam: the category is the app's vocabulary and now so are the words
+    // over it, because the app's own component gallery groups by the same families and
+    // may not import this site (ADR 0040). A literal here would be German in a `.tsx`
+    // file, which `test/rendered-literals.test.ts` fails on — but only for a string it can
+    // see, and a tab built out of the id (`category`) would read `faktencheck` to a
+    // newsroom and trip nothing at all.
+    expect(PALETTE).toMatch(/import \{ useCategoryLabel \} from '@\/lib\/home\/category-labels'/);
+    expect(PALETTE).toMatch(/useCategoryLabel\(category\)/);
     expect(PALETTE).not.toMatch(/>\{category\}</);
+    // And the hook is asked by a component of its own, because a hook called once per
+    // option out of a map is a hook whose number of calls changes with the number of
+    // families. Named here, since that is a claim about the shape rather than a literal.
+    expect(PALETTE).toMatch(/function FamilyName\(\{ category \}: \{ category: BlockCategory \}\)/);
   });
 
   it('gives every category in the core’s order a word, and invents none', () => {
+    // **Read from the app, not from here.** The table is `apps/mobile/src/lib/home/
+    // category-labels.ts` since the gallery needed it too, and this file imports it across
+    // the seam ADR 0040 draws the other way round — which is allowed, since the workbench
+    // may read the app and the app may not read the workbench.
     expect(Object.keys(CATEGORY_LABELS).sort()).toEqual([...BLOCK_CATEGORIES].sort());
-    const german = createIntl({ locale: 'de', defaultLocale: 'en', messages: de });
+    const source = createIntl({ locale: 'en', defaultLocale: 'en' });
     for (const category of BLOCK_CATEGORIES) {
-      const word = german.formatMessage(CATEGORY_LABELS[category]);
+      const word = source.formatMessage(CATEGORY_LABELS[category]);
       expect(word).not.toBe('');
-      // A missing entry in the catalogue falls through to the English `defaultMessage`,
-      // which is the failure this is here for: the heading a newsroom reads is German.
-      expect(word).not.toBe(
-        createIntl({ locale: 'en', defaultLocale: 'en' }).formatMessage(CATEGORY_LABELS[category]),
-      );
-      // And not the id itself, which is what a lazy label would be.
+      // Not the id, which is what a lazy label would be: `faktencheck` above a family of
+      // fact checks reads as a key to whoever has to place one.
       expect(word).not.toBe(category);
+      // And the German that ships is the APP's, so it is checked where it now lives: a
+      // missing entry in `packages/catalogue/src/de/home.ts` would fall through to the
+      // English `defaultMessage` for every reader of the app, and the newsroom's tab row
+      // would be the first place it showed.
+      expect(APP_GERMAN).toMatch(new RegExp(`'home\\.category\\.${category}':\\s*'`));
     }
+  });
+
+  it('keeps the six words in one table, which is the app’s', () => {
+    // The ratchet for a move like this one: two hosts, one table. The ids are still
+    // `home.category.*` — a translator's existing entry is reused rather than a new id to
+    // fill in — and the German that ships is the app's catalogue, beside every other
+    // `home.*` string, because a second copy of six words in this site's catalogue would be
+    // the one nobody re-translates.
+    expect(APP_LABELS).toMatch(/export const CATEGORY_LABELS/);
+    expect(read('apps/workbench/src/preview/home/document.ts')).not.toMatch(/home\.category\./);
+    expect(read('apps/workbench/src/i18n/catalogue/de/home.ts')).not.toMatch(
+      /'home\.category\.[a-z]+':/,
+    );
+    expect(read('packages/catalogue/src/de/home.ts')).toMatch(/'home\.category\.struktur':/);
+  });
+
+  it('is declared and translated exactly once across both trees', () => {
+    /**
+     * The whole-repo half of the ratchet, and it is here rather than in the app's own test
+     * because of [ADR 0040](../../../../adr/0040-the-app-does-not-depend-on-the-workbench.md):
+     * the app may not read this site, so a check inside it could not name this site at all,
+     * and a second declaration on this side would be invisible to it.
+     *
+     * Six words can be written twice without anything failing. The second copy draws, reads
+     * well and is translated, and the two part the day a family is added — which is the
+     * claim ADR 0073 §2 already made about the family LIST, applied here to the words.
+     */
+    const sourceFiles = (root: string): string[] => {
+      const out: string[] = [];
+      const walk = (dir: string): void => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const full = join(dir, entry.name);
+          if (entry.isDirectory()) walk(full);
+          else if (/\.tsx?$/.test(full)) out.push(full);
+        }
+      };
+      walk(root);
+      return out;
+    };
+    // `ROOT` ends in a separator, so the slice needs no arithmetic of its own.
+    const under = (full: string): string => full.slice(ROOT.length);
+    const both = [
+      ...sourceFiles(join(ROOT, 'apps/mobile/src')),
+      ...sourceFiles(join(ROOT, 'apps/workbench/src')),
+    ];
+
+    // Both spellings a declaration can take, so the check is not about formatting.
+    const DECLARING = /(id: 'home\.category\.[a-z]+'|'home\.category\.[a-z]+': \{\s*\n\s*id:)/;
+    expect(
+      both
+        .filter((full) => DECLARING.test(readFileSync(full, 'utf8')))
+        .map(under)
+        .sort(),
+    ).toEqual(['apps/mobile/src/lib/home/category-labels.ts']);
+
+    // And no second list of the families, in either spelling. Six names inside ONE array
+    // literal is the shape a hand-written list takes; the app's own block→family
+    // declaration is keyed by block and spread over many lines, which is why the bracket is
+    // the discriminator rather than the names alone.
+    const SIX_NAMES = /\[[^\]]{0,900}'struktur'[^\]]{0,900}'recherche'[^\]]{0,900}'faktencheck'/;
+    expect(
+      both
+        .filter((full) => SIX_NAMES.test(readFileSync(full, 'utf8')))
+        .map(under)
+        .sort(),
+    ).toEqual([]);
   });
 
   it('gives every module in that table words a newsroom can read', () => {
@@ -228,6 +326,205 @@ describe('the marks and the verbs they carry', () => {
     expect(PANEL).toMatch(/removed\(layout, section\.id\)/);
     expect(PANEL).toMatch(
       /aria-label=\{intl\.formatMessage\(COPY\.rowRemove, \{ block: spoken \}\)\}/,
+    );
+  });
+
+  it('draws the block on top of the card, at the card’s width, and crops it with a fade', () => {
+    /**
+     * A design review found four faults in the old card and they are one fault: the drawing
+     * was a 132px thumbnail down the left with the words beside it, so it was too small to
+     * recognise and the card's own text was carrying the whole decision. Read here as the
+     * shape that answers it — a well across the top, in the app's own width, scaled to the
+     * card, with the cut-off softened.
+     */
+    // The well is a FIXED height and not a ratio. A ratio is a function of the column, so the
+    // same block was drawn 300px tall at two columns and 244px at three, and a card beside
+    // another could be 56px taller: the height fault the other three parts of this shape exist
+    // to answer, arriving from the one thing in it that was still measuring.
+    expect(PALETTE).toMatch(/const PREVIEW_HEIGHT = 15 \* 16/);
+    expect(PALETTE).toContain('previewHeight={PREVIEW_HEIGHT}');
+    expect(PALETTE).not.toMatch(/aspect[Rr]atio/);
+    // Scaled from the device's real width to the well's own width, and the scale is `fit()`'s
+    // so it can never exceed one (ADR 0045 §3: a block drawn larger than the phone draws it
+    // is a lie about the thing being placed).
+    expect(CARD).toMatch(/fit\(room > 0 \? room : null, appWidth\)/);
+    expect(CARD).toMatch(/transform: `scale\(\$\{fitted\.scale\}\)`/);
+    // Measured on the WELL and not on the drawing inside it, whose `clientWidth` is the
+    // device's own 393 whatever the scale — which is what the first version watched, and every
+    // card came out unscaled and clipped. `room` is the stage's own width, read by the observer
+    // that already answers whether the well is cropping.
+    expect(CLIPPED).toContain('room: stageElement.clientWidth');
+    expect(CARD).toContain('room > 0 ? room : null');
+    // The fade, which is the difference between a crop that reads as a crop and a line drawn
+    // through whatever happened to be there, and only where there is a crop: a band painted over
+    // a drawing that fits is a band painted on nothing.
+    expect(CARD).toMatch(/from-canvas to-transparent/);
+    expect(CARD).toMatch(/\{clipped \? \(/);
+    // And a ground behind it, so a block that draws almost nothing here is a quiet card
+    // rather than one that looks like it failed to load.
+    expect(PALETTE).toMatch(/bg-canvas/);
+  });
+
+  it('centres a block that draws less than the well, which was the empty half of a card', () => {
+    /**
+     * Three cards on the „Alle" shelf were a line of text at the top of an empty box: the
+     * screen title, the offline note and the search entry, all of which draw a row or two.
+     * Pinned to the top of the well they read as cards that failed to load, and a reader had
+     * no way to tell those from a card whose block had not arrived.
+     *
+     * Auto margins and not `justify-content: center`: they take the free space when there is
+     * some, so a short drawing is centred, and resolve to zero when there is none, so a tall
+     * one keeps its top edge and is cut off below — the half of it a reader most needs.
+     */
+    expect(CARD).toContain('mx-auto my-auto w-full');
+    expect(CARD).not.toContain('justify-center');
+    // And the box the margins are asked about is the height the drawing is PAINTED at. A
+    // scaled drawing's layout box is still 393 × 484 while it is painted at 393 × 244, and
+    // auto margins read the layout box — so centring on it would push a scaled drawing a
+    // hundred pixels too low and crop the wrong end of it.
+    expect(CARD).toMatch(/style=\{fitted === null \? undefined : \{ height: painted \}\}/);
+  });
+
+  it('draws the card once, and both pages are its callers', () => {
+    /**
+     * The whole of this card work in one assertion: a design review found the picker and the
+     * component page drawing the same shape two ways — a ratio against a square, one crop note
+     * between them, two name sizes — and the fix is that there is one card and two callers. A
+     * page that built its own again would satisfy every assertion above and be the fault this
+     * was made to end, so both halves are held: the card is used, and neither page draws a well
+     * of its own.
+     */
+    expect(PALETTE).toContain('<PreviewCard');
+    expect(PAGE_CARD).toContain('<PreviewCard');
+    expect(PALETTE).not.toContain('stage-grid');
+    expect(PAGE_CARD).not.toContain('stage-grid');
+    // And the card takes the device's own width as the width to draw at, rather than taking a
+    // scale: `fit()` is `preview/home/fit.ts`'s, the one place ADR 0045 §3's cap is written.
+    expect(PALETTE).toContain('appWidth={deviceWidth}');
+  });
+
+  it('holds every card in a row to the same height, in four ways', () => {
+    // One line for the name, two RESERVED for the sentence, and the mark as a chip rather
+    // than a paragraph — the third of those was the height fault: a card with a feature mark
+    // was half again as tall as its neighbours because the mark printed two or three lines.
+    expect(PALETTE).toMatch(/className="min-w-0 truncate text-m font-semibold text-on-canvas"/);
+    // `min-h-[2lh]` and not only the clamp: `line-clamp-2` holds the long sentences to two
+    // and lets the short ones stand at one, which measured as rows of 318px beside rows of
+    // 337px in the same grid. Reserving both lines is what makes the rows equal by
+    // construction rather than by the grid's mercy.
+    expect(CARD).toMatch(/line-clamp-2 min-h-\[2lh\]/);
+    expect(PALETTE).toMatch(/<FeatureChip feature=\{MODULE_FEATURES\[module\]\?\.feature\}/);
+    // `h-full` on the card and the grid above it, so the row equalises rather than each card
+    // reporting its own height.
+    expect(CARD).toMatch(/flex h-full min-w-0 flex-col/);
+    // `mt-auto` on the foot pins every card's foot to the same line whatever is above it, so
+    // a marked card and an unmarked one are the same height. The chip carries `ml-auto`
+    // instead, which puts it at the right of the foot beside the family badge — `mt-auto` on a
+    // chip that is not the only thing in the foot would push that foot a row further down.
+    // And the foot RESERVES two lines whatever is in it, which is the fourth half: the picker's
+    // foot holds two optional things, and a card carrying „Vorschau" stood 387px beside its
+    // neighbours at 376px before the reservation. `mt-auto` pins the foot to the bottom; only
+    // the reservation stops a taller foot from making the card taller, which is this card's whole
+    // subject one region lower.
+    expect(CARD).toMatch(/mt-auto flex min-h-\[2lh\] min-w-0 items-baseline/);
+    expect(PALETTE).toMatch(/<FeatureChip[^>]*className="ml-auto"/);
+  });
+
+  it('is one grid for the whole shelf, so no family leaves an orphan row', () => {
+    /**
+     * The grid broke twice and both times at a family boundary. It was one `<ul>` per family,
+     * and a family holds whatever blocks the app happens to have in it — four in `struktur`,
+     * nine in `medien` — so a family of four at three columns is a row of three and an orphan,
+     * then the next family begins a row lower at whatever height its own cards came out at.
+     * Measured: the second row held `Impact` alone and the row below it started again.
+     *
+     * That is the second list of the families a grid keeps for itself, and the one answer is a
+     * single list. What is lost is the heading over each family, and what replaces it is the
+     * family on the card itself, in the foot — where the tab row above does not already say
+     * it, which is on „Alle" and while a search spans every family.
+     */
+    expect(PALETTE).toMatch(/groups\.flatMap\(\(\{ category, blocks \}\) =>/);
+    // One `<ul>`, and no `<section>` per family to hold a second one.
+    expect(PALETTE.match(/<ul/g) ?? []).toHaveLength(1);
+    expect(PALETTE).not.toContain('<section key={category}>');
+    // The badge's own rule, both halves: drawn where the tab does not name the family, and
+    // taken from the app's table so a card and its tab cannot disagree about it.
+    expect(PALETTE).toMatch(/nameFamily=\{searching \|\| tab === FIRST_TAB\}/);
+    expect(PALETTE).toMatch(/nameFamily \? \(\s*<Badge variant="outline"/);
+    expect(PALETTE).toContain('<FamilyName category={category} />');
+  });
+
+  it('scrolls the shelf under a head that stays, rather than clipping it at the panel edge', () => {
+    // Thirty-two cards are taller than any window, so the shelf has to scroll. It was the whole
+    // panel that scrolled, which took the search field and the tab row off the top of it, so a
+    // person who had scrolled to „Club und Profil" could not narrow what they were looking at
+    // without scrolling back and starting again.
+    expect(PALETTE).toMatch(
+      /className="flex max-h-\[85vh\] w-\[min\(80rem,94vw\)\] flex-col overflow-hidden"/,
+    );
+    expect(PALETTE).toContain('<div className="min-h-0 flex-1 overflow-y-auto">');
+    // `min-h-0` is the half that makes it work: a flex child defaults to `min-height: auto` and
+    // would take the height of its content rather than the height left over, so the shelf would
+    // push the head up and out of the panel instead of scrolling inside it.
+    expect(PALETTE).toMatch(/@container mt-s flex min-h-0 flex-1 flex-col gap-s/);
+  });
+
+  it('puts the whole card behind one button and keeps the sentence whole for a reader', () => {
+    // The card is the target: an overlay sheet, not a button round the drawing, because the
+    // app's own pressables are inside the drawing.
+    expect(PALETTE).toMatch(/peer absolute inset-0 z-10 rounded-md/);
+    // The description is clamped to two lines for the eye and read in full twice over for
+    // everyone else: the `title` under the pointer and the button's accessible name, which
+    // carries the whole sentence rather than the two lines that fit.
+    expect(PALETTE).toMatch(/description=\{sentence\}/);
+    expect(PALETTE).toMatch(/what: sentence/);
+    // A string description carries its own full text into the card's `title`, so the sentence a
+    // reader cannot see is still there under a pointer — and it is the card, not the picker,
+    // that knows a string needs no second answer for it.
+    expect(CARD).toMatch(
+      /title=\{typeof description === 'string' \? description : descriptionTitle\}/,
+    );
+  });
+
+  it('keeps the family tabs on one row that scrolls rather than wrapping', () => {
+    /**
+     * The other fault a design review named: seven German family names beside „Alle", and
+     * `flex-wrap` answering that by leaving „Club und Profil" alone on a second line. The
+     * fix is in the control (`ui/kit/segmented.tsx`'s `scroll`) and it is opted into here,
+     * because a control that scrolled everywhere would change ten other pages.
+     */
+    expect(PALETTE).toMatch(/<Segmented[\s\S]{0,400}?\bscroll\b/);
+    // The search field and the tab row on two lines, which is what gives the strip the
+    // dialog's full width instead of what is left beside a field.
+    const picker = PALETTE.slice(PALETTE.indexOf('function BlockPicker'));
+    expect(picker.indexOf('COPY.searchLegend')).toBeLessThan(picker.indexOf('COPY.familyLegend'));
+    // And three columns at the dialog's width, two below it, asked of the container rather
+    // than the window: the dialog is `min(80rem, 94vw)`, so a viewport query would answer for
+    // a width the cards are not laid out in — it is 80rem on a 1600px screen and on a 1000px
+    // one, and the second of those wants two columns.
+    expect(PALETTE.replace(/\s+/g, ' ')).toMatch(
+      /'@container mt-s grid grid-cols-1 gap-xs', '@min-\[34rem\]:grid-cols-2 @min-\[52rem\]:grid-cols-3'/,
+    );
+  });
+
+  it('says what a release build would do with a block as one word, and the reason underneath', () => {
+    // ADR 0072 §5: the mark stays on the card whatever this build would do. The long form is
+    // still there for the feature page and a component's own card; on the tile it is a chip,
+    // because the sentence is what made one card taller than the row it sat in.
+    const MARK = read('apps/workbench/src/preview/features/Mark.tsx');
+    expect(MARK).toMatch(/export function FeatureChip/);
+    expect(MARK).toMatch(/data-testid="feature-chip"/);
+    // The reason is moved into the chip rather than dropped: `title` for a pointer,
+    // `aria-description` for a screen reader, both built from the same two descriptors the
+    // long form prints, so a tooltip and the sentence cannot part.
+    expect(MARK).toMatch(/title=\{full\}/);
+    expect(MARK).toMatch(/aria-description=\{full\}/);
+    expect(MARK).toMatch(/MARK_CHIP\[mark\.state\]/);
+    // And the words are a second set of ids in the same file as the sentences, so the chip
+    // says „Preview" where the sentence says „Preview only: a release build does not draw
+    // it" — one claim, not two.
+    expect(read('apps/workbench/src/preview/features/document.ts')).toMatch(
+      /export const MARK_CHIP/,
     );
   });
 

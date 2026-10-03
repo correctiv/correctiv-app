@@ -254,6 +254,36 @@ export interface Mark {
 }
 
 /**
+ * The same two marks in one word each, for a place with no room for the sentence.
+ *
+ * `MARK_STATE` above says what a release build does and `MARK_REASON` says what holds it
+ * back, and between them they are a line of prose. That is right where a mark has a row to
+ * itself — the feature page, a component's own card, the palette's tiles — and wrong on a
+ * chip the width of the word „Vorschau", where the sentence wrapped to three lines and made
+ * its tile taller than its neighbours.
+ *
+ * **The chip carries no reason and does not paraphrase one.** `features.mark.vorschau` is
+ * „Nur Vorschau: Ein Release-Build zeigt es nicht." and the chip says „Vorschau", which is the
+ * same claim with the sentence dropped rather than a second claim. The reason stays where it
+ * was read — the chip's `title` and its accessible description carry the whole of it, which
+ * is `FeatureChip`'s job in `Mark.tsx`.
+ */
+export const MARK_CHIP: Readonly<Record<'vorschau' | 'aus', WorkbenchMessage>> = {
+  vorschau: wbMessage({
+    id: 'features.mark.chip.vorschau',
+    defaultMessage: 'Preview',
+    description:
+      'The chip that says a feature is `vorschau`: a release build does not draw it, and the preview channel does. The sentence behind it is features.mark.vorschau, which the chip’s tooltip carries.',
+  }),
+  aus: wbMessage({
+    id: 'features.mark.chip.aus',
+    defaultMessage: 'Off',
+    description:
+      'The chip that says a feature is `aus`: no build draws it. The sentence behind it is features.mark.aus, which the chip’s tooltip carries.',
+  }),
+};
+
+/**
  * The mark a feature carries in a release build, or null for one that ships.
  *
  * Read against the file and no draft: the mark answers what a store build does today, and a

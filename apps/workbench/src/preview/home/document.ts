@@ -26,7 +26,6 @@ import {
   type ModuleSettings,
   type SettingValue,
 } from '@correctiv/app-core/lib/home-layout';
-import type { BlockCategory } from '@correctiv/app-core/lib/block-category';
 import type { IntlShape } from 'react-intl';
 
 import {
@@ -392,50 +391,6 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'The newsletters to switch on or off.',
     }),
   },
-};
-
-/**
- * What each family of blocks is called, for the headings a palette groups under.
- *
- * ADR 0073 §2 puts the category itself in the app, beside the block, because it is the
- * app's vocabulary like the id and the settings; the WORDS are here for ADR 0054 §3's
- * reason unchanged — the app declares what a thing is, this site says what it is called.
- * So the core exports `blocksByCategory(screen)` and never a label, and a heading drawn
- * from a category id would be a German word in the one package that may not hold one.
- *
- * Keyed by `BlockCategory` rather than by a string, which is the difference from
- * `MODULE_LABELS` above: the union is the core's, so a category added without a word is
- * a type error here rather than a heading reading `faktencheck` in the newsroom's tool.
- */
-export const CATEGORY_LABELS: Readonly<Record<BlockCategory, WorkbenchMessage>> = {
-  struktur: wbMessage({
-    id: 'home.category.struktur',
-    defaultMessage: 'Structure and notices',
-    description:
-      'The heading over the blocks that build a screen’s frame rather than its content: the headers, the search field, the loading notice and the footer.',
-  }),
-  recherche: wbMessage({
-    id: 'home.category.recherche',
-    defaultMessage: 'News and investigations',
-  }),
-  faktencheck: wbMessage({
-    id: 'home.category.faktencheck',
-    defaultMessage: 'Fact checking',
-  }),
-  medien: wbMessage({
-    id: 'home.category.medien',
-    defaultMessage: 'Audio and video',
-  }),
-  mitmachen: wbMessage({
-    id: 'home.category.mitmachen',
-    defaultMessage: 'Taking part and community',
-  }),
-  club: wbMessage({
-    id: 'home.category.club',
-    defaultMessage: 'Club and profile',
-    description:
-      'The heading over the blocks a membership pays for and the ones that show it: early access, Backstage, and the profile’s own rows.',
-  }),
 };
 
 /** What stands under a module this tool has never heard of, where the label is its id. */

@@ -79,10 +79,6 @@
     "defaultMessage": "Its page draws it in the shipped app.",
     "description": "The line under that badge when no more specific reason is recorded for this component in components/direct-ids.ts."
   },
-  "components.card.clipped": {
-    "defaultMessage": "Clipped · {height} px tall",
-    "description": "Printed over the lower edge of a card that cannot show the whole of its component. {height} is the component’s real height in CSS pixels, measured in the browser. Read by eye only: the same fact is in the accessible name of the link over the drawing, components.card.specimens.clipped."
-  },
   "components.card.noDoc": {
     "defaultMessage": "No doc comment.",
     "description": "Stands in where a component’s source carries no prose to print. reference.symbol.noDoc says the same thing about a symbol on /reference."
@@ -97,7 +93,7 @@
   },
   "components.card.specimens.clipped": {
     "defaultMessage": "Every specimen of {name}, which this card clips at {height} px",
-    "description": "The same link as components.card.specimens, on a card that cannot show the whole component. {name} is the component’s name in the source and is not translated; {height} is the component’s real height in CSS pixels. It carries the fact that the note over the drawing states visually, because that note is hidden from a screen reader."
+    "description": "The same link as components.card.specimens, on a card that cannot show the whole component. {name} is the component’s name in the source and is not translated; {height} is the component’s real height in CSS pixels, which is the number kit.previewCard.clipped prints over the drawing and hides from the browser. This link is where that fact becomes actionable, which is why it carries it."
   },
   "components.detail.breadcrumb": {
     "defaultMessage": "Breadcrumb",
@@ -1125,6 +1121,14 @@
     "defaultMessage": "Off: no build draws it.",
     "description": "The mark on a block or a component whose feature is `aus`, which is reachable nowhere. features.mark.reason.* is read right after it and says what holds it back."
   },
+  "features.mark.chip.aus": {
+    "defaultMessage": "Off",
+    "description": "The chip that says a feature is `aus`: no build draws it. The sentence behind it is features.mark.aus, which the chip’s tooltip carries."
+  },
+  "features.mark.chip.vorschau": {
+    "defaultMessage": "Preview",
+    "description": "The chip that says a feature is `vorschau`: a release build does not draw it, and the preview channel does. The sentence behind it is features.mark.vorschau, which the chip’s tooltip carries."
+  },
   "features.mark.reason.data": {
     "defaultMessage": "It reads sample data only.",
     "description": "The reason after a mark: every data source of the feature is a stand-in file, which caps it at `vorschau` (ADR 0072 §4)."
@@ -1507,26 +1511,6 @@
     "defaultMessage": "{day}, today",
     "description": "The accessible name of the column for today in the week or month under the frame. {day} is the date already spelled by the browser, as “Monday, 28 September”."
   },
-  "home.category.club": {
-    "defaultMessage": "Club and profile",
-    "description": "The heading over the blocks a membership pays for and the ones that show it: early access, Backstage, and the profile’s own rows."
-  },
-  "home.category.faktencheck": {
-    "defaultMessage": "Fact checking"
-  },
-  "home.category.medien": {
-    "defaultMessage": "Audio and video"
-  },
-  "home.category.mitmachen": {
-    "defaultMessage": "Taking part and community"
-  },
-  "home.category.recherche": {
-    "defaultMessage": "News and investigations"
-  },
-  "home.category.struktur": {
-    "defaultMessage": "Structure and notices",
-    "description": "The heading over the blocks that build a screen’s frame rather than its content: the headers, the search field, the loading notice and the footer."
-  },
   "home.document.field": {
     "defaultMessage": "The change",
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
@@ -1812,15 +1796,39 @@
   },
   "home.palette.addModule": {
     "defaultMessage": "Add {name}. {what}",
-    "description": "The accessible name of one tile in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the tile."
+    "description": "The accessible name of one card in the palette, which is a drawing of a module with the drawing itself hidden from the accessibility tree. {name} is the module’s name and {what} the sentence about it, both shown on the card. The sentence is read in full here because the card shows two lines of it."
+  },
+  "home.palette.found": {
+    "defaultMessage": "{found} of {total} blocks match.",
+    "description": "Said above the shelf while a search is typed, so a shelf that has narrowed to one card is not mistaken for the whole of what is there. {found} is how many blocks match and {total} how many this screen offers."
   },
   "home.palette.lead": {
     "defaultMessage": "The new block goes {where}.",
     "description": "The one line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
   },
   "home.palette.leadMore": {
-    "defaultMessage": "The list offers every block the app has, in groups. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.",
+    "defaultMessage": "The shelf holds every block the app has, sorted into families and drawn as it will appear. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.",
     "description": "Behind the ⓘ beside the palette dialog’s heading, home.palette.title."
+  },
+  "home.palette.none": {
+    "defaultMessage": "No block matches “{query}”.",
+    "description": "Stands in for an empty shelf, where a search matched nothing. {query} is the text that was typed, in its own spelling."
+  },
+  "home.palette.search": {
+    "defaultMessage": "Name or description",
+    "description": "The text in the palette’s search field while it is empty. It is a hint rather than a name, so the browser reads the field as the search legend beside it."
+  },
+  "home.palette.search.legend": {
+    "defaultMessage": "Search by name and description",
+    "description": "The name of the field that narrows the shelf, above it. Every word typed has to appear in a block’s name or its sentence, so a search is an answer rather than a guess."
+  },
+  "home.palette.tab.all": {
+    "defaultMessage": "All",
+    "description": "The first tab of the palette: every block this screen may take, whichever family it is in. The families themselves are the app’s words and come from the app."
+  },
+  "home.palette.tab.legend": {
+    "defaultMessage": "Which family of block you are looking in",
+    "description": "The name the row of family tabs carries for the browser, above the tabs. It is read where the tabs are and is not drawn, because the tab in it is already drawn."
   },
   "home.palette.title": {
     "defaultMessage": "Add a block",
@@ -2323,6 +2331,10 @@
   "insideCore.types.files": {
     "defaultMessage": "1 file",
     "description": "How many files the types layer holds, beside its name. insideCore.ports.file says the same of the layer beside it and names the file as well."
+  },
+  "kit.previewCard.clipped": {
+    "defaultMessage": "Clipped · {height} px tall",
+    "description": "Printed over the lower edge of a card whose well is showing only the top of what it draws. {height} is that thing’s real height in CSS pixels, measured in the browser, and on a card that scales its drawing it is the height of the app rather than of the scaled copy. Read by eye only: the same fact is in the accessible name of whatever control covers the drawing."
   },
   "landing.door.decisions.blurb": {
     "defaultMessage": "Why the repository is the way it is, and which of its claims no longer hold."

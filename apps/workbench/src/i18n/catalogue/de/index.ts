@@ -27,6 +27,7 @@ import { frame } from './frame';
 import { handbook } from './handbook';
 import { home } from './home';
 import { insideCore } from './insideCore';
+import { kit } from './kit';
 import { landing } from './landing';
 import { measured } from './measured';
 import { nav } from './nav';
@@ -62,6 +63,7 @@ export const de: Record<string, string> = {
   ...handbook,
   ...home,
   ...insideCore,
+  ...kit,
   ...landing,
   ...measured,
   ...nav,

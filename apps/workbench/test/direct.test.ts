@@ -159,6 +159,18 @@ describe('the components the workbench draws', () => {
  */
 describe('the components overview', () => {
   const PAGE = readFileSync(join(WORKBENCH, 'src/pages/Components.tsx'), 'utf8');
+  /*
+   * The card the page hands its drawings to.
+   *
+   * Read beside the page and not instead of it: the shape moved out of this page into
+   * `ui/kit/PreviewCard.tsx` when the block picker took it over, and what this file holds is
+   * two questions. Does the card still reserve the box, centre a short specimen and measure the
+   * crop — the card is where those live now, and a check pointed at the page alone would pass
+   * while the card grew a second, drifting shape. And does the page still USE the card, which is
+   * the other half: a page that built its own again would satisfy the first three answers and
+   * be the fault this move was made to end.
+   */
+  const CARD = readFileSync(join(WORKBENCH, 'src/ui/kit/PreviewCard.tsx'), 'utf8');
 
   it('draws every card’s specimen on arrival, with nothing to press', () => {
     expect(PAGE).toContain('<DirectPreview');
@@ -177,8 +189,13 @@ describe('the components overview', () => {
     // the grid by hand, and it was 176px against columns of 260, 379 and 432 at
     // three different widths. `aspect-ratio: 1` reserves the same box without
     // stating a size, so the two cannot part.
-    expect(PAGE).toMatch(/aspect-square/);
-    expect(PAGE).not.toMatch(/h-\[\d/);
+    expect(CARD).toMatch(/aspect-square/);
+    // `rem` and not merely `h-[`: `min-h-[2lh]` reserves two lines of a card's sentence and is
+    // a different thing from a height for the box the drawing stands in.
+    expect(CARD).not.toMatch(/h-\[\d+rem\]/);
+    // And the page is the card's user rather than a second drawer of its own.
+    expect(PAGE).toContain('<PreviewCard');
+    expect(PAGE).not.toMatch(/stage-grid/);
   });
 
   it('centres a short specimen with auto margins, so a tall one keeps its top', () => {
@@ -189,11 +206,11 @@ describe('the components overview', () => {
     // `justify-content: center` would split the overflow between both edges and
     // shave the top off every tall component, which is the half a reader most
     // needs — a screen's header, a card's title.
-    expect(PAGE).toContain('my-auto');
+    expect(CARD).toContain('my-auto');
     // And the column itself stays full width. Shrink-wrapping it would centre
     // `ui/Badge` and `participate/ClaimStatusTag`, which both say `self-start` in
     // the app, and hide which components stretch and which hug.
-    expect(PAGE).toContain('mx-auto my-auto w-full');
+    expect(CARD).toContain('mx-auto my-auto w-full');
   });
 
   it('asks the two boxes which cards clip rather than naming the components', () => {
@@ -206,8 +223,13 @@ describe('the components overview', () => {
     expect(clipped).toContain('ResizeObserver');
     // The marker is drawn from the answer the two boxes give, and from nothing
     // else: no set, no list, no id in a condition anywhere.
-    expect(PAGE).toContain('useClipped');
-    expect(PAGE).toContain('{clipped && (');
+    expect(CARD).toContain('useClipped');
+    expect(CARD).toContain('{clipped ? (');
+    // The link over the drawing is named from the same measurement rather than from a second
+    // one, which is what makes „every specimen, clipped at 484 px" and the note over the
+    // picture the same claim. The card hands it over as `crop`, and the page reads it.
+    expect(CARD).toContain('overlay?.({ clipped, height: natural })');
+    expect(PAGE).toContain('crop.height');
     // And the decision itself knows no component at all — it is two numbers.
     for (const name of ['RecoveryScreen', 'LoginGate', 'ArticleHero', 'NOT_DRAWN']) {
       expect(clipped).not.toContain(name);
