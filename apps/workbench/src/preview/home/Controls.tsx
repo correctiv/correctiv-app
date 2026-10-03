@@ -202,7 +202,6 @@ export function EditorBar({
   scenario,
   follow,
   onFollow,
-  notice,
   outcome,
 }: {
   screen: ConfigurableScreen;
@@ -213,13 +212,14 @@ export function EditorBar({
   follow: boolean;
   onFollow: (next: boolean) => void;
   /**
-   * What the bar has to say about the document itself rather than about a control: where
-   * it came from, if it came in a link (ADR 0076 §3). A row of its own above the
-   * outcome, because it stays while somebody works and an outcome is gone by the next
-   * click.
+   * What the last submit or share click did, drawn under the row. Nothing while there is
+   * none.
+   *
+   * **This bar has no `notice` slot and there is nothing to put in it.** It had one for
+   * a paragraph saying the document came in a link (ADR 0076 §3), and that is three
+   * words and a tooltip in the header now — `useToolActions`'s `origin`. #323 took the
+   * draft paragraphs out of the panels and the slot is what is left of them.
    */
-  notice?: ReactNode;
-  /** What the last submit or share click did, drawn under the row. Nothing while there is none. */
   outcome?: ReactNode;
 }) {
   const intl = useWorkbenchIntl();
@@ -296,7 +296,6 @@ export function EditorBar({
         on its own line now, which is what a row of controls plus a stack of state is.
       */}
       {guarded && <p className={NOTE}>{intl.formatMessage(CONTROLS_COPY.screenLocked)}</p>}
-      {notice}
       {outcome}
     </div>
   );

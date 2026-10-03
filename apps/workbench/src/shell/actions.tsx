@@ -41,6 +41,17 @@ export interface ToolActions {
    */
   blocked?: string;
   /**
+   * Where this draft came from, in the reader's language, when a link carried it
+   * (ADR 0076 §3). Absent for a draft that was typed here.
+   *
+   * **A status in the bar rather than a paragraph over the panel**, and the reason
+   * is #323's: a permanent sentence at the top of a tool panel is a sentence
+   * everybody reads once and then never again, and it pushes the work down. This
+   * says `Aus Link` in words the reader can act on and leaves the explanation to
+   * the tooltip, which is where the rest of this bar keeps what it has to say.
+   */
+  origin?: string;
+  /**
    * Submit is a link, because the click leaves for GitHub in a new tab and only a link
    * opens one without a popup blocker in the way (ADR 0061 §1). `null` while there is
    * nothing it may send; the button is then drawn disabled.
@@ -50,8 +61,18 @@ export interface ToolActions {
    * Hands the tool's draft over as a link (ADR 0076). `run` builds it and puts it on the
    * clipboard; what came of that is the tool's own news, in its own panel, because a
    * sentence about a link does not belong in a header that is 32 pixels tall.
+   *
+   * `warning` is the exception and is the one piece of that news the header draws
+   * itself: a draft too long to travel in the address cannot be shared at all, so it
+   * opens a popover **at this button** instead of a line in the panel, with the link
+   * to submit beside it. It is folded away by the reader and by nothing else — a new
+   * warning opens it again, and one that is already dismissed stays folded while the
+   * text is the same, because that is a fact about the bar and not about the tool.
    */
-  share?: { run: () => void };
+  share?: {
+    run: () => void;
+    warning?: { text: string; submit?: { href: string } };
+  };
   /** The dev server's save. Absent on the published site, on every tool alike. */
   save?: { run: () => void; busy?: boolean };
   /** Puts the tool's changes back to what ships. */
@@ -101,8 +122,13 @@ function drawsTheSame(a: Entry | undefined, b: Entry | undefined): boolean {
     a.dirty === b.dirty &&
     a.count === b.count &&
     a.blocked === b.blocked &&
+    a.origin === b.origin &&
     (a.submit?.href ?? null) === (b.submit?.href ?? null) &&
     (a.share === undefined) === (b.share === undefined) &&
+    // The warning is compared by its text and not by the object holding it, because
+    // the tool builds a fresh one on every render and identity would put the header
+    // into a render loop with a popover that opens itself.
+    (a.share?.warning?.text ?? null) === (b.share?.warning?.text ?? null) &&
     (a.save === undefined) === (b.save === undefined) &&
     a.save?.busy === b.save?.busy &&
     (a.discard === undefined) === (b.discard === undefined)

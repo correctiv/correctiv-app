@@ -2,7 +2,13 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { filesUnder, floorFaults, under, withoutComments } from '@correctiv/prose-and-code';
+import {
+  filesUnder,
+  floorFaults,
+  ratchet,
+  under,
+  withoutComments,
+} from '@correctiv/prose-and-code';
 
 import { ROOT } from '../../plugin/collect.ts';
 
@@ -124,6 +130,101 @@ describe('a tool does not explain the submit button itself (ratchet)', () => {
     // is the half of the format this repository's own descriptors use.
     const offenders = [...code]
       .filter(([, source]) => /defaultMessage:[\s\S]{0,400}?GitHub account/.test(source))
+      .map(([path]) => path);
+    expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * No panel says where the draft came from, and the editor bar has no slot to say it in.
+ *
+ * **What was wrong, and why it kept coming back.** ADR 0076 §3 put a paragraph at the
+ * top of the home panel saying the document arrived in a link and that this machine
+ * holds nothing of it. #323 took the draft paragraphs out of the panels — a permanent
+ * sentence above a block list is a sentence everybody reads once and then never again,
+ * and it pushes the work down — and #331 found the same sentence again, because it had
+ * arrived a second time through the door the first one used. It is three words in the
+ * header now (`Aus Link`, beside the change status, the sentence in its tooltip), and
+ * this is the check that says the panel does not get it back.
+ *
+ * **Two rules, because the slot and the sentence are separate mistakes.** A
+ * `notice={…}` prop coming back is the paragraph coming back; a panel formatting
+ * `sharedHeld` or `sharedDamaged` is the sentence arriving through some other door
+ * entirely, in any component, in any arrangement. The first is named, the second is
+ * not, and the second is the one that has happened twice.
+ *
+ * **The excuse list is empty and the ratchet is two-sided**, for the reason the
+ * describe above says: a panel that grows a `notice` fails, and a slot that is left
+ * behind unused fails too, because an empty slot is where the next paragraph goes.
+ */
+describe('a panel does not say where the draft came from (ratchet)', () => {
+  const SRC = join(ROOT, 'apps/workbench/src');
+  /** The one place that may hand the sentence over, and it hands it to the header. */
+  const BAR = 'preview/home/HomeDocument.tsx';
+
+  const files = filesUnder(SRC, /\.tsx?$/).filter((f) => !f.endsWith(BAR));
+  const code = new Map(files.map((f) => [under(SRC, f), withoutComments(readFileSync(f, 'utf8'))]));
+
+  it('reads the files it is checking, and finds both halves of the sentence', () => {
+    const inTheTool = withoutComments(readFileSync(join(SRC, BAR), 'utf8'));
+    expect(
+      floorFaults({
+        'files under src/': { found: files.length, atLeast: 80 },
+        'sharedHeld in the tool': {
+          found: Number(/COPY\.sharedHeld\b/.test(inTheTool)),
+          atLeast: 1,
+        },
+        // The floor for the rule itself: with the tool no longer holding them, both
+        // rules below would pass over nothing rather than over a sentence that moved.
+        'the sentence is in the file': {
+          found: Number(/sharedDamaged/.test(inTheTool)),
+          atLeast: 1,
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it('no file but the tool formats either sentence, and the tool does it once', () => {
+    /*
+     * A ratchet and not a list of offenders, because the tool IS allowed to format
+     * these — it hands the sentence to the header's `origin` — and a rule that named
+     * it would have to be switched off the moment the header asked for it. One entry
+     * in one file, and a second arrival in that file is the paragraph coming back
+     * through the other door. Every other file has no entry, so one arrival there
+     * fails and so does the entry going stale.
+     */
+    const all = new Map(code);
+    all.set(BAR, withoutComments(readFileSync(join(SRC, BAR), 'utf8')));
+    const renders = /formatMessage\([^)]*\bshared(Held|Damaged)\b/g;
+    const found = [...all]
+      .filter(([, source]) => renders.test(source))
+      .map(([path]) => ({ key: path }));
+    renders.lastIndex = 0;
+    const report = ratchet(found, { [BAR]: 1 });
+    expect(report.arrivals).toEqual([]);
+    expect(report.stale).toEqual([]);
+  });
+
+  it('no panel declares a prop to put a paragraph in', () => {
+    /*
+     * `notice?:` and `notice={`, and neither the word: `preview/home/store.ts` has a
+     * `notice` and it is a store value about a document that would not open, which is
+     * the same word doing a different job. What came back twice was a PROP, and a prop
+     * is what a paragraph is handed over through.
+     */
+    const offenders = [...code]
+      .filter(([, source]) =>
+        /\bnotice\?:\s*(ReactNode|React\.ReactNode|string)\b|\bnotice=\{/.test(source),
+      )
+      .map(([path]) => path);
+    expect(offenders).toEqual([]);
+  });
+
+  it('no panel draws the hint this paragraph used to carry', () => {
+    // The `data-testid` the sentence wore, which outlived the paragraph it named and
+    // is the shape a copy of it would be pasted back into.
+    const offenders = [...code]
+      .filter(([, source]) => /data-testid="shared-hint"/.test(source))
       .map(([path]) => path);
     expect(offenders).toEqual([]);
   });

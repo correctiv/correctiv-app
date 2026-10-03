@@ -1,11 +1,12 @@
 import { Maximize2, Search as SearchIcon, Settings as SettingsIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { defineMessages } from 'react-intl';
 
 import docsModule from 'virtual:docs';
 import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Button } from './kit/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
+import { useOneRow } from './header-row';
 import { href } from '../router';
 import { ToolActions } from './ToolActions';
 
@@ -70,12 +71,29 @@ interface Props {
  * two controls, one job, and neither of them said which of six tools was about to
  * appear. `ui/ToolRail.tsx` is the one switch now, on the edge the panel opens
  * from. ([ADR 0038](../../../../adr/0038-one-tool-at-a-time-in-a-rail.md))
+ *
+ * **One row, always, and what it gives up to stay that way.** It was `flex-wrap`
+ * with a measured note about wrapping at 1024px, and it had grown past that note:
+ * at 1280, 1600 and 2000 CSS pixels alike it broke into three rows, moving the frame
+ * down each time it did. So it is `flex-nowrap` now, the context bar is `min-w-0` so
+ * the route field takes the shortfall first, and what the bar still cannot hold is
+ * given up in four measured tiers that `ui/header-row.tsx` owns and this file and
+ * the bar below it read. Two boxes are measured, not one: this bar and the context
+ * bar inside it, because the context bar is the one that would take the shortfall
+ * silently.
  */
 export function Header({ onSearch, onSettings, onFull, children }: Props) {
   const intl = useWorkbenchIntl();
+  const bar = useRef<HTMLElement>(null);
+  const context = useRef<HTMLDivElement>(null);
+  const density = useOneRow([bar, context]);
 
   return (
-    <header className="flex min-h-[2.75rem] shrink-0 flex-wrap items-center gap-xs border-b border-stroke bg-canvas py-4xs pl-3xs pr-s">
+    <header
+      ref={bar}
+      data-density={density}
+      className="flex min-h-[2.75rem] shrink-0 flex-nowrap items-center gap-xs overflow-hidden border-b border-stroke bg-canvas py-4xs pl-3xs pr-s"
+    >
       <a
         href={href('/')}
         className="flex min-w-0 items-center gap-2xs rounded-md px-3xs text-m font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -88,10 +106,11 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
       </a>
 
       {/* The context bar. It is the middle of the header rather than a row of its
-          own, so a view that needs no controls costs no height. It is allowed to
-          wrap: at 1024px the app view's controls are about forty pixels wider
-          than the room left for them, and a control pushed off the end of a bar
-          is a control nobody knows is missing.
+          own, so a view that needs no controls costs no height, and it is `min-w-0`
+          so that the field inside it gives up its width before anything else does.
+          `overflow-hidden` is on the bar above rather than here, because a bar that
+          clipped its own shortfall would measure as fitting at every width and the
+          tiers would never move.
 
           Below 640 it takes a row of its own instead, and takes it last. Every
           view keeps its bar here at that width, so without this the mark and the
@@ -99,7 +118,10 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
           fall: measured at 390px on `/design`, the mark ended up under the "Open
           in Figma" button, which reads as a broken header rather than as a
           wrap. */}
-      <div className="flex min-w-0 flex-1 flex-wrap items-center max-sm:order-last max-sm:basis-full max-sm:pt-4xs">
+      <div
+        ref={context}
+        className="flex min-w-0 flex-1 items-center overflow-hidden max-sm:order-last max-sm:basis-full max-sm:pt-4xs"
+      >
         {children}
       </div>
 
@@ -111,7 +133,7 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
         variant="outline"
         size="sm"
         onClick={onSearch}
-        className="gap-xs text-on-canvas-muted"
+        className="shrink-0 gap-xs text-on-canvas-muted"
         aria-label={intl.formatMessage(COPY.search)}
       >
         <SearchIcon aria-hidden="true" />
@@ -145,7 +167,7 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
       */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" asChild className="size-[2rem]">
+          <Button variant="ghost" size="icon" asChild className="size-[2rem] shrink-0">
             <a
               href={docsModule.repo}
               target="_blank"

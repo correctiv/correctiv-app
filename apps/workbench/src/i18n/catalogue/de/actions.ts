@@ -6,7 +6,7 @@ export const actions: Record<string, string> = {
   'actions.group': 'Änderungen des geöffneten Werkzeugs',
   'actions.submit': 'Einreichen',
   'actions.submitTip':
-    'Öffnet GitHub mit Ihrer Änderung, oder legt sie in die Zwischenablage, wenn sie zu lang für einen Link ist. Ein Klick auf „Create“ reicht sie ein, daraus entsteht automatisch ein Pull Request. Dafür brauchen Sie ein GitHub-Konto; diese Seite speichert kein Passwort und keinen Token.',
+    'Öffnet GitHub mit Ihrer Änderung. Ein Klick auf „Create“ reicht sie ein; dafür brauchen Sie ein GitHub-Konto, und hier wird kein Token gespeichert.',
   'actions.submitOff': 'Noch nichts einzureichen. Ändern Sie zuerst etwas in diesem Werkzeug.',
   'actions.share': 'Link teilen',
   'actions.shareTip':
@@ -21,4 +21,8 @@ export const actions: Record<string, string> = {
   'actions.changed': 'Geändert',
   'actions.previewTip': 'Die Vorschau zeigt diesen Entwurf, nicht die veröffentlichte App.',
   'actions.unchanged': 'Unverändert',
+  'actions.fromLink': 'Aus Link',
+  'actions.more': 'Die anderen Aktionen für dieses Werkzeug',
+  'actions.shareWarningSubmit': 'Stattdessen einreichen',
+  'actions.shareWarningClose': 'Diesen Hinweis zuklappen',
 };

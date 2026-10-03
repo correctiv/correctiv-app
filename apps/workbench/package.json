@@ -11,6 +11,7 @@
     "api": "node scripts/api.mjs",
     "strings": "tsx scripts/strings.mjs",
     "measure-direct": "node scripts/measure-direct.mjs",
+    "measure-header": "node scripts/measure-header.mjs",
     "renders": "node scripts/renders.mjs dev",
     "renders:dist": "node scripts/renders.mjs dist",
     "home-live": "node scripts/home-live.mjs",

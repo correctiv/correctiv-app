@@ -13,6 +13,7 @@ import {
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
+import { useHeaderDensity } from '../../ui/header-row';
 
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
@@ -241,6 +242,16 @@ const ZOOMS: { value: string; label: string | null }[] = [
  * everything the wider bar shows inline, one press further in. `sm:` and up
  * is unchanged, because a tablet or a desktop window already had the room
  * these controls asked for.
+ *
+ * **And again, further up, because "one row" is a rule and not a note.** The
+ * header stopped wrapping in `ui/header-row.tsx`, which meant this bar had to
+ * take its share of the shortfall before anything was clipped: at 1280, 1600
+ * and 2000 CSS pixels alike the header broke into three rows, and this bar is
+ * two thirds of what it carries. So the same fold runs on `density` as well as on
+ * the media query, and the four tiers are that file's table. The route field is
+ * the one control that gives up its width without being touched — its width is a
+ * choice and every other control's is a meaning — which is why it is `flex-1`
+ * with a `min-w-0` and not one of the things folded.
  */
 export function Toolbar({
   state,
@@ -256,6 +267,23 @@ export function Toolbar({
   // Left shut until asked, and not reset when the frame's own state changes —
   // it is a fact about what this bar is showing, not about the frame.
   const [moreOpen, setMoreOpen] = useState(false);
+  /**
+   * How much room the header has given up, which is this bar's share of it. The
+   * fold below runs on this as well as on the media query, because the header is
+   * one row at every width now and this bar is most of what it carries.
+   */
+  const density = useHeaderDensity();
+  /** The same fold the small breakpoint asks for, at the header's tiers. */
+  const fold = moreOpen || density >= 1;
+  /**
+   * `hidden` and not `max-sm:hidden` once the HEADER is what is folding the group,
+   * because the header's tiers are a measurement rather than a breakpoint: there is
+   * no width at which `max-sm` becomes true, so the controls stayed on the bar at
+   * 1280 and 1600 with everything else already given up around them.
+   */
+  const FOLDED = fold ? 'hidden' : 'max-sm:hidden';
+  /** Tier 3: one icon for the orientation, and a narrower device select. */
+  const tight = density >= 3;
   /*
    * At the host's own size there is no frame to turn or to scale: the app has
    * the screen. Both controls are written out rather than disabled, because a
@@ -284,12 +312,18 @@ export function Toolbar({
 
   return (
     <div
-      className="flex min-w-0 flex-1 flex-wrap items-center gap-2xs"
+      className="flex min-w-0 flex-1 flex-nowrap items-center gap-2xs"
       role="toolbar"
       aria-label={intl.formatMessage(COPY.toolbar)}
     >
       <Select
-        className="shrink-0 max-w-[7rem] sm:max-w-[13rem]"
+        className={cn(
+          'shrink-0 max-w-[7rem] sm:max-w-[13rem]',
+          // Tier 3, and the closed control only: the options in the dropdown are
+          // the same list at every width, so narrowing this hides characters of a
+          // device name rather than a device.
+          tight && 'sm:max-w-[9rem]',
+        )}
         aria-label={intl.formatMessage(COPY.device)}
         value={state.device}
         onValueChange={(device) =>
@@ -379,7 +413,7 @@ export function Toolbar({
             <Button
               variant="ghost"
               size="icon"
-              className="shrink-0 sm:hidden"
+              className={cn('shrink-0 sm:hidden', tight && 'sm:block')}
               aria-label={intl.formatMessage(landscape ? COPY.toPortrait : COPY.toLandscape)}
               onClick={() => onChange({ landscape: !state.landscape })}
             >
@@ -400,7 +434,7 @@ export function Toolbar({
         <Segmented
           name="orientation"
           legend={intl.formatMessage(COPY.orientation)}
-          className="hidden shrink-0 sm:block"
+          className={cn('hidden shrink-0 sm:block', tight && 'lg:hidden')}
           value={landscape ? 'landscape' : 'portrait'}
           options={[
             { value: 'portrait', label: intl.formatMessage(COPY.portrait) },
@@ -413,21 +447,21 @@ export function Toolbar({
       )}
 
       {/*
-        Below `sm`, one button that opens and shuts the group beneath it —
-        itself never hidden there, so folding the group away always leaves a
-        way back. `moreOpen` picks exactly one of `max-sm:hidden` (on each of
-        the four items past this one) and no override at all, never both, so
-        there is nothing for an importance modifier to win against. `sm` and up
-        ignores the state, always shows the group and never shows this button,
-        which is its own `sm:hidden`.
+        Below `sm`, and at every header tier above zero, one button that opens
+        and shuts the group beneath it — itself never hidden there, so folding
+        the group away always leaves a way back. `fold` picks exactly one of
+        `max-sm:hidden` (on each of the items past this one) and no override at
+        all, never both, so there is nothing for an importance modifier to win
+        against. At `sm` and up with nothing folded the state is ignored: the
+        group shows and this button does not.
       */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            aria-pressed={moreOpen}
-            className="shrink-0 sm:hidden"
+            aria-pressed={moreOpen || density >= 1}
+            className={cn('shrink-0 sm:hidden', density >= 1 && 'sm:block')}
             aria-label={intl.formatMessage(COPY.more)}
             onClick={() => setMoreOpen((open) => !open)}
           >
@@ -453,7 +487,7 @@ export function Toolbar({
         those two are about a frame there is not one of, and a language is about the app.
       */}
       <Select
-        className={cn('shrink-0', !moreOpen && 'max-sm:hidden')}
+        className={cn('shrink-0', FOLDED)}
         aria-label={intl.formatMessage(COPY.language)}
         value={state.lang ?? ''}
         onValueChange={(lang) => onChange({ lang: isLocale(lang) ? lang : null })}
@@ -473,7 +507,7 @@ export function Toolbar({
       />
 
       <Select
-        className={cn('shrink-0', !moreOpen && 'max-sm:hidden')}
+        className={cn('shrink-0', FOLDED)}
         aria-label={intl.formatMessage(COPY.channel)}
         value={state.channel ?? ''}
         onValueChange={(channel) => onChange({ channel: isFrameChannel(channel) ? channel : null })}
@@ -485,7 +519,7 @@ export function Toolbar({
 
       {!host && (
         <Select
-          className={cn('shrink-0', !moreOpen && 'max-sm:hidden')}
+          className={cn('shrink-0', FOLDED)}
           aria-label={intl.formatMessage(COPY.zoom)}
           value={String(state.zoom)}
           onValueChange={(zoom) => onChange({ zoom: zoom === 'fit' ? 'fit' : Number(zoom) })}
@@ -520,17 +554,14 @@ export function Toolbar({
         ))}
       </datalist>
 
-      <Separator
-        orientation="vertical"
-        className={cn('h-[1.5rem]', !moreOpen && 'max-sm:hidden')}
-      />
+      <Separator orientation="vertical" className={cn('h-[1.5rem]', FOLDED)} />
 
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className={cn(!moreOpen && 'max-sm:hidden')}
+            className={cn(FOLDED)}
             aria-label={intl.formatMessage(COPY.reload)}
             onClick={onReload}
           >
@@ -555,7 +586,7 @@ export function Toolbar({
           <Button
             variant="ghost"
             size="icon"
-            className={cn(!moreOpen && 'max-sm:hidden')}
+            className={cn(FOLDED)}
             aria-label={intl.formatMessage(COPY.raw)}
             onClick={onRaw}
           >
