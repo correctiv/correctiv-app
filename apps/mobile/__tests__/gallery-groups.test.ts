@@ -1,12 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import {
-  BLOCK_CATEGORIES,
-  allBlocks,
-  categoryOf,
-  screenBoundTo,
-} from '@correctiv/app-core/lib/block-category';
+import { BLOCK_CATEGORIES, categoryOf } from '@correctiv/app-core/lib/block-category';
 
 import { floorFaults, withoutComments } from '@correctiv/prose-and-code';
 import { BAUSTEINE, galleryGroups } from '../src/gallery/groups';
@@ -32,6 +27,19 @@ import { CATEGORY_LABELS, categoryName } from '../src/lib/home/category-labels';
 const APP = resolve(__dirname, '..');
 const CATALOGUE = join(APP, 'src/gallery/catalogue.tsx');
 const GROUPS = join(APP, 'src/gallery/groups.ts');
+/**
+ * The core's two files that answer for blocks, comments stripped.
+ *
+ * Both halves are prose in this repository, and both halves name what is gone — so a check
+ * over the raw text would be held by `block-category.ts`'s own header saying that §6 took it,
+ * and would fail the day somebody tidied that sentence. `withoutComments` is what the checks
+ * above it are built on for the same reason.
+ */
+const CORE = ['block-category.ts', 'block-catalogue.generated.ts']
+  .map((file) =>
+    withoutComments(readFileSync(join(APP, '../../packages/app-core/src/lib', file), 'utf8')),
+  )
+  .join('\n');
 
 /** `folder/Name` → the block it draws, `undefined` where it is no block's own drawing. */
 function blocksByComponent(source: string): Map<string, string | undefined> {
@@ -341,12 +349,19 @@ describe('there is one list of families and one table of words', () => {
 });
 
 describe('the grouping asks nothing about screens', () => {
+  /**
+   * It never did here, and ADR 0075 §6 is what made the same true of the core it reads.
+   *
+   * This page has no screen, so it always had nothing to exclude; the four blocks bound to
+   * one screen each were the palette's business and this page's by inheritance only. They
+   * are one block now, and the question the last line of this test used to ask cannot be
+   * asked at all: the function that answered it is gone, so the bound table cannot come back
+   * in a second copy either.
+   */
   it('holds no screen table and no list of screen-bound blocks of its own', () => {
-    // The core answers for those, and it answers per screen where a screen is asked about:
-    // the gallery has no screen, so it has nothing to exclude and nothing to say.
     const groups = readFileSync(GROUPS, 'utf8');
     expect(groups).not.toMatch(/screenBoundTo|SCREEN_BOUND_BLOCKS|ConfigurableScreen/);
-    expect(groups).not.toMatch(/'home-header'|'mediathek-header'/);
-    expect(allBlocks().filter((block) => screenBoundTo(block) !== undefined).length).toBe(4);
+    expect(groups).not.toMatch(/'screen-header'|'mediathek-header'/);
+    expect(CORE).not.toMatch(/SCREEN_BOUND_BLOCKS|screenBoundTo|mayAppearOn|blocksFor/);
   });
 });

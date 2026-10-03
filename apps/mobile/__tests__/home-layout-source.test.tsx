@@ -81,7 +81,7 @@ function merged(screens: Record<string, string>): string {
   return JSON.stringify({ version: 1, screens: parsed });
 }
 
-const FETCHED = merged({ home: documentWith('fetched', 'home-header') });
+const FETCHED = merged({ home: documentWith('fetched', 'screen-header') });
 const OVERRIDE = documentWith('override', 'impact-footer');
 
 function ids(layout: HomeLayout): string[] {
@@ -96,7 +96,7 @@ function holdFetched(text: string, publishedAt = BUILT_AT + 60_000) {
 
 describe('the document another screen draws', () => {
   it('is the fetched copy of that screen, and the bundle for a screen the copy lacks', () => {
-    holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'participate-header') }));
+    holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'screen-header') }));
     expect(ids(screenLayout('mitmachen'))).toEqual(['fetched-mitmachen']);
     expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
     expect(screenLayout('entdecken').sections.length).toBeGreaterThan(0);
@@ -106,7 +106,7 @@ describe('the document another screen draws', () => {
     const bundled = ids(screenLayout('mitmachen'));
     holdFetched(
       merged({
-        home: documentWith('fetched', 'home-header'),
+        home: documentWith('fetched', 'screen-header'),
         mitmachen: JSON.stringify({ version: 2, sections: [], moments: [] }),
       }),
     );
@@ -115,10 +115,10 @@ describe('the document another screen draws', () => {
   });
 
   it('is its own override over its fetched copy, under its own key', () => {
-    holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'participate-header') }));
+    holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'screen-header') }));
     storage.set(
       layoutOverrideKey('mitmachen'),
-      documentWith('override-mitmachen', 'participate-header'),
+      documentWith('override-mitmachen', 'screen-header'),
     );
     expect(layoutOverrideKey('mitmachen')).toBe('workbench:layout:mitmachen');
     expect(ids(screenLayout('mitmachen'))).toEqual(['override-mitmachen']);
@@ -127,7 +127,10 @@ describe('the document another screen draws', () => {
 
   it('ignores a screen it does not declare', () => {
     holdFetched(
-      merged({ game: documentWith('game', 'home-header'), home: documentWith('h', 'home-header') }),
+      merged({
+        game: documentWith('game', 'screen-header'),
+        home: documentWith('h', 'screen-header'),
+      }),
     );
     expect(ids(screenLayout('home'))).toEqual(['h']);
   });

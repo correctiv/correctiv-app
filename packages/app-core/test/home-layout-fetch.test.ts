@@ -41,7 +41,7 @@ const BUILT_AT = NOW - 60 * 60 * 1000;
 /** A deploy after this build, and one before it. */
 const AFTER_BUILD = 'Wed, 23 Sep 2026 07:30:00 GMT';
 const BEFORE_BUILD = 'Wed, 23 Sep 2026 06:30:00 GMT';
-const RENDERABLE = new Set(['home-header', 'impact-footer', 'participate-header']);
+const RENDERABLE = new Set(['screen-header', 'impact-footer', 'screen-header']);
 const OPTIONS = { builtAt: BUILT_AT, renderable: RENDERABLE };
 
 const fetchMock = vi.mocked(fetchTextResponse);
@@ -67,7 +67,7 @@ const HOME = {
   version: HOME_LAYOUT_VERSION,
   title: TITLE,
   sections: [
-    { id: 'header', module: 'home-header' },
+    { id: 'header', module: 'screen-header' },
     { id: 'impact', module: 'impact-footer' },
   ],
   moments: [],
@@ -131,7 +131,7 @@ describe('a document that is a layout', () => {
         version: HOME_LAYOUT_VERSION,
         title: TITLE,
         sections: [
-          { id: 'header', module: 'home-header' },
+          { id: 'header', module: 'screen-header' },
           { id: 'quiz', module: 'quiz-of-the-day' },
         ],
         moments: [],
@@ -343,7 +343,7 @@ describe('a merged document with several screens', () => {
   const MITMACHEN = {
     version: HOME_LAYOUT_VERSION,
     title: TITLE,
-    sections: [{ id: 'only', module: 'participate-header' }],
+    sections: [{ id: 'only', module: 'screen-header' }],
     moments: [],
   };
 

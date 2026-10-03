@@ -15,7 +15,7 @@ import { governs, SHIPPED } from './document';
  * it, and the document the app ships for it.
  *
  * The palette is not here. Which blocks a screen offers, and in which groups, is
- * `blocksByCategory(screen)` in the core (ADR 0073 §2), read where the palette is drawn,
+ * `blocksByCategory()` in the core (ADR 0073 §2), read where the palette is drawn,
  * so this file holds no second list of blocks.
  */
 
@@ -85,7 +85,7 @@ export function shippedOf(screen: ConfigurableScreen): HomeLayout {
   if (screen === 'home') return SHIPPED;
   let layout = shipped.get(screen);
   if (!layout) {
-    const parsed = parseHomeLayout(SCREEN_DOCUMENTS[screen], undefined, screen).layout;
+    const parsed = parseHomeLayout(SCREEN_DOCUMENTS[screen]).layout;
     if (!parsed) throw new Error(`the bundled ${screen} document does not parse`);
     layout = parsed;
     shipped.set(screen, layout);

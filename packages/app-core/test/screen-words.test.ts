@@ -232,7 +232,7 @@ describe('the five documents that ship with the app', () => {
     const source = SCREEN_DOCUMENTS[screen];
     expect(codes(parseScreenDocument(source))).toEqual([]);
 
-    const parse: HomeLayoutParse = parseHomeLayout(source, undefined, screen);
+    const parse: HomeLayoutParse = parseHomeLayout(source);
     expect(parse.problems).toEqual([]);
     expect(parse.layout?.words).not.toBeNull();
   });

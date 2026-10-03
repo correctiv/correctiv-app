@@ -137,16 +137,16 @@ export interface ModuleWords {
 }
 
 export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
-  'home-header': {
+  'screen-header': {
     label: wbMessage({
       id: 'home.module.header',
       defaultMessage: 'Header',
       description:
-        'The name of the app’s topmost block, which is a word the app’s own header does not print. `frame.pages.home` is the tab this block sits on.',
+        'The name of the block at the top of a screen, which prints that screen’s own title. It is a word the app’s own header does not print.',
     }),
     what: wbMessage({
       id: 'home.module.header.what',
-      defaultMessage: 'The date, the greeting and the search.',
+      defaultMessage: 'The screen’s title, and what you switch on beside it.',
     }),
   },
   'feed-status': {
@@ -244,13 +244,6 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'What the reporting changed, and a thank-you.',
     }),
   },
-  'discover-header': {
-    label: wbMessage({ id: 'home.module.discoverHeader', defaultMessage: 'Discover heading' }),
-    what: wbMessage({
-      id: 'home.module.discoverHeader.what',
-      defaultMessage: 'The title of the Discover screen.',
-    }),
-  },
   'search-entry': {
     label: wbMessage({ id: 'home.module.searchEntry', defaultMessage: 'Search entry' }),
     what: wbMessage({
@@ -270,13 +263,6 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     what: wbMessage({
       id: 'home.module.projectDirectory.what',
       defaultMessage: 'The projects and products of CORRECTIV, in their groups.',
-    }),
-  },
-  'mediathek-header': {
-    label: wbMessage({ id: 'home.module.mediathekHeader', defaultMessage: 'Mediathek heading' }),
-    what: wbMessage({
-      id: 'home.module.mediathekHeader.what',
-      defaultMessage: 'The title of the Mediathek screen.',
     }),
   },
   'live-radio-banner': {
@@ -312,13 +298,6 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
     what: wbMessage({
       id: 'home.module.bonusAudioList.what',
       defaultMessage: 'The club’s bonus audio tracks, as a list.',
-    }),
-  },
-  'participate-header': {
-    label: wbMessage({ id: 'home.module.participateHeader', defaultMessage: 'Take part heading' }),
-    what: wbMessage({
-      id: 'home.module.participateHeader.what',
-      defaultMessage: 'The title of the Take part screen, with its introduction.',
     }),
   },
   'callout-list': {
@@ -425,6 +404,46 @@ export function moduleLabel(module: string): ModuleWords {
  * labelled `count`.
  */
 export const SETTING_LABELS: Readonly<Record<string, ModuleWords>> = {
+  'screen-header.mark': {
+    label: wbMessage({
+      id: 'home.setting.screenHeader.mark',
+      defaultMessage: 'Show the wordmark instead of the title',
+    }),
+    what: wbMessage({
+      id: 'home.setting.screenHeader.mark.what',
+      defaultMessage: 'The CORRECTIV wordmark with a rule under it, as the home screen has.',
+    }),
+  },
+  'screen-header.intro': {
+    label: wbMessage({
+      id: 'home.setting.screenHeader.intro',
+      defaultMessage: 'The sentence under the title',
+    }),
+    what: wbMessage({
+      id: 'home.setting.screenHeader.intro.what',
+      defaultMessage: 'One line saying what the screen is for. Empty leaves it out.',
+    }),
+  },
+  'screen-header.date': {
+    label: wbMessage({
+      id: 'home.setting.screenHeader.date',
+      defaultMessage: 'Show today’s date',
+    }),
+    what: wbMessage({
+      id: 'home.setting.screenHeader.date.what',
+      defaultMessage: 'Beside the wordmark, so the screen reads as today’s edition.',
+    }),
+  },
+  'screen-header.search': {
+    label: wbMessage({
+      id: 'home.setting.screenHeader.search',
+      defaultMessage: 'Offer the search',
+    }),
+    what: wbMessage({
+      id: 'home.setting.screenHeader.search.what',
+      defaultMessage: 'The field under the header that opens the search screen.',
+    }),
+  },
   'article-hero.pin': {
     label: wbMessage({
       id: 'home.setting.articleHero.pin',
@@ -943,7 +962,7 @@ export function mintId(layout: HomeLayout, module: string): string {
   /*
    * The one input that made an editor operation produce a file the core refuses: an empty
    * module name mints an empty id, and the parser answers `section-id-invalid`. Not
-   * reachable from the palette, which offers `blocksByCategory(screen)` and nothing else
+   * reachable from the palette, which offers `blocksByCategory()` and nothing else
    * — so this is a precondition rather than a bug, found by a cold review feeding this
    * function names no registry would hold. Refused at the door, where the message names
    * the caller, rather than at a parse of a file somebody has already saved.

@@ -344,7 +344,7 @@ const INTL: IntlShape = createIntl({ locale: 'de', defaultLocale: 'en', messages
 export const SUMMARY_MAX = 20_000;
 
 /** Modules that are furniture rather than content: a day of only these shows nothing. */
-const FURNITURE: ReadonlySet<string> = new Set(['home-header', 'feed-status']);
+const FURNITURE: ReadonlySet<string> = new Set(['screen-header', 'feed-status']);
 
 /**
  * What changed between two home documents, as a list a person can read.

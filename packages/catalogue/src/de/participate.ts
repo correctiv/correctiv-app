@@ -1,8 +1,5 @@
 /** German for the `participate.*` ids: the participate tab. */
 export const participate: Record<string, string> = {
-  'participate.title': 'Mitmachen',
-  'participate.lead':
-    'Recherchen entstehen mit Ihnen. Ihre Hinweise, Beobachtungen und Prüfungen machen sie erst möglich.',
   'participate.activeCallouts': 'Aktive Aufrufe',
   'participate.forumHeading': 'Behauptungen gemeinsam prüfen',
   'participate.forumLead':

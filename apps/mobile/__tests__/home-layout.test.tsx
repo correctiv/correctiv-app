@@ -79,7 +79,7 @@ import { readerOf } from '@correctiv/app-core/lib/home-audience';
 import { sessionActions } from '@correctiv/app-core/stores/session';
 import type { Entitlement } from '@correctiv/app-core/types/models';
 import { HOME_MODULE_AUDIENCES, MODULE_CONDITIONS } from '@/lib/home/conditions';
-import { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS } from '@/lib/home/blocks';
+import { MODULE_CATEGORIES } from '@/lib/home/blocks';
 import { HOME_MODULE_SETTINGS } from '@/lib/home/settings';
 import { berlinInstant } from '@correctiv/app-core/lib/berlin-time';
 import { resetStore } from '@correctiv/app-core/stores/store';
@@ -93,11 +93,7 @@ import HomeScreen from '@/app/(tabs)/index';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { HOME_MODULES, LIFTED_CALLOUT, placeTestID } from '@/lib/home/modules';
 import { coreStore } from '@/lib/store/core';
-import {
-  CONFIGURABLE_SCREENS,
-  SCREEN_DOCUMENTS,
-  type ConfigurableScreen,
-} from '@correctiv/app-core/lib/screen-layout';
+import { CONFIGURABLE_SCREENS, SCREEN_DOCUMENTS } from '@correctiv/app-core/lib/screen-layout';
 
 const DOCUMENT_PATH = join(
   __dirname,
@@ -227,21 +223,16 @@ describe('the shipped home document', () => {
   });
 
   /**
-   * ADR 0073 §3, from the side that is easy to let grow: the restriction is four blocks
-   * and the reason is that each prints a screen's own title. A fifth one arriving is a
-   * decision, so it fails here until somebody writes it down in both places.
+   * ADR 0075 §6, from the side that is easy to let grow back: the four blocks that each
+   * printed one screen's name are one block that prints the name of wherever it stands,
+   * and nothing in the app is tied to a screen any more. A second header arriving is the
+   * thing ADR 0073 refused in another shape — two ways to put a heading on a screen — so
+   * it fails here until somebody writes down which is which.
    */
-  it('binds only the screen titles to a screen, and binds each to one it can be on', () => {
-    expect(Object.keys(SCREEN_BOUND_BLOCKS).sort()).toEqual([
-      'discover-header',
-      'home-header',
-      'mediathek-header',
-      'participate-header',
+  it('holds exactly one header, and ties no block to a screen', () => {
+    expect(Object.keys(HOME_MODULES).filter((module) => module.endsWith('-header'))).toEqual([
+      'screen-header',
     ]);
-    const unknown = Object.entries(SCREEN_BOUND_BLOCKS).filter(
-      ([module, screen]) => !(module in HOME_MODULES) || !CONFIGURABLE_SCREENS.includes(screen),
-    );
-    expect(unknown).toEqual([]);
   });
 
   /**
@@ -393,7 +384,7 @@ describe('what Home draws', () => {
  * are compared by hand in the pull request that made it (`screens/`).
  */
 describe('the shipped Entdecken document', () => {
-  const entdecken = parseHomeLayout(SCREEN_DOCUMENTS.entdecken, undefined, 'entdecken');
+  const entdecken = parseHomeLayout(SCREEN_DOCUMENTS.entdecken);
 
   it('reads cleanly on its own screen, and says something', () => {
     expect(entdecken.problems).toEqual([]);
@@ -406,19 +397,16 @@ describe('the shipped Entdecken document', () => {
   });
 
   /**
-   * ADR 0073 §3, which is all that is left of ADR 0071 §2's refusal: the document as a
-   * whole is no longer Entdecken's alone, and the one thing in it that cannot move is the
-   * heading that says which screen this is.
+   * ADR 0073 §1 with nothing held back, which ADR 0075 §6 is what finished: the last
+   * thing in this document that could not move was the heading saying which screen it
+   * was, and the heading now says whichever screen it is standing on. So the whole
+   * document reads anywhere, and there is no code left to refuse any of it.
    */
-  it('keeps only its own title off Home, and lets the rest of it through', () => {
-    const onHome = parseHomeLayout(SCREEN_DOCUMENTS.entdecken, undefined, 'home');
-    expect(onHome.problems).toEqual([
-      {
-        code: 'section-module-not-on-screen',
-        context: { id: 'title', module: 'discover-header', screen: 'home' },
-      },
-    ]);
-    expect(onHome.layout?.sections.map((section) => section.module)).toEqual([
+  it('reads whole on another screen, title included', () => {
+    const parse = parseHomeLayout(SCREEN_DOCUMENTS.entdecken);
+    expect(parse.problems).toEqual([]);
+    expect(parse.layout?.sections.map((section) => section.module)).toEqual([
+      'screen-header',
       'search-entry',
       'topic-rail',
       'project-directory',
@@ -439,24 +427,20 @@ describe('what Entdecken draws', () => {
    * the screen it would lead to.
    */
   it('places the fact-check rail with its own count, and without a link to itself', () => {
-    const placed = (screen: 'home' | 'entdecken', count: number) =>
-      parseHomeLayout(
-        {
-          version: 4,
-          title: { de: 'Bildschirm' },
-          sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count } }],
-          moments: [],
-        },
-        undefined,
-        screen,
-      ).layout!;
+    const placed = (count: number) =>
+      parseHomeLayout({
+        version: 4,
+        title: { de: 'Bildschirm' },
+        sections: [{ id: 'rail', module: 'faktencheck-rail', settings: { count } }],
+        moments: [],
+      }).layout!;
     const cards = (tree: ReturnType<typeof render>) => renderedText(tree).match(/Recherche \d/g);
 
-    const onEntdecken = render(<ScreenBlocks screen="entdecken" layout={placed('entdecken', 2)} />);
+    const onEntdecken = render(<ScreenBlocks screen="entdecken" layout={placed(2)} />);
     expect(cards(onEntdecken)).toHaveLength(2);
     expect(renderedText(onEntdecken)).not.toContain('Alle ansehen');
 
-    const onHome = render(<ScreenBlocks screen="home" layout={placed('home', 3)} />);
+    const onHome = render(<ScreenBlocks screen="home" layout={placed(3)} />);
     expect(cards(onHome)).toHaveLength(3);
     expect(renderedText(onHome)).toContain('Alle ansehen');
   });
@@ -476,11 +460,14 @@ describe('what Mitmachen draws', () => {
     expect(renderedText(tree)).toContain('Mitmachen');
   });
 
-  it('keeps only its own title off Home', () => {
-    const onHome = parseHomeLayout(SCREEN_DOCUMENTS.mitmachen, undefined, 'home');
-    expect(onHome.problems.map((problem) => problem.context.module)).toEqual([
-      'participate-header',
-    ]);
+  /** ADR 0075 §6: its introduction is a setting of the header, so the whole document moves. */
+  it('carries its introduction in the document, and reads whole anywhere', () => {
+    const parse = parseHomeLayout(SCREEN_DOCUMENTS.mitmachen);
+    expect(parse.problems).toEqual([]);
+    expect(parse.layout?.sections[0]?.settings?.intro).toEqual({
+      de: 'Recherchen entstehen mit Ihnen. Ihre Hinweise, Beobachtungen und Prüfungen machen sie erst möglich.',
+      en: 'Investigations are made with you. Your tips, your observations and your checks are what make them possible.',
+    });
   });
 });
 
@@ -492,15 +479,15 @@ describe('what Profil draws', () => {
   });
 
   /**
-   * The one bundled document with no title block of its own, so after ADR 0073 §1 there
-   * is nothing in it a document of Home may not carry. That used to be a refusal and the
-   * test said it was "what makes it a document of its own", which was never true: what
-   * makes it one is that the Profil screen reads it (§1 of ADR 0071).
+   * The one bundled document with no heading of its own at all, which is how the screen
+   * was drawn before there was a document and still is. What makes it a document of its
+   * own is that the Profil screen reads it (ADR 0071 §1), and nothing in it is refused
+   * anywhere.
    */
-  it('reads cleanly on Home as well, since nothing in it is a screen title', () => {
-    const onHome = parseHomeLayout(SCREEN_DOCUMENTS.profil, undefined, 'home');
-    expect(onHome.problems).toEqual([]);
-    expect(onHome.layout?.sections.map((section) => section.module)).toEqual([
+  it('reads cleanly, and draws its five cards and no heading', () => {
+    const parse = parseHomeLayout(SCREEN_DOCUMENTS.profil);
+    expect(parse.problems).toEqual([]);
+    expect(parse.layout?.sections.map((section) => section.module)).toEqual([
       'profile-club-card',
       'profile-membership',
       'profile-impact',
@@ -518,7 +505,7 @@ describe('what Profil draws', () => {
  * so it does not (`lib/store/core.ts`, `useLazyLoad`).
  */
 describe('a block placed on a screen it was not written for', () => {
-  const placed = (screen: ConfigurableScreen, ...modules: string[]) =>
+  const placed = (...modules: string[]) =>
     parseHomeLayout(
       {
         version: 4,
@@ -527,11 +514,10 @@ describe('a block placed on a screen it was not written for', () => {
         moments: [],
       },
       new Set(Object.keys(HOME_MODULES)),
-      screen,
     );
 
   it('draws the Mediathek’s blocks on Home', () => {
-    const parse = placed('home', 'live-radio-banner', 'podcast-rail', 'bonus-audio-list');
+    const parse = placed('live-radio-banner', 'podcast-rail', 'bonus-audio-list');
     expect(parse.problems).toEqual([]);
 
     const tree = render(<ScreenBlocks screen="home" layout={parse.layout!} />);
@@ -542,7 +528,7 @@ describe('a block placed on a screen it was not written for', () => {
   });
 
   it('draws a Home block on the Mediathek', () => {
-    const parse = placed('mediathek', 'article-hero', 'latest-research', 'impact-footer');
+    const parse = placed('article-hero', 'latest-research', 'impact-footer');
     expect(parse.problems).toEqual([]);
 
     const tree = render(<ScreenBlocks screen="mediathek" layout={parse.layout!} />);
@@ -551,24 +537,33 @@ describe('a block placed on a screen it was not written for', () => {
   });
 
   it('still refuses a module no renderer answers to', () => {
-    const parse = placed('home', 'quiz');
+    const parse = placed('quiz');
     expect(parse.problems).toEqual([
       { code: 'module-unrecognised', context: { id: 'quiz', module: 'quiz' } },
     ]);
     expect(parse.layout?.sections).toEqual([]);
   });
 
-  /** And the four that stay put, each refused on every screen that is not its own. */
-  it('refuses another screen’s title, on every screen but its own', () => {
-    for (const [module, own] of Object.entries(SCREEN_BOUND_BLOCKS)) {
-      for (const screen of CONFIGURABLE_SCREENS) {
-        const codes = placed(screen, module).problems.map((problem) => problem.code);
-        expect({ module, screen, codes }).toEqual({
-          module,
-          screen,
-          codes: screen === own ? [] : ['section-module-not-on-screen'],
-        });
-      }
+  /**
+   * And the header, which was the last block that could be refused anywhere (ADR 0075 §6).
+   * It parses on every screen and draws that screen's own name, which is the whole of why
+   * the binding could go: a heading that reads its screen cannot say the reader is
+   * somewhere they are not.
+   */
+  it('draws the header on every screen, saying that screen’s own name', () => {
+    for (const screen of CONFIGURABLE_SCREENS) {
+      const parse = parseHomeLayout(
+        {
+          version: 4,
+          title: { de: `Titel von ${screen}` },
+          sections: [{ id: 'header', module: 'screen-header' }],
+          moments: [],
+        },
+        new Set(Object.keys(HOME_MODULES)),
+      );
+      expect({ screen, problems: parse.problems }).toEqual({ screen, problems: [] });
+      const tree = render(<ScreenBlocks screen={screen} layout={parse.layout!} />);
+      expect(renderedText(tree)).toContain(`Titel von ${screen}`);
     }
   });
 });

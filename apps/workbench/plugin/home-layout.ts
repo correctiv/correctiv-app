@@ -220,11 +220,7 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
       '/src/preview/home/document.ts',
     )) as Document;
 
-    const { layout, problems } = parseHomeLayout(
-      input,
-      undefined,
-      screen as Parameters<typeof parseHomeLayout>[2],
-    );
+    const { layout, problems } = parseHomeLayout(input);
     if (!layout || problems.length > 0) {
       return answer(res, 400, {
         error: 'The core refused the document.',

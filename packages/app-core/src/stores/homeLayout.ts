@@ -289,7 +289,7 @@ export const refreshLayouts =
     for (const screen of CONFIGURABLE_SCREENS) {
       const document = screenDocumentOf(body, screen);
       if (document === undefined) continue;
-      const parsed = parseHomeLayout(document, renderable, screen);
+      const parsed = parseHomeLayout(document, renderable);
       problems.push(...parsed.problems);
       if (parsed.layout && parsed.layout.sections.length > 0) draws = true;
     }

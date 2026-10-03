@@ -1,11 +1,14 @@
 /**
- * The families a block can belong to, and who may be placed where.
+ * The families a block can belong to.
  *
- * [ADR 0073](../../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md).
- * Every configurable screen takes every block, so there is no per-screen table any more
- * and `blocksFor` answers nearly the same list for every screen. What is left of the
- * restriction is `SCREEN_BOUND_BLOCKS`, the four blocks that print a screen's own title,
- * and the parser holds a document to it (`home-layout.ts`).
+ * [ADR 0073](../../../../adr/0073-every-screen-takes-every-block-and-a-block-declares-its-category.md)
+ * §1: every configurable screen takes every block. It held with one exception until
+ * [ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §6 — `SCREEN_BOUND_BLOCKS`, the four blocks that each printed one screen's name — and
+ * the exception is gone with them: `screen-header` prints the title of whatever screen it
+ * is on, so there is no longer a block that can lie about where the reader is. Nothing
+ * here asks about a screen any more, and the parser has no `section-module-not-on-screen`
+ * left to report.
  *
  * **The type is the core's and the declaration is the app's**, which is ADR 0054 §3
  * unchanged: `apps/mobile/src/lib/home/blocks.ts` says which family each block is in, and
@@ -18,8 +21,7 @@
  * package may hold a label for one.
  */
 
-import { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS } from './block-catalogue.generated';
-import { type ConfigurableScreen } from './screen-layout';
+import { MODULE_CATEGORIES } from './block-catalogue.generated';
 
 /**
  * A block's family. A union, so a category nobody has thought about is a type error
@@ -50,9 +52,16 @@ export const BLOCK_CATEGORIES: readonly BlockCategory[] = [
   'club',
 ];
 
-export { MODULE_CATEGORIES, SCREEN_BOUND_BLOCKS };
+export { MODULE_CATEGORIES };
 
-/** Every block the app declares, in the order it declares them. */
+/**
+ * Every block the app declares, in the order it declares them — and so the palette of
+ * every screen alike.
+ *
+ * It took a screen until ADR 0075 §6 and answers one list now. The parameter is gone
+ * rather than kept and ignored, because a function that asks for a screen it does not
+ * read is a restriction a reader keeps looking for.
+ */
 export function allBlocks(): readonly string[] {
   return Object.keys(MODULE_CATEGORIES);
 }
@@ -62,43 +71,22 @@ export function categoryOf(block: string): BlockCategory | undefined {
   return Object.hasOwn(MODULE_CATEGORIES, block) ? MODULE_CATEGORIES[block] : undefined;
 }
 
-/** The one screen a block is bound to, or `undefined` when it may go anywhere. */
-export function screenBoundTo(block: string): ConfigurableScreen | undefined {
-  return Object.hasOwn(SCREEN_BOUND_BLOCKS, block) ? SCREEN_BOUND_BLOCKS[block] : undefined;
-}
-
-/**
- * Whether a block may be arranged on a screen. True for a block nobody has declared,
- * which is what leaves `renderable` to say a module does not exist (`parseHomeLayout`).
- */
-export function mayAppearOn(block: string, screen: ConfigurableScreen): boolean {
-  const bound = screenBoundTo(block);
-  return bound === undefined || bound === screen;
-}
-
-/** The blocks a screen's palette may offer, in the declaration's own order. */
-export function blocksFor(screen: ConfigurableScreen): readonly string[] {
-  return allBlocks().filter((block) => mayAppearOn(block, screen));
-}
-
-/** One category and the blocks of it a screen may take. */
+/** One category and the blocks in it. */
 export interface BlockGroup {
   category: BlockCategory;
   blocks: readonly string[];
 }
 
 /**
- * What a picker draws: the categories in `BLOCK_CATEGORIES` order, each with the blocks
- * this screen may take, and a category with nothing left for this screen left out
- * entirely rather than drawn empty.
+ * What a picker draws: the categories in `BLOCK_CATEGORIES` order with their blocks, and
+ * a category nothing is filed under left out entirely rather than drawn empty.
  *
  * The one export a tabbed picker needs, so that the grouping is decided once here and
  * not once per tool.
  */
-export function blocksByCategory(screen: ConfigurableScreen): readonly BlockGroup[] {
-  const offered = blocksFor(screen);
+export function blocksByCategory(): readonly BlockGroup[] {
   return BLOCK_CATEGORIES.map((category) => ({
     category,
-    blocks: offered.filter((block) => MODULE_CATEGORIES[block] === category),
+    blocks: allBlocks().filter((block) => MODULE_CATEGORIES[block] === category),
   })).filter((group) => group.blocks.length > 0);
 }

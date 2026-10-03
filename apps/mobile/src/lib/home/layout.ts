@@ -134,13 +134,13 @@ const read = new Map<
   { override: string | null; fetched: string | null; layout: HomeLayout }
 >();
 
-function parseScreen(document: unknown, screen: ConfigurableScreen) {
-  return parseHomeLayout(document, RENDERABLE, screen);
+function parseScreen(document: unknown) {
+  return parseHomeLayout(document, RENDERABLE);
 }
 
 /** The screen's bundled document, which is always usable (ADR 0036 §10). */
 function bundled(screen: ConfigurableScreen): HomeLayout {
-  const { layout, problems } = parseScreen(SCREEN_DOCUMENTS[screen], screen);
+  const { layout, problems } = parseScreen(SCREEN_DOCUMENTS[screen]);
   reportLayoutProblems(problems);
   return layout ?? { version: 0, words: null, sections: [], moments: [], editions: [] };
 }
@@ -186,13 +186,13 @@ export function screenLayout(screen: ConfigurableScreen): HomeLayout {
   let layout: HomeLayout | null = null;
   if (override !== null) {
     // A document that does not parse costs the override and not the screen.
-    const parsed = parseScreen(parseText(override), screen);
+    const parsed = parseScreen(parseText(override));
     reportLayoutProblems(parsed.problems);
     layout = parsed.layout;
   } else if (fetched !== null) {
     const document = screenDocumentOf(parseText(fetched), screen);
     if (document !== undefined) {
-      const parsed = parseScreen(document, screen);
+      const parsed = parseScreen(document);
       reportLayoutProblems(parsed.problems);
       if (parsed.layout && parsed.layout.sections.length > 0) layout = parsed.layout;
     }

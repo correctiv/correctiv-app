@@ -106,7 +106,7 @@ export function setLayout(next: HomeLayout): void {
 export function holdIncoming(of: ConfigurableScreen, document: string): boolean {
   let parsed: HomeLayout | null;
   try {
-    parsed = restorable(JSON.parse(document), of);
+    parsed = restorable(JSON.parse(document));
   } catch {
     parsed = null;
   }

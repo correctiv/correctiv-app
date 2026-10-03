@@ -419,20 +419,39 @@ describe('a document with audiences, read by the version 3 app', () => {
     expect(drawn[0]?.settings?.pin).toBe('https://wahl/');
   });
 
-  it('draws the shipped document exactly as the version 3 document it was', () => {
+  /**
+   * The shipped document, as the app that shipped the day before audiences reads it.
+   *
+   * The header is the one place it loses, and it loses it for the reason of ADR 0036 §6:
+   * `screen-header`'s two switches are a setting kind that app has no word for, and a place
+   * whose settings it cannot read costs the place. Renumbering the document is free of it,
+   * which is what the loop holds — the audience question this fixture is about moves no
+   * place and drops none.
+   */
+  it('draws the shipped document as the version 3 document it was, bar the header', () => {
     const now = v3.parseHomeLayout(homeLayoutDocument);
     const before = v3.parseHomeLayout({ ...homeLayoutDocument, version: 3 });
-    expect(now.problems.map((problem) => problem.code)).toEqual(['version-unknown']);
-    expect(before.problems).toEqual([]);
+    expect(now.problems.map((problem) => problem.code)).toEqual([
+      'version-unknown',
+      'section-setting-invalid',
+      'section-setting-invalid',
+    ]);
+    expect(before.problems.map((problem) => problem.code)).toEqual([
+      'section-setting-invalid',
+      'section-setting-invalid',
+    ]);
     for (let minute = 0; minute < 24 * 60; minute += 5) {
       const instant = berlinInstant('2026-09-03', minute)!;
       expect(v3.sectionsAtInstant(now.layout!, instant)).toEqual(
         v3.sectionsAtInstant(before.layout!, instant),
       );
-      // And for a paying member this app draws what the version 3 app draws.
-      expect(sectionsAtInstant(read(homeLayoutDocument), instant, PAYING)).toEqual(
-        v3.sectionsAtInstant(now.layout!, instant),
-      );
+      // And for a paying member this app draws what the version 3 app draws, less that
+      // one place.
+      expect(
+        sectionsAtInstant(read(homeLayoutDocument), instant, PAYING).filter(
+          (section) => section.module !== 'screen-header',
+        ),
+      ).toEqual(v3.sectionsAtInstant(now.layout!, instant));
     }
   });
 });

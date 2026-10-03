@@ -30,7 +30,7 @@ import { LoginGate } from '@/components/gate/LoginGate';
 import { BackstageTeaser } from '@/components/home/BackstageTeaser';
 import { CalloutTeaser } from '@/components/home/CalloutTeaser';
 import { EarlyAccessCard } from '@/components/home/EarlyAccessCard';
-import { HomeHeader } from '@/components/home/HomeHeader';
+import { Masthead } from '@/components/home/Masthead';
 import { ImpactFooter } from '@/components/home/ImpactFooter';
 import { MediathekReihe } from '@/components/home/MediathekReihe';
 import { SpotlightBriefing } from '@/components/home/SpotlightBriefing';
@@ -641,9 +641,12 @@ const LISTED = [
     folder: 'home',
     entries: [
       {
-        name: 'HomeHeader',
-        block: 'home-header',
-        specimens: [{ label: 'default', node: <HomeHeader instant={Date.now()} /> }],
+        name: 'Masthead',
+        block: 'screen-header',
+        specimens: [
+          { label: 'default', node: <Masthead instant={Date.now()} /> },
+          { label: 'date={false}', node: <Masthead instant={Date.now()} date={false} /> },
+        ],
       },
       {
         name: 'SpotlightBriefing',

@@ -59,7 +59,7 @@ export function restore(screen: ConfigurableScreen = 'home'): HomeLayout {
   try {
     const raw = window.localStorage.getItem(layoutKey(screen));
     if (raw === null) return shipped;
-    return restorable(JSON.parse(raw), screen) ?? shipped;
+    return restorable(JSON.parse(raw)) ?? shipped;
   } catch {
     return shipped;
   }
@@ -76,11 +76,8 @@ export function restore(screen: ConfigurableScreen = 'home'): HomeLayout {
  * other problem still refuses, and so does a version from a later editor, whose document
  * this one may not be able to write back whole.
  */
-export function restorable(
-  document: unknown,
-  screen: ConfigurableScreen = 'home',
-): HomeLayout | null {
-  const { layout, problems } = parseHomeLayout(document, undefined, screen);
+export function restorable(document: unknown): HomeLayout | null {
+  const { layout, problems } = parseHomeLayout(document);
   if (!layout) return null;
   const older = layout.version < HOME_LAYOUT_VERSION;
   const only = problems.every((problem) => older && problem.code === 'version-unknown');

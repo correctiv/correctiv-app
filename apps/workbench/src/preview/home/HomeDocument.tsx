@@ -36,7 +36,11 @@ import {
 } from '@correctiv/app-core/lib/home-layout';
 import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 import { postIdOf } from '@correctiv/app-core/lib/home-rules';
-import type { CategorySetting, TagSetting } from '@correctiv/app-core/lib/home-settings';
+import type {
+  CategorySetting,
+  FlagSetting,
+  TagSetting,
+} from '@correctiv/app-core/lib/home-settings';
 
 import { useLivePosts, useLivePostTitle, useTerms } from './liveSettings';
 
@@ -2066,6 +2070,14 @@ function Setting({
           label={say(intl, label)}
           onSet={onSet}
         />
+      ) : spec.kind === 'flag' ? (
+        <Flag
+          spec={spec}
+          value={value}
+          disabled={disabled}
+          label={say(intl, label)}
+          onSet={onSet}
+        />
       ) : spec.kind === 'text' ? (
         /*
          * One field for the language this workbench is in, and a mark on the others
@@ -2115,6 +2127,46 @@ function Setting({
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * A switch, which is the whole of what a `flag` can be asked (ADR 0075 §6).
+ *
+ * A checkbox and not a pair of options, because the question already reads as one — "show
+ * the date" is answered by yes or no and a list of two is a list nobody wanted. Switching
+ * it back to what the block does by itself takes the key out of the document rather than
+ * writing the same answer twice, which is the model's own promise that a change that
+ * changes nothing is never written.
+ */
+function Flag({
+  spec,
+  value,
+  disabled,
+  label,
+  onSet,
+}: {
+  spec: FlagSetting;
+  value: unknown;
+  disabled: boolean;
+  label: string;
+  onSet: (value: boolean | undefined) => void;
+}) {
+  const on = typeof value === 'boolean' ? value : spec.fallback;
+  return (
+    <label className="flex items-center gap-2xs text-s text-on-canvas">
+      <input
+        type="checkbox"
+        checked={on}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(event) =>
+          onSet(event.target.checked === spec.fallback ? undefined : event.target.checked)
+        }
+        className="size-[0.875rem] shrink-0 accent-accent"
+      />
+      {label}
+    </label>
   );
 }
 

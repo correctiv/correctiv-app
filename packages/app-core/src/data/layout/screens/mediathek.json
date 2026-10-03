@@ -3,7 +3,7 @@
   "title": { "de": "Mediathek" },
   "icon": "play",
   "sections": [
-    { "id": "title", "module": "mediathek-header" },
+    { "id": "title", "module": "screen-header" },
     { "id": "live", "module": "live-radio-banner" },
     { "id": "podcasts", "module": "podcast-rail" },
     { "id": "gespraech", "module": "gespraech-rail" },

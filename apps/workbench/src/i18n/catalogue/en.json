@@ -1632,12 +1632,6 @@
   "home.module.communityNote.what": {
     "defaultMessage": "A short note about the community area."
   },
-  "home.module.discoverHeader": {
-    "defaultMessage": "Discover heading"
-  },
-  "home.module.discoverHeader.what": {
-    "defaultMessage": "The title of the Discover screen."
-  },
   "home.module.earlyAccess": {
     "defaultMessage": "Early access"
   },
@@ -1676,10 +1670,10 @@
   },
   "home.module.header": {
     "defaultMessage": "Header",
-    "description": "The name of the app’s topmost block, which is a word the app’s own header does not print. `frame.pages.home` is the tab this block sits on."
+    "description": "The name of the block at the top of a screen, which prints that screen’s own title. It is a word the app’s own header does not print."
   },
   "home.module.header.what": {
-    "defaultMessage": "The date, the greeting and the search."
+    "defaultMessage": "The screen’s title, and what you switch on beside it."
   },
   "home.module.impact": {
     "defaultMessage": "Impact",
@@ -1706,18 +1700,6 @@
   },
   "home.module.mediathek.what": {
     "defaultMessage": "Video and audio, as a row."
-  },
-  "home.module.mediathekHeader": {
-    "defaultMessage": "Mediathek heading"
-  },
-  "home.module.mediathekHeader.what": {
-    "defaultMessage": "The title of the Mediathek screen."
-  },
-  "home.module.participateHeader": {
-    "defaultMessage": "Take part heading"
-  },
-  "home.module.participateHeader.what": {
-    "defaultMessage": "The title of the Take part screen, with its introduction."
   },
   "home.module.podcastRail": {
     "defaultMessage": "Podcast rail"
@@ -1807,7 +1789,7 @@
     "description": "The one line of the palette dialog, under its heading. {where} is the place the chosen block would land, in words, as \"at the very top\"."
   },
   "home.palette.leadMore": {
-    "defaultMessage": "The shelf holds every block the app has, sorted into families and drawn as it will appear. Any block may stand on any screen; only the four screen titles stay on their own. How it looks, you see in the frame beside it.",
+    "defaultMessage": "The shelf holds every block the app has, sorted into families and drawn as it will appear. Any block may stand on any screen, the header included: it prints the title of the screen it is on. How it looks, you see in the frame beside it.",
     "description": "Behind the ⓘ beside the palette dialog’s heading, home.palette.title."
   },
   "home.palette.none": {
@@ -2015,6 +1997,30 @@
   "home.setting.sampleQuote": {
     "defaultMessage": "In the source inventory:",
     "description": "Behind the same ⓘ, above a quotation printed as the source inventory writes it, in English: what the checked-in list stands in for. The page that shows the inventory is called “Statusübersicht der Quellen” in German."
+  },
+  "home.setting.screenHeader.date": {
+    "defaultMessage": "Show today’s date"
+  },
+  "home.setting.screenHeader.date.what": {
+    "defaultMessage": "Beside the wordmark, so the screen reads as today’s edition."
+  },
+  "home.setting.screenHeader.intro": {
+    "defaultMessage": "The sentence under the title"
+  },
+  "home.setting.screenHeader.intro.what": {
+    "defaultMessage": "One line saying what the screen is for. Empty leaves it out."
+  },
+  "home.setting.screenHeader.mark": {
+    "defaultMessage": "Show the wordmark instead of the title"
+  },
+  "home.setting.screenHeader.mark.what": {
+    "defaultMessage": "The CORRECTIV wordmark with a rule under it, as the home screen has."
+  },
+  "home.setting.screenHeader.search": {
+    "defaultMessage": "Offer the search"
+  },
+  "home.setting.screenHeader.search.what": {
+    "defaultMessage": "The field under the header that opens the search screen."
   },
   "home.setting.searchHits": {
     "defaultMessage": "{count, plural, =0 {No articles found.} one {# article found.} other {# articles found.}}",

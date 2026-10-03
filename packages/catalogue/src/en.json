@@ -283,10 +283,6 @@
   "discover.searchPlaceholder": {
     "defaultMessage": "Investigations, fact checks, projects …"
   },
-  "discover.title": {
-    "defaultMessage": "Discover",
-    "description": "The heading of the Discover screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room."
-  },
   "faktenforum.lead": {
     "defaultMessage": "The community checks claims together with the CORRECTIV newsroom. Have a look at what is being worked on."
   },
@@ -658,9 +654,6 @@
     "defaultMessage": "The community checks claims from around the web, guided by the newsroom. Right now {count, plural, one {one claim is} other {# claims are}} being worked on.",
     "description": "The paragraph about the Faktenforum on the participation tab. {count} is how many claims the Faktenforum holds altogether, the finished ones included, not only the ones still open."
   },
-  "participate.lead": {
-    "defaultMessage": "Investigations are made with you. Your tips, your observations and your checks are what make them possible."
-  },
   "participate.tipAction": {
     "defaultMessage": "Open WhatsApp"
   },
@@ -672,10 +665,6 @@
   },
   "participate.tipLead": {
     "defaultMessage": "Seen a suspicious claim? Send it straight to the fact-checking desk."
-  },
-  "participate.title": {
-    "defaultMessage": "Take part",
-    "description": "The heading of the participation screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and three callout buttons say it too."
   },
   "player.changeSpeed": {
     "defaultMessage": "Change the speed"

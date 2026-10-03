@@ -3,7 +3,7 @@
   "title": { "de": "Home" },
   "icon": "home",
   "sections": [
-    { "id": "header", "module": "home-header" },
+    { "id": "header", "module": "screen-header", "settings": { "mark": true, "date": true } },
     { "id": "feed-status", "module": "feed-status" },
     { "id": "callout-lifted", "module": "callout-teaser", "hidden": true },
     { "id": "hero", "module": "article-hero" },

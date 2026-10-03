@@ -2,7 +2,7 @@
   "version": 4,
   "title": { "de": "Home" },
   "sections": [
-    { "id": "header", "module": "home-header" },
+    { "id": "header", "module": "screen-header", "settings": { "mark": true, "date": true } },
     { "id": "feed-status", "module": "feed-status" },
     { "id": "callout-lifted", "module": "callout-teaser", "hidden": true },
     { "id": "fact-checks-lifted", "module": "faktencheck-rail", "hidden": true },

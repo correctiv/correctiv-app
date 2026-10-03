@@ -2,8 +2,10 @@ import type {
   ArticleSetting,
   CategorySetting,
   CountSetting,
+  FlagSetting,
   SettingSpec,
   TagSetting,
+  TextSetting,
 } from '@correctiv/app-core/lib/home-settings';
 
 /**
@@ -114,11 +116,36 @@ export const FACT_CHECK_COUNT: CountSetting = {
 };
 
 /**
+ * The four questions the screen header asks, which are the whole of what the four title
+ * rows it replaced differed in (ADR 0075 §6).
+ *
+ * The title itself is not among them, and that is §3's decision rather than an omission:
+ * the header prints the title of the screen it is on, out of that screen's own document,
+ * so a screen with two headers still has one name and the "Mehr" list can read a name off
+ * a screen that has no header at all.
+ *
+ * **Every fallback is the quiet one**, so the four rows are reproduced by what each
+ * document says and never by what it leaves out: Home writes `mark` and `date`, Mitmachen
+ * writes its `intro`, and Entdecken and Mediathek write nothing at all because a title on
+ * its own is what they already drew.
+ */
+export const HEADER_MARK: FlagSetting = { key: 'mark', kind: 'flag', fallback: false };
+export const HEADER_DATE: FlagSetting = { key: 'date', kind: 'flag', fallback: false };
+export const HEADER_SEARCH: FlagSetting = { key: 'search', kind: 'flag', fallback: false };
+
+/**
+ * The sentence under the title. The core's own bound (120 characters) and one line, which
+ * is what an introduction is here: the paragraph under "Mitmachen" is 99 characters in
+ * German and 106 in English, and a heading that wants a second paragraph wants a block.
+ */
+export const HEADER_INTRO: TextSetting = { key: 'intro', kind: 'text', fallback: null };
+
+/**
  * Module name, as the document writes it, to the settings it understands.
  *
  * Different blocks want different settings: which article one highlights (the product
- * side asked for that by name), how many a list draws, and which category or tag a rule
- * reads from.
+ * side asked for that by name), how many a list draws, which category or tag a rule
+ * reads from, and what the header at the top of a screen puts beside its title.
  *
  * Keyed by a string rather than by the module names `modules.tsx` holds, because typing
  * it against those would mean importing that file and the React Native tree under it —
@@ -127,6 +154,7 @@ export const FACT_CHECK_COUNT: CountSetting = {
  * cannot draw.
  */
 export const HOME_MODULE_SETTINGS: Readonly<Record<string, readonly SettingSpec[]>> = {
+  'screen-header': [HEADER_MARK, HEADER_INTRO, HEADER_DATE, HEADER_SEARCH],
   'article-hero': [HERO_PIN, HERO_CATEGORY],
   'latest-research': [RESEARCH_COUNT, RESEARCH_CATEGORY, RESEARCH_TAG],
   'faktencheck-rail': [FACT_CHECK_COUNT, FACT_CHECK_CATEGORY],

@@ -55,7 +55,8 @@ export type IntrinsicCondition =
  * directions.
  */
 export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | null>> = {
-  'home-header': null,
+  // The screen's own name, which every screen has: there is no state in which it is empty.
+  'screen-header': null,
   // `offline || loading`, in `FeedStatusModule`.
   'feed-status': 'loading-or-offline',
   // A pin, or the newest item of the investigations feed; nothing when both are missing.
@@ -72,19 +73,16 @@ export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | nul
   'backstage-teaser': null,
   'impact-footer': null,
   // Entdecken's blocks are the catalogue and the app's own entry points: always there.
-  'discover-header': null,
   'search-entry': null,
   'topic-rail': null,
   'project-directory': null,
   // Mediathek's blocks show their own empty and offline states, so none of them is conditional.
-  'mediathek-header': null,
   'live-radio-banner': null,
   'podcast-rail': null,
   'gespraech-rail': null,
   'funfacts-rail': null,
   'bonus-audio-list': null,
   // Mitmachen's blocks are fixed entry points and the sample catalogue: always there.
-  'participate-header': null,
   'callout-list': null,
   'faktenforum-card': null,
   'atlas-card': null,

@@ -25,8 +25,9 @@ import { code } from '../source.ts';
  * because a module waiting in a palette stopped being a module nobody can reach.
  *
  * ADR 0054 §2 moved it one step and ADR 0073 §1 moved it back past where it started: the
- * palette is every block the app has, bar the four that print another screen's title,
- * grouped by the category each one declares. The grouping is the core's
+ * palette is every block the app has, grouped by the category each one declares, and
+ * since ADR 0075 §6 it is that with no exception at all, because the four blocks that
+ * printed another screen's title are one header that prints its own. The grouping is the core's
  * (`blocksByCategory`), so this site still keeps no list of blocks, and what stands in
  * for the list's absence is `apps/mobile/__tests__/home-layout.test.tsx` failing in both
  * directions — a block with no category, and a category for no block. Neither half is
@@ -168,8 +169,12 @@ describe('the palette is the registry', () => {
     expect(OFFERED).toMatch(
       /import \{[^}]*blocksByCategory[^}]*\} from '@correctiv\/app-core\/lib\/block-category'/,
     );
-    expect(OFFERED).toMatch(/blocksByCategory\(screen\)/);
-    expect(OFFERED).not.toMatch(/blocksByCategory\('home'\)/);
+    // And it is asked without a screen: ADR 0075 §6 took the four bound headers away, so
+    // there is no shelf that is one list on one screen and a shorter one on the next, and a
+    // `blocksByCategory('home')` written here would be the second copy of that restriction
+    // the core no longer has.
+    expect(OFFERED).toMatch(/blocksByCategory\(\)/);
+    expect(OFFERED).not.toMatch(/blocksByCategory\([a-z]/);
     expect(`${PALETTE}\n${OFFERED}`).not.toMatch(/Object\.keys\(HOME_MODULES\)/);
     expect(PALETTE).not.toMatch(/MODULE_CATEGORIES/);
   });

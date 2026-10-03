@@ -3,7 +3,7 @@
   "title": { "de": "Entdecken" },
   "icon": "compass",
   "sections": [
-    { "id": "title", "module": "discover-header" },
+    { "id": "title", "module": "screen-header" },
     { "id": "search", "module": "search-entry" },
     { "id": "topics", "module": "topic-rail" },
     { "id": "projects", "module": "project-directory" }
