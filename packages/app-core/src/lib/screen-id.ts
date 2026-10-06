@@ -52,7 +52,20 @@ export const CUSTOM_SCREEN_ID_MAX_LENGTH = 40;
 const CUSTOM_SCREEN_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Why an id cannot name a custom screen. */
-export type CustomScreenIdFault = 'not-a-string' | 'empty' | 'too-long' | 'malformed' | 'declared';
+export type CustomScreenIdFault =
+  | 'not-a-string'
+  | 'empty'
+  | 'too-long'
+  | 'malformed'
+  | 'declared'
+  | 'reserved';
+
+/**
+ * Ids that are well-formed and still not a screen's. `navigation` is the name a layout
+ * submission gives the tab bar's document (ADR 0071 §4), so a screen of that name could
+ * not be told apart from it on the wire.
+ */
+const RESERVED_IDS: readonly string[] = ['navigation'];
 
 /**
  * Whether `id` may name a screen the newsroom makes, and the first reason it may not.
@@ -72,6 +85,7 @@ export function customScreenIdFault(
   if (id.length > CUSTOM_SCREEN_ID_MAX_LENGTH) return 'too-long';
   if (!CUSTOM_SCREEN_ID.test(id)) return 'malformed';
   if (declared.includes(id)) return 'declared';
+  if (RESERVED_IDS.includes(id)) return 'reserved';
   return null;
 }
 
