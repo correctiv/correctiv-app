@@ -3,7 +3,9 @@
 Status: accepted, 2026-08-28. Verified on an Android emulator 2026-08-29, which found
 two faults in the first version of it; iOS remains unrun. See the last two sections.
 §1 amended by [ADR 0070](0070-a-left-rail-on-tablet.md): native tabs are the phone
-answer; tablets take a left rail.
+answer; tablets take a left rail. ~~Native tabs are the phone answer.~~ Voided by
+[ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md): every platform draws the app's own
+bar, because a tab is an address and the platform's bar needs a route file per tab.
 
 ## Context
 

@@ -794,5 +794,14 @@
       "6": ["A submission names exactly one layout"],
       "7": ["Until the workbench can choose, it works on `demo`"]
     }
+  },
+  "0079": {
+    "slugs": ["the-app-draws-its-tabs-from-the-layout"],
+    "decisions": {
+      "1": ["Every screen is `/s/<id>`, and the bar is the app's own"],
+      "2": ["The first entry is the start, and the table is the core's"],
+      "3": ["The bar follows the documents"],
+      "4": ["An id names a screen, whatever it is called"]
+    }
   }
 }
