@@ -4,15 +4,22 @@ import {
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
 
-import { isDeclaredScreen, type ScreenId } from '@correctiv/app-core/lib/screen-layout';
+import { isScreenId, type ScreenId } from '@correctiv/app-core/lib/screen-layout';
 
 import docsModule from 'virtual:docs';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
-import { homePayload, issueAddress, issueFor, layoutPayload, type Via } from '../submission';
+import { issueAddress, issueFor, layoutPayload, type Via } from '../submission';
 import { differs, formatLayoutDocument, HOME_LAYOUT_ENDPOINT } from './document';
-import { layoutKey } from './names';
-import { SCREEN_NAMES, shippedOf } from './screens';
+import {
+  DEMO_LAYOUT,
+  HOME_LAYOUT_KEY,
+  layoutDraftKey,
+  LAYOUT_SET_KEY,
+  NAVIGATION_KEY,
+  navigationDraftKey,
+} from './names';
+import { inRepository, shippedOf } from './screens';
 
 /**
  * The three ways a change leaves the page: into the running app, into a GitHub issue that
@@ -25,47 +32,176 @@ import { SCREEN_NAMES, shippedOf } from './screens';
  */
 
 /**
- * Put the edited document where the framed app will find it, or take it away again.
+ * What a draft key holds when the person deleted a screen the repository carries. The file
+ * stays in `main` until a submission merges, so the deletion is a draft like any other: it
+ * outlives a reload for as long as the draft does, and Discard takes it back.
+ */
+const DELETED = '{"deleted":true}';
+
+/** What a layout's draft says about a screen: a document, a deletion, or nothing. */
+export type Draft = HomeLayout | 'deleted' | null;
+
+function isDeletion(raw: unknown): boolean {
+  return typeof raw === 'object' && raw !== null && (raw as { deleted?: unknown }).deleted === true;
+}
+
+/**
+ * The draft this tool holds for one screen of one layout, read out of storage.
+ *
+ * Anything the core will not take cleanly is `null` rather than loaded for repair: the
+ * editor's vocabulary cannot express a broken document, so opening on one would give a
+ * person a list they can move around and never make valid.
+ */
+export function readDraft(layout: string, screen: ScreenId): Draft {
+  ensureMigrated();
+  try {
+    const raw = window.localStorage.getItem(layoutDraftKey(layout, screen));
+    if (raw === null) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return isDeletion(parsed) ? 'deleted' : restorable(parsed);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Keep a screen's document as this layout's draft, or drop the draft when the document is
+ * what the repository carries: a draft that is written once and then matches for ever is a
+ * state nobody can see and nobody clears.
+ */
+export function writeDraft(layout: string, screen: ScreenId, document: HomeLayout): void {
+  try {
+    if (inRepository(screen, layout) && !differs(document, shippedOf(screen, layout)))
+      window.localStorage.removeItem(layoutDraftKey(layout, screen));
+    else
+      window.localStorage.setItem(layoutDraftKey(layout, screen), formatLayoutDocument(document));
+  } catch {
+    // Site data switched off. Nothing can be kept, and nothing may throw.
+  }
+}
+
+/** Mark a screen deleted for this layout, or forget it altogether when no file carries it. */
+export function writeDeletion(layout: string, screen: ScreenId): void {
+  try {
+    if (inRepository(screen, layout))
+      window.localStorage.setItem(layoutDraftKey(layout, screen), DELETED);
+    else window.localStorage.removeItem(layoutDraftKey(layout, screen));
+  } catch {
+    // Site data switched off.
+  }
+}
+
+export function dropDraft(layout: string, screen: ScreenId): void {
+  try {
+    window.localStorage.removeItem(layoutDraftKey(layout, screen));
+  } catch {
+    // Site data switched off.
+  }
+}
+
+/** Every screen this browser holds a draft or a deletion of, for one layout. */
+export function draftedScreens(layout: string): { id: string; deleted: boolean }[] {
+  ensureMigrated();
+  const out: { id: string; deleted: boolean }[] = [];
+  try {
+    const prefix = layoutDraftKey(layout, '');
+    for (let at = 0; at < window.localStorage.length; at += 1) {
+      const key = window.localStorage.key(at);
+      if (!key?.startsWith(prefix)) continue;
+      const id = key.slice(prefix.length);
+      if (!isScreenId(id)) continue;
+      const draft = readDraft(layout, id);
+      if (draft !== null) out.push({ id, deleted: draft === 'deleted' });
+    }
+  } catch {
+    // No storage: the repository's screens are all there is.
+  }
+  return out;
+}
+
+/**
+ * What the screen is for this layout: the draft this browser holds, else the file the
+ * repository carries.
+ */
+export function restore(screen: ScreenId, layout: string): HomeLayout {
+  const draft = readDraft(layout, screen);
+  return draft === null || draft === 'deleted' ? shippedOf(screen, layout) : draft;
+}
+
+/**
+ * Put a whole layout where the framed app will find it: the navigation and every screen,
+ * under one key (ADR 0080 §2).
  *
  * The shell and the app are one origin, so `window.localStorage` here **is** the app's,
- * which is the whole mechanism `frame/seed.ts` already runs on. What is new is that the
- * app redraws without a reload: a write to `localStorage` fires a `storage` event in
- * every other same-origin document, the frame is one, and the app subscribes. No dev
- * handle, so this works against the published export too.
+ * which is the whole mechanism `frame/seed.ts` already runs on. A write fires a `storage`
+ * event in every other same-origin document, the frame is one, and the app redraws without
+ * a reload. No dev handle, so this works against the published export too.
  *
- * A layout equal to the shipped one **removes** the key rather than writing a copy of
- * it. `/preview` with nothing edited must leave the app exactly as it ships, and a key
- * that is written once and then matches for ever is a state nobody can see and nobody
- * clears.
+ * **Always written, even for a layout nobody has edited.** The app draws the whole of what
+ * is under this key and nothing else, which is how a screen of the layout that is not
+ * chosen cannot show through; leaving the key out for an unedited layout would let the
+ * app's own bundle answer for it.
  */
-export function publish(layout: HomeLayout, screen: ScreenId = 'home'): void {
+export function publishFrame(
+  layout: string,
+  navigation: unknown,
+  screens: Readonly<Record<string, unknown>>,
+): void {
   try {
-    // A screen the newsroom made is the exception: the app bundles no document for it, so
-    // a key removed because it equals the repository's would leave the frame with nothing
-    // to draw at `/s/<id>` (ADR 0075 §7).
-    if (isDeclaredScreen(screen) && !differs(layout, shippedOf(screen)))
-      window.localStorage.removeItem(layoutKey(screen));
-    else window.localStorage.setItem(layoutKey(screen), formatLayoutDocument(layout));
+    window.localStorage.setItem(LAYOUT_SET_KEY, JSON.stringify({ layout, navigation, screens }));
   } catch {
     // Site data switched off. Nothing can be previewed, and nothing may throw.
   }
 }
 
+let migrated = false;
+
+/** Moves the older keys on the first read of any draft, and then never again in this page. */
+export function ensureMigrated(): void {
+  if (!migrated) migrateLegacy();
+}
+
+/** Lets a test put storage back as an older visit left it and have it read again. */
+export function forgetMigration(): void {
+  migrated = false;
+}
+
 /**
- * What was left in storage by an earlier visit, so the tool opens on what the app draws.
+ * The tool's older keys, read once: before layouts, the draft of a screen lived at the
+ * app's own per-screen key and the navigation's at `workbench:navigation`, and both were
+ * `demo`'s, the only layout the tool could edit. They become `demo`'s drafts under the new
+ * keys and are removed, so nothing is read from them or written to them again, and the
+ * app's per-screen seam is not a place this tool leaves anything in.
  *
- * Anything the core will not take cleanly is discarded rather than loaded for repair:
- * the editor's vocabulary cannot express a broken document, so opening on one would give
- * a person a list they can move around and never make valid.
+ * Never over a draft that is already there: a person who has been on the new keys has
+ * moved on from what an old key says.
  */
-export function restore(screen: ScreenId = 'home'): HomeLayout {
-  const shipped = shippedOf(screen);
+export function migrateLegacy(): void {
+  migrated = true;
   try {
-    const raw = window.localStorage.getItem(layoutKey(screen));
-    if (raw === null) return shipped;
-    return restorable(JSON.parse(raw)) ?? shipped;
+    const legacy: string[] = [];
+    for (let at = 0; at < window.localStorage.length; at += 1) {
+      const key = window.localStorage.key(at);
+      if (key === null) continue;
+      const screen = key === HOME_LAYOUT_KEY ? 'home' : key.slice('workbench:layout:'.length);
+      if (key === HOME_LAYOUT_KEY || (key.startsWith('workbench:layout:') && isScreenId(screen)))
+        legacy.push(key);
+    }
+    for (const key of legacy) {
+      const screen = key === HOME_LAYOUT_KEY ? 'home' : key.slice('workbench:layout:'.length);
+      const target = layoutDraftKey(DEMO_LAYOUT, screen);
+      if (window.localStorage.getItem(target) === null)
+        window.localStorage.setItem(target, window.localStorage.getItem(key) ?? '');
+      window.localStorage.removeItem(key);
+    }
+    const navigation = window.localStorage.getItem(NAVIGATION_KEY);
+    if (navigation !== null) {
+      if (window.localStorage.getItem(navigationDraftKey(DEMO_LAYOUT)) === null)
+        window.localStorage.setItem(navigationDraftKey(DEMO_LAYOUT), navigation);
+      window.localStorage.removeItem(NAVIGATION_KEY);
+    }
   } catch {
-    return shipped;
+    // Site data switched off.
   }
 }
 
@@ -130,30 +266,17 @@ const COPY = {
     description:
       'Stands in for a refusal the server sent no sentence with. {status} is the numeric response status.',
   }),
-  issueHeading: wbMessage({
-    id: 'home.issue.heading',
-    defaultMessage: 'Changes to the home screen',
-    description:
-      'The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list.',
-  }),
   issueHeadingScreen: wbMessage({
     id: 'home.issue.headingScreen',
-    defaultMessage: 'Changes to the {screen} screen',
+    defaultMessage: 'Changes to the {screen} screen of the {layout} layout',
     description:
-      'The title of the GitHub issue Submit changes opens for a screen other than Home, after a fixed tag in square brackets that is not translated. {screen} is the screen’s own name, such as Entdecken, which is not translated either. home.issue.heading is the same sentence for Home.',
+      'The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as entdecken, and {layout} the layout’s, such as ship; neither is translated.',
   }),
   issueHeadingDelete: wbMessage({
     id: 'home.issue.headingDelete',
-    defaultMessage: 'Delete the {screen} screen',
+    defaultMessage: 'Delete the {screen} screen from the {layout} layout',
     description:
-      'The title of the GitHub issue that asks for a screen the newsroom made to be deleted, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as kampagne, which is not translated either.',
-  }),
-  issueLead: wbMessage({
-    id: 'home.issue.lead',
-    defaultMessage:
-      'This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.',
-    description:
-      'The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English.',
+      'The title of the GitHub issue that asks for a screen the newsroom made to be deleted, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as kampagne, and {layout} the layout’s, such as demo; neither is translated.',
   }),
   issueLeadLayout: wbMessage({
     id: 'home.issue.leadLayout',
@@ -205,10 +328,11 @@ export const canSave: boolean = import.meta.env.DEV;
 export async function save(
   layout: HomeLayout,
   format: Format,
-  screen: ScreenId = 'home',
+  screen: ScreenId,
+  layoutId: string,
 ): Promise<SaveResult> {
   try {
-    const response = await fetch(`${HOME_LAYOUT_ENDPOINT}?screen=${screen}`, {
+    const response = await fetch(`${HOME_LAYOUT_ENDPOINT}?layout=${layoutId}&screen=${screen}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: formatLayoutDocument(layout),
@@ -262,7 +386,8 @@ export interface Submit {
 export function submission(
   layout: HomeLayout,
   format: Format,
-  screen: ScreenId = 'home',
+  screen: ScreenId,
+  layoutId: string,
   via?: Via,
 ): Submit {
   // Minified: the printed document spends most of its address on indentation, measured
@@ -270,24 +395,14 @@ export function submission(
   // with `formatLayoutDocument`, so what reaches the repository is formatted either way,
   // and one line of JSON is still readable to a maintainer looking at the issue.
   const payload = JSON.stringify(JSON.parse(formatLayoutDocument(layout)));
-  // Home keeps its own kind and its bare document; every other screen goes in an envelope
-  // that names it, because the payload is all the workflow reads (ADR 0061 §2).
-  const home = screen === 'home';
-  // A screen the newsroom made is named by its id in the issue's title: the id is the one
-  // name the core has checked, and the title is the part of an issue the workflow matches on.
-  const name = isDeclaredScreen(screen) ? SCREEN_NAMES[screen] : screen;
-  const issue = issueFor(
-    home ? 'home' : 'layout',
-    home ? homePayload(payload, via) : layoutPayload(screen, payload, via),
-    {
-      heading: home
-        ? format(COPY.issueHeading)
-        : format(COPY.issueHeadingScreen, {
-            screen: typeof name === 'string' ? name : format(name),
-          }),
-      lead: format(home ? COPY.issueLead : COPY.issueLeadLayout),
-    },
-  );
+  // Every screen goes in an envelope that names the layout and the screen, because the
+  // payload is all the workflow reads (ADR 0061 §2, ADR 0078 §6). A screen is named by its
+  // id in the issue's title: the id is the one name the core has checked, and the title is
+  // the part of an issue the workflow matches on.
+  const issue = issueFor('layout', layoutPayload(screen, payload, via, layoutId), {
+    heading: format(COPY.issueHeadingScreen, { screen, layout: layoutId }),
+    lead: format(COPY.issueLeadLayout),
+  });
   const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));
   return { href, fits, body: issue.body };
 }
@@ -299,9 +414,9 @@ export function submission(
  * Only for a screen that is in the repository. One that was only ever a draft has nothing to
  * delete there, and `deleteScreen` in `./store.ts` is the whole of it.
  */
-export function deletion(screen: ScreenId, format: Format): Submit {
-  const issue = issueFor('layout', layoutPayload(screen, 'null'), {
-    heading: format(COPY.issueHeadingDelete, { screen }),
+export function deletion(screen: ScreenId, layoutId: string, format: Format): Submit {
+  const issue = issueFor('layout', layoutPayload(screen, 'null', undefined, layoutId), {
+    heading: format(COPY.issueHeadingDelete, { screen, layout: layoutId }),
     lead: format(COPY.issueLeadLayout),
   });
   const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));

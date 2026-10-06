@@ -12,6 +12,7 @@ import { HomeDocument } from '../preview/home/HomeDocument';
 import { FeaturesEditor } from '../preview/features/FeaturesEditor';
 import { NavigationEditor } from '../preview/navigation/NavigationEditor';
 import { useScenario } from '../preview/home/Scenario';
+import { selectLayout } from '../preview/home/store';
 import { Timeline } from '../preview/home/Timeline';
 import {
   Appearance,
@@ -115,6 +116,16 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
    * spent here is a line taken back off the app.
    */
   const timeline = state.timeline && governs(preview.status.frameRoute) && (!full || wide);
+
+  /*
+   * The layout the address names is the one the tools edit and the frame draws whole
+   * (ADR 0080 §1). Here and not in a tool, because the tools are drawn into slots that are
+   * not always there, and the frame has to be told whether or not anybody opens one. After
+   * `started`, for the reason the effect above gives: the first render holds the defaults.
+   */
+  useEffect(() => {
+    if (preview.started) selectLayout(state.layout);
+  }, [preview.started, state.layout]);
 
   const panels = {
     state,

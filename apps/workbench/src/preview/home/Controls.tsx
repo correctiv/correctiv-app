@@ -9,21 +9,21 @@ import {
 } from '@correctiv/app-core/lib/home-layout';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
-import { say } from '../../i18n/messages';
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
 import { InfoTip } from '../../ui/kit/info-tip';
-import { Segmented } from '../../ui/kit/segmented';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { formatTimeOfDay, type Point } from './document';
 import { parseMinute, STEP } from './minutes';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
-import { CONFIGURABLE_SCREENS, SCREEN_ICONS, SCREEN_NAMES, type ScreenId } from './screens';
+import { type ScreenId } from './screens';
 import {
-  CustomScreenList,
-  CustomScreenRow,
-  type CustomScreensControl,
-  type OpenCustomScreen,
+  DeletedScreens,
+  ScreenList,
+  ScreenRow,
+  type DeletedScreen,
+  type OpenScreen,
+  type ScreensControl,
 } from './CustomScreens';
 
 /**
@@ -203,8 +203,9 @@ export function EditorBar({
   follow,
   onFollow,
   outcome,
-  custom,
-  openCustom,
+  screens,
+  openScreen,
+  deleted,
 }: {
   screen: ScreenId;
   /** A scenario is open or the document holds one, so the screen and the submit are off. */
@@ -223,55 +224,25 @@ export function EditorBar({
    * draft paragraphs out of the panels and the slot is what is left of them.
    */
   outcome?: ReactNode;
-  /**
-   * The screens the newsroom made, beside the five (ADR 0075 §7): the list, the form for a
-   * new one. Absent in a host that has none, such as a test of the five.
-   */
-  custom?: CustomScreensControl;
-  /** The open screen's own row, when it is one of those. */
-  openCustom?: OpenCustomScreen | null;
+  /** The open layout's screens (ADR 0080 §3): the list, the form for a new one. */
+  screens: ScreensControl;
+  /** The open screen's own row, or null while the layout has no screen to open. */
+  openScreen: OpenScreen | null;
+  /** The deletions this draft holds that the repository does not know of yet. */
+  deleted: readonly DeletedScreen[];
 }) {
   const intl = useWorkbenchIntl();
 
   return (
     <div className="sticky top-0 z-10 -mx-s -mt-s flex flex-col gap-xs border-b border-stroke bg-canvas px-s py-2xs">
       <div className="flex items-center gap-2xs">
-        {/*
-          The five screens as icons, in the app's tab order and with the app's tab
-          icons. A drop-down said the same thing in two rows of a narrow panel, and
-          the icons are what somebody who has the app open on the device beside them
-          is already looking for. Radios in labels, so this is one tab stop with the
-          arrow keys moving inside it, which is what `ui/kit/segmented.tsx` argues
-          for and the reason this is a `Segmented` rather than five buttons.
-        */}
-        <Segmented
-          name="home-screen"
-          legend={intl.formatMessage(CONTROLS_COPY.screen)}
-          className="min-w-0 shrink-0"
-          value={screen}
-          disabled={guarded}
-          options={CONFIGURABLE_SCREENS.map((of) => {
-            const Icon = SCREEN_ICONS[of].Icon;
-            return {
-              value: of,
-              label: <Icon aria-hidden="true" className="size-[1rem]" />,
-              icon: { name: say(intl, SCREEN_NAMES[of]) },
-            };
-          })}
-          onChange={(value) => {
-            const declared = CONFIGURABLE_SCREENS.find((of) => of === value);
-            if (declared) onScreen(declared);
-          }}
-        />
-        {custom && (
-          <CustomScreenList control={custom} screen={screen} disabled={guarded} onOpen={onScreen} />
-        )}
+        <ScreenList control={screens} screen={screen} disabled={guarded} onOpen={onScreen} />
         {/*
           A scenario is a Home document, so the select only exists on Home. It has
           room for a chip rather than a row of its own, and what it has to say about
           a scenario stays behind its ⓘ — `Scenario.tsx` says the rest.
         */}
-        {screen === 'home' && <ScenarioBar control={scenario} />}
+        {openScreen !== null && screen === 'home' && <ScenarioBar control={scenario} />}
         {/*
           Whether the frame follows the pointer, as the pressed state of a button
           rather than as a checked box with a sentence beside it. The variant carries
@@ -308,7 +279,8 @@ export function EditorBar({
         submit click. Each was inside the same box before and each is the only thing
         on its own line now, which is what a row of controls plus a stack of state is.
       */}
-      {openCustom && <CustomScreenRow screen={openCustom} disabled={guarded} />}
+      {openScreen && <ScreenRow screen={openScreen} disabled={guarded} />}
+      <DeletedScreens screens={deleted} />
       {guarded && <p className={NOTE}>{intl.formatMessage(CONTROLS_COPY.screenLocked)}</p>}
       {outcome}
     </div>

@@ -26,6 +26,8 @@ import { deviceOption, DEVICES, HOST_DEVICE } from '../devices';
 import { isFrameChannel } from '../frame/channel';
 import { isLocale, LOCALES } from '../frame/locale';
 import { governs } from '../home/document';
+import { LAYOUT_NAMES, layoutIds } from '../home/screens';
+import { say } from '../../i18n/messages';
 import { ROUTES } from '../routes';
 import { frameSize, type PreviewState } from '../state';
 import type { Status } from '../api';
@@ -54,6 +56,12 @@ const COPY = defineMessages({
   },
   width: { id: 'frame.width', defaultMessage: 'Width in CSS pixels' },
   height: { id: 'frame.height', defaultMessage: 'Height in CSS pixels' },
+  layout: {
+    id: 'frame.layout',
+    defaultMessage: 'Layout',
+    description:
+      'The accessible name of the select that chooses which layout the workbench edits and the frame shows: the one the app ships, the demo, or any other folder under data/layouts. The bar carries no labels above its fields.',
+  },
   dayHide: { id: 'frame.day.hide', defaultMessage: 'Put the day away' },
   dayShow: {
     id: 'frame.day.show',
@@ -316,6 +324,25 @@ export function Toolbar({
       role="toolbar"
       aria-label={intl.formatMessage(COPY.toolbar)}
     >
+      {/*
+        The layout, first because it decides what everything after it shows: the frame draws
+        this layout whole and the tools edit it (ADR 0080 §1). In the address as `ly`, so a
+        link opens on the layout it was made on.
+      */}
+      <Select
+        className="max-w-[6rem] shrink-0 sm:max-w-[8rem]"
+        aria-label={intl.formatMessage(COPY.layout)}
+        value={state.layout}
+        // The route goes back to the start: a screen of the layout left behind is an address
+        // the new one may not have, and the app answers it with its not-found page.
+        onValueChange={(layout) => onChange({ layout, route: '/' })}
+        options={layoutIds().map((id) => ({
+          value: id,
+          label: LAYOUT_NAMES[id] === undefined ? id : say(intl, LAYOUT_NAMES[id]),
+          badge: LAYOUT_NAMES[id] === undefined ? undefined : id,
+        }))}
+      />
+
       <Select
         className={cn(
           'shrink-0 max-w-[7rem] sm:max-w-[13rem]',

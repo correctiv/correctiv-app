@@ -1313,6 +1313,10 @@
     "defaultMessage": "As it ships",
     "description": "The one option of the app-language select that is a word rather than a locale code: leave the app in the language it ships, which is what an address naming no language asks for."
   },
+  "frame.layout": {
+    "defaultMessage": "Layout",
+    "description": "The accessible name of the select that chooses which layout the workbench edits and the frame shows: the one the app ships, the demo, or any other folder under data/layouts. The bar carries no labels above its fields."
+  },
   "frame.more": {
     "defaultMessage": "More frame controls: language, zoom, reload, open without the frame",
     "description": "The accessible name of the button that unfolds the controls that do not fit below 640px."
@@ -1543,13 +1547,9 @@
     "defaultMessage": "Delete this screen",
     "description": "The name of the button that takes the open custom screen away. For one that was only ever a draft it is the whole of the deletion."
   },
-  "home.custom.deleteSubmit": {
-    "defaultMessage": "Delete this screen and submit the deletion",
-    "description": "The name of the button that takes a custom screen away that the repository already carries. It opens GitHub’s new-issue page with the deletion in it, like Submit changes does, because the file is only removed when the pull request is merged."
-  },
-  "home.custom.fault.declared": {
-    "defaultMessage": "The app already has a screen with that name.",
-    "description": "Under the id field of a new screen when it is the id of one of the five screens the demo layout carries, which this tool always holds."
+  "home.custom.deletedNote": {
+    "defaultMessage": "Deleted in this draft only. The file stays in the repository until a submission that deletes it is merged, and it stays deleted here for as long as this draft is kept.",
+    "description": "Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted."
   },
   "home.custom.fault.empty": {
     "defaultMessage": "Type an id.",
@@ -1580,8 +1580,8 @@
     "description": "The accessible name and the placeholder of the field for a new screen’s id. The id becomes the address /s/<id> in the app and the name of the file, so the example is one a person could use."
   },
   "home.custom.more": {
-    "defaultMessage": "Your screens",
-    "description": "The accessible name of the list of screens the newsroom made, beside the five the app ships with, in the layout tool’s bar. Also its placeholder while none of them is open."
+    "defaultMessage": "Screens",
+    "description": "The accessible name of the list of the open layout’s screens, in the layout tool’s bar. Also its placeholder while none of them is open."
   },
   "home.custom.new": {
     "defaultMessage": "New screen",
@@ -1590,6 +1590,14 @@
   "home.custom.preview": {
     "defaultMessage": "Show {path} in the frame",
     "description": "The name of the button that takes the frame to the open custom screen. {path} is its address, such as /s/summer-campaign, which is never translated."
+  },
+  "home.custom.restore": {
+    "defaultMessage": "Restore {id}",
+    "description": "The name of the button that takes a deletion back. {id} is the screen’s id, such as entdecken, which is not translated."
+  },
+  "home.custom.submitDeletion": {
+    "defaultMessage": "Submit the deletion of {id}",
+    "description": "The name of the link that opens GitHub’s new-issue page with the deletion of a screen in it, like Submit changes does. {id} is the screen’s id, which is not translated."
   },
   "home.custom.title": {
     "defaultMessage": "Title",
@@ -1610,6 +1618,10 @@
   "home.document.gap": {
     "defaultMessage": "{language} is missing in {count, plural, one {# text} other {# texts}} on this screen.",
     "description": "Under the head of the layout tool, one line per language some text of the screen does not carry (ADR 0075 §2). {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and {count} is how many of the screen’s texts lack it. A mark and not a fault: the app draws German where a language is missing."
+  },
+  "home.document.layoutEmpty": {
+    "defaultMessage": "This layout has no screen. The app draws its empty state. Make one with the plus above.",
+    "description": "Under the screen list of the layout tool when the open layout holds no screen at all, which is how the layout the app ships begins. The plus is the New screen button in the bar above."
   },
   "home.document.nearLimit": {
     "defaultMessage": "The published screens are at {share} of what the app reads: {length} of {limit} characters. Past that the app ignores the document and draws the one it ships with.",
@@ -1663,35 +1675,39 @@
     "defaultMessage": "This draft came in a link. It is not saved on this machine: submit it, or reload to get your own document back.",
     "description": "In the header of the layout tool and of the navigation tool, after a link with a draft in it was opened (ADR 0076 §3). Says the two things a person cannot see: where the document came from, and that nothing of it was written here."
   },
+  "home.document.shipped": {
+    "defaultMessage": "This is the layout the app ships. Once this change is merged and published, readers get it.",
+    "description": "Beside Submit changes while the open layout is the one the app ships (ADR 0080 §5). It says that, unlike the demo, a change to this layout reaches readers."
+  },
   "home.document.submitCopied": {
     "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."
   },
   "home.document.submitNoClipboard": {
     "defaultMessage": "The browser did not let this page use the clipboard. Copy the change from this field and paste it into the issue on GitHub."
   },
-  "home.issue.heading": {
-    "defaultMessage": "Changes to the home screen",
-    "description": "The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
-  },
   "home.issue.headingDelete": {
-    "defaultMessage": "Delete the {screen} screen",
-    "description": "The title of the GitHub issue that asks for a screen the newsroom made to be deleted, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as kampagne, which is not translated either."
+    "defaultMessage": "Delete the {screen} screen from the {layout} layout",
+    "description": "The title of the GitHub issue that asks for a screen the newsroom made to be deleted, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as kampagne, and {layout} the layout’s, such as demo; neither is translated."
   },
   "home.issue.headingScreen": {
-    "defaultMessage": "Changes to the {screen} screen",
-    "description": "The title of the GitHub issue Submit changes opens for a screen other than Home, after a fixed tag in square brackets that is not translated. {screen} is the screen’s own name, such as Entdecken, which is not translated either. home.issue.heading is the same sentence for Home."
+    "defaultMessage": "Changes to the {screen} screen of the {layout} layout",
+    "description": "The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as entdecken, and {layout} the layout’s, such as ship; neither is translated."
   },
   "home.issue.help": {
     "defaultMessage": "The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",
     "description": "Stands in the body of the GitHub issue instead of the change, when the change is too long to go in the address. “Create” is GitHub’s own button and stays in English."
   },
-  "home.issue.lead": {
-    "defaultMessage": "This change to the home screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
-    "description": "The first paragraph of the GitHub issue Submit changes opens, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
-  },
   "home.issue.leadLayout": {
     "defaultMessage": "This change to a screen comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
     "description": "The first paragraph of the GitHub issue Submit changes opens for a screen other than Home, above the document. home.issue.lead is the same sentence for Home. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
+  },
+  "home.layout.demo": {
+    "defaultMessage": "Demo",
+    "description": "The name of the example layout, in the layout picker of the preview toolbar. It holds five screens that show what the blocks can do, and no app bundles it."
+  },
+  "home.layout.ship": {
+    "defaultMessage": "Shipped",
+    "description": "The name of the layout the app ships with, in the layout picker of the preview toolbar. It is the one readers get, and it is empty until it has been agreed what goes onto the app."
   },
   "home.module.articleHero": {
     "defaultMessage": "Lead article"
@@ -2030,10 +2046,6 @@
   "home.save.written": {
     "defaultMessage": "Written to {path}.",
     "description": "Confirms that the dev server wrote the document. {path} is the repository path it wrote, or home.save.repository where the server named none."
-  },
-  "home.screen.home": {
-    "defaultMessage": "Home",
-    "description": "The app’s first screen, in the screen picker of the layout tool. The same word as frame.pages.home, which names it in the page picker."
   },
   "home.setHere": {
     "defaultMessage": "set here",
@@ -2638,7 +2650,7 @@
   },
   "navigation.available": {
     "defaultMessage": "Not on the bar",
-    "description": "The heading above the screens the app declares that the bar does not list."
+    "description": "The heading above the screens of the open layout that the bar does not list."
   },
   "navigation.behindMore": {
     "defaultMessage": "behind “Mehr”: {names}",
@@ -2657,8 +2669,8 @@
     "description": "Shown when the navigation is not valid, and the reason the Submit button in the header is switched off. {codes} is a comma-separated list of the core’s problem codes, which are never translated."
   },
   "navigation.issue.heading": {
-    "defaultMessage": "Changes to the navigation",
-    "description": "The title of the GitHub issue Submit changes opens for the tab bar, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+    "defaultMessage": "Changes to the navigation of the {layout} layout",
+    "description": "The title of the GitHub issue Submit changes opens for the tab bar, after a fixed tag in square brackets that is not translated. {layout} is the layout’s id, such as ship, which is not translated either. Read in the repository’s issue list."
   },
   "navigation.issue.help": {
     "defaultMessage": "The change was too long for the link, so it is on your clipboard. Delete this text, paste the change here (Ctrl+V, or Cmd+V on a Mac) and click “Create”.",

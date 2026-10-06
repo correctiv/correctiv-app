@@ -11,16 +11,14 @@ import { Localisation } from '../../src/i18n/Localisation';
 import { SOURCE_LANGUAGE } from '../../src/i18n/language';
 import { SizeNote } from '../../src/preview/home/DocumentNotes';
 import { formatLayoutDocument, SHIPPED } from '../../src/preview/home/document';
+import { shippedNavigationOf } from '../../src/preview/home/screens';
 import {
   joinedLength,
   readSize,
   SIZE_WARNING_AT,
   SIZE_WARNING_FRACTION,
 } from '../../src/preview/home/size';
-import {
-  formatNavigationDocument,
-  SHIPPED_NAVIGATION,
-} from '../../src/preview/navigation/document';
+import { formatNavigationDocument } from '../../src/preview/navigation/document';
 
 /**
  * The warning before the joined document reaches the size the app refuses (ADR 0075 §7).
@@ -33,7 +31,7 @@ import {
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const SHIPPED_TEXT = formatLayoutDocument(SHIPPED);
-const NAVIGATION_TEXT = formatNavigationDocument(SHIPPED_NAVIGATION);
+const NAVIGATION_TEXT = formatNavigationDocument(shippedNavigationOf('demo'));
 
 function drawn(length: number): string {
   const container = document.body.appendChild(document.createElement('div'));

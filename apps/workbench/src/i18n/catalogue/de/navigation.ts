@@ -23,7 +23,7 @@ export const navigation: Record<string, string> = {
   'navigation.save.written': 'Geschrieben nach {path}.',
   'navigation.save.refused': '{said} ({codes})',
   'navigation.save.http': 'HTTP {status}',
-  'navigation.issue.heading': 'Änderungen an der Navigation',
+  'navigation.issue.heading': 'Änderungen an der Navigation im Layout {layout}',
   'navigation.issue.lead':
     'Diese Änderung an der Navigation kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
   'navigation.issue.help':

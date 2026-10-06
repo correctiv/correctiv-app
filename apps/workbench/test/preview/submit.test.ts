@@ -37,34 +37,38 @@ const EDITED = withHidden(SHIPPED, null, 'hero', true);
 
 describe('a draft that arrived by a link, submitted', () => {
   it('says so in the block the workflow reads, and the workflow reads it back', () => {
-    const { body } = submission(EDITED, format, 'home', VIA_LINK);
-    const read = readSubmission('[startseite] Änderungen an der Startseite', body);
-    expect(JSON.parse(read.payload)).toMatchObject({ via: 'link' });
+    const { body } = submission(EDITED, format, 'home', 'demo', VIA_LINK);
+    const read = readSubmission('[layout] Änderungen am Bildschirm home im Layout demo', body);
+    expect(JSON.parse(read.payload)).toMatchObject({ via: 'link', layout: 'demo' });
   });
 
   it('says nothing for a draft that was the person’s own', () => {
-    const { body } = submission(EDITED, format);
+    const { body } = submission(EDITED, format, 'home', 'demo');
     expect(body).not.toContain('"via"');
   });
 });
 
 describe('where Submit changes sends a person', () => {
-  it('is a new issue on this repository, titled with the home kind’s prefix', () => {
-    const { href, fits } = submission(EDITED, format);
+  it('is a new issue on this repository, titled with the layout kind’s prefix and the layout it is about', () => {
+    const { href, fits } = submission(EDITED, format, 'home', 'ship');
     expect(fits).toBe(true);
     const url = new URL(href);
     expect(`${url.origin}${url.pathname}`).toBe(`${REPO}/issues/new`);
     const title = url.searchParams.get('title') ?? '';
-    expect(kindOfTitle(title)).toBe('home');
-    expect(title).toBe('[startseite] Änderungen an der Startseite');
+    expect(kindOfTitle(title)).toBe('layout');
+    expect(title).toBe('[layout] Änderungen am Bildschirm home im Layout ship');
   });
 
   it('carries the document exactly as Save would write it, in the one fenced block', () => {
-    const { href, body } = submission(EDITED, format);
+    const { href, body } = submission(EDITED, format, 'home', 'demo');
     expect(new URL(href).searchParams.get('body')).toBe(body);
     const fenced = /```json\n([\s\S]*?)```/.exec(body);
     expect(fenced?.[1]).toBeDefined();
-    expect(JSON.parse(fenced?.[1] ?? '')).toMatchObject({ version: SHIPPED.version });
+    expect(JSON.parse(fenced?.[1] ?? '')).toMatchObject({
+      layout: 'demo',
+      target: 'home',
+      document: { version: SHIPPED.version },
+    });
   });
 
   /*

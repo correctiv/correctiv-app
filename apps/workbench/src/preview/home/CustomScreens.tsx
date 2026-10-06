@@ -19,12 +19,13 @@ import type { NewScreenFault } from './store';
 import { TextSetting } from './TextSetting';
 
 /**
- * The screens the newsroom makes, in the layout tool's bar (ADR 0075 §7).
+ * The open layout's screens, in the layout tool's bar (ADR 0075 §7, ADR 0080 §3): every one
+ * alike, whether a file in the repository or a draft made here.
  *
  * A file of its own for the reason `Controls.tsx` gives: it takes its state as arguments,
  * so a test can press it in a real DOM without the app behind it. The store, the
  * submission and the frame stay in the panel; what is here is what a person sees and the
- * four things they can do: open a custom screen, make one, name it, take it away.
+ * four things they can do: open a screen, make one, name it, take it away.
  *
  * **An id is typed once and never edited.** It becomes a route segment, a file name and a
  * key in the joined document, so renaming one would be a deletion and a new screen. The
@@ -35,9 +36,9 @@ import { TextSetting } from './TextSetting';
 export const CUSTOM_SCREEN_COPY = defineMessages({
   more: {
     id: 'home.custom.more',
-    defaultMessage: 'Your screens',
+    defaultMessage: 'Screens',
     description:
-      'The accessible name of the list of screens the newsroom made, beside the five the app ships with, in the layout tool’s bar. Also its placeholder while none of them is open.',
+      'The accessible name of the list of the open layout’s screens, in the layout tool’s bar. Also its placeholder while none of them is open.',
   },
   new: {
     id: 'home.custom.new',
@@ -91,12 +92,6 @@ export const CUSTOM_SCREEN_COPY = defineMessages({
     description:
       'Under the id field of a new screen when it holds anything else: a capital, a space, a dot, a slash, a leading or doubled hyphen. The id becomes part of an address, so the rule is strict.',
   },
-  declared: {
-    id: 'home.custom.fault.declared',
-    defaultMessage: 'The app already has a screen with that name.',
-    description:
-      'Under the id field of a new screen when it is the id of one of the five screens the demo layout carries, which this tool always holds.',
-  },
   reserved: {
     id: 'home.custom.fault.reserved',
     defaultMessage: 'That name is kept for the tab bar.',
@@ -133,11 +128,24 @@ export const CUSTOM_SCREEN_COPY = defineMessages({
     description:
       'The name of the button that takes the open custom screen away. For one that was only ever a draft it is the whole of the deletion.',
   },
-  deleteSubmit: {
-    id: 'home.custom.deleteSubmit',
-    defaultMessage: 'Delete this screen and submit the deletion',
+  deletedNote: {
+    id: 'home.custom.deletedNote',
+    defaultMessage:
+      'Deleted in this draft only. The file stays in the repository until a submission that deletes it is merged, and it stays deleted here for as long as this draft is kept.',
     description:
-      'The name of the button that takes a custom screen away that the repository already carries. It opens GitHub’s new-issue page with the deletion in it, like Submit changes does, because the file is only removed when the pull request is merged.',
+      'Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted.',
+  },
+  restore: {
+    id: 'home.custom.restore',
+    defaultMessage: 'Restore {id}',
+    description:
+      'The name of the button that takes a deletion back. {id} is the screen’s id, such as entdecken, which is not translated.',
+  },
+  submitDeletion: {
+    id: 'home.custom.submitDeletion',
+    defaultMessage: 'Submit the deletion of {id}',
+    description:
+      'The name of the link that opens GitHub’s new-issue page with the deletion of a screen in it, like Submit changes does. {id} is the screen’s id, which is not translated.',
   },
 });
 
@@ -147,10 +155,9 @@ const FAULTS = {
   empty: CUSTOM_SCREEN_COPY.empty,
   'too-long': CUSTOM_SCREEN_COPY.tooLong,
   malformed: CUSTOM_SCREEN_COPY.malformed,
-  declared: CUSTOM_SCREEN_COPY.declared,
   reserved: CUSTOM_SCREEN_COPY.reserved,
   taken: CUSTOM_SCREEN_COPY.taken,
-} as const satisfies Record<CustomScreenIdFault | 'declared' | 'taken', unknown>;
+} as const satisfies Record<CustomScreenIdFault | 'taken', unknown>;
 
 export type { NewScreenFault };
 
@@ -159,9 +166,9 @@ const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 const FIELD =
   'h-[1.75rem] w-full rounded-md border border-stroke bg-canvas px-2xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
-/** What the bar needs to draw the custom screens, and to change them. */
-export interface CustomScreensControl {
-  /** Every custom screen the editor can open, by id. */
+/** What the bar needs to draw the open layout's screens, and to change them. */
+export interface ScreensControl {
+  /** Every screen of the open layout, by id. */
   ids: readonly string[];
   /** The title a screen is listed by: its own German one, or the id. */
   titleOf: (id: string) => string;
@@ -171,28 +178,22 @@ export interface CustomScreensControl {
   create: (id: string, title: string) => NewScreenFault | null;
 }
 
-/** The open custom screen's own row: what it is called, where it is, and the way out. */
-export interface OpenCustomScreen {
+/** The open screen's own row: what it is called, where it is, and the way out. */
+export interface OpenScreen {
   id: string;
   words: ScreenWords | null;
   onTitle: (title: SettingValue) => void;
   onPreview: () => void;
-  /**
-   * Set when the repository already carries the screen: deleting it is then a submission,
-   * which is a link, and `onDelete` still takes it out of this editor as the link opens.
-   */
-  submitDeletion: { href: string } | null;
   onDelete: () => void;
 }
 
-export function CustomScreenList({
+export function ScreenList({
   control,
   screen,
   disabled,
   onOpen,
 }: {
-  control: CustomScreensControl;
-  /** The screen being edited, so the list says which of its own is open. */
+  control: ScreensControl;
   screen: string;
   disabled: boolean;
   onOpen: (id: string) => void;
@@ -204,7 +205,7 @@ export function CustomScreenList({
       {control.ids.length > 0 && (
         <Select
           aria-label={intl.formatMessage(CUSTOM_SCREEN_COPY.more)}
-          className="w-[8rem] shrink"
+          className="w-[12rem] min-w-0 shrink"
           disabled={disabled}
           value={open}
           options={[
@@ -221,15 +222,7 @@ export function CustomScreenList({
   );
 }
 
-/**
- * The form for a screen nobody has made yet.
- *
- * Validation is the core's, asked through `control.fault`, and it is shown as text under
- * the field as the person types, once there is something to judge. An empty field is not a
- * fault until Create is pressed: telling somebody who has not typed that they have made a
- * mistake is the wrong first sentence.
- */
-function NewScreen({ control, disabled }: { control: CustomScreensControl; disabled: boolean }) {
+function NewScreen({ control, disabled }: { control: ScreensControl; disabled: boolean }) {
   const intl = useWorkbenchIntl();
   const [open, setOpen] = useState(false);
   const [id, setId] = useState('');
@@ -352,13 +345,7 @@ function NewScreen({ control, disabled }: { control: CustomScreensControl; disab
  * is leave the title without a German: `withWord` refuses that, because a screen with no
  * name has nothing to fall back to, so a clear that would do it is not written.
  */
-export function CustomScreenRow({
-  screen,
-  disabled,
-}: {
-  screen: OpenCustomScreen;
-  disabled: boolean;
-}) {
+export function ScreenRow({ screen, disabled }: { screen: OpenScreen; disabled: boolean }) {
   const intl = useWorkbenchIntl();
   const path = `/s/${screen.id}`;
   const label = (message: typeof CUSTOM_SCREEN_COPY.delete) => (
@@ -367,20 +354,7 @@ export function CustomScreenRow({
       {intl.formatMessage(message)}
     </>
   );
-  const remove = screen.submitDeletion ? (
-    <Button variant="outline" className={SMALL} asChild>
-      <a
-        href={screen.submitDeletion.href}
-        target="_blank"
-        rel="noreferrer"
-        onClick={screen.onDelete}
-        aria-disabled={disabled}
-        data-testid="delete-screen"
-      >
-        {label(CUSTOM_SCREEN_COPY.deleteSubmit)}
-      </a>
-    </Button>
-  ) : (
+  const remove = (
     <Button
       variant="outline"
       className={SMALL}
@@ -414,6 +388,58 @@ export function CustomScreenRow({
         </Button>
         {remove}
       </div>
+    </div>
+  );
+}
+
+/** A screen the repository carries that this draft deletes. */
+export interface DeletedScreen {
+  id: string;
+  title: string;
+  /** Opens GitHub's new-issue page with the deletion in it. */
+  submit: { href: string };
+  onRestore: () => void;
+}
+
+/**
+ * The screens deleted in this draft and not yet submitted, said as what they are: a draft
+ * (ADR 0080 §3). A deleted screen leaves the list, the frame and the navigation, so without
+ * this it would be gone from the only place a person could see that it is not gone from the
+ * repository, and nothing would say how to bring it back or how to make it final.
+ */
+export function DeletedScreens({ screens }: { screens: readonly DeletedScreen[] }) {
+  const intl = useWorkbenchIntl();
+  if (screens.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2xs" data-testid="deleted-screens">
+      <p className={NOTE}>{intl.formatMessage(CUSTOM_SCREEN_COPY.deletedNote)}</p>
+      <ul className="flex flex-col gap-2xs">
+        {screens.map((deleted) => (
+          <li key={deleted.id} className="flex flex-wrap items-center gap-2xs">
+            <span className="min-w-0 flex-1 truncate text-s text-on-canvas">
+              {deleted.title} <code className="font-mono text-[0.75rem]">{deleted.id}</code>
+            </span>
+            <Button
+              variant="outline"
+              className={SMALL}
+              onClick={deleted.onRestore}
+              data-testid={`restore-screen-${deleted.id}`}
+            >
+              {intl.formatMessage(CUSTOM_SCREEN_COPY.restore, { id: deleted.id })}
+            </Button>
+            <Button variant="outline" className={SMALL} asChild>
+              <a
+                href={deleted.submit.href}
+                target="_blank"
+                rel="noreferrer"
+                data-testid={`submit-deletion-${deleted.id}`}
+              >
+                {intl.formatMessage(CUSTOM_SCREEN_COPY.submitDeletion, { id: deleted.id })}
+              </a>
+            </Button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

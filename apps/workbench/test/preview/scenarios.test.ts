@@ -352,7 +352,7 @@ describe('the editor’s two ways out, as HomeDocument.tsx wires them', () => {
 
   it('offers Submit changes only for a document that is not guarded', () => {
     const offer = between('const offer =', ';');
-    expect(offer.replace(/\s+/g, ' ')).toContain('dirty && !guarded ?');
+    expect(offer.replace(/\s+/g, ' ')).toContain('dirty && !guarded && exists ?');
   });
 
   it('registers the guard with the header, which switches Save and Submit off for it', () => {

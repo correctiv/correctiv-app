@@ -13,6 +13,7 @@ export const frame: Record<string, string> = {
   'frame.width': 'Breite in CSS-Pixeln',
   'frame.height': 'Höhe in CSS-Pixeln',
 
+  'frame.layout': 'Layout',
   'frame.day.hide': 'Den Tag einklappen',
   'frame.day.show': 'Den Tag unter dem Rahmen zeigen',
   'frame.day.hideTip': 'Der Tag · zum Einklappen drücken',

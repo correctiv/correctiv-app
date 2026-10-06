@@ -1,14 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { allBlocks, blocksByCategory } from '@correctiv/app-core/lib/block-category';
-import {
-  CONFIGURABLE_SCREENS,
-  parseScreenDocument,
-  type ConfigurableScreen,
-} from '@correctiv/app-core/lib/screen-layout';
+import { CONFIGURABLE_SCREENS } from '@correctiv/app-core/lib/screen-layout';
 import { MAX_TABS, MIN_MAX_TABS } from '@correctiv/app-core/lib/navigation';
 import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
 
@@ -23,28 +19,34 @@ import { Refusal } from '../../scripts/submission.ts';
 import { applyIssue, KINDS, mayWrite } from '../../scripts/submission-kinds.ts';
 import { formatLayoutDocument, moved, MODULE_LABELS } from '../../src/preview/home/document';
 import {
+  layoutDraftKey,
   layoutFile,
   layoutKey,
+  LAYOUT_SET_KEY,
   layoutDir,
   NAVIGATION_FILE,
   NAVIGATION_KEY,
 } from '../../src/preview/home/names';
 import {
+  layoutIds,
   screenOfRoute,
-  SCREEN_ICONS,
-  shippedOf,
+  shippedNavigationOf,
+  shippedOf as shippedIn,
   routeOf,
-  SCREEN_ROUTES,
 } from '../../src/preview/home/screens';
-import { getLayout, getScreen, setLayout, setScreen } from '../../src/preview/home/store';
+import {
+  getLayout,
+  getScreen,
+  selectLayout,
+  setLayout,
+  setScreen,
+} from '../../src/preview/home/store';
 import {
   barOf,
   checkNavigation,
-  DESTINATION_NAMES,
   formatNavigationDocument,
   movedTab,
   navigationDiffers,
-  SHIPPED_NAVIGATION,
   unused,
   withMaxTabs,
   withTab,
@@ -55,15 +57,25 @@ const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 const repo = { read, list: () => [] as string[] };
 const APP = (path: string) => read(`apps/mobile/src/${path}`);
 
+/** The tool opens on `ship`, which is empty; these tests are about documents, so they read `demo`'s. */
+const shippedOf = (screen: string) => shippedIn(screen, 'demo');
+const SHIPPED_NAVIGATION = shippedNavigationOf('demo');
+const DEMO_IDS = Object.keys(DEMO_SCREENS).sort();
+
 describe('the screen picker and its palette', () => {
-  it('knows every screen the core configures, with a route each', () => {
-    expect(Object.keys(SCREEN_ROUTES).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
+  it('lists the layouts the repository carries, the shipped one first and the demo second', () => {
+    expect(layoutIds().slice(0, 2)).toEqual(['ship', 'demo']);
+    expect(layoutIds()).toEqual(expect.arrayContaining(['ship', 'demo']));
+  });
+
+  it('gives every screen the same address, whatever its name', () => {
+    for (const id of ['home', 'entdecken', 'kampagne']) expect(routeOf(id)).toBe(`/s/${id}`);
   });
 
   it('offers one palette to every screen, with each one’s shipped blocks among them', () => {
     const palette = allBlocks();
     expect(palette.length).toBeGreaterThan(20);
-    for (const screen of CONFIGURABLE_SCREENS) {
+    for (const screen of DEMO_IDS) {
       for (const section of shippedOf(screen).sections) expect(palette).toContain(section.module);
     }
   });
@@ -88,82 +100,41 @@ describe('the screen picker and its palette', () => {
     expect(groups.flatMap((group) => group.blocks).sort()).toEqual([...allBlocks()].sort());
   });
 
+  it('keeps a draft per layout and screen, under a key no per-screen key of the app can be', () => {
+    expect(layoutDraftKey('ship', 'home')).toBe('workbench:layout:ship:home');
+    expect(layoutDraftKey('demo', 'entdecken')).toBe('workbench:layout:demo:entdecken');
+  });
+
   it('writes each screen to its own file and its own preview key, spelled as the app spells them', () => {
     expect(layoutKey('home')).toBe('workbench:home-layout');
     for (const screen of CONFIGURABLE_SCREENS.filter((s) => s !== 'home'))
       expect(layoutKey(screen)).toBe(`workbench:layout:${screen}`);
     expect(APP('lib/home/layout.ts')).toContain("'workbench:layout:${screen}'".replace(/'/g, '`'));
     expect(APP('lib/home/layout.ts')).toContain("'workbench:home-layout'");
+    expect(APP('lib/home/layout.ts')).toContain(
+      `export const LAYOUT_SET_KEY = '${LAYOUT_SET_KEY}';`,
+    );
     expect(APP('lib/navigation/tabBar.ts')).toContain(`'${NAVIGATION_KEY}'`);
     for (const screen of CONFIGURABLE_SCREENS)
       expect(read(layoutFile(screen))).toBe(formatLayoutDocument(shippedOf(screen)));
   });
 });
 
-describe('the screen switcher’s icons', () => {
-  /**
-   * The Ionicons name the app's own tab bar gives each screen.
-   *
-   * **Out of two places, because the answer is in two** (ADR 0075 §4 and §5): the KEY is
-   * in the screen's own document now, which is data this half of the repository may read
-   * outright, and the key is declared with its six native names in the app's
-   * `screenIcons.ts`, which only text can reach — the app is not importable from Node
-   * and its icon components are React Native's. Read either half alone and the answer is
-   * a name or a key rather than the mark the tab bar actually draws.
-   *
-   * It used to read `DESTINATIONS` in `tabTargets.ts` for the key. That table declared a
-   * destination's icon until ADR 0075 §5 took the words and the icon out of the app, so
-   * reading it now would be reading a table that no longer answers the question.
-   */
-  function appIonicon(screen: ConfigurableScreen): string | null {
-    const key = parseScreenDocument(DEMO_SCREENS[screen]).words?.icon;
-    if (key === undefined) return null;
-    const icons = /export const SCREEN_ICONS[\s\S]*?\n};/.exec(APP('lib/screenIcons.ts'))![0];
-    /*
-     * `[{ ]active` and not `active`: `inactive:` ends in it, and a search without
-     * the leading character reads `compass-outline` where it means `compass`.
-     */
-    const at = new RegExp(
-      `\\n {2}${key}: \\{[\\s\\S]*?ionicon: \\{[^}]*[{ ]active: '([^']+)'`,
-    ).exec(icons);
-    return at === null ? null : at[1]!;
-  }
-
-  it('gives every screen a mark', () => {
-    expect(Object.keys(SCREEN_ICONS).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
-    for (const screen of CONFIGURABLE_SCREENS) expect(SCREEN_ICONS[screen].Icon).toBeTruthy();
-  });
-
-  it('draws the app’s own tab icon for each of them', () => {
-    // The editor's switcher stands in for the app's tab bar, so a screen marked
-    // differently in the two is a mark somebody has to learn twice. Home is no longer
-    // read apart: its icon is in its document like every other screen's (ADR 0075 §3),
-    // where it used to be the tab bar's fixed first entry and nothing else.
-    // One object per screen rather than an `expect` each, as `tool-panel.test.tsx`
-    // does it: a failure names every screen whose mark has drifted, and they drift
-    // together, because the drift is one rename.
-    expect(
-      Object.fromEntries(
-        CONFIGURABLE_SCREENS.map((of) => [
-          of,
-          SCREEN_ICONS[of].ionicon === appIonicon(of) ? 'the app’s mark' : SCREEN_ICONS[of].ionicon,
-        ]),
-      ),
-    ).toEqual(Object.fromEntries(CONFIGURABLE_SCREENS.map((of) => [of, 'the app’s mark'])));
-  });
-});
-
 describe('the editor follows the frame', () => {
-  it('maps the route of every configurable screen back to that screen, whatever the spelling', () => {
-    for (const screen of CONFIGURABLE_SCREENS) {
-      expect(screenOfRoute(SCREEN_ROUTES[screen])).toBe(screen);
-      expect(screenOfRoute(`${SCREEN_ROUTES[screen]}?x=1`)).toBe(screen);
-    }
-    expect(screenOfRoute('/index')).toBe('home');
+  beforeEach(() => {
+    selectLayout('demo');
   });
 
-  it('answers null for a route that is no configurable screen, and for no route yet', () => {
-    for (const route of ['/artikel', '/einstellungen', '/gespeichert', '/entdecken/x', undefined])
+  it('maps the route of every screen back to that screen, whatever the spelling', () => {
+    for (const screen of [...DEMO_IDS, 'kampagne']) {
+      expect(screenOfRoute(routeOf(screen))).toBe(screen);
+      expect(screenOfRoute(`${routeOf(screen)}?x=1`)).toBe(screen);
+    }
+  });
+
+  it('answers null for a route that is no screen, the start included, and for no route yet', () => {
+    // `/` is whatever the navigation starts on (ADR 0079 §1), which a route cannot say.
+    for (const route of ['/', '/index', '/artikel', '/einstellungen', '/entdecken/x', undefined])
       expect(screenOfRoute(route)).toBeNull();
   });
 
@@ -171,7 +142,7 @@ describe('the editor follows the frame', () => {
     setScreen('mitmachen');
     expect(screenOfRoute(routeOf(getScreen()))).toBe(getScreen());
     const before = getScreen();
-    const followed = screenOfRoute(SCREEN_ROUTES.mitmachen);
+    const followed = screenOfRoute(routeOf('mitmachen'));
     if (followed) setScreen(followed);
     expect(getScreen()).toBe(before);
     setScreen('home');
@@ -191,12 +162,26 @@ describe('the editor follows the frame', () => {
 describe('the navigation editor', () => {
   it('prints the shipped file exactly and reports it as unchanged', () => {
     expect(formatNavigationDocument(SHIPPED_NAVIGATION)).toBe(read(NAVIGATION_FILE));
-    expect(navigationDiffers(SHIPPED_NAVIGATION)).toBe(false);
+    expect(navigationDiffers(SHIPPED_NAVIGATION, SHIPPED_NAVIGATION)).toBe(false);
   });
 
-  it('offers exactly the screens the demo layout carries', () => {
-    expect(Object.keys(DESTINATION_NAMES).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
-    expect(Object.keys(DESTINATION_NAMES).sort()).toEqual(Object.keys(DEMO_SCREENS).sort());
+  it('reads the file of every layout, and none for a layout with nothing in it', () => {
+    expect(shippedNavigationOf('ship').tabs).toEqual([]);
+    expect([...shippedNavigationOf('demo').tabs].sort()).toEqual(DEMO_IDS);
+  });
+
+  it('offers every screen of the layout it is given, not a fixed five', () => {
+    const own = ['kampagne', 'profil'];
+    expect(unused(SHIPPED_NAVIGATION, own)).toEqual(['kampagne']);
+    expect(withTab(SHIPPED_NAVIGATION, 'kampagne', true, own).tabs.at(-1)).toBe('kampagne');
+    // A screen the layout does not carry cannot be put on; one that is listed can always come off.
+    expect(withTab(SHIPPED_NAVIGATION, 'kampagne', true, DEMO_IDS)).toBe(SHIPPED_NAVIGATION);
+  });
+
+  it('draws no tab for a screen the layout no longer carries', () => {
+    const rest = DEMO_IDS.filter((id) => id !== 'profil');
+    expect(barOf(SHIPPED_NAVIGATION, rest).entries).not.toContain('profil');
+    expect(barOf(SHIPPED_NAVIGATION, []).kind).toBe('empty');
   });
 
   it('accepts any number of entries and a threshold of two to five, and refuses the rest', () => {
@@ -215,22 +200,25 @@ describe('the navigation editor', () => {
 
   it('treats Home as an entry like any other: it can be moved and taken off, and is first only by position', () => {
     expect(SHIPPED_NAVIGATION.tabs[0]).toBe('home');
-    expect(barOf(SHIPPED_NAVIGATION).start).toBe('home');
+    expect(barOf(SHIPPED_NAVIGATION, DEMO_IDS).start).toBe('home');
     const homeSecond = movedTab(SHIPPED_NAVIGATION, 'home', 1);
     expect(homeSecond.tabs.slice(0, 2)).toEqual(['entdecken', 'home']);
-    expect(barOf(homeSecond).start).toBe('entdecken');
-    expect(withTab(SHIPPED_NAVIGATION, 'home', false).tabs).not.toContain('home');
-    expect(withTab(SHIPPED_NAVIGATION, 'index', true)).toBe(SHIPPED_NAVIGATION);
+    expect(barOf(homeSecond, DEMO_IDS).start).toBe('entdecken');
+    expect(withTab(SHIPPED_NAVIGATION, 'home', false, DEMO_IDS).tabs).not.toContain('home');
+    expect(withTab(SHIPPED_NAVIGATION, 'index', true, DEMO_IDS)).toBe(SHIPPED_NAVIGATION);
   });
 
   it('lets the last entry go: a bar of none is the empty state, and of one the screen alone', () => {
     const none = SHIPPED_NAVIGATION.tabs.reduce(
-      (nav, id) => withTab(nav, id, false),
+      (nav, id) => withTab(nav, id, false, DEMO_IDS),
       SHIPPED_NAVIGATION,
     );
     expect(none.tabs).toEqual([]);
-    expect(barOf(none).kind).toBe('empty');
-    expect(barOf(withTab(none, 'profil', true))).toMatchObject({ kind: 'single', start: 'profil' });
+    expect(barOf(none, DEMO_IDS).kind).toBe('empty');
+    expect(barOf(withTab(none, 'profil', true, DEMO_IDS), DEMO_IDS)).toMatchObject({
+      kind: 'single',
+      start: 'profil',
+    });
     expect(checkNavigation(none).navigation).not.toBeNull();
   });
 
@@ -238,16 +226,16 @@ describe('the navigation editor', () => {
     const moved1 = movedTab(SHIPPED_NAVIGATION, SHIPPED_NAVIGATION.tabs[1]!, -1);
     expect(moved1.tabs[0]).toBe(SHIPPED_NAVIGATION.tabs[1]);
     expect(movedTab(SHIPPED_NAVIGATION, SHIPPED_NAVIGATION.tabs[0]!, -1)).toBe(SHIPPED_NAVIGATION);
-    const without = withTab(SHIPPED_NAVIGATION, 'profil', false);
-    expect(unused(without)).toEqual(['profil']);
-    expect(withTab(without, 'profil', true).tabs.at(-1)).toBe('profil');
+    const without = withTab(SHIPPED_NAVIGATION, 'profil', false, DEMO_IDS);
+    expect(unused(without, DEMO_IDS)).toEqual(['profil']);
+    expect(withTab(without, 'profil', true, DEMO_IDS).tabs.at(-1)).toBe('profil');
     expect(withMaxTabs(SHIPPED_NAVIGATION, 1).maxTabs).toBe(MIN_MAX_TABS);
     expect(withMaxTabs(SHIPPED_NAVIGATION, 9).maxTabs).toBe(MAX_TABS);
-    expect(navigationDiffers(withMaxTabs(SHIPPED_NAVIGATION, 3))).toBe(true);
+    expect(navigationDiffers(withMaxTabs(SHIPPED_NAVIGATION, 3), SHIPPED_NAVIGATION)).toBe(true);
   });
 
   it('puts the surplus behind Mehr, which counts as a visible tab', () => {
-    const bar = barOf(withMaxTabs(SHIPPED_NAVIGATION, 3));
+    const bar = barOf(withMaxTabs(SHIPPED_NAVIGATION, 3), DEMO_IDS);
     expect(bar.tabs).toHaveLength(3);
     expect(bar.tabs.at(-1)).toBe('mehr');
     expect(bar.more).toHaveLength(SHIPPED_NAVIGATION.tabs.length - 2);

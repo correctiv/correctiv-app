@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 
@@ -6,10 +6,12 @@ import type { ViteDevServer } from 'vite';
 
 import { ROOT } from './collect.ts';
 import {
+  DEMO_LAYOUT,
   HOME_LAYOUT_ENDPOINT,
+  layoutDir,
   layoutFile,
   NAVIGATION_ENDPOINT,
-  NAVIGATION_FILE,
+  navigationFile,
 } from '../src/preview/home/names.ts';
 
 /**
@@ -171,15 +173,26 @@ type Document = typeof import('../src/preview/home/document.ts');
 type Screens = typeof import('@correctiv/app-core/lib/screen-layout');
 type Navigation = typeof import('../src/preview/navigation/document.ts');
 
-/** The `screen` of a request's query: Home when it names none, null when it names a screen there is not. */
-function screenOf(
-  url: string,
-  screens: readonly string[],
-  isCustom: (id: string) => boolean,
-): string | null {
+/**
+ * The `screen` of a request's query: Home when it names none, null when it names an id that
+ * is no screen's. Every well-formed id is one (ADR 0078 §4), which this save creates a file
+ * for if there is none.
+ */
+function screenOf(url: string, isScreen: (id: string) => boolean): string | null {
   const named = new URL(url, 'http://localhost').searchParams.get('screen');
   if (named === null) return 'home';
-  return screens.includes(named) || isCustom(named) ? named : null;
+  return isScreen(named) ? named : null;
+}
+
+/**
+ * The `layout` of a request's query: the demo layout when it names none, which is what the
+ * save wrote before layouts could be chosen, and null for one that is not a folder there is
+ * (ADR 0078 §1, §6). A save never makes a layout, and the id is held to the core's grammar
+ * before it is ever joined to a path.
+ */
+function layoutOf(url: string, isLayout: (id: string) => boolean): string | null {
+  const named = new URL(url, 'http://localhost').searchParams.get('layout') ?? DEMO_LAYOUT;
+  return isLayout(named) && existsSync(join(ROOT, layoutDir(named))) ? named : null;
 }
 
 export function homeLayoutEndpoint(server: ViteDevServer) {
@@ -210,12 +223,19 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     const { parseHomeLayout } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/home-layout',
     )) as Parse;
-    const { CONFIGURABLE_SCREENS, isCustomScreenId } = (await server.ssrLoadModule(
+    const { isLayoutId, isScreenId } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/screen-layout',
     )) as Screens;
-    // A screen the newsroom made is written to a file of its own, which is the one thing
-    // this save does for it that it does not do for a declared screen: create it.
-    const screen = screenOf(req.url ?? '', CONFIGURABLE_SCREENS, isCustomScreenId);
+    const layoutId = layoutOf(req.url ?? '', isLayoutId);
+    if (layoutId === null) {
+      return answer(res, 400, {
+        code: 'unknown-layout',
+        error: 'That is not a layout there is a folder for.',
+      });
+    }
+    // A screen that has no file yet is written to one of its own, which is what a save does
+    // for a screen made here: create it.
+    const screen = screenOf(req.url ?? '', isScreenId);
     if (screen === null) {
       return answer(res, 400, {
         code: 'unknown-screen',
@@ -237,7 +257,7 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     // Printed from the parse rather than written as it arrived, so the file on disk is
     // formatted whatever reached the socket, and `npm run check` has nothing to say
     // about a document this endpoint wrote.
-    const file = layoutFile(screen);
+    const file = layoutFile(screen, layoutId);
     writeFileSync(join(ROOT, file), formatLayoutDocument(layout), 'utf8');
     return answer(res, 200, { path: file });
   };
@@ -270,6 +290,16 @@ export function navigationEndpoint(server: ViteDevServer) {
       });
     }
 
+    const { isLayoutId } = (await server.ssrLoadModule(
+      '@correctiv/app-core/lib/screen-layout',
+    )) as Screens;
+    const layoutId = layoutOf(req.url ?? '', isLayoutId);
+    if (layoutId === null) {
+      return answer(res, 400, {
+        code: 'unknown-layout',
+        error: 'That is not a layout there is a folder for.',
+      });
+    }
     const { checkNavigation, formatNavigationDocument } = (await server.ssrLoadModule(
       '/src/preview/navigation/document.ts',
     )) as Navigation;
@@ -280,7 +310,8 @@ export function navigationEndpoint(server: ViteDevServer) {
         problems: problems.map((problem) => ({ code: problem.code, context: problem.context })),
       });
     }
-    writeFileSync(join(ROOT, NAVIGATION_FILE), formatNavigationDocument(navigation), 'utf8');
-    return answer(res, 200, { path: NAVIGATION_FILE });
+    const file = navigationFile(layoutId);
+    writeFileSync(join(ROOT, file), formatNavigationDocument(navigation), 'utf8');
+    return answer(res, 200, { path: file });
   };
 }

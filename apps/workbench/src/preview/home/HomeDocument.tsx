@@ -11,7 +11,7 @@ import {
 
 import type { HomeLayout, SettingValue } from '@correctiv/app-core/lib/home-layout';
 import type { LocalisedText } from '@correctiv/app-core/lib/home-settings';
-import { isDeclaredScreen, screenTitleOf } from '@correctiv/app-core/lib/screen-layout';
+import { screenTitleOf } from '@correctiv/app-core/lib/screen-layout';
 import {
   useEffect,
   useMemo,
@@ -110,32 +110,36 @@ import { GUTTER, rowWidth } from './fit';
 import type { ScenarioControl } from './Scenario';
 import { routeOf, screenOfRoute, shippedOf, type ScreenId } from './screens';
 import { inRepository } from './screens';
+import { DEFAULT_LAYOUT } from './names';
 import {
   createScreen,
-  customScreenIds,
-  customScreensSnapshot,
+  deletedSnapshot,
   deleteScreen,
   getLayout,
+  getLayoutId,
   getScreen,
   incomingOf,
   joinedDocumentLength,
   newScreenFault,
   noticeOf,
-  publishCustomScreens,
+  restoreScreen,
+  screenExists,
+  screenIds,
+  screensSnapshot,
   screenTitle,
   setLayout,
   setScreen,
   subscribeJoined,
   subscribeLayout,
 } from './store';
-import { GapsNote, SizeNote } from './DocumentNotes';
+import { GapsNote, ShippedNote, SizeNote } from './DocumentNotes';
 import { gapsOf } from './gaps';
 import { readSize } from './size';
 import { copyNow } from '../clipboard';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { SHARE_COPY } from '../shareCopy';
 import { VIA_LINK } from '../submission';
-import { canSave, deletion, publish, save, submission, type SaveResult } from './write';
+import { canSave, deletion, save, submission, type SaveResult } from './write';
 
 /**
  * The home screen's document, as a day somebody can arrange.
@@ -224,6 +228,13 @@ const COPY = defineMessages({
     defaultMessage: 'The change',
     description:
       'The name read out for the field that holds the issue’s text when the clipboard was refused.',
+  },
+  layoutEmpty: {
+    id: 'home.document.layoutEmpty',
+    defaultMessage:
+      'This layout has no screen. The app draws its empty state. Make one with the plus above.',
+    description:
+      'Under the screen list of the layout tool when the open layout holds no screen at all, which is how the layout the app ships begins. The plus is the New screen button in the bar above.',
   },
   refused: {
     id: 'home.document.refused',
@@ -514,6 +525,8 @@ export function HomeDocument({
   const layout = useSyncExternalStore(subscribeLayout, getLayout, getLayout);
   /** The screen whose document that is, and the file the app ships for it. */
   const screen = useSyncExternalStore(subscribeLayout, getScreen, getScreen);
+  /** The layout it is a screen of: what Submit names, and what a deletion is measured against. */
+  const layoutId = useSyncExternalStore(subscribeLayout, getLayoutId, () => DEFAULT_LAYOUT);
   /**
    * Whether this document came in a shared link, and whether one arrived that would not
    * open (ADR 0076 §3). Read out of the store rather than handed in, because the arrival
@@ -531,11 +544,18 @@ export function HomeDocument({
     joinedDocumentLength,
     joinedDocumentLength,
   );
-  const customJoined = useSyncExternalStore(subscribeLayout, customScreensSnapshot, () => '');
-  const customIds = useMemo(
-    () => (customJoined === '' ? [] : customJoined.split('\n')),
-    [customJoined],
+  const screensJoined = useSyncExternalStore(subscribeLayout, screensSnapshot, () => '');
+  const ids = useMemo(
+    () => (screensJoined === '' ? [] : screensJoined.split('\n')),
+    [screensJoined],
   );
+  const deletedJoined = useSyncExternalStore(subscribeLayout, deletedSnapshot, () => '');
+  const deletedIds = useMemo(
+    () => (deletedJoined === '' ? [] : deletedJoined.split('\n')),
+    [deletedJoined],
+  );
+  /** False for the placeholder a layout with no screen is asked about (`store.ts`). */
+  const exists = ids.includes(screen);
   const shipped = shippedOf(screen);
   /**
    * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the session the framed app holds,
@@ -716,17 +736,6 @@ export function HomeDocument({
    * second thing to edit.
    */
   const deviceWidth = preset(DEFAULT_DEVICE).w;
-
-  /*
-   * Once, on arrival: a stored document that is now identical to the shipped one is a
-   * key nobody can see and nobody clears, and `publish` takes it away. It is the state
-   * every successful save leaves behind, because saving is what makes the two the same
-   * — the file changes, Vite reloads the page, and the override is then a copy of it.
-   */
-  useEffect(() => {
-    publish(getLayout(), getScreen());
-    publishCustomScreens();
-  }, []);
 
   /*
    * A save message is about the document that was saved, so it goes when the document
@@ -997,7 +1006,7 @@ export function HomeDocument({
     const of = screenOfRoute(state.route);
     // A route into a custom screen this editor does not hold is a link to nothing it can
     // open, and the editor stays where it is (ADR 0075 §7).
-    if (of && (isDeclaredScreen(of) || customScreenIds().includes(of))) setScreen(of);
+    if (of && screenIds().includes(of)) setScreen(of);
     // `guarded` is deliberately not a dependency: only a route change is a move.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.route]);
@@ -1006,16 +1015,17 @@ export function HomeDocument({
    * leave out (ADR 0075 §2), and Submit is off until it does. The tool writes one whenever
    * it makes a screen, so this is the guard against a document that arrived without.
    */
-  const nameless = !isDeclaredScreen(screen) && screenTitleOf(layout.words)?.de === undefined;
+  const nameless = !inRepository(screen) && screenTitleOf(layout.words)?.de === undefined;
   /** Where Submit changes goes, or nothing while there is nothing to submit. */
   const offer =
-    dirty && !guarded
+    dirty && !guarded && exists
       ? nameless
         ? null
         : submission(
             layout,
             (message, values) => intl.formatMessage(message, values),
             screen,
+            layoutId,
             // Still the document a link brought and nothing written to since (ADR 0076 §3).
             incoming ? VIA_LINK : undefined,
           )
@@ -1059,6 +1069,7 @@ export function HomeDocument({
               layout,
               (message, values) => intl.formatMessage(message, values),
               screen,
+              layoutId,
             ).then(setResult),
         }
       : undefined,
@@ -1135,8 +1146,8 @@ export function HomeDocument({
           setScreen(next);
           onChange({ route: routeOf(next) });
         }}
-        custom={{
-          ids: customIds,
+        screens={{
+          ids,
           titleOf: screenTitle,
           fault: newScreenFault,
           create: (id, title) => {
@@ -1145,10 +1156,9 @@ export function HomeDocument({
             return fault;
           },
         }}
-        openCustom={
-          isDeclaredScreen(screen)
-            ? null
-            : {
+        openScreen={
+          exists
+            ? {
                 id: screen,
                 words: layout.words,
                 onTitle: (title) =>
@@ -1157,24 +1167,32 @@ export function HomeDocument({
                     words: { ...layout.words, title: title as LocalisedText },
                   }),
                 onPreview: () => onChange({ route: routeOf(screen) }),
-                submitDeletion: inRepository(screen)
-                  ? {
-                      href: deletion(screen, (message, values) =>
-                        intl.formatMessage(message, values),
-                      ).href,
-                    }
-                  : null,
                 onDelete: () => {
                   deleteScreen(screen);
-                  onChange({ route: routeOf('home') });
+                  const next = getScreen();
+                  if (screenExists(next)) onChange({ route: routeOf(next) });
                 },
               }
+            : null
         }
+        deleted={deletedIds.map((id) => ({
+          id,
+          title: screenTitle(id),
+          submit: {
+            href: deletion(id, layoutId, (message, values) => intl.formatMessage(message, values))
+              .href,
+          },
+          onRestore: () => {
+            restoreScreen(id);
+            onChange({ route: routeOf(id) });
+          },
+        }))}
         scenario={scenario}
         follow={follow}
         onFollow={setFollow}
         outcome={
           <>
+            {offer && <ShippedNote layout={layoutId} />}
             {offer && copied !== null && (
               <div className="flex flex-col gap-xs">
                 <output className="flex items-start gap-xs text-s text-on-canvas">
@@ -1246,42 +1264,44 @@ export function HomeDocument({
         }
       />
 
-      <SizeNote size={readSize(joinedLength)} />
-      <GapsNote gaps={gapsOf(layout, !isDeclaredScreen(screen))} />
+      {exists ? (
+        <>
+          <SizeNote size={readSize(joinedLength)} />
+          <GapsNote gaps={gapsOf(layout, true)} />
 
-      {target.edition === null ? (
-        <PointChip
-          layout={layout}
-          point={point}
-          span={span}
-          changes={moment?.changes.length ?? 0}
-          landsOn={EDITION_COPY.landsOnDay}
-          onMove={(to) => {
-            if (point === null) return;
-            setLayout(movedMoment(layout, point, to));
-            goTo(to);
-          }}
-          onRemove={() => {
-            if (point === null) return;
-            setLayout(withoutMoment(layout, point));
-          }}
-        />
-      ) : (
-        <EditionHead
-          layout={layout}
-          edition={target.edition}
-          point={target.point}
-          onLayout={setLayout}
-          onGoTo={goTo}
-        />
-      )}
+          {target.edition === null ? (
+            <PointChip
+              layout={layout}
+              point={point}
+              span={span}
+              changes={moment?.changes.length ?? 0}
+              landsOn={EDITION_COPY.landsOnDay}
+              onMove={(to) => {
+                if (point === null) return;
+                setLayout(movedMoment(layout, point, to));
+                goTo(to);
+              }}
+              onRemove={() => {
+                if (point === null) return;
+                setLayout(withoutMoment(layout, point));
+              }}
+            />
+          ) : (
+            <EditionHead
+              layout={layout}
+              edition={target.edition}
+              point={target.point}
+              onLayout={setLayout}
+              onGoTo={goTo}
+            />
+          )}
 
-      {/*
+          {/*
         One environment around the whole list, not one per row. `AppEnvironment` mounts a
         store provider, an intl provider, a safe-area provider and a gesture root, and one
         per row would be one of each per row; `components/AppHost.tsx` says the rest.
       */}
-      {/*
+          {/*
         The day, and on every seam a place to put a block. ADR 0045 §6 wants the mark at
         each end too, so there is one more of them than there are blocks.
 
@@ -1298,95 +1318,104 @@ export function HomeDocument({
         the answer a release would write without the DOM having moved at all. `sameSection`
         is what keeps a carry from redrawing the whole list per pointer event.
       */}
-      <AppHost>
-        <ol
-          ref={list}
-          className="mx-auto flex w-full flex-col"
-          /*
-           * The phone's own width plus the gutter, centred in whatever the panel has.
-           * ADR 0045 §3 refuses to scale a block UP, so on a wide window the drawing would
-           * otherwise stand in a row half again its size with the controls floating out in
-           * the empty half. `Stage.tsx` centres the device frame with `m-auto` for the same
-           * reason, and this is the list's version of it.
-           *
-           * `rowWidth`, which is also what `shell/views.ts` sizes the panel by — the panel
-           * opens at the row's width, so at its default the row fills it and `fit()`'s
-           * centring has nothing to centre. A person who drags the panel wider gets the
-           * centring back, which is the case the rule was written for.
-           */
-          style={{ maxWidth: rowWidth(deviceWidth) }}
-        >
-          {layout.sections.map((section, index) => (
-            <Row
-              key={section.id}
-              section={effective.find((held) => held.id === section.id) ?? section}
-              inherited={inherited.find((held) => held.id === section.id) ?? section}
-              point={target.point}
-              layer={target.edition === null ? null : nameOf(target.edition)}
-              decidedBy={
-                layout.editions.find((edition) => edition.id === decided.get(section.id)) ?? null
-              }
-              index={index}
-              last={index === layout.sections.length - 1}
-              changed={edited.includes(section.id)}
-              deviceWidth={drawing ? deviceWidth : null}
-              screen={screen}
-              follow={follow}
-              before={
-                carried === null ? (
-                  <InsertMark
-                    where={whereAt(intl, layout, index)}
-                    deviceWidth={deviceWidth}
-                    screen={screen}
-                    onAdd={(module) => setLayout(added(layout, index, module))}
-                  />
-                ) : null
-              }
-              after={
-                carried === null && index === layout.sections.length - 1 ? (
-                  <InsertMark
-                    where={whereAt(intl, layout, layout.sections.length)}
-                    deviceWidth={deviceWidth}
-                    screen={screen}
-                    onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
-                  />
-                ) : null
-              }
-              grip={gripFor(section.id, index)}
-              carried={carried?.id === section.id}
-              shift={offsetOf(section.id, index)}
+          <AppHost>
+            <ol
+              ref={list}
+              className="mx-auto flex w-full flex-col"
               /*
-               * Only while something is being carried. The transition has to be gone in the
-               * same commit that writes the new order, or the transforms would animate back
-               * to nought while the layout jumps to meet them, and one move would be drawn
-               * twice. React batches `carry(null)` and `setLayout` into one update, so this
-               * goes at the same moment the offsets do.
+               * The phone's own width plus the gutter, centred in whatever the panel has.
+               * ADR 0045 §3 refuses to scale a block UP, so on a wide window the drawing would
+               * otherwise stand in a row half again its size with the controls floating out in
+               * the empty half. `Stage.tsx` centres the device frame with `m-auto` for the same
+               * reason, and this is the list's version of it.
+               *
+               * `rowWidth`, which is also what `shell/views.ts` sizes the panel by — the panel
+               * opens at the row's width, so at its default the row fills it and `fit()`'s
+               * centring has nothing to centre. A person who drags the panel wider gets the
+               * centring back, which is the case the rule was written for.
                */
-              dragging={carried !== null}
-              onMove={(delta) => setLayout(moved(layout, section.id, delta))}
-              onHidden={(hidden) =>
-                setLayout(writeHidden(layout, playhead.instant, section.id, hidden, reader))
-              }
-              onSetting={(key, value) =>
-                setLayout(writeSetting(layout, playhead.instant, section.id, key, value, reader))
-              }
-              reaches={reaches(reader, audienceOf(section))}
-              locked={!editableAt(layout, playhead.instant, section.id, reader)}
-              change={changeHeldAt(layout, playhead.instant, section.id, reader)}
-              taken={takenAudiences(layout, playhead.instant, section.id, reader)}
-              stranding={strandingAudiences(layout, playhead.instant, section.id, reader)}
-              onAudience={(audience) => setLayout(withAudience(layout, section.id, audience))}
-              onChangeAudience={(audience) =>
-                setLayout(
-                  writeChangeAudience(layout, playhead.instant, section.id, audience, reader),
-                )
-              }
-              onRemove={() => setLayout(removed(layout, section.id))}
-              outline={outline}
-            />
-          ))}
-        </ol>
-      </AppHost>
+              style={{ maxWidth: rowWidth(deviceWidth) }}
+            >
+              {layout.sections.map((section, index) => (
+                <Row
+                  key={section.id}
+                  section={effective.find((held) => held.id === section.id) ?? section}
+                  inherited={inherited.find((held) => held.id === section.id) ?? section}
+                  point={target.point}
+                  layer={target.edition === null ? null : nameOf(target.edition)}
+                  decidedBy={
+                    layout.editions.find((edition) => edition.id === decided.get(section.id)) ??
+                    null
+                  }
+                  index={index}
+                  last={index === layout.sections.length - 1}
+                  changed={edited.includes(section.id)}
+                  deviceWidth={drawing ? deviceWidth : null}
+                  screen={screen}
+                  follow={follow}
+                  before={
+                    carried === null ? (
+                      <InsertMark
+                        where={whereAt(intl, layout, index)}
+                        deviceWidth={deviceWidth}
+                        screen={screen}
+                        onAdd={(module) => setLayout(added(layout, index, module))}
+                      />
+                    ) : null
+                  }
+                  after={
+                    carried === null && index === layout.sections.length - 1 ? (
+                      <InsertMark
+                        where={whereAt(intl, layout, layout.sections.length)}
+                        deviceWidth={deviceWidth}
+                        screen={screen}
+                        onAdd={(module) => setLayout(added(layout, layout.sections.length, module))}
+                      />
+                    ) : null
+                  }
+                  grip={gripFor(section.id, index)}
+                  carried={carried?.id === section.id}
+                  shift={offsetOf(section.id, index)}
+                  /*
+                   * Only while something is being carried. The transition has to be gone in the
+                   * same commit that writes the new order, or the transforms would animate back
+                   * to nought while the layout jumps to meet them, and one move would be drawn
+                   * twice. React batches `carry(null)` and `setLayout` into one update, so this
+                   * goes at the same moment the offsets do.
+                   */
+                  dragging={carried !== null}
+                  onMove={(delta) => setLayout(moved(layout, section.id, delta))}
+                  onHidden={(hidden) =>
+                    setLayout(writeHidden(layout, playhead.instant, section.id, hidden, reader))
+                  }
+                  onSetting={(key, value) =>
+                    setLayout(
+                      writeSetting(layout, playhead.instant, section.id, key, value, reader),
+                    )
+                  }
+                  reaches={reaches(reader, audienceOf(section))}
+                  locked={!editableAt(layout, playhead.instant, section.id, reader)}
+                  change={changeHeldAt(layout, playhead.instant, section.id, reader)}
+                  taken={takenAudiences(layout, playhead.instant, section.id, reader)}
+                  stranding={strandingAudiences(layout, playhead.instant, section.id, reader)}
+                  onAudience={(audience) => setLayout(withAudience(layout, section.id, audience))}
+                  onChangeAudience={(audience) =>
+                    setLayout(
+                      writeChangeAudience(layout, playhead.instant, section.id, audience, reader),
+                    )
+                  }
+                  onRemove={() => setLayout(removed(layout, section.id))}
+                  outline={outline}
+                />
+              ))}
+            </ol>
+          </AppHost>
+        </>
+      ) : (
+        <p className={NOTE} data-testid="layout-empty">
+          {intl.formatMessage(COPY.layoutEmpty)}
+        </p>
+      )}
 
       {/*
         A refusal is a red fill with white text, not red text on the canvas. That is what

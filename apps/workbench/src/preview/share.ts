@@ -24,6 +24,7 @@
 import { parseAddress, writeAddress } from '../shell/address';
 import type { SectionId } from '../shell/views';
 import { VIEWS } from '../shell/views';
+import { DEMO_LAYOUT } from './home/names';
 import { fromAddress, toAddress } from './state';
 import { layoutPayload } from './submission';
 
@@ -87,6 +88,11 @@ export interface Draft {
   readonly screen: string;
   /** The document as `formatLayoutDocument` writes it. */
   readonly document: string;
+  /**
+   * The layout the screen is of (ADR 0080). A link made before layouts has none, and means
+   * `demo`, the one layout the tool could edit then, so `unpack` says so.
+   */
+  readonly layout?: string;
 }
 
 /**
@@ -130,7 +136,9 @@ export function packedIn(hash: string): string | null {
  * its way to a person.
  */
 export async function pack(draft: Draft): Promise<string> {
-  const bytes = new TextEncoder().encode(layoutPayload(draft.screen, draft.document));
+  const bytes = new TextEncoder().encode(
+    layoutPayload(draft.screen, draft.document, undefined, draft.layout),
+  );
   const stream = streamOf(bytes).pipeThrough(new CompressionStream('deflate-raw'));
   return toBase64Url(await drained(stream));
 }
@@ -156,12 +164,18 @@ export async function unpack(packed: string): Promise<Arrival> {
   const text = await inflate(bytes);
   if (text === null) return { damaged: true };
   try {
-    const envelope = JSON.parse(text) as { target?: unknown; document?: unknown };
+    const envelope = JSON.parse(text) as { layout?: unknown; target?: unknown; document?: unknown };
     if (typeof envelope.target !== 'string' || typeof envelope.document !== 'object') {
       return { damaged: true };
     }
     if (envelope.document === null) return { damaged: true };
-    return { draft: { screen: envelope.target, document: JSON.stringify(envelope.document) } };
+    return {
+      draft: {
+        screen: envelope.target,
+        document: JSON.stringify(envelope.document),
+        layout: typeof envelope.layout === 'string' ? envelope.layout : DEMO_LAYOUT,
+      },
+    };
   } catch {
     return { damaged: true };
   }
