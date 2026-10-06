@@ -1661,7 +1661,7 @@
   },
   "home.document.sharedHeld": {
     "defaultMessage": "This draft came in a link. It is not saved on this machine: submit it, or reload to get your own document back.",
-    "description": "Under the head of the layout tool, after a link with a draft in it was opened (ADR 0076 §3). Says the two things a person cannot see: where the document came from, and that nothing of it was written here."
+    "description": "In the header of the layout tool and of the navigation tool, after a link with a draft in it was opened (ADR 0076 §3). Says the two things a person cannot see: where the document came from, and that nothing of it was written here."
   },
   "home.document.submitCopied": {
     "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."

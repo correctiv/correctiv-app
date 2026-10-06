@@ -109,6 +109,9 @@ export function layoutFile(screen: string): string {
 /** Where the navigation document lives in the repository. */
 export const NAVIGATION_FILE = `${LAYOUT_DIR}/navigation.json`;
 
+/** What an issue's or a link's envelope names as `target` for the navigation (ADR 0061 §2). */
+export const NAVIGATION_TARGET = 'navigation';
+
 /** The dev server's save for a navigation, beside `HOME_LAYOUT_ENDPOINT`. */
 export const NAVIGATION_ENDPOINT = '/__workbench/navigation';
 

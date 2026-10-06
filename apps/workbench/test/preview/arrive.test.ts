@@ -6,7 +6,18 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { arriveFrom } from '../../src/preview/arrive';
 import { formatLayoutDocument, SHIPPED, withHidden } from '../../src/preview/home/document';
 import { layoutKey } from '../../src/preview/home/names';
+import { NAVIGATION_KEY, NAVIGATION_TARGET } from '../../src/preview/home/names';
 import { shippedOf } from '../../src/preview/home/screens';
+import {
+  formatNavigationDocument,
+  SHIPPED_NAVIGATION,
+  withMaxTabs,
+} from '../../src/preview/navigation/document';
+import {
+  getNavigation,
+  navigationIncoming,
+  setNavigation,
+} from '../../src/preview/navigation/store';
 import {
   discardScreens,
   customScreenIds,
@@ -195,5 +206,48 @@ describe('a link carrying nothing this editor can open', () => {
     expect(await arriveFrom(link)).toBe(true);
     expect(window.location.hash).toBe(link);
     expect(packedIn(window.location.hash)).not.toBeNull();
+  });
+});
+
+describe('a link carrying a navigation draft (ADR 0076 §1, the navigation document)', () => {
+  const DRAFTED = withMaxTabs(SHIPPED_NAVIGATION, SHIPPED_NAVIGATION.maxTabs === 4 ? 5 : 4);
+  const navigationDraft: Draft = {
+    screen: NAVIGATION_TARGET,
+    document: formatNavigationDocument(DRAFTED),
+  };
+
+  beforeEach(() => setNavigation(SHIPPED_NAVIGATION));
+
+  it('opens in the navigation tool and says where it came from', async () => {
+    expect(await arriveFrom(await linkTo(navigationDraft))).toBe(true);
+
+    expect(formatNavigationDocument(getNavigation())).toBe(navigationDraft.document);
+    expect(navigationIncoming()).toBe(true);
+  });
+
+  it('writes nothing into the machine it was opened on', async () => {
+    window.localStorage.clear();
+    await arriveFrom(await linkTo(navigationDraft));
+    expect(window.localStorage.getItem(NAVIGATION_KEY)).toBeNull();
+    expect(window.localStorage.length).toBe(0);
+  });
+
+  it('publishes on the first edit, and is the editor’s own from then on', async () => {
+    await arriveFrom(await linkTo(navigationDraft));
+    setNavigation(getNavigation());
+
+    expect(navigationIncoming()).toBe(false);
+    expect(window.localStorage.getItem(NAVIGATION_KEY)).toBe(navigationDraft.document);
+  });
+
+  it('leaves the tool unchanged and says so for a document it cannot open', async () => {
+    const broken: Draft = { screen: NAVIGATION_TARGET, document: '{"version":99}' };
+    expect(await arriveFrom(await linkTo(broken))).toBe(false);
+
+    expect(noticeOf()).toBe('damaged');
+    expect(navigationIncoming()).toBe(false);
+    expect(formatNavigationDocument(getNavigation())).toBe(
+      formatNavigationDocument(SHIPPED_NAVIGATION),
+    );
   });
 });

@@ -11,7 +11,9 @@
 
 import { holdIncoming, noteDamaged, setScreen } from './home/store';
 import { isScreen, routeOf } from './home/screens';
+import { holdIncomingNavigation } from './navigation/store';
 import { packedIn, unpack } from './share';
+import { NAVIGATION_TARGET } from './home/names';
 import { set } from './store';
 
 /**
@@ -36,6 +38,15 @@ export async function arriveFrom(hash: string): Promise<boolean> {
   if (packed === null) return false;
   const arrival = await unpack(packed);
   const draft = arrival === null || 'damaged' in arrival ? null : arrival.draft;
+  /*
+   * The navigation is not a screen and has no frame route of its own: the address the link
+   * carries already names the tool, so there is nothing to move, only a document to hold.
+   */
+  if (draft?.screen === NAVIGATION_TARGET) {
+    if (holdIncomingNavigation(draft.document)) return true;
+    noteDamaged();
+    return false;
+  }
   if (draft === null || !isScreen(draft.screen)) {
     noteDamaged();
     return false;
