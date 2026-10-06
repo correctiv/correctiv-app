@@ -1,9 +1,8 @@
 /** German for the `navigation.*` ids: the tab bar editor. */
 export const navigation: Record<string, string> = {
   'navigation.lead':
-    'Die Tab-Leiste der App. Home steht immer an erster Stelle. Der Rahmen lädt nach jeder Änderung neu, weil die App die Navigation nur beim Start liest.',
+    'Die Tab-Leiste der App. Der erste Eintrag ist der Bildschirm, mit dem die App startet. Der Rahmen folgt jeder Änderung.',
   'navigation.entries': 'Einträge',
-  'navigation.homeFixed': 'immer zuerst',
   'navigation.moveUp': '{name} nach oben',
   'navigation.moveDown': '{name} nach unten',
   'navigation.remove': '{name} aus der Tab-Leiste nehmen',
@@ -15,8 +14,8 @@ export const navigation: Record<string, string> = {
     '„Mehr“ zählt als einer davon. Gibt es mehr Einträge, wandert der Rest hinter „Mehr“. Mindestens {min}, höchstens {max}.',
   'navigation.result': 'Die Leiste zeigt',
   'navigation.behindMore': 'hinter „Mehr“: {names}',
-  'navigation.lastTab':
-    'Eine Leiste braucht mindestens {min} Tabs, Home eingerechnet. Der letzte Eintrag bleibt deshalb.',
+  'navigation.resultEmpty': 'nichts: die App zeigt ihren Leerzustand',
+  'navigation.resultSingle': '{name}, ohne Tab-Leiste',
   'navigation.invalid': 'Die App würde diese Leiste nicht zeichnen: {codes}',
   'navigation.copied':
     'Die Änderung war zu lang für den Link und liegt in der Zwischenablage. Fügen Sie sie in das Issue ein.',

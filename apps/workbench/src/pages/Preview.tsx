@@ -190,7 +190,7 @@ export function Preview({ address, onAddress, wide, full }: ShellProps) {
       </Slot>
 
       <Slot id="navigation">
-        <NavigationEditor onReload={preview.onReload} />
+        <NavigationEditor />
       </Slot>
 
       <Slot id="features">

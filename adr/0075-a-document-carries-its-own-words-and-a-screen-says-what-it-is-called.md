@@ -173,10 +173,12 @@ arrange (ADR 0071 §5).
 
 **The bar's words come from the same copy of the document its entries come from.** The
 native tab components take their triggers before the navigator mounts, and changing them
-remounts it and resets the state (measured 2026-10-01). So the bar is built once per start
+remounts it and resets the state (measured 2026-10-01). ~~So the bar is built once per start
 out of one copy: the last good fetched document if there is one, the bundled files
 otherwise. A fetch that lands later changes the next start and not this one, which is what
-ADR 0071 §6 already says about the entries and now says about the words as well.
+ADR 0071 §6 already says about the entries and now says about the words as well.~~ The bar is
+the app's own now and is re-read when a document changes, out of one copy at a time
+([ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md) §3).
 
 **The floor is the bundled document, and it is a stronger floor than a message.** A test
 holds every bundled document to parse (ADR 0071 §2), so there is no state in which the bar

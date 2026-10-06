@@ -1,6 +1,7 @@
 import { useIntl } from 'react-intl';
 
 import { resolveText } from '@correctiv/app-core/lib/home-settings';
+import { MORE_TAB, type TabBar } from '@correctiv/app-core/lib/navigation';
 import {
   screenTabLabelOf,
   SCREEN_ICON_FALLBACK,
@@ -10,9 +11,9 @@ import type { Locale } from '@correctiv/app-core/stores/settings';
 
 import { SCREEN_ICONS, type ScreenIcon } from '@/lib/screenIcons';
 import { useLocale } from '@/lib/store/core';
-import { MORE_LABEL, TAB_ROUTES, TAB_TARGETS } from '@/lib/tabTargets';
+import { MORE_LABEL } from '@/lib/tabTargets';
 
-import { tabScreenWords } from './tabBar';
+import { useTabBarDecision } from './tabBar';
 
 /**
  * What the three bars draw for one route: a word in the language the app is in, and an
@@ -73,7 +74,7 @@ export function tabWordOf(
   locale: Locale,
   more: string,
 ): TabWord {
-  if (TAB_TARGETS[route]?.screen === undefined) return { label: more, icon: iconOf(MORE_ICON) };
+  if (route === MORE_TAB) return { label: more, icon: iconOf(MORE_ICON) };
   const text = screenTabLabelOf(words ?? null);
   return {
     label: text === null ? route : resolveText(text, locale),
@@ -81,19 +82,32 @@ export function tabWordOf(
   };
 }
 
+/** What the bars and "Mehr" draw: the arrangement and each screen's word, in the app's language. */
+export interface Tabs {
+  readonly bar: TabBar;
+  /** The screens the layout carries and the navigation does not list, which "Mehr" holds too. */
+  readonly unlisted: readonly string[];
+  /** Every tab, every screen behind "Mehr" and "Mehr" itself. */
+  readonly words: Readonly<Record<string, TabWord>>;
+}
+
 /**
- * What every declared route is called and drawn with, in the app's language.
+ * The bar and what everything on it is called and drawn with, in the app's language.
  *
- * The words are the bar's frozen copy (`tabScreenWords`) and the language is the
- * store's, which is construction state the host names once (`lib/locale.ts`). So this
- * re-renders with the app and still cannot disagree with the entries beside it.
+ * The arrangement is re-read when a document changes (`useTabBarDecision`), and the
+ * language is the store's, which is construction state the host names once
+ * (`lib/locale.ts`). So this re-renders with the app and cannot disagree with the entries
+ * beside it.
  */
-export function useTabWords(): Readonly<Record<string, TabWord>> {
+export function useTabs(): Tabs {
   const intl = useIntl();
   const locale = useLocale();
-  const words = tabScreenWords();
+  const { bar, unlisted, words } = useTabBarDecision();
   const more = intl.formatMessage(MORE_LABEL);
-  return Object.fromEntries(
-    TAB_ROUTES.map((route) => [route, tabWordOf(route, words[route], locale, more)]),
-  );
+  const ids = [...Object.keys(words), MORE_TAB];
+  return {
+    bar,
+    unlisted,
+    words: Object.fromEntries(ids.map((id) => [id, tabWordOf(id, words[id], locale, more)])),
+  };
 }

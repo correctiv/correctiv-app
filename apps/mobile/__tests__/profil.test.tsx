@@ -54,12 +54,14 @@ import { findAllPressable, press, render, renderedText } from './support/renderi
 
 import EinstellungenScreen from '@/app/einstellungen';
 import GespeichertScreen from '@/app/gespeichert';
-import ProfilScreen from '@/app/(tabs)/profil';
 import { sessionActions } from '@correctiv/app-core/stores/session';
 import { resetStore } from '@correctiv/app-core/stores/store';
 import type { Entitlement, FeedItem, MembershipTier } from '@correctiv/app-core/types/models';
 
 import { coreActions, coreStore } from '@/lib/store/core';
+import { screenOf } from './support/screens';
+
+const ProfilScreen = screenOf('profil');
 
 const push = router.push as jest.Mock;
 

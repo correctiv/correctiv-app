@@ -5,7 +5,7 @@ import {
   CONFIGURABLE_SCREENS,
   CUSTOM_SCREEN_ID_MAX_LENGTH,
   customScreenIdFault,
-  customScreenIdsOf,
+  screenIdsOf,
   isCustomScreenId,
   parseScreenDocument,
   SCREEN_ICONS,
@@ -345,12 +345,12 @@ describe('the id of a screen the newsroom makes (ADR 0075 §7)', () => {
     expect(customScreenIdFault('a'.repeat(CUSTOM_SCREEN_ID_MAX_LENGTH + 1))).toBe('too-long');
   });
 
-  it('refuses every id the app declares, and the one the navigation answers to', () => {
-    for (const id of CONFIGURABLE_SCREENS) expect(customScreenIdFault(id)).toBe('declared');
+  it('refuses no id for having been built in, and the one the navigation answers to', () => {
+    for (const id of CONFIGURABLE_SCREENS) expect(customScreenIdFault(id)).toBeNull();
     expect(customScreenIdFault('navigation')).toBe('reserved');
   });
 
-  it('lists the custom screens of a joined document and leaves the rest out', () => {
+  it('lists the screens of a joined document, built-in names included, and leaves bad ids out', () => {
     const body = {
       version: 1,
       screens: {
@@ -361,10 +361,10 @@ describe('the id of a screen the newsroom makes (ADR 0075 §7)', () => {
         'wahl-2026': {},
       },
     };
-    expect(customScreenIdsOf(body)).toEqual(['klima', 'wahl-2026']);
-    expect(customScreenIdsOf(null)).toEqual([]);
-    expect(customScreenIdsOf({ screens: [] })).toEqual([]);
-    expect(customScreenIdsOf({})).toEqual([]);
+    expect(screenIdsOf(body)).toEqual(['home', 'klima', 'mitmachen', 'wahl-2026']);
+    expect(screenIdsOf(null)).toEqual([]);
+    expect(screenIdsOf({ screens: [] })).toEqual([]);
+    expect(screenIdsOf({})).toEqual([]);
   });
 
   it('reads a custom screen out of the joined document, and an older app never asks for it', () => {

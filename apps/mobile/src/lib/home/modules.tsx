@@ -80,7 +80,7 @@ import {
   RESEARCH_COUNT,
   RESEARCH_TAG,
 } from '@/lib/home/settings';
-import { useCustomScreenLayout } from '@/lib/home/layout';
+import { useScreenLayout } from '@/lib/home/layout';
 import { useLivePin, useRuleItems } from '@/lib/home/useRule';
 import { iconOf } from '@/lib/navigation/tabWords';
 import { projectTarget } from '@/lib/discover/target';
@@ -472,7 +472,7 @@ const FaktencheckRailModule: HomeModule = ({ section, screen }) => {
         title={intl.formatMessage(COPY.factChecks)}
         className="mb-s"
         actionLabel={screen === 'entdecken' ? undefined : intl.formatMessage(COPY.viewAll)}
-        onAction={screen === 'entdecken' ? undefined : () => router.push('/(tabs)/entdecken')}
+        onAction={screen === 'entdecken' ? undefined : () => router.push('/s/entdecken')}
       />
       <FaktencheckRail
         items={items.slice(0, itemCount(section.settings, FACT_CHECK_COUNT))}
@@ -500,9 +500,9 @@ const MediathekModule: HomeModule = ({ section }) => {
         title={MEDIATHEK}
         className="mb-s"
         actionLabel={intl.formatMessage(COPY.viewEverything)}
-        onAction={() => router.push('/(tabs)/mediathek')}
+        onAction={() => router.push('/s/mediathek')}
       />
-      <MediathekReihe onOpenMediathek={() => router.push('/(tabs)/mediathek')} />
+      <MediathekReihe onOpenMediathek={() => router.push('/s/mediathek')} />
     </Place>
   );
 };
@@ -676,7 +676,7 @@ const ScreenLinkModule: HomeModule = ({ section }) => {
   const locale = useLocale();
   const colors = useColors();
   const id = screenOf(section.settings, LINK_SCREEN);
-  const words = useCustomScreenLayout(id ?? '')?.words ?? null;
+  const words = useScreenLayout(id ?? '')?.words ?? null;
   const text = screenTabLabelOf(words);
   if (id === null || text === null) return null;
   const label = resolveText(text, locale);

@@ -3,23 +3,22 @@ import { Pressable, View } from 'react-native';
 import type { EdgeInsets } from 'react-native-safe-area-context';
 
 import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { tabBar } from '@/lib/navigation/tabBar';
-import { useTabWords } from '@/lib/navigation/tabWords';
+import { useTabs } from '@/lib/navigation/tabWords';
 import { sizes, spacingPx, useColors } from '@/lib/theme';
 
 import { ScaledText } from './ScaledText';
 
 export type NavRailProps = {
-  /** The active tab's route name. */
-  active: string;
-  /** Called with the route name when a tab is pressed. */
+  /** The active tab's id, or null when the address is on none. */
+  active: string | null;
+  /** Called with the tab's id when it is pressed. */
   onSelect: (name: string) => void;
   /** Safe-area insets to pad the rail's top and bottom. */
   insets?: EdgeInsets;
 };
 
 /**
- * The tablet navigation rail: five tab triggers, each an icon over its label as in
+ * The tablet navigation rail: a trigger per tab, each an icon over its label as in
  * the phone bar, plus the mini player.
  *
  * The label is the phone bar's: the same `useTabWords()`, `SourceSans3_600SemiBold` at 11,
@@ -32,13 +31,14 @@ export type NavRailProps = {
  *
  * The first tab starts `spacingPx.s` below the top inset, so it clears the status bar.
  *
- * Width is `sizes.railWidth` (88 px). `lib/navigation/railTabs` renders it as the tab bar of a
- * navigator, left of the screens.
+ * Width is `sizes.railWidth` (88 px). The tab layout draws it left of the screens.
+ *
+ * Not in the barrel (`./index`): it reads the layout's documents, which reach the block
+ * renderers, which import the barrel, so a barrel that held it would be a cycle.
  */
 export function NavRail({ active, onSelect, insets }: NavRailProps) {
   const colors = useColors();
-  const { bar } = tabBar();
-  const words = useTabWords();
+  const { bar, words } = useTabs();
   const top = insets?.top ?? 0;
   const bottom = insets?.bottom ?? 0;
   return (

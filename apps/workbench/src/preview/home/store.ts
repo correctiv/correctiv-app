@@ -119,13 +119,18 @@ export function screenTitle(of: ScreenId): string {
   return screenLayoutOf(of).words?.title.de ?? of;
 }
 
+/** The core's faults and two of this tool's: the five screens it always holds, and a name in use. */
+export type NewScreenFault = CustomScreenIdFault | 'declared' | 'taken';
+
 /**
  * Why a new screen cannot be called `id`, or null when it can: the core's own rule, and a
  * second reason of this tool's, that the name is taken.
  */
-export function newScreenFault(id: string): CustomScreenIdFault | 'taken' | null {
+export function newScreenFault(id: string): NewScreenFault | null {
   const fault = customScreenIdFault(id);
   if (fault !== null) return fault;
+  // The core allows every well-formed name (ADR 0078 §4); this tool always holds the demo's five.
+  if (isDeclaredScreen(id)) return 'declared';
   return customScreenIds().includes(id) ? 'taken' : null;
 }
 
@@ -133,7 +138,7 @@ export function newScreenFault(id: string): CustomScreenIdFault | 'taken' | null
  * Makes a screen the newsroom thinks of, with its German title and nothing on it, and opens
  * it. Returns why not instead when the id cannot name one (ADR 0075 §7).
  */
-export function createScreen(id: string, title: string): CustomScreenIdFault | 'taken' | null {
+export function createScreen(id: string, title: string): NewScreenFault | null {
   const fault = newScreenFault(id);
   if (fault !== null) return fault;
   const layout = blankScreen(title.trim());

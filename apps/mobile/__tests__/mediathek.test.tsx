@@ -41,7 +41,6 @@ import { router } from 'expo-router';
 
 import { press, render, renderedText } from './support/rendering';
 
-import MediathekScreen from '@/app/(tabs)/mediathek';
 import { playEpisode } from '@/lib/audio/player';
 import { loaded } from '@correctiv/app-core/stores/podcasts';
 import {
@@ -52,6 +51,9 @@ import { patch as mediaPatch } from '@correctiv/app-core/stores/media';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { coreStore } from '@/lib/store/core';
+import { screenOf } from './support/screens';
+
+const MediathekScreen = screenOf('mediathek');
 
 const push = router.push as jest.Mock;
 const playEpisodeMock = playEpisode as jest.Mock;

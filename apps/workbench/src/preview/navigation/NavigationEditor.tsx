@@ -1,11 +1,10 @@
-import { ArrowDown, ArrowUp, Check, Lock, Plus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Plus, X } from 'lucide-react';
 import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { defineMessages } from 'react-intl';
 
-import { HOME_TAB, MAX_TABS, MIN_TABS, MORE_TAB } from '@correctiv/app-core/lib/navigation';
+import { MAX_TABS, MIN_MAX_TABS, MORE_TAB } from '@correctiv/app-core/lib/navigation';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
-import { say } from '../../i18n/messages';
 import { cn } from '../../lib/cn';
 import { Button } from '../../ui/kit/button';
 import { useToolActions } from '../../shell/actions';
@@ -16,7 +15,6 @@ import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { SHARE_COPY } from '../shareCopy';
 import { VIA_LINK } from '../submission';
 import { NAVIGATION_TARGET } from '../home/names';
-import { SCREEN_NAMES } from '../home/screens';
 import { canSave } from '../home/write';
 import {
   barOf,
@@ -39,18 +37,13 @@ const COPY = defineMessages({
   lead: {
     id: 'navigation.lead',
     defaultMessage:
-      'The tab bar of the app. Home is always the first entry. The frame reloads after every change, because the app reads the navigation once when it starts.',
+      'The tab bar of the app. The first entry is the screen the app starts on. The frame follows every change.',
     description: 'The one paragraph at the top of the navigation tool.',
   },
   entries: {
     id: 'navigation.entries',
     defaultMessage: 'Entries',
     description: 'The heading above the list of tabs, in order. One word.',
-  },
-  homeFixed: {
-    id: 'navigation.homeFixed',
-    defaultMessage: 'always first',
-    description: 'Beside Home in the list of tabs: it cannot be moved or removed.',
   },
   moveUp: {
     id: 'navigation.moveUp',
@@ -111,10 +104,17 @@ const COPY = defineMessages({
     description:
       'After the bar, when entries overflow. {names} is a comma-separated list of screens’ own names. “Mehr” is the overflow tab’s name and stays.',
   },
-  lastTab: {
-    id: 'navigation.lastTab',
-    defaultMessage: 'A bar needs at least {min} tabs, Home included, so the last entry stays.',
-    description: 'Shown when the only entry after Home cannot be removed. {min} is a number.',
+  resultEmpty: {
+    id: 'navigation.resultEmpty',
+    defaultMessage: 'nothing: the app shows its empty state',
+    description:
+      'After the label of the bar, when no entry can be opened. The empty state is the app’s own page that says the layout holds no screen yet.',
+  },
+  resultSingle: {
+    id: 'navigation.resultSingle',
+    defaultMessage: '{name}, with no tab bar',
+    description:
+      'After the label of the bar, when there is exactly one entry. {name} is the screen’s own name, such as Entdecken.',
   },
   invalid: {
     id: 'navigation.invalid',
@@ -139,7 +139,7 @@ const COPY = defineMessages({
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 const ROW = 'flex items-center gap-xs rounded-md border border-stroke bg-canvas px-xs py-2xs';
 
-export function NavigationEditor({ onReload }: { onReload: () => void }) {
+export function NavigationEditor() {
   const intl = useWorkbenchIntl();
   const navigation = useSyncExternalStore(subscribeNavigation, getNavigation, getNavigation);
   const selectId = useId();
@@ -155,15 +155,15 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
     | null
   >(null);
 
-  // The app reads the navigation once, so a change is a reload of the frame. Skipped on
-  // arrival: the frame has just loaded with whatever is stored.
+  // The frame follows the navigation on its own, because the app listens for the key
+  // (ADR 0079): a change is no reload. What it does clear is what the last save said. Skipped
+  // on arrival, when there is nothing to clear.
   const [first, setFirst] = useState(true);
   useEffect(() => {
     if (first) {
       setFirst(false);
       return;
     }
-    onReload();
     setResult(null);
     setCopied(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -244,11 +244,6 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
       <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.entries)}>
         <h3 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.entries)}</h3>
         <ol className="flex flex-col gap-2xs">
-          <li className={ROW} data-testid={`nav-entry-${HOME_TAB}`}>
-            <Lock aria-hidden="true" className="size-[0.875rem] text-on-canvas-muted" />
-            <span className="flex-1 text-s text-on-canvas">{say(intl, SCREEN_NAMES.home)}</span>
-            <span className={NOTE}>{intl.formatMessage(COPY.homeFixed)}</span>
-          </li>
           {navigation.tabs.map((id, index) => (
             <li key={id} className={ROW} data-testid={`nav-entry-${id}`}>
               <span className="flex-1 text-s text-on-canvas">{nameOf(id)}</span>
@@ -273,7 +268,6 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={navigation.tabs.length <= MIN_TABS - 1}
                 aria-label={intl.formatMessage(COPY.remove, { name: nameOf(id) })}
                 onClick={() => setNavigation(withTab(navigation, id, false))}
               >
@@ -282,9 +276,6 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
             </li>
           ))}
         </ol>
-        {navigation.tabs.length <= MIN_TABS - 1 && (
-          <p className={NOTE}>{intl.formatMessage(COPY.lastTab, { min: String(MIN_TABS) })}</p>
-        )}
       </section>
 
       {rest.length > 0 && (
@@ -320,33 +311,31 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
             className="flex-1"
             value={String(navigation.maxTabs)}
             onValueChange={(value) => setNavigation(withMaxTabs(navigation, Number(value)))}
-            options={Array.from({ length: MAX_TABS - MIN_TABS + 1 }, (_, i) => MIN_TABS + i).map(
-              (count) => ({
-                value: String(count),
-                label: intl.formatMessage(COPY.maxTabsOption, { count: String(count) }),
-              }),
-            )}
+            options={Array.from(
+              { length: MAX_TABS - MIN_MAX_TABS + 1 },
+              (_, i) => MIN_MAX_TABS + i,
+            ).map((count) => ({
+              value: String(count),
+              label: intl.formatMessage(COPY.maxTabsOption, { count: String(count) }),
+            }))}
           />
         </div>
         <p className={NOTE}>
-          {intl.formatMessage(COPY.maxTabsNote, { min: String(MIN_TABS), max: String(MAX_TABS) })}
+          {intl.formatMessage(COPY.maxTabsNote, {
+            min: String(MIN_MAX_TABS),
+            max: String(MAX_TABS),
+          })}
         </p>
       </div>
 
       <p className={cn(NOTE, 'text-on-canvas')} data-testid="navigation-result">
         {intl.formatMessage(COPY.result)}:{' '}
-        {bar
-          ? bar.tabs
-              .map((id) =>
-                id === HOME_TAB
-                  ? say(intl, SCREEN_NAMES.home)
-                  : id === MORE_TAB
-                    ? MORE_NAME
-                    : nameOf(id),
-              )
-              .join(' · ')
-          : '—'}
-        {bar && bar.more.length > 0 && (
+        {bar.kind === 'empty'
+          ? intl.formatMessage(COPY.resultEmpty)
+          : bar.kind === 'single'
+            ? intl.formatMessage(COPY.resultSingle, { name: nameOf(bar.start!) })
+            : bar.tabs.map((id) => (id === MORE_TAB ? MORE_NAME : nameOf(id))).join(' · ')}
+        {bar.more.length > 0 && (
           <> ({intl.formatMessage(COPY.behindMore, { names: bar.more.map(nameOf).join(', ') })})</>
         )}
       </p>

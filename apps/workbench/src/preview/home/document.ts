@@ -2528,10 +2528,10 @@ export {
  */
 export function governs(route: string | undefined, screenRoute = '/'): boolean {
   if (route === undefined) return false;
-  // Query and hash are the app's business, and `/` and `/index` are one screen: Expo
-  // Router serves the home route under both spellings and the frame reports whichever
-  // it navigated with.
+  // Query and hash are the app's business. `/` and `/index` are the start and `/s/home` is
+  // Home's own address (ADR 0079), which the start redirects to when the layout opens on
+  // it; the frame reports whichever it navigated with.
   const path = route.split(/[?#]/)[0].replace(/\/+$/, '');
   if (screenRoute !== '/') return path === screenRoute;
-  return path === '' || path === '/index';
+  return path === '' || path === '/index' || path === '/s/home';
 }

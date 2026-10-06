@@ -83,8 +83,11 @@ for the icon and the label: they are properties of the screen's own document, lo
 the app declares the route and the set of icons a document may name
 — [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
 §3 to §5. The feature a destination belongs to is still the app's (ADR 0072). The document
-chooses and orders. Home is always the first entry and cannot be taken out, because it is the
-one screen that is the app's answer to "where am I" and the floor under every fallback in §6.
+chooses and orders. ~~Home is always the first entry and cannot be taken out, because it is the
+one screen that is the app's answer to "where am I" and the floor under every fallback in §6.~~
+Voided by [ADR 0078](0078-layouts-ship-and-demo.md) §5 and
+[ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md): Home is a screen like the others and
+the first entry is the start.
 
 The destinations are tabs, and nothing else yet. A later screen of another kind, a game for
 instance, is one more destination in the declaration; whether such a thing is a tab is the
@@ -113,9 +116,11 @@ not another document, and it follows the same limits.
 The navigation and the screens are fetched the way the home document is (ADR 0057 §4; ADR
 0036 §5, §9, §10): from one address the app holds as a constant, kept as the last good copy,
 with the bundled files as what a first launch without a network draws. The app falls back to
-the **bundled navigation** when it is offline or the fetch failed, when fewer than two tabs
+the **bundled navigation** when it is offline or the fetch failed, ~~when fewer than two tabs
 remain after the unreachable ones are removed, or when an entry names a screen this version
-of the app does not know. An older app therefore never draws a tab it cannot open, and a
+of the app does not know.~~ An entry that cannot be opened is left out instead and a document
+with none is the empty state, since [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md)
+§2. An older app therefore never draws a tab it cannot open, and a
 newer document never needs a newer app to be safe.
 
 Navigation is layout, and layout is fetched. What the app may reach is not: that is

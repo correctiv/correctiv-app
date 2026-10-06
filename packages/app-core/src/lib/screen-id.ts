@@ -51,14 +51,8 @@ export const CUSTOM_SCREEN_ID_MAX_LENGTH = 40;
 /** Lower-case ASCII letters and digits, with single hyphens between them. */
 const CUSTOM_SCREEN_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** Why an id cannot name a custom screen. */
-export type CustomScreenIdFault =
-  | 'not-a-string'
-  | 'empty'
-  | 'too-long'
-  | 'malformed'
-  | 'declared'
-  | 'reserved';
+/** Why an id cannot name a screen. */
+export type CustomScreenIdFault = 'not-a-string' | 'empty' | 'too-long' | 'malformed' | 'reserved';
 
 /**
  * Ids that are well-formed and still not a screen's. `navigation` is the name a layout
@@ -68,23 +62,22 @@ export type CustomScreenIdFault =
 const RESERVED_IDS: readonly string[] = ['navigation'];
 
 /**
- * Whether `id` may name a screen the newsroom makes, and the first reason it may not.
+ * Whether `id` may name a screen, and the first reason it may not.
  *
  * ADR 0075 §7: the id becomes a route segment (`/s/<id>`), a file name under `screens/`,
  * a key in the joined document and the suffix of `workbench:layout:<screen>`, so it is
- * held to more than the core's `id-unsafe` asks of any other id. `declared` is every id
- * the app declares, `CONFIGURABLE_SCREENS` by default: a custom screen that took one would
- * shadow a document the app draws itself.
+ * held to more than the core's `id-unsafe` asks of any other id.
+ *
+ * [ADR 0078](../../../../adr/0078-layouts-ship-and-demo.md) §4 and
+ * [ADR 0079](../../../../adr/0079-the-app-draws-its-tabs-from-the-layout.md): every screen
+ * is drawn by the one route, so a name the app once declared is no special case and the
+ * only ids refused beyond the grammar are the reserved ones.
  */
-export function customScreenIdFault(
-  id: unknown,
-  declared: readonly string[] = CONFIGURABLE_SCREENS,
-): CustomScreenIdFault | null {
+export function customScreenIdFault(id: unknown): CustomScreenIdFault | null {
   if (typeof id !== 'string') return 'not-a-string';
   if (id.length === 0) return 'empty';
   if (id.length > CUSTOM_SCREEN_ID_MAX_LENGTH) return 'too-long';
   if (!CUSTOM_SCREEN_ID.test(id)) return 'malformed';
-  if (declared.includes(id)) return 'declared';
   if (RESERVED_IDS.includes(id)) return 'reserved';
   return null;
 }
@@ -96,26 +89,14 @@ export function isCustomScreenId(id: unknown): id is string {
 
 // --- every id is a screen's, and a layout has one of its own -------------------------
 
-/** Why an id cannot name a screen at all. The grammar of `CustomScreenIdFault`, minus who owns the name. */
-export type ScreenIdFault = Exclude<CustomScreenIdFault, 'declared'>;
+/** Why an id cannot name a screen at all: the same faults, under the name the layout side uses. */
+export type ScreenIdFault = CustomScreenIdFault;
 
-/**
- * Whether `id` may name a screen in a layout, and the first reason it may not.
- *
- * [ADR 0078](../../../../adr/0078-layouts-ship-and-demo.md) §4: a built-in screen is no
- * special case, so the grammar is the same for every id and the only ids refused beyond it
- * are the reserved ones. `customScreenIdFault` keeps refusing the declared names for as
- * long as the app draws those five from code, which is the app's side of the same change.
- */
-export function screenIdFault(id: unknown): ScreenIdFault | null {
-  // With nothing declared the one fault `customScreenIdFault` cannot return is `declared`.
-  return customScreenIdFault(id, []) as ScreenIdFault | null;
-}
+/** `customScreenIdFault`, for the code that reads a layout and not a route. */
+export const screenIdFault: (id: unknown) => ScreenIdFault | null = customScreenIdFault;
 
 /** `screenIdFault` as a type guard. */
-export function isScreenId(id: unknown): id is string {
-  return screenIdFault(id) === null;
-}
+export const isScreenId: (id: unknown) => id is string = isCustomScreenId;
 
 /** Why an id cannot name a layout. */
 export type LayoutIdFault = 'not-a-string' | 'empty' | 'too-long' | 'malformed';

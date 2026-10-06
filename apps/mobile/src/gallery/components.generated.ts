@@ -47,6 +47,7 @@ export type ComponentId =
   | 'recovery/RecoveryScreen'
   | 'ui/Badge'
   | 'ui/Bleed'
+  | 'ui/BottomTabBar'
   | 'ui/Button'
   | 'ui/Card'
   | 'ui/Chip'

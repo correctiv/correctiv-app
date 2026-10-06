@@ -283,6 +283,10 @@
   "discover.searchPlaceholder": {
     "defaultMessage": "Investigations, fact checks, projects …"
   },
+  "empty.screenTitle": {
+    "defaultMessage": "Coming soon",
+    "description": "What the app says when its layout holds no screen yet. A heading on an otherwise empty page, so it has to stand alone."
+  },
   "faktenforum.lead": {
     "defaultMessage": "The community checks claims together with the CORRECTIV newsroom. Have a look at what is being worked on."
   },
@@ -830,12 +834,9 @@
   "profile.tier.soli": {
     "defaultMessage": "Solidarity membership"
   },
-  "profile.title": {
-    "defaultMessage": "Profile",
-    "description": "The heading of the profile screen. The tab that opens it says the same word, out of the screen document rather than out of this catalogue, and a tab has far less room."
-  },
   "project.comingSoon": {
-    "defaultMessage": "Coming soon"
+    "defaultMessage": "Coming soon",
+    "description": "The heading of a project that has published nothing yet. The app's empty state says the same words under empty.screenTitle, for a layout with no screen."
   },
   "project.comingSoonBody": {
     "defaultMessage": "{name} is just starting. The first pieces appear here as soon as they are published.",

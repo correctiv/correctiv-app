@@ -46,7 +46,12 @@ const COPY = defineMessages({
     description:
       'Shown when the project screen is opened with no identifier at all. Four other screens say the same thing under callout.detail.noSlug, claim.noId, diary.noId and series.noId.',
   },
-  comingSoon: { id: 'project.comingSoon', defaultMessage: 'Coming soon' },
+  comingSoon: {
+    id: 'project.comingSoon',
+    defaultMessage: 'Coming soon',
+    description:
+      "The heading of a project that has published nothing yet. The app's empty state says the same words under empty.screenTitle, for a layout with no screen.",
+  },
   comingSoonBody: {
     id: 'project.comingSoonBody',
     defaultMessage:
@@ -96,7 +101,7 @@ const ACTIONS: Record<
     // The live stream belongs to the player, and that is ONE app-wide singleton
     // (expo-audio). A second player here would be a second state for the same
     // playback — hence only the jump into the Mediathek.
-    run: () => router.push('/(tabs)/mediathek'),
+    run: () => router.push('/s/mediathek'),
   },
   'local-network': {
     label: COPY.joinLocalNetwork,

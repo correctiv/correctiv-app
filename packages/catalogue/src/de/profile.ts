@@ -9,8 +9,6 @@
  * most.
  */
 export const profile: Record<string, string> = {
-  'profile.title': 'Profil',
-
   'profile.tier.free': 'Kostenlose Mitgliedschaft',
   'profile.tier.paid': 'Mitgliedschaft mit Beitrag',
   'profile.tier.soli': 'Soli-Mitgliedschaft',

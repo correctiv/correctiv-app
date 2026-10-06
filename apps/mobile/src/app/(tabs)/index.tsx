@@ -1,52 +1,45 @@
-import { Screen } from '@/components/ui';
-import { useHomeLayout } from '@/lib/home/layout';
-import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
+import { Redirect } from 'expo-router';
+import { defineMessages, useIntl } from 'react-intl';
+import { View } from 'react-native';
+
+import { Screen, Typo } from '@/components/ui';
+import { useDocumentTitle } from '@/lib/navigation/documentTitle';
+import { useTabBarDecision } from '@/lib/navigation/tabBar';
+import { tabHref } from '@/lib/navigation/tabRoutes';
+
+/** Everything a person reads on this page, in ENGLISH; the German that ships is `packages/catalogue/src/de/empty.ts`. */
+const COPY = defineMessages({
+  screenTitle: {
+    id: 'empty.screenTitle',
+    defaultMessage: 'Coming soon',
+    description:
+      'What the app says when its layout holds no screen yet. A heading on an otherwise empty page, so it has to stand alone.',
+  },
+});
 
 /**
- * Home — a curated cross-section of the ecosystem, in the draft's order: lead research,
- * today's briefing, the club's early access, the latest research, fact checks, one open
- * callout, the media row, backstage, and a quiet thank-you.
+ * The start: the first screen of the layout's navigation
+ * ([ADR 0078](../../../../../adr/0078-layouts-ship-and-demo.md) §5), or the empty state when
+ * the layout has none.
  *
- * **That order is no longer written here.** It is
- * `@correctiv/app-core/src/data/layouts/demo/screens/home.json`, an ordered list of sections each
- * naming a module, and this screen is the loop that draws them
- * ([ADR 0036](../../../../../adr/0036-the-home-screen-becomes-data.md)). What each module
- * renders is `lib/home/modules.tsx`; which of them appear right now is
- * `sectionsAtInstant`, which folds the document up to this instant and drops what is
- * hidden in it. The loop itself is `ScreenBlocks`, shared with every other screen that
- * is a document.
- *
- * `useHomeLayout` rather than a read, because the document may be replaced while this
- * screen is on it: §4's stored copy is a key in the app's own storage, and the
- * workbench's editor writes it. `lib/home/layout.ts` is where that seam is argued.
- *
- * **What the clock decides is which STATE of that document this is.** The document is a
- * day — places, plus a list of moments each carrying only what changes at it — and
- * `sectionsAtInstant` folds it up to an instant, the day's minute in Berlin first and then
- * whichever editions are running ([ADR 0039](../../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md),
- * [ADR 0059](../../../../../adr/0059-the-day-gets-a-date-and-the-newsroom-plans-in-editions.md) §4).
- * So the callout still has two sections and is still rendered exactly once in one of two
- * places; what says which is two moments in the document rather than a daypart named on
- * each section. `useHomeInstant` is where that instant comes from, and the reason it is a
- * hook rather than `Date.now()` on render. A module the document names and this host
- * cannot draw was dropped when the document was read, with a report; the `?? null` below
- * is the second net and not the mechanism.
- *
- * **And whose screen it is.** The fold takes the reader as its third parameter
- * ([ADR 0060](../../../../../adr/0060-a-block-says-when-it-appears-and-an-editor-says-for-whom.md)
- * §4): the audiences the signed-in entitlement is in, answered by the core's one file that
- * knows what an audience means. A filter on what Home leads with and never a lock; every
- * route stays as open as the door made it.
- *
- * LIVE from the feeds: hero, "Neueste Recherchen", the fact-check rail and the FunFacts
- * tile. Sample data: briefing, early access, callout, backstage — each one exists to
- * show a flow the feeds cannot supply.
+ * It is a redirect and not a screen, so that `/` is the address of whichever screen the
+ * layout starts on and the onboarding, the not-found page and a launch all say "the start"
+ * without knowing which it is. `replace`, which `<Redirect>` is: the start is not a place
+ * one comes back to. The decision is reactive, so a layout that gains its first screen while
+ * this page is open draws it.
  */
-export default function HomeScreen() {
-  const layout = useHomeLayout();
+export default function Start() {
+  const intl = useIntl();
+  const { bar } = useTabBarDecision();
+  useDocumentTitle(bar.start === null ? intl.formatMessage(COPY.screenTitle) : '');
+  if (bar.start !== null) return <Redirect href={tabHref(bar.start) as never} />;
   return (
-    <Screen>
-      <ScreenBlocks screen="home" layout={layout} />
+    <Screen scroll={false}>
+      <View className="flex-1 items-center justify-center">
+        <Typo variant="headline-l" className="text-center">
+          {intl.formatMessage(COPY.screenTitle)}
+        </Typo>
+      </View>
     </Screen>
   );
 }

@@ -1,9 +1,11 @@
 # ADR 0078 — Layouts: ship and demo
 
 Status: accepted, 2026-10-06, decided by the product side. **Built in part:** the data model,
-the scripts and the submission's payload (steps 1 and 2 of 5). The tab bar's rules, the empty
+the scripts and the submission's payload (steps 1 and 2 of 5). ~~The tab bar's rules, the empty
 state, the workbench's choice of layout and routes for screens the app does not declare are
-the steps after, and the last section lists them.
+the steps after, and the last section lists them.~~ The tab bar's rules, the empty state and
+the routes were built by [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md); the
+workbench's choice of layout is still to do, and the last section lists what is.
 
 It changes where the documents of [ADR 0071](0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
 live, and what [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md) §7
@@ -77,9 +79,11 @@ screen may hold no block, because a screen that is only a heading is a screen (A
 The one id that stays reserved is `navigation`, the name a submission gives the tab bar's
 document (ADR 0071 §4).
 
-`screenIdFault` and `isScreenId` say this in the core. `customScreenIdFault` is unchanged,
+`screenIdFault` and `isScreenId` say this in the core. ~~`customScreenIdFault` is unchanged,
 because the app still draws the five from code, and the two stay apart until the app's side
-(the open points) lets a route stand for any id.
+(the open points) lets a route stand for any id.~~ Voided by
+[ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md) §4: a route stands for any id now,
+and the two are one question.
 
 ### 5. The order in `navigation.json` is the order of the bar, and its first entry is the start
 
@@ -96,8 +100,9 @@ counted as one of them):
 | more than `max` | the first `max − 1` as tabs and "Mehr", which lists the rest |
 
 An entry the bar leaves out is behind "Mehr", so no screen is unreachable for being listed
-late. **This is decided and not built:** the core's `parseNavigation` still reads Home as the
-fixed first tab that is not in the document, which is the first of the open points.
+late. ~~**This is decided and not built:** the core's `parseNavigation` still reads Home as the
+fixed first tab that is not in the document, which is the first of the open points.~~ Built by
+[ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md) §2.
 
 ### 6. A submission names exactly one layout
 
@@ -133,19 +138,22 @@ it draws no screen until the editor's own draft (the override seam, ADR 0057) pu
   a phone shows is its own empty state, once the empty state is built, and its last good copy until.
 - The `ADR 0071 §1` check no longer wants every declared screen, and no longer refuses a
   declared screen with no section. Both were the special case of §4.
-- A navigation editor that refuses a bar of fewer than two entries is stricter than the
+- ~~A navigation editor that refuses a bar of fewer than two entries is stricter than the
   document now is. The submission no longer says so; the editor's own affordance does, until
-  the open points are built.
+  the open points are built.~~ The editor takes the last entry off as well, since
+  [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md).
 
 ## What this does not decide, and what comes next
 
-1. **The tab bar in the app** (§5): `parseNavigation`, `arrangeTabBar`, the tab bar's host
+1. ~~**The tab bar in the app** (§5): `parseNavigation`, `arrangeTabBar`, the tab bar's host
    and the empty state, with the navigation document carrying every entry, Home's included.
    Nothing here changes what the app draws until then, which is why the app still reads a
-   navigation of no entries as Home alone.
-2. **Routes for any screen**: the app declares five and draws a custom screen at `/s/<id>`.
+   navigation of no entries as Home alone.~~ Built by
+   [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md) §2.
+2. ~~**Routes for any screen**: the app declares five and draws a custom screen at `/s/<id>`.
    When every id is a screen, a route has to stand for any of them, and `customScreenIdFault`
-   loses its `declared` fault.
+   loses its `declared` fault.~~ Built by
+   [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md) §1 and §4.
 3. **The workbench chooses a layout**, and may offer `ship` as an editing target. The frame
    then needs a way to show a layout the app does not bundle.
 4. **A whole layout as an override** in the frame, instead of a screen at a time (ADR 0057).

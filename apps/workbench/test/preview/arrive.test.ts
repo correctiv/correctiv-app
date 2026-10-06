@@ -123,7 +123,7 @@ describe('a link carrying a draft for another screen', () => {
     await arriveFrom(await linkTo(other));
 
     expect(getScreen()).toBe('entdecken');
-    expect(getState().route).toBe('/entdecken');
+    expect(getState().route).toBe('/s/entdecken');
     expect(incomingOf('entdecken')).toBe(true);
   });
 });

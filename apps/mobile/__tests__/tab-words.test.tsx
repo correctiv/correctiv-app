@@ -36,7 +36,7 @@ import { SCREEN_ICON_FALLBACK, type ScreenWords } from '@correctiv/app-core/lib/
 
 import { NavRail } from '@/components/ui/NavRail';
 import { BUILT_AT } from '@/lib/home/layout';
-import { resetTabBar, tabBar, tabScreenWords } from '@/lib/navigation/tabBar';
+import { decideTabBar } from '@/lib/navigation/tabBar';
 import { tabWordOf } from '@/lib/navigation/tabWords';
 import { SCREEN_ICONS } from '@/lib/screenIcons';
 import { coreStore } from '@/lib/store/core';
@@ -67,7 +67,7 @@ function holdFetched(text: string, publishedAt = BUILT_AT + 60_000) {
 
 /** The rail, which draws the same words as the phone bar and is the one of the three a test can render. */
 function railLabels(): string[] {
-  const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
+  const tree = render(<NavRail active="home" onSelect={() => {}} insets={NO_INSETS} />);
   return tree.root
     .findAll(
       (node) =>
@@ -80,11 +80,6 @@ beforeEach(() => {
   act(() => {
     coreStore.dispatch(resetStore());
   });
-  resetTabBar();
-});
-
-afterAll(() => {
-  resetTabBar();
 });
 
 describe('the words a bar draws', () => {
@@ -126,7 +121,8 @@ describe('the words a bar draws', () => {
 
   it('come out of the same copy of the document as the entries', () => {
     // One fetched body carrying both halves: the navigation puts Profil second and the
-    // screen documents rename two tabs. Both arrive, because both are read out of it.
+    // screen documents rename two tabs. Both arrive, because both are read out of it, and the
+    // bundle's other three screens are behind "Mehr" because the navigation omits them.
     holdFetched(
       merged(
         {
@@ -136,22 +132,27 @@ describe('the words a bar draws', () => {
         { version: 1, tabs: ['profil', 'entdecken'], maxTabs: 5 },
       ),
     );
-    expect(tabBar().bar.tabs).toEqual(['index', 'profil', 'entdecken']);
-    expect(railLabels()).toEqual(['Home', 'Mein Bereich', 'Themen']);
+    expect(decideTabBar().bar.tabs).toEqual(['profil', 'entdecken', 'mehr']);
+    expect(railLabels()).toEqual(['Mein Bereich', 'Themen', 'Mehr']);
   });
 
-  it('are frozen with the entries, so a fetch that lands later applies at the next start', () => {
-    // The measurement behind ADR 0071 §6 and ADR 0075 §5: changing the triggers
-    // remounts the navigator and loses the state of every tab, so neither half of the
-    // bar may move while the app is running. The next start is `resetTabBar()` here and
-    // a relaunch on a phone.
-    expect(railLabels()[3]).toBe('Mitmachen');
+  it('follow a fetch that lands while the app runs, with no restart', () => {
+    // The bar used to be fixed at the first call because the system's tab bar remounts
+    // every tab when its triggers change (measured 2026-10-01, ADR 0071 §6). The bar is the
+    // app's own now (ADR 0079), so a word and an entry arrive when the fetch does.
+    const tree = render(<NavRail active="home" onSelect={() => {}} insets={NO_INSETS} />);
+    const labels = () =>
+      tree.root
+        .findAll(
+          (node) =>
+            node.props?.accessibilityRole === 'tab' && typeof node.props?.onPress === 'function',
+        )
+        .map((tab) => tab.props.accessibilityLabel as string);
+    expect(labels()[3]).toBe('Mitmachen');
     holdFetched(
       merged({ mitmachen: screenDocument({ title: { de: 'Beteiligen' }, icon: 'people' }) }),
     );
-    expect(railLabels()[3]).toBe('Mitmachen');
-    resetTabBar();
-    expect(railLabels()[3]).toBe('Beteiligen');
+    expect(labels()[3]).toBe('Beteiligen');
   });
 
   it('report an icon this build does not know by drawing the fallback', () => {
@@ -161,39 +162,38 @@ describe('the words a bar draws', () => {
     holdFetched(
       merged({ mediathek: screenDocument({ title: { de: 'Mediathek' }, icon: 'hologram' }) }),
     );
-    expect(tabScreenWords()['mediathek']?.icon).toBeUndefined();
-    const word = tabWordOf('mediathek', tabScreenWords()['mediathek'], 'de', 'Mehr');
+    const { words } = decideTabBar();
+    expect(words['mediathek']?.icon).toBeUndefined();
+    const word = tabWordOf('mediathek', words['mediathek'], 'de', 'Mehr');
     expect(word.icon).toBe(SCREEN_ICONS[SCREEN_ICON_FALLBACK]);
   });
 });
 
-describe('the "Mehr" tab for a screen the newsroom made (ADR 0075 §7)', () => {
+describe('the "Mehr" tab for a screen the navigation does not list (ADR 0075 §7)', () => {
   const custom = { klima: screenDocument({ title: { de: 'Klimakrise' } }) };
 
-  it('is not there while the document carries no custom screen and nothing overflows', () => {
+  it('is not there while every screen is listed and nothing overflows', () => {
     holdFetched(merged({}, { version: 1, tabs: ['entdecken'], maxTabs: 5 }));
-    expect(tabBar().bar).toEqual({ tabs: ['index', 'entdecken'], more: [] });
+    // The bundle is `demo` here: four of its screens are carried and not listed.
+    expect(decideTabBar().unlisted).toEqual(['home', 'mediathek', 'mitmachen', 'profil']);
   });
 
-  it('appears with nothing behind it once the document carries a custom screen', () => {
-    holdFetched(merged(custom, { version: 1, tabs: ['entdecken'], maxTabs: 5 }));
-    expect(tabBar().bar).toEqual({ tabs: ['index', 'entdecken', 'mehr'], more: [] });
+  it('appears with nothing behind it once a screen the navigation omits is carried', () => {
+    holdFetched(merged(custom, { version: 1, tabs: ['home', 'entdecken'], maxTabs: 5 }));
+    expect(decideTabBar().bar.tabs).toEqual(['home', 'entdecken', 'mehr']);
+    expect(decideTabBar().bar.more).toEqual([]);
   });
 
   it('takes the last tab of a full bar, as an overflow does', () => {
     holdFetched(merged(custom));
-    expect(tabBar().bar.tabs).toEqual(['index', 'entdecken', 'mediathek', 'mitmachen', 'mehr']);
-    expect(tabBar().bar.more).toEqual(['profil']);
-  });
-
-  it('is decided at the first call, so a screen that arrives later has its tab at the next start', () => {
-    // The bar cannot change while the app runs (ADR 0071 §5); the row in "Mehr" is not
-    // frozen and appears at once, which `custom-screen.test.tsx` holds.
-    expect(tabBar().bar.tabs).not.toContain('mehr');
-    holdFetched(merged(custom));
-    expect(tabBar().bar.tabs).not.toContain('mehr');
-    resetTabBar();
-    expect(tabBar().bar.tabs).toContain('mehr');
+    expect(decideTabBar().bar.tabs).toEqual([
+      'home',
+      'entdecken',
+      'mediathek',
+      'mitmachen',
+      'mehr',
+    ]);
+    expect(decideTabBar().bar.more).toEqual(['profil']);
   });
 });
 

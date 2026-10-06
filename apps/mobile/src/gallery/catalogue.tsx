@@ -55,6 +55,8 @@ import { RecoveryScreen } from '@/components/recovery/RecoveryScreen';
 // gallery card would set the options of the route the gallery is on (ADR 0030).
 // What is drawn here is what `ScreenHeader` draws on web, which is the whole of
 // what there is to look at.
+import { BottomTabBar } from '@/components/ui/BottomTabBar';
+import { NavRail } from '@/components/ui/NavRail';
 import { ScreenHeaderBar } from '@/components/ui/ScreenHeaderBar';
 import {
   Badge,
@@ -64,7 +66,6 @@ import {
   Card,
   Chip,
   Hairline,
-  NavRail,
   Overline,
   Rail,
   SafeAreaView,
@@ -568,16 +569,28 @@ const LISTED = [
         ],
       },
       {
-        name: 'NavRail',
-        note: 'The five tab triggers for the tablet rail, plus the mini player pinned to its bottom. Width is 88 px — justified in sizes.ts.',
+        name: 'BottomTabBar',
+        note: "The phone's tab bar, drawn by the app on every platform: one cell per tab, the selected one in the accent. The tabs are the layout's navigation, so with nothing published this draws no cell.",
         specimens: [
           {
-            label: 'active="index"',
+            label: 'active="home"',
+            height: 120,
+            ownSurface: true,
+            node: <BottomTabBar active="home" onSelect={noop} />,
+          },
+        ],
+      },
+      {
+        name: 'NavRail',
+        note: 'The tab triggers for the tablet rail, plus the mini player pinned to its bottom. Width is 88 px — justified in sizes.ts.',
+        specimens: [
+          {
+            label: 'active="home"',
             height: 480,
             ownSurface: true,
             node: (
               <NavRail
-                active="index"
+                active="home"
                 onSelect={noop}
                 insets={{ top: 0, bottom: 0, left: 0, right: 0 }}
               />

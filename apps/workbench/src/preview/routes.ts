@@ -53,7 +53,7 @@ export const PAGES: PageGroup[] = [
     }),
     pages: [
       {
-        route: '/',
+        route: '/s/home',
         label: wbMessage({
           id: 'frame.pages.home',
           defaultMessage: 'Home',
@@ -61,10 +61,10 @@ export const PAGES: PageGroup[] = [
             'The app’s first tab. One of the three entries in the picker this site had to name itself, because the screen carries no name of its own the way Entdecken and Mediathek do.',
         }),
       },
-      { route: '/entdecken', label: 'Entdecken' },
-      { route: '/mediathek', label: 'Mediathek' },
-      { route: '/mitmachen', label: 'Mitmachen' },
-      { route: '/profil', label: 'Profil' },
+      { route: '/s/entdecken', label: 'Entdecken' },
+      { route: '/s/mediathek', label: 'Mediathek' },
+      { route: '/s/mitmachen', label: 'Mitmachen' },
+      { route: '/s/profil', label: 'Profil' },
     ],
   },
   {

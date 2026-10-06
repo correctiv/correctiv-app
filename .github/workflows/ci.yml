@@ -169,7 +169,10 @@ jobs:
             grep -ril 'rozenite' dist/ | head
             exit 1
           fi
-          for route in index 404 artikel entdecken mediathek mitmachen profil; do
+          # Every screen the layout draws is one route, `/s/<id>` (ADR 0075 §7), so the
+          # export holds the one `s/[id].html` shell and no page per tab; `404.html` is
+          # the copy of `index.html` that `build:web` writes for hosts that cannot rewrite.
+          for route in index 404 's/[id]' mehr artikel; do
             test -f "dist/$route.html" || { echo "::error::missing dist/$route.html"; exit 1; }
           done
           # One real id per dynamic family. A route that loses its

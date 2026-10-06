@@ -33,12 +33,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import { isDisabled, press, render, renderedText, typeInto } from './support/rendering';
 
-import MitmachenScreen from '@/app/(tabs)/mitmachen';
 import FaktenforumScreen from '@/app/faktenforum';
 import FormularScreen from '@/app/formular';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { coreActions, coreStore } from '@/lib/store/core';
+import { screenOf } from './support/screens';
+
+const MitmachenScreen = screenOf('mitmachen');
 
 const push = router.push as jest.Mock;
 const params = useLocalSearchParams as jest.Mock;
@@ -194,7 +196,7 @@ describe('the callout form', () => {
     press(tree, 'Weitere Mitmach-Aktionen ansehen');
 
     // Not router.back() — that would land on the callout page the user just left.
-    expect(router.dismissTo).toHaveBeenCalledWith('/(tabs)/mitmachen');
+    expect(router.dismissTo).toHaveBeenCalledWith('/s/mitmachen');
   });
 
   it('does not invent a form for an unknown callout', () => {

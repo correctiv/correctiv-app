@@ -16,7 +16,8 @@ import {
   type ErrorReport,
 } from '@correctiv/app-core';
 
-import { screenLayout } from '@/lib/home/layout';
+import { screenIds, screenLayout } from '@/lib/home/layout';
+import { decideTabBar } from '@/lib/navigation/tabBar';
 import { CONFIGURABLE_SCREENS } from '@correctiv/app-core/lib/screen-layout';
 
 const reports: ErrorReport[] = [];
@@ -30,11 +31,20 @@ beforeAll(() => {
 afterAll(resetPlatform);
 
 describe('the bundled layout', () => {
-  it.each(CONFIGURABLE_SCREENS)(
-    'has nothing to draw on %s, and says nothing about it',
-    (screen) => {
-      expect(screenLayout(screen).sections).toEqual([]);
-      expect(reports).toEqual([]);
-    },
-  );
+  it.each(CONFIGURABLE_SCREENS)('has no screen called %s, and says nothing about it', (screen) => {
+    expect(screenLayout(screen)).toBeNull();
+    expect(reports).toEqual([]);
+  });
+
+  it('carries no screen at all, so the bar is the empty state and not a bar', () => {
+    expect(screenIds()).toEqual([]);
+    expect(decideTabBar().bar).toEqual({
+      kind: 'empty',
+      start: null,
+      entries: [],
+      tabs: [],
+      more: [],
+    });
+    expect(reports).toEqual([]);
+  });
 });

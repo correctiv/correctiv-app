@@ -1549,7 +1549,7 @@
   },
   "home.custom.fault.declared": {
     "defaultMessage": "The app already has a screen with that name.",
-    "description": "Under the id field of a new screen when it is the id of one of the five screens the app ships with."
+    "description": "Under the id field of a new screen when it is the id of one of the five screens the demo layout carries, which this tool always holds."
   },
   "home.custom.fault.empty": {
     "defaultMessage": "Type an id.",
@@ -2652,10 +2652,6 @@
     "defaultMessage": "Entries",
     "description": "The heading above the list of tabs, in order. One word."
   },
-  "navigation.homeFixed": {
-    "defaultMessage": "always first",
-    "description": "Beside Home in the list of tabs: it cannot be moved or removed."
-  },
   "navigation.invalid": {
     "defaultMessage": "The app would not draw this bar: {codes}",
     "description": "Shown when the navigation is not valid, and the reason the Submit button in the header is switched off. {codes} is a comma-separated list of the core’s problem codes, which are never translated."
@@ -2672,12 +2668,8 @@
     "defaultMessage": "This change to the navigation comes from the workbench. Click “Create” below. A pull request is then made automatically, and this issue will link to it. Please leave the block below as it is.",
     "description": "The first paragraph of the GitHub issue, above the document. “Create” is GitHub’s own button on that page, which GitHub labels in English, so it stays in English."
   },
-  "navigation.lastTab": {
-    "defaultMessage": "A bar needs at least {min} tabs, Home included, so the last entry stays.",
-    "description": "Shown when the only entry after Home cannot be removed. {min} is a number."
-  },
   "navigation.lead": {
-    "defaultMessage": "The tab bar of the app. Home is always the first entry. The frame reloads after every change, because the app reads the navigation once when it starts.",
+    "defaultMessage": "The tab bar of the app. The first entry is the screen the app starts on. The frame follows every change.",
     "description": "The one paragraph at the top of the navigation tool."
   },
   "navigation.maxTabs": {
@@ -2711,6 +2703,14 @@
   "navigation.result": {
     "defaultMessage": "The bar shows",
     "description": "The label before the tabs the bar will draw, in order, such as Home · Entdecken · Mehr."
+  },
+  "navigation.resultEmpty": {
+    "defaultMessage": "nothing: the app shows its empty state",
+    "description": "After the label of the bar, when no entry can be opened. The empty state is the app’s own page that says the layout holds no screen yet."
+  },
+  "navigation.resultSingle": {
+    "defaultMessage": "{name}, with no tab bar",
+    "description": "After the label of the bar, when there is exactly one entry. {name} is the screen’s own name, such as Entdecken."
   },
   "navigation.save.http": {
     "defaultMessage": "HTTP {status}",

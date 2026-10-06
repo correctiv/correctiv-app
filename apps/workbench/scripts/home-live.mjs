@@ -310,6 +310,30 @@ const READ_FRAME = `(() => {
   }
 })()`;
 
+/**
+ * Writes the demo navigation and Home's demo document under the keys the app reads as
+ * overrides, in whatever document `sessionId` is on. The keys are read out of the files
+ * that declare them, for the reason `homeTimeKey` gives.
+ */
+async function seedDemoLayout(call, sessionId) {
+  const demo = join(ROOT, 'packages/app-core/src/data/layouts/demo');
+  const navigation = readFileSync(join(demo, 'navigation.json'), 'utf8');
+  const home = readFileSync(join(demo, 'screens/home.json'), 'utf8');
+  const names = readFileSync(join(WORKBENCH, 'src/preview/home/names.ts'), 'utf8');
+  const navigationKey = /NAVIGATION_KEY\s*=\s*'([^']+)'/.exec(names)?.[1];
+  const homeKey = /HOME_LAYOUT_KEY\s*=\s*'([^']+)'/.exec(names)?.[1];
+  if (!navigationKey || !homeKey) return false;
+  return evaluate(
+    call,
+    sessionId,
+    `(() => {
+      window.localStorage.setItem(${JSON.stringify(navigationKey)}, ${JSON.stringify(navigation)});
+      window.localStorage.setItem(${JSON.stringify(homeKey)}, ${JSON.stringify(home)});
+      return true;
+    })()`,
+  );
+}
+
 async function main() {
   const server = await assembledServer();
   const endpoint = await browser();
@@ -332,6 +356,15 @@ async function main() {
 
   // The exact reproduction: the plain link `RELEASE.md` hands out, `?s=` unset, the home
   // tool open. Nothing seeds a fixture — a first-time visitor has nothing else to give it.
+  // The app bundles `ship`, which draws no screen (ADR 0078 §7), while the home tool edits
+  // `demo`. So the frame is given the demo layout the way the editor gives it a draft: the
+  // navigation and Home's document, written into the origin's storage before the visit.
+  // What is asserted below is untouched: the tool's edit has to redraw the frame.
+  await call('Page.navigate', { url: `${server.url}preview` }, sessionId);
+  await sleep(1000);
+  if (!(await seedDemoLayout(call, sessionId))) {
+    throw new Reported('could not write the demo layout into storage before the visit.');
+  }
   await call('Page.navigate', { url: `${server.url}preview#/?tool=home` }, sessionId);
 
   const deadline = Date.now() + READY_MS;

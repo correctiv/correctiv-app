@@ -1,5 +1,5 @@
 {
   "version": 1,
   "maxTabs": 5,
-  "tabs": ["entdecken", "mediathek", "mitmachen", "profil"]
+  "tabs": ["home", "entdecken", "mediathek", "mitmachen", "profil"]
 }
