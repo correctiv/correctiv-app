@@ -3,10 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { parseHomeLayout, type HomeLayoutParse } from '../src/lib/home-layout';
 import {
   CONFIGURABLE_SCREENS,
+  CUSTOM_SCREEN_ID_MAX_LENGTH,
+  customScreenIdFault,
+  customScreenIdsOf,
+  isCustomScreenId,
   parseScreenDocument,
   SCREEN_ICONS,
   SCREEN_ICON_FALLBACK,
   SCREEN_DOCUMENTS,
+  screenDocumentOf,
   screenIconOf,
   screenTabLabelOf,
   screenTitleOf,
@@ -275,7 +280,12 @@ describe('the icon set, held to the declaration it was generated from', () => {
    */
   it('gives every key an icon in all three vocabularies, with both states named', () => {
     for (const [key, icon] of Object.entries(SCREEN_ICONS)) {
-      expect({ key, sf: icon.sf, md: icon.md, ionicon: icon.ionicon }).toMatchObject({
+      expect({
+        key,
+        sf: icon.sf,
+        md: icon.md,
+        ionicon: icon.ionicon,
+      }).toMatchObject({
         sf: { default: expect.any(String), selected: expect.any(String) },
         md: { default: expect.any(String), selected: expect.any(String) },
         ionicon: { active: expect.any(String), inactive: expect.any(String) },
@@ -300,5 +310,71 @@ describe('the icon set, held to the declaration it was generated from', () => {
 
   it('is not empty, because a screen with no icon to choose from is a picker with nothing', () => {
     expect(Object.keys(SCREEN_ICONS).length).toBeGreaterThan(CONFIGURABLE_SCREENS.length);
+  });
+});
+
+describe('the id of a screen the newsroom makes (ADR 0075 §7)', () => {
+  it('takes lower-case letters, digits and single hyphens between them', () => {
+    for (const id of ['klima', 'wahl-2026', 'a', '2026', 'a-b-c']) {
+      expect(customScreenIdFault(id)).toBeNull();
+      expect(isCustomScreenId(id)).toBe(true);
+    }
+  });
+
+  it('refuses what cannot be a route segment, a file name and a storage key at once', () => {
+    const malformed = [
+      'Klima',
+      'wahl_2026',
+      '-a',
+      'a-',
+      'a--b',
+      'a b',
+      'a/b',
+      '../x',
+      'über',
+      'a.b',
+    ];
+    for (const id of malformed) expect(customScreenIdFault(id)).toBe('malformed');
+    expect(customScreenIdFault('')).toBe('empty');
+    expect(customScreenIdFault(7)).toBe('not-a-string');
+    expect(customScreenIdFault(null)).toBe('not-a-string');
+  });
+
+  it('holds the length to the bound, inclusive', () => {
+    expect(customScreenIdFault('a'.repeat(CUSTOM_SCREEN_ID_MAX_LENGTH))).toBeNull();
+    expect(customScreenIdFault('a'.repeat(CUSTOM_SCREEN_ID_MAX_LENGTH + 1))).toBe('too-long');
+  });
+
+  it('refuses every id the app declares', () => {
+    for (const id of CONFIGURABLE_SCREENS) expect(customScreenIdFault(id)).toBe('declared');
+  });
+
+  it('lists the custom screens of a joined document and leaves the rest out', () => {
+    const body = {
+      version: 1,
+      screens: {
+        home: {},
+        klima: {},
+        'Bad Id': {},
+        mitmachen: {},
+        'wahl-2026': {},
+      },
+    };
+    expect(customScreenIdsOf(body)).toEqual(['klima', 'wahl-2026']);
+    expect(customScreenIdsOf(null)).toEqual([]);
+    expect(customScreenIdsOf({ screens: [] })).toEqual([]);
+    expect(customScreenIdsOf({})).toEqual([]);
+  });
+
+  it('reads a custom screen out of the joined document, and an older app never asks for it', () => {
+    const klima = {
+      version: 4,
+      title: { de: 'Klima' },
+      sections: HOME_SECTION,
+    };
+    const body = { version: 1, screens: { klima } };
+    expect(screenDocumentOf(body, 'klima')).toBe(klima);
+    expect(screenDocumentOf(body, 'home')).toBeUndefined();
+    expect(screenDocumentOf(body, 'constructor')).toBeUndefined();
   });
 });
