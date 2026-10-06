@@ -345,8 +345,9 @@ describe('the id of a screen the newsroom makes (ADR 0075 §7)', () => {
     expect(customScreenIdFault('a'.repeat(CUSTOM_SCREEN_ID_MAX_LENGTH + 1))).toBe('too-long');
   });
 
-  it('refuses every id the app declares', () => {
+  it('refuses every id the app declares, and the one the navigation answers to', () => {
     for (const id of CONFIGURABLE_SCREENS) expect(customScreenIdFault(id)).toBe('declared');
+    expect(customScreenIdFault('navigation')).toBe('reserved');
   });
 
   it('lists the custom screens of a joined document and leaves the rest out', () => {
