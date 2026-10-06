@@ -1607,6 +1607,10 @@
     "defaultMessage": "Scroll the frame to the block you point at",
     "description": "The tooltip, and the accessible name, of the button in the editor’s bar that switches following the pointer on and off. It was a checkbox with this sentence beside it, which took a row of the panel that the block list wanted."
   },
+  "home.document.gap": {
+    "defaultMessage": "{language} is missing in {count, plural, one {# text} other {# texts}} on this screen.",
+    "description": "Under the head of the layout tool, one line per language some text of the screen does not carry (ADR 0075 §2). {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and {count} is how many of the screen’s texts lack it. A mark and not a fault: the app draws German where a language is missing."
+  },
   "home.document.nearLimit": {
     "defaultMessage": "The published screens are at {share} of what the app reads: {length} of {limit} characters. Past that the app ignores the document and draws the one it ships with.",
     "description": "A warning under the head of the layout tool, shown from 80 percent of the limit on (ADR 0075 §7). {share} is the fraction already formatted as a percentage, {length} is how many characters the screens and the navigation come to when they are joined, and {limit} is the most the app reads, both as plain numbers."
