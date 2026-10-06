@@ -112,7 +112,8 @@ filled with the German.
 
 A missing translation is therefore marked where somebody can act on it: in the workbench,
 on the screen that lacks it, and in the check that runs before a submission. It is a
-warning there and not an error, for the reason above.
+warning there and not an error, for the reason above. (The field marks its own gap and the
+screen counts them, 2026-10-06. The check before a submission does not warn yet.)
 
 ### 3. A screen document carries its own title, its tab label and its icon
 
@@ -233,6 +234,9 @@ them is a property of the decisions above.
 - **No count of its own.** The bound is the joined document's, which is the app's own 256
   KiB. That is the figure that actually fails; a second number would be one more thing to
   keep in step, and the workbench warns before a document gets near the first one.
+  Built 2026-10-06: from 80 % of `HOME_LAYOUT_MAX_CHARS` on, the editor counts the joined
+  document as the deploy would write it, screens and navigation together, and says so; the
+  share is a fraction of the constant, so changing the limit moves it.
 
 ## How §7 was built
 

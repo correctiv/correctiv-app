@@ -300,6 +300,13 @@ goes, so a document that has not been edited by the person who opened it does no
    both make the link less about the document.
 3. **What a submission should do with a draft that arrived by link.** Today it is submitted as
    any other document and nothing records where it came from, which matters for the reviewer
-   of the pull request CI will open.
+   of the pull request CI will open. Built 2026-10-06 and answered: a draft submitted while it
+   is still the one the link brought, before the first edit, travels with `via: "link"`, in
+   the `layout` envelope beside `target` and `document`, and for Home as `{ document, via }`
+   in place of the bare document. The pull request opens with one fixed sentence saying so.
+   It is the issue's own claim, which the sentence says, and `link` is the only value the
+   workflow accepts. A draft edited after it arrived is the editor's own (§3) and carries
+   nothing, so the record says where an unchanged draft came from and not who touched it
+   since.
 4. **Whether the mobile app ever reads a shared link.** `screens/` are documents and a link
    names one; a route for a link on the phone is ADR 0075 §7's question, not this one's.
