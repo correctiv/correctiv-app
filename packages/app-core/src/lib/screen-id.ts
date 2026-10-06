@@ -10,6 +10,19 @@
 /** A screen whose arrangement is a document. A union, so a second one is a type error where unthought of. */
 export type ConfigurableScreen = 'home' | 'entdecken' | 'mediathek' | 'mitmachen' | 'profil';
 
+/**
+ * Any screen the editor and the submission can hold a document for: a declared one, or an id
+ * the newsroom made (ADR 0075 §7).
+ *
+ * `ConfigurableScreen` stays closed, so every table keyed by it (`SCREEN_DOCUMENTS`, the
+ * tab targets, the workbench's names and icons) still fails to compile when a declared
+ * screen is added and forgotten. Only code that takes an id off the wire or out of a
+ * file name widens to this, and it narrows with `isDeclaredScreen` before it reaches one
+ * of those tables. The intersection keeps the declared names offered by the editor's
+ * completion, which a bare `string` would swallow.
+ */
+export type ScreenId = ConfigurableScreen | (string & Record<never, never>);
+
 export const CONFIGURABLE_SCREENS: readonly ConfigurableScreen[] = [
   'home',
   'entdecken',
@@ -17,6 +30,11 @@ export const CONFIGURABLE_SCREENS: readonly ConfigurableScreen[] = [
   'mitmachen',
   'profil',
 ];
+
+/** Whether `id` is a screen the app declares, which has a bundled document. */
+export function isDeclaredScreen(id: string): id is ConfigurableScreen {
+  return (CONFIGURABLE_SCREENS as readonly string[]).includes(id);
+}
 
 // --- screens the newsroom makes -----------------------------------------------------
 
