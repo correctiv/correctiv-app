@@ -18,7 +18,7 @@ import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
 // both directions, which is what ADR 0046 §1's "no second list to forget" became.
 import { useCategoryLabel } from '@/lib/home/category-labels';
 import { MODULE_FEATURES } from '@/lib/features';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+import type { ScreenId } from '@correctiv/app-core/lib/screen-layout';
 
 import { AppHost } from '../../components/AppHost';
 import { cn } from '../../lib/cn';
@@ -205,7 +205,7 @@ export function InsertMark({
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
   /** The screen being edited, which the specimens draw on; the list itself is the same everywhere. */
-  screen: ConfigurableScreen;
+  screen: ScreenId;
   onAdd: (module: string) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -350,7 +350,7 @@ function BlockPicker({
   deviceWidth,
   onPick,
 }: {
-  screen: ConfigurableScreen;
+  screen: ScreenId;
   deviceWidth: number;
   onPick: (module: string) => void;
 }) {
@@ -586,7 +586,7 @@ function Specimen({
   /** Whether the tab row above already names the family, in which case the badge says it twice. */
   nameFamily: boolean;
   deviceWidth: number;
-  screen: ConfigurableScreen;
+  screen: ScreenId;
   onPick: () => void;
 }) {
   const intl = useWorkbenchIntl();

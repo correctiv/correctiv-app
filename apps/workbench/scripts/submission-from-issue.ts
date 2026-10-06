@@ -39,16 +39,14 @@ try {
     read: (file) => readFileSync(join(root, file), 'utf8'),
     list: (dir) => readdirSync(join(root, dir)),
   });
-  for (const { path, content } of applied.files) {
-    // A null content is a deletion, which the layout kind asks for a screen the newsroom made.
-    if (content === null) rmSync(join(root, path));
-    else writeFileSync(join(root, path), content, 'utf8');
-  }
+  for (const { path, content } of applied.files) writeFileSync(join(root, path), content, 'utf8');
+  // The layout kind's deletion of a screen the newsroom made, and no other kind's.
+  for (const path of applied.removed ?? []) rmSync(join(root, path));
   // No shell: the paths are arguments, and every one of them passed `mayWrite`.
   if (applied.format)
     execFileSync(
       join(root, 'node_modules/.bin/oxfmt'),
-      applied.files.filter((file) => file.content !== null).map((file) => file.path),
+      applied.files.map((file) => file.path),
       { cwd: root, stdio: 'inherit' },
     );
   if (process.env.SUBMISSION_SUMMARY_FILE)
@@ -57,6 +55,7 @@ try {
 
   console.log(`kind=${applied.kind}`);
   for (const { path } of applied.files) console.log(`wrote ${path}`);
+  for (const path of applied.removed ?? []) console.log(`removed ${path}`);
   if (process.env.GITHUB_OUTPUT)
     appendFileSync(process.env.GITHUB_OUTPUT, `kind=${applied.kind}\n`);
 } catch (error) {

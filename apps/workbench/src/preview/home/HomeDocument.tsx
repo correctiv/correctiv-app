@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 
 import type { HomeLayout, SettingValue } from '@correctiv/app-core/lib/home-layout';
+import type { LocalisedText } from '@correctiv/app-core/lib/home-settings';
+import { isDeclaredScreen, screenTitleOf } from '@correctiv/app-core/lib/screen-layout';
 import {
   useEffect,
   useMemo,
@@ -106,19 +108,27 @@ import { CONTROLS_COPY, EditorBar, PointChip } from './Controls';
 import { TextSetting } from './TextSetting';
 import { GUTTER, rowWidth } from './fit';
 import type { ScenarioControl } from './Scenario';
-import { screenOfRoute, SCREEN_ROUTES, shippedOf, type ConfigurableScreen } from './screens';
+import { routeOf, screenOfRoute, shippedOf, type ScreenId } from './screens';
+import { inRepository } from './screens';
 import {
+  createScreen,
+  customScreenIds,
+  customScreensSnapshot,
+  deleteScreen,
   getLayout,
   getScreen,
   incomingOf,
+  newScreenFault,
   noticeOf,
+  publishCustomScreens,
+  screenTitle,
   setLayout,
   setScreen,
   subscribeLayout,
 } from './store';
 import { copyNow } from '../clipboard';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
-import { canSave, publish, save, submission, type SaveResult } from './write';
+import { canSave, deletion, publish, save, submission, type SaveResult } from './write';
 
 /**
  * The home screen's document, as a day somebody can arrange.
@@ -488,7 +498,7 @@ const FIELD =
  * hash is the frame's half of the link — the device, the hour, the scenario — which
  * `shareLink` reads and writes back so a link says what the person looking at it sees.
  */
-async function shareDraft(of: ConfigurableScreen, held: HomeLayout) {
+async function shareDraft(of: ScreenId, held: HomeLayout) {
   return await shareLink(
     'home',
     { screen: of, document: formatLayoutDocument(held) },
@@ -549,6 +559,11 @@ export function HomeDocument({
     () => false,
   );
   const notice = useSyncExternalStore(subscribeLayout, noticeOf, () => null);
+  const customJoined = useSyncExternalStore(subscribeLayout, customScreensSnapshot, () => '');
+  const customIds = useMemo(
+    () => (customJoined === '' ? [] : customJoined.split('\n')),
+    [customJoined],
+  );
   const shipped = shippedOf(screen);
   /**
    * Whose screen this is (ADR 0041's cost, ADR 0060 §4): the session the framed app holds,
@@ -736,7 +751,10 @@ export function HomeDocument({
    * every successful save leaves behind, because saving is what makes the two the same
    * — the file changes, Vite reloads the page, and the override is then a copy of it.
    */
-  useEffect(() => publish(getLayout(), getScreen()), []);
+  useEffect(() => {
+    publish(getLayout(), getScreen());
+    publishCustomScreens();
+  }, []);
 
   /*
    * A save message is about the document that was saved, so it goes when the document
@@ -1005,14 +1023,24 @@ export function HomeDocument({
   useEffect(() => {
     if (guarded) return;
     const of = screenOfRoute(state.route);
-    if (of) setScreen(of);
+    // A route into a custom screen this editor does not hold is a link to nothing it can
+    // open, and the editor stays where it is (ADR 0075 §7).
+    if (of && (isDeclaredScreen(of) || customScreenIds().includes(of))) setScreen(of);
     // `guarded` is deliberately not a dependency: only a route change is a move.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.route]);
+  /**
+   * A screen the newsroom made has to carry a German title, the one word a document may not
+   * leave out (ADR 0075 §2), and Submit is off until it does. The tool writes one whenever
+   * it makes a screen, so this is the guard against a document that arrived without.
+   */
+  const nameless = !isDeclaredScreen(screen) && screenTitleOf(layout.words)?.de === undefined;
   /** Where Submit changes goes, or nothing while there is nothing to submit. */
   const offer =
     dirty && !guarded
-      ? submission(layout, (message, values) => intl.formatMessage(message, values), screen)
+      ? nameless
+        ? null
+        : submission(layout, (message, values) => intl.formatMessage(message, values), screen)
       : null;
 
   useToolActions('home', {
@@ -1125,8 +1153,43 @@ export function HomeDocument({
         guarded={guarded}
         onScreen={(next) => {
           setScreen(next);
-          onChange({ route: SCREEN_ROUTES[next] });
+          onChange({ route: routeOf(next) });
         }}
+        custom={{
+          ids: customIds,
+          titleOf: screenTitle,
+          fault: newScreenFault,
+          create: (id, title) => {
+            const fault = createScreen(id, title);
+            if (fault === null) onChange({ route: routeOf(id) });
+            return fault;
+          },
+        }}
+        openCustom={
+          isDeclaredScreen(screen)
+            ? null
+            : {
+                id: screen,
+                words: layout.words,
+                onTitle: (title) =>
+                  setLayout({
+                    ...layout,
+                    words: { ...layout.words, title: title as LocalisedText },
+                  }),
+                onPreview: () => onChange({ route: routeOf(screen) }),
+                submitDeletion: inRepository(screen)
+                  ? {
+                      href: deletion(screen, (message, values) =>
+                        intl.formatMessage(message, values),
+                      ).href,
+                    }
+                  : null,
+                onDelete: () => {
+                  deleteScreen(screen);
+                  onChange({ route: routeOf('home') });
+                },
+              }
+        }
         scenario={scenario}
         follow={follow}
         onFollow={setFollow}
@@ -1448,7 +1511,7 @@ function Row({
    */
   deviceWidth: number | null;
   /** The screen being edited, for the drawing of a block that sits on more than one. */
-  screen: ConfigurableScreen;
+  screen: ScreenId;
   onMove: (delta: -1 | 1) => void;
   onHidden: (hidden: boolean) => void;
   onSetting: (key: string, value: SettingValue | undefined) => void;

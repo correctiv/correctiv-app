@@ -4,7 +4,7 @@ import {
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
 
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+import { isDeclaredScreen, type ScreenId } from '@correctiv/app-core/lib/screen-layout';
 
 import docsModule from 'virtual:docs';
 
@@ -38,9 +38,13 @@ import { SCREEN_NAMES, shippedOf } from './screens';
  * that is written once and then matches for ever is a state nobody can see and nobody
  * clears.
  */
-export function publish(layout: HomeLayout, screen: ConfigurableScreen = 'home'): void {
+export function publish(layout: HomeLayout, screen: ScreenId = 'home'): void {
   try {
-    if (!differs(layout, shippedOf(screen))) window.localStorage.removeItem(layoutKey(screen));
+    // A screen the newsroom made is the exception: the app bundles no document for it, so
+    // a key removed because it equals the repository's would leave the frame with nothing
+    // to draw at `/s/<id>` (ADR 0075 §7).
+    if (isDeclaredScreen(screen) && !differs(layout, shippedOf(screen)))
+      window.localStorage.removeItem(layoutKey(screen));
     else window.localStorage.setItem(layoutKey(screen), formatLayoutDocument(layout));
   } catch {
     // Site data switched off. Nothing can be previewed, and nothing may throw.
@@ -54,7 +58,7 @@ export function publish(layout: HomeLayout, screen: ConfigurableScreen = 'home')
  * the editor's vocabulary cannot express a broken document, so opening on one would give
  * a person a list they can move around and never make valid.
  */
-export function restore(screen: ConfigurableScreen = 'home'): HomeLayout {
+export function restore(screen: ScreenId = 'home'): HomeLayout {
   const shipped = shippedOf(screen);
   try {
     const raw = window.localStorage.getItem(layoutKey(screen));
@@ -138,6 +142,12 @@ const COPY = {
     description:
       'The title of the GitHub issue Submit changes opens for a screen other than Home, after a fixed tag in square brackets that is not translated. {screen} is the screen’s own name, such as Entdecken, which is not translated either. home.issue.heading is the same sentence for Home.',
   }),
+  issueHeadingDelete: wbMessage({
+    id: 'home.issue.headingDelete',
+    defaultMessage: 'Delete the {screen} screen',
+    description:
+      'The title of the GitHub issue that asks for a screen the newsroom made to be deleted, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as kampagne, which is not translated either.',
+  }),
   issueLead: wbMessage({
     id: 'home.issue.lead',
     defaultMessage:
@@ -195,7 +205,7 @@ export const canSave: boolean = import.meta.env.DEV;
 export async function save(
   layout: HomeLayout,
   format: Format,
-  screen: ConfigurableScreen = 'home',
+  screen: ScreenId = 'home',
 ): Promise<SaveResult> {
   try {
     const response = await fetch(`${HOME_LAYOUT_ENDPOINT}?screen=${screen}`, {
@@ -249,11 +259,7 @@ export interface Submit {
   body: string;
 }
 
-export function submission(
-  layout: HomeLayout,
-  format: Format,
-  screen: ConfigurableScreen = 'home',
-): Submit {
+export function submission(layout: HomeLayout, format: Format, screen: ScreenId = 'home'): Submit {
   // Minified: the printed document spends most of its address on indentation, measured
   // at 2,112 against 1,320 encoded characters for the shipped day. CI prints it again
   // with `formatLayoutDocument`, so what reaches the repository is formatted either way,
@@ -262,7 +268,9 @@ export function submission(
   // Home keeps its own kind and its bare document; every other screen goes in an envelope
   // that names it, because the payload is all the workflow reads (ADR 0061 §2).
   const home = screen === 'home';
-  const name = SCREEN_NAMES[screen];
+  // A screen the newsroom made is named by its id in the issue's title: the id is the one
+  // name the core has checked, and the title is the part of an issue the workflow matches on.
+  const name = isDeclaredScreen(screen) ? SCREEN_NAMES[screen] : screen;
   const issue = issueFor(
     home ? 'home' : 'layout',
     home ? payload : layoutPayload(screen, payload),
@@ -275,6 +283,22 @@ export function submission(
       lead: format(home ? COPY.issueLead : COPY.issueLeadLayout),
     },
   );
+  const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));
+  return { href, fits, body: issue.body };
+}
+
+/**
+ * What deleting a screen the repository carries opens: the same issue as `submission`, with
+ * a document of `null`, which the workflow reads as the file's deletion (ADR 0075 §7).
+ *
+ * Only for a screen that is in the repository. One that was only ever a draft has nothing to
+ * delete there, and `deleteScreen` in `./store.ts` is the whole of it.
+ */
+export function deletion(screen: ScreenId, format: Format): Submit {
+  const issue = issueFor('layout', layoutPayload(screen, 'null'), {
+    heading: format(COPY.issueHeadingDelete, { screen }),
+    lead: format(COPY.issueLeadLayout),
+  });
   const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));
   return { href, fits, body: issue.body };
 }

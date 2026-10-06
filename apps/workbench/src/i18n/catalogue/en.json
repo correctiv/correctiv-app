@@ -1527,6 +1527,78 @@
     "defaultMessage": "{day}, today",
     "description": "The accessible name of the column for today in the week or month under the frame. {day} is the date already spelled by the browser, as “Monday, 28 September”."
   },
+  "home.custom.address": {
+    "defaultMessage": "The app opens it at {path}.",
+    "description": "Under the form for a new screen, saying where it will be in the app. {path} is the address with the id typed so far, such as /s/summer-campaign, which is never translated."
+  },
+  "home.custom.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button that closes the form for a new screen without making one."
+  },
+  "home.custom.create": {
+    "defaultMessage": "Create screen",
+    "description": "The button that makes the new screen, in the form opened by home.custom.new."
+  },
+  "home.custom.delete": {
+    "defaultMessage": "Delete this screen",
+    "description": "The name of the button that takes the open custom screen away. For one that was only ever a draft it is the whole of the deletion."
+  },
+  "home.custom.deleteSubmit": {
+    "defaultMessage": "Delete this screen and submit the deletion",
+    "description": "The name of the button that takes a custom screen away that the repository already carries. It opens GitHub’s new-issue page with the deletion in it, like Submit changes does, because the file is only removed when the pull request is merged."
+  },
+  "home.custom.fault.declared": {
+    "defaultMessage": "The app already has a screen with that name.",
+    "description": "Under the id field of a new screen when it is the id of one of the five screens the app ships with."
+  },
+  "home.custom.fault.empty": {
+    "defaultMessage": "Type an id.",
+    "description": "Under the id field of a new screen while it is empty and the person has pressed Create."
+  },
+  "home.custom.fault.malformed": {
+    "defaultMessage": "Only lower-case letters, digits and single hyphens between them.",
+    "description": "Under the id field of a new screen when it holds anything else: a capital, a space, a dot, a slash, a leading or doubled hyphen. The id becomes part of an address, so the rule is strict."
+  },
+  "home.custom.fault.reserved": {
+    "defaultMessage": "That name is kept for the tab bar.",
+    "description": "Under the id field of a new screen when it is navigation, which is the name a submission gives the tab bar’s document."
+  },
+  "home.custom.fault.taken": {
+    "defaultMessage": "There is already a screen with that id.",
+    "description": "Under the id field of a new screen when a custom screen with that id exists, in the repository or as a draft here."
+  },
+  "home.custom.fault.titleMissing": {
+    "defaultMessage": "Give the screen a German title.",
+    "description": "Under the title field of a new screen while it is empty and the person has pressed Create. A screen with no name has nothing to fall back to (ADR 0075 §2)."
+  },
+  "home.custom.fault.tooLong": {
+    "defaultMessage": "At most {max} characters.",
+    "description": "Under the id field of a new screen when the id is longer than the core allows. {max} is the number."
+  },
+  "home.custom.idLabel": {
+    "defaultMessage": "Id, e.g. summer-campaign",
+    "description": "The accessible name and the placeholder of the field for a new screen’s id. The id becomes the address /s/<id> in the app and the name of the file, so the example is one a person could use."
+  },
+  "home.custom.more": {
+    "defaultMessage": "Your screens",
+    "description": "The accessible name of the list of screens the newsroom made, beside the five the app ships with, in the layout tool’s bar. Also its placeholder while none of them is open."
+  },
+  "home.custom.new": {
+    "defaultMessage": "New screen",
+    "description": "The name of the button that opens the form for making a screen the newsroom thinks of, in the layout tool’s bar. A tooltip and a title as well, because the button is a plus sign."
+  },
+  "home.custom.preview": {
+    "defaultMessage": "Show {path} in the frame",
+    "description": "The name of the button that takes the frame to the open custom screen. {path} is its address, such as /s/summer-campaign, which is never translated."
+  },
+  "home.custom.title": {
+    "defaultMessage": "Title",
+    "description": "The accessible name of the field that renames the open custom screen, in its own row under the bar. The word readers see at the top of the screen and in the “Mehr” list."
+  },
+  "home.custom.titleLabel": {
+    "defaultMessage": "Title in German",
+    "description": "The accessible name and the placeholder of the field for a new screen’s title. German is the language every screen has to be named in (ADR 0075 §2)."
+  },
   "home.document.field": {
     "defaultMessage": "The change",
     "description": "The name read out for the field that holds the issue’s text when the clipboard was refused."
@@ -1588,6 +1660,10 @@
   "home.issue.heading": {
     "defaultMessage": "Changes to the home screen",
     "description": "The title of the GitHub issue Submit changes opens, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list."
+  },
+  "home.issue.headingDelete": {
+    "defaultMessage": "Delete the {screen} screen",
+    "description": "The title of the GitHub issue that asks for a screen the newsroom made to be deleted, after a fixed tag in square brackets that is not translated. {screen} is the screen’s id, such as kampagne, which is not translated either."
   },
   "home.issue.headingScreen": {
     "defaultMessage": "Changes to the {screen} screen",

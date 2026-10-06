@@ -9,6 +9,7 @@ import { layoutKey } from '../../src/preview/home/names';
 import { shippedOf } from '../../src/preview/home/screens';
 import {
   discardScreens,
+  customScreenIds,
   getLayout,
   getScreen,
   incomingOf,
@@ -116,6 +117,18 @@ describe('a link carrying a draft for another screen', () => {
   });
 });
 
+describe('a link carrying a draft for a screen the newsroom made (ADR 0075 §7)', () => {
+  it('opens it as a screen of its own and takes the frame to /s/<id>', async () => {
+    const draft = { screen: 'kampagne', document: formatLayoutDocument(shippedOf('entdecken')) };
+    await arriveFrom(await linkTo(draft));
+
+    expect(getScreen()).toBe('kampagne');
+    expect(getState().route).toBe('/s/kampagne');
+    expect(incomingOf('kampagne')).toBe(true);
+    expect(customScreenIds()).toContain('kampagne');
+  });
+});
+
 describe('a link carrying nothing this editor can open', () => {
   /** Whatever the fault, this is all the arrival has to say and all it may change. */
   const damaged = async (hash: string) => {
@@ -130,10 +143,8 @@ describe('a link carrying nothing this editor can open', () => {
     expect(notice).toBe('damaged');
   });
 
-  it('is one sentence for a screen this workbench has not got', async () => {
-    const { opened, notice } = await damaged(
-      await linkTo({ ...DRAFT, screen: 'nowhere' as never }),
-    );
+  it('is one sentence for a screen whose name could not be one', async () => {
+    const { opened, notice } = await damaged(await linkTo({ ...DRAFT, screen: 'No Where' }));
 
     expect(opened).toBe(false);
     expect(notice).toBe('damaged');

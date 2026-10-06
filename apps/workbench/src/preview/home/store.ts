@@ -1,7 +1,20 @@
 import type { HomeLayout } from '@correctiv/app-core/lib/home-layout';
+import {
+  customScreenIdFault,
+  isDeclaredScreen,
+  type CustomScreenIdFault,
+} from '@correctiv/app-core/lib/screen-layout';
 
 import { differs } from './document';
-import { CONFIGURABLE_SCREENS, shippedOf, type ConfigurableScreen } from './screens';
+import { layoutKey } from './names';
+import {
+  blankScreen,
+  CONFIGURABLE_SCREENS,
+  inRepository,
+  repositoryScreenIds,
+  shippedOf,
+  type ScreenId,
+} from './screens';
 import { publish, restore, restorable } from './write';
 
 /**
@@ -26,8 +39,8 @@ type Listener = () => void;
  * there was one. A document is read from storage the first time its screen is asked for
  * and kept, so a draft on Entdecken survives a visit to Mediathek and back.
  */
-let screen: ConfigurableScreen = 'home';
-const layouts = new Map<ConfigurableScreen, HomeLayout>();
+let screen: ScreenId = 'home';
+const layouts = new Map<ScreenId, HomeLayout>();
 const listeners = new Set<Listener>();
 
 /**
@@ -37,15 +50,28 @@ const listeners = new Set<Listener>();
  * that re-renders when its document does re-renders for these too, and a second
  * subscription for one word of news would be one more thing to keep in step.
  */
-const incoming = new Set<ConfigurableScreen>();
+const incoming = new Set<ScreenId>();
 type Notice = 'damaged' | null;
 let notice: Notice = null;
+
+/**
+ * The custom screens this session knows beyond the repository's and the storage's: one
+ * just made, and one that arrived in a link. Their documents are in `layouts`.
+ */
+const session = new Set<string>();
+
+/**
+ * Custom screens the repository carries that the person has deleted and not yet submitted.
+ * Held for this page's life only: nothing is deleted from the repository until the pull
+ * request merges, so a reload shows the screen again, which is the true state.
+ */
+const removed = new Set<string>();
 
 /**
  * Lazy, and not module scope. `restore()` reads `localStorage`, and a module evaluated
  * while the bundle loads is one more thing that has to work before the site can draw.
  */
-export function screenLayoutOf(of: ConfigurableScreen): HomeLayout {
+export function screenLayoutOf(of: ScreenId): HomeLayout {
   let held = layouts.get(of);
   if (!held) {
     held = restore(of);
@@ -54,17 +80,115 @@ export function screenLayoutOf(of: ConfigurableScreen): HomeLayout {
   return held;
 }
 
+/**
+ * The custom screens (ADR 0075 §7) the editor can open: the repository's, the ones this
+ * browser holds a draft of and the ones made or received this session, each once and in
+ * name order, without the ones deleted.
+ *
+ * Read from `localStorage` because that is where the frame finds a draft, so what the
+ * frame can draw and what this lists are one answer. A key whose document the editor would
+ * not open is left out, as `restore` leaves it out.
+ */
+export function customScreenIds(): string[] {
+  const ids = new Set<string>([...repositoryScreenIds(), ...session]);
+  try {
+    const prefix = layoutKey('');
+    for (let at = 0; at < window.localStorage.length; at += 1) {
+      const key = window.localStorage.key(at);
+      if (!key?.startsWith(prefix)) continue;
+      const id = key.slice(prefix.length);
+      if (isDeclaredScreen(id) || customScreenIdFault(id) !== null) continue;
+      if (restorable(JSON.parse(window.localStorage.getItem(key) ?? 'null')) !== null) ids.add(id);
+    }
+  } catch {
+    // No storage, or a key that is not JSON: the repository's and the session's are all there is.
+  }
+  return [...ids].filter((id) => !removed.has(id)).sort();
+}
+
+/** `customScreenIds` as a string, which is a snapshot `useSyncExternalStore` can compare. */
+export function customScreensSnapshot(): string {
+  return customScreenIds().join('\n');
+}
+
+/** The id and the name of a custom screen, in its own title when it has one. */
+export function screenTitle(of: ScreenId): string {
+  return screenLayoutOf(of).words?.title.de ?? of;
+}
+
+/**
+ * Why a new screen cannot be called `id`, or null when it can: the core's own rule, and a
+ * second reason of this tool's, that the name is taken.
+ */
+export function newScreenFault(id: string): CustomScreenIdFault | 'taken' | null {
+  const fault = customScreenIdFault(id);
+  if (fault !== null) return fault;
+  return customScreenIds().includes(id) ? 'taken' : null;
+}
+
+/**
+ * Makes a screen the newsroom thinks of, with its German title and nothing on it, and opens
+ * it. Returns why not instead when the id cannot name one (ADR 0075 §7).
+ */
+export function createScreen(id: string, title: string): CustomScreenIdFault | 'taken' | null {
+  const fault = newScreenFault(id);
+  if (fault !== null) return fault;
+  const layout = blankScreen(title.trim());
+  layouts.set(id, layout);
+  session.add(id);
+  removed.delete(id);
+  publish(layout, id);
+  screen = id;
+  incoming.delete(id);
+  notice = null;
+  for (const listener of listeners) listener();
+  return null;
+}
+
+/**
+ * Takes a custom screen away from the editor and from the frame, and opens Home.
+ *
+ * The screen's file stays in the repository until a submission deletes it (`deletion` in
+ * `./write.ts` opens that), so a screen the repository carries is held as removed for this
+ * page and comes back on a reload. A screen that was only ever a draft is gone for good.
+ */
+export function deleteScreen(of: ScreenId): void {
+  if (isDeclaredScreen(of)) return;
+  layouts.delete(of);
+  session.delete(of);
+  incoming.delete(of);
+  try {
+    window.localStorage.removeItem(layoutKey(of));
+  } catch {
+    // Site data switched off: there was nothing to remove.
+  }
+  if (inRepository(of)) removed.add(of);
+  if (screen === of) screen = 'home';
+  for (const listener of listeners) listener();
+}
+
+/**
+ * Puts every custom screen the repository carries where the frame looks.
+ *
+ * Declared screens need no copy, the app bundles them and `publish` removes a document
+ * equal to its own. A custom screen has no bundled document, so without a draft written
+ * here the frame would answer `/s/<id>` with its not-found page for a screen that exists.
+ */
+export function publishCustomScreens(): void {
+  for (const id of customScreenIds()) publish(screenLayoutOf(id), id);
+}
+
 /** The document of the screen being edited. */
 export function getLayout(): HomeLayout {
   return screenLayoutOf(screen);
 }
 
-export function getScreen(): ConfigurableScreen {
+export function getScreen(): ScreenId {
   return screen;
 }
 
 /** Opens another screen's document. The documents are untouched. */
-export function setScreen(next: ConfigurableScreen): void {
+export function setScreen(next: ScreenId): void {
   if (next === screen) return;
   screen = next;
   for (const listener of listeners) listener();
@@ -103,7 +227,7 @@ export function setLayout(next: HomeLayout): void {
  * Returns whether it took it: a document the core refuses is a link that cannot be opened,
  * and the caller says so in the one sentence it has (ADR 0076 §3).
  */
-export function holdIncoming(of: ConfigurableScreen, document: string): boolean {
+export function holdIncoming(of: ScreenId, document: string): boolean {
   let parsed: HomeLayout | null;
   try {
     parsed = restorable(JSON.parse(document));
@@ -116,6 +240,10 @@ export function holdIncoming(of: ConfigurableScreen, document: string): boolean 
     return false;
   }
   layouts.set(of, parsed);
+  if (!isDeclaredScreen(of)) {
+    session.add(of);
+    removed.delete(of);
+  }
   incoming.add(of);
   notice = null;
   for (const listener of listeners) listener();
@@ -132,7 +260,7 @@ export function holdIncoming(of: ConfigurableScreen, document: string): boolean 
  * The first edit clears it, and that is the moment the draft becomes the editor's own —
  * from there it is published like any other.
  */
-export function incomingOf(of: ConfigurableScreen): boolean {
+export function incomingOf(of: ScreenId): boolean {
   return incoming.has(of);
 }
 
@@ -165,7 +293,9 @@ export function noteDamaged(): void {
  * it is a snapshot `useSyncExternalStore` can compare. Empty for none.
  */
 export function changedScreens(): string {
-  return CONFIGURABLE_SCREENS.filter((of) => differs(screenLayoutOf(of), shippedOf(of))).join(',');
+  return [...CONFIGURABLE_SCREENS, ...customScreenIds()]
+    .filter((of) => differs(screenLayoutOf(of), shippedOf(of)))
+    .join(',');
 }
 
 /** Puts every screen back to the file the app ships. */
@@ -174,6 +304,16 @@ export function discardScreens(): void {
     layouts.set(of, shippedOf(of));
     publish(shippedOf(of), of);
   }
+  // A custom screen the repository carries goes back to its file; one it does not carry
+  // was never shipped, so discarding it is deleting it.
+  const added = customScreenIds().filter((of) => !inRepository(of));
+  removed.clear();
+  for (const of of added) deleteScreen(of);
+  for (const of of customScreenIds()) {
+    layouts.set(of, shippedOf(of));
+    publish(shippedOf(of), of);
+  }
+  if (!isDeclaredScreen(screen) && !customScreenIds().includes(screen)) screen = 'home';
   incoming.clear();
   notice = null;
   for (const listener of listeners) listener();

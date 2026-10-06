@@ -51,7 +51,7 @@ export function mayWriteLayout(path: string): boolean {
   const suffix = '.json';
   if (!path.startsWith(prefix) || !path.endsWith(suffix)) return false;
   const id = path.slice(prefix.length, path.length - suffix.length);
-  return isDeclaredScreen(id) ? SCREENS.includes(id) : isCustomTarget(id);
+  return isDeclaredScreen(id) ? id !== 'home' : isCustomTarget(id);
 }
 
 function readEnvelope(payload: string): { target: string; document: unknown } {
@@ -157,7 +157,10 @@ export function applyLayout(payload: string, repo: Repo): AppliedLayout {
 
   const screen = target as (typeof SCREENS)[number];
   const { layout, problems } = parseHomeLayout(document, RENDERABLE);
-  if (!layout || layout.sections.length === 0 || problems.length > 0) {
+  // A screen the newsroom made may hold no block: a screen that is only a heading is a
+  // screen (ADR 0075 §7), and the deploy's check says the same.
+  const empty = layout !== null && layout.sections.length === 0 && !isCustomTarget(target);
+  if (!layout || empty || problems.length > 0) {
     const codes = [...new Set(problems.map((problem) => problem.code))].join(', ');
     throw new Refusal('refused', codes || 'kein Dokument mit Blöcken');
   }

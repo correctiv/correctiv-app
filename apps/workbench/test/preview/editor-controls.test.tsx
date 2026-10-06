@@ -5,7 +5,7 @@ import { act, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+import type { ScreenId } from '@correctiv/app-core/lib/screen-layout';
 
 import { MINUTES_IN_DAY, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
 
@@ -210,7 +210,7 @@ describe('the screen switcher', () => {
   });
 
   it('hands the screen that was chosen back to the panel', () => {
-    const chosen: ConfigurableScreen[] = [];
+    const chosen: ScreenId[] = [];
     draw(bar({ onScreen: (next) => chosen.push(next) }));
     act(() =>
       radios()

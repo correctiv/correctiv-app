@@ -33,6 +33,7 @@ import {
   screenOfRoute,
   SCREEN_ICONS,
   shippedOf,
+  routeOf,
   SCREEN_ROUTES,
 } from '../../src/preview/home/screens';
 import { getLayout, getScreen, setLayout, setScreen } from '../../src/preview/home/store';
@@ -168,7 +169,7 @@ describe('the editor follows the frame', () => {
 
   it('goes both ways without a loop: the picker’s screen is already the one its route maps to', () => {
     setScreen('mitmachen');
-    expect(screenOfRoute(SCREEN_ROUTES[getScreen()])).toBe(getScreen());
+    expect(screenOfRoute(routeOf(getScreen()))).toBe(getScreen());
     const before = getScreen();
     const followed = screenOfRoute(SCREEN_ROUTES.mitmachen);
     if (followed) setScreen(followed);
@@ -408,5 +409,16 @@ describe('the layout submission for a screen the newsroom made (ADR 0075 §7)', 
     });
     const applied = applyIssue(issue.title, issue.body, without);
     expect(applied.files.map((file) => file.path)).toEqual([layoutFile('kampagne')]);
+    expect(applied.removed ?? []).toEqual([]);
+  });
+
+  it('goes the whole way from an issue to a deleted file, which is removed and not written', () => {
+    const issue = issueFor('layout', layoutPayload('kampagne', 'null'), {
+      heading: 'Kampagne löschen',
+      lead: 'Lead',
+    });
+    const applied = applyIssue(issue.title, issue.body, withIt);
+    expect(applied.files).toEqual([]);
+    expect(applied.removed).toEqual([layoutFile('kampagne')]);
   });
 });
