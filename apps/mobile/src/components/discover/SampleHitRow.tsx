@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Typo } from '@/components/ui';
 import type { SearchSample } from '@correctiv/app-core/data/search-samples';
 import { useColors } from '@/lib/theme';
+import { screenHref } from '@/lib/navigation/screenHref';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -16,7 +17,7 @@ const ICON: Record<SearchSample['kind'], IoniconName> = {
 };
 
 /** The tabs a hit can jump to. */
-type TabPath = '/s/mediathek' | '/s/mitmachen' | '/s/profil';
+type TabPath = string;
 
 /**
  * Where a non-article hit leads, or `null` when it has no place in this app.
@@ -28,11 +29,11 @@ type TabPath = '/s/mediathek' | '/s/mitmachen' | '/s/profil';
 export function sampleTarget(kind: SearchSample['kind']): TabPath | null {
   switch (kind) {
     case 'podcast':
-      return '/s/mediathek';
+      return screenHref('mediathek');
     case 'callout':
-      return '/s/mitmachen';
+      return screenHref('mitmachen');
     case 'backstage':
-      return '/s/profil';
+      return screenHref('profil');
     default:
       return null;
   }

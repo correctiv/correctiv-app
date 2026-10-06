@@ -72,7 +72,11 @@ function wordsOf(screen: string): ScreenWords | null {
 }
 
 /** A navigation with no entry, which a whole layout falls back to when its own is refused. */
-const EMPTY_NAVIGATION = { version: NAVIGATION_VERSION, maxTabs: MAX_TABS, tabs: [] };
+const EMPTY_NAVIGATION = {
+  version: NAVIGATION_VERSION,
+  maxTabs: MAX_TABS,
+  tabs: [],
+};
 
 /** The bar and the words of every screen on it or behind it, taken together. */
 export interface TabBarDecision {
@@ -181,4 +185,26 @@ export function useTabBarDecision(): TabBarDecision {
   };
   const joined = useSyncExternalStore(subscribe, snapshot, snapshot);
   return useMemo(() => JSON.parse(joined) as TabBarDecision, [joined]);
+}
+
+let decidedAtStart: TabBarDecision | null = null;
+
+/**
+ * The bar this process starts with, decided on first use and then never again: the system's
+ * tab bar on iOS and Android cannot change its triggers without losing the state of every
+ * tab (measured 2026-10-01), so a navigation fetched later applies at the next start
+ * ([ADR 0081](../../../../../adr/0081-the-system-tab-bar-returns-and-is-decided-at-start.md)).
+ *
+ * First use is the first render of the tabs, which the shell holds back until the kept copy
+ * of the layout is in the store, so this reads the bundled layout or the last fetched one
+ * and nothing in between.
+ */
+export function startDecision(): TabBarDecision {
+  decidedAtStart ??= decideTabBar();
+  return decidedAtStart;
+}
+
+/** Forget the start's decision. For tests: a process decides once, a suite decides per case. */
+export function resetStartDecision(): void {
+  decidedAtStart = null;
 }

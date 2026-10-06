@@ -18,6 +18,7 @@ jest.mock('expo-constants', () => ({
   default: { expoConfig: { extra: { builtAt: '2026-09-23T06:00:00.000Z' } } },
 }));
 
+import { Platform } from 'react-native';
 import { act } from 'react-test-renderer';
 
 import { isReachable, type Channel } from '@correctiv/app-core/features/features';
@@ -32,6 +33,14 @@ import { activeTabOf, tabHref } from '@/lib/navigation/tabRoutes';
 import { coreStore } from '@/lib/store/core';
 
 import { render } from './support/rendering';
+
+// The drawn bar is the web's (ADR 0081): its addresses are `/s/<id>`.
+beforeAll(() => {
+  jest.replaceProperty(Platform, 'OS', 'web');
+});
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
 beforeEach(() => {
   act(() => {

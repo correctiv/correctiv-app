@@ -16,7 +16,12 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('@/lib/feeds/useFeed', () => ({
-  useFeed: () => ({ data: [], loading: false, offline: false, reload: jest.fn() }),
+  useFeed: () => ({
+    data: [],
+    loading: false,
+    offline: false,
+    reload: jest.fn(),
+  }),
   useInvestigations: () => [],
 }));
 
@@ -30,7 +35,7 @@ import { SCREEN_DOCUMENTS } from '@correctiv/app-core/lib/screen-layout';
 import { parseHomeLayout } from '@correctiv/app-core/lib/home-layout';
 
 // First, so the cycle through the screen route is entered from the module map's side.
-import '@/app/(tabs)/s/[id]';
+import '@/app/(tabs)/s/[id].web';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { placeTestID } from '@/lib/home/modules';
 import { TAB_FEATURES, tabReachable } from '@/lib/features';

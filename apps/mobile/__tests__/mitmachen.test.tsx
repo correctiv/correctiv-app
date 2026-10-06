@@ -1,5 +1,6 @@
 import { act, type ReactTestRenderer } from 'react-test-renderer';
 
+import { screenHref } from '@/lib/navigation/screenHref';
 import { callouts } from '@correctiv/app-core/data/callouts';
 import { claims } from '@correctiv/app-core/data/claims';
 import { formatNumber } from '@correctiv/app-core/lib/format';
@@ -196,7 +197,7 @@ describe('the callout form', () => {
     press(tree, 'Weitere Mitmach-Aktionen ansehen');
 
     // Not router.back() — that would land on the callout page the user just left.
-    expect(router.dismissTo).toHaveBeenCalledWith('/s/mitmachen');
+    expect(router.dismissTo).toHaveBeenCalledWith(screenHref('mitmachen'));
   });
 
   it('does not invent a form for an unknown callout', () => {

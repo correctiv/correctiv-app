@@ -1,8 +1,10 @@
 import type { Project } from '@correctiv/app-core/data/projects';
 
+import { screenHref } from '@/lib/navigation/screenHref';
+
 export type ProjectTarget =
   /** Cross-link into another tab (CrowdNewsroom, Faktenforum, Abriss-Atlas). */
-  | { kind: 'tab'; path: '/s/mitmachen' }
+  | { kind: 'tab'; path: string }
   /** Purely external project — system browser. */
   | { kind: 'external'; url: string }
   /** A project or topic page inside this app. */
@@ -18,7 +20,7 @@ export type ProjectTarget =
  * replacement for the project page with its feed and its own action.
  */
 export function projectTarget(project: Project): ProjectTarget {
-  if (project.tab === 'participate') return { kind: 'tab', path: '/s/mitmachen' };
+  if (project.tab === 'participate') return { kind: 'tab', path: screenHref('mitmachen') };
   if (project.url && !project.feed) return { kind: 'external', url: project.url };
   return { kind: 'project', id: project.id };
 }

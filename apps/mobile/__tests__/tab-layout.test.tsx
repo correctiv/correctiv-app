@@ -10,7 +10,11 @@ jest.mock('expo-router', () => {
   const react = jest.requireActual<typeof import('react')>('react');
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
-    router: { push: jest.fn(), replace: jest.fn(), navigate: (href: string) => mockNavigate(href) },
+    router: {
+      push: jest.fn(),
+      replace: jest.fn(),
+      navigate: (href: string) => mockNavigate(href),
+    },
     usePathname: () => '/s/a',
     useLocalSearchParams: jest.fn(() => ({})),
     Slot: () => react.createElement(View, { testID: 'screen' }),
@@ -32,20 +36,28 @@ jest.mock('uniwind', () => ({
   withUniwind: (C: any) => C,
 }));
 
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 import { act } from 'react-test-renderer';
 
 import { homeLayoutActions } from '@correctiv/app-core/stores/homeLayout';
 import { resetStore } from '@correctiv/app-core/stores/store';
 
-import Layout from '@/app/(tabs)/_layout';
-import Start from '@/app/(tabs)/index';
+import Layout from '@/app/(tabs)/_layout.web';
+import Start from '@/app/(tabs)/index.web';
 import { BUILT_AT } from '@/lib/home/layout';
 import { coreStore } from '@/lib/store/core';
 
 import { render, renderedText } from './support/rendering';
 
 const PHONE = { width: 390, height: 844, scale: 2, fontScale: 1 };
+
+// The drawn bar is the web's (ADR 0081): its addresses are `/s/<id>`.
+beforeAll(() => {
+  jest.replaceProperty(Platform, 'OS', 'web');
+});
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
 beforeEach(() => {
   mockNavigate.mockClear();
@@ -62,11 +74,18 @@ function publish(carried: string[], listed: string[], maxTabs?: number) {
     screens: Object.fromEntries(
       carried.map((id) => [id, { version: 4, title: { de: id.toUpperCase() }, sections: [] }]),
     ),
-    navigation: { version: 1, tabs: listed, ...(maxTabs === undefined ? {} : { maxTabs }) },
+    navigation: {
+      version: 1,
+      tabs: listed,
+      ...(maxTabs === undefined ? {} : { maxTabs }),
+    },
   };
   act(() => {
     coreStore.dispatch(
-      homeLayoutActions.received({ text: JSON.stringify(body), publishedAt: BUILT_AT + 60_000 }),
+      homeLayoutActions.received({
+        text: JSON.stringify(body),
+        publishedAt: BUILT_AT + 60_000,
+      }),
     );
   });
 }

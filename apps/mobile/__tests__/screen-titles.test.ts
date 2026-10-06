@@ -45,7 +45,7 @@ const SHELL = /(^|\/)\+(?!not-found)[\w.-]+\.tsx$/;
  * id names (ADR 0075 §7), so its title is `words.title` of that screen and there is no
  * descriptor to read. Both checks below leave it out; its own test reads what it draws.
  */
-const DOCUMENT_TITLED = /^s\/\[id\]\.tsx$/;
+const DOCUMENT_TITLED = /^(s|screen)\/\[id\](\.\w+)?\.tsx$/;
 
 function routeFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

@@ -59,6 +59,11 @@ const PLATFORM_PAIRED = [
   // without the `.web.ts` the button on a desktop browser does nothing at all and
   // logs a warning nobody reads. The web export is how most people see this app.
   'lib/shareArticle.ts',
+  // The tab bar. Native tabs are the system's; the web has no system tab bar to
+  // borrow, so `.web.tsx` draws one (ADR 0013, ADR 0079, ADR 0081). Without the sibling the
+  // web target falls back to expo-router's native-tabs web implementation, which renders the
+  // labels and NO icons — a bar that still works, and is not the app.
+  'app/(tabs)/_layout.tsx',
 ];
 
 /**
@@ -190,11 +195,13 @@ describe('web target', () => {
     // (TROUBLESHOOTING.md → The web target). Native never notices; it has no URLs.
     const dynamicRoutes = files.filter((file) => {
       const rel = relative(SRC, file).replaceAll('\\', '/');
-      return rel.startsWith('app/') && /\[[^\]]+\]\.tsx$/.test(rel);
+      return rel.startsWith('app/') && /\[[^\]]+\](\.web)?\.tsx$/.test(rel);
     });
 
     expect(
-      floorFaults({ 'dynamic routes found': { found: dynamicRoutes.length, atLeast: 1 } }),
+      floorFaults({
+        'dynamic routes found': { found: dynamicRoutes.length, atLeast: 1 },
+      }),
     ).toEqual([]);
 
     const offenders = dynamicRoutes.filter(
@@ -215,7 +222,11 @@ describe('web target', () => {
     // neither layout grows a set of its own again — a `defineMessages` in a bar is the
     // shape the five came back in.
     expect(tabLabels('lib/tabTargets.ts')).toEqual(['more: ui.tabMore = More']);
-    for (const layout of ['app/(tabs)/_layout.tsx', 'components/ui/BottomTabBar.tsx']) {
+    for (const layout of [
+      'app/(tabs)/_layout.tsx',
+      'app/(tabs)/_layout.web.tsx',
+      'components/ui/BottomTabBar.tsx',
+    ]) {
       expect(readFileSync(resolve(SRC, layout), 'utf8')).not.toContain('defineMessages');
     }
   });

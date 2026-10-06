@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import type { ComponentType } from 'react';
 
-import ScreenRoute from '@/app/(tabs)/s/[id]';
+import ScreenRoute from '@/app/(tabs)/s/[id].web';
 
 /**
  * What a suite renders to see one screen: every screen is the one route `/s/<id>` (ADR 0079),

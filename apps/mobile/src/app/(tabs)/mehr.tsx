@@ -7,7 +7,7 @@ import { MORE_TAB } from '@correctiv/app-core/lib/navigation';
 
 import NotFoundScreen from '@/app/+not-found';
 import { Card, Hairline, Screen, Typo } from '@/components/ui';
-import { useTabs } from '@/lib/navigation/tabWords';
+import { useShellTabs } from '@/lib/navigation/shellTabs';
 import { tabHref } from '@/lib/navigation/tabRoutes';
 import { MORE_LABEL } from '@/lib/tabTargets';
 import { useColors } from '@/lib/theme';
@@ -27,7 +27,7 @@ import { useColors } from '@/lib/theme';
 export default function MehrScreen() {
   const intl = useIntl();
   const colors = useColors();
-  const { bar, unlisted, words } = useTabs();
+  const { bar, unlisted, words } = useShellTabs();
   if (!bar.tabs.includes(MORE_TAB)) return <NotFoundScreen />;
   const rows = [...bar.more, ...unlisted].map((id) => ({
     key: id,

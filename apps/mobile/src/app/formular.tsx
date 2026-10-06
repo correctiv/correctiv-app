@@ -9,6 +9,7 @@ import { FormField } from '@/components/participate/FormField';
 import { Button, ContentColumn, Hairline, ScreenHeader, Typo } from '@/components/ui';
 import { callouts, type CalloutComponent, type Callout } from '@correctiv/app-core/data/callouts';
 import { useCoreActions, useExtraCount } from '@/lib/store/core';
+import { screenHref } from '@/lib/navigation/screenHref';
 import { sizes, useColors } from '@/lib/theme';
 
 /**
@@ -279,8 +280,8 @@ function ThankYou({ callout }: { callout: Callout }) {
  */
 function backToOverview(): void {
   if (router.canGoBack()) {
-    router.dismissTo('/s/mitmachen');
+    router.dismissTo(screenHref('mitmachen') as never);
     return;
   }
-  router.replace('/s/mitmachen');
+  router.replace(screenHref('mitmachen') as never);
 }

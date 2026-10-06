@@ -38,7 +38,12 @@ describe('a screen that owns its scroller', () => {
   // Two spellings, because two containers: `ContentColumn` around the content, or the
   // cap on the scroller's own `contentContainerStyle` — wrapping a `FlatList` in a
   // `View` would take the height away from the list, and the list is what scrolls.
-  const screens = screenFiles().map((path) => ({ path, source: readFileSync(path, 'utf-8') }));
+  // The routes that only hand over to `ScreenView` or `SlotScreen` own no scroller and are
+  // not screens in this sense: the slots of the system's tab bar and `/s/<id>` (ADR 0081).
+  const delegates = /from '@\/lib\/(home\/ScreenView|navigation\/SlotScreen)'/;
+  const screens = screenFiles()
+    .map((path) => ({ path, source: readFileSync(path, 'utf-8') }))
+    .filter(({ source }) => !delegates.test(source));
   const withScroller = screens.filter(({ source }) => /<(ScrollView|FlatList)\b/.test(source));
 
   it('is a list of more than half the screens, so the walk is not vacuous', () => {

@@ -1,12 +1,14 @@
 import { MORE_TAB, type TabBar } from '@correctiv/app-core/lib/navigation';
 
+import { screenHref } from './screenHref';
+
 /**
- * Where a tab leads. Every screen is `/s/<id>` (ADR 0079), so a tab is an address and
+ * Where a tab leads. Every screen is `/s/<id>` on the web (ADR 0079), so a tab is an address and
  * nothing the navigator has to declare: there is no route per tab, and a screen that is
  * gone is an address that leads nowhere.
  */
 export function tabHref(tab: string): string {
-  return tab === MORE_TAB ? '/mehr' : `/s/${tab}`;
+  return tab === MORE_TAB ? '/mehr' : screenHref(tab);
 }
 
 /**
