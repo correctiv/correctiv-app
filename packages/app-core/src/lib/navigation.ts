@@ -118,7 +118,9 @@ export function parseNavigation(document: unknown): NavigationParse {
     ) {
       maxTabs = value;
     } else {
-      fail('navigation-max-tabs-invalid', { maxTabs: typeof value === 'number' ? value : null });
+      fail('navigation-max-tabs-invalid', {
+        maxTabs: typeof value === 'number' ? value : null,
+      });
     }
   }
 
@@ -137,7 +139,10 @@ export function parseNavigation(document: unknown): NavigationParse {
   }
 
   if (problems.length > 0) return { navigation: null, problems };
-  return { navigation: { version: NAVIGATION_VERSION, tabs, maxTabs }, problems };
+  return {
+    navigation: { version: NAVIGATION_VERSION, tabs, maxTabs },
+    problems,
+  };
 }
 
 /** What a bar draws. */
@@ -187,6 +192,48 @@ export function arrangeTabBar(
     tabs: [...entries.slice(0, kept), MORE_TAB],
     more: entries.slice(kept),
   };
+}
+
+/**
+ * The routes a native tab bar declares, in order. The system's bar takes its triggers by
+ * route name, so a tab cannot be `/s/<id>` and is the n-th of these instead, which draws
+ * the screen of the n-th tab ([ADR 0081](../../../../adr/0081-the-system-tab-bar-returns-and-is-decided-at-start.md)).
+ * The first is `index` so that `/` is the first tab and no hidden route has to stand
+ * in front of it.
+ */
+export const SLOT_ROUTES = ['index', 'slot-2', 'slot-3', 'slot-4', 'slot-5'] as const;
+
+/** One trigger of a native bar. `screen` is null for "Mehr", which is its own route. */
+export interface TabSlot {
+  readonly route: string;
+  readonly screen: string | null;
+}
+
+/**
+ * The triggers a bar declares, in order: the slot of each screen on the bar, and "Mehr"
+ * where the bar has it, which is always last. One screen is a single slot and no bar, and
+ * none is no slot: the first route then draws the empty state. `MAX_TABS` is the number of
+ * slot routes, so no bar needs one that does not exist.
+ */
+export function tabSlots(bar: TabBar): readonly TabSlot[] {
+  if (bar.kind === 'empty') return [];
+  if (bar.kind === 'single') return [{ route: SLOT_ROUTES[0], screen: bar.start }];
+  return bar.tabs.map((tab, index) =>
+    tab === MORE_TAB
+      ? { route: MORE_TAB, screen: null }
+      : { route: SLOT_ROUTES[index]!, screen: tab },
+  );
+}
+
+/** The screen a slot route draws in this bar, or null when the bar gives it none. */
+export function slotScreen(bar: TabBar, route: string): string | null {
+  return tabSlots(bar).find((slot) => slot.route === route)?.screen ?? null;
+}
+
+/** The route that draws a screen in this bar, or null when the screen is not on it. */
+export function slotRoute(bar: TabBar, screen: string | undefined): string | null {
+  if (screen === undefined) return null;
+  return tabSlots(bar).find((slot) => slot.screen === screen)?.route ?? null;
 }
 
 /** The navigation this build bundles, as written. */
@@ -247,6 +294,10 @@ export function chooseTabBar({
 /** Report what `chooseTabBar` found wrong, through the same port a layout fault uses. */
 export function reportNavigationProblems(problems: readonly NavigationProblem[]): void {
   for (const problem of problems) {
-    platform().errors.report({ domain: 'layout', code: problem.code, context: problem.context });
+    platform().errors.report({
+      domain: 'layout',
+      code: problem.code,
+      context: problem.context,
+    });
   }
 }
