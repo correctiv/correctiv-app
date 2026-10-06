@@ -20,13 +20,16 @@ import {
   isDeclaredScreen,
 } from '@correctiv/app-core/lib/screen-layout';
 
-import { LAYOUT_DIR, layoutFile, NAVIGATION_FILE } from '../src/preview/home/names.ts';
+import {
+  LAYOUT_DIR,
+  layoutFile,
+  NAVIGATION_FILE,
+  NAVIGATION_TARGET,
+} from '../src/preview/home/names.ts';
 import { formatLayoutDocument } from '../src/preview/home/document.ts';
 import { checkNavigation, formatNavigationDocument } from '../src/preview/navigation/document.ts';
 import type { Repo } from './submission-strings.ts';
 import { Refusal, RENDERABLE, shown } from './submission.ts';
-
-export const NAVIGATION_TARGET = 'navigation';
 
 /** The screens this kind writes: all of them but Home. */
 const SCREENS = CONFIGURABLE_SCREENS.filter((screen) => screen !== 'home');

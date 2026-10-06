@@ -159,10 +159,11 @@ describe('a tool does not explain the submit button itself (ratchet)', () => {
  */
 describe('a panel does not say where the draft came from (ratchet)', () => {
   const SRC = join(ROOT, 'apps/workbench/src');
-  /** The one place that may hand the sentence over, and it hands it to the header. */
+  /** The places that may hand the sentence over, and each hands it to the header. */
   const BAR = 'preview/home/HomeDocument.tsx';
+  const BARS = [BAR, 'preview/navigation/NavigationEditor.tsx'];
 
-  const files = filesUnder(SRC, /\.tsx?$/).filter((f) => !f.endsWith(BAR));
+  const files = filesUnder(SRC, /\.tsx?$/).filter((f) => !BARS.some((bar) => f.endsWith(bar)));
   const code = new Map(files.map((f) => [under(SRC, f), withoutComments(readFileSync(f, 'utf8'))]));
 
   it('reads the files it is checking, and finds both halves of the sentence', () => {
@@ -189,18 +190,20 @@ describe('a panel does not say where the draft came from (ratchet)', () => {
      * A ratchet and not a list of offenders, because the tool IS allowed to format
      * these — it hands the sentence to the header's `origin` — and a rule that named
      * it would have to be switched off the moment the header asked for it. One entry
-     * in one file, and a second arrival in that file is the paragraph coming back
+     * in each tool that has a draft to receive (the layout and the navigation), and a
+     * second arrival in either file is the paragraph coming back
      * through the other door. Every other file has no entry, so one arrival there
      * fails and so does the entry going stale.
      */
     const all = new Map(code);
-    all.set(BAR, withoutComments(readFileSync(join(SRC, BAR), 'utf8')));
-    const renders = /formatMessage\([^)]*\bshared(Held|Damaged)\b/g;
+    for (const bar of BARS) all.set(bar, withoutComments(readFileSync(join(SRC, bar), 'utf8')));
+    // No `g` flag: `test` on a global regex carries `lastIndex` from one file into the next,
+    // which hides a second match, and there are two tools that may legitimately have one.
+    const renders = /formatMessage\([^)]*\bshared(Held|Damaged)\b/;
     const found = [...all]
       .filter(([, source]) => renders.test(source))
       .map(([path]) => ({ key: path }));
-    renders.lastIndex = 0;
-    const report = ratchet(found, { [BAR]: 1 });
+    const report = ratchet(found, Object.fromEntries(BARS.map((bar) => [bar, 1])));
     expect(report.arrivals).toEqual([]);
     expect(report.stale).toEqual([]);
   });

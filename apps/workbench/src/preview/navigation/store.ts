@@ -17,6 +17,8 @@ import {
 type Listener = () => void;
 
 let navigation: Navigation | null = null;
+/** Whether the navigation held is one a link brought in and nothing has been written to since. */
+let incoming = false;
 const listeners = new Set<Listener>();
 
 /** Put the navigation where the framed app finds it, or take it away when it is the shipped one. */
@@ -52,6 +54,35 @@ export function subscribeNavigation(listener: Listener): () => void {
 
 export function setNavigation(next: Navigation): void {
   navigation = next;
+  incoming = false;
   publishNavigation(next);
   for (const listener of listeners) listener();
+}
+
+/**
+ * A navigation that arrived in a shared link, held rather than published (ADR 0076 §3).
+ *
+ * The same argument as `holdIncoming` in `../home/store.ts`: the framed app reads the key,
+ * so a draft written there would replace whatever the machine held before anybody edited a
+ * character of it. The editor shows the draft and nothing else; the first edit publishes it.
+ * Returns whether it took it, and a document the editor will not open is a link that cannot
+ * be opened.
+ */
+export function holdIncomingNavigation(document: string): boolean {
+  let parsed: Navigation | null;
+  try {
+    parsed = restorableNavigation(JSON.parse(document));
+  } catch {
+    parsed = null;
+  }
+  if (parsed === null) return false;
+  navigation = parsed;
+  incoming = true;
+  for (const listener of listeners) listener();
+  return true;
+}
+
+/** Whether the navigation is one a link brought in and nothing has been written to since. */
+export function navigationIncoming(): boolean {
+  return incoming;
 }

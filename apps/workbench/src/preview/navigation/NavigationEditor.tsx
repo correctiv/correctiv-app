@@ -11,11 +11,16 @@ import { Button } from '../../ui/kit/button';
 import { useToolActions } from '../../shell/actions';
 import { Select } from '../../ui/kit/select';
 import { copyNow } from '../clipboard';
+import { noticeOf, subscribeLayout } from '../home/store';
+import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
+import { SHARE_COPY } from '../shareCopy';
+import { NAVIGATION_TARGET } from '../home/names';
 import { SCREEN_NAMES } from '../home/screens';
 import { canSave } from '../home/write';
 import {
   barOf,
   DESTINATION_NAMES,
+  formatNavigationDocument,
   MORE_NAME,
   movedTab,
   navigationDiffers,
@@ -25,7 +30,7 @@ import {
   withMaxTabs,
   withTab,
 } from './document';
-import { getNavigation, setNavigation, subscribeNavigation } from './store';
+import { getNavigation, navigationIncoming, setNavigation, subscribeNavigation } from './store';
 import { saveNavigation, submitNavigation } from './write';
 
 /** Everything this tool says, in ENGLISH; the German that ships is `src/i18n/catalogue/de/navigation.ts`. */
@@ -139,6 +144,15 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
   const selectId = useId();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const incoming = useSyncExternalStore(subscribeNavigation, navigationIncoming, () => false);
+  const notice = useSyncExternalStore(subscribeLayout, noticeOf, () => null);
+  /** What the last click on Share link came to, as the layout tool keeps it (ADR 0076 §2). */
+  const [linked, setLinked] = useState<
+    | { kind: 'copied' }
+    | { kind: 'no-clipboard'; link: string }
+    | { kind: 'too-long'; length: number }
+    | null
+  >(null);
 
   // The app reads the navigation once, so a change is a reload of the frame. Skipped on
   // arrival: the frame has just loaded with whatever is stored.
@@ -165,6 +179,16 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
   const offer = dirty && problems.length === 0 ? submitNavigation(navigation, format) : null;
   const rest = unused(navigation);
 
+  const share = async () => {
+    const { link, length } = await shareLink(
+      'navigation',
+      { screen: NAVIGATION_TARGET, document: formatNavigationDocument(getNavigation()) },
+      { base: `${window.location.origin}${window.location.pathname}`, hash: window.location.hash },
+    );
+    if (link === null) setLinked({ kind: 'too-long', length });
+    else setLinked(copyNow(link) ? { kind: 'copied' } : { kind: 'no-clipboard', link });
+  };
+
   useToolActions('navigation', {
     dirty,
     /*
@@ -184,6 +208,25 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
           },
         }
       : null,
+    origin:
+      incoming || notice !== null
+        ? intl.formatMessage(
+            notice === 'damaged' ? SHARE_COPY.sharedDamaged : SHARE_COPY.sharedHeld,
+          )
+        : undefined,
+    share: {
+      run: () => void share(),
+      warning:
+        linked?.kind === 'too-long'
+          ? {
+              text: intl.formatMessage(SHARE_COPY.shareTooLong, {
+                link: linked.length,
+                limit: SHARE_ADDRESS_LIMIT,
+              }),
+              submit: offer === null ? undefined : { href: offer.href },
+            }
+          : undefined,
+    },
     save: canSave
       ? { run: () => void saveNavigation(navigation, format).then(setResult) }
       : undefined,
@@ -311,6 +354,33 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
       )}
 
       {copied && <p className={NOTE}>{intl.formatMessage(COPY.copied)}</p>}
+      {linked !== null && linked.kind !== 'too-long' && (
+        <div className="flex flex-col gap-xs">
+          <output
+            className="flex items-start gap-xs text-s text-on-canvas"
+            data-testid="share-outcome"
+          >
+            {linked.kind === 'copied' && (
+              <Check aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
+            )}
+            <span className="min-w-0">
+              {intl.formatMessage(
+                linked.kind === 'copied' ? SHARE_COPY.shareCopied : SHARE_COPY.shareNoClipboard,
+              )}
+            </span>
+          </output>
+          {linked.kind === 'no-clipboard' && (
+            <textarea
+              readOnly
+              aria-label={intl.formatMessage(SHARE_COPY.shareLinkField)}
+              value={linked.link}
+              rows={3}
+              onFocus={(event) => event.currentTarget.select()}
+              className="rounded-sm border border-stroke bg-canvas px-3xs py-4xs font-mono text-[0.75rem] leading-snug text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            />
+          )}
+        </div>
+      )}
       {result && (
         <p className="flex items-start gap-xs text-s text-on-canvas">
           {result.ok ? (
