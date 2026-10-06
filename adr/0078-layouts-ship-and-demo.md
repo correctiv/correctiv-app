@@ -1,11 +1,10 @@
 # ADR 0078 — Layouts: ship and demo
 
-Status: accepted, 2026-10-06, decided by the product side. **Built in part:** the data model,
-the scripts and the submission's payload (steps 1 and 2 of 5). ~~The tab bar's rules, the empty
-state, the workbench's choice of layout and routes for screens the app does not declare are
-the steps after, and the last section lists them.~~ The tab bar's rules, the empty state and
-the routes were built by [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md); the
-workbench's choice of layout is still to do, and the last section lists what is.
+Status: accepted, 2026-10-06, decided by the product side. **Built:** the data model, the
+scripts and the submission's payload (steps 1 and 2 of 5), the tab bar's rules, the empty state
+and the routes ([ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md)), and the
+workbench's choice of layout with a whole layout as the frame's override
+([ADR 0080](0080-the-workbench-chooses-a-layout.md)). The last section lists what is still open.
 
 It changes where the documents of [ADR 0071](0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
 live, and what [ADR 0075](0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md) §7
@@ -122,10 +121,13 @@ tab that names no screen of its layout is refused, and a layout with no screen i
 
 ### 7. Until the workbench can choose, it works on `demo`
 
-The editor's baseline, its dev save and the payload it builds name `demo`: it is the layout
+~~The editor's baseline, its dev save and the payload it builds name `demo`: it is the layout
 with something in it. `shippedOf` and the navigation editor read `demo/bundle.ts`.
 One consequence is visible: the frame beside the editor is the app, which bundles `ship`, so
-it draws no screen until the editor's own draft (the override seam, ADR 0057) puts one there.
+it draws no screen until the editor's own draft (the override seam, ADR 0057) puts one there.~~
+Voided by [ADR 0080](0080-the-workbench-chooses-a-layout.md) §1 and §2: the workbench chooses
+its layout, opens on `ship`, and the frame draws the chosen layout whole. `demo` stays the layout
+with something in it, and the one a link made before layouts means.
 
 ## Consequences
 
@@ -154,9 +156,11 @@ it draws no screen until the editor's own draft (the override seam, ADR 0057) pu
    When every id is a screen, a route has to stand for any of them, and `customScreenIdFault`
    loses its `declared` fault.~~ Built by
    [ADR 0079](0079-the-app-draws-its-tabs-from-the-layout.md) §1 and §4.
-3. **The workbench chooses a layout**, and may offer `ship` as an editing target. The frame
-   then needs a way to show a layout the app does not bundle.
-4. **A whole layout as an override** in the frame, instead of a screen at a time (ADR 0057).
+3. ~~**The workbench chooses a layout**, and may offer `ship` as an editing target. The frame
+   then needs a way to show a layout the app does not bundle.~~ Built by
+   [ADR 0080](0080-the-workbench-chooses-a-layout.md) §1.
+4. ~~**A whole layout as an override** in the frame, instead of a screen at a time (ADR 0057).~~
+   Built by [ADR 0080](0080-the-workbench-chooses-a-layout.md) §2.
 5. **Making a layout** from the workbench. Today it is a commit (§1).
 6. **What goes into `ship`.** This record is the reason the question can wait; it does not
    answer it.

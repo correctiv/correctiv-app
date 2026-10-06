@@ -26,7 +26,7 @@ import { de } from '../../src/i18n/catalogue/de';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const withIntro = (words: LocalisedText): HomeLayout => {
-  const layout = shippedOf('mitmachen');
+  const layout = shippedOf('mitmachen', 'demo');
   const section = layout.sections.find((one) => 'intro' in (one.settings ?? {}));
   if (!section) throw new Error('fixture: mitmachen has no section with an intro');
   return {

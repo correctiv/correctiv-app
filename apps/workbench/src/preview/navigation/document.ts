@@ -8,7 +8,6 @@ import {
   type NavigationProblem,
   type TabBar,
 } from '@correctiv/app-core/lib/navigation';
-import { DEMO_NAVIGATION } from '@correctiv/app-core/data/layouts/demo/bundle';
 
 /**
  * The navigation editor's model: pure functions over the core's `Navigation`, with no
@@ -21,35 +20,8 @@ import { DEMO_NAVIGATION } from '@correctiv/app-core/data/layouts/demo/bundle';
  * is first only where it is written first, and the first entry is the screen the app starts on.
  */
 
-/**
- * The screens the editor offers to put on the bar, in the screens' own names: the five the
- * demo layout carries, which is the one it edits (ADR 0078 §7).
- *
- * Not messages, for the reason `preview/routes.ts` gives of the same names: the app ships
- * in German, and `Entdecken` is what the tab says. Held to the demo layout's screens by
- * `test/preview/screen-editor.test.ts`. The parser takes any well-formed id, so a document
- * that lists another screen opens and is written; it is only not offered here.
- */
-export const DESTINATION_NAMES: Readonly<Record<string, string>> = {
-  home: 'Home',
-  entdecken: 'Entdecken',
-  mediathek: 'Mediathek',
-  mitmachen: 'Mitmachen',
-  profil: 'Profil',
-};
-
 /** The overflow tab's name, which the app draws and the document never names. */
 export const MORE_NAME = 'Mehr';
-
-/**
- * The navigation the editor starts from, which is also what Discard returns to: the demo
- * layout's, because the one the app bundles has no entry (ADR 0078 §7).
- */
-export const SHIPPED_NAVIGATION: Navigation = (() => {
-  const { navigation } = parseNavigation(DEMO_NAVIGATION);
-  if (!navigation) throw new Error('the demo navigation does not parse');
-  return navigation;
-})();
 
 export type EditorProblemCode = NavigationProblem['code'];
 
@@ -79,14 +51,25 @@ export function problemsOf(navigation: Navigation): readonly EditorProblem[] {
   return checkNavigation(navigation).problems;
 }
 
-/** The ids a navigation could still add, in the app's own order. */
-export function unused(navigation: Navigation): readonly string[] {
-  return Object.keys(DESTINATION_NAMES).filter((id) => !navigation.tabs.includes(id));
+/**
+ * The screens of the layout a navigation could still add, in the order given: every screen
+ * the layout carries, not a fixed five (ADR 0080 §4).
+ */
+export function unused(navigation: Navigation, screens: readonly string[]): readonly string[] {
+  return screens.filter((id) => !navigation.tabs.includes(id));
 }
 
-/** A destination put on the bar at the end, or taken off it. */
-export function withTab(navigation: Navigation, id: string, on: boolean): Navigation {
-  if (!Object.hasOwn(DESTINATION_NAMES, id)) return navigation;
+/**
+ * A screen put on the bar at the end, or taken off it. Only a screen of the layout goes on;
+ * taking one off needs no such test, so a stale entry can always be removed.
+ */
+export function withTab(
+  navigation: Navigation,
+  id: string,
+  on: boolean,
+  screens: readonly string[],
+): Navigation {
+  if (on && !screens.includes(id)) return navigation;
   const listed = navigation.tabs.includes(id);
   if (on === listed) return navigation;
   return {
@@ -113,11 +96,13 @@ export function withMaxTabs(navigation: Navigation, maxTabs: number): Navigation
 }
 
 /**
- * The bar this navigation draws when every destination can be opened. Which of them a release
- * can actually open is the feature gate's question (ADR 0072), and the editor cannot ask it.
+ * The bar this navigation draws when every screen the layout carries can be opened, and none
+ * it does not carry can: a screen that was deleted leaves no tab, as in the app (ADR 0079 §1).
+ * Which of them a release can actually open is the feature gate's question (ADR 0072), and
+ * the editor cannot ask it.
  */
-export function barOf(navigation: Navigation): TabBar {
-  return arrangeTabBar(navigation, () => true);
+export function barOf(navigation: Navigation, screens: readonly string[]): TabBar {
+  return arrangeTabBar(navigation, (id) => screens.includes(id));
 }
 
 /**
@@ -137,9 +122,9 @@ export function formatNavigationDocument(navigation: Navigation): string {
   ].join('\n');
 }
 
-/** Whether the navigation differs from the file, compared as the printed file. */
-export function navigationDiffers(navigation: Navigation): boolean {
-  return formatNavigationDocument(navigation) !== formatNavigationDocument(SHIPPED_NAVIGATION);
+/** Whether the navigation differs from the layout's file, compared as the printed file. */
+export function navigationDiffers(navigation: Navigation, shipped: Navigation): boolean {
+  return formatNavigationDocument(navigation) !== formatNavigationDocument(shipped);
 }
 
 /** A stored navigation the editor can open, or null. Anything the parser refuses is not opened. */

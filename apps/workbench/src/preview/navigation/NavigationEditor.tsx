@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Check, Plus, X } from 'lucide-react';
-import { useEffect, useId, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react';
 import { defineMessages } from 'react-intl';
 
 import { MAX_TABS, MIN_MAX_TABS, MORE_TAB } from '@correctiv/app-core/lib/navigation';
@@ -10,7 +10,16 @@ import { Button } from '../../ui/kit/button';
 import { useToolActions } from '../../shell/actions';
 import { Select } from '../../ui/kit/select';
 import { copyNow } from '../clipboard';
-import { noticeOf, subscribeLayout } from '../home/store';
+import { ShippedNote } from '../home/DocumentNotes';
+import {
+  getLayoutId,
+  noticeOf,
+  screensSnapshot,
+  screenTitle,
+  subscribeLayout,
+} from '../home/store';
+import { DEFAULT_LAYOUT } from '../home/names';
+import { shippedNavigationOf } from '../home/screens';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { SHARE_COPY } from '../shareCopy';
 import { VIA_LINK } from '../submission';
@@ -18,13 +27,11 @@ import { NAVIGATION_TARGET } from '../home/names';
 import { canSave } from '../home/write';
 import {
   barOf,
-  DESTINATION_NAMES,
   formatNavigationDocument,
   MORE_NAME,
   movedTab,
   navigationDiffers,
   problemsOf,
-  SHIPPED_NAVIGATION,
   unused,
   withMaxTabs,
   withTab,
@@ -72,7 +79,7 @@ const COPY = defineMessages({
   available: {
     id: 'navigation.available',
     defaultMessage: 'Not on the bar',
-    description: 'The heading above the screens the app declares that the bar does not list.',
+    description: 'The heading above the screens of the open layout that the bar does not list.',
   },
   maxTabs: {
     id: 'navigation.maxTabs',
@@ -106,7 +113,7 @@ const COPY = defineMessages({
   },
   resultEmpty: {
     id: 'navigation.resultEmpty',
-    defaultMessage: 'nothing: the app shows its empty state',
+    defaultMessage: 'nothing, the app shows its empty state',
     description:
       'After the label of the bar, when no entry can be opened. The empty state is the app’s own page that says the layout holds no screen yet.',
   },
@@ -169,19 +176,22 @@ export function NavigationEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation]);
 
-  const nameOf = (id: string) => DESTINATION_NAMES[id] ?? id;
+  const layoutId = useSyncExternalStore(subscribeLayout, getLayoutId, () => DEFAULT_LAYOUT);
+  const joined = useSyncExternalStore(subscribeLayout, screensSnapshot, () => '');
+  /** Every screen of the open layout, not a fixed five (ADR 0080 §4). */
+  const screens = useMemo(() => (joined === '' ? [] : joined.split('\n')), [joined]);
   const format = (
     message: Parameters<typeof intl.formatMessage>[0],
     values?: Record<string, string>,
   ) => intl.formatMessage(message, values);
-  const dirty = navigationDiffers(navigation);
+  const dirty = navigationDiffers(navigation, shippedNavigationOf(layoutId));
   const problems = problemsOf(navigation);
-  const bar = barOf(navigation);
+  const bar = barOf(navigation, screens);
   const offer =
     dirty && problems.length === 0
-      ? submitNavigation(navigation, format, incoming ? VIA_LINK : undefined)
+      ? submitNavigation(navigation, format, layoutId, incoming ? VIA_LINK : undefined)
       : null;
-  const rest = unused(navigation);
+  const rest = unused(navigation, screens);
 
   const share = async () => {
     const { link, length } = await shareLink(
@@ -232,51 +242,55 @@ export function NavigationEditor() {
           : undefined,
     },
     save: canSave
-      ? { run: () => void saveNavigation(navigation, format).then(setResult) }
+      ? { run: () => void saveNavigation(navigation, format, layoutId).then(setResult) }
       : undefined,
-    discard: () => setNavigation(SHIPPED_NAVIGATION),
+    discard: () => setNavigation(shippedNavigationOf(layoutId)),
   });
 
   return (
     <div className="flex flex-col gap-s" data-testid="navigation-editor">
       <p className={NOTE}>{intl.formatMessage(COPY.lead)}</p>
 
-      <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.entries)}>
-        <h3 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.entries)}</h3>
-        <ol className="flex flex-col gap-2xs">
-          {navigation.tabs.map((id, index) => (
-            <li key={id} className={ROW} data-testid={`nav-entry-${id}`}>
-              <span className="flex-1 text-s text-on-canvas">{nameOf(id)}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={index === 0}
-                aria-label={intl.formatMessage(COPY.moveUp, { name: nameOf(id) })}
-                onClick={() => setNavigation(movedTab(navigation, id, -1))}
-              >
-                <ArrowUp aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={index === navigation.tabs.length - 1}
-                aria-label={intl.formatMessage(COPY.moveDown, { name: nameOf(id) })}
-                onClick={() => setNavigation(movedTab(navigation, id, 1))}
-              >
-                <ArrowDown aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                aria-label={intl.formatMessage(COPY.remove, { name: nameOf(id) })}
-                onClick={() => setNavigation(withTab(navigation, id, false))}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {navigation.tabs.length > 0 && (
+        <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.entries)}>
+          <h3 className="text-m font-semibold text-on-canvas">
+            {intl.formatMessage(COPY.entries)}
+          </h3>
+          <ol className="flex flex-col gap-2xs">
+            {navigation.tabs.map((id, index) => (
+              <li key={id} className={ROW} data-testid={`nav-entry-${id}`}>
+                <span className="flex-1 text-s text-on-canvas">{screenTitle(id)}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={index === 0}
+                  aria-label={intl.formatMessage(COPY.moveUp, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(movedTab(navigation, id, -1))}
+                >
+                  <ArrowUp aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={index === navigation.tabs.length - 1}
+                  aria-label={intl.formatMessage(COPY.moveDown, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(movedTab(navigation, id, 1))}
+                >
+                  <ArrowDown aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={intl.formatMessage(COPY.remove, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(withTab(navigation, id, false, screens))}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {rest.length > 0 && (
         <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.available)}>
@@ -286,12 +300,12 @@ export function NavigationEditor() {
           <ul className="flex flex-col gap-2xs">
             {rest.map((id) => (
               <li key={id} className={ROW} data-testid={`nav-available-${id}`}>
-                <span className="flex-1 text-s text-on-canvas">{nameOf(id)}</span>
+                <span className="flex-1 text-s text-on-canvas">{screenTitle(id)}</span>
                 <Button
                   variant="outline"
                   size="sm"
-                  aria-label={intl.formatMessage(COPY.add, { name: nameOf(id) })}
-                  onClick={() => setNavigation(withTab(navigation, id, true))}
+                  aria-label={intl.formatMessage(COPY.add, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(withTab(navigation, id, true, screens))}
                 >
                   <Plus aria-hidden="true" />
                 </Button>
@@ -333,10 +347,13 @@ export function NavigationEditor() {
         {bar.kind === 'empty'
           ? intl.formatMessage(COPY.resultEmpty)
           : bar.kind === 'single'
-            ? intl.formatMessage(COPY.resultSingle, { name: nameOf(bar.start!) })
-            : bar.tabs.map((id) => (id === MORE_TAB ? MORE_NAME : nameOf(id))).join(' · ')}
+            ? intl.formatMessage(COPY.resultSingle, { name: screenTitle(bar.start!) })
+            : bar.tabs.map((id) => (id === MORE_TAB ? MORE_NAME : screenTitle(id))).join(' · ')}
         {bar.more.length > 0 && (
-          <> ({intl.formatMessage(COPY.behindMore, { names: bar.more.map(nameOf).join(', ') })})</>
+          <>
+            {' '}
+            ({intl.formatMessage(COPY.behindMore, { names: bar.more.map(screenTitle).join(', ') })})
+          </>
         )}
       </p>
 
@@ -346,6 +363,7 @@ export function NavigationEditor() {
         </p>
       )}
 
+      {offer && <ShippedNote layout={layoutId} />}
       {copied && <p className={NOTE}>{intl.formatMessage(COPY.copied)}</p>}
       {linked !== null && linked.kind !== 'too-long' && (
         <div className="flex flex-col gap-xs">

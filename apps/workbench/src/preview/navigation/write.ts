@@ -3,7 +3,7 @@ import type { Navigation } from '@correctiv/app-core/lib/navigation';
 import docsModule from 'virtual:docs';
 
 import { wbMessage } from '../../i18n/messages';
-import { NAVIGATION_ENDPOINT, NAVIGATION_FILE, NAVIGATION_TARGET } from '../home/names';
+import { NAVIGATION_ENDPOINT, navigationFile, NAVIGATION_TARGET } from '../home/names';
 import { type Format, type SaveResult } from '../home/write';
 import { issueAddress, issueFor, layoutPayload, type Via } from '../submission';
 import { formatNavigationDocument } from './document';
@@ -34,9 +34,9 @@ const COPY = {
   }),
   issueHeading: wbMessage({
     id: 'navigation.issue.heading',
-    defaultMessage: 'Changes to the navigation',
+    defaultMessage: 'Changes to the navigation of the {layout} layout',
     description:
-      'The title of the GitHub issue Submit changes opens for the tab bar, after a fixed tag in square brackets that is not translated. Read in the repository’s issue list.',
+      'The title of the GitHub issue Submit changes opens for the tab bar, after a fixed tag in square brackets that is not translated. {layout} is the layout’s id, such as ship, which is not translated either. Read in the repository’s issue list.',
   }),
   issueLead: wbMessage({
     id: 'navigation.issue.lead',
@@ -54,9 +54,13 @@ const COPY = {
   }),
 };
 
-export async function saveNavigation(navigation: Navigation, format: Format): Promise<SaveResult> {
+export async function saveNavigation(
+  navigation: Navigation,
+  format: Format,
+  layout: string,
+): Promise<SaveResult> {
   try {
-    const response = await fetch(NAVIGATION_ENDPOINT, {
+    const response = await fetch(`${NAVIGATION_ENDPOINT}?layout=${layout}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: formatNavigationDocument(navigation),
@@ -71,16 +75,24 @@ export async function saveNavigation(navigation: Navigation, format: Format): Pr
       const said = body.error ?? format(COPY.http, { status: String(response.status) });
       return { ok: false, message: codes ? format(COPY.refused, { said, codes }) : said };
     }
-    return { ok: true, message: format(COPY.written, { path: body.path ?? NAVIGATION_FILE }) };
+    return {
+      ok: true,
+      message: format(COPY.written, { path: body.path ?? navigationFile(layout) }),
+    };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : String(error) };
   }
 }
 
-export function submitNavigation(navigation: Navigation, format: Format, via?: Via) {
+export function submitNavigation(
+  navigation: Navigation,
+  format: Format,
+  layout: string,
+  via?: Via,
+) {
   const payload = JSON.stringify(JSON.parse(formatNavigationDocument(navigation)));
-  const issue = issueFor('layout', layoutPayload(NAVIGATION_TARGET, payload, via), {
-    heading: format(COPY.issueHeading),
+  const issue = issueFor('layout', layoutPayload(NAVIGATION_TARGET, payload, via, layout), {
+    heading: format(COPY.issueHeading, { layout }),
     lead: format(COPY.issueLead),
   });
   const { href, fits } = issueAddress(docsModule.repo, issue, format(COPY.issueHelp));

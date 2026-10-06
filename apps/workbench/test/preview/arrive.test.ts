@@ -5,14 +5,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { arriveFrom } from '../../src/preview/arrive';
 import { formatLayoutDocument, SHIPPED, withHidden } from '../../src/preview/home/document';
-import { layoutKey } from '../../src/preview/home/names';
-import { NAVIGATION_KEY, NAVIGATION_TARGET } from '../../src/preview/home/names';
-import { shippedOf } from '../../src/preview/home/screens';
 import {
-  formatNavigationDocument,
-  SHIPPED_NAVIGATION,
-  withMaxTabs,
-} from '../../src/preview/navigation/document';
+  layoutDraftKey,
+  LAYOUT_SET_KEY,
+  navigationDraftKey,
+  NAVIGATION_TARGET,
+} from '../../src/preview/home/names';
+import { shippedNavigationOf, shippedOf as shippedIn } from '../../src/preview/home/screens';
+import { formatNavigationDocument, withMaxTabs } from '../../src/preview/navigation/document';
 import {
   getNavigation,
   navigationIncoming,
@@ -20,11 +20,12 @@ import {
 } from '../../src/preview/navigation/store';
 import {
   discardScreens,
-  customScreenIds,
   getLayout,
   getScreen,
   incomingOf,
   noticeOf,
+  screenIds,
+  selectLayout,
   setLayout,
   setScreen,
 } from '../../src/preview/home/store';
@@ -43,6 +44,23 @@ import { getState, set } from '../../src/preview/store';
  * The links are built by `shareLink` rather than written out, so the test cannot drift from
  * what the tool actually produces: the arrival has to open what the button makes.
  */
+/** These tests are about documents, so they read `demo`'s: the tool opens on `ship`, which is empty. */
+const shippedOf = (screen: string) => shippedIn(screen, 'demo');
+const SHIPPED_NAVIGATION = shippedNavigationOf('demo');
+const HOME_KEY = layoutDraftKey('demo', 'home');
+
+/**
+ * What the machine holds of its own: every key but the frame's. `workbench:layout-set` is
+ * the seam the tool tells the frame the layout through, and it is written whatever arrives,
+ * from what the machine holds; what a link must not do is put ITS draft anywhere
+ * (`frameDraws` below holds that half).
+ */
+const kept = () => Object.keys(window.localStorage).filter((key) => key !== LAYOUT_SET_KEY);
+
+/** The document the frame is told to draw for a screen. */
+const frameDraws = (screen: string): unknown =>
+  JSON.parse(window.localStorage.getItem(LAYOUT_SET_KEY) ?? '{"screens":{}}').screens[screen];
+
 const AT = {
   base: 'https://correctiv.github.io/correctiv-app/preview',
   hash: '#/home?d=ipad-mini',
@@ -63,6 +81,7 @@ const LOCAL = formatLayoutDocument(withHidden(SHIPPED, null, 'tip', true));
 
 beforeEach(() => {
   window.localStorage.clear();
+  selectLayout('demo');
   discardScreens();
   setScreen('home');
   set({ route: '/' });
@@ -70,7 +89,7 @@ beforeEach(() => {
 
 describe('a link carrying a draft, on a machine that holds one of its own', () => {
   it('opens the draft in the tool', async () => {
-    window.localStorage.setItem(layoutKey('home'), LOCAL);
+    window.localStorage.setItem(HOME_KEY, LOCAL);
     expect(await arriveFrom(await linkTo())).toBe(true);
 
     expect(formatLayoutDocument(getLayout())).toBe(DRAFT.document);
@@ -85,26 +104,33 @@ describe('a link carrying a draft, on a machine that holds one of its own', () =
    * work that was never submitted — before anybody has edited a character of it.
    */
   it('writes nothing into the machine it was opened on', async () => {
-    window.localStorage.setItem(layoutKey('home'), LOCAL);
+    window.localStorage.setItem(HOME_KEY, LOCAL);
+    // A page that opens over what an earlier visit left.
+    selectLayout('ship');
+    selectLayout('demo');
     await arriveFrom(await linkTo());
-    expect(window.localStorage.getItem(layoutKey('home'))).toBe(LOCAL);
-    expect(Object.keys(window.localStorage)).toEqual([layoutKey('home')]);
+    expect(window.localStorage.getItem(HOME_KEY)).toBe(LOCAL);
+    expect(kept()).toEqual([HOME_KEY]);
+    // And the frame goes on drawing what the machine holds, not the draft.
+    expect(frameDraws('home')).toEqual(JSON.parse(LOCAL));
   });
 
   it('writes nothing on a machine that held nothing either', async () => {
     await arriveFrom(await linkTo());
-    expect(window.localStorage.getItem(layoutKey('home'))).toBeNull();
-    expect(window.localStorage.length).toBe(0);
+    expect(window.localStorage.getItem(HOME_KEY)).toBeNull();
+    expect(kept()).toEqual([]);
+    expect(frameDraws('home')).toEqual(JSON.parse(formatLayoutDocument(shippedOf('home'))));
   });
 
   /** The moment the draft becomes the editor's own: the first edit, and it publishes. */
   it('publishes the draft on the first edit, and says no longer where it came from', async () => {
-    window.localStorage.setItem(layoutKey('home'), LOCAL);
+    window.localStorage.setItem(HOME_KEY, LOCAL);
     await arriveFrom(await linkTo());
     setLayout(getLayout());
 
     expect(incomingOf('home')).toBe(false);
-    expect(window.localStorage.getItem(layoutKey('home'))).toBe(DRAFT.document);
+    expect(window.localStorage.getItem(HOME_KEY)).toBe(DRAFT.document);
+    expect(frameDraws('home')).toEqual(JSON.parse(DRAFT.document));
   });
 });
 
@@ -136,7 +162,7 @@ describe('a link carrying a draft for a screen the newsroom made (ADR 0075 §7)'
     expect(getScreen()).toBe('kampagne');
     expect(getState().route).toBe('/s/kampagne');
     expect(incomingOf('kampagne')).toBe(true);
-    expect(customScreenIds()).toContain('kampagne');
+    expect(screenIds()).toContain('kampagne');
   });
 });
 
@@ -173,11 +199,11 @@ describe('a link carrying nothing this editor can open', () => {
   });
 
   it('leaves the machine and the tool exactly as they were', async () => {
-    window.localStorage.setItem(layoutKey('home'), LOCAL);
+    window.localStorage.setItem(HOME_KEY, LOCAL);
     const held = formatLayoutDocument(getLayout());
     await arriveFrom('#/home?draft=not-a-draft-at-all');
 
-    expect(window.localStorage.getItem(layoutKey('home'))).toBe(LOCAL);
+    expect(window.localStorage.getItem(HOME_KEY)).toBe(LOCAL);
     expect(formatLayoutDocument(getLayout())).toBe(held);
     expect(incomingOf('home')).toBe(false);
   });
@@ -228,8 +254,8 @@ describe('a link carrying a navigation draft (ADR 0076 §1, the navigation docum
   it('writes nothing into the machine it was opened on', async () => {
     window.localStorage.clear();
     await arriveFrom(await linkTo(navigationDraft));
-    expect(window.localStorage.getItem(NAVIGATION_KEY)).toBeNull();
-    expect(window.localStorage.length).toBe(0);
+    expect(window.localStorage.getItem(navigationDraftKey('demo'))).toBeNull();
+    expect(kept()).toEqual([]);
   });
 
   it('publishes on the first edit, and is the editor’s own from then on', async () => {
@@ -237,7 +263,7 @@ describe('a link carrying a navigation draft (ADR 0076 §1, the navigation docum
     setNavigation(getNavigation());
 
     expect(navigationIncoming()).toBe(false);
-    expect(window.localStorage.getItem(NAVIGATION_KEY)).toBe(navigationDraft.document);
+    expect(window.localStorage.getItem(navigationDraftKey('demo'))).toBe(navigationDraft.document);
   });
 
   it('leaves the tool unchanged and says so for a document it cannot open', async () => {

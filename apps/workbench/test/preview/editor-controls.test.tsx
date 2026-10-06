@@ -5,8 +5,6 @@ import { act, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { ScreenId } from '@correctiv/app-core/lib/screen-layout';
-
 import { MINUTES_IN_DAY, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
 
 import { Localisation } from '../../src/i18n/Localisation';
@@ -15,7 +13,7 @@ import { SOURCE_LANGUAGE } from '../../src/i18n/language';
 import { EditorBar, PointChip } from '../../src/preview/home/Controls';
 import { EDITION_COPY } from '../../src/preview/home/Edition';
 import type { Point } from '../../src/preview/home/document';
-import { SCREEN_NAMES } from '../../src/preview/home/screens';
+import type { ScreensControl } from '../../src/preview/home/CustomScreens';
 import type { ScenarioControl } from '../../src/preview/home/Scenario';
 
 /**
@@ -88,9 +86,24 @@ function draw(node: ReactNode): void {
 
 const byTestId = (id: string): HTMLElement =>
   container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
-const radios = (): HTMLInputElement[] => [
-  ...container.querySelectorAll<HTMLInputElement>('input[name="home-screen"]'),
-];
+const list = (): HTMLButtonElement | null =>
+  container.querySelector<HTMLButtonElement>('button[role="combobox"][aria-label="Screens"]');
+
+/** The titles a screen is listed by, as `screenTitle` would say them for the demo's five. */
+const TITLES: Record<string, string> = {
+  home: 'Home',
+  entdecken: 'Entdecken',
+  mediathek: 'Mediathek',
+  mitmachen: 'Mitmachen',
+  profil: 'Profil',
+};
+
+const SCREENS: ScreensControl = {
+  ids: Object.keys(TITLES),
+  titleOf: (id) => TITLES[id] ?? id,
+  fault: () => null,
+  create: () => null,
+};
 
 afterEach(() => {
   act(() => root.unmount());
@@ -106,6 +119,15 @@ function bar(over: Partial<Parameters<typeof EditorBar>[0]> = {}): ReactNode {
       scenario={SCENARIO}
       follow
       onFollow={() => {}}
+      screens={SCREENS}
+      openScreen={{
+        id: over.screen ?? 'home',
+        words: null,
+        onTitle: () => {},
+        onPreview: () => {},
+        onDelete: () => {},
+      }}
+      deleted={[]}
       {...over}
     />
   );
@@ -144,89 +166,28 @@ describe("the panel's bar", () => {
   });
 });
 
-describe('the screen switcher', () => {
-  it('is one radio group with a segment for every screen the core configures', () => {
-    draw(bar());
-    expect(radios().map((radio) => radio.value)).toEqual([
-      'home',
-      'entdecken',
-      'mediathek',
-      'mitmachen',
-      'profil',
-    ]);
-  });
-
-  it('names every segment, because an icon alone announces nothing', () => {
-    draw(bar());
-    // One object per segment, so a failure names which screen lost its name. Every
-    // one is named by the screen it switches to, four of them by the app's own string
-    // reaching the switcher as it is — `screens.ts` says why.
-    expect(
-      Object.fromEntries(radios().map((r) => [r.value, r.getAttribute('aria-label')])),
-    ).toEqual({
-      home: 'Home',
-      entdecken: SCREEN_NAMES.entdecken,
-      mediathek: SCREEN_NAMES.mediathek,
-      mitmachen: SCREEN_NAMES.mitmachen,
-      profil: SCREEN_NAMES.profil,
-    });
-  });
-
-  it('has the one checked, and the checked one is the screen being edited', () => {
+describe('the screen list', () => {
+  it('is one list, named for what it holds, showing the screen being edited', () => {
     draw(bar({ screen: 'mediathek' }));
-    expect(
-      radios()
-        .filter((radio) => radio.checked)
-        .map((radio) => radio.value),
-    ).toEqual(['mediathek']);
+    expect(list()).not.toBeNull();
+    expect(list()?.textContent).toContain('Mediathek');
   });
 
-  /*
-   * Every segment of this switcher is an icon, so the `p-0` that takes the base padding
-   * back is the whole of its geometry: measured, `padding-left` on a segment was 10px
-   * and its glyph sat 4px right of the middle of its own box, because the merge knew
-   * Tailwind's spacing scale and not this theme's. `test/cn.test.ts` holds that fix from
-   * the merge's side; this holds it from the one place a reader would have seen it.
-   */
-  it('takes the base padding back on an icon segment', () => {
-    draw(bar());
-    const paint = [...container.querySelectorAll<HTMLElement>('span[title]')].map(
-      (span) => span.className,
-    );
-    expect(paint.length).toBeGreaterThan(0);
-    for (const classes of paint) {
-      expect(classes).toContain('p-0');
-      expect(classes).not.toContain('px-xs');
-    }
+  it('holds every screen of the layout alike, whatever it is called', () => {
+    draw(bar({ screens: { ...SCREENS, ids: ['kampagne', 'home'] } }));
+    // The list is a closed control until it is opened; what it was handed is what it can show.
+    expect(list()?.textContent).toContain('Home');
   });
 
-  it('puts the name on the paint as well, for a pointer rather than a screen reader', () => {
-    draw(bar());
-    const titles = [...container.querySelectorAll('span[title]')].map((span) =>
-      span.getAttribute('title'),
-    );
-    expect(titles).toContain('Home');
-    expect(titles).toContain('Mediathek');
-  });
-
-  it('hands the screen that was chosen back to the panel', () => {
-    const chosen: ScreenId[] = [];
-    draw(bar({ onScreen: (next) => chosen.push(next) }));
-    act(() =>
-      radios()
-        .find((radio) => radio.value === 'mediathek')!
-        .click(),
-    );
-    expect(chosen).toEqual(['mediathek']);
+  it('draws no list while the layout has no screen, and still a way to make one', () => {
+    draw(bar({ screens: { ...SCREENS, ids: [] }, openScreen: null }));
+    expect(list()).toBeNull();
+    expect(byTestId('new-screen')).not.toBeNull();
   });
 
   it('switches off while a scenario is open, and says why underneath', () => {
     draw(bar({ guarded: true }));
-    // One `disabled` on the fieldset rather than five on the radios, which is what
-    // `Segmented` does and what makes a disabled group a single thing to a screen
-    // reader as well.
-    const group = radios()[0]?.closest('fieldset');
-    expect(group?.disabled).toBe(true);
+    expect(list()?.disabled).toBe(true);
     expect(container.textContent).toContain('A scenario is a Home document');
   });
 

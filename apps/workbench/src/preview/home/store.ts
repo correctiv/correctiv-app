@@ -1,33 +1,50 @@
 import type { HomeLayout } from '@correctiv/app-core/lib/home-layout';
 import {
   customScreenIdFault,
-  isDeclaredScreen,
   type CustomScreenIdFault,
 } from '@correctiv/app-core/lib/screen-layout';
 
 import { formatNavigationDocument } from '../navigation/document';
-import { getNavigation, subscribeNavigation } from '../navigation/store';
+import {
+  getNavigation,
+  publishNavigation,
+  resetNavigation,
+  restoreNavigation,
+  setNavigation,
+  subscribeNavigation,
+} from '../navigation/store';
+import { activeLayout, setActiveLayout } from './active';
 import { differs, formatLayoutDocument } from './document';
-import { layoutKey } from './names';
 import {
   blankScreen,
-  CONFIGURABLE_SCREENS,
+  fallbackTitle,
   inRepository,
+  isLayout,
   repositoryScreenIds,
+  shippedNavigationOf,
   shippedOf,
   type ScreenId,
 } from './screens';
 import { joinedLength } from './size';
-import { publish, restore, restorable } from './write';
+import {
+  draftedScreens,
+  dropDraft,
+  publishFrame,
+  readDraft,
+  restorable,
+  restore,
+  writeDeletion,
+  writeDraft,
+} from './write';
 
 /**
- * The edited document, held outside the component that renders it.
+ * The edited documents of the open layout, held outside the component that renders them.
  *
  * `preview/store.ts` is the same arrangement one rung up, for a version of the same
- * reason: every write goes into `localStorage` as it happens (`setLayout` calls
- * `publish` before it tells React anything changed), so the framed app is never showing
- * a document this one has moved on from. The browser's own `storage` event cannot serve
- * as the subscription here: it is fired in every same-origin document EXCEPT the one
+ * reason: every write goes into `localStorage` as it happens (`setLayout` keeps the draft
+ * and tells the frame before it tells React anything changed), so the framed app is never
+ * showing a document this one has moved on from. The browser's own `storage` event cannot
+ * serve as the subscription here: it is fired in every same-origin document EXCEPT the one
  * that wrote, which is exactly this one — `useSyncExternalStore` is what lets the panel
  * read a value that changes outside its own render.
  */
@@ -41,6 +58,14 @@ type Listener = () => void;
  * edited", which is what the list, the track and the calendar already asked for when
  * there was one. A document is read from storage the first time its screen is asked for
  * and kept, so a draft on Entdecken survives a visit to Mediathek and back.
+ *
+ * **Of one layout at a time** (ADR 0080): what is held here is the open layout's, and
+ * `selectLayout` drops it. Nothing is lost by that, because every edit is a draft in
+ * storage under its layout's own key before it is anything else.
+ *
+ * `screen` is the id of a screen the layout may not carry: a layout with no screen at all
+ * has to have an answer to "which is open", and `screenExists` is how a panel finds out
+ * that the answer is a placeholder.
  */
 let screen: ScreenId = 'home';
 const layouts = new Map<ScreenId, HomeLayout>();
@@ -58,17 +83,14 @@ type Notice = 'damaged' | null;
 let notice: Notice = null;
 
 /**
- * The custom screens this session knows beyond the repository's and the storage's: one
- * just made, and one that arrived in a link. Their documents are in `layouts`.
+ * The screens this session knows beyond the repository's and the storage's: one that
+ * arrived in a link and is held, not yet written anywhere. Their documents are in `layouts`.
  */
 const session = new Set<string>();
 
-/**
- * Custom screens the repository carries that the person has deleted and not yet submitted.
- * Held for this page's life only: nothing is deleted from the repository until the pull
- * request merges, so a reload shows the screen again, which is the true state.
- */
-const removed = new Set<string>();
+function notify(): void {
+  for (const listener of listeners) listener();
+}
 
 /**
  * Lazy, and not module scope. `restore()` reads `localStorage`, and a module evaluated
@@ -77,61 +99,151 @@ const removed = new Set<string>();
 export function screenLayoutOf(of: ScreenId): HomeLayout {
   let held = layouts.get(of);
   if (!held) {
-    held = restore(of);
+    held = restore(of, activeLayout());
     layouts.set(of, held);
   }
   return held;
 }
 
 /**
- * The custom screens (ADR 0075 §7) the editor can open: the repository's, the ones this
- * browser holds a draft of and the ones made or received this session, each once and in
- * name order, without the ones deleted.
+ * The screens of the open layout, each once and in name order: the repository's, minus the
+ * ones deleted as a draft, plus the ones this browser holds a draft of and the ones received
+ * in a link this session. **Every screen alike** (ADR 0078 §4): there is no list of five.
  *
- * Read from `localStorage` because that is where the frame finds a draft, so what the
- * frame can draw and what this lists are one answer. A key whose document the editor would
- * not open is left out, as `restore` leaves it out.
+ * Read from `localStorage` because that is where the frame's layout is built from, so what
+ * the frame can draw and what this lists are one answer. A key whose document the editor
+ * would not open is left out, as `restore` leaves it out.
  */
-export function customScreenIds(): string[] {
-  const ids = new Set<string>([...repositoryScreenIds(), ...session]);
-  try {
-    const prefix = layoutKey('');
-    for (let at = 0; at < window.localStorage.length; at += 1) {
-      const key = window.localStorage.key(at);
-      if (!key?.startsWith(prefix)) continue;
-      const id = key.slice(prefix.length);
-      if (isDeclaredScreen(id) || customScreenIdFault(id) !== null) continue;
-      if (restorable(JSON.parse(window.localStorage.getItem(key) ?? 'null')) !== null) ids.add(id);
-    }
-  } catch {
-    // No storage, or a key that is not JSON: the repository's and the session's are all there is.
+export function screenIds(): string[] {
+  const layout = activeLayout();
+  const ids = new Set<string>([...repositoryScreenIds(layout), ...session]);
+  for (const drafted of draftedScreens(layout)) {
+    if (drafted.deleted) ids.delete(drafted.id);
+    else ids.add(drafted.id);
   }
-  return [...ids].filter((id) => !removed.has(id)).sort();
+  return [...ids].sort();
 }
 
-/** `customScreenIds` as a string, which is a snapshot `useSyncExternalStore` can compare. */
-export function customScreensSnapshot(): string {
-  return customScreenIds().join('\n');
+/** `screenIds` as a string, which is a snapshot `useSyncExternalStore` can compare. */
+export function screensSnapshot(): string {
+  return screenIds().join('\n');
 }
 
-/** The id and the name of a custom screen, in its own title when it has one. */
+/**
+ * The screens of the open layout the repository carries that the person deleted and has not
+ * yet submitted: a draft like any other, kept in storage, so a reload leaves them deleted
+ * for as long as the draft is kept and Discard takes them back (ADR 0080 §3).
+ */
+export function deletedScreenIds(): string[] {
+  return draftedScreens(activeLayout())
+    .filter((drafted) => drafted.deleted && inRepository(drafted.id))
+    .map((drafted) => drafted.id)
+    .sort();
+}
+
+/** `deletedScreenIds` as a string, for `useSyncExternalStore`. */
+export function deletedSnapshot(): string {
+  return deletedScreenIds().join('\n');
+}
+
+/** Whether the screen being edited is one the layout carries. False for the placeholder of an empty layout. */
+export function screenExists(of: ScreenId = screen): boolean {
+  return screenIds().includes(of);
+}
+
+/** The id and the name of a screen, in its own title when it has one. */
 export function screenTitle(of: ScreenId): string {
-  return screenLayoutOf(of).words?.title.de ?? of;
+  return screenLayoutOf(of).words?.title.de ?? fallbackTitle(of);
 }
 
-/** The core's faults and two of this tool's: the five screens it always holds, and a name in use. */
-export type NewScreenFault = CustomScreenIdFault | 'declared' | 'taken';
+/** The core's faults and one of this tool's: a name in use. */
+export type NewScreenFault = CustomScreenIdFault | 'taken';
 
 /**
  * Why a new screen cannot be called `id`, or null when it can: the core's own rule, and a
- * second reason of this tool's, that the name is taken.
+ * second reason of this tool's, that the name is taken. Nothing else is held back, the five
+ * names of the demo included (ADR 0078 §4).
  */
 export function newScreenFault(id: string): NewScreenFault | null {
   const fault = customScreenIdFault(id);
   if (fault !== null) return fault;
-  // The core allows every well-formed name (ADR 0078 §4); this tool always holds the demo's five.
-  if (isDeclaredScreen(id)) return 'declared';
-  return customScreenIds().includes(id) ? 'taken' : null;
+  return screenIds().includes(id) ? 'taken' : null;
+}
+
+/**
+ * The open screen is one the layout carries, or the first it does: what is open after a
+ * deletion or a change of layout. The id of the placeholder is `home`, for no better
+ * reason than that a layout with nothing in it has to be asked about something.
+ */
+function chooseScreen(): void {
+  const ids = screenIds();
+  if (!ids.includes(screen)) screen = ids[0] ?? 'home';
+}
+
+/**
+ * Tells the frame what the open layout is: its navigation and every screen, as the tool
+ * holds them (ADR 0080 §2). A document that arrived in a link is **not** in it, for the
+ * reason `holdIncoming` gives: the frame keeps drawing what this machine holds.
+ */
+export function publishLayout(): void {
+  const layout = activeLayout();
+  const screens: Record<string, unknown> = {};
+  for (const id of screenIds()) {
+    const held = incoming.has(id);
+    // A screen that is only held from a link, with nothing kept and nothing in the
+    // repository, has no document to draw.
+    if (held && readDraft(layout, id) === null && !inRepository(id, layout)) continue;
+    const document = held ? restore(id, layout) : screenLayoutOf(id);
+    screens[id] = JSON.parse(formatLayoutDocument(document));
+  }
+  publishFrame(layout, JSON.parse(formatNavigationDocument(getNavigation())), screens);
+}
+
+// The navigation is the other half of the layout: the frame follows it too.
+subscribeNavigation(publishLayout);
+
+/**
+ * Drops every draft that has come to equal the repository's file, which is the state each
+ * successful save leaves behind (the file changes, Vite reloads the page, and the draft is
+ * then a copy of it). A draft nobody can tell from the file is a key nobody can see and
+ * nobody clears.
+ */
+function settleDrafts(): void {
+  const layout = activeLayout();
+  // The stored drafts, and never what is held: a document that arrived in a link is not
+  // this machine's to write (`holdIncoming`).
+  for (const drafted of draftedScreens(layout)) {
+    const draft = readDraft(layout, drafted.id);
+    if (draft !== null && draft !== 'deleted') writeDraft(layout, drafted.id, draft);
+  }
+  publishNavigation(restoreNavigation());
+}
+
+/** The layout the tool is on. */
+export function getLayoutId(): string {
+  return activeLayout();
+}
+
+/**
+ * Opens another layout: the documents held are dropped (each is a draft in storage already),
+ * the open screen is the first the new layout carries, and the frame is told the new layout
+ * whole. An id that is no folder is no layout, and the tool stays where it is.
+ */
+export function selectLayout(next: string): boolean {
+  if (!isLayout(next)) return false;
+  if (next !== activeLayout()) {
+    setActiveLayout(next);
+    layouts.clear();
+    incoming.clear();
+    session.clear();
+    notice = null;
+    resetNavigation();
+  }
+  settleDrafts();
+  chooseScreen();
+  publishLayout();
+  notify();
+  return true;
 }
 
 /**
@@ -143,47 +255,53 @@ export function createScreen(id: string, title: string): NewScreenFault | null {
   if (fault !== null) return fault;
   const layout = blankScreen(title.trim());
   layouts.set(id, layout);
-  session.add(id);
-  removed.delete(id);
-  publish(layout, id);
+  writeDraft(activeLayout(), id, layout);
   screen = id;
   incoming.delete(id);
   notice = null;
-  for (const listener of listeners) listener();
+  publishLayout();
+  notify();
   return null;
 }
 
 /**
- * Takes a custom screen away from the editor and from the frame, and opens Home.
+ * Takes a screen away from the editor, the frame and the navigation, and opens the next.
  *
- * The screen's file stays in the repository until a submission deletes it (`deletion` in
- * `./write.ts` opens that), so a screen the repository carries is held as removed for this
- * page and comes back on a reload. A screen that was only ever a draft is gone for good.
+ * **A draft until it is submitted.** The file stays in the repository until a submission
+ * merges (`deletion` in `./write.ts` opens that), so a screen the repository carries is
+ * marked deleted in storage: a reload leaves it deleted for as long as the draft is kept,
+ * and Discard brings it back. A screen that was only ever a draft is gone for good. The
+ * navigation drops the tab, because the check refuses a tab that names no screen.
  */
 export function deleteScreen(of: ScreenId): void {
-  if (isDeclaredScreen(of)) return;
   layouts.delete(of);
   session.delete(of);
   incoming.delete(of);
-  try {
-    window.localStorage.removeItem(layoutKey(of));
-  } catch {
-    // Site data switched off: there was nothing to remove.
+  writeDeletion(activeLayout(), of);
+  const navigation = getNavigation();
+  if (navigation.tabs.includes(of)) {
+    setNavigation({ ...navigation, tabs: navigation.tabs.filter((tab) => tab !== of) });
   }
-  if (inRepository(of)) removed.add(of);
-  if (screen === of) screen = 'home';
-  for (const listener of listeners) listener();
+  chooseScreen();
+  publishLayout();
+  notify();
 }
 
-/**
- * Puts every custom screen the repository carries where the frame looks.
- *
- * Declared screens need no copy, the app bundles them and `publish` removes a document
- * equal to its own. A custom screen has no bundled document, so without a draft written
- * here the frame would answer `/s/<id>` with its not-found page for a screen that exists.
- */
-export function publishCustomScreens(): void {
-  for (const id of customScreenIds()) publish(screenLayoutOf(id), id);
+/** Takes a deletion back: the screen is the repository's again, as it was before the draft. */
+export function restoreScreen(of: ScreenId): void {
+  dropDraft(activeLayout(), of);
+  layouts.delete(of);
+  // And its tab, where the repository's navigation had it: deleting the screen took it off.
+  const navigation = getNavigation();
+  const at = shippedNavigationOf().tabs.indexOf(of);
+  if (at !== -1 && !navigation.tabs.includes(of)) {
+    const tabs = [...navigation.tabs];
+    tabs.splice(Math.min(at, tabs.length), 0, of);
+    setNavigation({ ...navigation, tabs });
+  }
+  screen = of;
+  publishLayout();
+  notify();
 }
 
 /** The document of the screen being edited. */
@@ -209,10 +327,11 @@ export function subscribeLayout(listener: Listener): () => void {
 
 export function setLayout(next: HomeLayout): void {
   layouts.set(screen, next);
-  publish(next, screen);
+  writeDraft(activeLayout(), screen, next);
   incoming.delete(screen);
   notice = null;
-  for (const listener of listeners) listener();
+  publishLayout();
+  notify();
 }
 
 /**
@@ -248,10 +367,7 @@ export function holdIncoming(of: ScreenId, document: string): boolean {
     return false;
   }
   layouts.set(of, parsed);
-  if (!isDeclaredScreen(of)) {
-    session.add(of);
-    removed.delete(of);
-  }
+  session.add(of);
   incoming.add(of);
   notice = null;
   for (const listener of listeners) listener();
@@ -297,34 +413,34 @@ export function noteDamaged(): void {
 }
 
 /**
- * The screens whose document differs from the file, as one comma-separated string so that
- * it is a snapshot `useSyncExternalStore` can compare. Empty for none.
+ * The screens whose document differs from the repository's, or that were deleted, as one
+ * comma-separated string so that it is a snapshot `useSyncExternalStore` can compare.
+ * Empty for none.
  */
 export function changedScreens(): string {
-  return [...CONFIGURABLE_SCREENS, ...customScreenIds()]
-    .filter((of) => differs(screenLayoutOf(of), shippedOf(of)))
-    .join(',');
+  const layout = activeLayout();
+  return [
+    ...screenIds().filter((of) => differs(screenLayoutOf(of), shippedOf(of, layout))),
+    ...deletedScreenIds(),
+  ].join(',');
 }
 
-/** Puts every screen back to the file the app ships. */
+/**
+ * Puts every screen of the open layout back to the file the repository carries: the drafts
+ * and the deletions go, and a screen that was only ever a draft goes with them. So does the
+ * navigation's draft, which a deletion edits.
+ */
 export function discardScreens(): void {
-  for (const of of CONFIGURABLE_SCREENS) {
-    layouts.set(of, shippedOf(of));
-    publish(shippedOf(of), of);
-  }
-  // A custom screen the repository carries goes back to its file; one it does not carry
-  // was never shipped, so discarding it is deleting it.
-  const added = customScreenIds().filter((of) => !inRepository(of));
-  removed.clear();
-  for (const of of added) deleteScreen(of);
-  for (const of of customScreenIds()) {
-    layouts.set(of, shippedOf(of));
-    publish(shippedOf(of), of);
-  }
-  if (!isDeclaredScreen(screen) && !customScreenIds().includes(screen)) screen = 'home';
+  const layout = activeLayout();
+  for (const drafted of draftedScreens(layout)) dropDraft(layout, drafted.id);
+  setNavigation(shippedNavigationOf());
+  layouts.clear();
   incoming.clear();
+  session.clear();
   notice = null;
-  for (const listener of listeners) listener();
+  chooseScreen();
+  publishLayout();
+  notify();
 }
 
 /**
@@ -361,7 +477,7 @@ export function setOpenEdition(id: string | null): void {
  */
 export function joinedDocumentLength(): number {
   const screens: Record<string, string> = {};
-  for (const of of [...CONFIGURABLE_SCREENS, ...customScreenIds()]) {
+  for (const of of screenIds()) {
     screens[of] = formatLayoutDocument(screenLayoutOf(of));
   }
   return joinedLength(screens, formatNavigationDocument(getNavigation()));

@@ -7,6 +7,7 @@ import { useWorkbenchIntl } from '../i18n/Localisation';
 import { Button } from './kit/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
 import { useOneRow } from './header-row';
+import { cn } from '../lib/cn';
 import { href } from '../router';
 import { ToolActions } from './ToolActions';
 
@@ -87,6 +88,8 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
   const bar = useRef<HTMLElement>(null);
   const context = useRef<HTMLDivElement>(null);
   const density = useOneRow([bar, context]);
+  /** From tier 3 the search is its icon alone: the layout and device selects need the width. */
+  const iconOnly = density >= 3;
 
   return (
     <header
@@ -137,8 +140,15 @@ export function Header({ onSearch, onSettings, onFull, children }: Props) {
         aria-label={intl.formatMessage(COPY.search)}
       >
         <SearchIcon aria-hidden="true" />
-        <span className="hidden md:inline">{intl.formatMessage(COPY.searchShort)}</span>
-        <kbd className="hidden rounded-sm border border-stroke px-3xs font-mono text-s md:inline">
+        <span className={cn('hidden', !iconOnly && 'md:inline')}>
+          {intl.formatMessage(COPY.searchShort)}
+        </span>
+        <kbd
+          className={cn(
+            'hidden rounded-sm border border-stroke px-3xs font-mono text-s',
+            !iconOnly && 'md:inline',
+          )}
+        >
           ⌘K
         </kbd>
       </Button>

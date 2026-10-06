@@ -8,6 +8,8 @@ import { isFrameChannel, type FrameChannel } from './frame/channel';
 import { isLocale } from './frame/locale';
 import { TOKENS, type Overrides, type Scheme } from './frame/tokens';
 import { isSpan, type Span } from './home/calendar';
+import { DEFAULT_LAYOUT } from './home/names';
+import { isLayout } from './home/screens';
 import { scenarioNamed } from './scenarios';
 
 /** The app's own appearance setting. `null` means "leave the app alone". */
@@ -104,6 +106,15 @@ export interface PreviewState {
    * tried to hold the answer would be a second copy of a media query.
    */
   timeline: boolean;
+  /**
+   * The layout the workbench edits and the frame shows whole (ADR 0080 §1): a folder under
+   * `data/layouts/`, and `ship`, what the app bundles, unless the address says another. `ly=demo`.
+   *
+   * Two letters like the other keys added since the original five. A name that is no folder
+   * is no layout, the way a junk `tm` is no time: a stale link should still open, and on
+   * the layout readers get.
+   */
+  layout: string;
   /** Colour tokens overridden in the frame, per scheme. */
   overrides: Overrides;
   /** Run the measure checks as soon as the frame settles. */
@@ -125,6 +136,7 @@ export const INITIAL: PreviewState = {
   time: null,
   span: 'day',
   timeline: true,
+  layout: DEFAULT_LAYOUT,
   overrides: {},
   check: false,
 };
@@ -187,6 +199,7 @@ export function fromAddress(address: ShellAddress): PreviewState {
     // Junk is the day, which is what a missing one is.
     span: isSpan(p.get('zm')) ? (p.get('zm') as Span) : 'day',
     timeline: p.get('tl') !== '0',
+    layout: isLayout(p.get('ly')) ? (p.get('ly') as string) : DEFAULT_LAYOUT,
     overrides: parseOverrides(p.get('kl'), p.get('kd')),
     check: p.has('check'),
   };
@@ -241,6 +254,7 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   unlessDefault(p, 'tm', state.time, scenario?.opensAt ?? null);
   if (state.span !== 'day') p.set('zm', state.span);
   if (!state.timeline) p.set('tl', '0');
+  if (state.layout !== DEFAULT_LAYOUT) p.set('ly', state.layout);
   if (state.check) p.set('check', '1');
   const light = writeOverrides(state.overrides, 'light');
   const dark = writeOverrides(state.overrides, 'dark');

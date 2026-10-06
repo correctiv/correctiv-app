@@ -1,18 +1,16 @@
 import { type Navigation } from '@correctiv/app-core/lib/navigation';
 
-import { NAVIGATION_KEY } from '../home/names';
-import {
-  formatNavigationDocument,
-  navigationDiffers,
-  restorableNavigation,
-  SHIPPED_NAVIGATION,
-} from './document';
+import { activeLayout } from '../home/active';
+import { navigationDraftKey } from '../home/names';
+import { shippedNavigationOf } from '../home/screens';
+import { ensureMigrated } from '../home/write';
+import { formatNavigationDocument, navigationDiffers, restorableNavigation } from './document';
 
 /**
- * The edited navigation, held outside the component that renders it and written into the
- * app's storage as it changes: `preview/home/store.ts` is the same arrangement for a
- * screen. Unlike a screen, the app reads the navigation once at its first render, so
- * whoever writes here also has to reload the frame (`NavigationEditor` does).
+ * The edited navigation of the open layout, held outside the component that renders it and
+ * kept in storage as it changes: `preview/home/store.ts` is the same arrangement for a
+ * screen, and is what tells the frame (it listens here and republishes the whole layout,
+ * ADR 0080 §2).
  */
 type Listener = () => void;
 
@@ -21,25 +19,37 @@ let navigation: Navigation | null = null;
 let incoming = false;
 const listeners = new Set<Listener>();
 
-/** Put the navigation where the framed app finds it, or take it away when it is the shipped one. */
+/**
+ * Keep the navigation as the open layout's draft, or drop the draft when it is the layout's
+ * own file: a key that is written once and then matches for ever is a state nobody can see.
+ */
 export function publishNavigation(next: Navigation): void {
+  const key = navigationDraftKey(activeLayout());
   try {
-    if (!navigationDiffers(next)) window.localStorage.removeItem(NAVIGATION_KEY);
-    else window.localStorage.setItem(NAVIGATION_KEY, formatNavigationDocument(next));
+    if (!navigationDiffers(next, shippedNavigationOf())) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, formatNavigationDocument(next));
   } catch {
     // Site data switched off. Nothing can be previewed, and nothing may throw.
   }
 }
 
-/** What an earlier visit left, or the shipped navigation when that is gone or refused. */
+/** What an earlier visit left for the open layout, or its file when that is gone or refused. */
 export function restoreNavigation(): Navigation {
+  ensureMigrated();
   try {
-    const raw = window.localStorage.getItem(NAVIGATION_KEY);
-    if (raw === null) return SHIPPED_NAVIGATION;
-    return restorableNavigation(JSON.parse(raw)) ?? SHIPPED_NAVIGATION;
+    const raw = window.localStorage.getItem(navigationDraftKey(activeLayout()));
+    if (raw === null) return shippedNavigationOf();
+    return restorableNavigation(JSON.parse(raw)) ?? shippedNavigationOf();
   } catch {
-    return SHIPPED_NAVIGATION;
+    return shippedNavigationOf();
   }
+}
+
+/** The open layout has changed: read the navigation of the new one on the next ask. */
+export function resetNavigation(): void {
+  navigation = null;
+  incoming = false;
+  for (const listener of listeners) listener();
 }
 
 export function getNavigation(): Navigation {

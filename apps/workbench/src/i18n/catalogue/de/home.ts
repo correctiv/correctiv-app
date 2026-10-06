@@ -176,6 +176,7 @@ export const home: Record<string, string> = {
   // The palette, and the hairline that opens it (`preview/home/Palette.tsx`).
   // `{where}`, `{name}` and `{what}` come out of `preview/home/document.ts` and are
   // German too since that table became descriptors, so these read German through.
+  'home.palette.addFirst': 'Ersten Block hinzufügen',
   'home.palette.addHere': 'Einen Block hinzufügen: {where}',
   'home.palette.title': 'Einen Block hinzufügen',
   'home.palette.lead': 'Der neue Block kommt {where}.',
@@ -210,10 +211,9 @@ export const home: Record<string, string> = {
   'home.document.screen': 'Bildschirm',
   'home.document.screenLocked':
     'Ein Szenario ist ein Dokument der Startseite, deshalb bleibt der Bildschirm auf Home, solange eines offen ist.',
-  'home.screen.home': 'Home',
-  'home.issue.headingScreen': 'Änderungen am Bildschirm {screen}',
-  'home.issue.headingDelete': 'Bildschirm {screen} löschen',
-  'home.custom.more': 'Eigene Bildschirme',
+  'home.issue.headingScreen': 'Änderungen am Bildschirm {screen} im Layout {layout}',
+  'home.issue.headingDelete': 'Bildschirm {screen} im Layout {layout} löschen',
+  'home.custom.more': 'Bildschirme',
   'home.custom.new': 'Neuer Bildschirm',
   'home.custom.idLabel': 'Kennung, z. B. sommer-kampagne',
   'home.custom.titleLabel': 'Titel auf Deutsch',
@@ -224,14 +224,25 @@ export const home: Record<string, string> = {
   'home.custom.fault.tooLong': 'Höchstens {max} Zeichen.',
   'home.custom.fault.malformed':
     'Nur Kleinbuchstaben, Ziffern und einzelne Bindestriche dazwischen.',
-  'home.custom.fault.declared': 'Die App hat schon einen Bildschirm mit diesem Namen.',
   'home.custom.fault.reserved': 'Dieser Name ist für die Tab-Leiste reserviert.',
   'home.custom.fault.taken': 'Es gibt schon einen Bildschirm mit dieser Kennung.',
   'home.custom.fault.titleMissing': 'Geben Sie dem Bildschirm einen deutschen Titel.',
   'home.custom.title': 'Titel',
   'home.custom.preview': '{path} im Rahmen zeigen',
   'home.custom.delete': 'Diesen Bildschirm löschen',
-  'home.custom.deleteSubmit': 'Diesen Bildschirm löschen und die Löschung einreichen',
+  'home.custom.deletedNote':
+    'Nur in diesem Entwurf gelöscht. Die Datei bleibt, bis die Löschung eingereicht ist.',
+  'home.custom.removed': 'Gelöscht: „{title}“. Jetzt geöffnet: „{next}“.',
+  'home.custom.removedLast': 'Gelöscht: „{title}“. Dieses Layout hat keinen Bildschirm mehr.',
+  'home.document.shipped':
+    'Das ist das Layout, das die App ausliefert. Sobald diese Änderung übernommen und veröffentlicht ist, sehen die Leser sie.',
+  'home.layout.ship': 'Ausgeliefert',
+  'home.layout.demo': 'Demo',
+  'home.custom.restore': 'Wiederherstellen',
+  'home.custom.restoreNamed': '{title} wiederherstellen',
+  'home.custom.submitDeletion': 'Löschung von {id} einreichen',
+  'home.document.layoutEmpty':
+    'Dieses Layout hat keinen Bildschirm. Die App zeigt ihren Leerzustand. Legen Sie mit dem Plus oben einen an.',
   'home.issue.leadLayout':
     'Diese Änderung an einem Bildschirm kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, auf den dieses Issue verweist. Bitte lassen Sie den Block darunter unverändert.',
   'home.document.scenarioGuard': 'Szenarien sind Beispiele. Sie werden nicht eingereicht.',
@@ -322,9 +333,6 @@ export const home: Record<string, string> = {
 
   // The issue Submit changes opens (`preview/home/write.ts`). „Create“ is GitHub's own
   // button, which GitHub labels in English, so it is quoted as it reads there.
-  'home.issue.heading': 'Änderungen an der Startseite',
-  'home.issue.lead':
-    'Diese Änderung an der Startseite kommt aus der Workbench. Klicken Sie unten auf „Create“. Danach entsteht automatisch ein Pull Request, und dieses Issue verlinkt ihn. Bitte lassen Sie den Block darunter, wie er ist.',
   'home.issue.help':
     'Die Änderung war zu lang für den Link. Sie liegt deshalb in Ihrer Zwischenablage. Löschen Sie diesen Text, fügen Sie die Änderung hier ein (Strg+V, auf dem Mac Cmd+V) und klicken Sie auf „Create“.',
 };

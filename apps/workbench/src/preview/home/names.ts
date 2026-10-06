@@ -61,8 +61,9 @@ export const HOME_LAYOUT_ENDPOINT = '/__workbench/home-layout';
 export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/layouts/demo/screens/home.json';
 
 /**
- * Where the app looks for a screen's document: Home keeps the key it always had, every
- * other screen takes `workbench:layout:<screen>`.
+ * Where the app looks for ONE screen's document: Home keeps the key it always had, every
+ * other screen takes `workbench:layout:<screen>`. **Older than layouts, and read by this tool
+ * only to move a draft out of it** (`migrateLegacy`); the frame is told by `LAYOUT_SET_KEY`.
  *
  * The same rule as `layoutOverrideKey()` in `apps/mobile/src/lib/home/layout.ts`, spelled
  * a second time for the reason `HOME_LAYOUT_KEY` is, and held to it by
@@ -71,6 +72,30 @@ export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/layouts/demo/screens
  */
 export function layoutKey(screen: string): string {
   return screen === 'home' ? HOME_LAYOUT_KEY : `workbench:layout:${screen}`;
+}
+
+/**
+ * Where the app looks for a whole layout: the navigation and every screen of the one the
+ * workbench has chosen, as one JSON text. The same string as `LAYOUT_SET_KEY` in
+ * `apps/mobile/src/lib/home/layout.ts`, held by `test/preview/home-document.test.ts` for the
+ * reason `HOME_LAYOUT_KEY` is: a spelling that drifts is a frame that quietly shows the
+ * bundle. The workbench writes this key and only this one (ADR 0080); the per-screen keys
+ * above are the app's older seam and are read here once, by `migrateLegacy`.
+ */
+export const LAYOUT_SET_KEY = 'workbench:layout-set';
+
+/**
+ * Where this tool keeps the draft of one screen of one layout. **The tool's own record, not
+ * the app's seam**: what the frame draws is `LAYOUT_SET_KEY`, built from these. A screen
+ * id has no colon, so no draft key is another layout's per-screen key.
+ */
+export function layoutDraftKey(layout: string, screen: string): string {
+  return `workbench:layout:${layout}:${screen}`;
+}
+
+/** Where this tool keeps one layout's navigation draft. */
+export function navigationDraftKey(layout: string): string {
+  return `workbench:navigation:${layout}`;
 }
 
 /**
@@ -101,12 +126,17 @@ export const FEATURES_FILE = 'packages/app-core/src/features/features.json';
 /** The directory the layouts live in, one folder each: `data/layouts/<layout>/`. */
 export const LAYOUTS_DIR = 'packages/app-core/src/data/layouts';
 
-/**
- * The layout the workbench edits until it can choose one (ADR 0078 §7): the one with
- * something in it. `ship` is what the app bundles and is empty, so nothing is edited there
- * by default.
- */
+/** The layout the app bundles and the store ships (ADR 0078 §2). */
+export const SHIP_LAYOUT = 'ship';
+
+/** The layout with something in it (ADR 0078 §2), and the one a document of no layout meant. */
 export const DEMO_LAYOUT = 'demo';
+
+/**
+ * The layout the workbench opens on: what the app ships, so that what is edited and what
+ * is submitted are by default what readers get (ADR 0080 §1).
+ */
+export const DEFAULT_LAYOUT = SHIP_LAYOUT;
 
 /** The directory one layout's documents live in, with `screens/` and the navigation under it. */
 export function layoutDir(layout: string = DEMO_LAYOUT): string {

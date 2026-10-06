@@ -22,7 +22,7 @@ const COPY = defineMessages({
     id: 'scenarios.label',
     defaultMessage: 'Scenario',
     description:
-      'The name of the select that opens a named example of the home screen, such as the election night, in the editor and the frame. Read aloud rather than drawn: the select stands in a row of the editor’s bar beside the screen switcher, where its own label would take a row to itself, and the trigger carries the open scenario’s name.',
+      'The name of the select that opens a named example of the home screen, such as the election night, in the editor and the frame. Drawn as a short word before the select in the editor’s bar and read aloud as its name, so the trigger’s “None” answers a question.',
   },
   none: {
     id: 'scenarios.none',
@@ -163,11 +163,10 @@ const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
 /**
  * The list, what the open scenario shows, and the question when opening one would cost work.
  *
- * **A chip beside the screen switcher, not a labelled row of its own.** It lost the
- * visible "Scenario" label to the editor's bar, which has room for one row: the
- * trigger says the open scenario's name, or "None", which is what the label was
- * for, and `aria-label` keeps the group's name for a screen reader and the title
- * for a pointer. What a scenario is stays behind the ⓘ as it was.
+ * **A chip beside the screen switcher, not a labelled row of its own.** The editor's bar has
+ * room for one row, so the label is the short word before the select rather than a line
+ * above it: without it the trigger's "None" read as a control with no subject. What a
+ * scenario is stays behind the ⓘ as it was.
  */
 export function ScenarioBar({ control }: { control: ScenarioControl }) {
   const intl = useWorkbenchIntl();
@@ -177,6 +176,10 @@ export function ScenarioBar({ control }: { control: ScenarioControl }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2xs" data-testid="scenario-bar">
       <div className="flex min-w-0 items-center gap-3xs">
+        {/* Drawn, so “None” reads as the answer to a question and not as a stray control. */}
+        <span aria-hidden="true" className="shrink-0 text-s text-on-canvas-muted">
+          {label}
+        </span>
         <Select
           aria-label={label}
           className="min-w-0 max-w-[9rem]"

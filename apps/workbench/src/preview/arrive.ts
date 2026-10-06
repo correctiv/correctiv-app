@@ -9,11 +9,11 @@
  * an effect nobody can reach from Node (`test/preview/arrive.test.ts` is the test).
  */
 
-import { holdIncoming, noteDamaged, setScreen } from './home/store';
-import { isScreen, routeOf } from './home/screens';
+import { holdIncoming, noteDamaged, selectLayout, setScreen } from './home/store';
+import { isLayout, isScreen, routeOf } from './home/screens';
 import { holdIncomingNavigation } from './navigation/store';
 import { packedIn, unpack } from './share';
-import { NAVIGATION_TARGET } from './home/names';
+import { DEMO_LAYOUT, NAVIGATION_TARGET } from './home/names';
 import { set } from './store';
 
 /**
@@ -42,6 +42,21 @@ export async function arriveFrom(hash: string): Promise<boolean> {
    * The navigation is not a screen and has no frame route of its own: the address the link
    * carries already names the tool, so there is nothing to move, only a document to hold.
    */
+  /*
+   * The layout the draft is of, opened first: switching layouts drops what the editor holds,
+   * and a draft held before it would be dropped with it. A link made before layouts names
+   * none and means `demo` (`unpack`); one naming a folder this build does not have is a link
+   * that cannot be opened.
+   */
+  if (draft !== null) {
+    const layout = draft.layout ?? DEMO_LAYOUT;
+    if (!isLayout(layout)) {
+      noteDamaged();
+      return false;
+    }
+    selectLayout(layout);
+    set({ layout });
+  }
   if (draft?.screen === NAVIGATION_TARGET) {
     if (holdIncomingNavigation(draft.document)) return true;
     noteDamaged();

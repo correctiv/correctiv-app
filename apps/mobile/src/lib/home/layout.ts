@@ -70,6 +70,64 @@ export function layoutOverrideKey(screen: string): string {
 }
 
 /**
+ * Where a whole layout arrives, as opposed to one screen at a time: the workbench's choice of
+ * layout (ADR 0078 §3, ADR 0080). One JSON text, `{ layout, navigation, screens }`, holding the
+ * navigation and **every** screen of the layout being looked at.
+ *
+ * **While it is set it is the layout, whole.** A screen it does not hold is not found, the
+ * bundled and the fetched copies are not consulted, and the navigation is its own: nothing of
+ * another layout shows through, which is what the per-screen keys could not promise, since a
+ * screen they leave out falls back to what this build bundles. Same origin, same seam, same
+ * reasons as the key above; held to the workbench's spelling by
+ * `apps/workbench/test/preview/home-document.test.ts`.
+ */
+export const LAYOUT_SET_KEY = 'workbench:layout-set';
+
+/** What the workbench wrote under `LAYOUT_SET_KEY`, once it is known to be an object of the right shape. */
+export interface LayoutSet {
+  readonly layout: string;
+  readonly navigation: unknown;
+  readonly screens: Readonly<Record<string, unknown>>;
+}
+
+let heldSet: { text: string | null; set: LayoutSet | null } = { text: null, set: null };
+
+/**
+ * The whole-layout override as it stands, or null when there is none or it is not one.
+ *
+ * Cached on the raw text, so that an unchanged text answers the same object, which is what
+ * the per-screen cache below and `useSyncExternalStore` need from it.
+ */
+export function layoutSet(): LayoutSet | null {
+  let text: string | null = null;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      text = window.localStorage.getItem(LAYOUT_SET_KEY);
+    }
+  } catch {
+    text = null;
+  }
+  if (text === heldSet.text) return heldSet.set;
+  let set: LayoutSet | null = null;
+  if (text !== null) {
+    const body = parseText(text);
+    if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
+      const { layout, navigation, screens } = body as Record<string, unknown>;
+      if (
+        typeof layout === 'string' &&
+        typeof screens === 'object' &&
+        screens !== null &&
+        !Array.isArray(screens)
+      ) {
+        set = { layout, navigation, screens: screens as Record<string, unknown> };
+      }
+    }
+  }
+  heldSet = { text, set };
+  return set;
+}
+
+/**
  * A screen's override as it stands, or null.
  *
  * Text rather than a parsed value, because the text is what says whether anything
@@ -210,6 +268,8 @@ export function screenLayout(screen: string): HomeLayout | null {
  * that resolve, so there is no entry to be dangling.
  */
 export function screenIds(): string[] {
+  const set = layoutSet();
+  if (set !== null) return Object.keys(set.screens).filter((id) => screenLayout(id) !== null);
   const named = new Set<string>();
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -230,6 +290,22 @@ export function screenIds(): string[] {
 }
 
 function resolveLayout(screen: string): HomeLayout | null {
+  const set = layoutSet();
+  if (set !== null) {
+    // The layout is whole: what it does not hold is not found, whatever this build bundles.
+    const document = Object.hasOwn(set.screens, screen) ? set.screens[screen] : undefined;
+    const marker = `set:${document === undefined ? '' : JSON.stringify(document)}`;
+    const held = read.get(screen);
+    if (held && held.override === marker && held.fetched === null) return held.layout;
+    let layout: HomeLayout | null = null;
+    if (document !== undefined) {
+      const parsed = parseScreen(document);
+      reportLayoutProblems(parsed.problems);
+      layout = parsed.layout;
+    }
+    read.set(screen, { override: marker, fetched: null, layout });
+    return layout;
+  }
   const override = overrideText(screen);
   const fetched = fetchedText();
   const held = read.get(screen);
@@ -286,6 +362,7 @@ export function subscribeToLayout(listener: () => void, alsoKey?: string): () =>
     if (
       event.key === null ||
       event.key === HOME_LAYOUT_OVERRIDE_KEY ||
+      event.key === LAYOUT_SET_KEY ||
       event.key === alsoKey ||
       event.key.startsWith(prefix)
     ) {

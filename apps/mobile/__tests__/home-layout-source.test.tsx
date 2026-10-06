@@ -39,6 +39,7 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import {
   BUILT_AT,
   HOME_LAYOUT_OVERRIDE_KEY,
+  LAYOUT_SET_KEY,
   LAYOUTS_URL,
   layoutOverrideKey,
   screenIds,
@@ -46,6 +47,7 @@ import {
   useScreenLayout,
   useHomeLayoutRefresh,
 } from '@/lib/home/layout';
+import { decideTabBar } from '@/lib/navigation/tabBar';
 import { coreStore } from '@/lib/store/core';
 
 import { render } from './support/rendering';
@@ -217,6 +219,64 @@ describe('the document Home draws', () => {
 
   it('is the bundled one again when the fetched copy was published before this build', () => {
     holdFetched(FETCHED, BUILT_AT - 1);
+    expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
+  });
+});
+
+describe('a whole layout as the override', () => {
+  /** A layout holding the given screens and a navigation listing the given tabs. */
+  function holdSet(screens: Record<string, string>, tabs: string[], layout = 'ship') {
+    storage.set(
+      LAYOUT_SET_KEY,
+      JSON.stringify({
+        layout,
+        navigation: { version: 1, maxTabs: 5, tabs },
+        screens: Object.fromEntries(Object.entries(screens).map(([k, v]) => [k, JSON.parse(v)])),
+      }),
+    );
+  }
+
+  it('holds the layout whole: a screen it lacks is not found, whatever the bundle carries', () => {
+    holdSet({ klima: documentWith('k', 'screen-header') }, ['klima']);
+    expect(ids(screenLayout('klima'))).toEqual(['k']);
+    expect(screenLayout('home')).toBeNull();
+    expect(screenIds()).toEqual(['klima']);
+  });
+
+  it('beats the per-screen override and the fetched copy', () => {
+    holdFetched(FETCHED);
+    storage.set(HOME_LAYOUT_OVERRIDE_KEY, OVERRIDE);
+    holdSet({}, []);
+    expect(screenLayout('home')).toBeNull();
+    storage.delete(LAYOUT_SET_KEY);
+    expect(ids(screenLayout('home'))).toEqual(['override']);
+  });
+
+  it('draws the empty state for a layout with no screen, and its own bar otherwise', () => {
+    holdSet({}, []);
+    expect(decideTabBar().bar.kind).toBe('empty');
+    holdSet({ a: documentWith('a', 'screen-header'), b: documentWith('b', 'screen-header') }, [
+      'a',
+      'b',
+    ]);
+    expect(decideTabBar().bar).toMatchObject({ kind: 'tabs', start: 'a', tabs: ['a', 'b'] });
+  });
+
+  it('leaves a deleted screen off the bar even when the navigation still names it', () => {
+    holdSet({ a: documentWith('a', 'screen-header') }, ['a', 'gone']);
+    expect(decideTabBar().bar).toMatchObject({ kind: 'single', start: 'a' });
+  });
+
+  it('is the empty bar, and not the bundle’s, when its navigation is refused', () => {
+    storage.set(
+      LAYOUT_SET_KEY,
+      JSON.stringify({ layout: 'x', navigation: 'nonsense', screens: {} }),
+    );
+    expect(decideTabBar().bar.kind).toBe('empty');
+  });
+
+  it('is ignored when it is not an object of the right shape', () => {
+    storage.set(LAYOUT_SET_KEY, '[1]');
     expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
   });
 });

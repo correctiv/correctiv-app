@@ -37,11 +37,10 @@ import {
   type SubmissionKind,
 } from '../src/preview/submission';
 import { applyLayout } from '../scripts/submission-layout.ts';
-import {
-  SHIPPED_NAVIGATION,
-  formatNavigationDocument,
-  withMaxTabs,
-} from '../src/preview/navigation/document';
+import { formatNavigationDocument, withMaxTabs } from '../src/preview/navigation/document';
+import { shippedNavigationOf } from '../src/preview/home/screens';
+
+const SHIPPED_NAVIGATION = shippedNavigationOf('demo');
 
 /**
  * ADR 0061: an issue in, one file and a German summary out, or a reason the person can act
