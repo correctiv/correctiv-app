@@ -3,7 +3,7 @@
 Status: accepted, 2026-10-06, built. Carries out the open points 1 and 2 of
 [ADR 0078](0078-layouts-ship-and-demo.md): the tab bar's rules, the empty state and a route
 for any screen. The workbench's choice of layout and a whole layout as an override (points 3
-and 4) are not built.
+and 4) are built by [ADR 0080](0080-the-workbench-chooses-a-layout.md).
 
 ## Context
 
@@ -93,11 +93,12 @@ demo's five.
 
 ## What is not decided
 
-1. **A whole layout as the frame's layout** (ADR 0078 point 4). The frame is the app, which
+1. ~~**A whole layout as the frame's layout** (ADR 0078 point 4). The frame is the app, which
    bundles `ship` and so draws the empty state until an override puts a screen and a navigation
    there; the navigation editor writes its override only when the navigation differs from
-   `demo`'s, so an unedited workbench frame shows the empty state.
-2. **Offering a custom screen to the navigation editor.** It offers the demo's five; the
-   parser takes any id.
+   `demo`'s, so an unedited workbench frame shows the empty state.~~ Built by
+   [ADR 0080](0080-the-workbench-chooses-a-layout.md) §2.
+2. ~~**Offering a custom screen to the navigation editor.** It offers the demo's five; the
+   parser takes any id.~~ Built by [ADR 0080](0080-the-workbench-chooses-a-layout.md) §4.
 3. **Whether the system's bar comes back** where the layout is fixed, which a native tab bar
    could do again if a document never changes at runtime.

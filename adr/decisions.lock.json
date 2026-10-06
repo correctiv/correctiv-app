@@ -803,5 +803,16 @@
       "3": ["The bar follows the documents"],
       "4": ["An id names a screen, whatever it is called"]
     }
+  },
+  "0080": {
+    "slugs": ["the-workbench-chooses-a-layout"],
+    "decisions": {
+      "1": ["The layout is in the address, and `ship` is the default"],
+      "2": ["The frame gets the whole layout under one key"],
+      "3": ["Every screen can be deleted, and a deletion is a draft"],
+      "4": ["The navigation editor offers every screen, and has no minimum of its own"],
+      "5": ["A submission names one layout, and says when it is the shipped one"],
+      "6": ["Drafts are kept per layout, and the old keys are read once"]
+    }
   }
 }
