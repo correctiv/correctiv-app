@@ -1385,6 +1385,22 @@ export function HomeDocument({
               outline={outline}
             />
           ))}
+          {/*
+           * A screen with no block has no join for a mark to sit on, and a new custom screen
+           * starts that way (ADR 0075 §7), so without this one it could never get a first block.
+           */}
+          {layout.sections.length === 0 && carried === null && (
+            <li className="relative" style={{ minHeight: '3rem' }}>
+              <span className="absolute inset-x-0 top-1/2 z-20 -translate-y-1/2">
+                <InsertMark
+                  where={whereAt(intl, layout, 0)}
+                  deviceWidth={deviceWidth}
+                  screen={screen}
+                  onAdd={(module) => setLayout(added(layout, 0, module))}
+                />
+              </span>
+            </li>
+          )}
         </ol>
       </AppHost>
 
