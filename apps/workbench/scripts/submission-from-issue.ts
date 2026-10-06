@@ -20,7 +20,7 @@
  * be committed by accident.
  */
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { applyIssue } from './submission-kinds.ts';
@@ -39,12 +39,16 @@ try {
     read: (file) => readFileSync(join(root, file), 'utf8'),
     list: (dir) => readdirSync(join(root, dir)),
   });
-  for (const { path, content } of applied.files) writeFileSync(join(root, path), content, 'utf8');
+  for (const { path, content } of applied.files) {
+    // A null content is a deletion, which the layout kind asks for a screen the newsroom made.
+    if (content === null) rmSync(join(root, path));
+    else writeFileSync(join(root, path), content, 'utf8');
+  }
   // No shell: the paths are arguments, and every one of them passed `mayWrite`.
   if (applied.format)
     execFileSync(
       join(root, 'node_modules/.bin/oxfmt'),
-      applied.files.map((file) => file.path),
+      applied.files.filter((file) => file.content !== null).map((file) => file.path),
       { cwd: root, stdio: 'inherit' },
     );
   if (process.env.SUBMISSION_SUMMARY_FILE)

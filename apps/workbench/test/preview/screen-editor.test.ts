@@ -20,7 +20,7 @@ import {
   targetFile,
 } from '../../scripts/submission-layout.ts';
 import { Refusal } from '../../scripts/submission.ts';
-import { applyIssue, mayWrite } from '../../scripts/submission-kinds.ts';
+import { applyIssue, KINDS, mayWrite } from '../../scripts/submission-kinds.ts';
 import { formatLayoutDocument, moved, MODULE_LABELS } from '../../src/preview/home/document';
 import {
   layoutFile,
@@ -311,5 +311,102 @@ describe('the layout submission', () => {
     const applied = applyIssue(issue.title, issue.body, repo);
     expect(applied.kind).toBe('layout');
     expect(applied.files.map((file) => file.path)).toEqual([NAVIGATION_FILE]);
+  });
+});
+
+const code = (fn: () => unknown) => {
+  try {
+    fn();
+  } catch (error) {
+    return error instanceof Refusal ? error.code : String(error);
+  }
+  return null;
+};
+
+describe('the layout submission for a screen the newsroom made (ADR 0075 §7)', () => {
+  const campaign = {
+    ...shippedOf('entdecken'),
+    words: { title: { de: 'Kampagne' } },
+  };
+  const document = JSON.stringify(JSON.parse(formatLayoutDocument(campaign)));
+  /** A repository with no file for the screen, which is what `main` has before the pull request. */
+  const without = {
+    read: (path: string) => {
+      if (path === layoutFile('kampagne')) throw new Error('ENOENT');
+      return read(path);
+    },
+    list: () => [] as string[],
+  };
+  /** One that has it. */
+  const withIt = {
+    read: (path: string) =>
+      path === layoutFile('kampagne') ? formatLayoutDocument(campaign) : read(path),
+    list: () => [] as string[],
+  };
+
+  it('creates the file under screens/ from an id the core accepts', () => {
+    const payload = layoutPayload('kampagne', document);
+    const applied = applyLayout(payload, without);
+    expect(applied.file).toBe(layoutFile('kampagne'));
+    expect(applied.content).toBe(formatLayoutDocument(campaign));
+    expect(applied.summary).toContain('Neuer Bildschirm');
+    expect(targetFile(payload)).toBe(`${LAYOUT_DIR}/screens/kampagne.json`);
+    expect(mayWrite('layout', layoutFile('kampagne'))).toBe(true);
+  });
+
+  it('refuses an id the core would not, and a file name the id could not make', () => {
+    for (const id of ['Kampagne', 'a/b', '..', 'a--b', '-a', 'a.json', 'x'.repeat(41), '']) {
+      expect(code(() => applyLayout(layoutPayload(id, document), without))).toBe('layout-target');
+    }
+    expect(mayWrite('layout', `${LAYOUT_DIR}/screens/Kampagne.json`)).toBe(false);
+    expect(mayWrite('layout', `${LAYOUT_DIR}/screens/a/b.json`)).toBe(false);
+    expect(mayWrite('layout', `${LAYOUT_DIR}/other/kampagne.json`)).toBe(false);
+  });
+
+  it('refuses a new screen that has no German title', () => {
+    const nameless = JSON.stringify({
+      ...JSON.parse(document),
+      title: undefined,
+      words: undefined,
+    });
+    expect(code(() => applyLayout(layoutPayload('kampagne', nameless), without))).toBe('refused');
+  });
+
+  it('deletes only a custom screen, and only one that exists', () => {
+    const payload = layoutPayload('kampagne', 'null');
+    const applied = applyLayout(payload, withIt);
+    expect(applied.content).toBeNull();
+    expect(applied.file).toBe(layoutFile('kampagne'));
+    expect(applied.summary).toContain('gelöscht');
+    expect(code(() => applyLayout(payload, without))).toBe('unchanged');
+    for (const target of ['entdecken', 'home', 'navigation'])
+      expect(code(() => applyLayout(layoutPayload(target, 'null'), withIt))).toBe('layout-target');
+  });
+
+  it('proves a created file as untracked, a deleted one as deleted, and nothing else', () => {
+    const create = layoutPayload('kampagne', document);
+    const remove = layoutPayload('kampagne', 'null');
+    const file = layoutFile('kampagne');
+    const verify = (payload: string, status: string, path = file) =>
+      KINDS.layout!.verify(payload, [{ status, path }], {
+        before: read,
+        after: read,
+        list: () => [],
+      });
+    expect(verify(create, '??')).toEqual([]);
+    expect(verify(create, ' M')).toEqual([]);
+    expect(verify(create, ' D')).not.toEqual([]);
+    expect(verify(remove, ' D')).toEqual([]);
+    expect(verify(remove, '??')).not.toEqual([]);
+    expect(verify(create, '??', layoutFile('profil'))).not.toEqual([]);
+  });
+
+  it('goes the whole way from an issue to a created file', () => {
+    const issue = issueFor('layout', layoutPayload('kampagne', document), {
+      heading: 'Kampagne',
+      lead: 'Lead',
+    });
+    const applied = applyIssue(issue.title, issue.body, without);
+    expect(applied.files.map((file) => file.path)).toEqual([layoutFile('kampagne')]);
   });
 });
