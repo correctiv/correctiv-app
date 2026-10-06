@@ -9,7 +9,7 @@ import { isDeclaredScreen, type ScreenId } from '@correctiv/app-core/lib/screen-
 import docsModule from 'virtual:docs';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
-import { issueAddress, issueFor, layoutPayload } from '../submission';
+import { homePayload, issueAddress, issueFor, layoutPayload, type Via } from '../submission';
 import { differs, formatLayoutDocument, HOME_LAYOUT_ENDPOINT } from './document';
 import { layoutKey } from './names';
 import { SCREEN_NAMES, shippedOf } from './screens';
@@ -259,7 +259,12 @@ export interface Submit {
   body: string;
 }
 
-export function submission(layout: HomeLayout, format: Format, screen: ScreenId = 'home'): Submit {
+export function submission(
+  layout: HomeLayout,
+  format: Format,
+  screen: ScreenId = 'home',
+  via?: Via,
+): Submit {
   // Minified: the printed document spends most of its address on indentation, measured
   // at 2,112 against 1,320 encoded characters for the shipped day. CI prints it again
   // with `formatLayoutDocument`, so what reaches the repository is formatted either way,
@@ -273,7 +278,7 @@ export function submission(layout: HomeLayout, format: Format, screen: ScreenId 
   const name = isDeclaredScreen(screen) ? SCREEN_NAMES[screen] : screen;
   const issue = issueFor(
     home ? 'home' : 'layout',
-    home ? payload : layoutPayload(screen, payload),
+    home ? homePayload(payload, via) : layoutPayload(screen, payload, via),
     {
       heading: home
         ? format(COPY.issueHeading)

@@ -27,9 +27,10 @@ import {
   NAVIGATION_TARGET,
 } from '../src/preview/home/names.ts';
 import { formatLayoutDocument } from '../src/preview/home/document.ts';
+import { VIA_LINK, type Via } from '../src/preview/submission.ts';
 import { checkNavigation, formatNavigationDocument } from '../src/preview/navigation/document.ts';
 import type { Repo } from './submission-strings.ts';
-import { Refusal, RENDERABLE, shown } from './submission.ts';
+import { Refusal, RENDERABLE, shown, withProvenance } from './submission.ts';
 
 /** The screens this kind writes: all of them but Home. */
 const SCREENS = CONFIGURABLE_SCREENS.filter((screen) => screen !== 'home');
@@ -57,7 +58,11 @@ export function mayWriteLayout(path: string): boolean {
   return isDeclaredScreen(id) ? id !== 'home' : isCustomTarget(id);
 }
 
-function readEnvelope(payload: string): { target: string; document: unknown } {
+function readEnvelope(payload: string): {
+  target: string;
+  document: unknown;
+  via: Via | undefined;
+} {
   let envelope: unknown;
   try {
     envelope = JSON.parse(payload);
@@ -71,14 +76,20 @@ function readEnvelope(payload: string): { target: string; document: unknown } {
     Array.isArray(record) ||
     typeof record['target'] !== 'string' ||
     !Object.hasOwn(record, 'document') ||
-    Object.keys(record).length !== 2
+    Object.keys(record).length !== (Object.hasOwn(record, 'via') ? 3 : 2)
   )
     throw new Refusal('layout-target');
+  // The one provenance there is (ADR 0076 §3). Anything else is refused and never printed.
+  if (Object.hasOwn(record, 'via') && record['via'] !== VIA_LINK) throw new Refusal('provenance');
   if (fileOf(record['target']) === null) throw new Refusal('layout-target', record['target']);
   // Only a custom screen is deleted, and `navigation` and the declared screens are not.
   if (record['document'] === null && !isCustomTarget(record['target']))
     throw new Refusal('layout-target', record['target']);
-  return { target: record['target'], document: record['document'] };
+  return {
+    target: record['target'],
+    document: record['document'],
+    via: Object.hasOwn(record, 'via') ? VIA_LINK : undefined,
+  };
 }
 
 /** Whether the payload deletes its target's file rather than writing it. */
@@ -108,6 +119,11 @@ function readOrNull(repo: Repo, file: string): string | null {
 }
 
 export function applyLayout(payload: string, repo: Repo): AppliedLayout {
+  const applied = applyEnvelope(payload, repo);
+  return { ...applied, summary: withProvenance(applied.summary, readEnvelope(payload).via) };
+}
+
+function applyEnvelope(payload: string, repo: Repo): AppliedLayout {
   const { target, document } = readEnvelope(payload);
   const file = fileOf(target)!;
 

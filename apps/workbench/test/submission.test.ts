@@ -11,6 +11,7 @@ import { applyIssue, KINDS } from '../scripts/submission-kinds.ts';
 import {
   applyHome,
   longestCommonRun,
+  PROVENANCE_LINK,
   plain,
   readSubmission,
   Refusal,
@@ -27,7 +28,20 @@ import {
   withMoment,
   withSetting,
 } from '../src/preview/home/document';
-import { issueFor, SUBMISSION_KINDS, type SubmissionKind } from '../src/preview/submission';
+import {
+  homePayload,
+  issueFor,
+  layoutPayload,
+  SUBMISSION_KINDS,
+  VIA_LINK,
+  type SubmissionKind,
+} from '../src/preview/submission';
+import { applyLayout } from '../scripts/submission-layout.ts';
+import {
+  SHIPPED_NAVIGATION,
+  formatNavigationDocument,
+  withMaxTabs,
+} from '../src/preview/navigation/document';
 
 /**
  * ADR 0061: an issue in, one file and a German summary out, or a reason the person can act
@@ -369,6 +383,68 @@ describe('what the review of #252 got through', () => {
 });
 
 /**
+ * Where a draft came from (ADR 0076 §3). The sentence is the issue's claim and the pull
+ * request words it as one, it is fixed text with nothing of the issue in it, and the only
+ * value that makes it appear is the one the workbench writes.
+ */
+describe('a draft that arrived by a link', () => {
+  const printed = JSON.stringify(JSON.parse(formatLayoutDocument(EDITED)));
+  const navigation = JSON.stringify(withMaxTabs(SHIPPED_NAVIGATION, 3));
+  const repo = {
+    read: (file: string) => {
+      if (file.endsWith('navigation.json')) return formatNavigationDocument(SHIPPED_NAVIGATION);
+      if (file === SUBMISSION_KINDS.home.file) return CURRENT;
+      throw new Error(`unexpected read of ${file}`);
+    },
+    list: () => [] as string[],
+  };
+
+  it('opens a home pull request with the sentence, above the changes', () => {
+    const applied = applyHome(homePayload(printed, VIA_LINK), CURRENT);
+    expect(applied.summary.startsWith(PROVENANCE_LINK)).toBe(true);
+    expect(applied.summary).toContain('„Aufmacher“ (`hero`) ist zu Tagesbeginn ausgeblendet.');
+    expect(applied.content).toBe(formatLayoutDocument(EDITED));
+  });
+
+  it('opens a layout pull request with it, for the navigation as for a screen', () => {
+    const applied = applyLayout(layoutPayload('navigation', navigation, VIA_LINK), repo);
+    expect(applied.summary.startsWith(PROVENANCE_LINK)).toBe(true);
+    expect(applied.summary).toContain('### Was sich an der Navigation ändert');
+  });
+
+  it('says nothing when the draft was the person’s own', () => {
+    expect(applyHome(homePayload(printed), CURRENT).summary).not.toContain(PROVENANCE_LINK);
+    expect(applyHome(printed, CURRENT).summary).not.toContain('Link');
+    expect(applyLayout(layoutPayload('navigation', navigation), repo).summary).not.toContain(
+      PROVENANCE_LINK,
+    );
+  });
+
+  it('writes the same file with or without it', () => {
+    expect(applyHome(homePayload(printed, VIA_LINK), CURRENT).content).toBe(
+      applyHome(printed, CURRENT).content,
+    );
+  });
+
+  it('refuses any origin but the one the workbench writes, and never prints it', () => {
+    const odd = `{"document":${printed},"via":"mail <script>"}`;
+    expect(refusal(() => applyHome(odd, CURRENT))).toBe('provenance');
+    const envelope = `{"target":"navigation","document":${navigation},"via":"mail"}`;
+    expect(refusal(() => applyLayout(envelope, repo))).toBe('provenance');
+    expect(refusalText(refusedWith(() => applyHome(odd, CURRENT)))).not.toContain('script');
+  });
+
+  it('still refuses an envelope with a key it does not know', () => {
+    const extra = `{"target":"navigation","document":${navigation},"via":"link","note":"x"}`;
+    expect(refusal(() => applyLayout(extra, repo))).toBe('layout-target');
+  });
+
+  it('is not read as a wrapper when the pair of keys is a home document’s own', () => {
+    expect(refusal(() => applyHome(`{"document":${printed}}`, CURRENT))).toBe('refused');
+  });
+});
+
+/**
  * The workflow, read as text. Two things are held here, and each is the kind of mistake
  * that looks right in review.
  */
@@ -417,6 +493,12 @@ describe('.github/workflows/submission.yml', () => {
    * a step output carries issue text just as well, and a rule with exceptions is the one
    * somebody extends.
    */
+  it('carries the origin through the summary alone, and has no wording of its own for it', () => {
+    expect(text).not.toContain(PROVENANCE_LINK);
+    expect(text).not.toMatch(/\bvia\b/);
+    expect(text).toContain('submission-summary.md');
+  });
+
   it('puts no expression inside any run: or script:', () => {
     const found = blocks().filter((block) => block.key !== 'if');
     expect(found.filter((block) => block.key === 'run').length).toBeGreaterThanOrEqual(5);

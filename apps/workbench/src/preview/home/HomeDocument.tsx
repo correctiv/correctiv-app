@@ -134,6 +134,7 @@ import { readSize } from './size';
 import { copyNow } from '../clipboard';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { SHARE_COPY } from '../shareCopy';
+import { VIA_LINK } from '../submission';
 import { canSave, deletion, publish, save, submission, type SaveResult } from './write';
 
 /**
@@ -1011,7 +1012,13 @@ export function HomeDocument({
     dirty && !guarded
       ? nameless
         ? null
-        : submission(layout, (message, values) => intl.formatMessage(message, values), screen)
+        : submission(
+            layout,
+            (message, values) => intl.formatMessage(message, values),
+            screen,
+            // Still the document a link brought and nothing written to since (ADR 0076 §3).
+            incoming ? VIA_LINK : undefined,
+          )
       : null;
 
   useToolActions('home', {

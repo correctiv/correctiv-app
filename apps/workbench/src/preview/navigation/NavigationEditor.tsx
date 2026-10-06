@@ -14,6 +14,7 @@ import { copyNow } from '../clipboard';
 import { noticeOf, subscribeLayout } from '../home/store';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { SHARE_COPY } from '../shareCopy';
+import { VIA_LINK } from '../submission';
 import { NAVIGATION_TARGET } from '../home/names';
 import { SCREEN_NAMES } from '../home/screens';
 import { canSave } from '../home/write';
@@ -176,7 +177,10 @@ export function NavigationEditor({ onReload }: { onReload: () => void }) {
   const dirty = navigationDiffers(navigation);
   const problems = problemsOf(navigation);
   const bar = barOf(navigation);
-  const offer = dirty && problems.length === 0 ? submitNavigation(navigation, format) : null;
+  const offer =
+    dirty && problems.length === 0
+      ? submitNavigation(navigation, format, incoming ? VIA_LINK : undefined)
+      : null;
   const rest = unused(navigation);
 
   const share = async () => {

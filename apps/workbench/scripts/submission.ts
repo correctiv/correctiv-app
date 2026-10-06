@@ -56,7 +56,9 @@ import {
   kindOfTitle,
   SUBMISSION_FENCE,
   SUBMISSION_KINDS,
+  VIA_LINK,
   type SubmissionKind,
+  type Via,
 } from '../src/preview/submission.ts';
 
 // --- refusals ---------------------------------------------------------------------
@@ -75,6 +77,7 @@ export type RefusalCode =
   | 'refused'
   | 'unchanged'
   | 'layout-target'
+  | 'provenance'
   | 'features-payload'
   | 'features-refused'
   | 'not-wordings'
@@ -141,6 +144,8 @@ export function refusalText(refusal: Refusal): string {
       return 'Die eingereichte Startseite ist dieselbe, die schon im Repository steht. Es gibt nichts zu ändern.';
     case 'layout-target':
       return `Der Block im Issue ist kein Dokument, wie die Workbench es für einen Bildschirm oder die Navigation schreibt: Erwartet ist ein Objekt mit \`target\` und \`document\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'provenance':
+      return `Die Herkunft (\`via\`) im Block des Issues ist keine, die die Workbench schreibt: Erlaubt ist nur \`link\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'features-payload':
       return `Der Block im Issue ist keine Freigabe, wie die Workbench sie schreibt: Erwartet ist ein Objekt mit \`groups\` und/oder \`features\`, je aus Feature-ID und Zustand (\`aus\`, \`vorschau\` oder \`an\`). Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'features-refused':
@@ -255,6 +260,8 @@ export function applyHome(payload: string, current: string): AppliedHome {
   } catch (error) {
     throw new Refusal('not-json', error instanceof Error ? error.message : String(error));
   }
+  const wrapped = unwrapHome(document);
+  document = wrapped.document;
 
   const { layout, problems } = parseHomeLayout(document, RENDERABLE);
   if (!layout || layout.sections.length === 0 || problems.length > 0) {
@@ -269,8 +276,41 @@ export function applyHome(payload: string, current: string): AppliedHome {
   return {
     file: SUBMISSION_KINDS.home.file,
     content,
-    summary: summariseHome(before, layout),
+    summary: withProvenance(summariseHome(before, layout), wrapped.via),
   };
+}
+
+/**
+ * The sentence a pull request carries for a draft that arrived by a shared link. Fixed
+ * text with nothing from the issue in it, and worded as what it is: the issue's own claim.
+ */
+export const PROVENANCE_LINK =
+  '> Der Entwurf kam laut Einreichung über einen geteilten Link und wurde vor dem Einreichen nicht bearbeitet. Wer ihn gebaut hat, steht hier nicht, nur dass ihn jemand weitergegeben hat.';
+
+/** The summary with its provenance, which a reviewer reads before the list of changes. */
+export function withProvenance(summary: string, via: Via | undefined): string {
+  return via === VIA_LINK ? `${PROVENANCE_LINK}\n\n${summary}` : summary;
+}
+
+/**
+ * A home payload's document, and where it came from. The wrapper is exactly
+ * `{ document, via }`: any other pair of keys is a home document and is read as one, so the
+ * parser says what is wrong with it rather than this saying it is not a wrapper.
+ */
+export function unwrapHome(payload: unknown): { document: unknown; via: Via | undefined } {
+  const record = payload as Record<string, unknown> | null;
+  if (
+    typeof record === 'object' &&
+    record !== null &&
+    !Array.isArray(record) &&
+    Object.keys(record).length === 2 &&
+    Object.hasOwn(record, 'document') &&
+    Object.hasOwn(record, 'via')
+  ) {
+    if (record['via'] !== VIA_LINK) throw new Refusal('provenance');
+    return { document: record['document'], via: VIA_LINK };
+  }
+  return { document: payload, via: undefined };
 }
 
 /** Every module the app can draw, as the editor names them. */
