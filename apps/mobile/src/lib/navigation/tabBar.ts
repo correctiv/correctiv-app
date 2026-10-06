@@ -4,6 +4,8 @@ import { isReachable } from '@correctiv/app-core/features/features';
 import {
   chooseTabBar,
   MORE_TAB,
+  NAVIGATION_VERSION,
+  MAX_TABS,
   reportNavigationProblems,
   type TabBar,
   type TabBarChoice,
@@ -16,7 +18,7 @@ import {
 } from '@correctiv/app-core/lib/screen-layout';
 import { fetchedLayouts } from '@correctiv/app-core/stores/homeLayout';
 
-import { BUILT_AT, screenIds, screenLayout, subscribeToLayout } from '@/lib/home/layout';
+import { BUILT_AT, layoutSet, screenIds, screenLayout, subscribeToLayout } from '@/lib/home/layout';
 import { tabReachable } from '@/lib/features';
 import { coreStore } from '@/lib/store/core';
 
@@ -63,9 +65,14 @@ function fetchedBody(): unknown {
 function wordsOf(screen: string): ScreenWords | null {
   const drawn = screenLayout(screen)?.words;
   if (drawn !== undefined && drawn !== null) return drawn;
+  // A whole layout is all there is: its screen has no bundled words to fall back to.
+  if (layoutSet() !== null) return null;
   const document = SCREEN_DOCUMENTS[screen];
   return document === undefined ? null : parseScreenDocument(document).words;
 }
+
+/** A navigation with no entry, which a whole layout falls back to when its own is refused. */
+const EMPTY_NAVIGATION = { version: NAVIGATION_VERSION, maxTabs: MAX_TABS, tabs: [] };
 
 /** The bar and the words of every screen on it or behind it, taken together. */
 export interface TabBarDecision {
@@ -94,6 +101,17 @@ function choose(body: unknown, unlisted: boolean): TabBarChoice {
     screenLayout(screen) !== null && tabReachable(screen, (id) => isReachable(state, id));
   const fetched = body === undefined ? undefined : navigationDocumentOf(body);
   const problems: TabBarChoice['problems'][number][] = [];
+  const set = layoutSet();
+  if (set !== null) {
+    // The navigation of a whole layout is that layout's, and a refused one is the empty bar,
+    // not the bundled one: the bundle belongs to another layout.
+    return chooseTabBar({
+      candidate: set.navigation,
+      reachable,
+      unlisted,
+      bundled: EMPTY_NAVIGATION,
+    });
+  }
   for (const candidate of [overrideDocument(), fetched]) {
     if (candidate === undefined) continue;
     const tried = chooseTabBar({ candidate, reachable, unlisted });
