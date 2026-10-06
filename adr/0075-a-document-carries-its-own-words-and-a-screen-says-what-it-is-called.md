@@ -1,7 +1,11 @@
 # ADR 0075 — A document carries its own words, and a screen says what it is called
 
-Status: accepted, 2026-10-02, decided by the product side. Built in part, 2026-10-06: §1 to §6 in #328, #330, #333 and
-#336; §7 is not built, there is no `/s/<id>` route and no custom screen yet. It supersedes
+Status: accepted, 2026-10-02, decided by the product side. Built, 2026-10-06: §1 to §6 in #328, #330, #333 and
+#336, and §7 in the changes that followed: the id rule and `/s/<id>` in the app, the link block and the "Mehr"
+entry, the Pages fallback for a path with no file, and in the workbench the editor that makes, names and deletes
+a custom screen and submits it as a `[layout]` issue (ADR 0061 §2 reads a new or deleted
+`screens/<id>.json` as well as a changed one). What is not built: a notification that names a custom screen (open
+item 3 below). A custom screen is not a tab by decision (§7), so that is no gap. It supersedes
 [ADR 0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md) §3
 whole, the clause of
 [ADR 0071](0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md) §4 that has the
@@ -230,6 +234,35 @@ them is a property of the decisions above.
   KiB. That is the figure that actually fails; a second number would be one more thing to
   keep in step, and the workbench warns before a document gets near the first one.
 
+## How §7 was built
+
+**One file per screen, and the submission may create and delete one.** A custom screen is
+`data/layout/screens/<id>.json`, which `join-screen-layouts.ts` already took by directory,
+so the joined document needed no change and `check-screen-layouts.ts` now judges every key
+in it: a declared screen must be there, a custom one must parse with a German title and may
+hold no block, and a key that is no valid id fails the deploy. The `[layout]` kind of
+ADR 0061 §2 takes `{ target, document }` as before; `target` may now be any id the core's
+`customScreenIdFault` accepts, and a `document` of `null` deletes that file. The path is
+still not the issue's text: the id's grammar admits no slash, no dot and no capital, so the
+set of paths is closed by the rule rather than by a list. `navigation` is reserved as an id
+because it is the tab bar's target on the wire. The workflow's proof accepts a created file
+(`??`) and a deleted one (` D`) for that kind alone, and the check step formats what is left
+and then runs the deploy's join and check over the tree as it now is.
+
+**`ConfigurableScreen` stays closed and `ScreenId` is the open one.** Every table keyed by the
+declared screens still fails to compile when one is added and forgotten. Code that takes an id
+from a route, a file name or a link widens to `ScreenId` and narrows with `isDeclaredScreen`
+before it touches one of those tables.
+
+**What the editor does and does not do.** It makes a screen from an id, validated by the core's
+function and told as text, and a German title; edits the title as the `text` setting of §1;
+previews it in the frame at `/s/<id>`; and deletes it. A draft that was never submitted is
+deleted for good. A screen the repository carries is deleted by a submission, a link like Submit
+changes, because the file goes only when the pull request merges, so it is hidden for the page's
+life and comes back on a reload. The dev server's Save writes a custom screen's file but does not
+delete one. Titles of the five declared screens are still not editable there: that stays the
+Screens tool's, which §5 names and nobody has built.
+
 ## Why not the alternatives
 
 **The words stay in the catalogue and the document names an id.** What exists, and what ADR
@@ -336,8 +369,9 @@ carries languages; it does not choose one.
    a language the app does not ship is not decided.
 2. **Time windows for a screen or a tab.** A moment for a whole screen rather than for a
    block. Named by the product side as undecided, and not touched here.
-3. **The link block, what "Mehr" lists, and whether a custom screen may be a notification's
-   target.** §7 decides the constraints; the record that builds custom screens decides these.
+3. **Whether a custom screen may be a notification's target.** Built 2026-10-06 and answered:
+   the link block stores a screen id and a custom screen is listed in "Mehr" by its tab label.
+   Not answered: a notification naming one.
 4. **Whether a screen's title and its tab label ever actually differ.** `tabLabel` is a field
    waiting for its first use, which is the position ADR 0054 §5 was in when it wrote the list
    of screens, and ADR 0073 is what happened next. If nothing uses it, it goes the same way.
