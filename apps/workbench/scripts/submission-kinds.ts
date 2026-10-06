@@ -18,7 +18,7 @@ import {
   type Repo,
   type Tree,
 } from './submission-strings.ts';
-import { applyLayout, mayWriteLayout, targetFile } from './submission-layout.ts';
+import { applyLayout, deletes, mayWriteLayout, targetFile } from './submission-layout.ts';
 import { applyFeatures, mayWriteFeatures } from './submission-features.ts';
 import { applyHome, readSubmission, Refusal } from './submission.ts';
 
@@ -26,7 +26,7 @@ export type { Change, Repo, Tree } from './submission-strings.ts';
 
 export interface Applied {
   /** Every file written, by repository path, which is the kind's own and never the issue's. */
-  files: { path: string; content: string }[];
+  files: { path: string; content: string | null }[];
   /** What changed, as Markdown in German, for the pull request's body. */
   summary: string;
   /**
@@ -73,10 +73,16 @@ export const KINDS: Readonly<Record<SubmissionKind, KindEntry | null>> = {
       const { file, content, summary } = applyLayout(payload, repo);
       return { files: [{ path: file, content }], summary, format: false };
     },
-    // One file, the one the payload's target names, modified.
+    // One file, the one the payload's target names: modified, or for a screen the newsroom
+    // makes, created, or deleted when the document is null (ADR 0075 §7).
     verify: (payload, changes) => {
       const file = targetFile(payload);
-      return changes.length === 1 && changes[0]!.status === ' M' && changes[0]!.path === file
+      const status = deletes(payload) ? ' D' : null;
+      const right = (change: Change) =>
+        status === null
+          ? change.status === ' M' || change.status === '??'
+          : change.status === status;
+      return changes.length === 1 && right(changes[0]!) && changes[0]!.path === file
         ? []
         : [`expected exactly ${file} to change, not ${describe(changes)}`];
     },

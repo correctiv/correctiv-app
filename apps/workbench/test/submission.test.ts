@@ -551,6 +551,14 @@ describe('.github/workflows/submission.yml', () => {
     expect(texts).toContain('npm test -w @correctiv/catalogue');
   });
 
+  it('holds a layout submission to the deploy’s own join and check, and formats only what is left', () => {
+    const layout = steps().find((step) => step.name === 'Check the written layout')!.text;
+    // A deleted screen (ADR 0075 §7) has no file for the formatter to open.
+    expect(layout).toContain('[ -e "$file" ]');
+    expect(layout).toContain('join-screen-layouts.ts');
+    expect(layout).toContain('check-screen-layouts.ts');
+  });
+
   it('closes the issue with the English keyword on a line of its own', () => {
     expect(text).toContain('`Closes #${ISSUE}`');
   });
