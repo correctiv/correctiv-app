@@ -250,6 +250,10 @@ export const home: Record<string, string> = {
   'home.document.shareTooLong':
     'Zu lang als Link: {link} Zeichen statt {limit}. Reichen Sie ihn ein.',
   'home.document.shareField': 'Der Link',
+  'home.document.nearLimit':
+    'Die veröffentlichten Bildschirme sind bei {share} dessen, was die App liest: {length} von {limit} Zeichen. Darüber ignoriert die App das Dokument und zeigt das mitgelieferte.',
+  'home.document.overLimit':
+    'Die veröffentlichten Bildschirme sind über dem, was die App liest: {length} von {limit} Zeichen. Die App ignoriert das Dokument und zeigt das mitgelieferte.',
   'home.document.sharedHeld':
     'Dieser Entwurf ist über einen Link gekommen. Er ist auf diesem Rechner nicht gespeichert: Reichen Sie ihn ein, oder laden Sie neu, um Ihr eigenes Dokument zurückzubekommen.',
   'home.document.sharedDamaged':
