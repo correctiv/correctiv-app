@@ -69,8 +69,8 @@ export const HOME_LAYOUT_FLOOR_MS = 10 * 60 * 1000;
 /**
  * The largest body this will read: 256 KiB.
  *
- * The shipped document is about 1 KiB (1,058 bytes on 2026-09-23), so this is two
- * hundred and fifty times what it needs today and room for the editions ADR 0059 plans.
+ * The shipped document is the joined one, every screen plus the navigation, so this is
+ * orders of magnitude more than it needs today and room for the editions ADR 0059 plans.
  * What it bounds is not the parse but the storage: a kept copy is persisted, and on the
  * web target `persist()` writes into `localStorage`, whose quota of a few megabytes is
  * shared with every other slice. A body beyond this is not a home screen somebody
