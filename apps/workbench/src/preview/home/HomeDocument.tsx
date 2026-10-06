@@ -36,6 +36,7 @@ import {
 } from '@correctiv/app-core/lib/home-layout';
 import { HOME_PINS } from '@correctiv/app-core/data/home-pins';
 import { postIdOf } from '@correctiv/app-core/lib/home-rules';
+import { customScreenIdFault } from '@correctiv/app-core/lib/screen-id';
 import type {
   CategorySetting,
   FlagSetting,
@@ -384,6 +385,18 @@ const COPY = defineMessages({
     id: 'home.setting.termSearch',
     defaultMessage: 'Search tags',
     description: 'Placeholder and accessible name of the search field above the tag picker.',
+  },
+  screenId: {
+    id: 'home.setting.screenId',
+    defaultMessage: 'Screen id, e.g. summer-campaign',
+    description:
+      'Placeholder and accessible name of the field that holds a link block’s target screen.',
+  },
+  screenIdInvalid: {
+    id: 'home.setting.screenId.invalid',
+    defaultMessage:
+      'Not a valid id: lower-case letters, digits and single hyphens, at most 40 characters, and not one of the built-in screens. Nothing is saved until it is.',
+    description: 'Shown under the screen id field while its text could not name a screen.',
   },
   noPin: {
     id: 'home.setting.noPin',
@@ -2097,6 +2110,8 @@ function Setting({
           label={say(intl, label)}
           onSet={onSet}
         />
+      ) : spec.kind === 'screen' ? (
+        <ScreenId value={value} disabled={disabled} label={say(intl, label)} onSet={onSet} />
       ) : spec.kind === 'text' ? (
         /*
          * One field for the language this workbench is in, and a mark on the others
@@ -2186,6 +2201,58 @@ function Flag({
       />
       {label}
     </label>
+  );
+}
+
+/**
+ * The id of a screen the newsroom made, typed (ADR 0075 §7).
+ *
+ * A field and not a list because this site knows no custom screen yet: the documents it
+ * edits are the five built-in ones, and a list of none would be a control that cannot be
+ * used. What it does know is the rule an id is held to, so an id that could not name a
+ * screen is never written — the parser would refuse the whole place for it. The draft is
+ * kept while it is invalid and the document keeps the last good value. Clearing the field
+ * takes the key out, which leaves the link with no target and therefore not drawn.
+ */
+function ScreenId({
+  value,
+  disabled,
+  label,
+  onSet,
+}: {
+  value: unknown;
+  disabled: boolean;
+  label: string;
+  onSet: (value: string | undefined) => void;
+}) {
+  const intl = useWorkbenchIntl();
+  const held = typeof value === 'string' ? value : '';
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? held;
+  const invalid = draft !== null && draft !== '' && customScreenIdFault(draft) !== null;
+  return (
+    <div className="flex flex-col gap-3xs">
+      <input
+        type="text"
+        value={shown}
+        disabled={disabled}
+        spellCheck={false}
+        autoCapitalize="none"
+        autoComplete="off"
+        placeholder={intl.formatMessage(COPY.screenId)}
+        aria-label={label}
+        aria-invalid={invalid}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (next === '') onSet(undefined);
+          else if (customScreenIdFault(next) === null) onSet(next);
+        }}
+        onBlur={() => setDraft(null)}
+        className="h-[1.75rem] rounded-md border border-stroke bg-canvas px-2xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      />
+      {invalid && <Warning>{intl.formatMessage(COPY.screenIdInvalid)}</Warning>}
+    </div>
   );
 }
 

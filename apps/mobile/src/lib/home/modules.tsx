@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { defineMessages, useIntl, type IntlShape, type MessageDescriptor } from 'react-intl';
@@ -11,6 +12,7 @@ import {
   itemCount,
   pinnedItem,
   resolveText,
+  screenOf,
   textOf,
 } from '@correctiv/app-core/lib/home-settings';
 import { callouts } from '@correctiv/app-core/data/callouts';
@@ -21,7 +23,11 @@ import { bonusMedia, type BonusMedia } from '@correctiv/app-core/data/backstage'
 import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
 import type { YoutubeKey } from '@correctiv/app-core/stores/media';
 import type { Video } from '@correctiv/app-core/types/models';
-import { screenTitleOf, type ScreenWords } from '@correctiv/app-core/lib/screen-layout';
+import {
+  screenTabLabelOf,
+  screenTitleOf,
+  type ScreenWords,
+} from '@correctiv/app-core/lib/screen-layout';
 import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
 import type { NewsletterKey } from '@correctiv/app-core/stores/settings';
@@ -69,11 +75,14 @@ import {
   HEADER_SEARCH,
   HERO_CATEGORY,
   HERO_PIN,
+  LINK_SCREEN,
   RESEARCH_CATEGORY,
   RESEARCH_COUNT,
   RESEARCH_TAG,
 } from '@/lib/home/settings';
+import { useCustomScreenLayout } from '@/lib/home/layout';
 import { useLivePin, useRuleItems } from '@/lib/home/useRule';
+import { iconOf } from '@/lib/navigation/tabWords';
 import { projectTarget } from '@/lib/discover/target';
 import { useFeed, useInvestigations } from '@/lib/feeds/useFeed';
 import { TIER_LABELS } from '@/lib/membership/tierLabel';
@@ -654,6 +663,45 @@ const CommunityNoteModule: HomeModule = ({ section }) => {
   );
 };
 
+/**
+ * A row that opens a screen the newsroom made (ADR 0075 §7), named by that screen's own tab
+ * label and drawn with its icon, the way "Mehr" lists it.
+ *
+ * **A screen no document carries leaves the block out** (ADR 0039 §6), so a link written
+ * before its screen was published, or after it was taken down, costs this place and
+ * nothing around it. The layout is read through the same hook the route reads, so the row
+ * appears the moment the fetch that brings the screen lands.
+ */
+const ScreenLinkModule: HomeModule = ({ section }) => {
+  const locale = useLocale();
+  const colors = useColors();
+  const id = screenOf(section.settings, LINK_SCREEN);
+  const words = useCustomScreenLayout(id ?? '')?.words ?? null;
+  const text = screenTabLabelOf(words);
+  if (id === null || text === null) return null;
+  const label = resolveText(text, locale);
+  return (
+    <Place section={section} className="mt-m">
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={label}
+        onPress={() => router.navigate(`/s/${id}` as never)}
+        className="flex-row items-center py-s active:opacity-80"
+      >
+        <Ionicons
+          name={iconOf(words?.icon).ionicon.inactive}
+          size={24}
+          color={colors['on-canvas']}
+        />
+        <Typo variant="text-m" className="ml-s flex-1">
+          {label}
+        </Typo>
+        <Ionicons name="chevron-forward" size={18} color={colors['on-canvas-muted']} />
+      </Pressable>
+    </Place>
+  );
+};
+
 function openProject(id: string) {
   router.push({ pathname: '/projekt/[id]', params: { id } });
 }
@@ -1215,6 +1263,7 @@ export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'atlas-card': AtlasCardModule,
   'tip-card': TipCardModule,
   'community-note': CommunityNoteModule,
+  'screen-link': ScreenLinkModule,
   'profile-club-card': ProfileClubCardModule,
   'profile-membership': ProfileMembershipModule,
   'profile-impact': ProfileImpactModule,

@@ -17,6 +17,7 @@ import type { SettingSpec } from './home-settings';
  */
 export const MODULE_SETTINGS: Readonly<Record<string, readonly SettingSpec[]>> = {
   'screen-header': [{ key: 'mark', kind: 'flag', fallback: false }, { key: 'intro', kind: 'text', fallback: null }, { key: 'date', kind: 'flag', fallback: false }, { key: 'search', kind: 'flag', fallback: false }],
+  'screen-link': [{ key: 'screen', kind: 'screen', fallback: null }],
   'article-hero': [{ key: 'pin', kind: 'article', fallback: null }, { key: 'category', kind: 'category', fallback: null }],
   'latest-research': [{ key: 'count', kind: 'count', min: 1, max: 8, fallback: 5 }, { key: 'category', kind: 'category', fallback: null }, { key: 'tag', kind: 'tag', fallback: null }],
   'faktencheck-rail': [{ key: 'count', kind: 'count', min: 1, max: 12, fallback: 8 }, { key: 'category', kind: 'category', fallback: 5 }],

@@ -1759,6 +1759,13 @@
   "home.module.projectDirectory.what": {
     "defaultMessage": "The projects and products of CORRECTIV, in their groups."
   },
+  "home.module.screenLink": {
+    "defaultMessage": "Link to a screen",
+    "description": "The name of the block that opens a screen the newsroom made, which the palette lists under the frame blocks."
+  },
+  "home.module.screenLink.what": {
+    "defaultMessage": "A row that opens another screen, named by that screen’s own tab label."
+  },
   "home.module.searchEntry": {
     "defaultMessage": "Search entry"
   },
@@ -2038,6 +2045,20 @@
   "home.setting.screenHeader.search.what": {
     "defaultMessage": "The field under the header that opens the search screen."
   },
+  "home.setting.screenId": {
+    "defaultMessage": "Screen id, e.g. summer-campaign",
+    "description": "Placeholder and accessible name of the field that holds a link block’s target screen."
+  },
+  "home.setting.screenId.invalid": {
+    "defaultMessage": "Not a valid id: lower-case letters, digits and single hyphens, at most 40 characters, and not one of the built-in screens. Nothing is saved until it is.",
+    "description": "Shown under the screen id field while its text could not name a screen."
+  },
+  "home.setting.screenLink.screen": {
+    "defaultMessage": "Which screen it opens"
+  },
+  "home.setting.screenLink.screen.what": {
+    "defaultMessage": "The id of a screen you made. A link to a screen the document does not carry is left out."
+  },
   "home.setting.searchHits": {
     "defaultMessage": "{count, plural, =0 {No articles found.} one {# article found.} other {# articles found.}}",
     "description": "Under the search field of the article picker once WordPress has answered. {count} is the number of articles added to the list below."
@@ -2207,7 +2228,7 @@
     "description": "The last paragraph under the drawing. <code> marks an import path, which stays as it is written."
   },
   "insideCore.alt.lede": {
-    "defaultMessage": "<code>packages/app-core</code>, 82 TypeScript files. Imports point down the stack. Layers from the top:",
+    "defaultMessage": "<code>packages/app-core</code>, 83 TypeScript files. Imports point down the stack. Layers from the top:",
     "description": "The paragraph opening the list under the drawing. <code> marks the package path, which stays as it is written. The file count is held to what packages/app-core/src holds by test/diagrams.test.ts, which reads this file, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.alt.lib": {
@@ -2267,7 +2288,7 @@
     "description": "The line beside the two small chips reading string and DOM. <file> marks a type name in monospace, which stays as it is written."
   },
   "insideCore.files": {
-    "defaultMessage": "82 TypeScript files",
+    "defaultMessage": "83 TypeScript files",
     "description": "The right-hand label on the core’s box, opposite the package path. The numeral is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src holds, so it and the two words after it are load-bearing in English."
   },
   "insideCore.imports": {
@@ -2275,7 +2296,7 @@
     "description": "The label on the long arrow down the left edge, set on its side. It is as long as the stack is tall, about 500 units, so length is not the constraint here."
   },
   "insideCore.lede": {
-    "defaultMessage": "82 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
+    "defaultMessage": "83 TypeScript files in seven layers. Imports point down the stack, the contracts sit at the bottom, and below them is a line nothing in the package crosses.",
     "description": "The paragraph under that heading. The file count is read out of this file by test/diagrams.test.ts and held to what packages/app-core/src actually holds, so the numeral and the two words after it are load-bearing in English."
   },
   "insideCore.lib": {
