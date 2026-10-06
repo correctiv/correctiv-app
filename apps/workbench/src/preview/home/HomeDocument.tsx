@@ -65,6 +65,7 @@ import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
+import { CUSTOM_SCREEN_COPY } from './CustomScreens';
 import { InsertMark } from './Palette';
 import { EDITION_COPY, EditionHead, inkOf, nameOf, Warning } from './Edition';
 import { openedAt, playheadFrom, timeAt } from './minutes';
@@ -600,6 +601,8 @@ export function HomeDocument({
    * moves, which is not a thing to send somebody.
    */
   const [follow, setFollow] = useState(true);
+  /** What the last deletion did, said once under the bar because the open screen moved with it. */
+  const [deletionNote, setDeletionNote] = useState<string | null>(null);
 
   /**
    * The block a pointer is carrying, where it started, and the gap it would land in.
@@ -1168,9 +1171,19 @@ export function HomeDocument({
                   }),
                 onPreview: () => onChange({ route: routeOf(screen) }),
                 onDelete: () => {
+                  const title = screenTitle(screen);
                   deleteScreen(screen);
                   const next = getScreen();
-                  if (screenExists(next)) onChange({ route: routeOf(next) });
+                  const left = screenExists(next);
+                  if (left) onChange({ route: routeOf(next) });
+                  setDeletionNote(
+                    left
+                      ? intl.formatMessage(CUSTOM_SCREEN_COPY.removed, {
+                          title,
+                          next: screenTitle(next),
+                        })
+                      : intl.formatMessage(CUSTOM_SCREEN_COPY.removedLast, { title }),
+                  );
                 },
               }
             : null
@@ -1183,6 +1196,7 @@ export function HomeDocument({
               .href,
           },
           onRestore: () => {
+            setDeletionNote(null);
             restoreScreen(id);
             onChange({ route: routeOf(id) });
           },
@@ -1192,6 +1206,11 @@ export function HomeDocument({
         onFollow={setFollow}
         outcome={
           <>
+            {deletionNote !== null && (
+              <output className="text-s text-on-canvas" data-testid="removed-note">
+                {deletionNote}
+              </output>
+            )}
             {offer && <ShippedNote layout={layoutId} />}
             {offer && copied !== null && (
               <div className="flex flex-col gap-xs">
@@ -1270,22 +1289,26 @@ export function HomeDocument({
           <GapsNote gaps={gapsOf(layout, true)} />
 
           {target.edition === null ? (
-            <PointChip
-              layout={layout}
-              point={point}
-              span={span}
-              changes={moment?.changes.length ?? 0}
-              landsOn={EDITION_COPY.landsOnDay}
-              onMove={(to) => {
-                if (point === null) return;
-                setLayout(movedMoment(layout, point, to));
-                goTo(to);
-              }}
-              onRemove={() => {
-                if (point === null) return;
-                setLayout(withoutMoment(layout, point));
-              }}
-            />
+            // A screen with no block has nothing for "the start of the day, until midnight" to
+            // describe, and it is true of every such screen, so the chip waits for a block.
+            layout.sections.length === 0 && point === null ? null : (
+              <PointChip
+                layout={layout}
+                point={point}
+                span={span}
+                changes={moment?.changes.length ?? 0}
+                landsOn={EDITION_COPY.landsOnDay}
+                onMove={(to) => {
+                  if (point === null) return;
+                  setLayout(movedMoment(layout, point, to));
+                  goTo(to);
+                }}
+                onRemove={() => {
+                  if (point === null) return;
+                  setLayout(withoutMoment(layout, point));
+                }}
+              />
+            )
           ) : (
             <EditionHead
               layout={layout}
@@ -1412,6 +1435,7 @@ export function HomeDocument({
             {layout.sections.length === 0 && (
               <InsertMark
                 shown
+                first
                 where={whereAt(intl, layout, 0)}
                 deviceWidth={deviceWidth}
                 screen={screen}
