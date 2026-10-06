@@ -86,12 +86,73 @@ export function navigationDocumentOf(body: unknown): unknown {
  * One screen's document out of a fetched joined one, or `undefined` when the body is not
  * a joined document or does not carry that screen. Only the screens the caller asks for
  * are read, so one this app does not know is ignored without being named.
+ *
+ * Takes any id and not only the declared ones: a custom screen (ADR 0075 §7) is asked for
+ * by the id the route carries, and `Object.hasOwn` keeps `constructor` from being one.
  */
-export function screenDocumentOf(body: unknown, screen: ConfigurableScreen): unknown {
+export function screenDocumentOf(body: unknown, screen: string): unknown {
   if (typeof body !== 'object' || body === null) return undefined;
   const screens = (body as { screens?: unknown }).screens;
   if (typeof screens !== 'object' || screens === null || Array.isArray(screens)) return undefined;
   return Object.hasOwn(screens, screen) ? (screens as Record<string, unknown>)[screen] : undefined;
+}
+
+// --- screens the newsroom makes -----------------------------------------------------
+
+/**
+ * The longest id a custom screen may have.
+ *
+ * ADR 0075 §7 asks for a bound and names none. 40 is a route segment a person can read in
+ * a deep link and a file name under `screens/`, with room for a campaign's two or three
+ * words; the figure that actually fails is the joined document's (ADR 0061 §2), so this
+ * one only keeps an id from being a paragraph.
+ */
+export const CUSTOM_SCREEN_ID_MAX_LENGTH = 40;
+
+/** Lower-case ASCII letters and digits, with single hyphens between them. */
+const CUSTOM_SCREEN_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** Why an id cannot name a custom screen. */
+export type CustomScreenIdFault = 'not-a-string' | 'empty' | 'too-long' | 'malformed' | 'declared';
+
+/**
+ * Whether `id` may name a screen the newsroom makes, and the first reason it may not.
+ *
+ * ADR 0075 §7: the id becomes a route segment (`/s/<id>`), a file name under `screens/`,
+ * a key in the joined document and the suffix of `workbench:layout:<screen>`, so it is
+ * held to more than the core's `id-unsafe` asks of any other id. `declared` is every id
+ * the app declares, `CONFIGURABLE_SCREENS` by default: a custom screen that took one would
+ * shadow a document the app draws itself.
+ */
+export function customScreenIdFault(
+  id: unknown,
+  declared: readonly string[] = CONFIGURABLE_SCREENS,
+): CustomScreenIdFault | null {
+  if (typeof id !== 'string') return 'not-a-string';
+  if (id.length === 0) return 'empty';
+  if (id.length > CUSTOM_SCREEN_ID_MAX_LENGTH) return 'too-long';
+  if (!CUSTOM_SCREEN_ID.test(id)) return 'malformed';
+  if (declared.includes(id)) return 'declared';
+  return null;
+}
+
+/** `customScreenIdFault` as a type guard, for the route and the lists that read an id. */
+export function isCustomScreenId(id: unknown): id is string {
+  return customScreenIdFault(id) === null;
+}
+
+/**
+ * The custom screens a fetched joined document carries, in the order it writes them.
+ *
+ * A key that is not a valid id is skipped without being named, which is what the host does
+ * with a screen it was not asked for: the id would be a route nobody can reach (§7), so
+ * there is nothing smaller to lose. A body that is not a joined document has none.
+ */
+export function customScreenIdsOf(body: unknown): string[] {
+  if (typeof body !== 'object' || body === null) return [];
+  const screens = (body as { screens?: unknown }).screens;
+  if (typeof screens !== 'object' || screens === null || Array.isArray(screens)) return [];
+  return Object.keys(screens).filter(isCustomScreenId);
 }
 
 // --- the words a screen is called by ----------------------------------------------
@@ -213,9 +274,19 @@ export interface ScreenWordsParse {
  * differ at all. 80 characters is a heading line in German or English; 24 is a tab bar
  * with the longest compound word the three platforms put on one.
  */
-const TITLE_SPEC: TextSetting = { key: 'title', kind: 'text', maxChars: 80, fallback: null };
+const TITLE_SPEC: TextSetting = {
+  key: 'title',
+  kind: 'text',
+  maxChars: 80,
+  fallback: null,
+};
 
-const TAB_LABEL_SPEC: TextSetting = { key: 'tabLabel', kind: 'text', maxChars: 24, fallback: null };
+const TAB_LABEL_SPEC: TextSetting = {
+  key: 'tabLabel',
+  kind: 'text',
+  maxChars: 24,
+  fallback: null,
+};
 
 /**
  * The code each fault of a word is reported under, one table per word.
@@ -302,7 +373,10 @@ function readIcon(raw: unknown, problems: ScreenProblem[]): ScreenIconKey | unde
     return undefined;
   }
   if (!Object.hasOwn(SCREEN_ICONS, raw)) {
-    problems.push({ code: 'icon-unknown', context: { icon: UNSAFE_KEY.test(raw) ? null : raw } });
+    problems.push({
+      code: 'icon-unknown',
+      context: { icon: UNSAFE_KEY.test(raw) ? null : raw },
+    });
     return undefined;
   }
   return raw;
@@ -330,7 +404,10 @@ export function parseScreenDocument(input: unknown): ScreenWordsParse {
   const problems: ScreenProblem[] = [];
 
   if (!isRecord(input)) {
-    problems.push({ code: 'screen-not-an-object', context: { type: typeOf(input) } });
+    problems.push({
+      code: 'screen-not-an-object',
+      context: { type: typeOf(input) },
+    });
     return { words: null, problems };
   }
 
