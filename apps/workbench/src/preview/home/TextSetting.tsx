@@ -67,6 +67,7 @@ export function TextSetting({
   value,
   disabled,
   label,
+  marked = true,
   onSet,
 }: {
   /** The declaration: the bound, the line rule and the words the block draws itself. */
@@ -76,6 +77,8 @@ export function TextSetting({
   disabled: boolean;
   /** The setting's own name, for the field's accessible name. */
   label: string;
+  /** Whether a missing language is marked beside the field, or said once somewhere else. */
+  marked?: boolean;
   onSet: (value: SettingValue | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -134,7 +137,7 @@ export function TextSetting({
       )}
 
       <div className="flex flex-wrap items-center gap-2xs">
-        {languagesMissing(words, language).map((one) => {
+        {(marked ? languagesMissing(words, language) : []).map((one) => {
           const mark = intl.formatMessage(TEXT_LANGUAGE_MISSING, {
             language: languageName(intl, one),
           });

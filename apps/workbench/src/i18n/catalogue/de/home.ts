@@ -176,6 +176,7 @@ export const home: Record<string, string> = {
   // The palette, and the hairline that opens it (`preview/home/Palette.tsx`).
   // `{where}`, `{name}` and `{what}` come out of `preview/home/document.ts` and are
   // German too since that table became descriptors, so these read German through.
+  'home.palette.addFirst': 'Ersten Block hinzufügen',
   'home.palette.addHere': 'Einen Block hinzufügen: {where}',
   'home.palette.title': 'Einen Block hinzufügen',
   'home.palette.lead': 'Der neue Block kommt {where}.',
@@ -230,12 +231,15 @@ export const home: Record<string, string> = {
   'home.custom.preview': '{path} im Rahmen zeigen',
   'home.custom.delete': 'Diesen Bildschirm löschen',
   'home.custom.deletedNote':
-    'Nur in diesem Entwurf gelöscht. Die Datei bleibt im Repository, bis eine Einreichung, die sie löscht, übernommen ist, und hier bleibt sie gelöscht, solange dieser Entwurf aufbewahrt wird.',
+    'Nur in diesem Entwurf gelöscht. Die Datei bleibt, bis die Löschung eingereicht ist.',
+  'home.custom.removed': 'Gelöscht: „{title}“. Jetzt geöffnet: „{next}“.',
+  'home.custom.removedLast': 'Gelöscht: „{title}“. Dieses Layout hat keinen Bildschirm mehr.',
   'home.document.shipped':
     'Das ist das Layout, das die App ausliefert. Sobald diese Änderung übernommen und veröffentlicht ist, sehen die Leser sie.',
   'home.layout.ship': 'Ausgeliefert',
   'home.layout.demo': 'Demo',
-  'home.custom.restore': '{id} wiederherstellen',
+  'home.custom.restore': 'Wiederherstellen',
+  'home.custom.restoreNamed': '{title} wiederherstellen',
   'home.custom.submitDeletion': 'Löschung von {id} einreichen',
   'home.document.layoutEmpty':
     'Dieses Layout hat keinen Bildschirm. Die App zeigt ihren Leerzustand. Legen Sie mit dem Plus oben einen an.',

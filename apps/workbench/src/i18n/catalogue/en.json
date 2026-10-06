@@ -1548,8 +1548,8 @@
     "description": "The name of the button that takes the open custom screen away. For one that was only ever a draft it is the whole of the deletion."
   },
   "home.custom.deletedNote": {
-    "defaultMessage": "Deleted in this draft only. The file stays in the repository until a submission that deletes it is merged, and it stays deleted here for as long as this draft is kept.",
-    "description": "Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted."
+    "defaultMessage": "Deleted in this draft only. The file stays until the deletion is submitted.",
+    "description": "Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted. One short sentence: the list under it is what the person acts on."
   },
   "home.custom.fault.empty": {
     "defaultMessage": "Type an id.",
@@ -1591,9 +1591,21 @@
     "defaultMessage": "Show {path} in the frame",
     "description": "The name of the button that takes the frame to the open custom screen. {path} is its address, such as /s/summer-campaign, which is never translated."
   },
+  "home.custom.removed": {
+    "defaultMessage": "Deleted “{title}”. Now showing “{next}”.",
+    "description": "Said under the layout tool’s bar right after a screen was deleted, because the open screen changes with it. {title} is the screen that went, {next} the one that is open now."
+  },
+  "home.custom.removedLast": {
+    "defaultMessage": "Deleted “{title}”. This layout has no screen left.",
+    "description": "Said under the layout tool’s bar right after the layout’s last screen was deleted, so no other screen opens in its place. {title} is the screen that went."
+  },
   "home.custom.restore": {
-    "defaultMessage": "Restore {id}",
-    "description": "The name of the button that takes a deletion back. {id} is the screen’s id, such as entdecken, which is not translated."
+    "defaultMessage": "Restore",
+    "description": "The visible label of the button that takes a deletion back, beside the screen it is about. restoreNamed is its accessible name."
+  },
+  "home.custom.restoreNamed": {
+    "defaultMessage": "Restore {title}",
+    "description": "The accessible name of the button that takes a deletion back. {title} is the screen’s title, so a list of several says which one each button is about."
   },
   "home.custom.submitDeletion": {
     "defaultMessage": "Submit the deletion of {id}",
@@ -1898,6 +1910,10 @@
   "home.module.unknown.what": {
     "defaultMessage": "No description for this block yet.",
     "description": "Under a module the palette is offering that MODULE_LABELS has no entry for, where the label above it is the module’s raw id. home.setting.unknown.what is the same kind of stand-in one level down, for a setting, and says something shorter because the control beside it already names itself."
+  },
+  "home.palette.addFirst": {
+    "defaultMessage": "Add the first block",
+    "description": "The visible text of the insertion mark on a screen that has no block yet, where there is no seam to point at. It is also the mark’s accessible name there, in place of home.palette.addHere."
   },
   "home.palette.addHere": {
     "defaultMessage": "Add a block {where}",
@@ -2818,7 +2834,7 @@
   },
   "scenarios.label": {
     "defaultMessage": "Scenario",
-    "description": "The name of the select that opens a named example of the home screen, such as the election night, in the editor and the frame. Read aloud rather than drawn: the select stands in a row of the editor’s bar beside the screen switcher, where its own label would take a row to itself, and the trigger carries the open scenario’s name."
+    "description": "The name of the select that opens a named example of the home screen, such as the election night, in the editor and the frame. Drawn as a short word before the select in the editor’s bar and read aloud as its name, so the trigger’s “None” answers a question."
   },
   "scenarios.live": {
     "defaultMessage": "All content is live.",

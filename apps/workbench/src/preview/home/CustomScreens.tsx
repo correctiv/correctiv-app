@@ -1,4 +1,4 @@
-import { Eye, Plus, Trash2 } from 'lucide-react';
+import { Eye, Plus, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -130,16 +130,33 @@ export const CUSTOM_SCREEN_COPY = defineMessages({
   },
   deletedNote: {
     id: 'home.custom.deletedNote',
-    defaultMessage:
-      'Deleted in this draft only. The file stays in the repository until a submission that deletes it is merged, and it stays deleted here for as long as this draft is kept.',
+    defaultMessage: 'Deleted in this draft only. The file stays until the deletion is submitted.',
     description:
-      'Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted.',
+      'Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted. One short sentence: the list under it is what the person acts on.',
   },
   restore: {
     id: 'home.custom.restore',
-    defaultMessage: 'Restore {id}',
+    defaultMessage: 'Restore',
     description:
-      'The name of the button that takes a deletion back. {id} is the screen’s id, such as entdecken, which is not translated.',
+      'The visible label of the button that takes a deletion back, beside the screen it is about. restoreNamed is its accessible name.',
+  },
+  restoreNamed: {
+    id: 'home.custom.restoreNamed',
+    defaultMessage: 'Restore {title}',
+    description:
+      'The accessible name of the button that takes a deletion back. {title} is the screen’s title, so a list of several says which one each button is about.',
+  },
+  removed: {
+    id: 'home.custom.removed',
+    defaultMessage: 'Deleted “{title}”. Now showing “{next}”.',
+    description:
+      'Said under the layout tool’s bar right after a screen was deleted, because the open screen changes with it. {title} is the screen that went, {next} the one that is open now.',
+  },
+  removedLast: {
+    id: 'home.custom.removedLast',
+    defaultMessage: 'Deleted “{title}”. This layout has no screen left.',
+    description:
+      'Said under the layout tool’s bar right after the layout’s last screen was deleted, so no other screen opens in its place. {title} is the screen that went.',
   },
   submitDeletion: {
     id: 'home.custom.submitDeletion',
@@ -372,6 +389,8 @@ export function ScreenRow({ screen, disabled }: { screen: OpenScreen; disabled: 
         value={screen.words?.title}
         disabled={disabled}
         label={intl.formatMessage(CUSTOM_SCREEN_COPY.title)}
+        // The screen-wide note under the bar already says the English is missing.
+        marked={false}
         onSet={(next) => {
           if (next !== undefined) screen.onTitle(next);
         }}
@@ -416,16 +435,30 @@ export function DeletedScreens({ screens }: { screens: readonly DeletedScreen[] 
       <ul className="flex flex-col gap-2xs">
         {screens.map((deleted) => (
           <li key={deleted.id} className="flex flex-wrap items-center gap-2xs">
-            <span className="min-w-0 flex-1 truncate text-s text-on-canvas">
-              {deleted.title} <code className="font-mono text-[0.75rem]">{deleted.id}</code>
+            <span className="min-w-0 basis-full truncate text-s text-on-canvas">
+              {deleted.title}
+              {deleted.title.toLowerCase() !== deleted.id && (
+                <>
+                  <span aria-hidden="true" className="text-on-canvas-muted">
+                    {' · '}
+                  </span>
+                  <code className="font-mono text-[0.75rem] text-on-canvas-muted">
+                    {deleted.id}
+                  </code>
+                </>
+              )}
             </span>
             <Button
               variant="outline"
               className={SMALL}
               onClick={deleted.onRestore}
+              aria-label={intl.formatMessage(CUSTOM_SCREEN_COPY.restoreNamed, {
+                title: deleted.title,
+              })}
               data-testid={`restore-screen-${deleted.id}`}
             >
-              {intl.formatMessage(CUSTOM_SCREEN_COPY.restore, { id: deleted.id })}
+              <Undo2 aria-hidden="true" />
+              {intl.formatMessage(CUSTOM_SCREEN_COPY.restore)}
             </Button>
             <Button variant="outline" className={SMALL} asChild>
               <a

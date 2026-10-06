@@ -126,6 +126,12 @@ import {
  * formatter here that may touch react-intl's own context.
  */
 const COPY = defineMessages({
+  addFirst: {
+    id: 'home.palette.addFirst',
+    defaultMessage: 'Add the first block',
+    description:
+      'The visible text of the insertion mark on a screen that has no block yet, where there is no seam to point at. It is also the mark’s accessible name there, in place of home.palette.addHere.',
+  },
   addHere: {
     id: 'home.palette.addHere',
     defaultMessage: 'Add a block {where}',
@@ -200,11 +206,14 @@ export function InsertMark({
   screen,
   onAdd,
   shown = false,
+  first = false,
 }: {
   /** Said in words, for the dialog and for the mark's own label: "at the top", "after X". */
   where: string;
   /** Keeps the line and the `+` drawn. For a list with no block, where there is no seam to point at. */
   shown?: boolean;
+  /** Draws the mark as a labelled button instead of a hairline, for a list with no block. */
+  first?: boolean;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
   /** The screen being edited, which the specimens draw on; the list itself is the same everywhere. */
@@ -213,6 +222,7 @@ export function InsertMark({
 }) {
   const intl = useWorkbenchIntl();
   const [open, setOpen] = useState(false);
+  const caption = first ? intl.formatMessage(COPY.addFirst) : undefined;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -226,7 +236,7 @@ export function InsertMark({
         */}
         <button
           type="button"
-          aria-label={intl.formatMessage(COPY.addHere, { where })}
+          aria-label={caption ?? intl.formatMessage(COPY.addHere, { where })}
           /*
            * The caller lays this over the join rather than setting it between two blocks.
            * ADR 0053 §1 leaves no gap to sit in: the blocks meet the way they meet on the
@@ -240,42 +250,56 @@ export function InsertMark({
            * off the bottom of one drawing and half off the top of the next, which is a
            * price only a block with something in its very first row would notice.
            */
-          className="group relative flex h-[1.25rem] w-full shrink-0 items-center focus-visible:outline-none"
+          className={cn(
+            'group relative flex w-full shrink-0 items-center focus-visible:outline-none',
+            caption === undefined
+              ? 'h-[1.25rem]'
+              : 'min-h-[2.25rem] justify-center gap-2xs rounded-md border border-dashed border-accent px-s text-s text-accent hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-accent',
+          )}
         >
-          {/*
+          {caption !== undefined ? (
+            <>
+              <Plus aria-hidden="true" className="size-[1rem] shrink-0" />
+              {caption}
+            </>
+          ) : (
+            <>
+              {/*
             One unbroken hairline, with the `+` laid over its middle rather than set
             between two halves of it. Laid between, the mark reads as two dashes while
             nothing is pointing at it, because a hidden element still takes its width.
           */}
-          <span
-            aria-hidden="true"
-            className={cn(
-              'w-full transition-all',
-              // Nothing at all until it is pointed at. ADR 0053 §1 makes the list a screen,
-              // and a hairline drawn across every seam of it would be a rule the phone has
-              // not got, once per block.
-              'h-px bg-transparent',
-              // Two pixels once it is, rather than one: the line is what confirms the aim,
-              // and a one-pixel confirmation under a twenty-pixel target is a mark a person
-              // has to look for to believe.
-              'group-hover:h-[2px] group-hover:bg-accent',
-              'group-focus-visible:h-[2px] group-focus-visible:bg-accent',
-              (open || shown) && 'h-[2px] bg-accent',
-            )}
-          />
-          <Plus
-            aria-hidden="true"
-            className={cn(
-              // `bg-canvas` and not the dock's `surface`: since ADR 0053 §1 this disc sits
-              // over a drawing of the app rather than over the panel's own ground. Ringed,
-              // because a bare glyph over a photograph is a glyph nobody can read.
-              'absolute left-1/2 size-[1.125rem] -translate-x-1/2 rounded-full p-[1px]',
-              'bg-canvas ring-1 ring-accent',
-              'text-accent opacity-0 transition-opacity',
-              'group-hover:opacity-100 group-focus-visible:opacity-100',
-              (open || shown) && 'opacity-100',
-            )}
-          />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'w-full transition-all',
+                  // Nothing at all until it is pointed at. ADR 0053 §1 makes the list a screen,
+                  // and a hairline drawn across every seam of it would be a rule the phone has
+                  // not got, once per block.
+                  'h-px bg-transparent',
+                  // Two pixels once it is, rather than one: the line is what confirms the aim,
+                  // and a one-pixel confirmation under a twenty-pixel target is a mark a person
+                  // has to look for to believe.
+                  'group-hover:h-[2px] group-hover:bg-accent',
+                  'group-focus-visible:h-[2px] group-focus-visible:bg-accent',
+                  (open || shown) && 'h-[2px] bg-accent',
+                )}
+              />
+              <Plus
+                aria-hidden="true"
+                className={cn(
+                  // `bg-canvas` and not the dock's `surface`: since ADR 0053 §1 this disc sits
+                  // over a drawing of the app rather than over the panel's own ground. Ringed,
+                  // because a bare glyph over a photograph is a glyph nobody can read.
+                  'absolute left-1/2 size-[1.125rem] -translate-x-1/2 rounded-full p-[1px]',
+                  'bg-canvas ring-1 ring-accent',
+                  'text-accent opacity-0 transition-opacity',
+                  'group-hover:opacity-100 group-focus-visible:opacity-100',
+                  (open || shown) && 'opacity-100',
+                )}
+              />
+            </>
+          )}
         </button>
       </DialogTrigger>
 

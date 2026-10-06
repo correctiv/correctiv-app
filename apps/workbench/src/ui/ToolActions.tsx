@@ -7,6 +7,7 @@ import { useActiveActions } from '../shell/actions';
 import { Button } from './kit/button';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from './kit/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from './kit/tooltip';
+import { cn } from '../lib/cn';
 import { useHeaderDensity } from './header-row';
 
 /**
@@ -214,7 +215,12 @@ export function ToolActions() {
       <Tooltip>
         <TooltipTrigger asChild>
           <span
-            className="text-s text-on-canvas-muted"
+            // A clean tool says "Unchanged" and nothing else, which is the first thing to go
+            // when the bar is short: the disabled Submit beside it says the same.
+            className={cn(
+              'text-s text-on-canvas-muted',
+              folded && !dirty && count === undefined && 'sr-only',
+            )}
             data-testid="tool-actions-status"
             data-draft={dirty ? 'true' : undefined}
           >
