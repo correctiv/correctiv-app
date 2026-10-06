@@ -3,6 +3,7 @@ import type {
   CategorySetting,
   CountSetting,
   FlagSetting,
+  ScreenSetting,
   SettingSpec,
   TagSetting,
   TextSetting,
@@ -141,6 +142,12 @@ export const HEADER_SEARCH: FlagSetting = { key: 'search', kind: 'flag', fallbac
 export const HEADER_INTRO: TextSetting = { key: 'intro', kind: 'text', fallback: null };
 
 /**
+ * The screen a link block points at, by id (ADR 0075 §7). No fallback but `null`: a link
+ * with no target is left out, and so is one whose target no document carries.
+ */
+export const LINK_SCREEN: ScreenSetting = { key: 'screen', kind: 'screen', fallback: null };
+
+/**
  * Module name, as the document writes it, to the settings it understands.
  *
  * Different blocks want different settings: which article one highlights (the product
@@ -155,6 +162,7 @@ export const HEADER_INTRO: TextSetting = { key: 'intro', kind: 'text', fallback:
  */
 export const HOME_MODULE_SETTINGS: Readonly<Record<string, readonly SettingSpec[]>> = {
   'screen-header': [HEADER_MARK, HEADER_INTRO, HEADER_DATE, HEADER_SEARCH],
+  'screen-link': [LINK_SCREEN],
   'article-hero': [HERO_PIN, HERO_CATEGORY],
   'latest-research': [RESEARCH_COUNT, RESEARCH_CATEGORY, RESEARCH_TAG],
   'faktencheck-rail': [FACT_CHECK_COUNT, FACT_CHECK_CATEGORY],

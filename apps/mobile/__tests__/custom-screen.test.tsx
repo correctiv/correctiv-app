@@ -92,3 +92,47 @@ describe('"Mehr"', () => {
     expect(text).not.toContain('Unsichtbar');
   });
 });
+
+const layout = (screen: string) => ({
+  version: 4,
+  title: { de: 'Start' },
+  sections: [{ id: 'go', module: 'screen-link', settings: { screen } }],
+});
+
+describe('the link block', () => {
+  const target = {
+    version: 4,
+    title: { de: 'Klimakrise' },
+    tabLabel: { de: 'Klima' },
+    sections: [],
+  };
+
+  it('is named by the tab label of the screen it points at', () => {
+    hold({ start: layout('klima'), klima: target });
+    params.mockReturnValue({ id: 'start' });
+    expect(renderedText(render(<CustomScreen />))).toContain('Klima');
+  });
+
+  it('is left out when the document does not carry its screen (ADR 0039 §6)', () => {
+    hold({ start: layout('gone') });
+    params.mockReturnValue({ id: 'start' });
+    const text = renderedText(render(<CustomScreen />));
+    expect(text).not.toContain('gone');
+    expect(text).not.toContain('Klima');
+  });
+
+  it('does not draw a link the parser refused, and takes only its own place with it', () => {
+    hold({
+      start: {
+        version: 4,
+        title: { de: 'Start' },
+        sections: [
+          { id: 'bad', module: 'screen-link', settings: { screen: 'Not An Id' } },
+          { id: 'head', module: 'screen-header' },
+        ],
+      },
+    });
+    params.mockReturnValue({ id: 'start' });
+    expect(renderedText(render(<CustomScreen />))).toContain('Start');
+  });
+});

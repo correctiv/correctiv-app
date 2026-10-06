@@ -81,6 +81,7 @@
  */
 
 import { MODULE_SETTINGS } from './home-settings.generated';
+import { isCustomScreenId } from './screen-id';
 import type { Locale } from '../stores/settings';
 
 /** A choice of one item, by the address the app already addresses it with. */
@@ -145,6 +146,22 @@ export interface FlagSetting {
   readonly key: string;
   readonly kind: 'flag';
   readonly fallback: boolean;
+}
+
+/**
+ * A screen the newsroom made, by its id (ADR 0075 §7): what a link block points at.
+ *
+ * Only the id is held, and whether a screen of that id exists is the host's question at
+ * draw time and not the document's: a valid id for a screen no document carries is a link
+ * that is left out (ADR 0039 §6), not a refused place. So the fault below is about the
+ * id's shape alone — `customScreenIdFault`, the rule the route and the "Mehr" list read.
+ * `null` is "no screen yet", which is also the fallback, so a freshly placed link block
+ * draws nothing until somebody chooses.
+ */
+export interface ScreenSetting {
+  readonly key: string;
+  readonly kind: 'screen';
+  readonly fallback: null;
 }
 
 /**
@@ -300,6 +317,7 @@ export type SettingSpec =
   | CategorySetting
   | TagSetting
   | FlagSetting
+  | ScreenSetting
   | TextSetting;
 
 /**
@@ -347,6 +365,8 @@ export function faultOf(spec: SettingSpec, value: unknown): SettingFault | null 
       // No `null` here, unlike every kind above: those three use it to say "no term" and
       // "no pin", and a switch has that answer already.
       return typeof value === 'boolean' ? null : 'invalid';
+    case 'screen':
+      return value === null || isCustomScreenId(value) ? null : 'invalid';
     case 'text':
       return textFaultOf(spec, value);
   }
@@ -422,6 +442,12 @@ export function pinnedItem(settings: Held, spec: ArticleSetting): string | null 
 export function termOf(settings: Held, spec: CategorySetting | TagSetting): number | null {
   const held = settings?.[spec.key];
   return typeof held === 'number' || held === null ? held : spec.fallback;
+}
+
+/** The screen a place points at: the held id, or `null` for none. */
+export function screenOf(settings: Held, spec: ScreenSetting): string | null {
+  const held = settings?.[spec.key];
+  return typeof held === 'string' ? held : spec.fallback;
 }
 
 export function itemCount(settings: Held, spec: CountSetting): number {

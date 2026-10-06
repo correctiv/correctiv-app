@@ -16,6 +16,7 @@ export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = {
   'feed-status': 'struktur',
   'search-entry': 'struktur',
   'impact-footer': 'struktur',
+  'screen-link': 'struktur',
   'article-hero': 'recherche',
   'latest-research': 'recherche',
   'spotlight-briefing': 'recherche',

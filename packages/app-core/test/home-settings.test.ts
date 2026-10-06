@@ -125,3 +125,26 @@ describe('the kinds that were there before the word', () => {
     expect(faultOf(category!, 'klima')).toBe('invalid');
   });
 });
+
+describe('a screen the newsroom made, the kind a link block holds (ADR 0075 §7)', () => {
+  const link = settingsFor('screen-link').find((spec) => spec.key === 'screen');
+
+  it('is declared by the link block, with no screen as its fallback', () => {
+    expect(link).toEqual({ key: 'screen', kind: 'screen', fallback: null });
+  });
+
+  it('admits an id a custom screen may have, and `null` for none', () => {
+    expect(faultOf(link!, 'klima-krise')).toBeNull();
+    expect(faultOf(link!, null)).toBeNull();
+  });
+
+  it('refuses what could not name a screen, by the rule the route reads', () => {
+    for (const value of ['', 'Klima', 'a--b', 'a'.repeat(41), 'home', 7, undefined, { de: 'x' }]) {
+      expect(faultOf(link!, value)).toBe('invalid');
+    }
+  });
+
+  it('admits a well-formed id whatever document carries it: existing is the host’s question', () => {
+    expect(faultOf(link!, 'never-published')).toBeNull();
+  });
+});

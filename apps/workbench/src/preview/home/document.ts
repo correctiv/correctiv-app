@@ -149,6 +149,18 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'The screen’s title, and what you switch on beside it.',
     }),
   },
+  'screen-link': {
+    label: wbMessage({
+      id: 'home.module.screenLink',
+      defaultMessage: 'Link to a screen',
+      description:
+        'The name of the block that opens a screen the newsroom made, which the palette lists under the frame blocks.',
+    }),
+    what: wbMessage({
+      id: 'home.module.screenLink.what',
+      defaultMessage: 'A row that opens another screen, named by that screen’s own tab label.',
+    }),
+  },
   'feed-status': {
     label: wbMessage({
       id: 'home.module.feedStatus',
@@ -442,6 +454,17 @@ export const SETTING_LABELS: Readonly<Record<string, ModuleWords>> = {
     what: wbMessage({
       id: 'home.setting.screenHeader.search.what',
       defaultMessage: 'The field under the header that opens the search screen.',
+    }),
+  },
+  'screen-link.screen': {
+    label: wbMessage({
+      id: 'home.setting.screenLink.screen',
+      defaultMessage: 'Which screen it opens',
+    }),
+    what: wbMessage({
+      id: 'home.setting.screenLink.screen.what',
+      defaultMessage:
+        'The id of a screen you made. A link to a screen the document does not carry is left out.',
     }),
   },
   'article-hero.pin': {

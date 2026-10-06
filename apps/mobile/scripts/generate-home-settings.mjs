@@ -253,6 +253,9 @@ function renderSpec(spec) {
   if (spec.kind === 'article') {
     return `{ key: ${name(spec.key, 'a setting key')}, kind: 'article', fallback: null }`;
   }
+  if (spec.kind === 'screen') {
+    return `{ key: ${name(spec.key, 'a setting key')}, kind: 'screen', fallback: null }`;
+  }
   if (spec.kind === 'count') {
     return (
       `{ key: ${name(spec.key, 'a setting key')}, kind: 'count', ` +

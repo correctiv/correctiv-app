@@ -60,6 +60,9 @@ export const home: Record<string, string> = {
   'home.module.atlasCard.what': 'Die Karte zum Abriss-Atlas.',
   'home.module.tipCard': 'Tipp-Karte',
   'home.module.tipCard.what': 'Die WhatsApp-Tippleitung der Faktencheck-Redaktion.',
+  'home.module.screenLink': 'Link zu einem Bildschirm',
+  'home.module.screenLink.what':
+    'Eine Zeile, die einen anderen Bildschirm öffnet, benannt nach dessen eigener Tab-Bezeichnung.',
   'home.module.communityNote': 'Community-Hinweis',
   'home.module.communityNote.what': 'Ein kurzer Hinweis auf den Community-Bereich.',
   'home.module.profileClubCard': 'Profilkarte',
@@ -88,6 +91,9 @@ export const home: Record<string, string> = {
   'home.setting.screenHeader.search': 'Die Suche anbieten',
   'home.setting.screenHeader.search.what':
     'Das Feld unter der Kopfzeile, das den Suchbildschirm öffnet.',
+  'home.setting.screenLink.screen': 'Welchen Bildschirm er öffnet',
+  'home.setting.screenLink.screen.what':
+    'Die Kennung eines selbst angelegten Bildschirms. Ein Link auf einen Bildschirm, den das Dokument nicht enthält, wird weggelassen.',
   'home.setting.articleHero.pin': 'Welcher Artikel führt',
   'home.setting.articleHero.pin.what':
     'Der angeheftete, oder die neueste Recherche, wenn keiner angeheftet ist.',
@@ -272,6 +278,9 @@ export const home: Record<string, string> = {
   'home.setting.termNone': 'Alle (kein Filter)',
   'home.setting.termDefault': 'Die eigene Kategorie des Blocks',
   'home.setting.termOption': '{name} ({count})',
+  'home.setting.screenId': 'Kennung des Bildschirms, z. B. sommer-aktion',
+  'home.setting.screenId.invalid':
+    'Keine gültige Kennung: Kleinbuchstaben, Ziffern und einzelne Bindestriche, höchstens 40 Zeichen, und keiner der eingebauten Bildschirme. Gespeichert wird erst, wenn sie gültig ist.',
   'home.setting.termSearch': 'Schlagwörter suchen',
   'home.setting.sample':
     'Eine feste Auswahl echter Artikel, stellvertretend für das, was WordPress später liefert.',

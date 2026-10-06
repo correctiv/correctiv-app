@@ -415,11 +415,12 @@ function holds(spec: SettingSpec, value: unknown): boolean {
     case 'tag':
       return value === null || (typeof value === 'number' && Number.isInteger(value) && value > 0);
     case 'flag':
+    case 'screen':
     case 'text':
       // The two lines this file carries that fbb2756 did not, and they change nothing.
       // The switch above is exhaustive over the live `SettingSpec` this file imports, and
       // [ADR 0075](../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
-      // §1 added a fifth kind to it, §6 a sixth. What the shipped parser did with a kind
+      // §1 added a fifth kind to it, §6 a sixth, §7 a seventh (`screen`). What the shipped parser did with a kind
       // it did not know was fall out of this switch, and the caller read that as a value
       // it cannot read — which is what `false` says here, so a word or a switch where a
       // count belongs still costs its place in an app that never heard of either.

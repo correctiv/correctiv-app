@@ -72,6 +72,8 @@ export const MODULE_CONDITIONS: Readonly<Record<string, IntrinsicCondition | nul
   'mediathek-reihe': null,
   'backstage-teaser': null,
   'impact-footer': null,
+  // Left out by the block itself when its screen is not carried; no condition can say that.
+  'screen-link': null,
   // Entdecken's blocks are the catalogue and the app's own entry points: always there.
   'search-entry': null,
   'topic-rail': null,

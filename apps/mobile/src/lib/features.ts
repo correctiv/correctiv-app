@@ -31,6 +31,7 @@ export const MODULE_FEATURES: Readonly<Record<string, { readonly feature: string
   'mediathek-reihe': { feature: 'video' },
   'backstage-teaser': { feature: 'diary' },
   'impact-footer': { feature: 'reader' },
+  'screen-link': { feature: 'reader' },
   'search-entry': { feature: 'search' },
   'topic-rail': { feature: 'discover' },
   'project-directory': { feature: 'discover' },
