@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 
 import { readerOf } from '@correctiv/app-core/lib/home-audience';
 import { sectionsAtInstant, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
 
 import { MODULE_FEATURES } from '@/lib/features';
 import { useHomeInstant } from '@/lib/home/clock';
@@ -25,13 +24,7 @@ import { useReachable, useSession } from '@/lib/store/core';
  * prints the title out of the same parsed document the sections are in (ADR 0075 §5, §6),
  * so a document that arrives while a screen is open changes both at once or neither.
  */
-export function ScreenBlocks({
-  screen,
-  layout,
-}: {
-  screen: ConfigurableScreen;
-  layout: HomeLayout;
-}) {
+export function ScreenBlocks({ screen, layout }: { screen: string; layout: HomeLayout }) {
   const { entitlement } = useSession();
   const reader = useMemo(() => readerOf(entitlement), [entitlement]);
   const instant = useHomeInstant(layout);

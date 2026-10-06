@@ -49,7 +49,7 @@ const MORE_ICON = 'more';
  * at the same lookup — this takes words somebody may have built by hand, and
  * `constructor` is not an icon.
  */
-function iconOf(key: string | undefined): ScreenIcon {
+export function iconOf(key: string | undefined): ScreenIcon {
   if (key !== undefined && Object.hasOwn(SCREEN_ICONS, key)) return SCREEN_ICONS[key]!;
   return SCREEN_ICONS[SCREEN_ICON_FALLBACK]!;
 }

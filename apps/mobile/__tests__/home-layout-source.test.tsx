@@ -40,6 +40,7 @@ import {
   BUILT_AT,
   HOME_LAYOUT_OVERRIDE_KEY,
   LAYOUTS_URL,
+  customScreenLayout,
   homeLayout,
   layoutOverrideKey,
   screenLayout,
@@ -133,6 +134,42 @@ describe('the document another screen draws', () => {
       }),
     );
     expect(ids(screenLayout('home'))).toEqual(['h']);
+  });
+});
+
+describe('the document a custom screen draws (ADR 0075 §7)', () => {
+  const KLIMA = JSON.stringify({
+    version: 4,
+    title: { de: 'Klima' },
+    sections: [{ id: 'k', module: 'screen-header' }],
+  });
+
+  it('is the fetched copy of that screen, and nothing when the copy lacks it', () => {
+    expect(customScreenLayout('klima')).toBeNull();
+    holdFetched(merged({ klima: KLIMA }));
+    expect(ids(customScreenLayout('klima')!)).toEqual(['k']);
+    expect(customScreenLayout('wahl')).toBeNull();
+  });
+
+  it('is its own override over its fetched copy, under its own key', () => {
+    holdFetched(merged({ klima: KLIMA }));
+    storage.set(layoutOverrideKey('klima'), documentWith('override', 'screen-header'));
+    expect(layoutOverrideKey('klima')).toBe('workbench:layout:klima');
+    expect(ids(customScreenLayout('klima')!)).toEqual(['override']);
+  });
+
+  it('keeps a document that is only a heading', () => {
+    holdFetched(
+      merged({ klima: JSON.stringify({ version: 4, title: { de: 'Klima' }, sections: [] }) }),
+    );
+    expect(customScreenLayout('klima')!.sections).toEqual([]);
+  });
+
+  it('is nothing for an id that cannot name one, and for a declared screen', () => {
+    holdFetched(merged({ 'Bad Id': KLIMA, home: KLIMA }));
+    expect(customScreenLayout('constructor')).toBeNull();
+    expect(customScreenLayout('Bad Id')).toBeNull();
+    expect(customScreenLayout('home')).toBeNull();
   });
 });
 

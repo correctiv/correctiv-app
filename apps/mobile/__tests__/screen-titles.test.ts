@@ -40,6 +40,13 @@ const LAYOUT = /(^|\/)_layout(\.\w+)?\.tsx$/;
  */
 const SHELL = /(^|\/)\+(?!not-found)[\w.-]+\.tsx$/;
 
+/**
+ * The one route whose name is a document's: `/s/<id>` draws whichever custom screen the
+ * id names (ADR 0075 §7), so its title is `words.title` of that screen and there is no
+ * descriptor to read. Both checks below leave it out; its own test reads what it draws.
+ */
+const DOCUMENT_TITLED = /^s\/\[id\]\.tsx$/;
+
 function routeFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const full = join(dir, entry);
@@ -195,14 +202,19 @@ describe('screen titles', () => {
     // empty — it leaves it reading the screen underneath.
     const nameless = routes.filter(
       ({ rel, titles }) =>
-        !TAB_ROOT.test(rel) && !LAYOUT.test(rel) && !SHELL.test(rel) && titles.length === 0,
+        !TAB_ROOT.test(rel) &&
+        !LAYOUT.test(rel) &&
+        !SHELL.test(rel) &&
+        !DOCUMENT_TITLED.test(rel) &&
+        titles.length === 0,
     );
 
     expect(nameless.map((r) => r.rel)).toEqual([]);
   });
 
   it('gives every ScreenHeader call site a title', () => {
-    const offenders = routes.filter(({ source, headerTitles }) => {
+    const offenders = routes.filter(({ rel, source, headerTitles }) => {
+      if (DOCUMENT_TITLED.test(rel)) return false;
       const calls = source.match(/<ScreenHeader\b/g)?.length ?? 0;
       // Both spellings, through the same helper the rest of the file uses: a
       // call site whose title is a descriptor has a title, and counting only
