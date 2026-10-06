@@ -4,7 +4,7 @@ import { defineMessages } from 'react-intl';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 
 import type { HomeSection } from '@correctiv/app-core/lib/home-layout';
-import type { ConfigurableScreen } from '@correctiv/app-core/lib/screen-layout';
+import type { ScreenId } from '@correctiv/app-core/lib/screen-layout';
 
 import { sameSection } from './section';
 
@@ -330,7 +330,7 @@ interface HomeBlockProps {
   /** Whether the reader in the frame is outside the block's audience, so it is not drawn there. */
   absent?: boolean;
   /** The screen the block is drawn on: a block that sits on two of them may draw differently on each. */
-  screen?: ConfigurableScreen;
+  screen?: ScreenId;
 }
 
 /**

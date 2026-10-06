@@ -1,10 +1,17 @@
 import { CirclePlay, Compass, House, User, Users, type LucideIcon } from 'lucide-react';
 
-import { parseHomeLayout, type HomeLayout } from '@correctiv/app-core/lib/home-layout';
+import {
+  HOME_LAYOUT_VERSION,
+  parseHomeLayout,
+  type HomeLayout,
+} from '@correctiv/app-core/lib/home-layout';
 import {
   CONFIGURABLE_SCREENS,
+  isCustomScreenId,
+  isDeclaredScreen,
   SCREEN_DOCUMENTS,
   type ConfigurableScreen,
+  type ScreenId,
 } from '@correctiv/app-core/lib/screen-layout';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
@@ -19,7 +26,7 @@ import { governs, SHIPPED } from './document';
  * so this file holds no second list of blocks.
  */
 
-export { CONFIGURABLE_SCREENS, type ConfigurableScreen };
+export { CONFIGURABLE_SCREENS, type ConfigurableScreen, type ScreenId };
 
 /**
  * A screen's name as the app's tab says it. Strings except Home, for the reason
@@ -78,14 +85,71 @@ export const SCREEN_ICONS: Readonly<
   profil: { ionicon: 'person', Icon: User },
 };
 
-const shipped = new Map<ConfigurableScreen, HomeLayout>();
+/**
+ * The documents under `data/layout/screens/` that no declared screen owns: the screens the
+ * newsroom made and a pull request has merged (ADR 0075 §7).
+ *
+ * Read at build time with Vite's own glob, so this site knows the list without a server,
+ * and in the published build as well as in development. A file whose name is not a valid
+ * id is left out, which is the same rule the route and the check apply to a key.
+ */
+const FILES = import.meta.glob<unknown>(
+  '../../../../../packages/app-core/src/data/layout/screens/*.json',
+  { eager: true, import: 'default' },
+);
 
-/** The document the app ships for a screen, as the core reads it. Home's is `SHIPPED`. */
-export function shippedOf(screen: ConfigurableScreen): HomeLayout {
+const REPOSITORY_SCREENS: ReadonlyMap<string, unknown> = new Map(
+  Object.entries(FILES).flatMap(([path, document]) => {
+    const id = /([^/]+)\.json$/.exec(path)?.[1];
+    return id !== undefined && !isDeclaredScreen(id) && isCustomScreenId(id)
+      ? [[id, document]]
+      : [];
+  }),
+);
+
+/** The custom screens the repository carries, sorted so that the list does not move. */
+export function repositoryScreenIds(): string[] {
+  return [...REPOSITORY_SCREENS.keys()].sort();
+}
+
+/** Whether a merged file carries this id, which decides if deleting it is a submission. */
+export function inRepository(screen: string): boolean {
+  return REPOSITORY_SCREENS.has(screen);
+}
+
+/**
+ * What a screen the repository does not have yet starts from: no sections and no name,
+ * so that it differs from anything a person has typed and is always a change to submit.
+ */
+const BLANK: HomeLayout = {
+  version: HOME_LAYOUT_VERSION,
+  words: null,
+  sections: [],
+  moments: [],
+  editions: [],
+};
+
+/** A new screen's first document: a name and nothing on it. */
+export function blankScreen(title: string): HomeLayout {
+  return { ...BLANK, words: { title: { de: title } } };
+}
+
+const shipped = new Map<string, HomeLayout>();
+
+/**
+ * The document the app ships for a screen, as the core reads it. Home's is `SHIPPED`.
+ * A custom screen is shipped once a pull request has merged its file, and before that it is
+ * `BLANK`, which no document equals.
+ */
+export function shippedOf(screen: ScreenId): HomeLayout {
   if (screen === 'home') return SHIPPED;
   let layout = shipped.get(screen);
   if (!layout) {
-    const parsed = parseHomeLayout(SCREEN_DOCUMENTS[screen]).layout;
+    const document = isDeclaredScreen(screen)
+      ? SCREEN_DOCUMENTS[screen]
+      : REPOSITORY_SCREENS.get(screen);
+    if (document === undefined) return BLANK;
+    const parsed = parseHomeLayout(document).layout;
     if (!parsed) throw new Error(`the bundled ${screen} document does not parse`);
     layout = parsed;
     shipped.set(screen, layout);
@@ -93,15 +157,33 @@ export function shippedOf(screen: ConfigurableScreen): HomeLayout {
   return layout;
 }
 
-/**
- * The configurable screen a frame route shows, or `null` for a route that is none (the
- * article reader, settings…). The picker's way back: it takes the frame to a screen, this
- * takes the editor to the screen the frame is on, so a tap inside the app is followed.
- */
-export function screenOfRoute(route: string | undefined): ConfigurableScreen | null {
-  return CONFIGURABLE_SCREENS.find((of) => governs(route, SCREEN_ROUTES[of])) ?? null;
+/** The frame's route for any screen: a declared one's own, a custom one's `/s/<id>` (ADR 0075 §7). */
+export function routeOf(screen: ScreenId): string {
+  return isDeclaredScreen(screen) ? SCREEN_ROUTES[screen] : `/s/${screen}`;
 }
 
-export function isScreen(value: string | null): value is ConfigurableScreen {
-  return value !== null && (CONFIGURABLE_SCREENS as readonly string[]).includes(value);
+/**
+ * The screen a frame route shows, or `null` for a route that is none (the article
+ * reader, settings…). The picker's way back: it takes the frame to a screen, this
+ * takes the editor to the screen the frame is on, so a tap inside the app is followed.
+ *
+ * A custom screen's route is `/s/<id>`, and the id is returned whether or not the editor
+ * holds that screen: the caller decides if it is one it knows (`isScreen`), so a tap on a
+ * link to a screen the repository does not carry does not open an editor on nothing.
+ */
+export function screenOfRoute(route: string | undefined): ScreenId | null {
+  const declared = CONFIGURABLE_SCREENS.find((of) => governs(route, SCREEN_ROUTES[of]));
+  if (declared) return declared;
+  if (route === undefined) return null;
+  const id = /^\/s\/([^/]+)$/.exec(route.split(/[?#]/)[0]!.replace(/\/+$/, ''))?.[1];
+  return id !== undefined && isCustomScreenId(id) ? id : null;
+}
+
+/**
+ * Whether a name is one the editor can hold a document for: a declared screen, or a valid
+ * custom id. Whether a custom screen exists is the store's question (`customScreenIds`):
+ * a shared draft may bring a screen this browser has never seen, and it is held as one.
+ */
+export function isScreen(value: string | null): value is ScreenId {
+  return value !== null && (isDeclaredScreen(value) || isCustomScreenId(value));
 }

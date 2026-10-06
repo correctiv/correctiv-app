@@ -172,10 +172,14 @@ type Screens = typeof import('@correctiv/app-core/lib/screen-layout');
 type Navigation = typeof import('../src/preview/navigation/document.ts');
 
 /** The `screen` of a request's query: Home when it names none, null when it names a screen there is not. */
-function screenOf(url: string, screens: readonly string[]): string | null {
+function screenOf(
+  url: string,
+  screens: readonly string[],
+  isCustom: (id: string) => boolean,
+): string | null {
   const named = new URL(url, 'http://localhost').searchParams.get('screen');
   if (named === null) return 'home';
-  return screens.includes(named) ? named : null;
+  return screens.includes(named) || isCustom(named) ? named : null;
 }
 
 export function homeLayoutEndpoint(server: ViteDevServer) {
@@ -206,10 +210,12 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     const { parseHomeLayout } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/home-layout',
     )) as Parse;
-    const { CONFIGURABLE_SCREENS } = (await server.ssrLoadModule(
+    const { CONFIGURABLE_SCREENS, isCustomScreenId } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/screen-layout',
     )) as Screens;
-    const screen = screenOf(req.url ?? '', CONFIGURABLE_SCREENS);
+    // A screen the newsroom made is written to a file of its own, which is the one thing
+    // this save does for it that it does not do for a declared screen: create it.
+    const screen = screenOf(req.url ?? '', CONFIGURABLE_SCREENS, isCustomScreenId);
     if (screen === null) {
       return answer(res, 400, {
         code: 'unknown-screen',

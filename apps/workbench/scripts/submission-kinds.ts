@@ -26,7 +26,9 @@ export type { Change, Repo, Tree } from './submission-strings.ts';
 
 export interface Applied {
   /** Every file written, by repository path, which is the kind's own and never the issue's. */
-  files: { path: string; content: string | null }[];
+  files: { path: string; content: string }[];
+  /** Files deleted, by repository path: only the layout kind, for a screen the newsroom made. */
+  removed?: string[];
   /** What changed, as Markdown in German, for the pull request's body. */
   summary: string;
   /**
@@ -71,7 +73,9 @@ export const KINDS: Readonly<Record<SubmissionKind, KindEntry | null>> = {
   layout: {
     apply: (payload, repo) => {
       const { file, content, summary } = applyLayout(payload, repo);
-      return { files: [{ path: file, content }], summary, format: false };
+      return content === null
+        ? { files: [], removed: [file], summary, format: false }
+        : { files: [{ path: file, content }], summary, format: false };
     },
     // One file, the one the payload's target names: modified, or for a screen the newsroom
     // makes, created, or deleted when the document is null (ADR 0075 §7).
@@ -137,7 +141,7 @@ function entryFor(kind: SubmissionKind): KindEntry {
 export function applyIssue(title: string, body: string, repo: Repo) {
   const { kind, payload } = readSubmission(title, body);
   const applied = entryFor(kind).apply(payload, repo);
-  for (const { path } of applied.files)
+  for (const path of [...applied.files.map((file) => file.path), ...(applied.removed ?? [])])
     if (!mayWrite(kind, path)) throw new Error(`the ${kind} kind may not write ${path}`);
   return { kind, ...applied };
 }

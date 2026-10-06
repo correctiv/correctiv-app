@@ -18,13 +18,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import { formatTimeOfDay, type Point } from './document';
 import { parseMinute, STEP } from './minutes';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
+import { CONFIGURABLE_SCREENS, SCREEN_ICONS, SCREEN_NAMES, type ScreenId } from './screens';
 import {
-  CONFIGURABLE_SCREENS,
-  isScreen,
-  SCREEN_ICONS,
-  SCREEN_NAMES,
-  type ConfigurableScreen,
-} from './screens';
+  CustomScreenList,
+  CustomScreenRow,
+  type CustomScreensControl,
+  type OpenCustomScreen,
+} from './CustomScreens';
 
 /**
  * Everything above the block list, in one row and one chip.
@@ -203,11 +203,13 @@ export function EditorBar({
   follow,
   onFollow,
   outcome,
+  custom,
+  openCustom,
 }: {
-  screen: ConfigurableScreen;
+  screen: ScreenId;
   /** A scenario is open or the document holds one, so the screen and the submit are off. */
   guarded: boolean;
-  onScreen: (next: ConfigurableScreen) => void;
+  onScreen: (next: ScreenId) => void;
   scenario: ScenarioControl;
   follow: boolean;
   onFollow: (next: boolean) => void;
@@ -221,6 +223,13 @@ export function EditorBar({
    * draft paragraphs out of the panels and the slot is what is left of them.
    */
   outcome?: ReactNode;
+  /**
+   * The screens the newsroom made, beside the five (ADR 0075 §7): the list, the form for a
+   * new one. Absent in a host that has none, such as a test of the five.
+   */
+  custom?: CustomScreensControl;
+  /** The open screen's own row, when it is one of those. */
+  openCustom?: OpenCustomScreen | null;
 }) {
   const intl = useWorkbenchIntl();
 
@@ -250,9 +259,13 @@ export function EditorBar({
             };
           })}
           onChange={(value) => {
-            if (isScreen(value)) onScreen(value);
+            const declared = CONFIGURABLE_SCREENS.find((of) => of === value);
+            if (declared) onScreen(declared);
           }}
         />
+        {custom && (
+          <CustomScreenList control={custom} screen={screen} disabled={guarded} onOpen={onScreen} />
+        )}
         {/*
           A scenario is a Home document, so the select only exists on Home. It has
           room for a chip rather than a row of its own, and what it has to say about
@@ -295,6 +308,7 @@ export function EditorBar({
         submit click. Each was inside the same box before and each is the only thing
         on its own line now, which is what a row of controls plus a stack of state is.
       */}
+      {openCustom && <CustomScreenRow screen={openCustom} disabled={guarded} />}
       {guarded && <p className={NOTE}>{intl.formatMessage(CONTROLS_COPY.screenLocked)}</p>}
       {outcome}
     </div>

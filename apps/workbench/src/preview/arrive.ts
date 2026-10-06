@@ -10,7 +10,7 @@
  */
 
 import { holdIncoming, noteDamaged, setScreen } from './home/store';
-import { isScreen, SCREEN_ROUTES } from './home/screens';
+import { isScreen, routeOf } from './home/screens';
 import { packedIn, unpack } from './share';
 import { set } from './store';
 
@@ -48,6 +48,6 @@ export async function arriveFrom(hash: string): Promise<boolean> {
    * an address they cannot see.
    */
   setScreen(draft.screen);
-  set({ route: SCREEN_ROUTES[draft.screen] });
+  set({ route: routeOf(draft.screen) });
   return true;
 }
