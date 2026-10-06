@@ -21,11 +21,7 @@ import { bonusMedia, type BonusMedia } from '@correctiv/app-core/data/backstage'
 import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
 import type { YoutubeKey } from '@correctiv/app-core/stores/media';
 import type { Video } from '@correctiv/app-core/types/models';
-import {
-  screenTitleOf,
-  type ConfigurableScreen,
-  type ScreenWords,
-} from '@correctiv/app-core/lib/screen-layout';
+import { screenTitleOf, type ScreenWords } from '@correctiv/app-core/lib/screen-layout';
 import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
 import type { NewsletterKey } from '@correctiv/app-core/stores/settings';
@@ -248,7 +244,7 @@ export interface HomeModuleProps {
    * fact-check rail's "see all" is the case: it leads to Entdecken, so on Entdecken it
    * would lead to itself.
    */
-  readonly screen: ConfigurableScreen;
+  readonly screen: string;
   /**
    * The instant the fold drew this render at — the screen's `useHomeInstant(layout)`,
    * passed down rather than re-read, so that a module reading the time agrees with the

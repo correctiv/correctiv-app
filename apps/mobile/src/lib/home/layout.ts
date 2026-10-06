@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import {
@@ -10,6 +10,8 @@ import {
 import {
   CONFIGURABLE_SCREENS,
   SCREEN_DOCUMENTS,
+  customScreenIdsOf,
+  isCustomScreenId,
   screenDocumentOf,
   type ConfigurableScreen,
 } from '@correctiv/app-core/lib/screen-layout';
@@ -54,7 +56,7 @@ export const HOME_LAYOUT_OVERRIDE_KEY = 'workbench:home-layout';
  * other screen takes `workbench:layout:<screen>`. Frame only: the app reads these, and
  * which of them the workbench's editor writes is the workbench's business.
  */
-export function layoutOverrideKey(screen: ConfigurableScreen): string {
+export function layoutOverrideKey(screen: string): string {
   return screen === 'home' ? HOME_LAYOUT_OVERRIDE_KEY : `workbench:layout:${screen}`;
 }
 
@@ -70,7 +72,7 @@ export function layoutOverrideKey(screen: ConfigurableScreen): string {
  * browser with site data switched off throws on the accessor, and both answer the same
  * way here: there is no override, so the bundled document stands.
  */
-function overrideText(screen: ConfigurableScreen): string | null {
+function overrideText(screen: string): string | null {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null;
     return window.localStorage.getItem(layoutOverrideKey(screen));
@@ -130,9 +132,13 @@ function parseText(text: string): unknown {
 }
 
 const read = new Map<
-  ConfigurableScreen,
-  { override: string | null; fetched: string | null; layout: HomeLayout }
+  string,
+  { override: string | null; fetched: string | null; layout: HomeLayout | null }
 >();
+
+function isDeclared(screen: string): screen is ConfigurableScreen {
+  return (CONFIGURABLE_SCREENS as readonly string[]).includes(screen);
+}
 
 function parseScreen(document: unknown) {
   return parseHomeLayout(document, RENDERABLE);
@@ -178,11 +184,56 @@ function bundled(screen: ConfigurableScreen): HomeLayout {
  * registered.
  */
 export function screenLayout(screen: ConfigurableScreen): HomeLayout {
+  return resolveLayout(screen) ?? bundled(screen);
+}
+
+/**
+ * A custom screen's layout (ADR 0075 §7), or null when no document carries it.
+ *
+ * The same precedence as `screenLayout` without the last step: a screen the newsroom made
+ * has no bundled document, so the override and the fetched copy are all there is, and
+ * nothing is the answer the route turns into `+not-found`. An id that is not a valid
+ * custom id is null without a lookup, so `/s/constructor` and `/s/..` find nothing.
+ * Unlike a declared screen, a fetched document with no sections still counts: a screen
+ * that is only a heading is a screen.
+ */
+export function customScreenLayout(screen: string): HomeLayout | null {
+  return isCustomScreenId(screen) ? resolveLayout(screen) : null;
+}
+
+/**
+ * The ids of the custom screens that can be drawn right now: the ones the workbench is
+ * previewing and the ones the fetched copy carries, each once, in that order.
+ *
+ * An id nothing can draw is left out, which is how "Mehr" omits an entry for a screen the
+ * document does not carry (ADR 0075 §7, ADR 0039 §6): the list is made of the screens
+ * that resolve, so there is no entry to be dangling.
+ */
+export function customScreenIds(): string[] {
+  const named = new Set<string>();
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const prefix = layoutOverrideKey('');
+      for (let at = 0; at < window.localStorage.length; at += 1) {
+        const key = window.localStorage.key(at);
+        if (key?.startsWith(prefix)) named.add(key.slice(prefix.length));
+      }
+    }
+  } catch {
+    // No storage, no overrides: the fetched copy is all there is.
+  }
+  const fetched = fetchedText();
+  if (fetched !== null) for (const id of customScreenIdsOf(parseText(fetched))) named.add(id);
+  return [...named].filter((id) => customScreenLayout(id) !== null);
+}
+
+function resolveLayout(screen: string): HomeLayout | null {
   const override = overrideText(screen);
   const fetched = fetchedText();
   const held = read.get(screen);
   if (held && held.override === override && held.fetched === fetched) return held.layout;
 
+  const declared = isDeclared(screen);
   let layout: HomeLayout | null = null;
   if (override !== null) {
     // A document that does not parse costs the override and not the screen.
@@ -194,10 +245,10 @@ export function screenLayout(screen: ConfigurableScreen): HomeLayout {
     if (document !== undefined) {
       const parsed = parseScreen(document);
       reportLayoutProblems(parsed.problems);
-      if (parsed.layout && parsed.layout.sections.length > 0) layout = parsed.layout;
+      if (parsed.layout && (parsed.layout.sections.length > 0 || !declared)) layout = parsed.layout;
     }
   }
-  const result = layout ?? bundled(screen);
+  const result = layout ?? (declared ? bundled(screen) : null);
   read.set(screen, { override, fetched, layout: result });
   return result;
 }
@@ -234,8 +285,10 @@ function subscribeToLayout(listener: () => void): () => void {
     return unsubscribeStore;
   }
   const keys = new Set(CONFIGURABLE_SCREENS.map(layoutOverrideKey));
+  // A custom screen's key is not known in advance, so its prefix is the test.
+  const custom = layoutOverrideKey('');
   const onStorage = (event: StorageEvent) => {
-    if (event.key === null || keys.has(event.key)) listener();
+    if (event.key === null || keys.has(event.key) || event.key.startsWith(custom)) listener();
   };
   window.addEventListener('storage', onStorage);
   return () => {
@@ -256,6 +309,21 @@ function subscribeToLayout(listener: () => void): () => void {
  */
 export function useScreenLayout(screen: ConfigurableScreen): HomeLayout {
   const snapshot = () => screenLayout(screen);
+  return useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
+}
+
+/** The custom screens that can be drawn, re-read as `useScreenLayout` is. */
+export function useCustomScreenIds(): readonly string[] {
+  // A string snapshot: `useSyncExternalStore` compares by identity, and a fresh array
+  // each call would never settle.
+  const snapshot = () => customScreenIds().join('\n');
+  const joined = useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
+  return useMemo(() => (joined === '' ? [] : joined.split('\n')), [joined]);
+}
+
+/** A custom screen's layout, re-read as `useScreenLayout` does; null when none carries it. */
+export function useCustomScreenLayout(screen: string): HomeLayout | null {
+  const snapshot = () => customScreenLayout(screen);
   return useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
 }
 
