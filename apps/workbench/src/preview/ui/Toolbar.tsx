@@ -330,7 +330,7 @@ export function Toolbar({
         link opens on the layout it was made on.
       */}
       <Select
-        className="max-w-[6rem] shrink-0 sm:max-w-[8rem]"
+        className="max-w-[10rem] shrink-0"
         aria-label={intl.formatMessage(COPY.layout)}
         value={state.layout}
         // The route goes back to the start: a screen of the layout left behind is an address
