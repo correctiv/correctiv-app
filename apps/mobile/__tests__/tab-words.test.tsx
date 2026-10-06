@@ -167,6 +167,36 @@ describe('the words a bar draws', () => {
   });
 });
 
+describe('the "Mehr" tab for a screen the newsroom made (ADR 0075 §7)', () => {
+  const custom = { klima: screenDocument({ title: { de: 'Klimakrise' } }) };
+
+  it('is not there while the document carries no custom screen and nothing overflows', () => {
+    holdFetched(merged({}, { version: 1, tabs: ['entdecken'], maxTabs: 5 }));
+    expect(tabBar().bar).toEqual({ tabs: ['index', 'entdecken'], more: [] });
+  });
+
+  it('appears with nothing behind it once the document carries a custom screen', () => {
+    holdFetched(merged(custom, { version: 1, tabs: ['entdecken'], maxTabs: 5 }));
+    expect(tabBar().bar).toEqual({ tabs: ['index', 'entdecken', 'mehr'], more: [] });
+  });
+
+  it('takes the last tab of a full bar, as an overflow does', () => {
+    holdFetched(merged(custom));
+    expect(tabBar().bar.tabs).toEqual(['index', 'entdecken', 'mediathek', 'mitmachen', 'mehr']);
+    expect(tabBar().bar.more).toEqual(['profil']);
+  });
+
+  it('is decided at the first call, so a screen that arrives later has its tab at the next start', () => {
+    // The bar cannot change while the app runs (ADR 0071 §5); the row in "Mehr" is not
+    // frozen and appears at once, which `custom-screen.test.tsx` holds.
+    expect(tabBar().bar.tabs).not.toContain('mehr');
+    holdFetched(merged(custom));
+    expect(tabBar().bar.tabs).not.toContain('mehr');
+    resetTabBar();
+    expect(tabBar().bar.tabs).toContain('mehr');
+  });
+});
+
 /** One screen's words, built by hand: what a document would have left after parsing. */
 const words = (overrides: Partial<ScreenWords>): ScreenWords => ({
   title: { de: 'Mitmachen', en: 'Take part' },
