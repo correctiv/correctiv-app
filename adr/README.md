@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Seventy-nine records shaped this repo. Read them when you want to know *why* something
+Eighty records shaped this repo. Read them when you want to know *why* something
 is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it is.
 
 | | Decision | Status |
@@ -84,6 +84,7 @@ is the way it is; [`../ARCHITECTURE.md`](../ARCHITECTURE.md) describes *what* it
 | [0078](0078-layouts-ship-and-demo.md) | Layouts: ship and demo | accepted, built (data model, scripts and the submission's payload; the tab bar by 0079, the workbench by 0080); a layout is a folder under `data/layouts/`, the app bundles `ship` and ships it empty while `demo` is the workbench's and the tests', every screen is a screen whatever its name with no minimum, the order of `navigation.json` is the order of the bar, and a `[layout]` submission names exactly one layout; the tab bar's rules, the empty state and the routes were built by 0079; the workbench's choice of layout is not |
 | [0079](0079-the-app-draws-its-tabs-from-the-layout.md) | The app draws its tabs from the layout | accepted, built; every screen is the one route `/s/<id>`, the bar is the app's own on every platform and re-read when a document changes, the first entry of `navigation.json` is the start and no entry is the empty state; retires the native phone bar of 0013, the fixed Home of 0071 and 0078, and the bar built once per start of 0075; costs the platform's tab bar, iOS unrun, and leaves the frame's choice of layout open |
 | [0080](0080-the-workbench-chooses-a-layout.md) | The workbench chooses a layout | accepted, built; the layout is `ly` in the address with `ship` as the default, the frame draws one whole layout from `workbench:layout-set` so nothing of another shows through, every screen is deletable and a deletion is a draft until it is submitted, the navigation editor offers every screen of the layout, a submission names its layout and says when it is the shipped one; carries out 0078's open points 3 and 4 |
+| [0081](0081-the-system-tab-bar-returns-and-is-decided-at-start.md) | The system tab bar returns, and is decided at start | accepted, built, unrun on a device; iOS and Android draw `NativeTabs` again from the navigation known at start, a trigger is a slot (`index`, `slot-2`…`slot-5`, `mehr`) that draws the n-th tab's screen, a later fetch applies at the next start, and the web and the workbench's frame keep the live drawn bar; answers 0079's open point 3 |
 
 Ten notes for readers of the older ones:
 

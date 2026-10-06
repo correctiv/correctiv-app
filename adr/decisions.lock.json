@@ -814,5 +814,13 @@
       "5": ["A submission names one layout, and says when it is the shipped one"],
       "6": ["Drafts are kept per layout, and the old keys are read once"]
     }
+  },
+  "0081": {
+    "slugs": ["the-system-tab-bar-returns-and-is-decided-at-start"],
+    "decisions": {
+      "1": ["The store apps decide the bar once, at start"],
+      "2": ["A trigger is a slot, not a screen"],
+      "3": ["The platform decides the bar, by file"]
+    }
   }
 }
