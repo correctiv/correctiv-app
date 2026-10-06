@@ -113,7 +113,7 @@ const COPY = defineMessages({
   },
   resultEmpty: {
     id: 'navigation.resultEmpty',
-    defaultMessage: 'nothing: the app shows its empty state',
+    defaultMessage: 'nothing, the app shows its empty state',
     description:
       'After the label of the bar, when no entry can be opened. The empty state is the app’s own page that says the layout holds no screen yet.',
   },
@@ -251,42 +251,46 @@ export function NavigationEditor() {
     <div className="flex flex-col gap-s" data-testid="navigation-editor">
       <p className={NOTE}>{intl.formatMessage(COPY.lead)}</p>
 
-      <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.entries)}>
-        <h3 className="text-m font-semibold text-on-canvas">{intl.formatMessage(COPY.entries)}</h3>
-        <ol className="flex flex-col gap-2xs">
-          {navigation.tabs.map((id, index) => (
-            <li key={id} className={ROW} data-testid={`nav-entry-${id}`}>
-              <span className="flex-1 text-s text-on-canvas">{screenTitle(id)}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={index === 0}
-                aria-label={intl.formatMessage(COPY.moveUp, { name: screenTitle(id) })}
-                onClick={() => setNavigation(movedTab(navigation, id, -1))}
-              >
-                <ArrowUp aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={index === navigation.tabs.length - 1}
-                aria-label={intl.formatMessage(COPY.moveDown, { name: screenTitle(id) })}
-                onClick={() => setNavigation(movedTab(navigation, id, 1))}
-              >
-                <ArrowDown aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                aria-label={intl.formatMessage(COPY.remove, { name: screenTitle(id) })}
-                onClick={() => setNavigation(withTab(navigation, id, false, screens))}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {navigation.tabs.length > 0 && (
+        <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.entries)}>
+          <h3 className="text-m font-semibold text-on-canvas">
+            {intl.formatMessage(COPY.entries)}
+          </h3>
+          <ol className="flex flex-col gap-2xs">
+            {navigation.tabs.map((id, index) => (
+              <li key={id} className={ROW} data-testid={`nav-entry-${id}`}>
+                <span className="flex-1 text-s text-on-canvas">{screenTitle(id)}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={index === 0}
+                  aria-label={intl.formatMessage(COPY.moveUp, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(movedTab(navigation, id, -1))}
+                >
+                  <ArrowUp aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={index === navigation.tabs.length - 1}
+                  aria-label={intl.formatMessage(COPY.moveDown, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(movedTab(navigation, id, 1))}
+                >
+                  <ArrowDown aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={intl.formatMessage(COPY.remove, { name: screenTitle(id) })}
+                  onClick={() => setNavigation(withTab(navigation, id, false, screens))}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {rest.length > 0 && (
         <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.available)}>

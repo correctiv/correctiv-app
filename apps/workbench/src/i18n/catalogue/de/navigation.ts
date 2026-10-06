@@ -14,7 +14,7 @@ export const navigation: Record<string, string> = {
     '„Mehr“ zählt als einer davon. Gibt es mehr Einträge, wandert der Rest hinter „Mehr“. Mindestens {min}, höchstens {max}.',
   'navigation.result': 'Die Leiste zeigt',
   'navigation.behindMore': 'hinter „Mehr“: {names}',
-  'navigation.resultEmpty': 'nichts: die App zeigt ihren Leerzustand',
+  'navigation.resultEmpty': 'nichts, die App zeigt ihren Leerzustand',
   'navigation.resultSingle': '{name}, ohne Tab-Leiste',
   'navigation.invalid': 'Die App würde diese Leiste nicht zeichnen: {codes}',
   'navigation.copied':
