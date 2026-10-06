@@ -5,7 +5,9 @@ import {
   type CustomScreenIdFault,
 } from '@correctiv/app-core/lib/screen-layout';
 
-import { differs } from './document';
+import { formatNavigationDocument } from '../navigation/document';
+import { getNavigation, subscribeNavigation } from '../navigation/store';
+import { differs, formatLayoutDocument } from './document';
 import { layoutKey } from './names';
 import {
   blankScreen,
@@ -15,6 +17,7 @@ import {
   shippedOf,
   type ScreenId,
 } from './screens';
+import { joinedLength } from './size';
 import { publish, restore, restorable } from './write';
 
 /**
@@ -344,4 +347,25 @@ export function setOpenEdition(id: string | null): void {
   if (openEdition === id) return;
   openEdition = id;
   for (const listener of editionListeners) listener();
+}
+
+/**
+ * The length of the document the deploy would publish from what is held now: every screen
+ * as the editor has it, and the navigation beside them (ADR 0075 §7). A number, so that it
+ * is a snapshot `useSyncExternalStore` can compare.
+ */
+export function joinedDocumentLength(): number {
+  const screens: Record<string, string> = {};
+  for (const of of [...CONFIGURABLE_SCREENS, ...customScreenIds()]) {
+    screens[of] = formatLayoutDocument(screenLayoutOf(of));
+  }
+  return joinedLength(screens, formatNavigationDocument(getNavigation()));
+}
+
+/** Subscribes to everything `joinedDocumentLength` reads: the screens and the navigation. */
+export function subscribeJoined(listener: Listener): () => void {
+  const stops = [subscribeLayout(listener), subscribeNavigation(listener)];
+  return () => {
+    for (const stop of stops) stop();
+  };
 }

@@ -118,14 +118,18 @@ import {
   getLayout,
   getScreen,
   incomingOf,
+  joinedDocumentLength,
   newScreenFault,
   noticeOf,
   publishCustomScreens,
   screenTitle,
   setLayout,
   setScreen,
+  subscribeJoined,
   subscribeLayout,
 } from './store';
+import { SizeNote } from './DocumentNotes';
+import { readSize } from './size';
 import { copyNow } from '../clipboard';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { canSave, deletion, publish, save, submission, type SaveResult } from './write';
@@ -559,6 +563,11 @@ export function HomeDocument({
     () => false,
   );
   const notice = useSyncExternalStore(subscribeLayout, noticeOf, () => null);
+  const joinedLength = useSyncExternalStore(
+    subscribeJoined,
+    joinedDocumentLength,
+    joinedDocumentLength,
+  );
   const customJoined = useSyncExternalStore(subscribeLayout, customScreensSnapshot, () => '');
   const customIds = useMemo(
     () => (customJoined === '' ? [] : customJoined.split('\n')),
@@ -1264,6 +1273,8 @@ export function HomeDocument({
           </>
         }
       />
+
+      <SizeNote size={readSize(joinedLength)} />
 
       {target.edition === null ? (
         <PointChip

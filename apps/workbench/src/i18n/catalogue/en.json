@@ -1607,6 +1607,14 @@
     "defaultMessage": "Scroll the frame to the block you point at",
     "description": "The tooltip, and the accessible name, of the button in the editor’s bar that switches following the pointer on and off. It was a checkbox with this sentence beside it, which took a row of the panel that the block list wanted."
   },
+  "home.document.nearLimit": {
+    "defaultMessage": "The published screens are at {share} of what the app reads: {length} of {limit} characters. Past that the app ignores the document and draws the one it ships with.",
+    "description": "A warning under the head of the layout tool, shown from 80 percent of the limit on (ADR 0075 §7). {share} is the fraction already formatted as a percentage, {length} is how many characters the screens and the navigation come to when they are joined, and {limit} is the most the app reads, both as plain numbers."
+  },
+  "home.document.overLimit": {
+    "defaultMessage": "The published screens are over what the app reads: {length} of {limit} characters. The app ignores the document and draws the one it ships with.",
+    "description": "Replaces home.document.nearLimit once the joined document is longer than the limit (ADR 0075 §7). {length} is how many characters the screens and the navigation come to when they are joined and {limit} is the most the app reads, both as plain numbers."
+  },
   "home.document.refused": {
     "defaultMessage": "refused",
     "description": "The badge in front of the dev server’s reason for not writing the file. White on the brand red, beside a sentence that comes from the server and is not translated."
