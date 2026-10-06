@@ -1,6 +1,7 @@
 # ADR 0071 — Screens become documents, and the tab bar becomes one too
 
-Status: accepted, 2026-10-01, decided by the product side. Not built. It answers the
+Status: accepted, 2026-10-01, decided by the product side. Built, 2026-10-06, in #305, #308–#313, #315, #317 and #319
+(§2 and the label-and-icon clause of §4 were since superseded, see ADR 0073 and ADR 0075). It answers the
 question [ADR 0054](0054-a-block-declares-where-it-may-appear.md)
 §5 left open and the two items of its "What is still open" that a second configurable
 screen forces, and it is written before the second screen exists for the reason ADR 0054

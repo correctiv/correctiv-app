@@ -1,6 +1,7 @@
 # ADR 0075 — A document carries its own words, and a screen says what it is called
 
-Status: accepted, 2026-10-02, decided by the product side. Not built. It supersedes
+Status: accepted, 2026-10-02, decided by the product side. Built in part, 2026-10-06: §1 to §6 in #328, #330, #333 and
+#336; §7 is not built, there is no `/s/<id>` route and no custom screen yet. It supersedes
 [ADR 0073](0073-every-screen-takes-every-block-and-a-block-declares-its-category.md) §3
 whole, the clause of
 [ADR 0071](0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md) §4 that has the
@@ -340,6 +341,9 @@ carries languages; it does not choose one.
 4. **Whether a screen's title and its tab label ever actually differ.** `tabLabel` is a field
    waiting for its first use, which is the position ADR 0054 §5 was in when it wrote the list
    of screens, and ADR 0073 is what happened next. If nothing uses it, it goes the same way.
+   Checked 2026-10-06: it is built (`screen-layout.ts`, read by the tab bar) and no document
+   under `data/layout/screens/` sets it, so every tab label is today its screen's title.
+   Still undecided.
 5. **Whether a missing translation should ever be an error** rather than the warning §2
    makes it. It depends on whether a second language ever ships, which is ADR 0049's question
    and not this one's.
