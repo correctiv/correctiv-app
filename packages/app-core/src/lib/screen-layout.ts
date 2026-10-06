@@ -94,8 +94,10 @@ export {
   CUSTOM_SCREEN_ID_MAX_LENGTH,
   customScreenIdFault,
   isCustomScreenId,
+  isDeclaredScreen,
   type ConfigurableScreen,
   type CustomScreenIdFault,
+  type ScreenId,
 } from './screen-id';
 
 /**
@@ -231,7 +233,7 @@ export interface ScreenWordsParse {
  * differ at all. 80 characters is a heading line in German or English; 24 is a tab bar
  * with the longest compound word the three platforms put on one.
  */
-const TITLE_SPEC: TextSetting = {
+export const SCREEN_TITLE_SPEC: TextSetting = {
   key: 'title',
   kind: 'text',
   maxChars: 80,
@@ -368,7 +370,7 @@ export function parseScreenDocument(input: unknown): ScreenWordsParse {
     return { words: null, problems };
   }
 
-  const title = readWord(input.title, TITLE_SPEC, TITLE_FAULT_CODES, problems);
+  const title = readWord(input.title, SCREEN_TITLE_SPEC, TITLE_FAULT_CODES, problems);
   const tabLabel =
     input.tabLabel === undefined
       ? undefined

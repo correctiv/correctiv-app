@@ -5,7 +5,11 @@
  *
  * The counterpart of `check-home-layout.ts` for the document ADR 0071 §1 publishes: every
  * screen the app declares has to be in it and has to parse with no problem, judged by the
- * app's own parser and stricter than the app, for the reason that script gives.
+ * app's own parser and stricter than the app, for the reason that script gives. A screen
+ * the newsroom made (ADR 0075 §7) is judged the same way, with two differences: it need not
+ * be there, and it may hold no section at all, because a screen that is only a heading is a
+ * screen. A key that is neither declared nor a valid custom id is refused, since it is a
+ * file somebody put under `screens/` that no route can reach.
  */
 import { readFileSync } from 'node:fs';
 
@@ -13,6 +17,8 @@ import { parseHomeLayout } from '../src/lib/home-layout';
 import { parseNavigation } from '../src/lib/navigation';
 import {
   CONFIGURABLE_SCREENS,
+  isCustomScreenId,
+  isDeclaredScreen,
   navigationDocumentOf,
   parseScreenDocument,
   screenDocumentOf,
@@ -32,8 +38,22 @@ try {
   process.exit(1);
 }
 
+const custom =
+  typeof body === 'object' &&
+  body !== null &&
+  typeof (body as { screens?: unknown }).screens === 'object' &&
+  (body as { screens: unknown }).screens !== null
+    ? Object.keys((body as { screens: object }).screens).filter((key) => !isDeclaredScreen(key))
+    : [];
+
 let failed = false;
-for (const screen of CONFIGURABLE_SCREENS) {
+for (const screen of [...CONFIGURABLE_SCREENS, ...custom]) {
+  const declared = isDeclaredScreen(screen);
+  if (!declared && !isCustomScreenId(screen)) {
+    console.error(`${path}: ${JSON.stringify(screen)}: not a valid screen id`);
+    failed = true;
+    continue;
+  }
   const document = screenDocumentOf(body, screen);
   if (document === undefined) {
     console.error(`${path}: ${screen}: missing`);
@@ -53,7 +73,12 @@ for (const screen of CONFIGURABLE_SCREENS) {
   const named = parseScreenDocument(document);
   for (const problem of named.problems)
     console.error(`${path}: ${screen}: ${problem.code} ${JSON.stringify(problem.context)}`);
-  if (!layout || layout.sections.length === 0 || problems.length > 0 || named.words === null) {
+  if (
+    !layout ||
+    (declared && layout.sections.length === 0) ||
+    problems.length > 0 ||
+    named.words === null
+  ) {
     console.error(`${path}: ${screen}: refused`);
     failed = true;
   } else {
