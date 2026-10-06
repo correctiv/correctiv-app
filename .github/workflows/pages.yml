@@ -143,6 +143,13 @@ jobs:
           npx tsx packages/app-core/scripts/join-screen-layouts.ts site/layout.json
           cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json
 
+      # `/app/s/<id>` has no file in the export (ADR 0075 §7), so Pages answers it with the
+      # SITE's 404.html, which is the workbench's. This links a script into that page that
+      # hands such an address to the app's entry page; every other address stays the
+      # workbench's. It edits the assembled site only, so `independence` is not touched.
+      - name: Route screen addresses to the app
+        run: node apps/mobile/scripts/pages-app-fallback.mjs site "${{ steps.pages.outputs.base_path }}"
+
       # Ways this deploy can be broken while both builds succeed, so each one
       # is read off the assembled files rather than assumed:
       #   1. a component with no web implementation (react-native-webview renders a
