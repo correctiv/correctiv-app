@@ -780,5 +780,19 @@
       "2": ["Why the name, and not the line that was supposed to save it"],
       "3": ["Where the rename could not reach"]
     }
+  },
+  "0078": {
+    "slugs": ["layouts-ship-and-demo"],
+    "decisions": {
+      "1": ["A layout is a folder under `data/layouts/`"],
+      "2": ["There are two layouts today, `ship` and `demo`"],
+      "3": ["The app bundles `ship` and nothing else"],
+      "4": ["A screen is a screen, whatever its name"],
+      "5": [
+        "The order in `navigation.json` is the order of the bar, and its first entry is the start"
+      ],
+      "6": ["A submission names exactly one layout"],
+      "7": ["Until the workbench can choose, it works on `demo`"]
+    }
   }
 }
