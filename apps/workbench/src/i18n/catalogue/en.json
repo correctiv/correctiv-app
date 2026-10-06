@@ -2717,7 +2717,7 @@
     "description": "The label before the tabs the bar will draw, in order, such as Home · Entdecken · Mehr."
   },
   "navigation.resultEmpty": {
-    "defaultMessage": "nothing: the app shows its empty state",
+    "defaultMessage": "nothing, the app shows its empty state",
     "description": "After the label of the bar, when no entry can be opened. The empty state is the app’s own page that says the layout holds no screen yet."
   },
   "navigation.resultSingle": {
