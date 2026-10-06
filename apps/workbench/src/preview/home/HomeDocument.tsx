@@ -128,7 +128,8 @@ import {
   subscribeJoined,
   subscribeLayout,
 } from './store';
-import { SizeNote } from './DocumentNotes';
+import { GapsNote, SizeNote } from './DocumentNotes';
+import { gapsOf } from './gaps';
 import { readSize } from './size';
 import { copyNow } from '../clipboard';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
@@ -1275,6 +1276,7 @@ export function HomeDocument({
       />
 
       <SizeNote size={readSize(joinedLength)} />
+      <GapsNote gaps={gapsOf(layout, !isDeclaredScreen(screen))} />
 
       {target.edition === null ? (
         <PointChip

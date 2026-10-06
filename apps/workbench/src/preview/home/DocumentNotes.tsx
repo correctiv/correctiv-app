@@ -2,6 +2,8 @@ import { TriangleAlert } from 'lucide-react';
 import { defineMessages } from 'react-intl';
 
 import { useWorkbenchIntl } from '../../i18n/Localisation';
+import { languageName } from './document';
+import type { Gap } from './gaps';
 import type { SizeReading } from './size';
 
 /**
@@ -23,6 +25,13 @@ const COPY = defineMessages({
       'The published screens are over what the app reads: {length} of {limit} characters. The app ignores the document and draws the one it ships with.',
     description:
       'Replaces home.document.nearLimit once the joined document is longer than the limit (ADR 0075 §7). {length} is how many characters the screens and the navigation come to when they are joined and {limit} is the most the app reads, both as plain numbers.',
+  },
+  gap: {
+    id: 'home.document.gap',
+    defaultMessage:
+      '{language} is missing in {count, plural, one {# text} other {# texts}} on this screen.',
+    description:
+      'Under the head of the layout tool, one line per language some text of the screen does not carry (ADR 0075 §2). {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and {count} is how many of the screen’s texts lack it. A mark and not a fault: the app draws German where a language is missing.',
   },
 });
 
@@ -48,6 +57,26 @@ export function SizeNote({ size }: { size: SizeReading }) {
               length: intl.formatNumber(size.length),
               limit: intl.formatNumber(size.limit),
             })}
+      </span>
+    </output>
+  );
+}
+
+export function GapsNote({ gaps }: { gaps: readonly Gap[] }) {
+  const intl = useWorkbenchIntl();
+  if (gaps.length === 0) return null;
+  return (
+    <output className={NOTE} data-testid="gaps-note">
+      <TriangleAlert aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />
+      <span className="flex min-w-0 flex-col">
+        {gaps.map((gap) => (
+          <span key={gap.language}>
+            {intl.formatMessage(COPY.gap, {
+              language: languageName(intl, gap.language),
+              count: gap.texts,
+            })}
+          </span>
+        ))}
       </span>
     </output>
   );

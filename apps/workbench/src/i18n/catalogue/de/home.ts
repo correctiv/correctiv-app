@@ -252,6 +252,8 @@ export const home: Record<string, string> = {
   'home.document.shareField': 'Der Link',
   'home.document.nearLimit':
     'Die veröffentlichten Bildschirme sind bei {share} dessen, was die App liest: {length} von {limit} Zeichen. Darüber ignoriert die App das Dokument und zeigt das mitgelieferte.',
+  'home.document.gap':
+    '{language} fehlt in {count, plural, one {# Text} other {# Texten}} auf diesem Bildschirm.',
   'home.document.overLimit':
     'Die veröffentlichten Bildschirme sind über dem, was die App liest: {length} von {limit} Zeichen. Die App ignoriert das Dokument und zeigt das mitgelieferte.',
   'home.document.sharedHeld':
