@@ -5,7 +5,7 @@ import docsModule from 'virtual:docs';
 import { wbMessage } from '../../i18n/messages';
 import { NAVIGATION_ENDPOINT, NAVIGATION_FILE, NAVIGATION_TARGET } from '../home/names';
 import { type Format, type SaveResult } from '../home/write';
-import { issueAddress, issueFor, layoutPayload } from '../submission';
+import { issueAddress, issueFor, layoutPayload, type Via } from '../submission';
 import { formatNavigationDocument } from './document';
 
 /**
@@ -77,9 +77,9 @@ export async function saveNavigation(navigation: Navigation, format: Format): Pr
   }
 }
 
-export function submitNavigation(navigation: Navigation, format: Format) {
+export function submitNavigation(navigation: Navigation, format: Format, via?: Via) {
   const payload = JSON.stringify(JSON.parse(formatNavigationDocument(navigation)));
-  const issue = issueFor('layout', layoutPayload(NAVIGATION_TARGET, payload), {
+  const issue = issueFor('layout', layoutPayload(NAVIGATION_TARGET, payload, via), {
     heading: format(COPY.issueHeading),
     lead: format(COPY.issueLead),
   });

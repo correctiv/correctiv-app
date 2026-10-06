@@ -97,11 +97,32 @@ export const SUBMISSION_FENCE = 'json';
 export const SUBMISSION_ADDRESS_LIMIT = 4000;
 
 /**
+ * Where a draft came from, when it is not this person's own work: the one value is `link`,
+ * a draft that arrived by a shared link and was submitted as it arrived (ADR 0076 §3).
+ *
+ * A claim by whoever wrote the issue and nothing the workflow can check, so the pull
+ * request words it as one. It is the only provenance there is, and an envelope that names
+ * any other is refused rather than printed.
+ */
+export const VIA_LINK = 'link';
+export type Via = typeof VIA_LINK;
+
+/**
  * The payload of a `layout` submission: the document, named by what it is for.
  * `payload` is the document already printed on one line.
  */
-export function layoutPayload(target: string, payload: string): string {
-  return `{"target":${JSON.stringify(target)},"document":${payload}}`;
+export function layoutPayload(target: string, payload: string, via?: Via): string {
+  const origin = via === undefined ? '' : `,"via":${JSON.stringify(via)}`;
+  return `{"target":${JSON.stringify(target)},"document":${payload}${origin}}`;
+}
+
+/**
+ * The payload of a `home` submission. The bare document, as ever, unless it came by a link:
+ * then it is wrapped as `{ document, via }`, which no home document can be mistaken for
+ * because none has a key called `document`.
+ */
+export function homePayload(payload: string, via?: Via): string {
+  return via === undefined ? payload : `{"document":${payload},"via":${JSON.stringify(via)}}`;
 }
 
 export interface Issue {

@@ -19,6 +19,7 @@ import {
   kindOfTitle,
   SUBMISSION_ADDRESS_LIMIT,
   SUBMISSION_KINDS,
+  VIA_LINK,
 } from '../../src/preview/submission';
 
 /**
@@ -33,6 +34,19 @@ const format = (
 ) => intl.formatMessage(message, values);
 
 const EDITED = withHidden(SHIPPED, null, 'hero', true);
+
+describe('a draft that arrived by a link, submitted', () => {
+  it('says so in the block the workflow reads, and the workflow reads it back', () => {
+    const { body } = submission(EDITED, format, 'home', VIA_LINK);
+    const read = readSubmission('[startseite] Änderungen an der Startseite', body);
+    expect(JSON.parse(read.payload)).toMatchObject({ via: 'link' });
+  });
+
+  it('says nothing for a draft that was the person’s own', () => {
+    const { body } = submission(EDITED, format);
+    expect(body).not.toContain('"via"');
+  });
+});
 
 describe('where Submit changes sends a person', () => {
   it('is a new issue on this repository, titled with the home kind’s prefix', () => {
