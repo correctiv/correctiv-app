@@ -102,6 +102,28 @@ describe('arrangeTabBar', () => {
   it('is null when fewer than two tabs remain', () => {
     expect(arrangeTabBar(nav(['mitmachen']), () => false)).toBeNull();
   });
+
+  describe('with a screen to list (ADR 0075 §7)', () => {
+    it('adds Mehr with nothing behind it when every destination fits', () => {
+      const bar = arrangeTabBar(nav(['entdecken', 'profil']), all, true)!;
+      expect(bar).toEqual({ tabs: ['index', 'entdecken', 'profil', MORE_TAB], more: [] });
+    });
+
+    it('makes room for Mehr in a bar that is exactly full, as an overflow does', () => {
+      const bar = arrangeTabBar(nav(['entdecken', 'mediathek', 'mitmachen', 'profil']), all, true)!;
+      expect(bar.tabs).toEqual(['index', 'entdecken', 'mediathek', 'mitmachen', MORE_TAB]);
+      expect(bar.more).toEqual(['profil']);
+    });
+
+    it('is the same bar as before when an overflow already put Mehr there', () => {
+      const tabs = ['entdecken', 'mediathek', 'mitmachen', 'profil', 'game'];
+      expect(arrangeTabBar(nav(tabs), all, true)).toEqual(arrangeTabBar(nav(tabs), all));
+    });
+
+    it('is a bar without Mehr when asked for none', () => {
+      expect(arrangeTabBar(nav(['entdecken']), all)!.tabs).toEqual(['index', 'entdecken']);
+    });
+  });
 });
 
 describe('chooseTabBar', () => {

@@ -147,14 +147,23 @@ export interface TabBar {
  *
  * `reachable` is asked about every destination after Home; Home is not asked about, as it
  * cannot be switched off.
+ *
+ * `withMore` keeps "Mehr" in the bar when nothing overflowed: a screen the newsroom made
+ * is not a tab (ADR 0075 §7) and is reached from that list, so a document that carries one
+ * needs the tab even when every destination fits. A bar that is already full gives up its
+ * last tab for it, as an overflow does, and `more` then holds only what moved.
  */
 export function arrangeTabBar(
   navigation: Navigation,
   reachable: (tab: string) => boolean,
+  withMore = false,
 ): TabBar | null {
   const entries = [HOME_TAB, ...navigation.tabs.filter(reachable)];
   if (entries.length < MIN_TABS) return null;
-  if (entries.length <= navigation.maxTabs) return { tabs: entries, more: [] };
+  if (entries.length < navigation.maxTabs) {
+    return { tabs: withMore ? [...entries, MORE_TAB] : entries, more: [] };
+  }
+  if (entries.length === navigation.maxTabs && !withMore) return { tabs: entries, more: [] };
   const kept = navigation.maxTabs - 1;
   return { tabs: [...entries.slice(0, kept), MORE_TAB], more: entries.slice(kept) };
 }
@@ -167,6 +176,8 @@ export interface TabBarOptions {
   candidate?: unknown;
   known: ReadonlySet<string>;
   reachable: (tab: string) => boolean;
+  /** Whether "Mehr" has a use beyond an overflow, which is a custom screen to list. */
+  withMore?: boolean;
 }
 
 export interface TabBarChoice {
@@ -182,17 +193,22 @@ export interface TabBarChoice {
  * navigation (ADR 0071 §6). Home alone is the last resort, for a bundle that is itself
  * wrong; a test holds that it never is.
  */
-export function chooseTabBar({ candidate, known, reachable }: TabBarOptions): TabBarChoice {
+export function chooseTabBar({
+  candidate,
+  known,
+  reachable,
+  withMore,
+}: TabBarOptions): TabBarChoice {
   const problems: NavigationProblem[] = [];
   if (candidate !== undefined) {
     const parsed = parseNavigation(candidate, known);
     problems.push(...parsed.problems);
-    const bar = parsed.navigation ? arrangeTabBar(parsed.navigation, reachable) : null;
+    const bar = parsed.navigation ? arrangeTabBar(parsed.navigation, reachable, withMore) : null;
     if (bar) return { bar, source: 'candidate', problems };
   }
   const bundled = parseNavigation(BUNDLED_NAVIGATION_DOCUMENT, known);
   problems.push(...bundled.problems);
-  const bar = (bundled.navigation && arrangeTabBar(bundled.navigation, reachable)) || {
+  const bar = (bundled.navigation && arrangeTabBar(bundled.navigation, reachable, withMore)) || {
     tabs: [HOME_TAB],
     more: [],
   };

@@ -14,7 +14,7 @@ import {
 } from '@correctiv/app-core/lib/screen-layout';
 import { fetchedLayouts } from '@correctiv/app-core/stores/homeLayout';
 
-import { BUILT_AT } from '@/lib/home/layout';
+import { BUILT_AT, customScreenIds } from '@/lib/home/layout';
 import { tabReachable } from '@/lib/features';
 import { coreStore } from '@/lib/store/core';
 import { KNOWN_DESTINATIONS, TAB_ROUTES, TAB_TARGETS } from '@/lib/tabTargets';
@@ -59,19 +59,24 @@ function fetchedBody(): unknown {
 
 function chooseBar(body: unknown): TabBarChoice {
   const state = coreStore.getState();
+  // "Mehr" is where a custom screen is listed (ADR 0075 §7), so one in the document earns
+  // the tab even when nothing overflowed. Read here and so frozen with the bar, which is
+  // the same limit the entries have: a screen published while the app runs gets its row
+  // in "Mehr" at once, and the tab itself on the next start (see `tabBar`).
+  const withMore = customScreenIds().length > 0;
   const reachable = (tab: string) => tabReachable(tab, (id) => isReachable(state, id));
   const fetched = body === undefined ? undefined : navigationDocumentOf(body);
   let choice: TabBarChoice | null = null;
   for (const candidate of [overrideDocument(), fetched]) {
     if (candidate === undefined) continue;
-    const tried = chooseTabBar({ candidate, known: KNOWN_DESTINATIONS, reachable });
+    const tried = chooseTabBar({ candidate, known: KNOWN_DESTINATIONS, reachable, withMore });
     reportNavigationProblems(tried.problems);
     if (tried.source === 'candidate') {
       choice = tried;
       break;
     }
   }
-  return choice ?? chooseTabBar({ known: KNOWN_DESTINATIONS, reachable });
+  return choice ?? chooseTabBar({ known: KNOWN_DESTINATIONS, reachable, withMore });
 }
 
 /**
@@ -125,6 +130,11 @@ let frozen: TabBarDecision | null = null;
  * next start. The first call is the tab layout's first render, which is after the
  * store has hydrated (`app/_layout.tsx` returns nothing before), so "the next start"
  * is "the cached copy of the last fetch".
+ *
+ * **That includes whether "Mehr" is there for a custom screen.** A document that gains its
+ * first custom screen while the app runs does not add the tab until the next start, and
+ * one that loses its last does not remove it (the list is then empty, which is the floor).
+ * The bar is the one thing a screen cannot change after launch.
  *
  * Precedence: the workbench's override, the fetched copy, the bundled navigation
  * (ADR 0071 §6). A candidate that does not parse, names a destination this build does
