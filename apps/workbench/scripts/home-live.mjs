@@ -330,9 +330,11 @@ async function main() {
     sessionId,
   );
 
-  // The exact reproduction: the plain link `RELEASE.md` hands out, `?s=` unset, the home
-  // tool open. Nothing seeds a fixture — a first-time visitor has nothing else to give it.
-  await call('Page.navigate', { url: `${server.url}preview#/?tool=home` }, sessionId);
+  // The reproduction: the plain link `RELEASE.md` hands out, the home tool open. The app
+  // bundles `ship`, which draws no screen (ADR 0078 §7), while the home tool edits `demo`, so
+  // the link names the layout the way the editor's own selector does (`ly=demo`, ADR 0080 §1).
+  // What is asserted below is untouched: the tool's edit has to redraw the frame.
+  await call('Page.navigate', { url: `${server.url}preview#/?tool=home&ly=demo` }, sessionId);
 
   const deadline = Date.now() + READY_MS;
   let before = null;

@@ -189,9 +189,19 @@ jobs:
             exit 1
           }
 
-          for route in index 404 artikel entdecken mediathek mitmachen profil; do
+          # Screens are one route, `/s/<id>` (ADR 0075 §7): the export holds the one
+          # `s/[id].html` shell, not a page per tab.
+          for route in index 404 's/[id]' mehr artikel; do
             test -f "site/app/$route.html" || { echo "::error::missing site/app/$route.html"; exit 1; }
           done
+
+          # What answers `/app/s/<id>` on Pages: the site's 404.html carrying the
+          # fallback script that hands the address to the app's entry page.
+          test -f site/app-route-fallback.js || { echo "::error::site/app-route-fallback.js is missing — /app/s/<id> would show the workbench's 404."; exit 1; }
+          grep -q 'app-route-fallback.js' site/404.html || {
+            echo "::error::site/404.html does not load app-route-fallback.js — /app/s/<id> would show the workbench's 404."
+            exit 1
+          }
 
           # One real id per dynamic family. A route that loses its
           # generateStaticParams exports as a single dist/<family>/[id].html and
