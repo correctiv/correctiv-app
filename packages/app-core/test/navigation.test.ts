@@ -6,7 +6,11 @@ import {
   MORE_TAB,
   arrangeTabBar,
   chooseTabBar,
+  SLOT_ROUTES,
   parseNavigation,
+  slotRoute,
+  slotScreen,
+  tabSlots,
 } from '../src/lib/navigation';
 import { joinScreenDocuments, navigationDocumentOf } from '../src/lib/screen-layout';
 import { DEMO_NAVIGATION } from './__fixtures__/demo-layout';
@@ -218,7 +222,10 @@ describe('chooseTabBar', () => {
   const base = { reachable: all, bundled: DEMO_NAVIGATION };
 
   it('draws a good candidate', () => {
-    const choice = chooseTabBar({ ...base, candidate: doc(['profil', 'entdecken']) });
+    const choice = chooseTabBar({
+      ...base,
+      candidate: doc(['profil', 'entdecken']),
+    });
     expect(choice.source).toBe('candidate');
     expect(choice.bar.tabs).toEqual(['profil', 'entdecken']);
     expect(choice.bar.start).toBe('profil');
@@ -264,5 +271,80 @@ describe('the published document', () => {
     expect(joinScreenDocuments({ home: {} })).not.toHaveProperty('navigation');
     expect(navigationDocumentOf({ screens: {} })).toBeUndefined();
     expect(navigationDocumentOf(null)).toBeUndefined();
+  });
+});
+
+describe('tabSlots', () => {
+  const nav = (tabs: string[], maxTabs?: number) =>
+    parseNavigation(doc(tabs, maxTabs === undefined ? {} : { maxTabs })).navigation!;
+  const slots = (
+    tabs: string[],
+    maxTabs?: number,
+    reachable: (screen: string) => boolean = all,
+    unlisted = false,
+  ) => tabSlots(arrangeTabBar(nav(tabs, maxTabs), reachable, unlisted));
+
+  it('declares no slot for no entry, so the first route draws the empty state', () => {
+    expect(slots([])).toEqual([]);
+  });
+
+  it('declares one slot and no bar for one entry', () => {
+    expect(slots(['s1'])).toEqual([{ route: 'index', screen: 's1' }]);
+  });
+
+  it('declares one slot per entry up to the most a bar holds', () => {
+    const max = MAX_TABS;
+    expect(slots(ids(2))).toEqual([
+      { route: 'index', screen: 's1' },
+      { route: 'slot-2', screen: 's2' },
+    ]);
+    expect(slots(ids(max)).map((slot) => slot.route)).toEqual([...SLOT_ROUTES]);
+    expect(slots(ids(max)).map((slot) => slot.screen)).toEqual(ids(max));
+  });
+
+  it('puts "Mehr" last in place of the entries that no longer fit', () => {
+    const result = slots(ids(MAX_TABS + 1));
+    expect(result).toHaveLength(MAX_TABS);
+    expect(result.at(-1)).toEqual({ route: MORE_TAB, screen: null });
+    expect(result.slice(0, -1).map((slot) => slot.screen)).toEqual(ids(MAX_TABS - 1));
+  });
+
+  it('follows a smaller maxTabs', () => {
+    expect(slots(ids(4), 3).map((slot) => slot.route)).toEqual(['index', 'slot-2', MORE_TAB]);
+  });
+
+  it('closes the gap of an entry that cannot be opened', () => {
+    expect(slots(ids(3), undefined, (tab) => tab !== 's2').map((slot) => slot.screen)).toEqual([
+      's1',
+      's3',
+    ]);
+  });
+
+  it('takes a screen off the bar by leaving it out of the navigation, behind "Mehr"', () => {
+    const before = slots(ids(3));
+    const after = slots(['s1', 's3'], undefined, all, true);
+    expect(before).toHaveLength(3);
+    expect(after).toEqual([
+      { route: 'index', screen: 's1' },
+      { route: 'slot-2', screen: 's3' },
+      { route: MORE_TAB, screen: null },
+    ]);
+  });
+
+  it('answers which screen a route draws', () => {
+    const bar = arrangeTabBar(nav(ids(2)), all);
+    expect(slotScreen(bar, 'index')).toBe('s1');
+    expect(slotScreen(bar, 'slot-2')).toBe('s2');
+    expect(slotScreen(bar, 'slot-3')).toBeNull();
+    expect(slotScreen(bar, MORE_TAB)).toBeNull();
+  });
+
+  it('answers which route draws a screen, and none for one off the bar', () => {
+    const bar = arrangeTabBar(nav(ids(MAX_TABS + 1)), all);
+    expect(slotRoute(bar, 's1')).toBe('index');
+    expect(slotRoute(bar, 's4')).toBe('slot-4');
+    expect(slotRoute(bar, 's5')).toBeNull();
+    expect(slotRoute(bar, undefined)).toBeNull();
+    expect(slotRoute(arrangeTabBar(nav([]), all), 's1')).toBeNull();
   });
 });

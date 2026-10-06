@@ -89,6 +89,7 @@ import { TIER_LABELS } from '@/lib/membership/tierLabel';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
 import { openLink } from '@/lib/openLink';
+import { screenHref } from '@/lib/navigation/screenHref';
 import {
   useCoreActions,
   useLocale,
@@ -472,7 +473,9 @@ const FaktencheckRailModule: HomeModule = ({ section, screen }) => {
         title={intl.formatMessage(COPY.factChecks)}
         className="mb-s"
         actionLabel={screen === 'entdecken' ? undefined : intl.formatMessage(COPY.viewAll)}
-        onAction={screen === 'entdecken' ? undefined : () => router.push('/s/entdecken')}
+        onAction={
+          screen === 'entdecken' ? undefined : () => router.push(screenHref('entdecken') as never)
+        }
       />
       <FaktencheckRail
         items={items.slice(0, itemCount(section.settings, FACT_CHECK_COUNT))}
@@ -500,9 +503,9 @@ const MediathekModule: HomeModule = ({ section }) => {
         title={MEDIATHEK}
         className="mb-s"
         actionLabel={intl.formatMessage(COPY.viewEverything)}
-        onAction={() => router.push('/s/mediathek')}
+        onAction={() => router.push(screenHref('mediathek') as never)}
       />
-      <MediathekReihe onOpenMediathek={() => router.push('/s/mediathek')} />
+      <MediathekReihe onOpenMediathek={() => router.push(screenHref('mediathek') as never)} />
     </Place>
   );
 };
@@ -685,7 +688,7 @@ const ScreenLinkModule: HomeModule = ({ section }) => {
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={label}
-        onPress={() => router.navigate(`/s/${id}` as never)}
+        onPress={() => router.navigate(screenHref(id) as never)}
         className="flex-row items-center py-s active:opacity-80"
       >
         <Ionicons
@@ -711,7 +714,7 @@ function openProjectCard(project: Project) {
   const target = projectTarget(project);
   switch (target.kind) {
     case 'tab':
-      router.push(target.path);
+      router.push(target.path as never);
       return;
     case 'external':
       openLink(target.url);

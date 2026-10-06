@@ -1,4 +1,4 @@
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 import { act } from 'react-test-renderer';
 
 import { sizes, spacingPx } from '../src/lib/theme';
@@ -60,11 +60,19 @@ function at(width: number) {
     window: { width, height: 1024, scale: 2, fontScale: 1 },
     screen: { width, height: 1024, scale: 2, fontScale: 1 },
   });
-  const Layout = require('../src/app/(tabs)/_layout').default as React.ComponentType;
+  const Layout = require('../src/app/(tabs)/_layout.web').default as React.ComponentType;
   return render(<Layout />);
 }
 
 describe('the tab layout', () => {
+  // The drawn shell is the web's (ADR 0081): its addresses are `/s/<id>`.
+  beforeAll(() => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+  });
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     mockNavigate.mockClear();
     mockPathname = '/s/entdecken';

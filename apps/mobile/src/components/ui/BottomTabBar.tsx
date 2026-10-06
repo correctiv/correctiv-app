@@ -33,9 +33,10 @@ export const TAB_BAR_HEIGHT = 56;
  * names. `__tests__/tab-bar-labels.test.ts` pins the inputs (the five German words, this
  * number as written here, one shipped language), and when it goes red the answer is
  * `OUT=out/a11y bash screens/tools/tour-a11y.sh`, not an edit to the test. The web has no
- * system font scale (`fontScale` is 1 there), so on that target this never fires.
+ * system font scale (`fontScale` is 1 there), so on that target this never fires. The system's
+ * bar on iOS and Android reads the same number (`app/(tabs)/_layout.tsx`).
  */
-const LABELS_FIT_UP_TO = 1.3;
+export const LABELS_FIT_UP_TO = 1.3;
 
 export type BottomTabBarProps = {
   /** The active tab's id, or null when the address is on none. */
@@ -67,7 +68,10 @@ export function BottomTabBar({ active, onSelect, bottomInset = 0 }: BottomTabBar
     <View
       accessibilityRole="tablist"
       className="flex-row border-t border-stroke bg-canvas"
-      style={{ height: TAB_BAR_HEIGHT + bottomInset, paddingBottom: bottomInset }}
+      style={{
+        height: TAB_BAR_HEIGHT + bottomInset,
+        paddingBottom: bottomInset,
+      }}
     >
       {bar.tabs.map((tab) => {
         const word = words[tab]!;

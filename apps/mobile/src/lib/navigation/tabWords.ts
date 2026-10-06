@@ -13,7 +13,7 @@ import { SCREEN_ICONS, type ScreenIcon } from '@/lib/screenIcons';
 import { useLocale } from '@/lib/store/core';
 import { MORE_LABEL } from '@/lib/tabTargets';
 
-import { useTabBarDecision } from './tabBar';
+import { startDecision, useTabBarDecision, type TabBarDecision } from './tabBar';
 
 /**
  * What the three bars draw for one route: a word in the language the app is in, and an
@@ -100,9 +100,22 @@ export interface Tabs {
  * beside it.
  */
 export function useTabs(): Tabs {
+  return useTabsOf(useTabBarDecision());
+}
+
+/**
+ * The same, for the bar this process started with, which does not change until the next
+ * start ([ADR 0081](../../../../../adr/0081-the-system-tab-bar-returns-and-is-decided-at-start.md)).
+ * The system's tab bar reads this one. The words are the start's too and the language is
+ * live, so a changed setting renames a trigger without rebuilding the bar.
+ */
+export function useStartTabs(): Tabs {
+  return useTabsOf(startDecision());
+}
+
+function useTabsOf({ bar, unlisted, words }: TabBarDecision): Tabs {
   const intl = useIntl();
   const locale = useLocale();
-  const { bar, unlisted, words } = useTabBarDecision();
   const more = intl.formatMessage(MORE_LABEL);
   const ids = [...Object.keys(words), MORE_TAB];
   return {

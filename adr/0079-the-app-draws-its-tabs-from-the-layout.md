@@ -69,7 +69,8 @@ demo's five.
 
 ## What it costs
 
-- **The platform's tab bar on iOS and Android**: the press feedback, the scroll-to-top on a
+- **The platform's tab bar on iOS and Android** (taken back by
+  [ADR 0081](0081-the-system-tab-bar-returns-and-is-decided-at-start.md); the web keeps this cost): the press feedback, the scroll-to-top on a
   second tap, the iOS 26 minimise-on-scroll, the growth with the system font and
   `NativeTabs.BottomAccessory` for the mini player. The mini player is the overlay the web and
   Android already had. iOS is unrun.
@@ -100,5 +101,7 @@ demo's five.
    [ADR 0080](0080-the-workbench-chooses-a-layout.md) §2.
 2. ~~**Offering a custom screen to the navigation editor.** It offers the demo's five; the
    parser takes any id.~~ Built by [ADR 0080](0080-the-workbench-chooses-a-layout.md) §4.
-3. **Whether the system's bar comes back** where the layout is fixed, which a native tab bar
-   could do again if a document never changes at runtime.
+3. ~~**Whether the system's bar comes back** where the layout is fixed, which a native tab bar
+   could do again if a document never changes at runtime.~~ Built by
+   [ADR 0081](0081-the-system-tab-bar-returns-and-is-decided-at-start.md): on iOS and Android it
+   does, decided once per start.

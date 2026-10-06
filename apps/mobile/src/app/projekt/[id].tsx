@@ -19,6 +19,7 @@ import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
+import { screenHref } from '@/lib/navigation/screenHref';
 import { useReachable } from '@/lib/store/core';
 import { sizes, useColors } from '@/lib/theme';
 
@@ -101,7 +102,7 @@ const ACTIONS: Record<
     // The live stream belongs to the player, and that is ONE app-wide singleton
     // (expo-audio). A second player here would be a second state for the same
     // playback — hence only the jump into the Mediathek.
-    run: () => router.push('/s/mediathek'),
+    run: () => router.push(screenHref('mediathek') as never),
   },
   'local-network': {
     label: COPY.joinLocalNetwork,

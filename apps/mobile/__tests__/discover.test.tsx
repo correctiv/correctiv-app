@@ -6,6 +6,7 @@ import type { FeedItem } from '@correctiv/app-core/types/models';
 
 import { sampleTarget } from '@/components/discover/SampleHitRow';
 import { projectTarget } from '@/lib/discover/target';
+import { screenHref } from '@/lib/navigation/screenHref';
 
 /**
  * The Entdecken tab, its search and its project pages.
@@ -104,7 +105,7 @@ describe('projectTarget', () => {
   it('cross-links the participate projects into their tab', () => {
     expect(projectTarget(allProjects.find((p) => p.id === 'crowdnewsroom')!)).toEqual({
       kind: 'tab',
-      path: '/s/mitmachen',
+      path: screenHref('mitmachen'),
     });
   });
 
@@ -119,9 +120,9 @@ describe('projectTarget', () => {
 
 describe('sampleTarget', () => {
   it('routes each search-sample kind that has a home', () => {
-    expect(sampleTarget('podcast')).toBe('/s/mediathek');
-    expect(sampleTarget('callout')).toBe('/s/mitmachen');
-    expect(sampleTarget('backstage')).toBe('/s/profil');
+    expect(sampleTarget('podcast')).toBe(screenHref('mediathek'));
+    expect(sampleTarget('callout')).toBe(screenHref('mitmachen'));
+    expect(sampleTarget('backstage')).toBe(screenHref('profil'));
   });
 
   it('leaves the kinds without a screen inert', () => {

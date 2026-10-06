@@ -177,7 +177,7 @@ export default function SucheScreen() {
                       <SampleHitRow
                         key={hit.id}
                         hit={hit}
-                        onPress={target ? () => router.push(target) : undefined}
+                        onPress={target ? () => router.push(target as never) : undefined}
                       />
                     );
                   })}

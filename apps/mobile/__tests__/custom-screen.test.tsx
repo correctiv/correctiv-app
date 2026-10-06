@@ -10,7 +10,12 @@ import { act } from 'react-test-renderer';
  */
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => true) },
+  router: {
+    push: jest.fn(),
+    back: jest.fn(),
+    replace: jest.fn(),
+    canGoBack: jest.fn(() => true),
+  },
   useLocalSearchParams: jest.fn(() => ({})),
   Stack: { Screen: () => null },
 }));
@@ -21,7 +26,12 @@ jest.mock('expo-constants', () => ({
 }));
 
 jest.mock('@/lib/feeds/useFeed', () => ({
-  useFeed: () => ({ data: undefined, loading: false, offline: false, reload: jest.fn() }),
+  useFeed: () => ({
+    data: undefined,
+    loading: false,
+    offline: false,
+    reload: jest.fn(),
+  }),
 }));
 
 import { useLocalSearchParams } from 'expo-router';
@@ -32,13 +42,15 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 import { render, renderedText } from './support/rendering';
 
 import MehrScreen from '@/app/(tabs)/mehr';
-import CustomScreen from '@/app/(tabs)/s/[id]';
+import CustomScreen from '@/app/(tabs)/s/[id].web';
 import { BUILT_AT } from '@/lib/home/layout';
+import { resetStartDecision } from '@/lib/navigation/tabBar';
 import { coreStore } from '@/lib/store/core';
 
 const params = useLocalSearchParams as jest.Mock;
 
 beforeEach(() => {
+  resetStartDecision();
   act(() => {
     coreStore.dispatch(resetStore());
   });
@@ -156,7 +168,11 @@ describe('the link block', () => {
         version: 4,
         title: { de: 'Start' },
         sections: [
-          { id: 'bad', module: 'screen-link', settings: { screen: 'Not An Id' } },
+          {
+            id: 'bad',
+            module: 'screen-link',
+            settings: { screen: 'Not An Id' },
+          },
           { id: 'head', module: 'screen-header' },
         ],
       },
