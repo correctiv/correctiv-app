@@ -139,12 +139,22 @@ describe('a screen the newsroom made, the kind a link block holds (ADR 0075 §7)
   });
 
   it('refuses what could not name a screen, by the rule the route reads', () => {
-    for (const value of ['', 'Klima', 'a--b', 'a'.repeat(41), 'home', 7, undefined, { de: 'x' }]) {
+    for (const value of [
+      '',
+      'Klima',
+      'a--b',
+      'a'.repeat(41),
+      'navigation',
+      7,
+      undefined,
+      { de: 'x' },
+    ]) {
       expect(faultOf(link!, value)).toBe('invalid');
     }
   });
 
   it('admits a well-formed id whatever document carries it: existing is the host’s question', () => {
     expect(faultOf(link!, 'never-published')).toBeNull();
+    expect(faultOf(link!, 'home')).toBeNull();
   });
 });

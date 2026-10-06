@@ -212,8 +212,6 @@ const NO_SUCCESSOR: Record<string, string> = {
  * same forty-five ADR 0022 counted, arrived at independently.
  */
 const STILL_ON_THE_V1_TIER: Record<string, number> = {
-  'app/(tabs)/_layout.tsx: grey-500': 1,
-  'app/(tabs)/_layout.web.tsx: grey-500': 1,
   'app/atlas.tsx: grey-500': 5,
   'app/aufruf/[slug].tsx: grey-500': 2,
   'app/backstage.tsx: grey-500': 4,

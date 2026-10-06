@@ -15,7 +15,7 @@ import {
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
-import { governs, SHIPPED } from './document';
+import { SHIPPED } from './document';
 
 /**
  * What the screen editor knows about each screen: its name, where the frame goes to show
@@ -46,13 +46,17 @@ export const SCREEN_NAMES: Readonly<Record<ConfigurableScreen, string | Workbenc
   profil: 'Profil',
 };
 
-/** The frame's route for a screen, which is where the picker takes the frame. */
+/**
+ * The frame's route for a screen, which is where the picker takes the frame: `/s/<id>`, as
+ * for every screen (ADR 0079). `/` is the start, whichever screen the layout's navigation
+ * opens on, and no screen's own address.
+ */
 export const SCREEN_ROUTES: Readonly<Record<ConfigurableScreen, string>> = {
-  home: '/',
-  entdecken: '/entdecken',
-  mediathek: '/mediathek',
-  mitmachen: '/mitmachen',
-  profil: '/profil',
+  home: '/s/home',
+  entdecken: '/s/entdecken',
+  mediathek: '/s/mediathek',
+  mitmachen: '/s/mitmachen',
+  profil: '/s/profil',
 };
 
 /**
@@ -157,9 +161,9 @@ export function shippedOf(screen: ScreenId): HomeLayout {
   return layout;
 }
 
-/** The frame's route for any screen: a declared one's own, a custom one's `/s/<id>` (ADR 0075 §7). */
+/** The frame's route for any screen: `/s/<id>` (ADR 0075 §7, ADR 0079). */
 export function routeOf(screen: ScreenId): string {
-  return isDeclaredScreen(screen) ? SCREEN_ROUTES[screen] : `/s/${screen}`;
+  return `/s/${screen}`;
 }
 
 /**
@@ -172,10 +176,11 @@ export function routeOf(screen: ScreenId): string {
  * link to a screen the repository does not carry does not open an editor on nothing.
  */
 export function screenOfRoute(route: string | undefined): ScreenId | null {
-  const declared = CONFIGURABLE_SCREENS.find((of) => governs(route, SCREEN_ROUTES[of]));
-  if (declared) return declared;
   if (route === undefined) return null;
-  const id = /^\/s\/([^/]+)$/.exec(route.split(/[?#]/)[0]!.replace(/\/+$/, ''))?.[1];
+  const path = route.split(/[?#]/)[0]!.replace(/\/+$/, '');
+  // The start is shown as Home's, which is what it was before every screen had an address.
+  if (path === '' || path === '/index') return 'home';
+  const id = /^\/s\/([^/]+)$/.exec(path)?.[1];
   return id !== undefined && isCustomScreenId(id) ? id : null;
 }
 

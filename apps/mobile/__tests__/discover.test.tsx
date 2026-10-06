@@ -55,11 +55,13 @@ import { press, render, renderedText, typeInto } from './support/rendering';
 
 import { searchWithFallback } from '@correctiv/app-core/stores/search';
 
-import EntdeckenScreen from '@/app/(tabs)/entdecken';
 import ProjektScreen from '@/app/projekt/[id]';
 import SucheScreen from '@/app/suche';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openExternal } from '@/lib/openExternal';
+import { screenOf } from './support/screens';
+
+const EntdeckenScreen = screenOf('entdecken');
 
 const push = router.push as jest.Mock;
 const params = useLocalSearchParams as jest.Mock;
@@ -102,7 +104,7 @@ describe('projectTarget', () => {
   it('cross-links the participate projects into their tab', () => {
     expect(projectTarget(allProjects.find((p) => p.id === 'crowdnewsroom')!)).toEqual({
       kind: 'tab',
-      path: '/(tabs)/mitmachen',
+      path: '/s/mitmachen',
     });
   });
 
@@ -117,9 +119,9 @@ describe('projectTarget', () => {
 
 describe('sampleTarget', () => {
   it('routes each search-sample kind that has a home', () => {
-    expect(sampleTarget('podcast')).toBe('/(tabs)/mediathek');
-    expect(sampleTarget('callout')).toBe('/(tabs)/mitmachen');
-    expect(sampleTarget('backstage')).toBe('/(tabs)/profil');
+    expect(sampleTarget('podcast')).toBe('/s/mediathek');
+    expect(sampleTarget('callout')).toBe('/s/mitmachen');
+    expect(sampleTarget('backstage')).toBe('/s/profil');
   });
 
   it('leaves the kinds without a screen inert', () => {

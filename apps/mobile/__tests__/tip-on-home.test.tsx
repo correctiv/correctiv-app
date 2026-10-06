@@ -29,8 +29,8 @@ jest.mock('@/lib/store/core', () => ({
 import { SCREEN_DOCUMENTS } from '@correctiv/app-core/lib/screen-layout';
 import { parseHomeLayout } from '@correctiv/app-core/lib/home-layout';
 
-// First, so the cycle through the tab bar is entered from the module map's side.
-import '@/app/(tabs)/index';
+// First, so the cycle through the screen route is entered from the module map's side.
+import '@/app/(tabs)/s/[id]';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { placeTestID } from '@/lib/home/modules';
 import { TAB_FEATURES, tabReachable } from '@/lib/features';

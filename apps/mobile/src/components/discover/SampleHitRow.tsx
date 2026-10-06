@@ -16,7 +16,7 @@ const ICON: Record<SearchSample['kind'], IoniconName> = {
 };
 
 /** The tabs a hit can jump to. */
-type TabPath = '/(tabs)/mediathek' | '/(tabs)/mitmachen' | '/(tabs)/profil';
+type TabPath = '/s/mediathek' | '/s/mitmachen' | '/s/profil';
 
 /**
  * Where a non-article hit leads, or `null` when it has no place in this app.
@@ -28,11 +28,11 @@ type TabPath = '/(tabs)/mediathek' | '/(tabs)/mitmachen' | '/(tabs)/profil';
 export function sampleTarget(kind: SearchSample['kind']): TabPath | null {
   switch (kind) {
     case 'podcast':
-      return '/(tabs)/mediathek';
+      return '/s/mediathek';
     case 'callout':
-      return '/(tabs)/mitmachen';
+      return '/s/mitmachen';
     case 'backstage':
-      return '/(tabs)/profil';
+      return '/s/profil';
     default:
       return null;
   }

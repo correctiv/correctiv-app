@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import {
@@ -8,12 +8,10 @@ import {
   type HomeLayout,
 } from '@correctiv/app-core/lib/home-layout';
 import {
-  CONFIGURABLE_SCREENS,
   SCREEN_DOCUMENTS,
-  customScreenIdsOf,
+  screenIdsOf,
   isCustomScreenId,
   screenDocumentOf,
-  type ConfigurableScreen,
 } from '@correctiv/app-core/lib/screen-layout';
 import { fetchedLayouts, refreshLayouts } from '@correctiv/app-core/stores/homeLayout';
 
@@ -21,8 +19,19 @@ import { coreStore } from '@/lib/store/core';
 
 import { HOME_MODULES } from './modules';
 
-/** The module names this host holds a renderer for — ADR 0036 §14, from the map itself. */
-const RENDERABLE: ReadonlySet<string> = new Set(Object.keys(HOME_MODULES));
+let renderable: ReadonlySet<string> | null = null;
+
+/**
+ * The module names this host holds a renderer for — ADR 0036 §14, from the map itself.
+ *
+ * Read on first use and not at module scope: the map's module imports the tab words, which
+ * import this one, so a module-scope read is `undefined` whenever the map is what a suite or
+ * a route entered first.
+ */
+function renderableModules(): ReadonlySet<string> {
+  renderable ??= new Set(Object.keys(HOME_MODULES));
+  return renderable;
+}
 
 /**
  * Where a document somebody is looking at arrives, as opposed to one a phone draws.
@@ -136,30 +145,26 @@ const read = new Map<
   { override: string | null; fetched: string | null; layout: HomeLayout | null }
 >();
 
-function isDeclared(screen: string): screen is ConfigurableScreen {
-  return (CONFIGURABLE_SCREENS as readonly string[]).includes(screen);
-}
-
 function parseScreen(document: unknown) {
-  return parseHomeLayout(document, RENDERABLE);
+  return parseHomeLayout(document, renderableModules());
 }
 
 /**
- * The screen's bundled document, which is always usable (ADR 0036 §10). The `ship` layout
- * is what is bundled (ADR 0078 §3), and a screen it has no file for has nothing to draw.
+ * The screen's bundled document, parsed, or null when the `ship` layout (ADR 0078 §3) has no
+ * file for it. A screen it does not carry has nothing to draw, which is not-found and no
+ * placeholder: no screen is built in.
  */
-function bundled(screen: ConfigurableScreen): HomeLayout {
+function bundled(screen: string): HomeLayout | null {
   const document = SCREEN_DOCUMENTS[screen];
-  if (document === undefined)
-    return { version: 0, words: null, sections: [], moments: [], editions: [] };
+  if (document === undefined) return null;
   const { layout, problems } = parseScreen(document);
   reportLayoutProblems(problems);
-  return layout ?? { version: 0, words: null, sections: [], moments: [], editions: [] };
+  return layout;
 }
 
 /**
- * The layout a screen draws: its override if there is one, else its part of the fetched
- * document, else the bundled document.
+ * The layout a screen draws, or null when nothing carries it: its override if there is one,
+ * else its part of the fetched document, else the bundled document.
  *
  * **That order is the precedence, and each step down is a fallback, not a merge.** The
  * override is somebody in the workbench looking at a document on purpose, so it beats
@@ -169,9 +174,11 @@ function bundled(screen: ConfigurableScreen): HomeLayout {
  * not offered at all, which `fetchedLayouts` decides in the core.
  *
  * **The fallback is per screen** (ADR 0071 §6). A fetched document that lacks a screen,
- * or whose part for it does not parse or draws nothing, costs that screen its fetched
- * copy and no other screen anything. A screen in it that this app does not declare is
- * never read.
+ * or whose part for it does not parse, costs that screen its fetched copy and no other
+ * screen anything. **Every id is treated alike** (ADR 0078 §4): a screen that is only a
+ * heading is a screen, whatever its name, and an id nothing carries is null, which the
+ * route turns into `+not-found`. An id that is not a valid screen id is null without a
+ * lookup, so `/s/constructor` and `/s/..` find nothing.
  *
  * **Once per document, not once per render**, which is what ADR 0036 §7's report is
  * worth. Strictly it is once per document per process: the cache below lives in memory,
@@ -189,48 +196,37 @@ function bundled(screen: ConfigurableScreen): HomeLayout {
  * the core's default reporter, which reports nowhere. By the first render the host's is
  * registered.
  */
-export function screenLayout(screen: ConfigurableScreen): HomeLayout {
-  return resolveLayout(screen) ?? bundled(screen);
-}
-
-/**
- * A custom screen's layout (ADR 0075 §7), or null when no document carries it.
- *
- * The same precedence as `screenLayout` without the last step: a screen the newsroom made
- * has no bundled document, so the override and the fetched copy are all there is, and
- * nothing is the answer the route turns into `+not-found`. An id that is not a valid
- * custom id is null without a lookup, so `/s/constructor` and `/s/..` find nothing.
- * Unlike a declared screen, a fetched document with no sections still counts: a screen
- * that is only a heading is a screen.
- */
-export function customScreenLayout(screen: string): HomeLayout | null {
+export function screenLayout(screen: string): HomeLayout | null {
   return isCustomScreenId(screen) ? resolveLayout(screen) : null;
 }
 
 /**
- * The ids of the custom screens that can be drawn right now: the ones the workbench is
- * previewing and the ones the fetched copy carries, each once, in that order.
+ * The ids of the screens that can be drawn right now: the ones the workbench is previewing,
+ * the ones the fetched copy carries and the ones the bundle carries, each once, in that
+ * order.
  *
  * An id nothing can draw is left out, which is how "Mehr" omits an entry for a screen the
  * document does not carry (ADR 0075 §7, ADR 0039 §6): the list is made of the screens
  * that resolve, so there is no entry to be dangling.
  */
-export function customScreenIds(): string[] {
+export function screenIds(): string[] {
   const named = new Set<string>();
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       const prefix = layoutOverrideKey('');
       for (let at = 0; at < window.localStorage.length; at += 1) {
         const key = window.localStorage.key(at);
-        if (key?.startsWith(prefix)) named.add(key.slice(prefix.length));
+        if (key === HOME_LAYOUT_OVERRIDE_KEY) named.add('home');
+        else if (key?.startsWith(prefix)) named.add(key.slice(prefix.length));
       }
     }
   } catch {
     // No storage, no overrides: the fetched copy is all there is.
   }
   const fetched = fetchedText();
-  if (fetched !== null) for (const id of customScreenIdsOf(parseText(fetched))) named.add(id);
-  return [...named].filter((id) => customScreenLayout(id) !== null);
+  if (fetched !== null) for (const id of screenIdsOf(parseText(fetched))) named.add(id);
+  for (const id of Object.keys(SCREEN_DOCUMENTS)) named.add(id);
+  return [...named].filter((id) => screenLayout(id) !== null);
 }
 
 function resolveLayout(screen: string): HomeLayout | null {
@@ -239,7 +235,6 @@ function resolveLayout(screen: string): HomeLayout | null {
   const held = read.get(screen);
   if (held && held.override === override && held.fetched === fetched) return held.layout;
 
-  const declared = isDeclared(screen);
   let layout: HomeLayout | null = null;
   if (override !== null) {
     // A document that does not parse costs the override and not the screen.
@@ -251,17 +246,12 @@ function resolveLayout(screen: string): HomeLayout | null {
     if (document !== undefined) {
       const parsed = parseScreen(document);
       reportLayoutProblems(parsed.problems);
-      if (parsed.layout && (parsed.layout.sections.length > 0 || !declared)) layout = parsed.layout;
+      layout = parsed.layout;
     }
   }
-  const result = layout ?? (declared ? bundled(screen) : null);
+  const result = layout ?? bundled(screen);
   read.set(screen, { override, fetched, layout: result });
   return result;
-}
-
-/** Home's layout: `screenLayout('home')`, kept under the name Home and its tests use. */
-export function homeLayout(): HomeLayout {
-  return screenLayout('home');
 }
 
 /**
@@ -278,7 +268,7 @@ export function homeLayout(): HomeLayout {
  * the copy itself is a different string; `screenLayout()` would answer the same object
  * anyway, but not asking is cheaper than asking.
  */
-function subscribeToLayout(listener: () => void): () => void {
+export function subscribeToLayout(listener: () => void, alsoKey?: string): () => void {
   let fetched = fetchedText();
   const unsubscribeStore = coreStore.subscribe(() => {
     const next = fetchedText();
@@ -290,11 +280,17 @@ function subscribeToLayout(listener: () => void): () => void {
   if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
     return unsubscribeStore;
   }
-  const keys = new Set(CONFIGURABLE_SCREENS.map(layoutOverrideKey));
-  // A custom screen's key is not known in advance, so its prefix is the test.
-  const custom = layoutOverrideKey('');
+  // A screen's key is not known in advance, so Home's own key and the prefix are the test.
+  const prefix = layoutOverrideKey('');
   const onStorage = (event: StorageEvent) => {
-    if (event.key === null || keys.has(event.key) || event.key.startsWith(custom)) listener();
+    if (
+      event.key === null ||
+      event.key === HOME_LAYOUT_OVERRIDE_KEY ||
+      event.key === alsoKey ||
+      event.key.startsWith(prefix)
+    ) {
+      listener();
+    }
   };
   window.addEventListener('storage', onStorage);
   return () => {
@@ -304,7 +300,8 @@ function subscribeToLayout(listener: () => void): () => void {
 }
 
 /**
- * A screen's layout, re-read when somebody writes a new one or a fetch lands.
+ * A screen's layout, re-read when somebody writes a new one or a fetch lands; null when
+ * none carries it.
  *
  * `useSyncExternalStore` rather than state and an effect, because the document is not
  * this component's to own: it is read at render time from storage and from the store,
@@ -313,29 +310,9 @@ function subscribeToLayout(listener: () => void): () => void {
  * the server snapshot: the static export prerenders each route, and there the bundled
  * document is the only one there can be.
  */
-export function useScreenLayout(screen: ConfigurableScreen): HomeLayout {
+export function useScreenLayout(screen: string): HomeLayout | null {
   const snapshot = () => screenLayout(screen);
   return useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
-}
-
-/** The custom screens that can be drawn, re-read as `useScreenLayout` is. */
-export function useCustomScreenIds(): readonly string[] {
-  // A string snapshot: `useSyncExternalStore` compares by identity, and a fresh array
-  // each call would never settle.
-  const snapshot = () => customScreenIds().join('\n');
-  const joined = useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
-  return useMemo(() => (joined === '' ? [] : joined.split('\n')), [joined]);
-}
-
-/** A custom screen's layout, re-read as `useScreenLayout` does; null when none carries it. */
-export function useCustomScreenLayout(screen: string): HomeLayout | null {
-  const snapshot = () => customScreenLayout(screen);
-  return useSyncExternalStore(subscribeToLayout, snapshot, snapshot);
-}
-
-/** Home's layout, re-read as `useScreenLayout` does. */
-export function useHomeLayout(): HomeLayout {
-  return useScreenLayout('home');
 }
 
 /**
@@ -358,7 +335,7 @@ export function useHomeLayoutRefresh(ready: boolean): void {
     if (__DEV__ || !ready || !Number.isFinite(BUILT_AT)) return;
     const refresh = () => {
       void coreStore.dispatch(
-        refreshLayouts(LAYOUTS_URL, { builtAt: BUILT_AT, renderable: RENDERABLE }),
+        refreshLayouts(LAYOUTS_URL, { builtAt: BUILT_AT, renderable: renderableModules() }),
       );
     };
     refresh();

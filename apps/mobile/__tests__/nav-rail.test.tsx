@@ -8,55 +8,22 @@ import { NavRail } from '../src/components/ui/NavRail';
 import { render } from './support/rendering';
 
 /**
- * Mocks expo-router so MiniPlayer (imported by NavRail) doesn't pull in
- * `standard-navigation`, an ESM package jest does not transform.
- * MiniPlayer calls `router.push`, silently absorbed by the mock.
+ * `Slot` stands for the screen the router has put in the shell, and `usePathname` for the
+ * address it is on, which decides which tab is selected. A press is a router call, which
+ * is what the layout does where the navigator used to be asked.
  */
-jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), navigate: jest.fn() },
-}));
-
 const mockNavigate = jest.fn();
-const mockEmit = jest.fn(() => ({ defaultPrevented: false }));
-const mockRoutes = ['index', 'entdecken', 'mediathek', 'mitmachen', 'profil'].map((name) => ({
-  key: `${name}-key`,
-  name,
-}));
-
-/**
- * A navigator double that does what the real one does for this test's purposes:
- * hand its `tabBar` prop the state and navigation object, or draw a bottom bar
- * marker when it has none. The rail code under test is the real one.
- */
-jest.mock('expo-router/js-tabs', () => {
+let mockPathname = '/s/entdecken';
+jest.mock('expo-router', () => {
   const react = jest.requireActual<typeof import('react')>('react');
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
-  const Tabs = ({ tabBar }: { tabBar?: (p: unknown) => React.ReactNode }) =>
-    tabBar
-      ? react.createElement(
-          View,
-          { testID: 'js-tabs-rail' },
-          tabBar({
-            state: { index: 1, routes: mockRoutes },
-            navigation: { emit: mockEmit, navigate: mockNavigate },
-            descriptors: {},
-            insets: { top: 0, bottom: 0, left: 0, right: 0 },
-          }),
-        )
-      : react.createElement(View, { testID: 'js-tabs-bottom-bar' });
-  Tabs.Screen = () => null;
-  return { Tabs };
+  return {
+    router: { push: jest.fn(), navigate: (href: string) => mockNavigate(href) },
+    usePathname: () => mockPathname,
+    Slot: () => react.createElement(View, { testID: 'screen' }),
+  };
 });
 
-jest.mock('expo-router/unstable-native-tabs', () => {
-  const react = jest.requireActual<typeof import('react')>('react');
-  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
-  const Part = () => null;
-  const NativeTabs = () => react.createElement(View, { testID: 'native-tabs' });
-  NativeTabs.Trigger = Object.assign(Part, { Label: Part, Icon: Part });
-  NativeTabs.BottomAccessory = Part;
-  return { NativeTabs };
-});
 /**
  * `useColors()` calls `useUniwind()` from uniwind; without a provider it throws
  * in the test tree. This mock mirrors `appearance.test.tsx`.
@@ -82,60 +49,58 @@ describe('the space beside the rail', () => {
 });
 
 /**
- * Both layouts, rendered at a phone width and a tablet width.
+ * The shell, rendered at a phone width and a tablet width.
  *
- * At tablet width the navigator's `tabBar` is the rail, and a press on a rail item
- * reaches the navigator's `navigate` — not a router call from the layout. At phone
- * width there is no rail: native shows the system tabs, web its drawn bar.
+ * At tablet width the tabs are the rail and a press reaches the router; at phone width they
+ * are the drawn bottom bar, the same words and the same press. With no bar to draw (one
+ * screen, or none) there is neither.
  */
-const LAYOUTS = [
-  ['native', () => require('../src/app/(tabs)/_layout').default],
-  ['web', () => require('../src/app/(tabs)/_layout.web').default],
-] as const;
-
-function at(width: number, Layout: React.ComponentType) {
+function at(width: number) {
   Dimensions.set({
     window: { width, height: 1024, scale: 2, fontScale: 1 },
     screen: { width, height: 1024, scale: 2, fontScale: 1 },
   });
+  const Layout = require('../src/app/(tabs)/_layout').default as React.ComponentType;
   return render(<Layout />);
 }
 
-describe.each(LAYOUTS)('the %s tab layout', (kind, load) => {
+describe('the tab layout', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
-    mockEmit.mockClear();
+    mockPathname = '/s/entdecken';
   });
 
-  it('draws no rail below the breakpoint', () => {
-    const tree = at(sizes.railBreakpoint - 1, load());
-    expect(findTabs(tree)).toHaveLength(0);
-    expect(tree.root.findAllByProps({ testID: 'js-tabs-rail' })).toHaveLength(0);
-  });
-
-  it('draws the rail from the breakpoint up', () => {
-    const tree = at(sizes.railBreakpoint, load());
+  it('draws the bottom bar below the breakpoint, and no rail', () => {
+    const tree = at(sizes.railBreakpoint - 1);
+    expect(tree.root.findAllByProps({ accessibilityRole: 'tablist' }).length).toBeGreaterThan(0);
     expect(findTabs(tree)).toHaveLength(5);
-    expect(tree.root.findAllByProps({ testID: 'native-tabs' })).toHaveLength(0);
+    expect(tree.root.findAllByType(NavRail)).toHaveLength(0);
   });
 
-  it('marks the focused route and routes a press through the navigator', () => {
-    const tree = at(834, load());
-    const tabs = findTabs(tree);
-    const selected = tabs.filter((t) => t.props.accessibilityState?.selected === true);
-    expect(selected).toHaveLength(1);
-    expect(selected[0]!.props.accessibilityLabel).toBe('Entdecken');
-
-    act(() => tabs[2]!.props.onPress());
-    expect(mockEmit).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'tabPress', target: 'mediathek-key' }),
-    );
-    expect(mockNavigate).toHaveBeenCalledWith('mediathek', undefined);
-
-    mockNavigate.mockClear();
-    act(() => tabs[1]!.props.onPress());
-    expect(mockNavigate).not.toHaveBeenCalled();
+  it('draws the rail from the breakpoint up, and no bottom bar', () => {
+    const tree = at(sizes.railBreakpoint);
+    expect(findTabs(tree)).toHaveLength(5);
+    expect(tree.root.findAllByType(NavRail)).toHaveLength(1);
+    expect(tree.root.findAllByProps({ accessibilityRole: 'tablist' })).toHaveLength(0);
   });
+
+  it.each([sizes.railBreakpoint - 1, sizes.railBreakpoint])(
+    'marks the screen the address is on and sends a press to its address, at %i',
+    (width) => {
+      const tree = at(width);
+      const tabs = findTabs(tree);
+      const selected = tabs.filter((t) => t.props.accessibilityState?.selected === true);
+      expect(selected).toHaveLength(1);
+      expect(selected[0]!.props.accessibilityLabel).toBe('Entdecken');
+
+      act(() => tabs[2]!.props.onPress());
+      expect(mockNavigate).toHaveBeenCalledWith('/s/mediathek');
+
+      mockNavigate.mockClear();
+      act(() => tabs[1]!.props.onPress());
+      expect(mockNavigate).not.toHaveBeenCalled();
+    },
+  );
 });
 
 /** Find all Tab-listeners in a rendered tree. */
@@ -146,7 +111,7 @@ const findTabs = (tree: ReturnType<typeof render>) =>
 
 describe('NavRail', () => {
   it('renders five tab triggers', () => {
-    const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
+    const tree = render(<NavRail active="home" onSelect={() => {}} insets={NO_INSETS} />);
     expect(findTabs(tree)).toHaveLength(5);
   });
 
@@ -158,7 +123,7 @@ describe('NavRail', () => {
   });
 
   it("draws each tab's label under its icon, and announces it once", () => {
-    const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
+    const tree = render(<NavRail active="home" onSelect={() => {}} insets={NO_INSETS} />);
     const labels = ['Home', 'Entdecken', 'Mediathek', 'Mitmachen', 'Profil'];
     const tabs = findTabs(tree);
     expect(tabs.map((t) => t.props.accessibilityLabel)).toEqual(labels);
@@ -175,7 +140,7 @@ describe('NavRail', () => {
 
   it('starts the first tab below the status bar, by the inset plus a spacing token', () => {
     const tree = render(
-      <NavRail active="index" onSelect={() => {}} insets={{ ...NO_INSETS, top: 32, bottom: 20 }} />,
+      <NavRail active="home" onSelect={() => {}} insets={{ ...NO_INSETS, top: 32, bottom: 20 }} />,
     );
     const rail = tree.root.findAll(
       (n) => n.props?.style?.width === sizes.railWidth && n.props.style.paddingTop !== undefined,
@@ -185,7 +150,7 @@ describe('NavRail', () => {
   });
 
   it('includes the mini player at its bottom', () => {
-    const tree = render(<NavRail active="index" onSelect={() => {}} insets={NO_INSETS} />);
+    const tree = render(<NavRail active="home" onSelect={() => {}} insets={NO_INSETS} />);
     expect(tree.root.findAllByType(MiniPlayer)).toHaveLength(1);
   });
 });

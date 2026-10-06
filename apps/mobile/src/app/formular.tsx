@@ -279,8 +279,8 @@ function ThankYou({ callout }: { callout: Callout }) {
  */
 function backToOverview(): void {
   if (router.canGoBack()) {
-    router.dismissTo('/(tabs)/mitmachen');
+    router.dismissTo('/s/mitmachen');
     return;
   }
-  router.replace('/(tabs)/mitmachen');
+  router.replace('/s/mitmachen');
 }

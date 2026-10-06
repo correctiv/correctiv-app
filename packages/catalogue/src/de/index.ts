@@ -18,6 +18,7 @@ import { claim } from './claim';
 import { core } from './core';
 import { diary } from './diary';
 import { discover } from './discover';
+import { empty } from './empty';
 import { faktenforum } from './faktenforum';
 import { form } from './form';
 import { gallery } from './gallery';
@@ -46,6 +47,7 @@ export const de: Record<string, string> = {
   ...core,
   ...diary,
   ...discover,
+  ...empty,
   ...faktenforum,
   ...form,
   ...gallery,

@@ -68,7 +68,8 @@ describe('check-screen-layouts and a screen the newsroom made (ADR 0075 §7)', (
 
   it('judges a built-in id like any other, so a layout without Home is valid', () => {
     const { home: _home, ...rest } = DEMO_SCREENS;
-    expect(check(rest).code).toBe(0);
+    const tabs = NAVIGATION.tabs.filter((tab: string) => tab !== 'home');
+    expect(check(rest, { ...NAVIGATION, tabs }).code).toBe(0);
   });
 
   it('accepts a built-in screen that is only a heading', () => {

@@ -3,54 +3,37 @@ import { router } from 'expo-router';
 import { useIntl } from 'react-intl';
 import { Pressable, View } from 'react-native';
 
-import { resolveText } from '@correctiv/app-core/lib/home-settings';
-import { screenTabLabelOf } from '@correctiv/app-core/lib/screen-layout';
+import { MORE_TAB } from '@correctiv/app-core/lib/navigation';
 
+import NotFoundScreen from '@/app/+not-found';
 import { Card, Hairline, Screen, Typo } from '@/components/ui';
-import { customScreenLayout, useCustomScreenIds } from '@/lib/home/layout';
-import { tabBar } from '@/lib/navigation/tabBar';
-import { iconOf, useTabWords } from '@/lib/navigation/tabWords';
-import { useLocale } from '@/lib/store/core';
+import { useTabs } from '@/lib/navigation/tabWords';
+import { tabHref } from '@/lib/navigation/tabRoutes';
 import { MORE_LABEL } from '@/lib/tabTargets';
 import { useColors } from '@/lib/theme';
 
 /**
- * Mehr, the tab that lists the destinations the bar had no room for
+ * Mehr, the tab that lists the screens the bar had no room for
  * ([ADR 0071](../../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
- * §5).
+ * §5, [ADR 0078](../../../../../adr/0078-layouts-ship-and-demo.md) §5).
  *
- * The system's own overflow is not used, so this is an ordinary screen. A row opens its
- * destination by route: the destination is a hidden tab, and navigating to it switches
- * to it without a button of its own in the bar.
- *
- * **Below those, the screens the newsroom made** (ADR 0075 §7): every custom screen the
- * document carries, by its own tab label and icon, opening `/s/<id>`. A screen the
- * document does not carry has no row, because the list is made of the screens that
- * resolve.
+ * An ordinary screen: a row opens its screen at `/s/<id>`, like every other. Two kinds of
+ * row, in this order: the entries the navigation lists beyond what the bar holds, and the
+ * screens the layout carries that the navigation does not list, which is how a screen is
+ * taken off the bar without being lost. A row says what its screen's own document calls it
+ * (ADR 0075 §3). **Where the bar has no "Mehr" this address leads nowhere**, as any
+ * address does that nothing stands behind.
  */
 export default function MehrScreen() {
   const intl = useIntl();
   const colors = useColors();
-  const { bar } = tabBar();
-  // A row says what its screen's own document calls it (ADR 0075 §3): a screen off the
-  // bar keeps its name, and this list is one of the two places that reads it.
-  const words = useTabWords();
-  const locale = useLocale();
-  const custom = useCustomScreenIds().flatMap((id) => {
-    const screenWords = customScreenLayout(id)?.words ?? null;
-    const label = screenTabLabelOf(screenWords);
-    return label === null
-      ? []
-      : [{ id, label: resolveText(label, locale), icon: iconOf(screenWords?.icon) }];
-  });
-  const rows = [
-    ...bar.more.map((route) => ({
-      key: route,
-      ...words[route]!,
-      href: `/(tabs)/${route}`,
-    })),
-    ...custom.map(({ id, label, icon }) => ({ key: `s/${id}`, label, icon, href: `/s/${id}` })),
-  ];
+  const { bar, unlisted, words } = useTabs();
+  if (!bar.tabs.includes(MORE_TAB)) return <NotFoundScreen />;
+  const rows = [...bar.more, ...unlisted].map((id) => ({
+    key: id,
+    ...words[id]!,
+    href: tabHref(id),
+  }));
   return (
     <Screen>
       <Typo variant="headline-xl">{intl.formatMessage(MORE_LABEL)}</Typo>

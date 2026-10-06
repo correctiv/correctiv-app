@@ -12,12 +12,10 @@ import {
 } from '@correctiv/app-core/lib/screen-layout';
 import { floorFaults, withoutComments } from '@correctiv/prose-and-code';
 
-import { TAB_TARGETS } from '../src/lib/tabTargets';
-
 /**
  * The five German words `LABELS_FIT_UP_TO` was measured against, pinned.
  *
- * `app/(tabs)/_layout.tsx` drops four of the five tab labels above a system font
+ * `components/ui/BottomTabBar.tsx` drops four of the five tab labels above a system font
  * scale of 1.3. That number is not a preference and not a platform constant: it
  * is the last step of Android's own slider at which these five words, in German,
  * at 1080 px, still have space between them, photographed one step at a time
@@ -55,11 +53,11 @@ const MEASURED_LABELS: Record<ConfigurableScreen, string> = {
   profil: 'Profil',
 };
 
-/** The threshold those five words produced, as `_layout.tsx` must still spell it. */
+/** The threshold those five words produced, as `BottomTabBar.tsx` must still spell it. */
 const MEASURED_THRESHOLD = '1.3';
 
 const SRC = join(__dirname, '..', 'src');
-const TABS_LAYOUT = join(SRC, 'app', '(tabs)', '_layout.tsx');
+const TABS_LAYOUT = join(SRC, 'components', 'ui', 'BottomTabBar.tsx');
 /**
  * The language the bar renders in, which the host says rather than the core
  * ([ADR 0049](../../../adr/0049-the-catalogue-is-a-package.md) §4), and the store
@@ -81,13 +79,6 @@ const read = (path: string) => withoutComments(readFileSync(path, 'utf8'));
 function germanTabLabel(screen: ConfigurableScreen): string | null {
   const text = screenTabLabelOf(parseScreenDocument(SCREEN_DOCUMENTS[screen]).words);
   return text === null ? null : resolveText(text, 'de');
-}
-
-/** Which screen each tab draws its words out of, by route (`index` is Home's file). */
-function screensOnTheBar(): ConfigurableScreen[] {
-  return Object.values(TAB_TARGETS)
-    .map((target) => target.screen)
-    .filter((screen): screen is ConfigurableScreen => screen !== undefined);
 }
 
 describe('the tab labels the 1.3 threshold was measured against', () => {
@@ -115,17 +106,12 @@ describe('the tab labels the 1.3 threshold was measured against', () => {
     ).toEqual(MEASURED_LABELS);
   });
 
-  it('draws those five documents and no others, and names the sixth label itself', () => {
-    // The other end of the same string. A tab pointed at another screen takes that
-    // screen's title with it, the five documents keep theirs, and the assertion
-    // above would pass while the bar drew something nobody measured.
-    expect(screensOnTheBar().sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
-
-    // "Mehr" is the sixth label, drawn only when the bar overflows. It is one short
-    // word, four letters shorter than the widest of the five, and it replaces a tab
-    // rather than adding one, so the bar is never wider than five. It is also the
-    // ONLY tab word left in the catalogue: the five went into their documents with
-    // ADR 0075 §5, and an id the catalogue kept beside them would be a second answer
+  it('names the sixth label itself, and no other tab word is in the catalogue', () => {
+    // "Mehr" is the sixth label, drawn only when the bar overflows or a screen is off it.
+    // It is one short word, four letters shorter than the widest of the five, and it
+    // replaces a tab rather than adding one, so the bar is never wider than five. It is
+    // also the ONLY tab word left in the catalogue: the five went into their documents
+    // with ADR 0075 §5, and an id the catalogue kept beside them would be a second answer
     // to one question — the day they disagreed the tab would say one thing and the
     // screen's heading another.
     expect(Object.keys(de).filter((id) => id.startsWith('ui.tab'))).toEqual(['ui.tabMore']);

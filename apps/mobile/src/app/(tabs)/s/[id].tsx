@@ -1,14 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, View } from 'react-native';
 
 import NotFoundScreen from '@/app/+not-found';
-import { ContentColumn, ScreenHeader } from '@/components/ui';
+import { Screen } from '@/components/ui';
 import { resolveText } from '@correctiv/app-core/lib/home-settings';
 import { screenTitleOf } from '@correctiv/app-core/lib/screen-layout';
-import { useCustomScreenLayout } from '@/lib/home/layout';
+import { tabReachable } from '@/lib/features';
+import { useScreenLayout } from '@/lib/home/layout';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { useDocumentTitle } from '@/lib/navigation/documentTitle';
-import { useLocale } from '@/lib/store/core';
+import { useLocale, useReachable } from '@/lib/store/core';
 
 /**
  * None are known at build time: an id arrives in a document the newsroom publishes after
@@ -23,37 +23,32 @@ export function generateStaticParams(): { id: string }[] {
 }
 
 /**
- * A screen the newsroom made: one route for all of them, `/s/<id>`, so that a new screen is
- * a document and no code
- * ([ADR 0075](../../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
- * §7).
+ * A screen: one route for all of them, `/s/<id>`, so that a screen is a document and no
+ * code ([ADR 0075](../../../../../../adr/0075-a-document-carries-its-own-words-and-a-screen-says-what-it-is-called.md)
+ * §7, [ADR 0079](../../../../../../adr/0079-the-app-draws-its-tabs-from-the-layout.md)). Home
+ * is one of them, drawn by the same lines as a screen made yesterday.
  *
- * It draws the document the way the five built-in screens do (`ScreenBlocks`), under the
- * platform's back control, because a custom screen is not a tab and is reached from "Mehr",
- * a link or a deep link. **A screen the document does not carry is `+not-found`**, the page
- * every address that leads nowhere gets; what the heading says is the document's own
- * `screen-header` block, as everywhere.
+ * It draws the document the way every screen is drawn (`ScreenBlocks`), as the root of its
+ * tab: no back control, because a screen is reached from the bar, from "Mehr", a link or a
+ * deep link, and what stands above it is the shell. **A screen nothing carries is
+ * `+not-found`**, and so is one whose feature this build cannot reach, so a deleted screen
+ * leaves an address that leads nowhere and not an empty page. What the heading says is the
+ * document's own `screen-header` block, as everywhere.
  */
-export default function CustomScreen() {
+export default function ScreenRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const layout = useCustomScreenLayout(id ?? '');
+  const layout = useScreenLayout(id ?? '');
+  const reachable = useReachable();
   const locale = useLocale();
   const title = screenTitleOf(layout?.words ?? null);
   useDocumentTitle(title === null ? '' : resolveText(title, locale));
 
-  if (layout === null) return <NotFoundScreen />;
+  if (layout === null || id === undefined || !tabReachable(id, reachable)) {
+    return <NotFoundScreen />;
+  }
   return (
-    <View className="flex-1 bg-canvas">
-      <ScreenHeader title={title === null ? (id ?? '') : resolveText(title, locale)} />
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="px-m pt-m pb-2xl"
-        showsVerticalScrollIndicator={false}
-      >
-        <ContentColumn>
-          <ScreenBlocks screen={id ?? ''} layout={layout} />
-        </ContentColumn>
-      </ScrollView>
-    </View>
+    <Screen>
+      <ScreenBlocks screen={id} layout={layout} />
+    </Screen>
   );
 }

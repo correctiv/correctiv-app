@@ -43,8 +43,10 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { findAllPressable, render } from './support/rendering';
 
-import HomeScreen from '@/app/(tabs)/index';
 import { coreStore } from '@/lib/store/core';
+import { screenOf } from './support/screens';
+
+const HomeScreen = screenOf('home');
 
 const OPEN = callouts.find((entry) => entry.status === 'open')!;
 

@@ -3,7 +3,7 @@
  *
  * Three can be drawn: the workbench's override (a preview seam), the copy the app
  * fetched (ADR 0036 §4, ADR 0057 §4) and the document this build bundles (ADR 0036
- * §10). The order is the claim, and it is argued on `homeLayout()` in
+ * §10). The order is the claim, and it is argued on `screenLayout()` in
  * `lib/home/layout.ts`: the override, then the fetched copy, then the bundle — and a
  * fetched copy published before this build was made does not count, because an app
  * update must not lose to an older document.
@@ -40,11 +40,10 @@ import {
   BUILT_AT,
   HOME_LAYOUT_OVERRIDE_KEY,
   LAYOUTS_URL,
-  customScreenLayout,
-  homeLayout,
   layoutOverrideKey,
+  screenIds,
   screenLayout,
-  useHomeLayout,
+  useScreenLayout,
   useHomeLayoutRefresh,
 } from '@/lib/home/layout';
 import { coreStore } from '@/lib/store/core';
@@ -60,6 +59,10 @@ beforeAll(() => {
       getItem: (key: string) => storage.get(key) ?? null,
       setItem: (key: string, value: string) => void storage.set(key, value),
       removeItem: (key: string) => void storage.delete(key),
+      get length() {
+        return storage.size;
+      },
+      key: (at: number) => [...storage.keys()][at] ?? null,
     },
   });
 });
@@ -85,8 +88,8 @@ function merged(screens: Record<string, string>): string {
 const FETCHED = merged({ home: documentWith('fetched', 'screen-header') });
 const OVERRIDE = documentWith('override', 'impact-footer');
 
-function ids(layout: HomeLayout): string[] {
-  return layout.sections.map((section) => section.id);
+function ids(layout: HomeLayout | null): string[] {
+  return layout!.sections.map((section) => section.id);
 }
 
 function holdFetched(text: string, publishedAt = BUILT_AT + 60_000) {
@@ -100,19 +103,28 @@ describe('the document another screen draws', () => {
     holdFetched(merged({ mitmachen: documentWith('fetched-mitmachen', 'screen-header') }));
     expect(ids(screenLayout('mitmachen'))).toEqual(['fetched-mitmachen']);
     expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
-    expect(screenLayout('entdecken').sections.length).toBeGreaterThan(0);
+    expect(screenLayout('entdecken')!.sections.length).toBeGreaterThan(0);
   });
 
-  it('is the bundle when the fetched part of that screen draws nothing', () => {
+  it('is the bundle when the fetched part of that screen does not parse', () => {
     const bundled = ids(screenLayout('mitmachen'));
     holdFetched(
       merged({
         home: documentWith('fetched', 'screen-header'),
-        mitmachen: JSON.stringify({ version: 2, sections: [], moments: [] }),
+        mitmachen: JSON.stringify({ version: 'two', sections: 'none' }),
       }),
     );
     expect(ids(screenLayout('mitmachen'))).toEqual(bundled);
     expect(ids(screenLayout('home'))).toEqual(['fetched']);
+  });
+
+  it('is the fetched part even when that draws nothing: a screen of a heading is a screen', () => {
+    holdFetched(
+      merged({
+        mitmachen: JSON.stringify({ version: 2, sections: [], moments: [] }),
+      }),
+    );
+    expect(ids(screenLayout('mitmachen'))).toEqual([]);
   });
 
   it('is its own override over its fetched copy, under its own key', () => {
@@ -126,7 +138,7 @@ describe('the document another screen draws', () => {
     expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
   });
 
-  it('ignores a screen it does not declare', () => {
+  it('draws a screen the bundle never had, like any other', () => {
     holdFetched(
       merged({
         game: documentWith('game', 'screen-header'),
@@ -134,10 +146,11 @@ describe('the document another screen draws', () => {
       }),
     );
     expect(ids(screenLayout('home'))).toEqual(['h']);
+    expect(ids(screenLayout('game'))).toEqual(['game']);
   });
 });
 
-describe('the document a custom screen draws (ADR 0075 §7)', () => {
+describe('the document a screen the bundle lacks draws (ADR 0075 §7)', () => {
   const KLIMA = JSON.stringify({
     version: 4,
     title: { de: 'Klima' },
@@ -145,31 +158,40 @@ describe('the document a custom screen draws (ADR 0075 §7)', () => {
   });
 
   it('is the fetched copy of that screen, and nothing when the copy lacks it', () => {
-    expect(customScreenLayout('klima')).toBeNull();
+    expect(screenLayout('klima')).toBeNull();
     holdFetched(merged({ klima: KLIMA }));
-    expect(ids(customScreenLayout('klima')!)).toEqual(['k']);
-    expect(customScreenLayout('wahl')).toBeNull();
+    expect(ids(screenLayout('klima')!)).toEqual(['k']);
+    expect(screenLayout('wahl')).toBeNull();
   });
 
   it('is its own override over its fetched copy, under its own key', () => {
     holdFetched(merged({ klima: KLIMA }));
     storage.set(layoutOverrideKey('klima'), documentWith('override', 'screen-header'));
     expect(layoutOverrideKey('klima')).toBe('workbench:layout:klima');
-    expect(ids(customScreenLayout('klima')!)).toEqual(['override']);
+    expect(ids(screenLayout('klima')!)).toEqual(['override']);
   });
 
   it('keeps a document that is only a heading', () => {
     holdFetched(
       merged({ klima: JSON.stringify({ version: 4, title: { de: 'Klima' }, sections: [] }) }),
     );
-    expect(customScreenLayout('klima')!.sections).toEqual([]);
+    expect(screenLayout('klima')!.sections).toEqual([]);
   });
 
-  it('is nothing for an id that cannot name one, and for a declared screen', () => {
-    holdFetched(merged({ 'Bad Id': KLIMA, home: KLIMA }));
-    expect(customScreenLayout('constructor')).toBeNull();
-    expect(customScreenLayout('Bad Id')).toBeNull();
-    expect(customScreenLayout('home')).toBeNull();
+  it('is nothing for an id that cannot name one', () => {
+    holdFetched(merged({ 'Bad Id': KLIMA }));
+    expect(screenLayout('constructor')).toBeNull();
+    expect(screenLayout('Bad Id')).toBeNull();
+    expect(screenLayout('navigation')).toBeNull();
+  });
+
+  it('lists the ids that resolve: the override, the fetched copy and the bundle, each once', () => {
+    holdFetched(merged({ klima: KLIMA, 'Bad Id': KLIMA, home: KLIMA }));
+    storage.set(layoutOverrideKey('wahl'), documentWith('w', 'screen-header'));
+    storage.set(HOME_LAYOUT_OVERRIDE_KEY, OVERRIDE);
+    expect(screenIds().sort()).toEqual(
+      ['entdecken', 'home', 'klima', 'mediathek', 'mitmachen', 'profil', 'wahl'].sort(),
+    );
   });
 });
 
@@ -179,31 +201,31 @@ describe('the document Home draws', () => {
   });
 
   it('is the bundled one when nothing else is held', () => {
-    expect(ids(homeLayout())).toEqual(ids(DEFAULT_HOME_LAYOUT));
+    expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
   });
 
   it('is the fetched copy over the bundled one', () => {
     holdFetched(FETCHED);
-    expect(ids(homeLayout())).toEqual(['fetched']);
+    expect(ids(screenLayout('home'))).toEqual(['fetched']);
   });
 
   it('is the override over the fetched copy, because somebody is looking at it on purpose', () => {
     holdFetched(FETCHED);
     storage.set(HOME_LAYOUT_OVERRIDE_KEY, OVERRIDE);
-    expect(ids(homeLayout())).toEqual(['override']);
+    expect(ids(screenLayout('home'))).toEqual(['override']);
   });
 
   it('is the bundled one again when the fetched copy was published before this build', () => {
     holdFetched(FETCHED, BUILT_AT - 1);
-    expect(ids(homeLayout())).toEqual(ids(DEFAULT_HOME_LAYOUT));
+    expect(ids(screenLayout('home'))).toEqual(ids(DEFAULT_HOME_LAYOUT));
   });
 });
 
-/** The ids `useHomeLayout` handed a screen on its latest render. */
+/** The ids `useScreenLayout` handed a screen on its latest render. */
 let drawn = '';
 
 function Probe() {
-  drawn = ids(useHomeLayout()).join(',');
+  drawn = ids(useScreenLayout('home')).join(',');
   return null;
 }
 

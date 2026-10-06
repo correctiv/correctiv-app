@@ -32,7 +32,7 @@ function write(): void {
  * cleanups in tree order, so the screen underneath restores first and the screen
  * on top then puts the underneath one's title back — and that title belongs to a
  * screen that has just been dismissed. The app has one path that does it,
- * `formular.tsx`'s `router.dismissTo('/(tabs)/mitmachen')` over
+ * `formular.tsx`'s `router.dismissTo('/s/mitmachen')` over
  * `(tabs) > /aufruf/[slug] > /formular`, and the tab it lands on would be left
  * reading "Mitmach-Aufruf". Nothing here reads the document, so no order of
  * cleanups can produce a title nobody claims: the tab is a function of who is

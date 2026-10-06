@@ -9,7 +9,7 @@ import {
   parseScreenDocument,
   type ConfigurableScreen,
 } from '@correctiv/app-core/lib/screen-layout';
-import { MAX_TABS, MIN_TABS } from '@correctiv/app-core/lib/navigation';
+import { MAX_TABS, MIN_MAX_TABS } from '@correctiv/app-core/lib/navigation';
 import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
 
 import { ROOT } from '../../plugin/collect.ts';
@@ -194,31 +194,44 @@ describe('the navigation editor', () => {
     expect(navigationDiffers(SHIPPED_NAVIGATION)).toBe(false);
   });
 
-  it('names exactly the destinations the app declares', () => {
-    const section = /export const DESTINATIONS[\s\S]*?\n};/.exec(APP('lib/tabTargets.ts'))![0];
-    const ids = [...section.matchAll(/^ {2}(\w+): \{ route:/gm)].map((match) => match[1]);
-    expect(Object.keys(DESTINATION_NAMES).sort()).toEqual(ids.sort());
+  it('offers exactly the screens the demo layout carries', () => {
+    expect(Object.keys(DESTINATION_NAMES).sort()).toEqual([...CONFIGURABLE_SCREENS].sort());
+    expect(Object.keys(DESTINATION_NAMES).sort()).toEqual(Object.keys(DEMO_SCREENS).sort());
   });
 
   it('accepts any number of entries and a threshold of two to five, and refuses the rest', () => {
     const doc = (tabs: unknown, maxTabs: unknown = 5) => ({ version: 1, tabs, maxTabs });
     expect(checkNavigation(doc(['entdecken'])).navigation).not.toBeNull();
-    expect(checkNavigation(doc(['entdecken'], MIN_TABS)).navigation).not.toBeNull();
+    expect(checkNavigation(doc(['entdecken'], MIN_MAX_TABS)).navigation).not.toBeNull();
     expect(checkNavigation(doc(['entdecken'], MAX_TABS)).navigation).not.toBeNull();
     expect(checkNavigation(doc([])).navigation).not.toBeNull();
-    expect(checkNavigation(doc(['entdecken'], MIN_TABS - 1)).navigation).toBeNull();
+    expect(checkNavigation(doc(['entdecken'], MIN_MAX_TABS - 1)).navigation).toBeNull();
     expect(checkNavigation(doc(['entdecken'], MAX_TABS + 1)).navigation).toBeNull();
-    expect(checkNavigation(doc(['index', 'entdecken'])).navigation).toBeNull();
+    expect(checkNavigation(doc(['home', 'entdecken'])).navigation).not.toBeNull();
     expect(checkNavigation(doc(['mehr'])).navigation).toBeNull();
     expect(checkNavigation(doc(['entdecken', 'entdecken'])).navigation).toBeNull();
-    expect(checkNavigation(doc(['nirgends'])).navigation).toBeNull();
+    expect(checkNavigation(doc(['Nirgends'])).navigation).toBeNull();
   });
 
-  it('keeps Home out of every operation: it cannot be moved, added or removed', () => {
+  it('treats Home as an entry like any other: it can be moved and taken off, and is first only by position', () => {
+    expect(SHIPPED_NAVIGATION.tabs[0]).toBe('home');
+    expect(barOf(SHIPPED_NAVIGATION).start).toBe('home');
+    const homeSecond = movedTab(SHIPPED_NAVIGATION, 'home', 1);
+    expect(homeSecond.tabs.slice(0, 2)).toEqual(['entdecken', 'home']);
+    expect(barOf(homeSecond).start).toBe('entdecken');
+    expect(withTab(SHIPPED_NAVIGATION, 'home', false).tabs).not.toContain('home');
     expect(withTab(SHIPPED_NAVIGATION, 'index', true)).toBe(SHIPPED_NAVIGATION);
-    expect(withTab(SHIPPED_NAVIGATION, 'index', false)).toBe(SHIPPED_NAVIGATION);
-    expect(movedTab(SHIPPED_NAVIGATION, 'index', 1)).toBe(SHIPPED_NAVIGATION);
-    expect(barOf(SHIPPED_NAVIGATION)!.tabs[0]).toBe('index');
+  });
+
+  it('lets the last entry go: a bar of none is the empty state, and of one the screen alone', () => {
+    const none = SHIPPED_NAVIGATION.tabs.reduce(
+      (nav, id) => withTab(nav, id, false),
+      SHIPPED_NAVIGATION,
+    );
+    expect(none.tabs).toEqual([]);
+    expect(barOf(none).kind).toBe('empty');
+    expect(barOf(withTab(none, 'profil', true))).toMatchObject({ kind: 'single', start: 'profil' });
+    expect(checkNavigation(none).navigation).not.toBeNull();
   });
 
   it('moves, adds and removes entries and clamps the threshold', () => {
@@ -228,16 +241,16 @@ describe('the navigation editor', () => {
     const without = withTab(SHIPPED_NAVIGATION, 'profil', false);
     expect(unused(without)).toEqual(['profil']);
     expect(withTab(without, 'profil', true).tabs.at(-1)).toBe('profil');
-    expect(withMaxTabs(SHIPPED_NAVIGATION, 1).maxTabs).toBe(MIN_TABS);
+    expect(withMaxTabs(SHIPPED_NAVIGATION, 1).maxTabs).toBe(MIN_MAX_TABS);
     expect(withMaxTabs(SHIPPED_NAVIGATION, 9).maxTabs).toBe(MAX_TABS);
     expect(navigationDiffers(withMaxTabs(SHIPPED_NAVIGATION, 3))).toBe(true);
   });
 
   it('puts the surplus behind Mehr, which counts as a visible tab', () => {
-    const bar = barOf(withMaxTabs(SHIPPED_NAVIGATION, 3))!;
+    const bar = barOf(withMaxTabs(SHIPPED_NAVIGATION, 3));
     expect(bar.tabs).toHaveLength(3);
     expect(bar.tabs.at(-1)).toBe('mehr');
-    expect(bar.more).toHaveLength(SHIPPED_NAVIGATION.tabs.length + 1 - 2);
+    expect(bar.more).toHaveLength(SHIPPED_NAVIGATION.tabs.length - 2);
   });
 });
 
@@ -337,7 +350,7 @@ describe('the layout submission', () => {
     expect(refusal(() => applyLayout('{"document":{}}', repo))).toBe('layout-target');
     expect(
       refusal(() =>
-        applyLayout(layoutPayload('navigation', '{"version":1,"tabs":["nirgends"]}'), repo),
+        applyLayout(layoutPayload('navigation', '{"version":1,"tabs":["Nirgends"]}'), repo),
       ),
     ).toBe('refused');
     // A module the app holds no renderer for, which is what `module-unrecognised` says

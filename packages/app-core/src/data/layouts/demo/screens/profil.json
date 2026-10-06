@@ -3,6 +3,7 @@
   "title": { "de": "Profil" },
   "icon": "person",
   "sections": [
+    { "id": "title", "module": "screen-header" },
     { "id": "club", "module": "profile-club-card" },
     { "id": "membership", "module": "profile-membership" },
     { "id": "impact", "module": "profile-impact" },

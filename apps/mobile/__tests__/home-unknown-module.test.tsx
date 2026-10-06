@@ -47,8 +47,10 @@ import {
 
 import { render, walkHostNodes } from './support/rendering';
 
-import HomeScreen from '@/app/(tabs)/index';
 import { placeTestID } from '@/lib/home/modules';
+import { screenOf } from './support/screens';
+
+const HomeScreen = screenOf('home');
 
 const reports: ErrorReport[] = [];
 

@@ -15,6 +15,7 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { Button } from '../../ui/kit/button';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { Select } from '../../ui/kit/select';
+import type { NewScreenFault } from './store';
 import { TextSetting } from './TextSetting';
 
 /**
@@ -94,7 +95,7 @@ export const CUSTOM_SCREEN_COPY = defineMessages({
     id: 'home.custom.fault.declared',
     defaultMessage: 'The app already has a screen with that name.',
     description:
-      'Under the id field of a new screen when it is the id of one of the five screens the app ships with.',
+      'Under the id field of a new screen when it is the id of one of the five screens the demo layout carries, which this tool always holds.',
   },
   reserved: {
     id: 'home.custom.fault.reserved',
@@ -149,9 +150,9 @@ const FAULTS = {
   declared: CUSTOM_SCREEN_COPY.declared,
   reserved: CUSTOM_SCREEN_COPY.reserved,
   taken: CUSTOM_SCREEN_COPY.taken,
-} as const satisfies Record<CustomScreenIdFault | 'taken', unknown>;
+} as const satisfies Record<CustomScreenIdFault | 'declared' | 'taken', unknown>;
 
-export type NewScreenFault = CustomScreenIdFault | 'taken';
+export type { NewScreenFault };
 
 const SMALL = 'h-[1.75rem] gap-3xs px-2xs text-s';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';

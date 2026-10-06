@@ -12,7 +12,7 @@ import type { MembershipTier } from '@correctiv/app-core/types/models';
  *
  * Descriptors and not strings, because this module has no React and therefore no
  * `useIntl`. What it can own is the vocabulary; the formatting belongs to whoever
- * renders it, which is `components/gate/LoginGate.tsx` and `app/(tabs)/profil.tsx`.
+ * renders it, which is `components/gate/LoginGate.tsx` and the profile blocks in `lib/home/modules.tsx`.
  * Typed as the record rather than left to inference, so a fourth `MembershipTier`
  * fails to compile here instead of printing nothing on both screens.
  */

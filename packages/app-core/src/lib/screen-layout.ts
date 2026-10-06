@@ -101,13 +101,13 @@ export {
 } from './screen-id';
 
 /**
- * The custom screens a fetched joined document carries, in the order it writes them.
+ * The screens a fetched joined document carries, in the order it writes them.
  *
  * A key that is not a valid id is skipped without being named, which is what the host does
  * with a screen it was not asked for: the id would be a route nobody can reach (§7), so
  * there is nothing smaller to lose. A body that is not a joined document has none.
  */
-export function customScreenIdsOf(body: unknown): string[] {
+export function screenIdsOf(body: unknown): string[] {
   if (typeof body !== 'object' || body === null) return [];
   const screens = (body as { screens?: unknown }).screens;
   if (typeof screens !== 'object' || screens === null || Array.isArray(screens)) return [];

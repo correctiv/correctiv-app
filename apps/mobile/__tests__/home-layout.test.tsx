@@ -86,14 +86,16 @@ import { resetStore } from '@correctiv/app-core/stores/store';
 
 import { render, renderedText, walkHostNodes } from './support/rendering';
 
-import EntdeckenScreen from '@/app/(tabs)/entdecken';
-import MitmachenScreen from '@/app/(tabs)/mitmachen';
-import ProfilScreen from '@/app/(tabs)/profil';
-import HomeScreen from '@/app/(tabs)/index';
 import { ScreenBlocks } from '@/lib/home/ScreenBlocks';
 import { HOME_MODULES, LIFTED_CALLOUT, placeTestID } from '@/lib/home/modules';
 import { coreStore } from '@/lib/store/core';
 import { CONFIGURABLE_SCREENS, SCREEN_DOCUMENTS } from '@correctiv/app-core/lib/screen-layout';
+import { screenOf } from './support/screens';
+
+const EntdeckenScreen = screenOf('entdecken');
+const MitmachenScreen = screenOf('mitmachen');
+const ProfilScreen = screenOf('profil');
+const HomeScreen = screenOf('home');
 
 const DOCUMENT_PATH = join(
   __dirname,
@@ -473,22 +475,29 @@ describe('what Mitmachen draws', () => {
 });
 
 describe('what Profil draws', () => {
-  it('draws the fixed heading and the sections of its document in order', () => {
+  it('draws the sections of its document in order, the heading among them', () => {
     const tree = render(<ProfilScreen />);
-    expect(renderedPlaces(tree)).toEqual(['club', 'membership', 'impact', 'area', 'newsletter']);
+    expect(renderedPlaces(tree)).toEqual([
+      'title',
+      'club',
+      'membership',
+      'impact',
+      'area',
+      'newsletter',
+    ]);
     expect(renderedText(tree)).toContain('Profil');
   });
 
   /**
-   * The one bundled document with no heading of its own at all, which is how the screen
-   * was drawn before there was a document and still is. What makes it a document of its
-   * own is that the Profil screen reads it (ADR 0071 §1), and nothing in it is refused
-   * anywhere.
+   * The heading used to be the frame's, a fixed line above the document. Every screen is one
+   * route now (ADR 0079), so there is no frame to hold it, and the document says its own
+   * name with a `screen-header` block like every other screen does.
    */
-  it('reads cleanly, and draws its five cards and no heading', () => {
+  it('reads cleanly, and draws its heading and five cards', () => {
     const parse = parseHomeLayout(SCREEN_DOCUMENTS.profil);
     expect(parse.problems).toEqual([]);
     expect(parse.layout?.sections.map((section) => section.module)).toEqual([
+      'screen-header',
       'profile-club-card',
       'profile-membership',
       'profile-impact',
