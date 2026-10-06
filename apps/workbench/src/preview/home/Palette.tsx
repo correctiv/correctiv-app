@@ -199,9 +199,12 @@ export function InsertMark({
   deviceWidth,
   screen,
   onAdd,
+  shown = false,
 }: {
   /** Said in words, for the dialog and for the mark's own label: "at the top", "after X". */
   where: string;
+  /** Keeps the line and the `+` drawn. For a list with no block, where there is no seam to point at. */
+  shown?: boolean;
   /** The width a specimen draws at, handed down so the list and the palette cannot part. */
   deviceWidth: number;
   /** The screen being edited, which the specimens draw on; the list itself is the same everywhere. */
@@ -257,7 +260,7 @@ export function InsertMark({
               // has to look for to believe.
               'group-hover:h-[2px] group-hover:bg-accent',
               'group-focus-visible:h-[2px] group-focus-visible:bg-accent',
-              open && 'h-[2px] bg-accent',
+              (open || shown) && 'h-[2px] bg-accent',
             )}
           />
           <Plus
@@ -270,7 +273,7 @@ export function InsertMark({
               'bg-canvas ring-1 ring-accent',
               'text-accent opacity-0 transition-opacity',
               'group-hover:opacity-100 group-focus-visible:opacity-100',
-              open && 'opacity-100',
+              (open || shown) && 'opacity-100',
             )}
           />
         </button>

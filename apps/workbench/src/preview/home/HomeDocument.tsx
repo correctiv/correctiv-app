@@ -1409,6 +1409,15 @@ export function HomeDocument({
                 />
               ))}
             </ol>
+            {layout.sections.length === 0 && (
+              <InsertMark
+                shown
+                where={whereAt(intl, layout, 0)}
+                deviceWidth={deviceWidth}
+                screen={screen}
+                onAdd={(module) => setLayout(added(layout, 0, module))}
+              />
+            )}
           </AppHost>
         </>
       ) : (
