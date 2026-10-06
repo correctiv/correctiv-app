@@ -127,11 +127,12 @@ jobs:
           echo "assembled $(find site -name '*.html' | wc -l) pages"
 
       # The screen documents the app fetches (ADR 0036 §4, ADR 0057 §4, ADR 0071 §1): the
-      # core's files under data/layout/screens/, the same ones the app bundles, joined into
+      # core's files under data/layouts/ship/screens/, the same ones the app bundles (the
+      # `ship` layout and no other, ADR 0078 §3), joined into
       # ONE document at <base>/layout.json, so every screen arrives in the same state. The
       # app holds that address as LAYOUTS_URL in apps/mobile/src/lib/home/layout.ts.
       # <base>/home.layout.json stays, Home's file as it was, for the builds that fetch
-      # only that one.
+      # only that one, for as long as the layout has one: `ship` is empty today.
       #
       # A step of its own, and it names the core's path and nothing else. That is what
       # keeps it on the right side of ADR 0040 §1: the document is the core's file, not
@@ -140,8 +141,9 @@ jobs:
       # the app, removes nothing this path touches.
       - name: Publish the screen documents
         run: |
-          npx tsx packages/app-core/scripts/join-screen-layouts.ts site/layout.json
-          cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json
+          npx tsx packages/app-core/scripts/join-screen-layouts.ts ship site/layout.json
+          SHIP_HOME=packages/app-core/src/data/layouts/ship/screens/home.json
+          if [ -f "$SHIP_HOME" ]; then cp "$SHIP_HOME" site/home.layout.json; fi
 
       # `/app/s/<id>` has no file in the export (ADR 0075 §7), so Pages answers it with the
       # SITE's 404.html, which is the workbench's. This links a script into that page that
@@ -283,11 +285,17 @@ jobs:
           # repository. So it is judged by the core's own parser, not by JSON.parse:
           # `{"version":2,"sections":[]}` and `null` are both JSON, and both are an
           # empty home screen. The script is stricter than the app and says why.
-          test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
-          npx tsx packages/app-core/scripts/check-home-layout.ts site/home.layout.json || {
-            echo "::error::site/home.layout.json is not a home layout the app would draw as written; the lines above name each problem."
-            exit 1
-          }
+          #
+          # Only while the `ship` layout has a Home (ADR 0078 §2): it has none today, and the
+          # builds that fetch only this address then keep their last copy, which is the
+          # floor they always had.
+          if [ -f packages/app-core/src/data/layouts/ship/screens/home.json ]; then
+            test -f site/home.layout.json || { echo "::error::site/home.layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
+            npx tsx packages/app-core/scripts/check-home-layout.ts site/home.layout.json || {
+              echo "::error::site/home.layout.json is not a home layout the app would draw as written; the lines above name each problem."
+              exit 1
+            }
+          fi
 
           test -f site/layout.json || { echo "::error::site/layout.json is missing, so every installed app would keep drawing its last copy."; exit 1; }
           npx tsx packages/app-core/scripts/check-screen-layouts.ts site/layout.json || {

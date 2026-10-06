@@ -10,11 +10,11 @@ import {
 import {
   applyAll,
   changesAt,
-  DEFAULT_HOME_LAYOUT,
   editionPointAt,
   editionsAt,
   formatTimeOfDay,
   MINUTES_IN_DAY,
+  parseHomeLayout,
   stateAt,
   stateAtInstant,
   type HomeChange,
@@ -26,6 +26,7 @@ import {
   type ModuleSettings,
   type SettingValue,
 } from '@correctiv/app-core/lib/home-layout';
+import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
 import type { IntlShape } from 'react-intl';
 
 import {
@@ -89,14 +90,12 @@ import { say, wbMessage, type WorkbenchMessage } from '../../i18n/messages';
  */
 
 /**
- * The document the app compiles in, as the editor's starting point and its baseline.
- *
- * `DEFAULT_HOME_LAYOUT` is the core's own parse of `data/layout/screens/home.json`, which is
- * the same value the app draws from when nothing has been written over it. So "reset"
- * and "unchanged" are both measured against the file a reviewer will see in the diff,
- * and not against a copy of it kept here.
+ * The document the editor starts from and measures against: the core's own parse of the
+ * demo layout's `home.json` (ADR 0078 §7), since the layout the app bundles is empty. So
+ * "reset" and "unchanged" are both measured against the file a reviewer will see in the
+ * diff, and not against a copy of it kept here.
  */
-export const SHIPPED: HomeLayout = DEFAULT_HOME_LAYOUT;
+export const SHIPPED: HomeLayout = parseHomeLayout(DEMO_SCREENS.home).layout!;
 
 /**
  * What each module is, in words an editor can act on.
@@ -2192,7 +2191,7 @@ function printSettings(settings: ModuleSettings | undefined): string {
 // --- the file ------------------------------------------------------------------
 
 /**
- * The document as `packages/app-core/src/data/layout/screens/home.json` should read.
+ * The document as `packages/app-core/src/data/layouts/demo/screens/home.json` should read.
  *
  * `JSON.stringify(…, 2)` is not this, and the difference is the whole point: it puts
  * every key of every section on a line of its own, so saving an unchanged document

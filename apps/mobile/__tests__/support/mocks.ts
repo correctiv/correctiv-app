@@ -31,3 +31,16 @@ jest.mock('@expo/vector-icons', () => {
 
 /** Leaving the app is never what a test wants, on any platform. */
 jest.mock('@/lib/openExternal', () => ({ openExternal: jest.fn() }));
+
+/**
+ * The app bundles the `ship` layout and ships it empty (ADR 0078 §3), so no suite would find
+ * a screen to draw. They read the `demo` layout in its place: content for the screens to
+ * render, which is what these suites were written against. A suite about the empty bundle
+ * mocks this module itself.
+ */
+jest.mock('@correctiv/app-core/data/layouts/ship/bundle', () => {
+  const demo = jest.requireActual<typeof import('@correctiv/app-core/data/layouts/demo/bundle')>(
+    '@correctiv/app-core/data/layouts/demo/bundle',
+  );
+  return { SHIP_SCREENS: demo.DEMO_SCREENS, SHIP_NAVIGATION: demo.DEMO_NAVIGATION };
+});

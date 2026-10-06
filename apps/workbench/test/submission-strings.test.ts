@@ -539,7 +539,9 @@ describe('the proof', () => {
     expect(mayWrite('strings', `${GERMAN_CATALOGUE_DIR}/../../../../.github/workflows/x.yml`)).toBe(
       false,
     );
-    expect(mayWrite('home', 'packages/app-core/src/data/layout/screens/home.json')).toBe(true);
+    expect(mayWrite('home', 'packages/app-core/src/data/layouts/demo/screens/home.json')).toBe(
+      true,
+    );
     expect(mayWrite('home', HOME)).toBe(false);
   });
 
@@ -601,7 +603,7 @@ describe('the proof', () => {
   });
 
   it('reads the home kind as one file, modified, and nothing else', () => {
-    const home = 'packages/app-core/src/data/layout/screens/home.json';
+    const home = 'packages/app-core/src/data/layouts/demo/screens/home.json';
     const title = '[startseite] x';
     const body = issueFor('home', '{}', { heading: 'x', lead: 'x' }).body;
     const tree = treeOf(new Map());

@@ -18,7 +18,6 @@ import { fileURLToPath } from 'node:url';
 import { HOME_LAYOUT_VERSION, parseHomeLayout } from '../src/lib/home-layout';
 import {
   CONFIGURABLE_SCREENS,
-  SCREEN_DOCUMENTS,
   SCREEN_LAYOUTS_VERSION,
   joinScreenDocuments,
   screenDocumentOf,
@@ -26,6 +25,7 @@ import {
 } from '../src/lib/screen-layout';
 import { persist, persisted } from '../src/stores/persist';
 import { createAppStore, type AppStore } from '../src/stores/store';
+import { DEMO_SCREENS } from './__fixtures__/demo-layout';
 
 /**
  * The app fetches its home document, keeps the last good copy and draws from it
@@ -397,23 +397,22 @@ describe('a merged document with several screens', () => {
 
 describe('the published documents', () => {
   it('joins every bundled screen under its id, so the files and the document agree', () => {
-    const document = JSON.parse(JSON.stringify(joinScreenDocuments({ ...SCREEN_DOCUMENTS })));
+    const document = JSON.parse(JSON.stringify(joinScreenDocuments({ ...DEMO_SCREENS })));
     for (const screen of CONFIGURABLE_SCREENS) {
-      expect(screenDocumentOf(document, screen)).toEqual(SCREEN_DOCUMENTS[screen]);
+      expect(screenDocumentOf(document, screen)).toEqual(DEMO_SCREENS[screen]);
     }
   });
 
-  it("keeps the old home address producing Home's own file, which older apps parse as a layout", () => {
-    const home = SCREEN_DOCUMENTS.home;
+  it("keeps the old home address producing the shipped Home's file, while there is one", () => {
+    const home = DEMO_SCREENS.home;
     expect(parseHomeLayout(home).problems).toEqual([]);
     const workflow = readFileSync(
       fileURLToPath(new globalThis.URL('../../../.github/workflows/pages.yml', import.meta.url)),
       'utf8',
     );
-    expect(workflow).toContain(
-      'cp packages/app-core/src/data/layout/screens/home.json site/home.layout.json',
-    );
-    expect(workflow).toContain('join-screen-layouts.ts site/layout.json');
+    expect(workflow).toContain('cp "$SHIP_HOME" site/home.layout.json');
+    expect(workflow).toContain('data/layouts/ship/screens/home.json');
+    expect(workflow).toContain('join-screen-layouts.ts ship site/layout.json');
   });
 });
 

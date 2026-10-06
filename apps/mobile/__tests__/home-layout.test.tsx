@@ -104,7 +104,8 @@ const DOCUMENT_PATH = join(
   'app-core',
   'src',
   'data',
-  'layout',
+  'layouts',
+  'demo',
   'screens',
   'home.json',
 );

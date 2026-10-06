@@ -77,6 +77,8 @@ export type RefusalCode =
   | 'refused'
   | 'unchanged'
   | 'layout-target'
+  | 'layout-id'
+  | 'layout-unknown'
   | 'provenance'
   | 'features-payload'
   | 'features-refused'
@@ -143,7 +145,11 @@ export function refusalText(refusal: Refusal): string {
     case 'unchanged':
       return 'Die eingereichte Startseite ist dieselbe, die schon im Repository steht. Es gibt nichts zu ändern.';
     case 'layout-target':
-      return `Der Block im Issue ist kein Dokument, wie die Workbench es für einen Bildschirm oder die Navigation schreibt: Erwartet ist ein Objekt mit \`target\` und \`document\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+      return `Der Block im Issue ist kein Dokument, wie die Workbench es für einen Bildschirm oder die Navigation schreibt: Erwartet ist ein Objekt mit \`layout\`, \`target\` und \`document\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'layout-id':
+      return `Das Layout im Block des Issues ist keine gültige Layout-ID: Erlaubt sind Kleinbuchstaben, Ziffern und einzelne Bindestriche, ohne Schrägstrich und ohne Punkt. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
+    case 'layout-unknown':
+      return `Ein Layout mit diesem Namen gibt es im Repository nicht. Ein Layout ist ein Ordner mit einer Navigation und wird mit einem Commit angelegt, nicht mit einer Einreichung.${detail}`;
     case 'provenance':
       return `Die Herkunft (\`via\`) im Block des Issues ist keine, die die Workbench schreibt: Erlaubt ist nur \`link\`. Reichen Sie die Änderung am besten noch einmal aus der Workbench ein.${detail}`;
     case 'features-payload':

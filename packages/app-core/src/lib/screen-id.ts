@@ -93,3 +93,50 @@ export function customScreenIdFault(
 export function isCustomScreenId(id: unknown): id is string {
   return customScreenIdFault(id) === null;
 }
+
+// --- every id is a screen's, and a layout has one of its own -------------------------
+
+/** Why an id cannot name a screen at all. The grammar of `CustomScreenIdFault`, minus who owns the name. */
+export type ScreenIdFault = Exclude<CustomScreenIdFault, 'declared'>;
+
+/**
+ * Whether `id` may name a screen in a layout, and the first reason it may not.
+ *
+ * [ADR 0078](../../../../adr/0078-layouts-ship-and-demo.md) §4: a built-in screen is no
+ * special case, so the grammar is the same for every id and the only ids refused beyond it
+ * are the reserved ones. `customScreenIdFault` keeps refusing the declared names for as
+ * long as the app draws those five from code, which is the app's side of the same change.
+ */
+export function screenIdFault(id: unknown): ScreenIdFault | null {
+  // With nothing declared the one fault `customScreenIdFault` cannot return is `declared`.
+  return customScreenIdFault(id, []) as ScreenIdFault | null;
+}
+
+/** `screenIdFault` as a type guard. */
+export function isScreenId(id: unknown): id is string {
+  return screenIdFault(id) === null;
+}
+
+/** Why an id cannot name a layout. */
+export type LayoutIdFault = 'not-a-string' | 'empty' | 'too-long' | 'malformed';
+
+/**
+ * Whether `id` may name a layout, a folder under `data/layouts/`, and the first reason it
+ * may not (ADR 0078 §1, §6). The grammar of a screen id and nothing beyond it: no slash, no
+ * dot and no capital, so the set of paths a submission can name is closed by the id and not
+ * by a list, and `..` is not a layout.
+ */
+export function layoutIdFault(id: unknown): LayoutIdFault | null {
+  if (typeof id !== 'string') return 'not-a-string';
+  if (id.length === 0) return 'empty';
+  if (id.length > CUSTOM_SCREEN_ID_MAX_LENGTH) return 'too-long';
+  return CUSTOM_SCREEN_ID.test(id) ? null : 'malformed';
+}
+
+/** `layoutIdFault` as a type guard. */
+export function isLayoutId(id: unknown): id is string {
+  return layoutIdFault(id) === null;
+}
+
+/** The one layout the app bundles. Every other is the workbench's alone (ADR 0078 §3). */
+export const SHIPPED_LAYOUT = 'ship';

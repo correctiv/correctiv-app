@@ -3,22 +3,19 @@
  *
  *     npx tsx packages/app-core/scripts/check-screen-layouts.ts site/layout.json
  *
- * The counterpart of `check-home-layout.ts` for the document ADR 0071 §1 publishes: every
- * screen the app declares has to be in it and has to parse with no problem, judged by the
- * app's own parser and stricter than the app, for the reason that script gives. A screen
- * the newsroom made (ADR 0075 §7) is judged the same way, with two differences: it need not
- * be there, and it may hold no section at all, because a screen that is only a heading is a
- * screen. A key that is neither declared nor a valid custom id is refused, since it is a
- * file somebody put under `screens/` that no route can reach.
+ * The counterpart of `check-home-layout.ts` for the document ADR 0071 §1 publishes, judged
+ * by the app's own parser and stricter than the app, for the reason that script gives.
+ * Every screen in it is judged alike (ADR 0078 §4): a valid id, a title, no problem, and
+ * no minimum of anything, so a layout with no screen is valid and a screen that is only a
+ * heading is a screen. A key that is not a valid id is refused, since it is a file somebody
+ * put under `screens/` that no route can reach, and so is a tab that names no screen.
  */
 import { readFileSync } from 'node:fs';
 
 import { parseHomeLayout } from '../src/lib/home-layout';
 import { parseNavigation } from '../src/lib/navigation';
 import {
-  CONFIGURABLE_SCREENS,
-  isCustomScreenId,
-  isDeclaredScreen,
+  isScreenId,
   navigationDocumentOf,
   parseScreenDocument,
   screenDocumentOf,
@@ -38,18 +35,17 @@ try {
   process.exit(1);
 }
 
-const custom =
+const screens =
   typeof body === 'object' &&
   body !== null &&
   typeof (body as { screens?: unknown }).screens === 'object' &&
   (body as { screens: unknown }).screens !== null
-    ? Object.keys((body as { screens: object }).screens).filter((key) => !isDeclaredScreen(key))
+    ? Object.keys((body as { screens: object }).screens)
     : [];
 
 let failed = false;
-for (const screen of [...CONFIGURABLE_SCREENS, ...custom]) {
-  const declared = isDeclaredScreen(screen);
-  if (!declared && !isCustomScreenId(screen)) {
+for (const screen of screens) {
+  if (!isScreenId(screen)) {
     console.error(`${path}: ${JSON.stringify(screen)}: not a valid screen id`);
     failed = true;
     continue;
@@ -73,12 +69,7 @@ for (const screen of [...CONFIGURABLE_SCREENS, ...custom]) {
   const named = parseScreenDocument(document);
   for (const problem of named.problems)
     console.error(`${path}: ${screen}: ${problem.code} ${JSON.stringify(problem.context)}`);
-  if (
-    !layout ||
-    (declared && layout.sections.length === 0) ||
-    problems.length > 0 ||
-    named.words === null
-  ) {
+  if (!layout || problems.length > 0 || named.words === null) {
     console.error(`${path}: ${screen}: refused`);
     failed = true;
   } else {
@@ -100,9 +91,15 @@ if (navigation === undefined) {
     console.error(`${path}: navigation: refused`);
     failed = true;
   } else {
-    console.log(
-      `${path}: navigation: ${parsed.navigation.tabs.length} tabs after Home, no problems`,
-    );
+    for (const tab of parsed.navigation.tabs) {
+      if (screenDocumentOf(body, tab) === undefined) {
+        console.error(
+          `${path}: navigation: ${JSON.stringify(tab)}: names no screen of this layout`,
+        );
+        failed = true;
+      }
+    }
+    console.log(`${path}: navigation: ${parsed.navigation.tabs.length} tabs, no problems`);
   }
 }
 process.exit(failed ? 1 : 0);

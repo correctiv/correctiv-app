@@ -2,7 +2,7 @@
  * The home screen as a day, and what it takes to read one somebody else wrote.
  *
  * [ADR 0036](../../../../adr/0036-the-home-screen-becomes-data.md) turned the screen's
- * source order into `data/layout/screens/home.json`: an ordered list of sections, each naming a
+ * source order into `data/layouts/demo/screens/home.json`: an ordered list of sections, each naming a
  * module the host can draw. [ADR 0039](../../../../adr/0039-the-home-screen-is-a-day-not-a-timetable.md)
  * turns the rest of it — when a section appears, and what it is configured to show —
  * into a **sequence of moments**.

@@ -429,13 +429,13 @@ describe('a draft that arrived by a link', () => {
   it('refuses any origin but the one the workbench writes, and never prints it', () => {
     const odd = `{"document":${printed},"via":"mail <script>"}`;
     expect(refusal(() => applyHome(odd, CURRENT))).toBe('provenance');
-    const envelope = `{"target":"navigation","document":${navigation},"via":"mail"}`;
+    const envelope = `{"layout":"demo","target":"navigation","document":${navigation},"via":"mail"}`;
     expect(refusal(() => applyLayout(envelope, repo))).toBe('provenance');
     expect(refusalText(refusedWith(() => applyHome(odd, CURRENT)))).not.toContain('script');
   });
 
   it('still refuses an envelope with a key it does not know', () => {
-    const extra = `{"target":"navigation","document":${navigation},"via":"link","note":"x"}`;
+    const extra = `{"layout":"demo","target":"navigation","document":${navigation},"via":"link","note":"x"}`;
     expect(refusal(() => applyLayout(extra, repo))).toBe('layout-target');
   });
 

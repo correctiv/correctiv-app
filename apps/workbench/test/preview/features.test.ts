@@ -61,7 +61,9 @@ describe('the release submission', () => {
   it('writes the one fixed path and nothing else', () => {
     expect(SUBMISSION_KINDS.features.file).toBe(FEATURES_FILE);
     expect(mayWrite('features', FEATURES_FILE)).toBe(true);
-    expect(mayWrite('features', 'packages/app-core/src/data/layout/navigation.json')).toBe(false);
+    expect(mayWrite('features', 'packages/app-core/src/data/layouts/demo/navigation.json')).toBe(
+      false,
+    );
   });
 
   it('changes only the states asked for, and clamps to the ceilings', () => {

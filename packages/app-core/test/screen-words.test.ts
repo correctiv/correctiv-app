@@ -10,12 +10,12 @@ import {
   parseScreenDocument,
   SCREEN_ICONS,
   SCREEN_ICON_FALLBACK,
-  SCREEN_DOCUMENTS,
   screenDocumentOf,
   screenIconOf,
   screenTabLabelOf,
   screenTitleOf,
 } from '../src/lib/screen-layout';
+import { DEMO_SCREENS } from './__fixtures__/demo-layout';
 
 /**
  * The three words a screen document carries
@@ -234,7 +234,7 @@ describe('the five documents that ship with the app', () => {
    * price of a name living in a document.
    */
   it.each(CONFIGURABLE_SCREENS)('%s names itself, and parses with nothing left over', (screen) => {
-    const source = SCREEN_DOCUMENTS[screen];
+    const source = DEMO_SCREENS[screen];
     expect(codes(parseScreenDocument(source))).toEqual([]);
 
     const parse: HomeLayoutParse = parseHomeLayout(source);
@@ -244,7 +244,7 @@ describe('the five documents that ship with the app', () => {
 
   /** ADR 0075 §5's other half: the words come from the same copy as the entries. */
   it.each(CONFIGURABLE_SCREENS)('%s has an icon this build can draw', (screen) => {
-    const words = parseScreenDocument(SCREEN_DOCUMENTS[screen]).words;
+    const words = parseScreenDocument(DEMO_SCREENS[screen]).words;
     expect(words?.icon).toBeDefined();
     expect(SCREEN_ICONS[words!.icon!]).toBeDefined();
     expect(screenIconOf(words)).not.toEqual(SCREEN_ICONS[SCREEN_ICON_FALLBACK]);
@@ -257,14 +257,14 @@ describe('the five documents that ship with the app', () => {
    * day one of them does differ, the assertion says which one.
    */
   it.each(CONFIGURABLE_SCREENS)("%s's tab is named by its title", (screen) => {
-    const words = parseScreenDocument(SCREEN_DOCUMENTS[screen]).words;
+    const words = parseScreenDocument(DEMO_SCREENS[screen]).words;
     expect(words?.tabLabel).toBeUndefined();
     expect(screenTabLabelOf(words)).toBe(words?.title);
   });
 
   it('names five screens with five different words, each in its own language value', () => {
     const titles = CONFIGURABLE_SCREENS.map(
-      (screen) => parseScreenDocument(SCREEN_DOCUMENTS[screen]).words?.title.de,
+      (screen) => parseScreenDocument(DEMO_SCREENS[screen]).words?.title.de,
     );
     expect(titles.every((title) => typeof title === 'string' && title.length > 0)).toBe(true);
     expect(new Set(titles).size).toBe(CONFIGURABLE_SCREENS.length);

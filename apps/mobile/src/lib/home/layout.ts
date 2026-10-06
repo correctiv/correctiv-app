@@ -84,7 +84,7 @@ function overrideText(screen: string): string | null {
 /**
  * Where the app fetches its screen documents from (ADR 0057 §4).
  *
- * The files under the core's `data/layout/screens/`, joined into one document by
+ * The files under the core's `data/layouts/ship/screens/`, joined into one document by
  * `.github/workflows/pages.yml` and published beside the site: the same files this build
  * bundles, as `main` has them now (ADR 0071 §1). `home.layout.json` stays published beside
  * it for the builds that fetch only Home's document.
@@ -144,9 +144,15 @@ function parseScreen(document: unknown) {
   return parseHomeLayout(document, RENDERABLE);
 }
 
-/** The screen's bundled document, which is always usable (ADR 0036 §10). */
+/**
+ * The screen's bundled document, which is always usable (ADR 0036 §10). The `ship` layout
+ * is what is bundled (ADR 0078 §3), and a screen it has no file for has nothing to draw.
+ */
 function bundled(screen: ConfigurableScreen): HomeLayout {
-  const { layout, problems } = parseScreen(SCREEN_DOCUMENTS[screen]);
+  const document = SCREEN_DOCUMENTS[screen];
+  if (document === undefined)
+    return { version: 0, words: null, sections: [], moments: [], editions: [] };
+  const { layout, problems } = parseScreen(document);
   reportLayoutProblems(problems);
   return layout ?? { version: 0, words: null, sections: [], moments: [], editions: [] };
 }

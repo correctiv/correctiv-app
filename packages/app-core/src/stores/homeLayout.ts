@@ -12,7 +12,7 @@ import type { AppThunk } from './store';
  * [ADR 0071](../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md) §1, §6).
  *
  * The app fetches its layout, keeps the last good copy and draws from that copy. Where
- * the copy comes from is ADR 0057 §4: the files under `data/layout/screens/` joined into
+ * the copy comes from is ADR 0057 §4: the files under `data/layouts/ship/screens/` joined into
  * ONE document by the Pages deploy (`{ version, screens: { <screen>: <document> } }`, with
  * room beside `screens` for the navigation), at an address the HOST holds. One address, so
  * every screen arrives in the same state. The slice keeps its name and its storage key

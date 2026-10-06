@@ -2,7 +2,7 @@
  * The tab bar as a document, and what it takes to read one somebody else wrote.
  *
  * [ADR 0071](../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
- * §4 to §6: `data/layout/navigation.json` chooses which destinations the app declares are
+ * §4 to §6: `data/layouts/<layout>/navigation.json` chooses which destinations the app declares are
  * tabs, and in what order. Home is always the first tab and is not in the document, so it
  * cannot be taken out. The app declares what a destination is (screen, icon, label,
  * feature); this file knows only their ids.
@@ -24,7 +24,7 @@
  * (an unknown key, a destination this app does not know, a duplicate) refuses the document.
  */
 
-import navigationDocument from '../data/layout/navigation.json';
+import { SHIP_NAVIGATION } from '../data/layouts/ship/bundle';
 import { platform } from '../ports';
 
 export const NAVIGATION_VERSION = 1;
@@ -169,7 +169,7 @@ export function arrangeTabBar(
 }
 
 /** The navigation this build bundles, as written. */
-export const BUNDLED_NAVIGATION_DOCUMENT: unknown = navigationDocument;
+export const BUNDLED_NAVIGATION_DOCUMENT: unknown = SHIP_NAVIGATION;
 
 export interface TabBarOptions {
   /** A navigation document from outside: the fetched copy, or an override. Undefined: none. */
@@ -178,6 +178,8 @@ export interface TabBarOptions {
   reachable: (tab: string) => boolean;
   /** Whether "Mehr" has a use beyond an overflow, which is a custom screen to list. */
   withMore?: boolean;
+  /** The navigation to fall back to. The bundled one, unless a test holds another layout's. */
+  bundled?: unknown;
 }
 
 export interface TabBarChoice {
@@ -198,6 +200,7 @@ export function chooseTabBar({
   known,
   reachable,
   withMore,
+  bundled: bundledDocument = BUNDLED_NAVIGATION_DOCUMENT,
 }: TabBarOptions): TabBarChoice {
   const problems: NavigationProblem[] = [];
   if (candidate !== undefined) {
@@ -206,7 +209,7 @@ export function chooseTabBar({
     const bar = parsed.navigation ? arrangeTabBar(parsed.navigation, reachable, withMore) : null;
     if (bar) return { bar, source: 'candidate', problems };
   }
-  const bundled = parseNavigation(BUNDLED_NAVIGATION_DOCUMENT, known);
+  const bundled = parseNavigation(bundledDocument, known);
   problems.push(...bundled.problems);
   const bar = (bundled.navigation && arrangeTabBar(bundled.navigation, reachable, withMore)) || {
     tabs: [HOME_TAB],
