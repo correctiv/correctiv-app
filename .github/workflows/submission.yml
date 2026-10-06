@@ -312,9 +312,11 @@ jobs:
       # The layout kind's file: the parser judged it in the step before, and the formatter
       # has the last word on how it is printed. A deleted screen (ADR 0075 §7) has no file
       # left to format, so only paths that still exist go to the formatter. Then the deploy's
-      # own two commands over the tree as it now is, which is what accepts a screen the
-      # newsroom made: a new file joins the document the app fetches, and a deleted one
-      # must leave it without a declared screen missing.
+      # own two commands over the tree as it now is, for the one layout the submission
+      # names (ADR 0078 §6): a new file joins the document the app fetches, a deleted one
+      # must leave it, and a tab left naming no screen is refused. The layout is read off the
+      # path the run changed, which the kind's proof has already held to
+      # `data/layouts/<layout>/`, and checked against the id grammar once more here.
       - name: Check the written layout
         if: steps.apply.outputs.kind == 'layout'
         run: |
@@ -323,7 +325,13 @@ jobs:
             if [ -e "$file" ]; then printf '%s\0' "$file"; fi
           done < "$RUNNER_TEMP/submission-files.txt" > "$RUNNER_TEMP/submission-existing.txt"
           xargs -0 -r -a "$RUNNER_TEMP/submission-existing.txt" npx oxfmt --check
-          npx tsx packages/app-core/scripts/join-screen-layouts.ts "$RUNNER_TEMP/layout.json"
+          LAYOUT="$(tr '\0' '\n' < "$RUNNER_TEMP/submission-files.txt" | head -n 1 \
+            | sed -E 's#^packages/app-core/src/data/layouts/([^/]+)/.*$#\1#')"
+          if ! printf '%s' "$LAYOUT" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "not a layout id: $LAYOUT" >&2
+            exit 1
+          fi
+          npx tsx packages/app-core/scripts/join-screen-layouts.ts "$LAYOUT" "$RUNNER_TEMP/layout.json"
           npx tsx packages/app-core/scripts/check-screen-layouts.ts "$RUNNER_TEMP/layout.json"
 
       # The release file: states only, judged by the core's parser and by both ceilings in

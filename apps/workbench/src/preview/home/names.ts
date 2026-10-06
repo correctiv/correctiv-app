@@ -58,7 +58,7 @@ export const HOME_LAYOUT_ENDPOINT = '/__workbench/home-layout';
  * of the file to be half done, and the half that went unnoticed would be the one that
  * writes a file nothing reads any more.
  */
-export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/layout/screens/home.json';
+export const HOME_LAYOUT_FILE = 'packages/app-core/src/data/layouts/demo/screens/home.json';
 
 /**
  * Where the app looks for a screen's document: Home keeps the key it always had, every
@@ -98,16 +98,33 @@ export const CHANNEL_KEY = 'workbench:channel';
 /** Where the release file lives in the repository. A commit is the only way it changes (ADR 0072 §6). */
 export const FEATURES_FILE = 'packages/app-core/src/features/features.json';
 
-/** The directory the layout documents live in: `data/layout/`, with `screens/` and the navigation under it. */
-export const LAYOUT_DIR = 'packages/app-core/src/data/layout';
+/** The directory the layouts live in, one folder each: `data/layouts/<layout>/`. */
+export const LAYOUTS_DIR = 'packages/app-core/src/data/layouts';
 
-/** Where a screen's document lives in the repository, spelled once for every writer. */
-export function layoutFile(screen: string): string {
-  return `${LAYOUT_DIR}/screens/${screen}.json`;
+/**
+ * The layout the workbench edits until it can choose one (ADR 0078 §7): the one with
+ * something in it. `ship` is what the app bundles and is empty, so nothing is edited there
+ * by default.
+ */
+export const DEMO_LAYOUT = 'demo';
+
+/** The directory one layout's documents live in, with `screens/` and the navigation under it. */
+export function layoutDir(layout: string = DEMO_LAYOUT): string {
+  return `${LAYOUTS_DIR}/${layout}`;
 }
 
-/** Where the navigation document lives in the repository. */
-export const NAVIGATION_FILE = `${LAYOUT_DIR}/navigation.json`;
+/** Where a screen's document lives in the repository, spelled once for every writer. */
+export function layoutFile(screen: string, layout: string = DEMO_LAYOUT): string {
+  return `${layoutDir(layout)}/screens/${screen}.json`;
+}
+
+/** Where a layout's navigation document lives in the repository. */
+export function navigationFile(layout: string = DEMO_LAYOUT): string {
+  return `${layoutDir(layout)}/navigation.json`;
+}
+
+/** The demo layout's navigation, which is the one the editor writes. */
+export const NAVIGATION_FILE = navigationFile();
 
 /** What an issue's or a link's envelope names as `target` for the navigation (ADR 0061 §2). */
 export const NAVIGATION_TARGET = 'navigation';

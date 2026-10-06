@@ -8,6 +8,7 @@ import {
   parseNavigation,
 } from '../src/lib/navigation';
 import { joinScreenDocuments, navigationDocumentOf } from '../src/lib/screen-layout';
+import { DEMO_NAVIGATION } from './__fixtures__/demo-layout';
 
 const KNOWN = new Set(['entdecken', 'mediathek', 'mitmachen', 'profil', 'game']);
 const all = () => true;
@@ -18,8 +19,20 @@ const doc = (tabs: string[], extra: Record<string, unknown> = {}) => ({
 });
 
 describe('the bundled navigation', () => {
-  it('parses with no problems and reproduces the five tabs the app had before', () => {
+  it('is the ship layout, which has no tab and draws Home alone', () => {
     const { navigation, problems } = parseNavigation(BUNDLED_NAVIGATION_DOCUMENT, KNOWN);
+    expect(problems).toEqual([]);
+    expect(navigation?.tabs).toEqual([]);
+    expect(chooseTabBar({ known: KNOWN, reachable: all }).bar).toEqual({
+      tabs: ['index'],
+      more: [],
+    });
+  });
+});
+
+describe('the demo navigation', () => {
+  it('parses with no problems and reproduces the five tabs the app had before', () => {
+    const { navigation, problems } = parseNavigation(DEMO_NAVIGATION, KNOWN);
     expect(problems).toEqual([]);
     expect(arrangeTabBar(navigation!, all)).toEqual({
       tabs: ['index', 'entdecken', 'mediathek', 'mitmachen', 'profil'],
@@ -127,7 +140,7 @@ describe('arrangeTabBar', () => {
 });
 
 describe('chooseTabBar', () => {
-  const base = { known: KNOWN, reachable: all };
+  const base = { known: KNOWN, reachable: all, bundled: DEMO_NAVIGATION };
 
   it('draws a good candidate', () => {
     const choice = chooseTabBar({ ...base, candidate: doc(['profil', 'entdecken']) });
@@ -149,6 +162,7 @@ describe('chooseTabBar', () => {
   it('falls back when fewer than two tabs remain after feature gating', () => {
     const choice = chooseTabBar({
       known: KNOWN,
+      bundled: DEMO_NAVIGATION,
       candidate: doc(['mitmachen']),
       reachable: (tab) => tab !== 'mitmachen',
     });

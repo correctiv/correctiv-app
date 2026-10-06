@@ -9,12 +9,12 @@ import {
   CONFIGURABLE_SCREENS,
   isCustomScreenId,
   isDeclaredScreen,
-  SCREEN_DOCUMENTS,
   type ConfigurableScreen,
   type ScreenId,
 } from '@correctiv/app-core/lib/screen-layout';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
+import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
 import { governs, SHIPPED } from './document';
 
 /**
@@ -86,7 +86,7 @@ export const SCREEN_ICONS: Readonly<
 };
 
 /**
- * The documents under `data/layout/screens/` that no declared screen owns: the screens the
+ * The documents under the demo layout's `screens/` that no declared screen owns: the screens the
  * newsroom made and a pull request has merged (ADR 0075 §7).
  *
  * Read at build time with Vite's own glob, so this site knows the list without a server,
@@ -94,7 +94,7 @@ export const SCREEN_ICONS: Readonly<
  * id is left out, which is the same rule the route and the check apply to a key.
  */
 const FILES = import.meta.glob<unknown>(
-  '../../../../../packages/app-core/src/data/layout/screens/*.json',
+  '../../../../../packages/app-core/src/data/layouts/demo/screens/*.json',
   { eager: true, import: 'default' },
 );
 
@@ -146,7 +146,7 @@ export function shippedOf(screen: ScreenId): HomeLayout {
   let layout = shipped.get(screen);
   if (!layout) {
     const document = isDeclaredScreen(screen)
-      ? SCREEN_DOCUMENTS[screen]
+      ? DEMO_SCREENS[screen]
       : REPOSITORY_SCREENS.get(screen);
     if (document === undefined) return BLANK;
     const parsed = parseHomeLayout(document).layout;

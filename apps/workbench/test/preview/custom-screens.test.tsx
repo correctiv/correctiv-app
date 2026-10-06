@@ -152,7 +152,7 @@ describe('submitting a screen the newsroom made', () => {
     const offer = deletion('kampagne', format);
     const body = decodeURIComponent(offer.href);
     expect(body).toContain('[layout] Delete the kampagne screen');
-    expect(body).toContain('{"target":"kampagne","document":null}');
+    expect(body).toContain('{"layout":"demo","target":"kampagne","document":null}');
   });
 
   it('renames through a write, which is what a change to the title is', () => {

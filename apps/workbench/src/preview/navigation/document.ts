@@ -1,6 +1,5 @@
 import {
   arrangeTabBar,
-  BUNDLED_NAVIGATION_DOCUMENT,
   MAX_TABS,
   MIN_TABS,
   NAVIGATION_VERSION,
@@ -9,6 +8,7 @@ import {
   type NavigationProblem,
   type TabBar,
 } from '@correctiv/app-core/lib/navigation';
+import { DEMO_NAVIGATION } from '@correctiv/app-core/data/layouts/demo/bundle';
 
 /**
  * The navigation editor's model: pure functions over the core's `Navigation`, with no
@@ -16,8 +16,7 @@ import {
  * submission workflow (`scripts/submission-layout.ts`) load this file in Node.
  *
  * **The grammar is the core's.** Which documents are valid is `parseNavigation`; this
- * file adds the one rule it deliberately leaves to the arranger (a bar of fewer than
- * `MIN_TABS` is not a bar, ADR 0071 §5) and the operations an editor needs, each of which
+ * file adds the operations an editor needs, each of which
  * returns a document the parser accepts. Home is not in the document: it is the fixed
  * first entry (§4), so no operation here can move it or take it out.
  */
@@ -44,14 +43,17 @@ export const MORE_NAME = 'Mehr';
 /** The destinations a navigation may name: the parser's `known` set. */
 export const KNOWN_DESTINATIONS: ReadonlySet<string> = new Set(Object.keys(DESTINATION_NAMES));
 
-/** The navigation the app ships, which is also what Discard returns to. */
+/**
+ * The navigation the editor starts from, which is also what Discard returns to: the demo
+ * layout's, because the one the app bundles has no entry (ADR 0078 §7).
+ */
 export const SHIPPED_NAVIGATION: Navigation = (() => {
-  const { navigation } = parseNavigation(BUNDLED_NAVIGATION_DOCUMENT, KNOWN_DESTINATIONS);
-  if (!navigation) throw new Error('the bundled navigation does not parse');
+  const { navigation } = parseNavigation(DEMO_NAVIGATION, KNOWN_DESTINATIONS);
+  if (!navigation) throw new Error('the demo navigation does not parse');
   return navigation;
 })();
 
-export type EditorProblemCode = NavigationProblem['code'] | 'navigation-too-few-tabs';
+export type EditorProblemCode = NavigationProblem['code'];
 
 export interface EditorProblem {
   readonly code: EditorProblemCode;
@@ -66,23 +68,12 @@ export interface Checked {
 
 /**
  * Whether a document is one the editor may write: the parser's reading, against the
- * destinations the app declares, plus at least `MIN_TABS` entries counting Home.
+ * destinations the app declares. No minimum of entries (ADR 0078 §4): a layout with none is
+ * valid, and what a bar of fewer than `MIN_TABS` draws is the app's question.
  */
 export function checkNavigation(document: unknown): Checked {
   const { navigation, problems } = parseNavigation(document, KNOWN_DESTINATIONS);
-  if (!navigation) return { navigation: null, problems };
-  if (1 + navigation.tabs.length < MIN_TABS) {
-    return {
-      navigation: null,
-      problems: [
-        {
-          code: 'navigation-too-few-tabs',
-          context: { tabs: 1 + navigation.tabs.length, min: MIN_TABS },
-        },
-      ],
-    };
-  }
-  return { navigation, problems: [] };
+  return navigation ? { navigation, problems: [] } : { navigation: null, problems };
 }
 
 /** Problems of a navigation held in the editor, for the message under the list. */

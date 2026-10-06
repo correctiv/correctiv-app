@@ -3,12 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { berlinInstant } from '../src/lib/berlin-time';
 import {
   changesAt,
-  DEFAULT_HOME_LAYOUT,
   editionPointAt,
   editionsAt,
   formatTimeOfDay,
   HOME_LAYOUT_VERSION,
-  homeLayoutDocument,
   minuteOfDay,
   nextChangeAfter,
   parseHomeLayout,
@@ -23,7 +21,8 @@ import {
 } from '../src/lib/home-layout';
 import * as v2 from './__fixtures__/home-layout-v2';
 import { readerOf } from '../src/lib/home-audience';
-import { CONFIGURABLE_SCREENS, SCREEN_DOCUMENTS } from '../src/lib/screen-layout';
+import { CONFIGURABLE_SCREENS } from '../src/lib/screen-layout';
+import { DEMO_HOME_LAYOUT, DEMO_SCREENS, demoHomeDocument } from './__fixtures__/demo-layout';
 import type { ErrorReport } from '../src/ports';
 import { configurePlatform, createMemoryPlatform, resetPlatform } from '../src/ports';
 
@@ -94,24 +93,24 @@ const AT = (hours: number, minutes = 0) => hours * 60 + minutes;
 
 describe('the bundled document', () => {
   it('parses with nothing left over', () => {
-    const parse = parseHomeLayout(homeLayoutDocument);
+    const parse = parseHomeLayout(demoHomeDocument);
     expect(parse.problems).toEqual([]);
     expect(parse.layout).not.toBeNull();
   });
 
   /**
-   * `DEFAULT_HOME_LAYOUT` is the fallback every caller writes `?? DEFAULT_HOME_LAYOUT`
+   * `DEMO_HOME_LAYOUT` is the fallback every caller writes `?? DEMO_HOME_LAYOUT`
    * against, and a fallback that is an empty screen is worse than the fault it catches.
    * The module cannot throw when its own document is broken — nothing here throws — so
    * this is what says it is not.
    */
-  it('is what DEFAULT_HOME_LAYOUT holds, and it is not empty', () => {
-    expect(DEFAULT_HOME_LAYOUT.version).toBe(HOME_LAYOUT_VERSION);
-    expect(DEFAULT_HOME_LAYOUT.sections.length).toBeGreaterThan(0);
+  it('is what DEMO_HOME_LAYOUT holds, and it is not empty', () => {
+    expect(DEMO_HOME_LAYOUT.version).toBe(HOME_LAYOUT_VERSION);
+    expect(DEMO_HOME_LAYOUT.sections.length).toBeGreaterThan(0);
   });
 
   it('gives every section an id of its own', () => {
-    const ids = DEFAULT_HOME_LAYOUT.sections.map((s) => s.id);
+    const ids = DEMO_HOME_LAYOUT.sections.map((s) => s.id);
     expect([...new Set(ids)]).toEqual(ids);
   });
 
@@ -127,7 +126,7 @@ describe('the bundled document', () => {
    */
   it('lifts the callout over the lead between 11:00 and 14:00, and nowhere else', () => {
     const lifted = (minute: number) =>
-      sectionsAt(DEFAULT_HOME_LAYOUT, minute, ANYONE)
+      sectionsAt(DEMO_HOME_LAYOUT, minute, ANYONE)
         .map((s) => s.id)
         .includes('callout-lifted');
 
@@ -144,7 +143,7 @@ describe('the bundled document', () => {
 
   it('shows the callout exactly once at every minute of the day', () => {
     for (let minute = 0; minute < 24 * 60; minute += 7) {
-      const callouts = sectionsAt(DEFAULT_HOME_LAYOUT, minute, ANYONE).filter(
+      const callouts = sectionsAt(DEMO_HOME_LAYOUT, minute, ANYONE).filter(
         (s) => s.module === 'callout-teaser',
       );
       expect({ minute, count: callouts.length }).toEqual({ minute, count: 1 });
@@ -596,11 +595,11 @@ describe('parseHomeLayout, on a document it cannot use at all', () => {
    * number, as every other number is, and read exactly as it was.
    */
   it('reads a version 2 document as the day it always was', () => {
-    const parse = parseHomeLayout({ ...homeLayoutDocument, version: 2 });
+    const parse = parseHomeLayout({ ...demoHomeDocument, version: 2 });
     expect(codes(parse)).toEqual(['version-unknown']);
     expect(parse.layout?.editions).toEqual([]);
-    expect(parse.layout?.sections).toEqual(DEFAULT_HOME_LAYOUT.sections);
-    expect(parse.layout?.moments).toEqual(DEFAULT_HOME_LAYOUT.moments);
+    expect(parse.layout?.sections).toEqual(DEMO_HOME_LAYOUT.sections);
+    expect(parse.layout?.moments).toEqual(DEMO_HOME_LAYOUT.moments);
   });
 
   /**
@@ -770,7 +769,7 @@ describe('parseHomeLayout, on a section it cannot use', () => {
 
   it('holds every bundled screen to its own declarations', () => {
     for (const screen of CONFIGURABLE_SCREENS) {
-      const parse = parseHomeLayout(SCREEN_DOCUMENTS[screen]);
+      const parse = parseHomeLayout(DEMO_SCREENS[screen]);
       expect({ screen, problems: parse.problems }).toEqual({ screen, problems: [] });
       expect(parse.layout?.sections.length).toBeGreaterThan(0);
     }
@@ -1072,7 +1071,7 @@ describe('reportLayoutProblems', () => {
       errors: { report: (report) => reports.push(report) },
     });
 
-    reportLayoutProblems(parseHomeLayout(homeLayoutDocument).problems);
+    reportLayoutProblems(parseHomeLayout(demoHomeDocument).problems);
     expect(reports).toEqual([]);
   });
 });
@@ -1512,7 +1511,7 @@ describe('parseHomeLayout, on the editions', () => {
  */
 describe('a version 3 document, read by an app written for version 2', () => {
   const planned = {
-    ...homeLayoutDocument,
+    ...demoHomeDocument,
     editions: [
       {
         id: 'wahlabend',
@@ -1573,8 +1572,8 @@ describe('a version 3 document, read by an app written for version 2', () => {
 
 describe('the shipped document', () => {
   it('is numbered for this app and carries no edition', () => {
-    expect(homeLayoutDocument.version).toBe(HOME_LAYOUT_VERSION);
-    expect(DEFAULT_HOME_LAYOUT.editions).toEqual([]);
+    expect(demoHomeDocument.version).toBe(HOME_LAYOUT_VERSION);
+    expect(DEMO_HOME_LAYOUT.editions).toEqual([]);
   });
 });
 

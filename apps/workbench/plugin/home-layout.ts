@@ -31,7 +31,7 @@ import {
  * ## Why the parser and the printer arrive at request time
  *
  * Both live in modules that reach the core, and the core's layout module imports
- * `data/layout/screens/home.json`. Vite loads `vite.config.ts` with **Node**, and Node refuses a
+ * `data/layouts/demo/screens/home.json`. Vite loads `vite.config.ts` with **Node**, and Node refuses a
  * JSON import without `with { type: 'json' }` — so a static import of either from here
  * is a site that does not start, with the error thrown while the config loads and
  * nothing on screen about the home screen at all. `ssrLoadModule` is the dev server's

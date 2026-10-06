@@ -7,10 +7,10 @@ import { allBlocks, blocksByCategory } from '@correctiv/app-core/lib/block-categ
 import {
   CONFIGURABLE_SCREENS,
   parseScreenDocument,
-  SCREEN_DOCUMENTS,
   type ConfigurableScreen,
 } from '@correctiv/app-core/lib/screen-layout';
 import { MAX_TABS, MIN_TABS } from '@correctiv/app-core/lib/navigation';
+import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
 
 import { ROOT } from '../../plugin/collect.ts';
 import {
@@ -25,7 +25,7 @@ import { formatLayoutDocument, moved, MODULE_LABELS } from '../../src/preview/ho
 import {
   layoutFile,
   layoutKey,
-  LAYOUT_DIR,
+  layoutDir,
   NAVIGATION_FILE,
   NAVIGATION_KEY,
 } from '../../src/preview/home/names';
@@ -116,7 +116,7 @@ describe('the screen switcher’s icons', () => {
    * reading it now would be reading a table that no longer answers the question.
    */
   function appIonicon(screen: ConfigurableScreen): string | null {
-    const key = parseScreenDocument(SCREEN_DOCUMENTS[screen]).words?.icon;
+    const key = parseScreenDocument(DEMO_SCREENS[screen]).words?.icon;
     if (key === undefined) return null;
     const icons = /export const SCREEN_ICONS[\s\S]*?\n};/.exec(APP('lib/screenIcons.ts'))![0];
     /*
@@ -200,14 +200,12 @@ describe('the navigation editor', () => {
     expect(Object.keys(DESTINATION_NAMES).sort()).toEqual(ids.sort());
   });
 
-  it('accepts two to five tabs with Home first, and refuses the rest', () => {
+  it('accepts any number of entries and a threshold of two to five, and refuses the rest', () => {
     const doc = (tabs: unknown, maxTabs: unknown = 5) => ({ version: 1, tabs, maxTabs });
     expect(checkNavigation(doc(['entdecken'])).navigation).not.toBeNull();
     expect(checkNavigation(doc(['entdecken'], MIN_TABS)).navigation).not.toBeNull();
     expect(checkNavigation(doc(['entdecken'], MAX_TABS)).navigation).not.toBeNull();
-    expect(checkNavigation(doc([])).problems.map((p) => p.code)).toEqual([
-      'navigation-too-few-tabs',
-    ]);
+    expect(checkNavigation(doc([])).navigation).not.toBeNull();
     expect(checkNavigation(doc(['entdecken'], MIN_TABS - 1)).navigation).toBeNull();
     expect(checkNavigation(doc(['entdecken'], MAX_TABS + 1)).navigation).toBeNull();
     expect(checkNavigation(doc(['index', 'entdecken'])).navigation).toBeNull();
@@ -275,14 +273,72 @@ describe('the layout submission', () => {
     return null;
   };
 
-  it('refuses an unchanged document, Home, an unknown target and a refused document', () => {
+  it('carries the layout it is about in the payload, first, beside target and document', () => {
+    const payload = layoutPayload('entdecken', '{}', undefined, 'ship');
+    expect(payload).toBe('{"layout":"ship","target":"entdecken","document":{}}');
+    expect(layoutPayload('entdecken', '{}')).toContain('"layout":"demo"');
+    expect(layoutPayload('entdecken', '{}', 'link')).toBe(
+      '{"layout":"demo","target":"entdecken","document":{},"via":"link"}',
+    );
+  });
+
+  it('writes into the layout the payload names, and into no other', () => {
+    const base = 'packages/app-core/src/data/layouts';
+    expect(fileOf('ship', 'entdecken')).toBe(`${base}/ship/screens/entdecken.json`);
+    expect(fileOf('ship', 'navigation')).toBe(`${base}/ship/navigation.json`);
+    expect(targetFile(layoutPayload('home', '{}', undefined, 'ship'))).toBe(
+      `${base}/ship/screens/home.json`,
+    );
+    expect(mayWriteLayout(`${base}/ship/screens/home.json`)).toBe(true);
+    expect(mayWriteLayout(`${base}/ship/navigation.json`)).toBe(true);
+  });
+
+  it('refuses a layout whose id is not one, whatever it would spell as a path', () => {
+    const same = JSON.stringify(JSON.parse(formatLayoutDocument(entdecken)));
+    for (const id of ['Demo', '../demo', 'a/b', 'a.b', '', 'a'.repeat(41)])
+      expect(
+        refusal(() => applyLayout(layoutPayload('entdecken', same, undefined, id), repo)),
+      ).toBe('layout-id');
+    expect(fileOf('../demo', 'entdecken')).toBeNull();
+    for (const path of [
+      'packages/app-core/src/data/layouts/../x/navigation.json',
+      'packages/app-core/src/data/layouts/Demo/navigation.json',
+      'packages/app-core/src/data/layouts/demo/screens/a/b.json',
+      'packages/app-core/src/data/layouts/demo/x.json',
+      'packages/app-core/src/data/layouts/demo/screens/navigation.json',
+    ])
+      expect(mayWriteLayout(path)).toBe(false);
+  });
+
+  it('refuses a payload without a layout, and a layout the repository does not hold', () => {
+    const same = JSON.stringify(JSON.parse(formatLayoutDocument(entdecken)));
+    expect(refusal(() => applyLayout(`{"target":"entdecken","document":${same}}`, repo))).toBe(
+      'layout-target',
+    );
+    expect(
+      refusal(() => applyLayout(layoutPayload('entdecken', same, undefined, 'elsewhere'), repo)),
+    ).toBe('layout-unknown');
+  });
+
+  it('accepts a navigation with no entry, which is what a layout with no screen carries', () => {
+    const payload = layoutPayload('navigation', '{"version":1,"maxTabs":5,"tabs":[]}');
+    const noTabs = {
+      ...repo,
+      read: (path: string) => (path === NAVIGATION_FILE ? '{}' : read(path)),
+    };
+    const applied = applyLayout(payload, noTabs);
+    expect(applied.content).toBe('{\n  "version": 1,\n  "maxTabs": 5,\n  "tabs": []\n}\n');
+  });
+
+  it('refuses an unchanged document, an unknown target and a refused document', () => {
     const same = JSON.stringify(JSON.parse(formatLayoutDocument(entdecken)));
     expect(refusal(() => applyLayout(layoutPayload('entdecken', same), repo))).toBe('unchanged');
-    expect(refusal(() => applyLayout(layoutPayload('home', same), repo))).toBe('layout-target');
     expect(refusal(() => applyLayout(layoutPayload('../x', same), repo))).toBe('layout-target');
     expect(refusal(() => applyLayout('{"document":{}}', repo))).toBe('layout-target');
     expect(
-      refusal(() => applyLayout(layoutPayload('navigation', '{"version":1,"tabs":[]}'), repo)),
+      refusal(() =>
+        applyLayout(layoutPayload('navigation', '{"version":1,"tabs":["nirgends"]}'), repo),
+      ),
     ).toBe('refused');
     // A module the app holds no renderer for, which is what `module-unrecognised` says
     // and the last of what this kind refuses. What it used to refuse as well — another
@@ -294,14 +350,14 @@ describe('the layout submission', () => {
     ).toBe('refused');
   });
 
-  it('allows the kind to write the other screens and the navigation, and nothing in Home’s file', () => {
-    expect(fileOf('home')).toBeNull();
+  it('allows the kind to write every screen and the navigation of a layout, and nothing else', () => {
+    expect(fileOf('demo', 'home')).toBe(layoutFile('home'));
     expect(mayWriteLayout(layoutFile('profil'))).toBe(true);
     expect(mayWriteLayout(NAVIGATION_FILE)).toBe(true);
-    expect(mayWriteLayout(layoutFile('home'))).toBe(false);
-    expect(mayWriteLayout(`${LAYOUT_DIR}/screens/../../x.json`)).toBe(false);
+    expect(mayWriteLayout(layoutFile('home'))).toBe(true);
+    expect(mayWriteLayout(`${layoutDir()}/screens/../../x.json`)).toBe(false);
     expect(mayWrite('layout', layoutFile('entdecken'))).toBe(true);
-    expect(mayWrite('layout', layoutFile('home'))).toBe(false);
+    expect(mayWrite('layout', layoutFile('home'))).toBe(true);
     expect(mayWrite('home', layoutFile('entdecken'))).toBe(false);
   });
 
@@ -351,7 +407,7 @@ describe('the layout submission for a screen the newsroom made (ADR 0075 §7)', 
     expect(applied.file).toBe(layoutFile('kampagne'));
     expect(applied.content).toBe(formatLayoutDocument(campaign));
     expect(applied.summary).toContain('Neuer Bildschirm');
-    expect(targetFile(payload)).toBe(`${LAYOUT_DIR}/screens/kampagne.json`);
+    expect(targetFile(payload)).toBe(`${layoutDir()}/screens/kampagne.json`);
     expect(mayWrite('layout', layoutFile('kampagne'))).toBe(true);
   });
 
@@ -359,9 +415,9 @@ describe('the layout submission for a screen the newsroom made (ADR 0075 §7)', 
     for (const id of ['Kampagne', 'a/b', '..', 'a--b', '-a', 'a.json', 'x'.repeat(41), '']) {
       expect(code(() => applyLayout(layoutPayload(id, document), without))).toBe('layout-target');
     }
-    expect(mayWrite('layout', `${LAYOUT_DIR}/screens/Kampagne.json`)).toBe(false);
-    expect(mayWrite('layout', `${LAYOUT_DIR}/screens/a/b.json`)).toBe(false);
-    expect(mayWrite('layout', `${LAYOUT_DIR}/other/kampagne.json`)).toBe(false);
+    expect(mayWrite('layout', `${layoutDir()}/screens/Kampagne.json`)).toBe(false);
+    expect(mayWrite('layout', `${layoutDir()}/screens/a/b.json`)).toBe(false);
+    expect(mayWrite('layout', `${layoutDir()}/other/kampagne.json`)).toBe(false);
   });
 
   it('refuses a new screen that has no German title', () => {
@@ -373,15 +429,19 @@ describe('the layout submission for a screen the newsroom made (ADR 0075 §7)', 
     expect(code(() => applyLayout(layoutPayload('kampagne', nameless), without))).toBe('refused');
   });
 
-  it('deletes only a custom screen, and only one that exists', () => {
+  it('deletes any screen that exists, and never the navigation', () => {
     const payload = layoutPayload('kampagne', 'null');
     const applied = applyLayout(payload, withIt);
     expect(applied.content).toBeNull();
     expect(applied.file).toBe(layoutFile('kampagne'));
     expect(applied.summary).toContain('gelöscht');
     expect(code(() => applyLayout(payload, without))).toBe('unchanged');
-    for (const target of ['entdecken', 'home', 'navigation'])
-      expect(code(() => applyLayout(layoutPayload(target, 'null'), withIt))).toBe('layout-target');
+    for (const built of ['entdecken', 'home'])
+      expect(applyLayout(layoutPayload(built, 'null'), withIt).content).toBeNull();
+    // The navigation is the one document a layout cannot be without.
+    expect(code(() => applyLayout(layoutPayload('navigation', 'null'), withIt))).toBe(
+      'layout-target',
+    );
   });
 
   it('proves a created file as untracked, a deleted one as deleted, and nothing else', () => {

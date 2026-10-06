@@ -13,7 +13,7 @@
  * loads this file with `tsx` in Node, and so do the tests.
  */
 
-import { FEATURES_FILE, HOME_LAYOUT_FILE, LAYOUT_DIR } from './home/names';
+import { DEMO_LAYOUT, FEATURES_FILE, HOME_LAYOUT_FILE, LAYOUTS_DIR } from './home/names';
 import { GERMAN_CATALOGUE_DIR } from './strings/names';
 
 /**
@@ -44,14 +44,14 @@ export const SUBMISSION_KINDS = {
     built: true,
   },
   /**
-   * Every document of the layout directory except Home's: the other screens' and the
-   * navigation. The payload is an envelope, `{ target, document }`, whose `target` is a
-   * screen id or `navigation`, so one kind and one workflow step carry both and the issue
-   * still decides no path (ADR 0071 §1, §4; ADR 0061 §2).
+   * Every document of the layouts directory: each layout's screens and its navigation. The
+   * payload is an envelope, `{ layout, target, document }`, whose `layout` is a folder and
+   * whose `target` is a screen id or `navigation`, so one kind and one workflow step carry
+   * both and the issue still decides no path (ADR 0071 §1, §4; ADR 0061 §2; ADR 0078 §6).
    */
   layout: {
     prefix: '[layout]',
-    dir: LAYOUT_DIR,
+    dir: LAYOUTS_DIR,
     built: true,
   },
   /**
@@ -108,12 +108,18 @@ export const VIA_LINK = 'link';
 export type Via = typeof VIA_LINK;
 
 /**
- * The payload of a `layout` submission: the document, named by what it is for.
- * `payload` is the document already printed on one line.
+ * The payload of a `layout` submission: the document, named by the layout and the screen
+ * it is for (ADR 0078 §6). `payload` is the document already printed on one line, and the
+ * layout is the demo one until the workbench can choose.
  */
-export function layoutPayload(target: string, payload: string, via?: Via): string {
+export function layoutPayload(
+  target: string,
+  payload: string,
+  via?: Via,
+  layout: string = DEMO_LAYOUT,
+): string {
   const origin = via === undefined ? '' : `,"via":${JSON.stringify(via)}`;
-  return `{"target":${JSON.stringify(target)},"document":${payload}${origin}}`;
+  return `{"layout":${JSON.stringify(layout)},"target":${JSON.stringify(target)},"document":${payload}${origin}}`;
 }
 
 /**

@@ -19,12 +19,8 @@
  * not in the workbench.
  */
 
-import entdeckenDocument from '../data/layout/screens/entdecken.json';
-import mitmachenDocument from '../data/layout/screens/mitmachen.json';
-import homeDocument from '../data/layout/screens/home.json';
-import profilDocument from '../data/layout/screens/profil.json';
-import mediathekDocument from '../data/layout/screens/mediathek.json';
-import { isCustomScreenId, type ConfigurableScreen } from './screen-id';
+import { SHIP_SCREENS } from '../data/layouts/ship/bundle';
+import { isCustomScreenId } from './screen-id';
 import { SCREEN_ICONS } from './block-catalogue.generated';
 import {
   faultOf,
@@ -34,14 +30,11 @@ import {
   type TextSetting,
 } from './home-settings';
 
-/** The bundled document of each screen, as written. */
-export const SCREEN_DOCUMENTS = {
-  home: homeDocument,
-  entdecken: entdeckenDocument,
-  mediathek: mediathekDocument,
-  mitmachen: mitmachenDocument,
-  profil: profilDocument,
-} satisfies Record<ConfigurableScreen, unknown>;
+/**
+ * The bundled document of each screen, as written: the `ship` layout's (ADR 0078 §3).
+ * A screen the layout has no file for is absent, which is a screen with nothing to draw.
+ */
+export const SCREEN_DOCUMENTS: Readonly<Record<string, unknown>> = SHIP_SCREENS;
 
 /** The version of the envelope the deploy joins the screens into. Not a screen's `version`. */
 export const SCREEN_LAYOUTS_VERSION = 1;
@@ -95,7 +88,14 @@ export {
   customScreenIdFault,
   isCustomScreenId,
   isDeclaredScreen,
+  isLayoutId,
+  isScreenId,
+  layoutIdFault,
+  screenIdFault,
+  SHIPPED_LAYOUT,
   type ConfigurableScreen,
+  type LayoutIdFault,
+  type ScreenIdFault,
   type CustomScreenIdFault,
   type ScreenId,
 } from './screen-id';

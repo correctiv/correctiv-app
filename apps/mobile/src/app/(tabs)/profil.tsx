@@ -19,7 +19,7 @@ const COPY = defineMessages({
  * settings.
  *
  * **The frame is fixed and the content is a document.** The heading stays here; the
- * blocks under it are `@correctiv/app-core/src/data/layout/screens/profil.json` drawn by
+ * blocks under it are `@correctiv/app-core/src/data/layouts/demo/screens/profil.json` drawn by
  * the loop Home uses ([ADR 0071](../../../../../adr/0071-screens-become-documents-and-the-tab-bar-becomes-one-too.md)
  * §1). Sign-in is the door's (`components/gate/LoginGate.tsx`), and the settings are
  * their own route, reached from the last row of the area block. What each block renders,

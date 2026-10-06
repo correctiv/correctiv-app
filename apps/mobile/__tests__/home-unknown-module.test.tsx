@@ -12,16 +12,21 @@
  */
 
 /** Two places this app holds a renderer for, and one it has never heard of. */
-jest.mock('@correctiv/app-core/data/layout/screens/home.json', () => ({
-  version: 4,
-  title: { de: 'Home' },
-  icon: 'home',
-  sections: [
-    { id: 'header', module: 'screen-header' },
-    { id: 'quiz', module: 'quiz-of-the-day' },
-    { id: 'impact', module: 'impact-footer' },
-  ],
-  moments: [{ at: '11:00', changes: [{ id: 'quiz', hidden: true }] }],
+jest.mock('@correctiv/app-core/data/layouts/ship/bundle', () => ({
+  SHIP_SCREENS: {
+    home: {
+      version: 4,
+      title: { de: 'Home' },
+      icon: 'home',
+      sections: [
+        { id: 'header', module: 'screen-header' },
+        { id: 'quiz', module: 'quiz-of-the-day' },
+        { id: 'impact', module: 'impact-footer' },
+      ],
+      moments: [{ at: '11:00', changes: [{ id: 'quiz', hidden: true }] }],
+    },
+  },
+  SHIP_NAVIGATION: { version: 1, tabs: [] },
 }));
 
 jest.mock('expo-router', () => ({

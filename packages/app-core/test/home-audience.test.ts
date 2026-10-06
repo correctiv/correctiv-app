@@ -13,7 +13,6 @@ import {
 } from '../src/lib/home-audience';
 import {
   changesAt,
-  homeLayoutDocument,
   HOME_LAYOUT_VERSION,
   parseHomeLayout,
   sectionsAt,
@@ -23,6 +22,7 @@ import {
 } from '../src/lib/home-layout';
 import { simulatedEntitlement } from '../src/services/auth.service';
 import type { Entitlement, MembershipTier } from '../src/types/models';
+import { demoHomeDocument } from './__fixtures__/demo-layout';
 import * as v2 from './__fixtures__/home-layout-v2';
 import * as v3 from './__fixtures__/home-layout-v3';
 
@@ -429,8 +429,8 @@ describe('a document with audiences, read by the version 3 app', () => {
    * place and drops none.
    */
   it('draws the shipped document as the version 3 document it was, bar the header', () => {
-    const now = v3.parseHomeLayout(homeLayoutDocument);
-    const before = v3.parseHomeLayout({ ...homeLayoutDocument, version: 3 });
+    const now = v3.parseHomeLayout(demoHomeDocument);
+    const before = v3.parseHomeLayout({ ...demoHomeDocument, version: 3 });
     expect(now.problems.map((problem) => problem.code)).toEqual([
       'version-unknown',
       'section-setting-invalid',
@@ -448,7 +448,7 @@ describe('a document with audiences, read by the version 3 app', () => {
       // And for a paying member this app draws what the version 3 app draws, less that
       // one place.
       expect(
-        sectionsAtInstant(read(homeLayoutDocument), instant, PAYING).filter(
+        sectionsAtInstant(read(demoHomeDocument), instant, PAYING).filter(
           (section) => section.module !== 'screen-header',
         ),
       ).toEqual(v3.sectionsAtInstant(now.layout!, instant));
