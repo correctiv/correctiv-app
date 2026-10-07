@@ -65,7 +65,6 @@ import { Conditions } from './Conditions';
 import type { PreviewState } from '../state';
 import { liftFor, scrollStep, shiftFor, slotFrom, type Drawn } from './carry';
 import { HomeBlock } from './HomeBlock';
-import { CUSTOM_SCREEN_COPY } from './CustomScreens';
 import { InsertMark } from './Palette';
 import { EDITION_COPY, EditionHead, inkOf, nameOf, Warning } from './Edition';
 import { openedAt, playheadFrom, timeAt } from './minutes';
@@ -95,6 +94,7 @@ import {
   targetAt,
   withoutMoment,
   blockName,
+  languageName,
   whereAt,
   withAudience,
   writeChangeAudience,
@@ -132,7 +132,7 @@ import {
   subscribeJoined,
   subscribeLayout,
 } from './store';
-import { GapsNote, ShippedNote, SizeNote } from './DocumentNotes';
+import { noticesOf } from './notices';
 import { gapsOf } from './gaps';
 import { readSize } from './size';
 import { copyNow } from '../clipboard';
@@ -600,8 +600,8 @@ export function HomeDocument({
    * moves, which is not a thing to send somebody.
    */
   const [follow, setFollow] = useState(true);
-  /** What the last deletion did, said once under the bar because the open screen moved with it. */
-  const [deletionNote, setDeletionNote] = useState<string | null>(null);
+  /** What the last deletion did, told in the notifications because the open screen moved with it. */
+  const [removal, setRemoval] = useState<{ title: string; next: string | null } | null>(null);
 
   /**
    * The block a pointer is carrying, where it started, and the gap it would land in.
@@ -1162,6 +1162,7 @@ export function HomeDocument({
           exists
             ? {
                 id: screen,
+                title: screenTitle(screen),
                 words: layout.words,
                 onTitle: (title) =>
                   setLayout({
@@ -1175,42 +1176,35 @@ export function HomeDocument({
                   const next = getScreen();
                   const left = screenExists(next);
                   onChange({ route: routeAfterDeletion(next, left) });
-                  setDeletionNote(
-                    left
-                      ? intl.formatMessage(CUSTOM_SCREEN_COPY.removed, {
-                          title,
-                          next: screenTitle(next),
-                        })
-                      : intl.formatMessage(CUSTOM_SCREEN_COPY.removedLast, { title }),
-                  );
+                  setRemoval({ title, next: left ? screenTitle(next) : null });
                 },
               }
             : null
         }
-        deleted={deletedIds.map((id) => ({
-          id,
-          title: screenTitle(id),
-          submit: {
+        notices={noticesOf({
+          layout: layoutId,
+          size: readSize(exists ? joinedLength : 0),
+          gaps: exists ? gapsOf(layout, true) : [],
+          languageName: (language) => languageName(intl, language),
+          guarded,
+          removal,
+          deleted: deletedIds.map((id) => ({
+            id,
+            title: screenTitle(id),
             href: deletion(id, layoutId, (message, values) => intl.formatMessage(message, values))
               .href,
-          },
-          onRestore: () => {
-            setDeletionNote(null);
-            restoreScreen(id);
-            onChange({ route: routeOf(id) });
-          },
-        }))}
+            onRestore: () => {
+              setRemoval(null);
+              restoreScreen(id);
+              onChange({ route: routeOf(id) });
+            },
+          })),
+        })}
         scenario={scenario}
         follow={follow}
         onFollow={setFollow}
         outcome={
           <>
-            {deletionNote !== null && (
-              <output className="text-s text-on-canvas" data-testid="removed-note">
-                {deletionNote}
-              </output>
-            )}
-            {offer && <ShippedNote layout={layoutId} />}
             {offer && copied !== null && (
               <div className="flex flex-col gap-xs">
                 <output className="flex items-start gap-xs text-s text-on-canvas">
@@ -1284,9 +1278,6 @@ export function HomeDocument({
 
       {exists ? (
         <>
-          <SizeNote size={readSize(joinedLength)} />
-          <GapsNote gaps={gapsOf(layout, true)} />
-
           {target.edition === null ? (
             // A screen with no block has nothing for "the start of the day, until midnight" to
             // describe, and it is true of every such screen, so the chip waits for a block.

@@ -358,10 +358,13 @@ describe('the editor’s two ways out, as HomeDocument.tsx wires them', () => {
   it('registers the guard with the header, which switches Save and Submit off for it', () => {
     const registration = between('useToolActions(', '});');
     expect(registration).toContain('blocked: guarded');
-    // And says why, under the bar rather than beside the button: the reason moved
-    // into `Controls.tsx` with the rest of the bar, so it is read there.
-    expect(controls).toContain('screenLocked');
-    expect(controls).toContain('{guarded && <p');
+    // And says why in the notifications rather than beside the button: `noticesOf` is asked
+    // with the same `guarded`, and answers with the sentence.
+    expect(file).toContain('guarded,');
+    expect(
+      readFileSync(join(ROOT, 'apps/workbench/src/preview/home/notices.ts'), 'utf8'),
+    ).toContain('screenLocked');
+    expect(controls).not.toContain('{guarded && <p');
   });
 });
 

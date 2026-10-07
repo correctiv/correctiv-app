@@ -17,14 +17,9 @@ import { formatTimeOfDay, type Point } from './document';
 import { parseMinute, STEP } from './minutes';
 import { ScenarioBar, type ScenarioControl } from './Scenario';
 import { type ScreenId } from './screens';
-import {
-  DeletedScreens,
-  ScreenList,
-  ScreenRow,
-  type DeletedScreen,
-  type OpenScreen,
-  type ScreensControl,
-} from './CustomScreens';
+import { ScreenList, ScreenRow, type OpenScreen, type ScreensControl } from './CustomScreens';
+import { NotificationCenter } from './NotificationCenter';
+import type { Notice } from './notices';
 
 /**
  * Everything above the block list, in one row and one chip.
@@ -78,12 +73,6 @@ export const CONTROLS_COPY = defineMessages({
     defaultMessage: 'Screen',
     description:
       'The legend of the icon switcher at the top of the layout tool, which chooses which of the app’s screens is being edited. Read aloud rather than drawn, because each of the five segments is named by the screen it switches to.',
-  },
-  screenLocked: {
-    id: 'home.document.screenLocked',
-    defaultMessage: 'A scenario is a Home document, so the screen stays on Home while one is open.',
-    description:
-      'Under the screen switcher while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens.',
   },
   follow: {
     id: 'home.document.follow',
@@ -205,7 +194,7 @@ export function EditorBar({
   outcome,
   screens,
   openScreen,
-  deleted,
+  notices,
 }: {
   screen: ScreenId;
   /** A scenario is open or the document holds one, so the screen and the submit are off. */
@@ -228,8 +217,8 @@ export function EditorBar({
   screens: ScreensControl;
   /** The open screen's own row, or null while the layout has no screen to open. */
   openScreen: OpenScreen | null;
-  /** The deletions this draft holds that the repository does not know of yet. */
-  deleted: readonly DeletedScreen[];
+  /** Everything the tool has to say about the open layout, drawn behind the bell. */
+  notices: readonly Notice[];
 }) {
   const intl = useWorkbenchIntl();
 
@@ -255,12 +244,13 @@ export function EditorBar({
           toggle is the last thing in the row and has to stay at the right end of it
           rather than sitting beside the scenario chip.
         */}
+        <NotificationCenter notices={notices} className="ml-auto" />
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant={follow ? 'default' : 'outline'}
               size="icon"
-              className="ml-auto size-[1.75rem]"
+              className="size-[1.75rem]"
               aria-pressed={follow}
               aria-label={intl.formatMessage(CONTROLS_COPY.follow)}
               onClick={() => onFollow(!follow)}
@@ -273,15 +263,8 @@ export function EditorBar({
         </Tooltip>
       </div>
 
-      {/*
-        The states that need a row of their own, which are the states rather than the
-        controls: why the screen switcher is off, and what the clipboard did after a
-        submit click. Each was inside the same box before and each is the only thing
-        on its own line now, which is what a row of controls plus a stack of state is.
-      */}
+      {/* The open screen's title and the way to see or delete it: one row, no sentences. */}
       {openScreen && <ScreenRow screen={openScreen} disabled={guarded} />}
-      <DeletedScreens screens={deleted} />
-      {guarded && <p className={NOTE}>{intl.formatMessage(CONTROLS_COPY.screenLocked)}</p>}
       {outcome}
     </div>
   );

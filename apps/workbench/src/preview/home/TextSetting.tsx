@@ -25,6 +25,7 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { cn } from '../../lib/cn';
 import { Badge } from '../../ui/kit/badge';
 import { InfoTip } from '../../ui/kit/info-tip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 
 /**
  * One field for a `text` setting, in the language this workbench is in, with what is left
@@ -62,12 +63,16 @@ const FIELD =
 
 const NOTE = 'text-s text-on-canvas-muted';
 
+/** A compact field shows its count only this close to the bound; the tooltip has it always. */
+const COUNT_SHOWN_AT = 10;
+
 export function TextSetting({
   spec,
   value,
   disabled,
   label,
   marked = true,
+  compact = false,
   onSet,
 }: {
   /** The declaration: the bound, the line rule and the words the block draws itself. */
@@ -79,6 +84,11 @@ export function TextSetting({
   label: string;
   /** Whether a missing language is marked beside the field, or said once somewhere else. */
   marked?: boolean;
+  /**
+   * One line and nothing under it: the count is a tooltip, and a number beside the text only
+   * from `COUNT_SHOWN_AT` characters before the bound. For a field in a bar.
+   */
+  compact?: boolean;
   onSet: (value: SettingValue | undefined) => void;
 }) {
   const intl = useWorkbenchIntl();
@@ -112,6 +122,37 @@ export function TextSetting({
   const typed = (raw: string) => {
     onSet(withWord(words, language, raw.slice(0, bound.maxChars)));
   };
+
+  if (compact && !bound.multiline) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="relative min-w-0 flex-1">
+            <input
+              type="text"
+              disabled={disabled}
+              value={words?.[language] ?? ''}
+              maxLength={bound.maxChars}
+              onChange={(event) => typed(event.target.value)}
+              aria-label={label}
+              className={cn(FIELD, 'h-[1.75rem] py-0', left <= COUNT_SHOWN_AT && 'pr-[2.25rem]')}
+            />
+            {left <= COUNT_SHOWN_AT && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-2xs flex items-center text-s tabular-nums text-on-canvas-muted"
+              >
+                {Math.max(0, left)}
+              </span>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {count}. {intl.formatMessage(TEXT_BOUND, { count: bound.maxChars })}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3xs">

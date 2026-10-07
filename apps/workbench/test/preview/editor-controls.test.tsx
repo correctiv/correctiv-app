@@ -11,6 +11,7 @@ import { Localisation } from '../../src/i18n/Localisation';
 import { TooltipProvider } from '../../src/ui/kit/tooltip';
 import { SOURCE_LANGUAGE } from '../../src/i18n/language';
 import { EditorBar, PointChip } from '../../src/preview/home/Controls';
+import { noticesOf } from '../../src/preview/home/notices';
 import { EDITION_COPY } from '../../src/preview/home/Edition';
 import type { Point } from '../../src/preview/home/document';
 import type { ScreensControl } from '../../src/preview/home/CustomScreens';
@@ -122,12 +123,13 @@ function bar(over: Partial<Parameters<typeof EditorBar>[0]> = {}): ReactNode {
       screens={SCREENS}
       openScreen={{
         id: over.screen ?? 'home',
+        title: 'Home',
         words: null,
         onTitle: () => {},
         onPreview: () => {},
         onDelete: () => {},
       }}
-      deleted={[]}
+      notices={[]}
       {...over}
     />
   );
@@ -157,12 +159,10 @@ describe("the panel's bar", () => {
     expect(container.querySelectorAll('p')).toHaveLength(0);
   });
 
-  it('draws the one paragraph a locked screen needs, and no other', () => {
-    draw(bar({ guarded: true }));
-    const said = [...container.querySelectorAll('p')].map((p) => p.textContent);
-    expect(said).toEqual([
-      'A scenario is a Home document, so the screen stays on Home while one is open.',
-    ]);
+  it('draws no paragraph for a locked screen either: that is a notification now', () => {
+    draw(bar({ guarded: true, notices: noticesOf({ layout: 'demo', guarded: true }) }));
+    expect(container.querySelectorAll('p')).toHaveLength(0);
+    expect(byTestId('notifications-badge').textContent).toBe('1');
   });
 });
 
@@ -185,10 +185,10 @@ describe('the screen list', () => {
     expect(byTestId('new-screen')).not.toBeNull();
   });
 
-  it('switches off while a scenario is open, and says why underneath', () => {
-    draw(bar({ guarded: true }));
+  it('switches off while a scenario is open, and says why in the notifications', () => {
+    draw(bar({ guarded: true, notices: noticesOf({ layout: 'demo', guarded: true }) }));
     expect(list()?.disabled).toBe(true);
-    expect(container.textContent).toContain('A scenario is a Home document');
+    expect(byTestId('notifications-badge').textContent).toBe('1');
   });
 
   it('offers the scenario only on Home, which is the only screen a scenario is', () => {
@@ -259,12 +259,12 @@ describe('what the GitHub paragraph became', () => {
     expect(container.querySelectorAll('[data-testid="scenario-bar"]')).toHaveLength(1);
   });
 
-  it('keeps the follow toggle at the right end of the row, where the ⓘ stood', () => {
+  it('keeps the bell and the follow toggle at the right end of the row', () => {
     draw(bar());
-    // `ml-auto` is the spacer and it moved onto the toggle with the ⓘ gone; without it
-    // the row would end at the scenario chip and the toggle would sit in the middle.
-    const toggle = byTestId('follow-toggle');
-    expect(toggle.className).toContain('ml-auto');
+    // `ml-auto` is the spacer and it sits on the bell, the first of the two; without it
+    // the row would end at the scenario chip and both would sit in the middle.
+    expect(byTestId('notifications').className).toContain('ml-auto');
+    expect(byTestId('notifications').nextElementSibling).toBe(byTestId('follow-toggle'));
   });
 });
 

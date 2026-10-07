@@ -1,16 +1,13 @@
 /**
  * @vitest-environment jsdom
  */
-import { act } from 'react';
-import { createRoot } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 
 import type { HomeLayout } from '@correctiv/app-core/lib/home-layout';
 import type { LocalisedText } from '@correctiv/app-core/lib/home-settings';
 
-import { Localisation } from '../../src/i18n/Localisation';
 import { SOURCE_LANGUAGE, type Language } from '../../src/i18n/language';
-import { GapsNote } from '../../src/preview/home/DocumentNotes';
+import { drawnNotices } from './drawn-notices';
 import { SHIPPED } from '../../src/preview/home/document';
 import { gapsOf } from '../../src/preview/home/gaps';
 import { blankScreen, shippedOf } from '../../src/preview/home/screens';
@@ -38,15 +35,11 @@ const withIntro = (words: LocalisedText): HomeLayout => {
 };
 
 function drawn(gaps: ReturnType<typeof gapsOf>, language: Language = SOURCE_LANGUAGE): string {
-  const container = document.body.appendChild(document.createElement('div'));
-  act(() => {
-    createRoot(container).render(
-      <Localisation language={language}>
-        <GapsNote gaps={gaps} />
-      </Localisation>,
-    );
-  });
-  return container.textContent ?? '';
+  const names = new Intl.DisplayNames(language, { type: 'language' });
+  return drawnNotices(
+    { layout: 'demo', gaps, languageName: (one) => names.of(one) ?? one },
+    language,
+  );
 }
 
 describe('gapsOf', () => {
@@ -72,14 +65,15 @@ describe('gapsOf', () => {
   });
 });
 
-describe('the mark', () => {
-  it('draws nothing for a whole screen', () => {
+describe('the notice', () => {
+  it('lists nothing for a whole screen', () => {
     expect(drawn([])).toBe('');
   });
 
   it('names the language and how many texts lack it', () => {
+    // The level is read aloud before the sentence, which is why the text starts with it.
     expect(drawn([{ language: 'en', texts: 2 }])).toBe(
-      'English is missing in 2 texts on this screen.',
+      'Warning: English is missing in 2 texts on this screen.',
     );
     expect(drawn([{ language: 'en', texts: 1 }])).toContain('in 1 text on');
   });

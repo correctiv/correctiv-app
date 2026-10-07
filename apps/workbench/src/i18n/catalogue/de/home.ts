@@ -231,7 +231,16 @@ export const home: Record<string, string> = {
   'home.custom.preview': '{path} im Rahmen zeigen',
   'home.custom.delete': 'Diesen Bildschirm löschen',
   'home.custom.deletedNote':
-    'Nur in diesem Entwurf gelöscht. Die Datei bleibt, bis die Löschung eingereicht ist.',
+    '„{title}“ nur in diesem Entwurf gelöscht. Die Datei bleibt, bis die Löschung eingereicht ist.',
+  'home.custom.deleteAsk': '„{title}“ löschen?',
+  'home.custom.deleteConfirm': 'Löschen',
+  'home.notices.label': 'Hinweise',
+  'home.notices.summary':
+    'Hinweise: {count, plural, =0 {keine} one {# Hinweis} other {# Hinweise}}',
+  'home.notices.empty': 'Nichts zu melden.',
+  'home.notices.error': 'Fehler',
+  'home.notices.warning': 'Warnung',
+  'home.notices.info': 'Information',
   'home.custom.removed': 'Gelöscht: „{title}“. Jetzt geöffnet: „{next}“.',
   'home.custom.removedLast': 'Gelöscht: „{title}“. Dieses Layout hat keinen Bildschirm mehr.',
   'home.document.shipped':
@@ -262,11 +271,11 @@ export const home: Record<string, string> = {
     'Zu lang als Link: {link} Zeichen statt {limit}. Reichen Sie ihn ein.',
   'home.document.shareField': 'Der Link',
   'home.document.nearLimit':
-    'Die veröffentlichten Bildschirme sind bei {share} dessen, was die App liest: {length} von {limit} Zeichen. Darüber ignoriert die App das Dokument und zeigt das mitgelieferte.',
+    'Die veröffentlichten Bildschirme sind bei {share, number, percent} dessen, was die App liest: {length, number} von {limit, number} Zeichen. Darüber ignoriert die App das Dokument und zeigt das mitgelieferte.',
   'home.document.gap':
     '{language} fehlt in {count, plural, one {# Text} other {# Texten}} auf diesem Bildschirm.',
   'home.document.overLimit':
-    'Die veröffentlichten Bildschirme sind über dem, was die App liest: {length} von {limit} Zeichen. Die App ignoriert das Dokument und zeigt das mitgelieferte.',
+    'Die veröffentlichten Bildschirme sind über dem, was die App liest: {length, number} von {limit, number} Zeichen. Die App ignoriert das Dokument und zeigt das mitgelieferte.',
   'home.document.sharedHeld':
     'Dieser Entwurf ist über einen Link gekommen. Er ist auf diesem Rechner nicht gespeichert: Reichen Sie ihn ein, oder laden Sie neu, um Ihr eigenes Dokument zurückzubekommen.',
   'home.document.sharedDamaged':

@@ -1,14 +1,8 @@
 /**
  * @vitest-environment jsdom
  */
-import { act, type ReactNode } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { Localisation } from '../../src/i18n/Localisation';
-import { SOURCE_LANGUAGE } from '../../src/i18n/language';
-import { EditorBar } from '../../src/preview/home/Controls';
-import type { ScreensControl } from '../../src/preview/home/CustomScreens';
 import { formatLayoutDocument } from '../../src/preview/home/document';
 import {
   layoutDraftKey,
@@ -42,8 +36,6 @@ import {
 } from '../../src/preview/home/store';
 import { getNavigation } from '../../src/preview/navigation/store';
 import { deletion, forgetMigration, submission } from '../../src/preview/home/write';
-import type { ScenarioControl } from '../../src/preview/home/Scenario';
-import { TooltipProvider } from '../../src/ui/kit/tooltip';
 
 /**
  * The screens of a layout (ADR 0075 §7, ADR 0080), in the editor: the id is held to the
@@ -53,37 +45,6 @@ import { TooltipProvider } from '../../src/ui/kit/tooltip';
  * envelope the workflow reads, naming its layout.
  */
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-const SCENARIO: ScenarioControl = {
-  open: null,
-  asking: null,
-  choose: () => {},
-  replace: () => {},
-  keep: () => {},
-  close: () => {},
-};
-
-let container: HTMLDivElement;
-let root: Root;
-
-const control: ScreensControl = {
-  ids: [],
-  titleOf: screenTitle,
-  fault: newScreenFault,
-  create: createScreen,
-};
-
-function draw(node: ReactNode): void {
-  container = document.body.appendChild(document.createElement('div'));
-  act(() => {
-    root = createRoot(container);
-    root.render(
-      <Localisation language={SOURCE_LANGUAGE}>
-        <TooltipProvider>{node}</TooltipProvider>
-      </Localisation>,
-    );
-  });
-}
 
 /** The frame's whole layout, as the app reads it. */
 function frameSet(): { layout: string; navigation: { tabs: string[] }; screens: object } {
@@ -98,17 +59,8 @@ beforeEach(() => {
   setScreen('home');
 });
 
-afterEach(() => {
-  if (root) act(() => root.unmount());
-  container?.remove();
-  document.body.innerHTML = '';
-});
-
 const format = (message: { defaultMessage?: unknown }, values: Record<string, string> = {}) =>
   String(message.defaultMessage).replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? '');
-
-const byId = (id: string) =>
-  document.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
 
 describe('making a screen', () => {
   it('opens it on its title, keeps the draft, tells the frame, and lists it with the rest', () => {
@@ -303,108 +255,5 @@ describe('submitting a screen', () => {
     setLayout({ ...getLayout(), words: { title: { de: 'Sommer' } } });
     expect(screenTitle('kampagne')).toBe('Sommer');
     expect(window.localStorage.getItem(layoutDraftKey('demo', 'kampagne'))).toContain('Sommer');
-  });
-});
-
-describe('the bar', () => {
-  const bar = (over: Partial<Parameters<typeof EditorBar>[0]> = {}): ReactNode => (
-    <EditorBar
-      screen="home"
-      guarded={false}
-      onScreen={() => {}}
-      scenario={SCENARIO}
-      follow
-      onFollow={() => {}}
-      screens={control}
-      openScreen={null}
-      deleted={[]}
-      {...over}
-    />
-  );
-  const byTestId = (id: string) =>
-    container.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
-
-  it('offers a way to make a screen, and the way is a button with a name', () => {
-    draw(bar());
-    expect(byTestId('new-screen').getAttribute('aria-label')).toBe('New screen');
-  });
-
-  it('keeps Create off until the id and the title hold, and tells a fault in red', () => {
-    draw(bar());
-    act(() => byTestId('new-screen').click());
-    const type = (id: string, value: string) =>
-      act(() => {
-        const field = byId(id) as HTMLInputElement;
-        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
-          field,
-          value,
-        );
-        field.dispatchEvent(new Event('input', { bubbles: true }));
-      });
-    const create = () => byId('new-screen-create') as HTMLButtonElement;
-
-    expect(create().disabled).toBe(true);
-    type('new-screen-id', 'Home');
-    type('new-screen-title', 'Start');
-    expect(byId('new-screen-fault').className).toContain('text-red-500');
-    expect(create().disabled).toBe(true);
-    type('new-screen-id', 'kampagne');
-    expect(create().disabled).toBe(false);
-    type('new-screen-title', ' ');
-    expect(create().disabled).toBe(true);
-  });
-
-  it('is switched off with the rest of the bar while a scenario is open', () => {
-    draw(bar({ guarded: true }));
-    expect((byTestId('new-screen') as HTMLButtonElement).disabled).toBe(true);
-  });
-
-  it('draws the open screen’s row: title as a field, the preview and the deletion', () => {
-    createScreen('kampagne', 'Kampagne');
-    draw(
-      bar({
-        screen: 'kampagne',
-        screens: { ...control, ids: screenIds() },
-        openScreen: {
-          id: 'kampagne',
-          words: getLayout().words,
-          onTitle: () => {},
-          onPreview: () => {},
-          onDelete: () => {},
-        },
-      }),
-    );
-    const field = container.querySelector<HTMLInputElement>('input[aria-label="Title"]');
-    // The field writes the language the interface is in, as every text setting does, so
-    // under the English source it shows the English word and there is none yet.
-    expect(field).not.toBeNull();
-    expect(field?.value).toBe('');
-    expect(byTestId('preview-screen').textContent).toContain('/s/kampagne');
-    expect(byTestId('delete-screen').textContent).toBe('Delete this screen');
-  });
-
-  it('says what a deletion is: a draft, with a way back and a way to submit it', () => {
-    let restored = '';
-    draw(
-      bar({
-        deleted: [
-          {
-            id: 'entdecken',
-            title: 'Entdecken',
-            submit: { href: 'https://github.com/x/y/issues/new?title=z' },
-            onRestore: () => (restored = 'entdecken'),
-          },
-        ],
-      }),
-    );
-    expect(byTestId('deleted-screens').textContent).toContain('Deleted in this draft only');
-    expect(byTestId('submit-deletion-entdecken').getAttribute('href')).toContain('issues/new');
-    act(() => byTestId('restore-screen-entdecken').click());
-    expect(restored).toBe('entdecken');
-  });
-
-  it('says nothing about deletions when there are none', () => {
-    draw(bar());
-    expect(container.querySelector('[data-testid="deleted-screens"]')).toBeNull();
   });
 });
