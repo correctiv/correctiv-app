@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Localisation } from '../../src/i18n/Localisation';
 import { SOURCE_LANGUAGE } from '../../src/i18n/language';
 import { EditorBar } from '../../src/preview/home/Controls';
+import { NoticeList } from '../../src/preview/home/NotificationCenter';
 import { noticesOf } from '../../src/preview/home/notices';
 import type { ScreensControl } from '../../src/preview/home/CustomScreens';
 import { formatLayoutDocument } from '../../src/preview/home/document';
@@ -411,24 +412,24 @@ describe('the bar', () => {
 
   it('says what a deletion is in the notifications: a draft, with a way back and a way to submit it', () => {
     let restored = '';
-    draw(
-      bar({
-        notices: noticesOf({
-          layout: 'demo',
-          deleted: [
-            {
-              id: 'entdecken',
-              title: 'Entdecken',
-              href: 'https://github.com/x/y/issues/new?title=z',
-              onRestore: () => (restored = 'entdecken'),
-            },
-          ],
-        }),
-      }),
-    );
+    const deletedNotices = noticesOf({
+      layout: 'demo',
+      deleted: [
+        {
+          id: 'entdecken',
+          title: 'Entdecken',
+          href: 'https://github.com/x/y/issues/new?title=z',
+          onRestore: () => (restored = 'entdecken'),
+        },
+      ],
+    });
+    draw(bar({ notices: deletedNotices }));
     // The bar itself says no sentence: the hint is behind the bell, which counts it.
     expect(byTestId('notifications-badge').textContent).toBe('1');
-    act(() => byTestId('notifications').click());
+    // The list the bell opens, drawn on its own: a popover left open costs every later test.
+    act(() => root.unmount());
+    container.remove();
+    draw(<NoticeList notices={deletedNotices} />);
     expect(byId('notifications-list').textContent).toContain(
       'Deleted “Entdecken” in this draft only',
     );

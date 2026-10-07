@@ -73,7 +73,6 @@ export function NotificationCenter({
   const intl = useWorkbenchIntl();
   const highest = highestLevel(notices);
   const label = intl.formatMessage(COPY.label);
-  const counts = countByLevel(notices);
 
   return (
     <Popover>
@@ -112,23 +111,32 @@ export function NotificationCenter({
         className="flex w-[min(24rem,92vw)] flex-col gap-xs"
       >
         <h2 className="text-s font-semibold text-on-canvas">{label}</h2>
-        {notices.length === 0 ? (
-          <p className="text-s text-on-canvas-muted" data-testid="notifications-empty">
-            {intl.formatMessage(COPY.empty)}
-          </p>
-        ) : (
-          <ul
-            className="flex flex-col gap-xs"
-            data-testid="notifications-list"
-            data-counts={JSON.stringify(counts)}
-          >
-            {notices.map((notice) => (
-              <NoticeItem key={notice.id} item={notice} />
-            ))}
-          </ul>
-        )}
+        <NoticeList notices={notices} />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** The list itself, apart from the popover that holds it, so a test can read it without one. */
+export function NoticeList({ notices }: { notices: readonly Notice[] }) {
+  const intl = useWorkbenchIntl();
+  if (notices.length === 0) {
+    return (
+      <p className="text-s text-on-canvas-muted" data-testid="notifications-empty">
+        {intl.formatMessage(COPY.empty)}
+      </p>
+    );
+  }
+  return (
+    <ul
+      className="flex flex-col gap-xs"
+      data-testid="notifications-list"
+      data-counts={JSON.stringify(countByLevel(notices))}
+    >
+      {notices.map((notice) => (
+        <NoticeItem key={notice.id} item={notice} />
+      ))}
+    </ul>
   );
 }
 

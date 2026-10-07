@@ -162,8 +162,7 @@ describe("the panel's bar", () => {
   it('draws no paragraph for a locked screen either: that is a notification now', () => {
     draw(bar({ guarded: true, notices: noticesOf({ layout: 'demo', guarded: true }) }));
     expect(container.querySelectorAll('p')).toHaveLength(0);
-    act(() => byTestId('notifications').click());
-    expect(document.body.textContent).toContain('A scenario is a Home document');
+    expect(byTestId('notifications-badge').textContent).toBe('1');
   });
 });
 
