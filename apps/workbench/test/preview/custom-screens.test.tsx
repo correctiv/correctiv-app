@@ -326,9 +326,12 @@ describe('the bar', () => {
   const byTestId = (id: string) =>
     container.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
 
-  it('offers a way to make a screen, and the way is a button with a name', () => {
+  it('offers a way to make a screen, and a silent bell', () => {
     draw(bar());
     expect(byTestId('new-screen').getAttribute('aria-label')).toBe('New screen');
+    // Nothing to say, so the bell carries no count.
+    expect(container.querySelector('[data-testid="notifications-badge"]')).toBeNull();
+    expect(byTestId('notifications').getAttribute('data-level')).toBe('none');
   });
 
   it('keeps Create off until the id and the title hold, and tells a fault in red', () => {
@@ -361,7 +364,8 @@ describe('the bar', () => {
     expect((byTestId('new-screen') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('draws the open screen’s row: title as a field, the preview and the deletion', () => {
+  it('draws the open screen’s row, and asks before it deletes', () => {
+    let deleted = 0;
     createScreen('kampagne', 'Kampagne');
     draw(
       bar({
@@ -373,7 +377,7 @@ describe('the bar', () => {
           words: getLayout().words,
           onTitle: () => {},
           onPreview: () => {},
-          onDelete: () => {},
+          onDelete: () => (deleted += 1),
         },
       }),
     );
@@ -387,22 +391,7 @@ describe('the bar', () => {
     // Icons with a name, so neither button draws a word of its own.
     expect(byTestId('preview-screen').textContent).toBe('');
     expect(byTestId('delete-screen').textContent).toBe('');
-  });
-
-  it('asks before it deletes, and deletes on the answer and not on the first press', () => {
-    let deleted = 0;
-    draw(
-      bar({
-        openScreen: {
-          id: 'kampagne',
-          title: 'Kampagne',
-          words: null,
-          onTitle: () => {},
-          onPreview: () => {},
-          onDelete: () => (deleted += 1),
-        },
-      }),
-    );
+    // The answer deletes, the first press does not.
     act(() => byTestId('delete-screen').click());
     expect(deleted).toBe(0);
     expect(document.body.textContent).toContain('Delete “Kampagne”?');
@@ -423,12 +412,7 @@ describe('the bar', () => {
         },
       ],
     });
-    draw(bar({ notices: deletedNotices }));
-    // The bar itself says no sentence: the hint is behind the bell, which counts it.
-    expect(byTestId('notifications-badge').textContent).toBe('1');
     // The list the bell opens, drawn on its own: a popover left open costs every later test.
-    act(() => root.unmount());
-    container.remove();
     draw(<NoticeList notices={deletedNotices} />);
     expect(byId('notifications-list').textContent).toContain(
       'Deleted “Entdecken” in this draft only',
@@ -437,11 +421,5 @@ describe('the bar', () => {
     expect(byId('restore-screen-entdecken').getAttribute('aria-label')).toBe('Restore Entdecken');
     act(() => byId('restore-screen-entdecken').click());
     expect(restored).toBe('entdecken');
-  });
-
-  it('has no badge while there is nothing to say', () => {
-    draw(bar());
-    expect(container.querySelector('[data-testid="notifications-badge"]')).toBeNull();
-    expect(byTestId('notifications').getAttribute('data-level')).toBe('none');
   });
 });
