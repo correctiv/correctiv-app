@@ -476,10 +476,10 @@ const FIELD =
  * hash is the frame's half of the link — the device, the hour, the scenario — which
  * `shareLink` reads and writes back so a link says what the person looking at it sees.
  */
-async function shareDraft(of: ScreenId, held: HomeLayout) {
+async function shareDraft(of: ScreenId, held: HomeLayout, layout: string) {
   return await shareLink(
     'home',
-    { screen: of, document: formatLayoutDocument(held) },
+    { screen: of, document: formatLayoutDocument(held), layout },
     { base: `${window.location.origin}${window.location.pathname}`, hash: window.location.hash },
   );
 }
@@ -776,7 +776,7 @@ export function HomeDocument({
    * went into the link.
    */
   const share = async () => {
-    const { link, length } = await shareDraft(getScreen(), getLayout());
+    const { link, length } = await shareDraft(getScreen(), getLayout(), getLayoutId());
     if (link === null) {
       setLinked({ kind: 'too-long', length });
       return;

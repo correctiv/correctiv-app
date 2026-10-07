@@ -29,6 +29,7 @@ import {
   setLayout,
   setScreen,
 } from '../../src/preview/home/store';
+import { EXAMPLE_LAYOUT } from '@correctiv/app-core/data/layouts/registry';
 import { packedIn, shareLink, type Draft } from '../../src/preview/share';
 import { getState, set } from '../../src/preview/store';
 
@@ -72,7 +73,7 @@ const DRAFT: Draft = { screen: 'home', document: formatLayoutDocument(EDITED) };
 
 /** The fragment of a link to this document, which is all the arrival is given. */
 async function linkTo(draft: Draft = DRAFT): Promise<string> {
-  const { link } = await shareLink('home', draft, AT);
+  const { link } = await shareLink('home', { layout: EXAMPLE_LAYOUT, ...draft }, AT);
   return (link ?? '').slice((link ?? '').indexOf('#'));
 }
 
