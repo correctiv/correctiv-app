@@ -7,6 +7,9 @@ import type { FeedItem } from '@correctiv/app-core/types/models';
 import { sampleTarget } from '@/components/discover/SampleHitRow';
 import { projectTarget } from '@/lib/discover/target';
 import { screenHref } from '@/lib/navigation/screenHref';
+import { SCREEN_ROLES, type ScreenLinker } from '@/lib/navigation/screenRoles';
+
+const link: ScreenLinker = (role) => screenHref(SCREEN_ROLES[role]);
 
 /**
  * The Entdecken tab, its search and its project pages.
@@ -80,13 +83,18 @@ beforeEach(() => {
 
 describe('projectTarget', () => {
   it('gives every directory entry a target', () => {
-    const kinds = new Set(allProjects.map((p) => projectTarget(p).kind));
+    const kinds = new Set(allProjects.map((p) => projectTarget(p, link).kind));
     // All three kinds must occur, or one branch is dead code no test protects.
     expect([...kinds].sort()).toEqual(['external', 'project', 'tab']);
   });
 
   it('sends purely external projects to the browser', () => {
-    expect(projectTarget(allProjects.find((p) => p.id === 'funfacts')!)).toEqual({
+    expect(
+      projectTarget(
+        allProjects.find((p) => p.id === 'funfacts')!,
+        link,
+      ),
+    ).toEqual({
       kind: 'external',
       url: 'https://www.youtube.com/@funfacts',
     });
@@ -96,14 +104,19 @@ describe('projectTarget', () => {
     // Salon5: the url is an extra source, not a replacement for the project page.
     const salon5 = allProjects.find((p) => p.id === 'salon5')!;
     expect(salon5.url ?? null).toBeNull();
-    expect(projectTarget({ ...salon5, url: 'https://correctiv.org/salon5/' })).toEqual({
+    expect(projectTarget({ ...salon5, url: 'https://correctiv.org/salon5/' }, link)).toEqual({
       kind: 'project',
       id: 'salon5',
     });
   });
 
   it('cross-links the participate projects into their tab', () => {
-    expect(projectTarget(allProjects.find((p) => p.id === 'crowdnewsroom')!)).toEqual({
+    expect(
+      projectTarget(
+        allProjects.find((p) => p.id === 'crowdnewsroom')!,
+        link,
+      ),
+    ).toEqual({
       kind: 'tab',
       path: screenHref('mitmachen'),
     });
@@ -111,7 +124,12 @@ describe('projectTarget', () => {
 
   it('opens the teaser-only project as a page, not as a link', () => {
     // Europe has no feed and no url — without this branch it would be a dead row.
-    expect(projectTarget(allProjects.find((p) => p.id === 'europe')!)).toEqual({
+    expect(
+      projectTarget(
+        allProjects.find((p) => p.id === 'europe')!,
+        link,
+      ),
+    ).toEqual({
       kind: 'project',
       id: 'europe',
     });
@@ -120,15 +138,15 @@ describe('projectTarget', () => {
 
 describe('sampleTarget', () => {
   it('routes each search-sample kind that has a home', () => {
-    expect(sampleTarget('podcast')).toBe(screenHref('mediathek'));
-    expect(sampleTarget('callout')).toBe(screenHref('mitmachen'));
-    expect(sampleTarget('backstage')).toBe(screenHref('profil'));
+    expect(sampleTarget('podcast', link)).toBe(screenHref('mediathek'));
+    expect(sampleTarget('callout', link)).toBe(screenHref('mitmachen'));
+    expect(sampleTarget('backstage', link)).toBe(screenHref('profil'));
   });
 
   it('leaves the kinds without a screen inert', () => {
     // Books have no screen in the app; a tappable row that does nothing is worse.
-    expect(sampleTarget('verlag')).toBeNull();
-    expect(sampleTarget('projekt')).toBeNull();
+    expect(sampleTarget('verlag', link)).toBeNull();
+    expect(sampleTarget('projekt', link)).toBeNull();
   });
 });
 

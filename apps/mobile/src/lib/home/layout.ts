@@ -17,19 +17,19 @@ import { fetchedLayouts, refreshLayouts } from '@correctiv/app-core/stores/homeL
 
 import { coreStore } from '@/lib/store/core';
 
-import { HOME_MODULES } from './modules';
+import { MODULE_CATEGORIES } from './blocks';
 
 let renderable: ReadonlySet<string> | null = null;
 
 /**
- * The module names this host holds a renderer for — ADR 0036 §14, from the map itself.
+ * The module names this host holds a renderer for — ADR 0036 §14.
  *
- * Read on first use and not at module scope: the map's module imports the tab words, which
- * import this one, so a module-scope read is `undefined` whenever the map is what a suite or
- * a route entered first.
+ * Read from the category table and not from the renderers' map, which would import every
+ * screen into the module that reads the layout and close a cycle through them. The two are
+ * held to the same keys in both directions by `__tests__/home-layout.test.tsx`.
  */
 function renderableModules(): ReadonlySet<string> {
-  renderable ??= new Set(Object.keys(HOME_MODULES));
+  renderable ??= new Set(Object.keys(MODULE_CATEGORIES));
   return renderable;
 }
 

@@ -40,7 +40,7 @@ const CHANNEL_FUNFACTS = 'FunFacts';
  * instance. This app used to pull it from the YouTube Atom feed — the legacy
  * path the core's MEDIA_SOURCE map exists to correct.
  */
-export function MediathekReihe({ onOpenMediathek }: { onOpenMediathek: () => void }) {
+export function MediathekReihe({ onOpenMediathek }: { onOpenMediathek?: () => void }) {
   const intl = useIntl();
   const colors = useColors();
   const { videos } = useVideoChannel('funfacts');
@@ -51,7 +51,7 @@ export function MediathekReihe({ onOpenMediathek }: { onOpenMediathek: () => voi
     <View className="flex-row gap-s">
       <Pressable
         onPress={onOpenMediathek}
-        accessibilityRole="link"
+        accessibilityRole={onOpenMediathek ? 'link' : undefined}
         accessibilityLabel={videoLabel}
         className="flex-1 overflow-hidden rounded-md bg-surface active:opacity-80"
       >
@@ -78,7 +78,7 @@ export function MediathekReihe({ onOpenMediathek }: { onOpenMediathek: () => voi
 
       <Pressable
         onPress={onOpenMediathek}
-        accessibilityRole="link"
+        accessibilityRole={onOpenMediathek ? 'link' : undefined}
         accessibilityLabel={intl.formatMessage(COPY.radioPlaying)}
         className="flex-1 justify-between rounded-md bg-surface p-s active:opacity-80"
       >

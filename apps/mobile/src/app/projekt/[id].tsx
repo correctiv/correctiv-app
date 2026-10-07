@@ -19,7 +19,8 @@ import type { FeedItem, FeedKey } from '@correctiv/app-core/types/models';
 import { useFeed } from '@/lib/feeds/useFeed';
 import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
-import { screenHref } from '@/lib/navigation/screenHref';
+import { useScreenLinker } from '@/lib/navigation/screenLink';
+import type { ScreenRole } from '@/lib/navigation/screenRoles';
 import { useReachable } from '@/lib/store/core';
 import { sizes, useColors } from '@/lib/theme';
 
@@ -87,10 +88,13 @@ const COPY = defineMessages({
  * descriptor spelled as a bare object literal in this table would have no English
  * side at all — measured, it extracted to zero and
  * `__tests__/localisation-seam.test.ts` named all three.
+ *
+ * `needs` names the screen an action opens: the button is left out when the active
+ * layout does not carry it, and `run` is handed its address.
  */
 const ACTIONS: Record<
   NonNullable<Project['action']>,
-  { label: MessageDescriptor; run: () => void }
+  { label: MessageDescriptor; needs?: ScreenRole; run: (href: string | null) => void }
 > = {
   'whatsapp-tip': {
     label: COPY.tipWhatsapp,
@@ -102,7 +106,8 @@ const ACTIONS: Record<
     // The live stream belongs to the player, and that is ONE app-wide singleton
     // (expo-audio). A second player here would be a second state for the same
     // playback — hence only the jump into the Mediathek.
-    run: () => router.push(screenHref('mediathek') as never),
+    needs: 'media',
+    run: (href) => router.push(href as never),
   },
   'local-network': {
     label: COPY.joinLocalNetwork,
@@ -148,7 +153,13 @@ export default function ProjektScreen() {
   // An entry whose feature is not reachable is a project this build does not have.
   const project =
     resolved && (resolved.feature === undefined || reachable(resolved.feature)) ? resolved : null;
-  const action = project?.action ? ACTIONS[project.action] : null;
+  const linker = useScreenLinker();
+  const entry = project?.action ? ACTIONS[project.action] : null;
+  const href = entry?.needs ? linker(entry.needs) : null;
+  const action: ScreenAction =
+    entry && (entry.needs === undefined || href !== null)
+      ? { label: entry.label, run: () => entry.run(href) }
+      : null;
 
   return (
     <View className="flex-1 bg-canvas">

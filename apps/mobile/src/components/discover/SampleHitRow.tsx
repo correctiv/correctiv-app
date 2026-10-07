@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Typo } from '@/components/ui';
 import type { SearchSample } from '@correctiv/app-core/data/search-samples';
 import { useColors } from '@/lib/theme';
-import { screenHref } from '@/lib/navigation/screenHref';
+import type { ScreenLinker } from '@/lib/navigation/screenRoles';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -22,18 +22,18 @@ type TabPath = string;
 /**
  * Where a non-article hit leads, or `null` when it has no place in this app.
  *
- * Books (`verlag`) have no screen, so they stay deliberately inert rather than
+ * A screen the active layout does not carry is inert as well. Books (`verlag`) have no screen, so they stay deliberately inert rather than
  * tappable-and-dead, which is what an earlier design shipped. Visibly untouchable
  * beats apparently broken.
  */
-export function sampleTarget(kind: SearchSample['kind']): TabPath | null {
+export function sampleTarget(kind: SearchSample['kind'], link: ScreenLinker): TabPath | null {
   switch (kind) {
     case 'podcast':
-      return screenHref('mediathek');
+      return link('media');
     case 'callout':
-      return screenHref('mitmachen');
+      return link('participate');
     case 'backstage':
-      return screenHref('profil');
+      return link('profile');
     default:
       return null;
   }
