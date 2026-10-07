@@ -38,6 +38,25 @@ describe('pages-app-fallback', () => {
     expect(run('', '/app/s/klima/')).toEqual(['/app/index.html']);
   });
 
+  it('writes the app page without its inline scripts, which the workbench policy refuses', async () => {
+    const entry =
+      '<head><script type="module">globalThis.__EXPO_ROUTER_HYDRATE__=true;</script>' +
+      '<script src="/app/_expo/static/js/web/index.js" defer></script></head>';
+    const written: string[] = [];
+    const document = {
+      open: () => undefined,
+      write: (html: string) => written.push(html),
+      close: () => undefined,
+    };
+    const fetchStub = () => Promise.resolve({ ok: true, text: () => Promise.resolve(entry) });
+    const window = { location: { pathname: '/app/s/klima' } };
+    new Function('window', 'fetch', 'document', fallbackScript(''))(window, fetchStub, document);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(written).toEqual([
+      '<head><script src="/app/_expo/static/js/web/index.js" defer></script></head>',
+    ]);
+  });
+
   it('leaves every other address to the workbench', () => {
     expect(run('', '/handbook')).toEqual([]);
     expect(run('', '/app/s/')).toEqual([]);

@@ -66,6 +66,10 @@ export function fallbackScript(base) {
       return response.ok ? response.text() : Promise.reject(new Error(String(response.status)));
     })
     .then(function (html) {
+      // The page's own inline scripts are refused by the workbench's policy (script-src 'self')
+      // and logged as errors. The one the export writes only says "hydrate", and the entry
+      // page's markup is not this screen's, so there is nothing to hydrate and it is left out.
+      html = html.replace(/<script\\b(?![^>]*\\bsrc=)[^>]*>[^<]*<\\/script>/g, '');
       document.open();
       document.write(html);
       document.close();
