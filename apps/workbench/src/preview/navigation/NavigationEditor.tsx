@@ -10,7 +10,8 @@ import { Button } from '../../ui/kit/button';
 import { useToolActions } from '../../shell/actions';
 import { Select } from '../../ui/kit/select';
 import { copyNow } from '../clipboard';
-import { ShippedNote } from '../home/DocumentNotes';
+import { NotificationCenter } from '../home/NotificationCenter';
+import { noticesOf } from '../home/notices';
 import {
   getLayoutId,
   noticeOf,
@@ -253,7 +254,10 @@ export function NavigationEditor() {
 
   return (
     <div className="flex flex-col gap-s" data-testid="navigation-editor">
-      <p className={NOTE}>{intl.formatMessage(COPY.lead)}</p>
+      <div className="flex items-start gap-xs">
+        <p className={cn(NOTE, 'min-w-0 flex-1')}>{intl.formatMessage(COPY.lead)}</p>
+        <NotificationCenter notices={noticesOf({ layout: layoutId })} />
+      </div>
 
       {navigation.tabs.length > 0 && (
         <section className="flex flex-col gap-2xs" aria-label={intl.formatMessage(COPY.entries)}>
@@ -367,7 +371,6 @@ export function NavigationEditor() {
         </p>
       )}
 
-      {offer && <ShippedNote layout={layoutId} />}
       {copied && <p className={NOTE}>{intl.formatMessage(COPY.copied)}</p>}
       {linked !== null && linked.kind !== 'too-long' && (
         <div className="flex flex-col gap-xs">

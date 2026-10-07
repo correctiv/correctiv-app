@@ -1,15 +1,10 @@
 /**
  * @vitest-environment jsdom
  */
-import { act } from 'react';
-import { createRoot } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 
 import { HOME_LAYOUT_MAX_CHARS } from '@correctiv/app-core/stores/homeLayout';
 
-import { Localisation } from '../../src/i18n/Localisation';
-import { SOURCE_LANGUAGE } from '../../src/i18n/language';
-import { SizeNote } from '../../src/preview/home/DocumentNotes';
 import { formatLayoutDocument, SHIPPED } from '../../src/preview/home/document';
 import { shippedNavigationOf } from '../../src/preview/home/screens';
 import {
@@ -19,6 +14,8 @@ import {
   SIZE_WARNING_FRACTION,
 } from '../../src/preview/home/size';
 import { formatNavigationDocument } from '../../src/preview/navigation/document';
+import { noticesOf } from '../../src/preview/home/notices';
+import { drawnNotices } from './drawn-notices';
 
 /**
  * The warning before the joined document reaches the size the app refuses (ADR 0075 §7).
@@ -34,15 +31,7 @@ const SHIPPED_TEXT = formatLayoutDocument(SHIPPED);
 const NAVIGATION_TEXT = formatNavigationDocument(shippedNavigationOf('demo'));
 
 function drawn(length: number): string {
-  const container = document.body.appendChild(document.createElement('div'));
-  act(() => {
-    createRoot(container).render(
-      <Localisation language={SOURCE_LANGUAGE}>
-        <SizeNote size={readSize(length)} />
-      </Localisation>,
-    );
-  });
-  return container.textContent ?? '';
+  return drawnNotices({ layout: 'demo', size: readSize(length) });
 }
 
 describe('the threshold', () => {
@@ -79,7 +68,7 @@ describe('joinedLength', () => {
   });
 });
 
-describe('the sentence', () => {
+describe('the notice', () => {
   it('is not drawn below the threshold', () => {
     expect(drawn(SIZE_WARNING_AT - 1)).toBe('');
   });
@@ -92,5 +81,12 @@ describe('the sentence', () => {
 
   it('says the app ignores it once it is over', () => {
     expect(drawn(HOME_LAYOUT_MAX_CHARS + 1)).toContain('over what the app reads');
+  });
+
+  it('is a warning short of the limit and an error past it', () => {
+    const level = (length: number) =>
+      noticesOf({ layout: 'demo', size: readSize(length) }).map((notice) => notice.level);
+    expect(level(SIZE_WARNING_AT)).toEqual(['warning']);
+    expect(level(HOME_LAYOUT_MAX_CHARS + 1)).toEqual(['error']);
   });
 });

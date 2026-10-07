@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Localisation } from '../../src/i18n/Localisation';
 import { SOURCE_LANGUAGE } from '../../src/i18n/language';
 import { EditorBar } from '../../src/preview/home/Controls';
+import { noticesOf } from '../../src/preview/home/notices';
 import type { ScreensControl } from '../../src/preview/home/CustomScreens';
 import { formatLayoutDocument } from '../../src/preview/home/document';
 import {
@@ -317,7 +318,7 @@ describe('the bar', () => {
       onFollow={() => {}}
       screens={control}
       openScreen={null}
-      deleted={[]}
+      notices={[]}
       {...over}
     />
   );
@@ -367,6 +368,7 @@ describe('the bar', () => {
         screens: { ...control, ids: screenIds() },
         openScreen: {
           id: 'kampagne',
+          title: 'Kampagne',
           words: getLayout().words,
           onTitle: () => {},
           onPreview: () => {},
@@ -379,32 +381,66 @@ describe('the bar', () => {
     // under the English source it shows the English word and there is none yet.
     expect(field).not.toBeNull();
     expect(field?.value).toBe('');
-    expect(byTestId('preview-screen').textContent).toContain('/s/kampagne');
-    expect(byTestId('delete-screen').textContent).toBe('Delete this screen');
+    expect(byTestId('preview-screen').getAttribute('aria-label')).toContain('/s/kampagne');
+    expect(byTestId('delete-screen').getAttribute('aria-label')).toBe('Delete this screen');
+    // Icons with a name, so neither button draws a word of its own.
+    expect(byTestId('preview-screen').textContent).toBe('');
+    expect(byTestId('delete-screen').textContent).toBe('');
   });
 
-  it('says what a deletion is: a draft, with a way back and a way to submit it', () => {
+  it('asks before it deletes, and deletes on the answer and not on the first press', () => {
+    let deleted = 0;
+    draw(
+      bar({
+        openScreen: {
+          id: 'kampagne',
+          title: 'Kampagne',
+          words: null,
+          onTitle: () => {},
+          onPreview: () => {},
+          onDelete: () => (deleted += 1),
+        },
+      }),
+    );
+    act(() => byTestId('delete-screen').click());
+    expect(deleted).toBe(0);
+    expect(document.body.textContent).toContain('Delete “Kampagne”?');
+    act(() => byId('delete-screen-confirm').click());
+    expect(deleted).toBe(1);
+  });
+
+  it('says what a deletion is in the notifications: a draft, with a way back and a way to submit it', () => {
     let restored = '';
     draw(
       bar({
-        deleted: [
-          {
-            id: 'entdecken',
-            title: 'Entdecken',
-            submit: { href: 'https://github.com/x/y/issues/new?title=z' },
-            onRestore: () => (restored = 'entdecken'),
-          },
-        ],
+        notices: noticesOf({
+          layout: 'demo',
+          deleted: [
+            {
+              id: 'entdecken',
+              title: 'Entdecken',
+              href: 'https://github.com/x/y/issues/new?title=z',
+              onRestore: () => (restored = 'entdecken'),
+            },
+          ],
+        }),
       }),
     );
-    expect(byTestId('deleted-screens').textContent).toContain('Deleted in this draft only');
-    expect(byTestId('submit-deletion-entdecken').getAttribute('href')).toContain('issues/new');
-    act(() => byTestId('restore-screen-entdecken').click());
+    // The bar itself says no sentence: the hint is behind the bell, which counts it.
+    expect(byTestId('notifications-badge').textContent).toBe('1');
+    act(() => byTestId('notifications').click());
+    expect(byId('notifications-list').textContent).toContain(
+      'Deleted “Entdecken” in this draft only',
+    );
+    expect(byId('submit-deletion-entdecken').getAttribute('href')).toContain('issues/new');
+    expect(byId('restore-screen-entdecken').getAttribute('aria-label')).toBe('Restore Entdecken');
+    act(() => byId('restore-screen-entdecken').click());
     expect(restored).toBe('entdecken');
   });
 
-  it('says nothing about deletions when there are none', () => {
+  it('has no badge while there is nothing to say', () => {
     draw(bar());
-    expect(container.querySelector('[data-testid="deleted-screens"]')).toBeNull();
+    expect(container.querySelector('[data-testid="notifications-badge"]')).toBeNull();
+    expect(byTestId('notifications').getAttribute('data-level')).toBe('none');
   });
 });

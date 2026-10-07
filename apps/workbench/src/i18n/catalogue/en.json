@@ -1547,9 +1547,17 @@
     "defaultMessage": "Delete this screen",
     "description": "The name of the button that takes the open custom screen away. For one that was only ever a draft it is the whole of the deletion."
   },
+  "home.custom.deleteAsk": {
+    "defaultMessage": "Delete “{title}”?",
+    "description": "The question in the small panel that asks before the open custom screen is deleted. {title} is the screen’s title. For a screen that was only ever a draft here the deletion is final; for one the repository carries, the notifications keep a way back."
+  },
+  "home.custom.deleteConfirm": {
+    "defaultMessage": "Delete",
+    "description": "The button in the panel opened by home.custom.deleteAsk that deletes the screen. Its label is the verb alone, because the panel above it names the screen."
+  },
   "home.custom.deletedNote": {
-    "defaultMessage": "Deleted in this draft only. The file stays until the deletion is submitted.",
-    "description": "Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted. One short sentence: the list under it is what the person acts on."
+    "defaultMessage": "Deleted “{title}” in this draft only. The file stays until the deletion is submitted.",
+    "description": "An info in the layout tool’s notifications, one per screen the person deleted that the repository still carries. Says that a deletion is a draft until it is submitted. {title} is the screen’s title."
   },
   "home.custom.fault.empty": {
     "defaultMessage": "Type an id.",
@@ -1593,11 +1601,11 @@
   },
   "home.custom.removed": {
     "defaultMessage": "Deleted “{title}”. Now showing “{next}”.",
-    "description": "Said under the layout tool’s bar right after a screen was deleted, because the open screen changes with it. {title} is the screen that went, {next} the one that is open now."
+    "description": "An info in the layout tool’s notifications right after a screen was deleted, because the open screen changes with it. {title} is the screen that went, {next} the one that is open now."
   },
   "home.custom.removedLast": {
     "defaultMessage": "Deleted “{title}”. This layout has no screen left.",
-    "description": "Said under the layout tool’s bar right after the layout’s last screen was deleted, so no other screen opens in its place. {title} is the screen that went."
+    "description": "An info in the layout tool’s notifications right after the layout’s last screen was deleted, so no other screen opens in its place. {title} is the screen that went."
   },
   "home.custom.restore": {
     "defaultMessage": "Restore",
@@ -1613,7 +1621,7 @@
   },
   "home.custom.title": {
     "defaultMessage": "Title",
-    "description": "The accessible name of the field that renames the open custom screen, in its own row under the bar. The word readers see at the top of the screen and in the “Mehr” list."
+    "description": "The accessible name of the field that renames the open custom screen, in the row under the screen list. The word readers see at the top of the screen and in the “Mehr” list."
   },
   "home.custom.titleLabel": {
     "defaultMessage": "Title in German",
@@ -1629,19 +1637,19 @@
   },
   "home.document.gap": {
     "defaultMessage": "{language} is missing in {count, plural, one {# text} other {# texts}} on this screen.",
-    "description": "Under the head of the layout tool, one line per language some text of the screen does not carry (ADR 0075 §2). {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and {count} is how many of the screen’s texts lack it. A mark and not a fault: the app draws German where a language is missing."
+    "description": "A warning in the layout tool’s notifications, one per language some text of the screen does not carry (ADR 0075 §2). {language} is that language’s own name in the reader’s language, as Intl.DisplayNames writes it, and {count} is how many of the screen’s texts lack it. A mark and not a fault: the app draws German where a language is missing."
   },
   "home.document.layoutEmpty": {
     "defaultMessage": "This layout has no screen. The app draws its empty state. Make one with the plus above.",
     "description": "Under the screen list of the layout tool when the open layout holds no screen at all, which is how the layout the app ships begins. The plus is the New screen button in the bar above."
   },
   "home.document.nearLimit": {
-    "defaultMessage": "The published screens are at {share} of what the app reads: {length} of {limit} characters. Past that the app ignores the document and draws the one it ships with.",
-    "description": "A warning under the head of the layout tool, shown from 80 percent of the limit on (ADR 0075 §7). {share} is the fraction already formatted as a percentage, {length} is how many characters the screens and the navigation come to when they are joined, and {limit} is the most the app reads, both as plain numbers."
+    "defaultMessage": "The published screens are at {share, number, percent} of what the app reads: {length, number} of {limit, number} characters. Past that the app ignores the document and draws the one it ships with.",
+    "description": "A warning in the layout tool’s notifications, shown from 80 percent of the limit on (ADR 0075 §7). {share} is the fraction, formatted as a percentage by the message, {length} is how many characters the screens and the navigation come to when they are joined, and {limit} is the most the app reads, both as plain numbers."
   },
   "home.document.overLimit": {
-    "defaultMessage": "The published screens are over what the app reads: {length} of {limit} characters. The app ignores the document and draws the one it ships with.",
-    "description": "Replaces home.document.nearLimit once the joined document is longer than the limit (ADR 0075 §7). {length} is how many characters the screens and the navigation come to when they are joined and {limit} is the most the app reads, both as plain numbers."
+    "defaultMessage": "The published screens are over what the app reads: {length, number} of {limit, number} characters. The app ignores the document and draws the one it ships with.",
+    "description": "An error in the layout tool’s notifications; replaces home.document.nearLimit once the joined document is longer than the limit (ADR 0075 §7). {length} is how many characters the screens and the navigation come to when they are joined and {limit} is the most the app reads, both as plain numbers."
   },
   "home.document.refused": {
     "defaultMessage": "refused",
@@ -1661,7 +1669,7 @@
   },
   "home.document.screenLocked": {
     "defaultMessage": "A scenario is a Home document, so the screen stays on Home while one is open.",
-    "description": "Under the screen switcher while it is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens."
+    "description": "An info in the layout tool’s notifications while the screen list is switched off because a scenario is open or the document still holds one. Scenarios are examples of Home’s day and do not exist for the other screens."
   },
   "home.document.shareCopied": {
     "defaultMessage": "The link is on your clipboard. Open it yourself to see what the person you send it to will see.",
@@ -1689,7 +1697,7 @@
   },
   "home.document.shipped": {
     "defaultMessage": "This is the layout the app ships. Once this change is merged and published, readers get it.",
-    "description": "Beside Submit changes while the open layout is the one the app ships (ADR 0080 §5). It says that, unlike the demo, a change to this layout reaches readers."
+    "description": "A warning in the layout tool’s notifications while the open layout is the one the app ships (ADR 0080 §5). It says that, unlike the demo, a change to this layout reaches readers."
   },
   "home.document.submitCopied": {
     "defaultMessage": "The change is on your clipboard. Paste it into the issue on GitHub."
@@ -1910,6 +1918,30 @@
   "home.module.unknown.what": {
     "defaultMessage": "No description for this block yet.",
     "description": "Under a module the palette is offering that MODULE_LABELS has no entry for, where the label above it is the module’s raw id. home.setting.unknown.what is the same kind of stand-in one level down, for a setting, and says something shorter because the control beside it already names itself."
+  },
+  "home.notices.empty": {
+    "defaultMessage": "Nothing to report.",
+    "description": "In the list under the bell while the open layout has no notice."
+  },
+  "home.notices.error": {
+    "defaultMessage": "Error",
+    "description": "Read aloud before a notice that is an error, because its icon and its colour are not read. Never drawn."
+  },
+  "home.notices.info": {
+    "defaultMessage": "Information",
+    "description": "Read aloud before a notice that is information only, because its icon and its colour are not read. Never drawn."
+  },
+  "home.notices.label": {
+    "defaultMessage": "Notifications",
+    "description": "The tooltip on the bell in the layout tool’s bar, and the heading of the list it opens. The bell holds every hint about the open layout: errors, warnings and information."
+  },
+  "home.notices.summary": {
+    "defaultMessage": "Notifications: {count, plural, =0 {none} one {# notice} other {# notices}}",
+    "description": "The accessible name of the bell in the layout tool’s bar. {count} is how many notices the open layout has, so a screen reader hears the number the badge shows."
+  },
+  "home.notices.warning": {
+    "defaultMessage": "Warning",
+    "description": "Read aloud before a notice that is a warning, because its icon and its colour are not read. Never drawn."
   },
   "home.palette.addFirst": {
     "defaultMessage": "Add the first block",

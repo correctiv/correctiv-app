@@ -1,4 +1,4 @@
-import { Eye, Plus, Trash2, Undo2 } from 'lucide-react';
+import { Eye, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { defineMessages } from 'react-intl';
 
@@ -15,6 +15,7 @@ import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { Button } from '../../ui/kit/button';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '../../ui/kit/popover';
 import { Select } from '../../ui/kit/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/kit/tooltip';
 import type { NewScreenFault } from './store';
 import { TextSetting } from './TextSetting';
 
@@ -114,7 +115,7 @@ export const CUSTOM_SCREEN_COPY = defineMessages({
     id: 'home.custom.title',
     defaultMessage: 'Title',
     description:
-      'The accessible name of the field that renames the open custom screen, in its own row under the bar. The word readers see at the top of the screen and in the “Mehr” list.',
+      'The accessible name of the field that renames the open custom screen, in the row under the screen list. The word readers see at the top of the screen and in the “Mehr” list.',
   },
   preview: {
     id: 'home.custom.preview',
@@ -128,41 +129,17 @@ export const CUSTOM_SCREEN_COPY = defineMessages({
     description:
       'The name of the button that takes the open custom screen away. For one that was only ever a draft it is the whole of the deletion.',
   },
-  deletedNote: {
-    id: 'home.custom.deletedNote',
-    defaultMessage: 'Deleted in this draft only. The file stays until the deletion is submitted.',
+  deleteAsk: {
+    id: 'home.custom.deleteAsk',
+    defaultMessage: 'Delete “{title}”?',
     description:
-      'Above the list of screens the person deleted that the repository still carries, in the layout tool’s bar. Says that a deletion is a draft until it is submitted. One short sentence: the list under it is what the person acts on.',
+      'The question in the small panel that asks before the open custom screen is deleted. {title} is the screen’s title. For a screen that was only ever a draft here the deletion is final; for one the repository carries, the notifications keep a way back.',
   },
-  restore: {
-    id: 'home.custom.restore',
-    defaultMessage: 'Restore',
+  deleteConfirm: {
+    id: 'home.custom.deleteConfirm',
+    defaultMessage: 'Delete',
     description:
-      'The visible label of the button that takes a deletion back, beside the screen it is about. restoreNamed is its accessible name.',
-  },
-  restoreNamed: {
-    id: 'home.custom.restoreNamed',
-    defaultMessage: 'Restore {title}',
-    description:
-      'The accessible name of the button that takes a deletion back. {title} is the screen’s title, so a list of several says which one each button is about.',
-  },
-  removed: {
-    id: 'home.custom.removed',
-    defaultMessage: 'Deleted “{title}”. Now showing “{next}”.',
-    description:
-      'Said under the layout tool’s bar right after a screen was deleted, because the open screen changes with it. {title} is the screen that went, {next} the one that is open now.',
-  },
-  removedLast: {
-    id: 'home.custom.removedLast',
-    defaultMessage: 'Deleted “{title}”. This layout has no screen left.',
-    description:
-      'Said under the layout tool’s bar right after the layout’s last screen was deleted, so no other screen opens in its place. {title} is the screen that went.',
-  },
-  submitDeletion: {
-    id: 'home.custom.submitDeletion',
-    defaultMessage: 'Submit the deletion of {id}',
-    description:
-      'The name of the link that opens GitHub’s new-issue page with the deletion of a screen in it, like Submit changes does. {id} is the screen’s id, which is not translated.',
+      'The button in the panel opened by home.custom.deleteAsk that deletes the screen. Its label is the verb alone, because the panel above it names the screen.',
   },
 });
 
@@ -199,6 +176,8 @@ export interface ScreensControl {
 /** The open screen's own row: what it is called, where it is, and the way out. */
 export interface OpenScreen {
   id: string;
+  /** What it is called now, for the question before it is deleted. */
+  title: string;
   words: ScreenWords | null;
   onTitle: (title: SettingValue) => void;
   onPreview: () => void;
@@ -360,121 +339,92 @@ function NewScreen({ control, disabled }: { control: ScreensControl; disabled: b
  * (ADR 0075 §3), the way to see it in the frame, and the way to delete it.
  *
  * The title field is `TextSetting`, the one every other word of the document is written
- * with, held to `SCREEN_TITLE_SPEC`, the bound the parser holds it to. What it cannot do
- * is leave the title without a German: `withWord` refuses that, because a screen with no
- * name has nothing to fall back to, so a clear that would do it is not written.
+ * with, held to `SCREEN_TITLE_SPEC`, the bound the parser holds it to, and drawn compact:
+ * the count is a tooltip. What it cannot do is leave the title without a German:
+ * `withWord` refuses that, because a screen with no name has nothing to fall back to, so
+ * a clear that would do it is not written.
+ *
+ * The two buttons are icons with a name and a tooltip. Deleting asks first, in a panel
+ * that holds one question, because a draft that was never submitted has no way back.
  */
 export function ScreenRow({ screen, disabled }: { screen: OpenScreen; disabled: boolean }) {
   const intl = useWorkbenchIntl();
   const path = `/s/${screen.id}`;
-  const label = (message: typeof CUSTOM_SCREEN_COPY.delete) => (
-    <>
-      <Trash2 aria-hidden="true" />
-      {intl.formatMessage(message)}
-    </>
-  );
-  const remove = (
-    <Button
-      variant="outline"
-      className={SMALL}
-      disabled={disabled}
-      onClick={screen.onDelete}
-      data-testid="delete-screen"
-    >
-      {label(CUSTOM_SCREEN_COPY.delete)}
-    </Button>
-  );
+  const preview = intl.formatMessage(CUSTOM_SCREEN_COPY.preview, { path });
+  const remove = intl.formatMessage(CUSTOM_SCREEN_COPY.delete);
+  const [asking, setAsking] = useState(false);
   return (
-    <div className="flex flex-col gap-2xs" data-testid="custom-screen-row">
+    <div className="flex items-center gap-2xs" data-testid="custom-screen-row">
       <TextSetting
         spec={SCREEN_TITLE_SPEC}
         value={screen.words?.title}
         disabled={disabled}
         label={intl.formatMessage(CUSTOM_SCREEN_COPY.title)}
-        // The screen-wide note under the bar already says the English is missing.
+        // The notifications already say the English is missing.
         marked={false}
+        compact
         onSet={(next) => {
           if (next !== undefined) screen.onTitle(next);
         }}
       />
-      <div className="flex flex-wrap items-center gap-2xs">
-        <Button
-          variant="outline"
-          className={SMALL}
-          onClick={screen.onPreview}
-          data-testid="preview-screen"
-        >
-          <Eye aria-hidden="true" />
-          {intl.formatMessage(CUSTOM_SCREEN_COPY.preview, { path })}
-        </Button>
-        {remove}
-      </div>
-    </div>
-  );
-}
-
-/** A screen the repository carries that this draft deletes. */
-export interface DeletedScreen {
-  id: string;
-  title: string;
-  /** Opens GitHub's new-issue page with the deletion in it. */
-  submit: { href: string };
-  onRestore: () => void;
-}
-
-/**
- * The screens deleted in this draft and not yet submitted, said as what they are: a draft
- * (ADR 0080 §3). A deleted screen leaves the list, the frame and the navigation, so without
- * this it would be gone from the only place a person could see that it is not gone from the
- * repository, and nothing would say how to bring it back or how to make it final.
- */
-export function DeletedScreens({ screens }: { screens: readonly DeletedScreen[] }) {
-  const intl = useWorkbenchIntl();
-  if (screens.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-2xs" data-testid="deleted-screens">
-      <p className={NOTE}>{intl.formatMessage(CUSTOM_SCREEN_COPY.deletedNote)}</p>
-      <ul className="flex flex-col gap-2xs">
-        {screens.map((deleted) => (
-          <li key={deleted.id} className="flex flex-wrap items-center gap-2xs">
-            <span className="min-w-0 basis-full truncate text-s text-on-canvas">
-              {deleted.title}
-              {deleted.title.toLowerCase() !== deleted.id && (
-                <>
-                  <span aria-hidden="true" className="text-on-canvas-muted">
-                    {' · '}
-                  </span>
-                  <code className="font-mono text-[0.75rem] text-on-canvas-muted">
-                    {deleted.id}
-                  </code>
-                </>
-              )}
-            </span>
-            <Button
-              variant="outline"
-              className={SMALL}
-              onClick={deleted.onRestore}
-              aria-label={intl.formatMessage(CUSTOM_SCREEN_COPY.restoreNamed, {
-                title: deleted.title,
-              })}
-              data-testid={`restore-screen-${deleted.id}`}
-            >
-              <Undo2 aria-hidden="true" />
-              {intl.formatMessage(CUSTOM_SCREEN_COPY.restore)}
-            </Button>
-            <Button variant="outline" className={SMALL} asChild>
-              <a
-                href={deleted.submit.href}
-                target="_blank"
-                rel="noreferrer"
-                data-testid={`submit-deletion-${deleted.id}`}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-[1.75rem] shrink-0"
+            aria-label={preview}
+            onClick={screen.onPreview}
+            data-testid="preview-screen"
+          >
+            <Eye aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{preview}</TooltipContent>
+      </Tooltip>
+      <Popover open={asking} onOpenChange={setAsking}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-[1.75rem] shrink-0"
+                disabled={disabled}
+                aria-label={remove}
+                data-testid="delete-screen"
               >
-                {intl.formatMessage(CUSTOM_SCREEN_COPY.submitDeletion, { id: deleted.id })}
-              </a>
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{remove}</TooltipContent>
+        </Tooltip>
+        <PopoverContent side="bottom" align="end" className="flex w-[16rem] flex-col gap-xs">
+          <p className="text-s text-on-canvas">
+            {intl.formatMessage(CUSTOM_SCREEN_COPY.deleteAsk, { title: screen.title })}
+          </p>
+          <div className="flex justify-end gap-2xs">
+            <PopoverClose asChild>
+              <Button type="button" variant="ghost" className={SMALL}>
+                {intl.formatMessage(CUSTOM_SCREEN_COPY.cancel)}
+              </Button>
+            </PopoverClose>
+            <Button
+              type="button"
+              className={SMALL}
+              data-testid="delete-screen-confirm"
+              onClick={() => {
+                setAsking(false);
+                screen.onDelete();
+              }}
+            >
+              <Trash2 aria-hidden="true" />
+              {intl.formatMessage(CUSTOM_SCREEN_COPY.deleteConfirm)}
             </Button>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
