@@ -180,6 +180,7 @@ export type { NewScreenFault };
 
 const SMALL = 'h-[1.75rem] gap-3xs px-2xs text-s';
 const NOTE = 'text-s leading-relaxed text-on-canvas-muted';
+const ERROR = 'text-s leading-relaxed text-red-500';
 const FIELD =
   'h-[1.75rem] w-full rounded-md border border-stroke bg-canvas px-2xs text-s text-on-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
@@ -308,7 +309,7 @@ function NewScreen({ control, disabled }: { control: ScreensControl; disabled: b
             className={FIELD}
           />
           {fault !== null && (
-            <p role="alert" className={NOTE} data-testid="new-screen-fault">
+            <p role="alert" className={ERROR} data-testid="new-screen-fault">
               {intl.formatMessage(FAULTS[fault], { max: CUSTOM_SCREEN_ID_MAX_LENGTH })}
             </p>
           )}
@@ -324,7 +325,7 @@ function NewScreen({ control, disabled }: { control: ScreensControl; disabled: b
             className={FIELD}
           />
           {titleMissing && (
-            <p role="alert" className={NOTE}>
+            <p role="alert" className={ERROR}>
               {intl.formatMessage(CUSTOM_SCREEN_COPY.titleMissing)}
             </p>
           )}
@@ -341,6 +342,7 @@ function NewScreen({ control, disabled }: { control: ScreensControl; disabled: b
             </PopoverClose>
             <Button
               type="submit"
+              disabled={control.fault(id) !== null || title.trim() === ''}
               className="h-[1.75rem] px-2xs text-s"
               data-testid="new-screen-create"
             >

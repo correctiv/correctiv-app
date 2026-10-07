@@ -107,6 +107,9 @@ afterEach(() => {
 const format = (message: { defaultMessage?: unknown }, values: Record<string, string> = {}) =>
   String(message.defaultMessage).replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? '');
 
+const byId = (id: string) =>
+  document.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
+
 describe('making a screen', () => {
   it('opens it on its title, keeps the draft, tells the frame, and lists it with the rest', () => {
     expect(createScreen('kampagne', 'Kampagne')).toBeNull();
@@ -324,6 +327,31 @@ describe('the bar', () => {
   it('offers a way to make a screen, and the way is a button with a name', () => {
     draw(bar());
     expect(byTestId('new-screen').getAttribute('aria-label')).toBe('New screen');
+  });
+
+  it('keeps Create off until the id and the title hold, and tells a fault in red', () => {
+    draw(bar());
+    act(() => byTestId('new-screen').click());
+    const type = (id: string, value: string) =>
+      act(() => {
+        const field = byId(id) as HTMLInputElement;
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
+          field,
+          value,
+        );
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    const create = () => byId('new-screen-create') as HTMLButtonElement;
+
+    expect(create().disabled).toBe(true);
+    type('new-screen-id', 'Home');
+    type('new-screen-title', 'Start');
+    expect(byId('new-screen-fault').className).toContain('text-red-500');
+    expect(create().disabled).toBe(true);
+    type('new-screen-id', 'kampagne');
+    expect(create().disabled).toBe(false);
+    type('new-screen-title', ' ');
+    expect(create().disabled).toBe(true);
   });
 
   it('is switched off with the rest of the bar while a scenario is open', () => {
