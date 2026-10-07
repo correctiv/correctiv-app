@@ -123,7 +123,7 @@ export function NotificationCenter({
             data-counts={JSON.stringify(counts)}
           >
             {notices.map((notice) => (
-              <NoticeItem key={notice.id} notice={notice} />
+              <NoticeItem key={notice.id} item={notice} />
             ))}
           </ul>
         )}
@@ -132,7 +132,7 @@ export function NotificationCenter({
   );
 }
 
-function NoticeItem({ notice }: { notice: Notice }) {
+function NoticeItem({ item: notice }: { item: Notice }) {
   const intl = useWorkbenchIntl();
   const { icon: Icon, tone, name } = LEVELS[notice.level];
   return (
