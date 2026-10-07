@@ -3,7 +3,7 @@ import { Slot } from 'expo-router';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { tabSlots } from '@correctiv/app-core/lib/navigation';
+import { MORE_TAB, tabSlots } from '@correctiv/app-core/lib/navigation';
 
 import { MiniPlayer } from '@/components/player/MiniPlayer';
 import { LABELS_FIT_UP_TO } from '@/components/ui/BottomTabBar';
@@ -133,7 +133,7 @@ export default function TabsLayout() {
         labelVisibilityMode={labelVisibilityMode}
       >
         {slots.map((slot) => {
-          const word = words[slot.screen ?? 'mehr']!;
+          const word = words[slot.screen ?? MORE_TAB]!;
           return (
             <NativeTabs.Trigger key={slot.route} name={slot.route}>
               <NativeTabs.Trigger.Label>{word.label}</NativeTabs.Trigger.Label>

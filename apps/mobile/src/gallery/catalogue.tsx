@@ -732,7 +732,12 @@ const LISTED = [
       {
         name: 'ProjectRow',
         block: 'project-directory',
-        specimens: [{ label: 'default', node: <ProjectRow project={PROJECT} onPress={noop} /> }],
+        specimens: [
+          {
+            label: 'default',
+            node: <ProjectRow project={PROJECT} external={false} onPress={noop} />,
+          },
+        ],
       },
       {
         name: 'SampleHitRow',

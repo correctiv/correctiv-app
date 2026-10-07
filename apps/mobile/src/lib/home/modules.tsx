@@ -90,6 +90,8 @@ import { openArticle } from '@/lib/openArticle';
 import { openExternal } from '@/lib/openExternal';
 import { openLink } from '@/lib/openLink';
 import { screenHref } from '@/lib/navigation/screenHref';
+import { useScreenLink, useScreenLinker } from '@/lib/navigation/screenLink';
+import { SCREEN_ROLES, type ScreenLinker } from '@/lib/navigation/screenRoles';
 import {
   useCoreActions,
   useLocale,
@@ -466,16 +468,17 @@ const FaktencheckRailModule: HomeModule = ({ section, screen }) => {
   const intl = useIntl();
   const rule = ruleOf(section.settings, { category: FACT_CHECK_CATEGORY });
   const items = useRuleItems('faktencheck', rule, useFeed('faktencheck').data ?? undefined) ?? [];
+  const discover = useScreenLink('discover');
   if (items.length === 0) return null;
+  // No "view all" on the screen it would lead to, nor where there is no such screen.
+  const viewAll = screen === SCREEN_ROLES.discover ? null : discover;
   return (
     <Place section={section} className="mt-l">
       <SectionHeader
         title={intl.formatMessage(COPY.factChecks)}
         className="mb-s"
-        actionLabel={screen === 'entdecken' ? undefined : intl.formatMessage(COPY.viewAll)}
-        onAction={
-          screen === 'entdecken' ? undefined : () => router.push(screenHref('entdecken') as never)
-        }
+        actionLabel={viewAll === null ? undefined : intl.formatMessage(COPY.viewAll)}
+        onAction={viewAll === null ? undefined : () => router.push(viewAll as never)}
       />
       <FaktencheckRail
         items={items.slice(0, itemCount(section.settings, FACT_CHECK_COUNT))}
@@ -497,15 +500,17 @@ const CalloutTeaserModule: HomeModule = ({ section }) => {
 
 const MediathekModule: HomeModule = ({ section }) => {
   const intl = useIntl();
+  const media = useScreenLink('media');
+  const open = media === null ? undefined : () => router.push(media as never);
   return (
     <Place section={section} className="mt-l">
       <SectionHeader
         title={MEDIATHEK}
         className="mb-s"
-        actionLabel={intl.formatMessage(COPY.viewEverything)}
-        onAction={() => router.push(screenHref('mediathek') as never)}
+        actionLabel={open ? intl.formatMessage(COPY.viewEverything) : undefined}
+        onAction={open}
       />
-      <MediathekReihe onOpenMediathek={() => router.push(screenHref('mediathek') as never)} />
+      <MediathekReihe onOpenMediathek={open} />
     </Place>
   );
 };
@@ -550,6 +555,7 @@ const TopicRailModule: HomeModule = ({ section }) => (
  */
 const ProjectDirectoryModule: HomeModule = ({ section }) => {
   const reachable = useReachable();
+  const linker = useScreenLinker();
   return (
     <Place section={section}>
       {projectGroups.map((group) => {
@@ -562,7 +568,12 @@ const ProjectDirectoryModule: HomeModule = ({ section }) => {
             <Overline label={group.title} />
             <View className="mt-2xs">
               {projects.map((project) => (
-                <ProjectRow key={project.id} project={project} onPress={openProjectCard} />
+                <ProjectRow
+                  key={project.id}
+                  project={project}
+                  external={projectTarget(project, linker).kind === 'external'}
+                  onPress={(opened) => openProjectCard(opened, linker)}
+                />
               ))}
             </View>
           </View>
@@ -710,8 +721,8 @@ function openProject(id: string) {
 }
 
 /** Carries out what `projectTarget` decided — the decision itself lives there. */
-function openProjectCard(project: Project) {
-  const target = projectTarget(project);
+function openProjectCard(project: Project, linker: ScreenLinker) {
+  const target = projectTarget(project, linker);
   switch (target.kind) {
     case 'tab':
       router.push(target.path as never);

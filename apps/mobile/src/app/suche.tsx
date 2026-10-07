@@ -4,6 +4,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { SampleHitRow, sampleTarget } from '@/components/discover/SampleHitRow';
+import { useScreenLinker } from '@/lib/navigation/screenLink';
 import { ArticleRow } from '@/components/feed/ArticleRow';
 import { KeyboardAvoiding } from '@/components/keyboard/KeyboardAvoiding';
 import {
@@ -64,6 +65,7 @@ const COPY = defineMessages({
  */
 export default function SucheScreen() {
   const intl = useIntl();
+  const linker = useScreenLinker();
   const colors = useColors();
   const actions = useCoreActions();
   const reachable = useReachable();
@@ -172,7 +174,7 @@ export default function SucheScreen() {
                 <Overline label={intl.formatMessage(COPY.projectsHeading)} />
                 <View className="mt-2xs">
                   {sampleHits.map((hit) => {
-                    const target = sampleTarget(hit.kind);
+                    const target = sampleTarget(hit.kind, linker);
                     return (
                       <SampleHitRow
                         key={hit.id}

@@ -9,7 +9,7 @@ import { FormField } from '@/components/participate/FormField';
 import { Button, ContentColumn, Hairline, ScreenHeader, Typo } from '@/components/ui';
 import { callouts, type CalloutComponent, type Callout } from '@correctiv/app-core/data/callouts';
 import { useCoreActions, useExtraCount } from '@/lib/store/core';
-import { screenHref } from '@/lib/navigation/screenHref';
+import { screenLink } from '@/lib/navigation/screenLink';
 import { sizes, useColors } from '@/lib/theme';
 
 /**
@@ -275,13 +275,15 @@ function ThankYou({ callout }: { callout: Callout }) {
 
 /**
  * Closes the callout page AND the form in one step — otherwise you land on the
- * detail page and have to go back a second time. `replace` is the fallback for when
+ * detail page and have to go back a second time. Where the active layout has no such
+ * screen it is the start. `replace` is the fallback for when
  * nobody navigated here (a cold deep link straight into the form).
  */
 function backToOverview(): void {
+  const overview = screenLink('participate') ?? '/';
   if (router.canGoBack()) {
-    router.dismissTo(screenHref('mitmachen') as never);
+    router.dismissTo(overview as never);
     return;
   }
-  router.replace(screenHref('mitmachen') as never);
+  router.replace(overview as never);
 }

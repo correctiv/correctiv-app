@@ -3,7 +3,6 @@ import { Pressable, View } from 'react-native';
 
 import { Typo } from '@/components/ui';
 import type { Project } from '@correctiv/app-core/data/projects';
-import { projectTarget } from '@/lib/discover/target';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -15,15 +14,15 @@ import { useColors } from '@/lib/theme';
  */
 export function ProjectRow({
   project,
+  external,
   onPress,
 }: {
   project: Project;
+  /** Whether the row leaves the app, which `projectTarget` decides. */
+  external: boolean;
   onPress: (project: Project) => void;
 }) {
   const colors = useColors();
-  // The same target the screen opens — read here only to say, in advance, whether
-  // it leaves the app.
-  const external = projectTarget(project).kind === 'external';
   return (
     <Pressable
       onPress={() => onPress(project)}
