@@ -12,7 +12,9 @@ import type { ScreensControl } from '../../src/preview/home/CustomScreens';
 import {
   createScreen,
   discardScreens,
+  getLayout,
   newScreenFault,
+  screenIds,
   screenTitle,
   selectLayout,
   setScreen,
@@ -22,9 +24,8 @@ import type { ScenarioControl } from '../../src/preview/home/Scenario';
 import { TooltipProvider } from '../../src/ui/kit/tooltip';
 
 /**
- * The bar above the block list: the form for a screen, and the bell that stays silent. Three files
- * and not one, because every render of the bar costs seconds in jsdom and later tests in a file
- * pay more for the earlier ones, which blocks the worker past vitest's reporting timeout.
+ * The open screen's row and the question before a deletion. Its own file, see
+ * `custom-screens-bar.test.tsx`.
  */
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -76,7 +77,7 @@ afterEach(() => {
 const byId = (id: string) =>
   document.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
 
-describe('the bar', () => {
+describe('the open screen row', () => {
   const bar = (over: Partial<Parameters<typeof EditorBar>[0]> = {}): ReactNode => (
     <EditorBar
       screen="home"
@@ -94,43 +95,38 @@ describe('the bar', () => {
   const byTestId = (id: string) =>
     container.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
 
-  it('offers a way to make a screen, and a silent bell', () => {
-    draw(bar());
-    expect(byTestId('new-screen').getAttribute('aria-label')).toBe('New screen');
-    // Nothing to say, so the bell carries no count.
-    expect(container.querySelector('[data-testid="notifications-badge"]')).toBeNull();
-    expect(byTestId('notifications').getAttribute('data-level')).toBe('none');
-  });
-
-  it('keeps Create off until the id and the title hold, and tells a fault in red', () => {
-    draw(bar());
-    act(() => byTestId('new-screen').click());
-    const type = (id: string, value: string) =>
-      act(() => {
-        const field = byId(id) as HTMLInputElement;
-        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
-          field,
-          value,
-        );
-        field.dispatchEvent(new Event('input', { bubbles: true }));
-      });
-    const create = () => byId('new-screen-create') as HTMLButtonElement;
-
-    expect(create().disabled).toBe(true);
-    type('new-screen-id', 'Home');
-    type('new-screen-title', 'Start');
-    expect(byId('new-screen-fault').className).toContain('text-red-500');
-    expect(create().disabled).toBe(true);
-    type('new-screen-id', 'kampagne');
-    expect(create().disabled).toBe(false);
-    type('new-screen-title', ' ');
-    expect(create().disabled).toBe(true);
-    // Closed again, because a popover left open makes every later render in the file slower.
-    act(() => byTestId('new-screen').click());
-  });
-
-  it('is switched off with the rest of the bar while a scenario is open', () => {
-    draw(bar({ guarded: true }));
-    expect((byTestId('new-screen') as HTMLButtonElement).disabled).toBe(true);
+  it('draws the open screen’s row, and asks before it deletes', () => {
+    let deleted = 0;
+    createScreen('kampagne', 'Kampagne');
+    draw(
+      bar({
+        screen: 'kampagne',
+        screens: { ...control, ids: screenIds() },
+        openScreen: {
+          id: 'kampagne',
+          title: 'Kampagne',
+          words: getLayout().words,
+          onTitle: () => {},
+          onPreview: () => {},
+          onDelete: () => (deleted += 1),
+        },
+      }),
+    );
+    const field = container.querySelector<HTMLInputElement>('input[aria-label="Title"]');
+    // The field writes the language the interface is in, as every text setting does, so
+    // under the English source it shows the English word and there is none yet.
+    expect(field).not.toBeNull();
+    expect(field?.value).toBe('');
+    expect(byTestId('preview-screen').getAttribute('aria-label')).toContain('/s/kampagne');
+    expect(byTestId('delete-screen').getAttribute('aria-label')).toBe('Delete this screen');
+    // Icons with a name, so neither button draws a word of its own.
+    expect(byTestId('preview-screen').textContent).toBe('');
+    expect(byTestId('delete-screen').textContent).toBe('');
+    // The answer deletes, the first press does not.
+    act(() => byTestId('delete-screen').click());
+    expect(deleted).toBe(0);
+    expect(document.body.textContent).toContain('Delete “Kampagne”?');
+    act(() => byId('delete-screen-confirm').click());
+    expect(deleted).toBe(1);
   });
 });
