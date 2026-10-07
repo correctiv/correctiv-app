@@ -11,7 +11,7 @@ import {
 
 import type { HomeLayout, SettingValue } from '@correctiv/app-core/lib/home-layout';
 import type { LocalisedText } from '@correctiv/app-core/lib/home-settings';
-import { screenTitleOf } from '@correctiv/app-core/lib/screen-layout';
+import { SHIPPED_LAYOUT, screenTitleOf } from '@correctiv/app-core/lib/screen-layout';
 import {
   useEffect,
   useMemo,
@@ -111,7 +111,6 @@ import { GUTTER, rowWidth } from './fit';
 import type { ScenarioControl } from './Scenario';
 import { routeOf, screenOfRoute, shippedOf, type ScreenId } from './screens';
 import { inRepository } from './screens';
-import { DEFAULT_LAYOUT } from './names';
 import {
   createScreen,
   deletedSnapshot,
@@ -527,7 +526,7 @@ export function HomeDocument({
   /** The screen whose document that is, and the file the app ships for it. */
   const screen = useSyncExternalStore(subscribeLayout, getScreen, getScreen);
   /** The layout it is a screen of: what Submit names, and what a deletion is measured against. */
-  const layoutId = useSyncExternalStore(subscribeLayout, getLayoutId, () => DEFAULT_LAYOUT);
+  const layoutId = useSyncExternalStore(subscribeLayout, getLayoutId, () => SHIPPED_LAYOUT);
   /**
    * Whether this document came in a shared link, and whether one arrived that would not
    * open (ADR 0076 §3). Read out of the store rather than handed in, because the arrival

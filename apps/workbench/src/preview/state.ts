@@ -8,7 +8,7 @@ import { isFrameChannel, type FrameChannel } from './frame/channel';
 import { isLocale } from './frame/locale';
 import { TOKENS, type Overrides, type Scheme } from './frame/tokens';
 import { isSpan, type Span } from './home/calendar';
-import { DEFAULT_LAYOUT } from './home/names';
+import { SHIPPED_LAYOUT } from '@correctiv/app-core/lib/screen-layout';
 import { isLayout } from './home/screens';
 import { scenarioNamed } from './scenarios';
 
@@ -136,7 +136,7 @@ export const INITIAL: PreviewState = {
   time: null,
   span: 'day',
   timeline: true,
-  layout: DEFAULT_LAYOUT,
+  layout: SHIPPED_LAYOUT,
   overrides: {},
   check: false,
 };
@@ -199,7 +199,7 @@ export function fromAddress(address: ShellAddress): PreviewState {
     // Junk is the day, which is what a missing one is.
     span: isSpan(p.get('zm')) ? (p.get('zm') as Span) : 'day',
     timeline: p.get('tl') !== '0',
-    layout: isLayout(p.get('ly')) ? (p.get('ly') as string) : DEFAULT_LAYOUT,
+    layout: isLayout(p.get('ly')) ? (p.get('ly') as string) : SHIPPED_LAYOUT,
     overrides: parseOverrides(p.get('kl'), p.get('kd')),
     check: p.has('check'),
   };
@@ -254,7 +254,7 @@ export function toAddress(state: PreviewState): { head: string; rest: URLSearchP
   unlessDefault(p, 'tm', state.time, scenario?.opensAt ?? null);
   if (state.span !== 'day') p.set('zm', state.span);
   if (!state.timeline) p.set('tl', '0');
-  if (state.layout !== DEFAULT_LAYOUT) p.set('ly', state.layout);
+  if (state.layout !== SHIPPED_LAYOUT) p.set('ly', state.layout);
   if (state.check) p.set('check', '1');
   const light = writeOverrides(state.overrides, 'light');
   const dark = writeOverrides(state.overrides, 'dark');

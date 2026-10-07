@@ -8,11 +8,16 @@ import {
   parseNavigation,
   type Navigation,
 } from '@correctiv/app-core/lib/navigation';
-import { isLayoutId, isScreenId, type ScreenId } from '@correctiv/app-core/lib/screen-layout';
+import { EXAMPLE_LAYOUT, orderLayouts } from '@correctiv/app-core/data/layouts/registry';
+import {
+  isLayoutId,
+  isScreenId,
+  SHIPPED_LAYOUT,
+  type ScreenId,
+} from '@correctiv/app-core/lib/screen-layout';
 
 import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 import { activeLayout } from './active';
-import { DEMO_LAYOUT, SHIP_LAYOUT } from './names';
 
 /**
  * What the screen editor knows about the layouts the repository carries: which there are,
@@ -30,13 +35,13 @@ export type { ScreenId };
  * folder is named by its id, which is the one name the core has checked (ADR 0078 §1).
  */
 export const LAYOUT_NAMES: Readonly<Record<string, WorkbenchMessage>> = {
-  [SHIP_LAYOUT]: wbMessage({
+  [SHIPPED_LAYOUT]: wbMessage({
     id: 'home.layout.ship',
     defaultMessage: 'Shipped',
     description:
       'The name of the layout the app ships with, in the layout picker of the preview toolbar. It is the one readers get, and it is empty until it has been agreed what goes onto the app.',
   }),
-  [DEMO_LAYOUT]: wbMessage({
+  [EXAMPLE_LAYOUT]: wbMessage({
     id: 'home.layout.demo',
     defaultMessage: 'Demo',
     description:
@@ -61,32 +66,61 @@ const NAVIGATION_FILES = import.meta.glob<unknown>(
 );
 
 /** Layout id to screen id to document, as written. */
-const REPOSITORY: ReadonlyMap<string, ReadonlyMap<string, unknown>> = (() => {
+export type Repository = ReadonlyMap<string, ReadonlyMap<string, unknown>>;
+
+/**
+ * The repository as the files say it, from the two globs' shapes (path to document). Pure,
+ * so that a test can hand it the files of a layout the repository does not have.
+ */
+export function readRepository(
+  navigationFiles: Readonly<Record<string, unknown>>,
+  screenFiles: Readonly<Record<string, unknown>>,
+): Repository {
   const layouts = new Map<string, Map<string, unknown>>();
-  for (const path of Object.keys(NAVIGATION_FILES)) {
+  for (const path of Object.keys(navigationFiles)) {
     const layout = /layouts\/([^/]+)\/navigation\.json$/.exec(path)?.[1];
     if (layout !== undefined && isLayoutId(layout)) layouts.set(layout, new Map());
   }
-  for (const [path, document] of Object.entries(SCREEN_FILES)) {
+  for (const [path, document] of Object.entries(screenFiles)) {
     const found = /layouts\/([^/]+)\/screens\/([^/]+)\.json$/.exec(path);
     const screens = found?.[1] === undefined ? undefined : layouts.get(found[1]);
     if (screens !== undefined && found?.[2] !== undefined && isScreenId(found[2]))
       screens.set(found[2], document);
   }
   return layouts;
-})();
-
-/**
- * The layouts there are, `ship` first, then `demo`, then the rest by name: the picker's
- * order, so that the one readers get is the one at the top. A folder somebody adds is listed
- * without a line here.
- */
-export function layoutIds(): string[] {
-  return [...REPOSITORY.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 
-function rank(id: string): number {
-  return id === SHIP_LAYOUT ? 0 : id === DEMO_LAYOUT ? 1 : 2;
+/** The layout ids of a repository in the picker's order (`orderLayouts`). */
+export function layoutIdsOf(repository: Repository): string[] {
+  return orderLayouts(repository.keys());
+}
+
+/** The navigation a repository's layout carries, as the core reads it; an empty one for none. */
+export function navigationOf(
+  navigationFiles: Readonly<Record<string, unknown>>,
+  layout: string,
+): Navigation {
+  const document = Object.entries(navigationFiles).find(([path]) =>
+    path.endsWith(`/layouts/${layout}/navigation.json`),
+  )?.[1];
+  return (
+    (document === undefined ? null : parseNavigation(document).navigation) ?? {
+      version: NAVIGATION_VERSION,
+      maxTabs: 5,
+      tabs: [],
+    }
+  );
+}
+
+const REPOSITORY: Repository = readRepository(NAVIGATION_FILES, SCREEN_FILES);
+
+/**
+ * The layouts there are, in the registry's order (`ship`, `demo`, whatever the registry
+ * lists after them) and then any other folder by name: the picker's order, so that the one
+ * readers get is the one at the top. A folder somebody adds is listed without a line here.
+ */
+export function layoutIds(): string[] {
+  return layoutIdsOf(REPOSITORY);
 }
 
 /** Whether a folder of this name exists, which decides if a link or an address may name it. */
@@ -114,14 +148,7 @@ const shippedNavigations = new Map<string, Navigation>();
 export function shippedNavigationOf(layout: string = activeLayout()): Navigation {
   let held = shippedNavigations.get(layout);
   if (!held) {
-    const document = Object.entries(NAVIGATION_FILES).find(([path]) =>
-      path.endsWith(`/layouts/${layout}/navigation.json`),
-    )?.[1];
-    held = (document === undefined ? null : parseNavigation(document).navigation) ?? {
-      version: NAVIGATION_VERSION,
-      maxTabs: 5,
-      tabs: [],
-    };
+    held = navigationOf(NAVIGATION_FILES, layout);
     shippedNavigations.set(layout, held);
   }
   return held;

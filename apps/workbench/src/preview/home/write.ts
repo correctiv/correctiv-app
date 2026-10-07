@@ -5,6 +5,7 @@ import {
 } from '@correctiv/app-core/lib/home-layout';
 
 import { isScreenId, type ScreenId } from '@correctiv/app-core/lib/screen-layout';
+import { EXAMPLE_LAYOUT } from '@correctiv/app-core/data/layouts/registry';
 
 import docsModule from 'virtual:docs';
 
@@ -12,7 +13,6 @@ import { wbMessage, type WorkbenchMessage } from '../../i18n/messages';
 import { issueAddress, issueFor, layoutPayload, type Via } from '../submission';
 import { differs, formatLayoutDocument, HOME_LAYOUT_ENDPOINT } from './document';
 import {
-  DEMO_LAYOUT,
   HOME_LAYOUT_KEY,
   layoutDraftKey,
   LAYOUT_SET_KEY,
@@ -189,15 +189,15 @@ export function migrateLegacy(): void {
     }
     for (const key of legacy) {
       const screen = key === HOME_LAYOUT_KEY ? 'home' : key.slice('workbench:layout:'.length);
-      const target = layoutDraftKey(DEMO_LAYOUT, screen);
+      const target = layoutDraftKey(EXAMPLE_LAYOUT, screen);
       if (window.localStorage.getItem(target) === null)
         window.localStorage.setItem(target, window.localStorage.getItem(key) ?? '');
       window.localStorage.removeItem(key);
     }
     const navigation = window.localStorage.getItem(NAVIGATION_KEY);
     if (navigation !== null) {
-      if (window.localStorage.getItem(navigationDraftKey(DEMO_LAYOUT)) === null)
-        window.localStorage.setItem(navigationDraftKey(DEMO_LAYOUT), navigation);
+      if (window.localStorage.getItem(navigationDraftKey(EXAMPLE_LAYOUT)) === null)
+        window.localStorage.setItem(navigationDraftKey(EXAMPLE_LAYOUT), navigation);
       window.localStorage.removeItem(NAVIGATION_KEY);
     }
   } catch {

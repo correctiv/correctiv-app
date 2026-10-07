@@ -4,7 +4,7 @@ import { defineMessages } from 'react-intl';
 import { useWorkbenchIntl } from '../../i18n/Localisation';
 import { languageName } from './document';
 import type { Gap } from './gaps';
-import { SHIP_LAYOUT } from './names';
+import { SHIPPED_LAYOUT } from '@correctiv/app-core/lib/screen-layout';
 import type { SizeReading } from './size';
 
 /**
@@ -96,7 +96,7 @@ export function GapsNote({ gaps }: { gaps: readonly Gap[] }) {
  */
 export function ShippedNote({ layout }: { layout: string }) {
   const intl = useWorkbenchIntl();
-  if (layout !== SHIP_LAYOUT) return null;
+  if (layout !== SHIPPED_LAYOUT) return null;
   return (
     <output className={NOTE} data-testid="shipped-note">
       <TriangleAlert aria-hidden="true" className="mt-4xs size-[0.875rem] shrink-0" />

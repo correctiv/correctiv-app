@@ -26,7 +26,7 @@ import {
   type ModuleSettings,
   type SettingValue,
 } from '@correctiv/app-core/lib/home-layout';
-import { DEMO_SCREENS } from '@correctiv/app-core/data/layouts/demo/bundle';
+import { layoutBundle, EXAMPLE_LAYOUT } from '@correctiv/app-core/data/layouts/registry';
 import type { IntlShape } from 'react-intl';
 
 import {
@@ -95,7 +95,9 @@ import { say, wbMessage, type WorkbenchMessage } from '../../i18n/messages';
  * "reset" and "unchanged" are both measured against the file a reviewer will see in the
  * diff, and not against a copy of it kept here.
  */
-export const SHIPPED: HomeLayout = parseHomeLayout(DEMO_SCREENS.home).layout!;
+export const SHIPPED: HomeLayout = parseHomeLayout(
+  layoutBundle(EXAMPLE_LAYOUT)!.screens.home,
+).layout!;
 
 /**
  * What each module is, in words an editor can act on.

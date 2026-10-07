@@ -13,7 +13,8 @@
  * loads this file with `tsx` in Node, and so do the tests.
  */
 
-import { DEMO_LAYOUT, FEATURES_FILE, HOME_LAYOUT_FILE, LAYOUTS_DIR } from './home/names';
+import { EXAMPLE_LAYOUT } from '@correctiv/app-core/data/layouts/registry';
+import { FEATURES_FILE, HOME_LAYOUT_FILE, LAYOUTS_DIR } from './home/names';
 import { GERMAN_CATALOGUE_DIR } from './strings/names';
 
 /**
@@ -110,13 +111,13 @@ export type Via = typeof VIA_LINK;
 /**
  * The payload of a `layout` submission: the document, named by the layout and the screen
  * it is for (ADR 0078 §6). `payload` is the document already printed on one line, and the
- * layout is the demo one until the workbench can choose.
+ * layout defaults to the example one, which an older caller meant.
  */
 export function layoutPayload(
   target: string,
   payload: string,
   via?: Via,
-  layout: string = DEMO_LAYOUT,
+  layout: string = EXAMPLE_LAYOUT,
 ): string {
   const origin = via === undefined ? '' : `,"via":${JSON.stringify(via)}`;
   return `{"layout":${JSON.stringify(layout)},"target":${JSON.stringify(target)},"document":${payload}${origin}}`;
