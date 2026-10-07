@@ -17,7 +17,12 @@ import {
   navigationDraftKey,
   NAVIGATION_KEY,
 } from '../../src/preview/home/names';
-import { blankScreen, routeOf, screenOfRoute } from '../../src/preview/home/screens';
+import {
+  blankScreen,
+  routeAfterDeletion,
+  routeOf,
+  screenOfRoute,
+} from '../../src/preview/home/screens';
 import {
   changedScreens,
   createScreen,
@@ -192,6 +197,11 @@ describe('deleting a screen', () => {
     expect(screenIds()).toEqual([]);
     expect(screenExists()).toBe(false);
     expect(frameSet().screens).toEqual({});
+  });
+
+  it('sends the frame to the next screen, and to the start once none is left', () => {
+    expect(routeAfterDeletion('entdecken', true)).toBe('/s/entdecken');
+    expect(routeAfterDeletion(getScreen(), false)).toBe('/');
   });
 
   it('drops the tab of the deleted screen, so the layout still checks', () => {

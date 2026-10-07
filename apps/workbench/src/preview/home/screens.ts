@@ -217,6 +217,15 @@ export function routeOf(screen: ScreenId): string {
 }
 
 /**
+ * Where the frame goes when a screen is deleted: to the screen the editor moved on to, or to
+ * the app's start once the layout has none, because the address it was on would draw the
+ * app's own 404.
+ */
+export function routeAfterDeletion(next: ScreenId, left: boolean): string {
+  return left ? routeOf(next) : '/';
+}
+
+/**
  * The screen a frame route shows, or `null` for a route that is none (the article
  * reader, settings, the start…). The picker's way back: it takes the frame to a screen, this
  * takes the editor to the screen the frame is on, so a tap inside the app is followed.

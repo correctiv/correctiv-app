@@ -109,7 +109,7 @@ import { CONTROLS_COPY, EditorBar, PointChip } from './Controls';
 import { TextSetting } from './TextSetting';
 import { GUTTER, rowWidth } from './fit';
 import type { ScenarioControl } from './Scenario';
-import { routeOf, screenOfRoute, shippedOf, type ScreenId } from './screens';
+import { routeAfterDeletion, routeOf, screenOfRoute, shippedOf, type ScreenId } from './screens';
 import { inRepository } from './screens';
 import {
   createScreen,
@@ -1174,7 +1174,7 @@ export function HomeDocument({
                   deleteScreen(screen);
                   const next = getScreen();
                   const left = screenExists(next);
-                  if (left) onChange({ route: routeOf(next) });
+                  onChange({ route: routeAfterDeletion(next, left) });
                   setDeletionNote(
                     left
                       ? intl.formatMessage(CUSTOM_SCREEN_COPY.removed, {
