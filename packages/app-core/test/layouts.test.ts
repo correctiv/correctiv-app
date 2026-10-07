@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { EXAMPLE_LAYOUT, LAYOUTS, layoutBundle, orderLayouts } from '../src/data/layouts/registry';
 import { SHIP_SCREENS } from '../src/data/layouts/ship/bundle';
 import {
   isLayoutId,
@@ -13,14 +14,16 @@ import {
   SHIPPED_LAYOUT,
 } from '../src/lib/screen-layout';
 
-const LAYOUTS = new URL('../src/data/layouts/', import.meta.url).pathname;
+const LAYOUTS_DIR = new URL('../src/data/layouts/', import.meta.url).pathname;
 const JOIN = new URL('../scripts/join-screen-layouts.ts', import.meta.url).pathname;
 const CHECK = new URL('../scripts/check-screen-layouts.ts', import.meta.url).pathname;
 const REPO = new URL('../../../', import.meta.url).pathname;
 
-const layouts = readdirSync(LAYOUTS).filter((name) => statSync(join(LAYOUTS, name)).isDirectory());
+const layouts = readdirSync(LAYOUTS_DIR).filter((name) =>
+  statSync(join(LAYOUTS_DIR, name)).isDirectory(),
+);
 const screensOf = (layout: string) =>
-  readdirSync(join(LAYOUTS, layout, 'screens'))
+  readdirSync(join(LAYOUTS_DIR, layout, 'screens'))
     .filter((name) => name.endsWith('.json'))
     .map((name) => name.slice(0, -'.json'.length))
     .sort();
@@ -48,8 +51,8 @@ describe('the layout folders (ADR 0078 §1)', () => {
     expect(layouts).toEqual(['demo', 'ship']);
     for (const layout of layouts) {
       expect(isLayoutId(layout)).toBe(true);
-      expect(existsSync(join(LAYOUTS, layout, 'navigation.json'))).toBe(true);
-      expect(existsSync(join(LAYOUTS, layout, 'screens'))).toBe(true);
+      expect(existsSync(join(LAYOUTS_DIR, layout, 'navigation.json'))).toBe(true);
+      expect(existsSync(join(LAYOUTS_DIR, layout, 'screens'))).toBe(true);
     }
   });
 
@@ -72,11 +75,62 @@ describe('what the app bundles (ADR 0078 §3)', () => {
         if (name === 'node_modules' || name === 'dist' || name === '.expo') continue;
         const path = join(directory, name);
         if (statSync(path).isDirectory()) {
-          if (path === join(LAYOUTS, 'demo')) continue;
+          if (path === join(LAYOUTS_DIR, 'demo')) continue;
           walk(path);
         } else if (/\.(tsx?|jsx?|json)$/.test(name) && !/\.generated\./.test(name)) {
           const text = readFileSync(path, 'utf8');
           if (/(?:from|import|require)\s*\(?\s*['"][^'"]*data\/layouts\/(?!ship\b)/.test(text))
+            offenders.push(relative(REPO, path));
+        }
+      }
+    };
+    walk(join(REPO, 'packages/app-core/src'));
+    walk(join(REPO, 'apps/mobile/src'));
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe('the layout registry', () => {
+  it('lists exactly the folders, ship first, and holds each folder’s files', () => {
+    expect(LAYOUTS.map((entry) => entry.id).sort()).toEqual(layouts);
+    expect(LAYOUTS[0]!.id).toBe(SHIPPED_LAYOUT);
+    for (const { id, bundle } of LAYOUTS) {
+      expect(isLayoutId(id)).toBe(true);
+      expect(Object.keys(bundle.screens).sort()).toEqual(screensOf(id));
+      expect(bundle.navigation).toEqual(
+        JSON.parse(readFileSync(join(LAYOUTS_DIR, id, 'navigation.json'), 'utf8')),
+      );
+    }
+  });
+
+  it('names the example layout among them, and finds a bundle by id', () => {
+    expect(layoutBundle(EXAMPLE_LAYOUT)).toBe(LAYOUTS.find((e) => e.id === EXAMPLE_LAYOUT)!.bundle);
+    expect(layoutBundle('nowhere')).toBeUndefined();
+  });
+
+  it('orders ship, then demo, then every other id by name, a third layout included', () => {
+    expect(orderLayouts(['zeta', 'demo', 'alpha', 'ship'])).toEqual([
+      'ship',
+      'demo',
+      'alpha',
+      'zeta',
+    ]);
+    expect(orderLayouts(['newsroom', 'ship'])).toEqual(['ship', 'newsroom']);
+  });
+
+  it('is imported by no file of the app or the core, which would bundle every layout', () => {
+    const offenders: string[] = [];
+    const walk = (directory: string) => {
+      for (const name of readdirSync(directory)) {
+        if (name === 'node_modules' || name === 'dist' || name === '.expo') continue;
+        const path = join(directory, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (/\.(tsx?|jsx?)$/.test(name) && path !== join(LAYOUTS_DIR, 'registry.ts')) {
+          if (
+            /(?:from|import|require)\s*\(?\s*['"][^'"]*layouts\/registry/.test(
+              readFileSync(path, 'utf8'),
+            )
+          )
             offenders.push(relative(REPO, path));
         }
       }

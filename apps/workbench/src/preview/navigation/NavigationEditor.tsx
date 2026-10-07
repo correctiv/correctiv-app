@@ -18,7 +18,7 @@ import {
   screenTitle,
   subscribeLayout,
 } from '../home/store';
-import { DEFAULT_LAYOUT } from '../home/names';
+import { SHIPPED_LAYOUT } from '@correctiv/app-core/lib/screen-layout';
 import { shippedNavigationOf } from '../home/screens';
 import { SHARE_ADDRESS_LIMIT, shareLink } from '../share';
 import { SHARE_COPY } from '../shareCopy';
@@ -176,7 +176,7 @@ export function NavigationEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation]);
 
-  const layoutId = useSyncExternalStore(subscribeLayout, getLayoutId, () => DEFAULT_LAYOUT);
+  const layoutId = useSyncExternalStore(subscribeLayout, getLayoutId, () => SHIPPED_LAYOUT);
   const joined = useSyncExternalStore(subscribeLayout, screensSnapshot, () => '');
   /** Every screen of the open layout, not a fixed five (ADR 0080 §4). */
   const screens = useMemo(() => (joined === '' ? [] : joined.split('\n')), [joined]);

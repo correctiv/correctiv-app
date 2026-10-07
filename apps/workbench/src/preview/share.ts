@@ -24,7 +24,7 @@
 import { parseAddress, writeAddress } from '../shell/address';
 import type { SectionId } from '../shell/views';
 import { VIEWS } from '../shell/views';
-import { DEMO_LAYOUT } from './home/names';
+import { EXAMPLE_LAYOUT } from '@correctiv/app-core/data/layouts/registry';
 import { fromAddress, toAddress } from './state';
 import { layoutPayload } from './submission';
 
@@ -173,7 +173,7 @@ export async function unpack(packed: string): Promise<Arrival> {
       draft: {
         screen: envelope.target,
         document: JSON.stringify(envelope.document),
-        layout: typeof envelope.layout === 'string' ? envelope.layout : DEMO_LAYOUT,
+        layout: typeof envelope.layout === 'string' ? envelope.layout : EXAMPLE_LAYOUT,
       },
     };
   } catch {

@@ -1,4 +1,4 @@
-import { DEFAULT_LAYOUT } from './names';
+import { SHIPPED_LAYOUT } from '@correctiv/app-core/lib/screen-layout';
 
 /**
  * The layout the workbench is editing, which every document it holds belongs to (ADR 0080).
@@ -8,7 +8,7 @@ import { DEFAULT_LAYOUT } from './names';
  * documents: a variable in either would be a cycle. `home/store.ts` is the only writer, and
  * `selectLayout` is where the other state follows it.
  */
-let active: string = DEFAULT_LAYOUT;
+let active: string = SHIPPED_LAYOUT;
 
 export function activeLayout(): string {
   return active;

@@ -6,7 +6,6 @@ import type { ViteDevServer } from 'vite';
 
 import { ROOT } from './collect.ts';
 import {
-  DEMO_LAYOUT,
   HOME_LAYOUT_ENDPOINT,
   layoutDir,
   layoutFile,
@@ -171,6 +170,7 @@ export async function read(req: AsyncIterable<unknown>, limit = LIMIT): Promise<
 type Parse = typeof import('@correctiv/app-core/lib/home-layout');
 type Document = typeof import('../src/preview/home/document.ts');
 type Screens = typeof import('@correctiv/app-core/lib/screen-layout');
+type Registry = typeof import('@correctiv/app-core/data/layouts/registry');
 type Navigation = typeof import('../src/preview/navigation/document.ts');
 
 /**
@@ -185,13 +185,13 @@ function screenOf(url: string, isScreen: (id: string) => boolean): string | null
 }
 
 /**
- * The `layout` of a request's query: the demo layout when it names none, which is what the
+ * The `layout` of a request's query: the example layout when it names none, which is what the
  * save wrote before layouts could be chosen, and null for one that is not a folder there is
  * (ADR 0078 §1, §6). A save never makes a layout, and the id is held to the core's grammar
  * before it is ever joined to a path.
  */
-function layoutOf(url: string, isLayout: (id: string) => boolean): string | null {
-  const named = new URL(url, 'http://localhost').searchParams.get('layout') ?? DEMO_LAYOUT;
+function layoutOf(url: string, isLayout: (id: string) => boolean, fallback: string): string | null {
+  const named = new URL(url, 'http://localhost').searchParams.get('layout') ?? fallback;
   return isLayout(named) && existsSync(join(ROOT, layoutDir(named))) ? named : null;
 }
 
@@ -226,7 +226,10 @@ export function homeLayoutEndpoint(server: ViteDevServer) {
     const { isLayoutId, isScreenId } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/screen-layout',
     )) as Screens;
-    const layoutId = layoutOf(req.url ?? '', isLayoutId);
+    const { EXAMPLE_LAYOUT } = (await server.ssrLoadModule(
+      '@correctiv/app-core/data/layouts/registry',
+    )) as Registry;
+    const layoutId = layoutOf(req.url ?? '', isLayoutId, EXAMPLE_LAYOUT);
     if (layoutId === null) {
       return answer(res, 400, {
         code: 'unknown-layout',
@@ -293,7 +296,10 @@ export function navigationEndpoint(server: ViteDevServer) {
     const { isLayoutId } = (await server.ssrLoadModule(
       '@correctiv/app-core/lib/screen-layout',
     )) as Screens;
-    const layoutId = layoutOf(req.url ?? '', isLayoutId);
+    const { EXAMPLE_LAYOUT } = (await server.ssrLoadModule(
+      '@correctiv/app-core/data/layouts/registry',
+    )) as Registry;
+    const layoutId = layoutOf(req.url ?? '', isLayoutId, EXAMPLE_LAYOUT);
     if (layoutId === null) {
       return answer(res, 400, {
         code: 'unknown-layout',

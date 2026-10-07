@@ -126,35 +126,25 @@ export const FEATURES_FILE = 'packages/app-core/src/features/features.json';
 /** The directory the layouts live in, one folder each: `data/layouts/<layout>/`. */
 export const LAYOUTS_DIR = 'packages/app-core/src/data/layouts';
 
-/** The layout the app bundles and the store ships (ADR 0078 §2). */
-export const SHIP_LAYOUT = 'ship';
-
-/** The layout with something in it (ADR 0078 §2), and the one a document of no layout meant. */
-export const DEMO_LAYOUT = 'demo';
-
 /**
- * The layout the workbench opens on: what the app ships, so that what is edited and what
- * is submitted are by default what readers get (ADR 0080 §1).
+ * The directory one layout's documents live in, with `screens/` and the navigation under it.
+ *
+ * The layout is always named: which one is the default, the shipped one or the example, is
+ * the core's registry to say (`data/layouts/registry.ts`), and this leaf imports nothing.
  */
-export const DEFAULT_LAYOUT = SHIP_LAYOUT;
-
-/** The directory one layout's documents live in, with `screens/` and the navigation under it. */
-export function layoutDir(layout: string = DEMO_LAYOUT): string {
+export function layoutDir(layout: string): string {
   return `${LAYOUTS_DIR}/${layout}`;
 }
 
 /** Where a screen's document lives in the repository, spelled once for every writer. */
-export function layoutFile(screen: string, layout: string = DEMO_LAYOUT): string {
+export function layoutFile(screen: string, layout: string): string {
   return `${layoutDir(layout)}/screens/${screen}.json`;
 }
 
 /** Where a layout's navigation document lives in the repository. */
-export function navigationFile(layout: string = DEMO_LAYOUT): string {
+export function navigationFile(layout: string): string {
   return `${layoutDir(layout)}/navigation.json`;
 }
-
-/** The demo layout's navigation, which is the one the editor writes. */
-export const NAVIGATION_FILE = navigationFile();
 
 /** What an issue's or a link's envelope names as `target` for the navigation (ADR 0061 §2). */
 export const NAVIGATION_TARGET = 'navigation';

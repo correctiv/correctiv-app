@@ -20,11 +20,11 @@ import { applyIssue, KINDS, mayWrite } from '../../scripts/submission-kinds.ts';
 import { formatLayoutDocument, moved, MODULE_LABELS } from '../../src/preview/home/document';
 import {
   layoutDraftKey,
-  layoutFile,
+  layoutFile as layoutFileIn,
   layoutKey,
   LAYOUT_SET_KEY,
-  layoutDir,
-  NAVIGATION_FILE,
+  layoutDir as layoutDirIn,
+  navigationFile,
   NAVIGATION_KEY,
 } from '../../src/preview/home/names';
 import {
@@ -61,6 +61,9 @@ const APP = (path: string) => read(`apps/mobile/src/${path}`);
 const shippedOf = (screen: string) => shippedIn(screen, 'demo');
 const SHIPPED_NAVIGATION = shippedNavigationOf('demo');
 const DEMO_IDS = Object.keys(DEMO_SCREENS).sort();
+const layoutFile = (screen: string) => layoutFileIn(screen, 'demo');
+const layoutDir = () => layoutDirIn('demo');
+const NAVIGATION_FILE = navigationFile('demo');
 
 describe('the screen picker and its palette', () => {
   it('lists the layouts the repository carries, the shipped one first and the demo second', () => {

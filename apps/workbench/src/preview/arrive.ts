@@ -13,7 +13,8 @@ import { holdIncoming, noteDamaged, selectLayout, setScreen } from './home/store
 import { isLayout, isScreen, routeOf } from './home/screens';
 import { holdIncomingNavigation } from './navigation/store';
 import { packedIn, unpack } from './share';
-import { DEMO_LAYOUT, NAVIGATION_TARGET } from './home/names';
+import { EXAMPLE_LAYOUT } from '@correctiv/app-core/data/layouts/registry';
+import { NAVIGATION_TARGET } from './home/names';
 import { set } from './store';
 
 /**
@@ -49,7 +50,7 @@ export async function arriveFrom(hash: string): Promise<boolean> {
    * that cannot be opened.
    */
   if (draft !== null) {
-    const layout = draft.layout ?? DEMO_LAYOUT;
+    const layout = draft.layout ?? EXAMPLE_LAYOUT;
     if (!isLayout(layout)) {
       noteDamaged();
       return false;
