@@ -122,7 +122,9 @@ export function frameScheme(win: Window | null): Scheme | null {
  * is explicit, and keeping them apart is the whole of the appearance readout.
  */
 export function activeScheme(win: Window | null): Scheme {
-  return win?.document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  // `documentElement` is null for a moment while the frame navigates, which a read from a
+  // timer or a store change can land in.
+  return win?.document.documentElement?.classList.contains('dark') ? 'dark' : 'light';
 }
 
 /** The app's appearance setting, as the store currently holds it. */
