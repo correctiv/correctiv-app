@@ -24,7 +24,7 @@ const AT = {
   hash: '#/home?d=ipad-mini&tm=18:30',
 };
 const EDITED = withHidden(SHIPPED, null, 'hero', true);
-const DRAFT = { screen: 'home', document: formatLayoutDocument(EDITED) };
+const DRAFT = { screen: 'home', document: formatLayoutDocument(EDITED), layout: 'demo' };
 
 /** The fragment of an address, which is where the draft and the frame both live. */
 const hashOf = (link: string | null): string => (link ?? '').slice((link ?? '').indexOf('#'));
@@ -100,6 +100,11 @@ describe('a draft through a link and back (ADR 0076 §2)', () => {
     expect(url.hash.startsWith('#/home?')).toBe(true);
     expect(url.hash).toContain('d=ipad-mini');
     expect(url.hash).toContain('tm=18%3A30');
+  });
+
+  it('keeps the layout the draft is of, `ship` included, which is not the default of a link', async () => {
+    const { link } = await shareLink('home', { ...DRAFT, layout: 'ship' }, AT);
+    expect((await draftIn(link))?.layout).toBe('ship');
   });
 
   /*

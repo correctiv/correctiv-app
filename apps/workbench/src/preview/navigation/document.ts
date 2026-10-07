@@ -100,9 +100,16 @@ export function withMaxTabs(navigation: Navigation, maxTabs: number): Navigation
  * it does not carry can: a screen that was deleted leaves no tab, as in the app (ADR 0079 §1).
  * Which of them a release can actually open is the feature gate's question (ADR 0072), and
  * the editor cannot ask it.
+ *
+ * A screen the navigation does not list can still be opened, and the app then gives the bar a
+ * "Mehr" for it, even beside a single entry; the frame draws that bar, so this does too.
  */
 export function barOf(navigation: Navigation, screens: readonly string[]): TabBar {
-  return arrangeTabBar(navigation, (id) => screens.includes(id));
+  const reachable = (id: string) => screens.includes(id);
+  const bar = arrangeTabBar(navigation, reachable);
+  if (bar.kind === 'empty') return bar;
+  const unlisted = screens.some((id) => !bar.entries.includes(id));
+  return unlisted ? arrangeTabBar(navigation, reachable, true) : bar;
 }
 
 /**

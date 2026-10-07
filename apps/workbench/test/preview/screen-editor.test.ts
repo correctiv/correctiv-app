@@ -218,11 +218,26 @@ describe('the navigation editor', () => {
     );
     expect(none.tabs).toEqual([]);
     expect(barOf(none, DEMO_IDS).kind).toBe('empty');
-    expect(barOf(withTab(none, 'profil', true, DEMO_IDS), DEMO_IDS)).toMatchObject({
+    expect(barOf(withTab(none, 'profil', true, DEMO_IDS), ['profil'])).toMatchObject({
       kind: 'single',
       start: 'profil',
     });
     expect(checkNavigation(none).navigation).not.toBeNull();
+  });
+
+  it('draws the "Mehr" the app gives a bar while a screen is not listed', () => {
+    const one = withTab(
+      SHIPPED_NAVIGATION.tabs.reduce(
+        (nav, id) => withTab(nav, id, false, DEMO_IDS),
+        SHIPPED_NAVIGATION,
+      ),
+      'profil',
+      true,
+      DEMO_IDS,
+    );
+    expect(barOf(one, DEMO_IDS)).toMatchObject({ kind: 'tabs', tabs: ['profil', 'mehr'] });
+    expect(barOf(one, ['profil', 'kampagne'])).toMatchObject({ tabs: ['profil', 'mehr'] });
+    expect(barOf(one, ['profil']).kind).toBe('single');
   });
 
   it('moves, adds and removes entries and clamps the threshold', () => {

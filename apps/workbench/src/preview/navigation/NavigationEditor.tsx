@@ -196,7 +196,11 @@ export function NavigationEditor() {
   const share = async () => {
     const { link, length } = await shareLink(
       'navigation',
-      { screen: NAVIGATION_TARGET, document: formatNavigationDocument(getNavigation()) },
+      {
+        screen: NAVIGATION_TARGET,
+        document: formatNavigationDocument(getNavigation()),
+        layout: layoutId,
+      },
       { base: `${window.location.origin}${window.location.pathname}`, hash: window.location.hash },
     );
     if (link === null) setLinked({ kind: 'too-long', length });

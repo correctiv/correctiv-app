@@ -192,6 +192,9 @@ export async function unpack(packed: string): Promise<Arrival> {
  * anything in the address this preview does not know, so a link built out of a link that
  * already carried a draft carries one draft, not two.
  *
+ * **The draft names its layout, and the type insists.** A link without one means `demo`, so a
+ * caller that left it out sent every link made in `ship` to the wrong layout, unnoticed.
+ *
  * `link` is null where the address came out longer than `SHARE_ADDRESS_LIMIT`, and
  * `length` is how long it came out either way — the one sentence the caller says for a
  * refused draft names both numbers, because a person who is told only the limit cannot
@@ -200,7 +203,7 @@ export async function unpack(packed: string): Promise<Arrival> {
  */
 export async function shareLink(
   tool: SectionId,
-  draft: Draft,
+  draft: Draft & { readonly layout: string },
   at: { base: string; hash: string },
 ): Promise<{ link: string | null; length: number }> {
   const address = parseAddress(at.hash, VIEWS.preview);
