@@ -82,7 +82,7 @@ import {
 } from '@/lib/home/settings';
 import { useScreenLayout } from '@/lib/home/layout';
 import { useLivePin, useRuleItems } from '@/lib/home/useRule';
-import { iconOf } from '@/lib/navigation/tabWords';
+import { iconOf } from '@/lib/iconOf';
 import { projectTarget } from '@/lib/discover/target';
 import { useFeed, useInvestigations } from '@/lib/feeds/useFeed';
 import { TIER_LABELS } from '@/lib/membership/tierLabel';
