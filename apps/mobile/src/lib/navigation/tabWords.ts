@@ -2,14 +2,11 @@ import { useIntl } from 'react-intl';
 
 import { resolveText } from '@correctiv/app-core/lib/home-settings';
 import { MORE_TAB, type TabBar } from '@correctiv/app-core/lib/navigation';
-import {
-  screenTabLabelOf,
-  SCREEN_ICON_FALLBACK,
-  type ScreenWords,
-} from '@correctiv/app-core/lib/screen-layout';
+import { screenTabLabelOf, type ScreenWords } from '@correctiv/app-core/lib/screen-layout';
 import type { Locale } from '@correctiv/app-core/stores/settings';
 
-import { SCREEN_ICONS, type ScreenIcon } from '@/lib/screenIcons';
+import { iconOf } from '@/lib/iconOf';
+import type { ScreenIcon } from '@/lib/screenIcons';
 import { useLocale } from '@/lib/store/core';
 import { MORE_LABEL } from '@/lib/tabTargets';
 
@@ -39,21 +36,6 @@ export interface TabWord {
  * a document whose only purpose is to be unchangeable.
  */
 const MORE_ICON = 'more';
-
-/**
- * The icon a key names, or the fallback.
- *
- * **The app's table and not the core's `screenIconOf`**, which answers the same
- * question with plain strings: the names a phone draws have to be the platforms' own
- * types or a name that does not exist on one of them is a blank tab rather than a
- * compile error (`lib/screenIcons.ts`). `Object.hasOwn` for the reason the core gives
- * at the same lookup — this takes words somebody may have built by hand, and
- * `constructor` is not an icon.
- */
-export function iconOf(key: string | undefined): ScreenIcon {
-  if (key !== undefined && Object.hasOwn(SCREEN_ICONS, key)) return SCREEN_ICONS[key]!;
-  return SCREEN_ICONS[SCREEN_ICON_FALLBACK]!;
-}
 
 /**
  * One route's word and icon, out of the words its screen's document carries.
