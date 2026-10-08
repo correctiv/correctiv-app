@@ -5,9 +5,8 @@ import { AppState, Platform, ScrollView, View } from 'react-native';
 
 import {
   conflictCells,
-  dailyDone,
   elapsedSeconds,
-  isTodaysDaily,
+  parkedDaily,
   resultOf,
   todayOf,
 } from '@correctiv/app-core/stores/sudoku';
@@ -75,6 +74,12 @@ const COPY = defineMessages({
   erase: { id: 'sudoku.erase', defaultMessage: 'Erase' },
   hint: { id: 'sudoku.hint', defaultMessage: 'Hint' },
   giveUp: { id: 'sudoku.giveUp', defaultMessage: 'Abandon this game' },
+  later: {
+    id: 'sudoku.later',
+    defaultMessage: 'Continue later',
+    description:
+      'Under the board of a daily puzzle, in place of sudoku.giveUp: the game is set aside with its clock stopped and picked up again from sudoku.continueDaily.',
+  },
   solvedSection: { id: 'sudoku.solved.section', defaultMessage: 'Solved' },
   solvedPoints: {
     id: 'sudoku.solved.points',
@@ -189,7 +194,7 @@ export default function SudokuScreen() {
 
   const today = todayOf(now);
   const todays = dailyResult(sudoku.scores, today, level);
-  const dailyOnBoard = isTodaysDaily(game, now, level) && open;
+  const dailyParked = parkedDaily(sudoku, now, level) !== null;
   const result = resultOf(sudoku);
   const levelWord = (difficulty: Difficulty) => intl.formatMessage(LEVEL_LABELS[difficulty]);
 
@@ -260,11 +265,11 @@ export default function SudokuScreen() {
                 />
               </View>
               <Button
-                title={intl.formatMessage(COPY.giveUp)}
+                title={intl.formatMessage(playing.daily ? COPY.later : COPY.giveUp)}
                 variant="secondary"
                 className="mt-m"
                 fullWidth
-                onPress={() => actions.sudoku.abandoned()}
+                onPress={() => actions.sudoku.left(Date.now())}
               />
             </>
           ) : (
@@ -314,10 +319,9 @@ export default function SudokuScreen() {
                   </Typo>
                 ) : (
                   <Button
-                    title={intl.formatMessage(dailyOnBoard ? COPY.continueDaily : COPY.playDaily)}
+                    title={intl.formatMessage(dailyParked ? COPY.continueDaily : COPY.playDaily)}
                     className="mt-s"
                     fullWidth
-                    disabled={dailyDone(sudoku, now, level)}
                     onPress={() => actions.sudoku.startDaily(level, Date.now())}
                   />
                 )}

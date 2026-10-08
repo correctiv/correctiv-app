@@ -337,6 +337,7 @@ export const en: Record<string, string> = {
   "sudoku.giveUp": "Abandon this game",
   "sudoku.hint": "Hint",
   "sudoku.intro": "A new puzzle every day, the same for every member. Fill each row, column and box with the digits 1 to 9.",
+  "sudoku.later": "Continue later",
   "sudoku.level.easy": "Easy",
   "sudoku.level.hard": "Hard",
   "sudoku.level.medium": "Medium",

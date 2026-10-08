@@ -57,6 +57,13 @@ export interface SudokuGame {
 
 export interface SudokuState {
   game: SudokuGame | null;
+  /**
+   * Daily puzzles left open when another game took the board or the player stepped away,
+   * one per difficulty. Starting that daily puzzle again picks the parked game up, clock,
+   * mistakes and hints included, so stepping away is not a way to a fresh clock on a grid
+   * the player has already half seen.
+   */
+  parked: SudokuGame[];
   scores: SudokuScore[];
   /** The cell the player has chosen. Not persisted: a restart starts with none. */
   selected: number | null;
@@ -65,7 +72,7 @@ export interface SudokuState {
 }
 
 /** What survives a restart. */
-export const PERSISTED_KEYS = ['game', 'scores'] satisfies Array<keyof SudokuState>;
+export const PERSISTED_KEYS = ['game', 'parked', 'scores'] satisfies Array<keyof SudokuState>;
 
 /**
  * How many results the device keeps. The weakest go first, so a table drawn from them
@@ -73,7 +80,13 @@ export const PERSISTED_KEYS = ['game', 'scores'] satisfies Array<keyof SudokuSta
  */
 export const SCORES_KEPT = 200;
 
-const initialState: SudokuState = { game: null, scores: [], selected: null, notesMode: false };
+const initialState: SudokuState = {
+  game: null,
+  parked: [],
+  scores: [],
+  selected: null,
+  notesMode: false,
+};
 
 function gameOf(puzzle: Puzzle, daily: BerlinDate | null): SudokuGame {
   return {
@@ -140,6 +153,24 @@ function place(game: SudokuGame, index: number, digit: number) {
   }
 }
 
+/**
+ * Takes the game off the board. An open daily puzzle is parked with its clock stopped, and
+ * parked games of an earlier day go: they can no longer be dealt.
+ */
+function clearBoard(state: SudokuState, now: Instant) {
+  const game = state.game;
+  if (isOpen(game) && game.daily !== null) {
+    stopClock(game, now);
+    state.parked = [
+      ...state.parked.filter((p) => p.daily === game.daily && p.puzzleId !== game.puzzleId),
+      game,
+    ];
+  }
+  state.game = null;
+  state.selected = null;
+  state.notesMode = false;
+}
+
 const isOpen = (game: SudokuGame | null): game is SudokuGame =>
   game !== null && game.finishedAt === null;
 
@@ -184,10 +215,22 @@ const slice = createSlice({
   name: 'sudoku',
   initialState,
   reducers: {
-    started(state, action: PayloadAction<{ puzzle: Puzzle; daily: BerlinDate | null }>) {
+    started(
+      state,
+      action: PayloadAction<{ puzzle: Puzzle; daily: BerlinDate | null; now: Instant }>,
+    ) {
+      clearBoard(state, action.payload.now);
       state.game = gameOf(action.payload.puzzle, action.payload.daily);
-      state.selected = null;
-      state.notesMode = false;
+    },
+
+    /** A parked daily puzzle back on the board, as it was left. */
+    unparked(state, action: PayloadAction<{ puzzleId: string; now: Instant }>) {
+      const { puzzleId, now } = action.payload;
+      const game = state.parked.find((p) => p.puzzleId === puzzleId);
+      if (!game) return;
+      state.parked = state.parked.filter((p) => p !== game);
+      clearBoard(state, now);
+      state.game = game;
     },
 
     /** The board is on screen. A clock that is already running keeps its start. */
@@ -263,10 +306,9 @@ const slice = createSlice({
       finishIfSolved(state, action.payload);
     },
 
-    abandoned(state) {
-      state.game = null;
-      state.selected = null;
-      state.notesMode = false;
+    /** Leaves the board: a free game is gone, a daily puzzle is parked. */
+    left(state, action: PayloadAction<Instant>) {
+      clearBoard(state, action.payload);
     },
 
     /**
@@ -276,8 +318,11 @@ const slice = createSlice({
      * now was not play, and there is no way to say how much of it was.
      */
     hydrate(state, action: PayloadAction<Partial<SudokuState>>) {
-      const { game, scores } = action.payload;
+      const { game, parked, scores } = action.payload;
       if (game !== undefined) state.game = isGame(game) ? { ...game, resumedAt: null } : null;
+      if (Array.isArray(parked)) {
+        state.parked = parked.filter(isGame).map((p) => ({ ...p, resumedAt: null }));
+      }
       if (Array.isArray(scores)) state.scores = scores.filter(isScore);
     },
   },
@@ -322,6 +367,15 @@ export function isTodaysDaily(
   return game !== null && game.daily === todayOf(now) && game.difficulty === difficulty;
 }
 
+/** Today's daily puzzle at a difficulty when it is parked, open and waiting. */
+export function parkedDaily(
+  state: SudokuState,
+  now: Instant,
+  difficulty: Difficulty,
+): SudokuGame | null {
+  return state.parked.find((game) => isTodaysDaily(game, now, difficulty)) ?? null;
+}
+
 /** The result the open-or-finished game produced, when it is finished. */
 export function resultOf(state: SudokuState): SudokuScore | null {
   const game = state.game;
@@ -336,8 +390,8 @@ export function resultOf(state: SudokuState): SudokuScore | null {
 // --- thunks ---------------------------------------------------------------------
 
 /**
- * Today's puzzle at a difficulty. A daily puzzle already on the board is kept as it is,
- * and one already solved is not dealt again, because a second try at it would be a
+ * Today's puzzle at a difficulty. A daily puzzle already on the board is kept as it is, a
+ * parked one is picked up where it was left, and one already solved is not dealt again, because a second try at it would be a
  * second result on a puzzle whose answer the player has seen. Returns whether a game is
  * on the board for it afterwards.
  */
@@ -346,11 +400,17 @@ export function startDaily(difficulty: Difficulty, now: Instant = Date.now()): A
     const state = getState().sudoku;
     if (isTodaysDaily(state.game, now, difficulty)) return true;
     if (dailyDone(state, now, difficulty)) return false;
+    const parked = parkedDaily(state, now, difficulty);
+    if (parked) {
+      dispatch(sudokuActions.unparked({ puzzleId: parked.puzzleId, now }));
+      return true;
+    }
     const date = todayOf(now);
     dispatch(
       sudokuActions.started({
         puzzle: generatePuzzle(dailySeed(date, difficulty), difficulty),
         daily: date,
+        now,
       }),
     );
     return true;
@@ -358,10 +418,18 @@ export function startDaily(difficulty: Difficulty, now: Instant = Date.now()): A
 }
 
 /** A new free game at a difficulty, from a fresh seed. */
-export function startFree(difficulty: Difficulty, random: () => number = Math.random): AppThunk {
+export function startFree(
+  difficulty: Difficulty,
+  random: () => number = Math.random,
+  now: Instant = Date.now(),
+): AppThunk {
   return (dispatch) => {
     dispatch(
-      sudokuActions.started({ puzzle: generatePuzzle(freeSeed(random), difficulty), daily: null }),
+      sudokuActions.started({
+        puzzle: generatePuzzle(freeSeed(random), difficulty),
+        daily: null,
+        now,
+      }),
     );
   };
 }

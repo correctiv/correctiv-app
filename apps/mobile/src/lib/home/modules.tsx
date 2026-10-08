@@ -32,7 +32,7 @@ import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
 import type { NewsletterKey } from '@correctiv/app-core/stores/settings';
 import type { Entitlement } from '@correctiv/app-core/types/models';
-import { elapsedSeconds, todayOf } from '@correctiv/app-core/stores/sudoku';
+import { elapsedSeconds, parkedDaily, todayOf } from '@correctiv/app-core/stores/sudoku';
 import { dailySeed, generatePuzzle, type Difficulty } from '@correctiv/app-core/sudoku/puzzle';
 import { dailyResult, formatDuration } from '@correctiv/app-core/sudoku/score';
 
@@ -679,14 +679,15 @@ const CARD_LEVEL: Difficulty = 'medium';
  * otherwise today's puzzle, and its button deals that puzzle before it opens the full
  * game, so a tap lands on a board and not on a choice.
  */
-const SudokuCardModule: HomeModule = ({ section }) => {
+const SudokuCardModule: HomeModule = ({ section, screen }) => {
   const actions = useCoreActions();
   const sudoku = useSudoku();
   const now = Date.now();
   const today = todayOf(now);
   const daily = useMemo(() => generatePuzzle(dailySeed(today, CARD_LEVEL), CARD_LEVEL), [today]);
   const game = sudoku.game;
-  const open = game !== null && game.finishedAt === null ? game : null;
+  const onBoard = game !== null && game.finishedAt === null ? game : null;
+  const open = onBoard ?? parkedDaily(sudoku, now, CARD_LEVEL);
   const solved = dailyResult(sudoku.scores, today, CARD_LEVEL);
   const state: SudokuCardState = open
     ? { kind: 'playing', time: formatDuration(elapsedSeconds(open, now)) }
@@ -695,13 +696,14 @@ const SudokuCardModule: HomeModule = ({ section }) => {
       : { kind: 'new' };
   const shown = open ?? (solved && game?.daily === today ? game : null);
   return (
-    <Place section={section} className="mt-l">
+    <Place section={section} className={screen === 'home' ? 'mt-l' : 'mt-m'}>
       <SudokuCard
         givens={shown?.givens ?? daily.givens}
         values={shown?.values ?? daily.givens}
         state={state}
         onPress={() => {
-          if (state.kind === 'new') actions.sudoku.startDaily(CARD_LEVEL, Date.now());
+          // Deals today's puzzle, or picks it up where it was parked.
+          if (!onBoard && !solved) actions.sudoku.startDaily(CARD_LEVEL, Date.now());
           router.push('/sudoku');
         }}
       />

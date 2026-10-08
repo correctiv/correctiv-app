@@ -182,6 +182,33 @@ describe('the slice', () => {
     expect(game().values).not.toEqual(game().givens);
   });
 
+  it('parks a daily puzzle that is left, and picks it up with its clock and mistakes', () => {
+    store.dispatch(startDaily('hard', NOW));
+    store.dispatch(sudokuActions.resumed(NOW));
+    const index = firstEmpty();
+    store.dispatch(sudokuActions.cellSelected(index));
+    store.dispatch(enterDigit((game().solution[index]! % 9) + 1, NOW));
+    const id = game().puzzleId;
+
+    // Stepping away and dealing a free game both leave the daily puzzle waiting.
+    store.dispatch(sudokuActions.left(NOW + 90_000));
+    expect(sudoku().game).toBeNull();
+    store.dispatch(startDaily('hard', NOW + 100_000));
+    store.dispatch(startFree('easy', seededRandom(6), NOW + 100_000));
+    expect(sudoku().parked.map((p) => p.puzzleId)).toEqual([id]);
+
+    store.dispatch(startDaily('hard', NOW + 500_000));
+    expect(game().puzzleId).toBe(id);
+    expect(game().mistakes).toBe(1);
+    expect(elapsedSeconds(game(), NOW + 500_000)).toBe(90);
+    expect(sudoku().parked).toEqual([]);
+
+    // A free game that is left is gone.
+    store.dispatch(startFree('easy', seededRandom(7), NOW + 600_000));
+    store.dispatch(sudokuActions.left(NOW + 600_000));
+    expect(sudoku().parked.map((p) => p.puzzleId)).toEqual([id]);
+  });
+
   it('counts a wrong digit as a mistake and shows it', () => {
     store.dispatch(startFree('easy', seededRandom(1)));
     const index = firstEmpty();

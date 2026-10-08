@@ -1071,6 +1071,10 @@
   "sudoku.intro": {
     "defaultMessage": "A new puzzle every day, the same for every member. Fill each row, column and box with the digits 1 to 9."
   },
+  "sudoku.later": {
+    "defaultMessage": "Continue later",
+    "description": "Under the board of a daily puzzle, in place of sudoku.giveUp: the game is set aside with its clock stopped and picked up again from sudoku.continueDaily."
+  },
   "sudoku.level.easy": {
     "defaultMessage": "Easy"
   },

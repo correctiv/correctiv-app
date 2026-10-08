@@ -19,6 +19,7 @@ export const sudoku: Record<string, string> = {
   'sudoku.erase': 'Löschen',
   'sudoku.hint': 'Tipp',
   'sudoku.giveUp': 'Dieses Spiel aufgeben',
+  'sudoku.later': 'Später weiterspielen',
   'sudoku.solved.section': 'Gelöst',
   'sudoku.solved.points': '{points, number} Punkte',
   'sudoku.solved.detail':

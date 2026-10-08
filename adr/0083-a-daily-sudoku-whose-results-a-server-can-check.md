@@ -47,6 +47,11 @@ says about themselves.
 `startDaily` keeps a daily puzzle that is on the board, and refuses to deal one already solved
 that day. A second attempt at a grid whose answer the player has seen is not a result.
 
+The same holds for a daily puzzle that is not finished. Leaving it, or dealing a free game over
+it, parks it with its clock stopped, and `startDaily` picks the parked game up with its time,
+mistakes and hints rather than dealing a fresh one. So the button under a daily board says
+"Später weiterspielen", and only a free game can be given up.
+
 ### 5. The clock is two numbers, not a timer
 
 The slice keeps the elapsed time of closed stretches of play and the moment the open one

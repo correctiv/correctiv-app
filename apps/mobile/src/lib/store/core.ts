@@ -484,7 +484,7 @@ function bindCoreActions(dispatch: AppDispatch) {
           cellSelected: sudokuActions.cellSelected,
           notesModeToggled: sudokuActions.notesModeToggled,
           erased: sudokuActions.erased,
-          abandoned: sudokuActions.abandoned,
+          left: sudokuActions.left,
           resumed: sudokuActions.resumed,
           paused: sudokuActions.paused,
         },
