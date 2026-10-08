@@ -85,6 +85,14 @@ import {
   type AppThunk,
   type RootState,
 } from '@correctiv/app-core/stores/store';
+import {
+  currentPlayer,
+  enterDigit,
+  giveHint,
+  startDaily,
+  startFree,
+  sudokuActions,
+} from '@correctiv/app-core/stores/sudoku';
 import { videoActions } from '@correctiv/app-core/stores/video';
 
 /**
@@ -197,6 +205,7 @@ export const useSettings = () => useAppSelector((s) => s.settings);
 export const useSession = () => useAppSelector((s) => s.session);
 export const useMedia = () => useAppSelector((s) => s.media);
 export const useVideo = () => useAppSelector((s) => s.video);
+export const useSudoku = () => useAppSelector((s) => s.sudoku);
 
 // --- narrow selectors --------------------------------------------------------
 
@@ -408,6 +417,13 @@ export const usePodcastSeries = (id: string) => {
   };
 };
 
+/**
+ * The name a result is entered under: the nickname from the settings, otherwise the
+ * first name and the initial of the last (`lib/player-name` in the core). A string, so
+ * it is compared by value and costs no render of its own.
+ */
+export const usePlayerName = () => useAppSelector(currentPlayer);
+
 export const useHasSubmitted = (slug: string) =>
   useAppSelector((s) => selectHasSubmitted(s.participation, slug));
 export const useExtraCount = (slug: string) =>
@@ -462,6 +478,23 @@ function bindCoreActions(dispatch: AppDispatch) {
     spotlight: { fetchIssues: bind(fetchIssues) },
     radio: { fetchStatus: bind(fetchRadioStatus) },
     media: { fetch: bind(fetchChannel) },
+    sudoku: {
+      ...bindActionCreators(
+        {
+          cellSelected: sudokuActions.cellSelected,
+          notesModeToggled: sudokuActions.notesModeToggled,
+          erased: sudokuActions.erased,
+          left: sudokuActions.left,
+          resumed: sudokuActions.resumed,
+          paused: sudokuActions.paused,
+        },
+        dispatch,
+      ),
+      startDaily: bind(startDaily),
+      startFree: bind(startFree),
+      enterDigit: bind(enterDigit),
+      giveHint: bind(giveHint),
+    },
     video: {
       ...bindActionCreators(
         { expand: videoActions.expand, collapse: videoActions.collapse, close: videoActions.close },

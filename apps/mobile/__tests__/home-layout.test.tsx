@@ -458,6 +458,7 @@ describe('what Mitmachen draws', () => {
       'faktenforum',
       'atlas',
       'tip',
+      'sudoku',
       'community',
     ]);
     expect(renderedText(tree)).toContain('Mitmachen');

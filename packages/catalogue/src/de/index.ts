@@ -35,6 +35,7 @@ import { recovery } from './recovery';
 import { search } from './search';
 import { series } from './series';
 import { settings } from './settings';
+import { sudoku } from './sudoku';
 import { ui } from './ui';
 import { video } from './video';
 
@@ -64,6 +65,7 @@ export const de: Record<string, string> = {
   ...search,
   ...series,
   ...settings,
+  ...sudoku,
   ...ui,
   ...video,
 };

@@ -7,7 +7,8 @@
     { "id": "newsletter", "state": "an" },
     { "id": "feeds", "state": "an" },
     { "id": "discovery", "state": "an" },
-    { "id": "library", "state": "an" }
+    { "id": "library", "state": "an" },
+    { "id": "games", "state": "vorschau" }
   ],
   "features": [
     { "id": "reader", "group": "core", "state": "an", "sources": ["articles"] },
@@ -46,6 +47,8 @@
     { "id": "feed-europe", "group": "feeds", "state": "vorschau", "sources": ["articles"] },
 
     { "id": "discover", "group": "discovery", "state": "an", "sources": ["projects", "articles"] },
-    { "id": "saved", "group": "library", "state": "an", "sources": ["articles"] }
+    { "id": "saved", "group": "library", "state": "an", "sources": ["articles"] },
+
+    { "id": "sudoku", "group": "games", "state": "vorschau" }
   ]
 }

@@ -71,6 +71,7 @@ const ONBOARDED = {
   textSize: 'system',
   newsletter: { spotlight: false, spotlightCh: false, klima: false },
   theme: 'system',
+  nickname: null,
 };
 
 /**

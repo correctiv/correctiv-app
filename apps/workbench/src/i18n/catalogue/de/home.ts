@@ -58,6 +58,8 @@ export const home: Record<string, string> = {
   'home.module.faktenforumCard.what': 'Die Karte zu den gemeinsam geprüften Behauptungen.',
   'home.module.atlasCard': 'Abriss-Atlas-Karte',
   'home.module.atlasCard.what': 'Die Karte zum Abriss-Atlas.',
+  'home.module.sudokuCard': 'Sudoku-Karte',
+  'home.module.sudokuCard.what': 'Das tägliche Sudoku im Kleinformat, mit dem Weg ins ganze Spiel.',
   'home.module.tipCard': 'Tipp-Karte',
   'home.module.tipCard.what': 'Die WhatsApp-Tippleitung der Faktencheck-Redaktion.',
   'home.module.screenLink': 'Link zu einem Bildschirm',

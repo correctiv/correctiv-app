@@ -78,7 +78,11 @@ import {
   Thumbnail,
   Typo,
 } from '@/components/ui';
+import { NumberPad } from '@/components/sudoku/NumberPad';
+import { SudokuBoard } from '@/components/sudoku/SudokuBoard';
+import { SudokuCard } from '@/components/sudoku/SudokuCard';
 import type { Callout } from '@correctiv/app-core/data/callouts';
+import { generatePuzzle } from '@correctiv/app-core/sudoku/puzzle';
 import type { Claim } from '@correctiv/app-core/data/claims';
 import type { PodcastSeries } from '@correctiv/app-core/data/podcasts';
 
@@ -102,6 +106,21 @@ import {
   SURVEY,
   VIDEO,
 } from './fixtures';
+
+/** One fixed puzzle for every Sudoku specimen, so the pictures do not change between runs. */
+const SUDOKU = generatePuzzle(2026, 'medium');
+/** The same puzzle a third of the way played, with one wrong digit and a few notes. */
+const SUDOKU_PLAYED = (() => {
+  const values = [...SUDOKU.givens];
+  const notes = Array.from({ length: 81 }, (): number => 0);
+  const empty = values.flatMap((digit, i) => (digit === 0 ? [i] : []));
+  empty.slice(0, 15).forEach((i) => (values[i] = SUDOKU.solution[i]!));
+  const wrongAt = empty[16]!;
+  values[wrongAt] = (SUDOKU.solution[wrongAt]! % 9) + 1;
+  notes[empty[20]!] = (1 << 2) | (1 << 5) | (1 << 9);
+  const wrong = values.map((digit, i) => digit !== 0 && digit !== SUDOKU.solution[i]);
+  return { values, notes, wrong, selected: empty[17]! };
+})();
 
 /** Every handler in the gallery. Nothing here navigates or plays. */
 const noop = () => {};
@@ -1045,6 +1064,88 @@ const LISTED = [
             height: 460,
             ownSurface: true,
             node: <RecoveryScreen detail={LONG_ERROR} onRetry={noop} />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    folder: 'sudoku',
+    entries: [
+      {
+        name: 'SudokuCard',
+        block: 'sudoku-card',
+        feature: 'sudoku',
+        specimens: [
+          {
+            label: 'state.kind="new"',
+            node: (
+              <SudokuCard
+                givens={SUDOKU.givens}
+                values={SUDOKU.givens}
+                state={{ kind: 'new' }}
+                onPress={noop}
+              />
+            ),
+          },
+          {
+            label: 'state.kind="playing"',
+            node: (
+              <SudokuCard
+                givens={SUDOKU.givens}
+                values={SUDOKU_PLAYED.values}
+                state={{ kind: 'playing', time: '4:12' }}
+                onPress={noop}
+              />
+            ),
+          },
+          {
+            label: 'state.kind="solved"',
+            node: (
+              <SudokuCard
+                givens={SUDOKU.givens}
+                values={SUDOKU.solution}
+                state={{ kind: 'solved', points: 2364, time: '7:48' }}
+                onPress={noop}
+              />
+            ),
+          },
+        ],
+      },
+      {
+        name: 'SudokuBoard',
+        feature: 'sudoku',
+        specimens: [
+          {
+            label: 'onSelect, selected, notes, wrong',
+            node: (
+              <SudokuBoard
+                givens={SUDOKU.givens}
+                values={SUDOKU_PLAYED.values}
+                notes={SUDOKU_PLAYED.notes}
+                wrong={SUDOKU_PLAYED.wrong}
+                selected={SUDOKU_PLAYED.selected}
+                onSelect={noop}
+              />
+            ),
+          },
+          {
+            label: 'compact',
+            node: <SudokuBoard givens={SUDOKU.givens} values={SUDOKU.givens} compact />,
+          },
+        ],
+      },
+      {
+        name: 'NumberPad',
+        feature: 'sudoku',
+        specimens: [
+          {
+            label: 'placed',
+            node: <NumberPad placed={[0, 9, 4, 6, 9, 2, 5, 7, 3, 8]} onDigit={noop} />,
+          },
+          {
+            label: 'disabled',
+            node: <NumberPad placed={[0, 9, 4, 6, 9, 2, 5, 7, 3, 8]} onDigit={noop} disabled />,
           },
         ],
       },

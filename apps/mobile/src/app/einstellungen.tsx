@@ -3,8 +3,17 @@ import { defineMessages, useIntl, type MessageDescriptor } from 'react-intl';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { SettingRow } from '@/components/profile/SettingRow';
-import { Button, ContentColumn, Hairline, ScreenHeader, SectionCard, Typo } from '@/components/ui';
+import {
+  Button,
+  ContentColumn,
+  Hairline,
+  ScaledTextInput,
+  ScreenHeader,
+  SectionCard,
+  Typo,
+} from '@/components/ui';
 import { openExternal } from '@/lib/openExternal';
+import { typography, useColors } from '@/lib/theme';
 import {
   useAppTextScale,
   useCoreActions,
@@ -17,6 +26,7 @@ import {
   TEXT_SIZE_STEPS,
   type TextSizeStep,
 } from '@correctiv/app-core/stores/settings';
+import { NICKNAME_MAX, shortName } from '@correctiv/app-core/lib/player-name';
 import type { EntitlementSource } from '@correctiv/app-core/types/models';
 
 /**
@@ -32,6 +42,12 @@ const COPY = defineMessages({
   signedOut: { id: 'settings.account.signedOut', defaultMessage: 'Not signed in' },
   signOut: { id: 'settings.account.signOut', defaultMessage: 'Sign out' },
   accessNone: { id: 'settings.access.none', defaultMessage: 'No app access' },
+  nicknameLabel: { id: 'settings.account.nickname', defaultMessage: 'Nickname' },
+  nicknameNote: {
+    id: 'settings.account.nicknameNote',
+    defaultMessage:
+      'Shown where other members can see you, in the Sudoku high scores first. Without one you appear with your first name and the initial of your last name.',
+  },
   notificationsSection: {
     id: 'settings.notifications.section',
     defaultMessage: 'Notifications',
@@ -151,6 +167,9 @@ export default function EinstellungenScreen() {
   const session = useSession();
   const intl = useIntl();
   const [resetDone, setResetDone] = useState(false);
+  const colors = useColors();
+  // The field keeps what is typed; the store keeps it normalised, on every change.
+  const [nickname, setNicknameDraft] = useState(settings.nickname ?? '');
 
   const followSystem = settings.theme === 'system';
   const textFollowsSystem = useTextSizeFollowsSystem();
@@ -186,6 +205,28 @@ export default function EinstellungenScreen() {
               fullWidth
               onPress={() => actions.session.signOut()}
             />
+            <Hairline className="my-s" />
+            <Typo variant="text-m" weight="semibold">
+              {intl.formatMessage(COPY.nicknameLabel)}
+            </Typo>
+            <ScaledTextInput
+              value={nickname}
+              onChangeText={(text) => {
+                setNicknameDraft(text);
+                actions.settings.setNickname(text);
+              }}
+              maxLength={NICKNAME_MAX * 2}
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel={intl.formatMessage(COPY.nicknameLabel)}
+              placeholder={shortName(session.account?.name) ?? undefined}
+              placeholderTextColor={colors['on-canvas-muted']}
+              className="mt-2xs rounded-md border border-stroke bg-canvas px-s py-s"
+              style={[typography['text-m'], { color: colors['on-canvas'] }]}
+            />
+            <Typo variant="text-s" color="on-canvas-muted" className="mt-2xs">
+              {intl.formatMessage(COPY.nicknameNote)}
+            </Typo>
           </SectionCard>
 
           <SectionCard label={intl.formatMessage(COPY.notificationsSection)} className="mt-m">

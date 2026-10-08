@@ -269,13 +269,13 @@ const STILL_IN_THE_MARKUP: Record<string, number> = {
   'preview/frame/seed.ts': 2,
   // At its floor: the name of a browser panel, and a token prefix in monospace.
   'preview/ui/Panels.tsx': 2,
-  // At its floor, and all 22 of it: the app's own screen names, from „Entdecken“
+  // At its floor, and all 23 of it: the app's own screen names, from „Entdecken“
   // to „Tagebuch“. The app ships in German, so these are what is written in its
   // tab bar and what somebody typing into that picker is looking for; the file's
   // own docblock argues it, and the three labels that ARE messages are the three
   // this site named itself because the screen behind them has no name. Counted
-  // rather than inherited: every one of the 22 is a screen name.
-  'preview/routes.ts': 22,
+  // rather than inherited: every one of the 23 is a screen name.
+  'preview/routes.ts': 23,
   // At its floor: the wordmark, and the wordmark with the product word after it.
   // `ui/Header.tsx` argues both as names, and a translator is not being asked to
   // rename the organisation.

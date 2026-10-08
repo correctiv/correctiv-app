@@ -5,6 +5,9 @@ export const settings: Record<string, string> = {
   'settings.account.section': 'Konto',
   'settings.account.signedOut': 'Nicht angemeldet',
   'settings.account.signOut': 'Abmelden',
+  'settings.account.nickname': 'Spitzname',
+  'settings.account.nicknameNote':
+    'Wird gezeigt, wo andere Mitglieder Sie sehen, zuerst in der Sudoku-Bestenliste. Ohne Spitznamen erscheinen Sie mit Vornamen und dem ersten Buchstaben Ihres Nachnamens.',
 
   'settings.access.paid': 'Mitgliedschaft mit Beitrag',
   'settings.access.localBundle': 'Lokal-Bundle',

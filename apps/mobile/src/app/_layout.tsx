@@ -29,6 +29,11 @@ import {
 } from '@correctiv/app-core/stores/participation';
 import { close as closeVideo } from '@correctiv/app-core/stores/video';
 import {
+  PERSISTED_KEYS as SUDOKU_KEYS,
+  sudokuActions,
+  type SudokuState,
+} from '@correctiv/app-core/stores/sudoku';
+import {
   PERSISTED_KEYS as HOME_LAYOUT_KEYS,
   homeLayoutActions,
   type HomeLayoutState,
@@ -99,6 +104,8 @@ function registerPersistence(): Promise<void> {
     // cache because that one evicts, and an evicted copy would put a phone back on the
     // bundled layout for a reason nobody could see.
     persisted<HomeLayoutState>('homeLayout', HOME_LAYOUT_KEYS, homeLayoutActions.hydrate),
+    // The game on the board and the results, so a puzzle survives the app being closed.
+    persisted<SudokuState>('sudoku', SUDOKU_KEYS, sudokuActions.hydrate),
   ]);
 }
 
