@@ -253,9 +253,11 @@ export function selectLayout(next: string): boolean {
 export function createScreen(id: string, title: string): NewScreenFault | null {
   const fault = newScreenFault(id);
   if (fault !== null) return fault;
+  const hadScreens = screenIds().length > 0;
   const layout = blankScreen(title.trim());
   layouts.set(id, layout);
   writeDraft(activeLayout(), id, layout);
+  listFirstScreen(id, hadScreens);
   screen = id;
   incoming.delete(id);
   notice = null;
@@ -325,9 +327,24 @@ export function subscribeLayout(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
+/**
+ * Puts the first screen a layout gets on its navigation. An empty navigation draws the empty
+ * state however many screens the layout carries, so a screen that nothing lists would stay
+ * invisible to the frame (and to the app, once submitted) until somebody opened it by its
+ * address. Only the first: the tabs of a layout that already has screens are the person's.
+ */
+function listFirstScreen(of: ScreenId, hadScreens: boolean): void {
+  if (hadScreens) return;
+  const navigation = getNavigation();
+  if (navigation.tabs.includes(of)) return;
+  setNavigation({ ...navigation, tabs: [...navigation.tabs, of] });
+}
+
 export function setLayout(next: HomeLayout): void {
+  const hadScreens = screenIds().length > 0;
   layouts.set(screen, next);
   writeDraft(activeLayout(), screen, next);
+  listFirstScreen(screen, hadScreens);
   incoming.delete(screen);
   notice = null;
   publishLayout();
