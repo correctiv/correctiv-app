@@ -822,5 +822,15 @@
       "2": ["A trigger is a slot, not a screen"],
       "3": ["The platform decides the bar, by file"]
     }
+  },
+  "0082": {
+    "slugs": ["push-goes-through-a-port-and-cleverpush-is-the-proposed-provider"],
+    "decisions": {
+      "1": ["Push is a port in the core, with a no-op default"],
+      "2": ["The reader's choice lives in the core, and the provider holds a copy"],
+      "3": ["Every push names a topic, and the general pushes are a topic"],
+      "4": ["The topic list is the provider's"],
+      "5": ["CleverPush, proposed as the first provider"]
+    }
   }
 }
