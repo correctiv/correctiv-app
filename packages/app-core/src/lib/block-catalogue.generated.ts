@@ -35,6 +35,7 @@ export const MODULE_CATEGORIES: Readonly<Record<string, BlockCategory>> = {
   'callout-list': 'mitmachen',
   'atlas-card': 'mitmachen',
   'community-note': 'mitmachen',
+  'sudoku-card': 'mitmachen',
   'early-access-card': 'club',
   'backstage-teaser': 'club',
   'profile-club-card': 'club',

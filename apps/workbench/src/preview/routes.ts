@@ -94,6 +94,7 @@ export const PAGES: PageGroup[] = [
       { route: '/backstage', label: 'Backstage' },
       { route: '/atlas', label: 'Abriss-Atlas' },
       { route: '/bericht', label: 'Quartalsbericht' },
+      { route: '/sudoku', label: 'Sudoku' },
       { route: '/einstellungen', label: 'Einstellungen' },
       { route: '/faktenforum', label: 'Faktenforum' },
       {

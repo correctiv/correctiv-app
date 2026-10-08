@@ -26,6 +26,7 @@ import { savedArticlesReducer } from './savedArticles';
 import { sessionReducer } from './session';
 import { settingsInitialState, settingsReducer, type Locale } from './settings';
 import { spotlightReducer } from './spotlight';
+import { sudokuReducer } from './sudoku';
 import { videoReducer } from './video';
 
 /**
@@ -54,6 +55,7 @@ const combined = combineReducers({
   video: videoReducer,
   homeLayout: homeLayoutReducer,
   features: featuresReducer,
+  sudoku: sudokuReducer,
 });
 
 /**

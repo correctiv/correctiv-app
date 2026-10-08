@@ -1,5 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import { normaliseNickname } from '../lib/player-name';
+
 export type TabId = 'home' | 'discover' | 'media' | 'participate' | 'profile';
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -72,6 +74,13 @@ export interface SettingsState {
    * decision is written: out of the core, into the host that knows the answer.
    */
   locale: Locale;
+  /**
+   * The name a member chose to be shown by where other members can see them, the
+   * Sudoku highscore first. Null is no choice, and `lib/player-name` then falls back to
+   * the first name and the initial of the last. Stored normalised, so what a table
+   * prints is what the field said after `normaliseNickname` and nothing rawer.
+   */
+  nickname: string | null;
   // Ephemeral shell state (not persisted)
   activeTab: TabId;
   visitedTabs: TabId[];
@@ -96,6 +105,7 @@ export const PERSISTED_KEYS = [
   'textSize',
   'newsletter',
   'theme',
+  'nickname',
 ] satisfies Array<keyof SettingsState>;
 
 /** Exported so `stores/store.ts` can build a preloaded slice on top of it. */
@@ -110,6 +120,7 @@ export const settingsInitialState: SettingsState = {
   },
   theme: 'system',
   locale: 'de',
+  nickname: null,
   activeTab: 'home',
   visitedTabs: ['home'],
 };
@@ -148,6 +159,11 @@ const slice = createSlice({
       state.pushOptIn = action.payload;
     },
 
+    /** Normalised here, so no caller can store a nickname the table would print raw. */
+    setNickname(state, action: PayloadAction<string | null>) {
+      state.nickname = normaliseNickname(action.payload);
+    },
+
     /**
      * The demo reset has to leave the app as if it were freshly installed: onboarding,
      * push, text size and the appearance setting. Interests live in their own slice —
@@ -168,9 +184,10 @@ const slice = createSlice({
      * control on the settings screen can show as chosen.
      */
     hydrate(state, action: PayloadAction<Partial<SettingsState>>) {
-      const { textSize, ...rest } = action.payload;
+      const { textSize, nickname, ...rest } = action.payload;
       Object.assign(state, rest);
       if (textSize !== undefined && isTextSize(textSize)) state.textSize = textSize;
+      if (nickname !== undefined) state.nickname = normaliseNickname(nickname);
     },
   },
 });
@@ -241,5 +258,6 @@ export const {
   setNewsletter,
   setTextSize,
   setPushOptIn,
+  setNickname,
   resetForDemo,
 } = slice.actions;

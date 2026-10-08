@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { defineMessages, useIntl, type IntlShape, type MessageDescriptor } from 'react-intl';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
@@ -32,6 +32,9 @@ import { formatDateShort } from '@correctiv/app-core/lib/format';
 import { quarterlyReport } from '@correctiv/app-core/data/quartalsbericht';
 import type { NewsletterKey } from '@correctiv/app-core/stores/settings';
 import type { Entitlement } from '@correctiv/app-core/types/models';
+import { elapsedSeconds, todayOf } from '@correctiv/app-core/stores/sudoku';
+import { dailySeed, generatePuzzle, type Difficulty } from '@correctiv/app-core/sudoku/puzzle';
+import { dailyResult, formatDuration } from '@correctiv/app-core/sudoku/score';
 
 import { ArticleHero } from '@/components/feed/ArticleHero';
 import { ArticleRow } from '@/components/feed/ArticleRow';
@@ -56,6 +59,7 @@ import { SeriesTile } from '@/components/media/SeriesTile';
 import { playEpisode, togglePlay } from '@/lib/audio/player';
 import { useEpisodeStatus } from '@/lib/audio/useAudio';
 import { CalloutCard } from '@/components/participate/CalloutCard';
+import { SudokuCard, type SudokuCardState } from '@/components/sudoku/SudokuCard';
 import {
   Button,
   Hairline,
@@ -100,6 +104,7 @@ import {
   useSavedArticles,
   useSession,
   useSettings,
+  useSudoku,
   useVideoChannel,
 } from '@/lib/store/core';
 import { sizes, useColors } from '@/lib/theme';
@@ -662,6 +667,44 @@ const TipCardModule: HomeModule = ({ section, screen }) => {
           className="mt-s"
         />
       </SectionCard>
+    </Place>
+  );
+};
+
+/** The difficulty the card deals: the middle one, the puzzle most members will finish. */
+const CARD_LEVEL: Difficulty = 'medium';
+
+/**
+ * The daily Sudoku in its small form. It shows the game on the board when one is open,
+ * otherwise today's puzzle, and its button deals that puzzle before it opens the full
+ * game, so a tap lands on a board and not on a choice.
+ */
+const SudokuCardModule: HomeModule = ({ section }) => {
+  const actions = useCoreActions();
+  const sudoku = useSudoku();
+  const now = Date.now();
+  const today = todayOf(now);
+  const daily = useMemo(() => generatePuzzle(dailySeed(today, CARD_LEVEL), CARD_LEVEL), [today]);
+  const game = sudoku.game;
+  const open = game !== null && game.finishedAt === null ? game : null;
+  const solved = dailyResult(sudoku.scores, today, CARD_LEVEL);
+  const state: SudokuCardState = open
+    ? { kind: 'playing', time: formatDuration(elapsedSeconds(open, now)) }
+    : solved
+      ? { kind: 'solved', points: solved.points, time: formatDuration(solved.seconds) }
+      : { kind: 'new' };
+  const shown = open ?? (solved && game?.daily === today ? game : null);
+  return (
+    <Place section={section} className="mt-l">
+      <SudokuCard
+        givens={shown?.givens ?? daily.givens}
+        values={shown?.values ?? daily.givens}
+        state={state}
+        onPress={() => {
+          if (state.kind === 'new') actions.sudoku.startDaily(CARD_LEVEL, Date.now());
+          router.push('/sudoku');
+        }}
+      />
     </Place>
   );
 };
@@ -1277,6 +1320,7 @@ export const HOME_MODULES: Readonly<Record<string, HomeModule>> = {
   'atlas-card': AtlasCardModule,
   'tip-card': TipCardModule,
   'community-note': CommunityNoteModule,
+  'sudoku-card': SudokuCardModule,
   'screen-link': ScreenLinkModule,
   'profile-club-card': ProfileClubCardModule,
   'profile-membership': ProfileMembershipModule,

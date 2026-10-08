@@ -832,5 +832,16 @@
       "4": ["The topic list is the provider's"],
       "5": ["CleverPush, proposed as the first provider"]
     }
+  },
+  "0083": {
+    "slugs": ["a-daily-sudoku-whose-results-a-server-can-check"],
+    "decisions": {
+      "1": ["A puzzle is a function of its seed"],
+      "2": ["Points are a function of four facts"],
+      "3": ["The name is the nickname, or the first name and one initial"],
+      "4": ["A daily puzzle counts once"],
+      "5": ["The clock is two numbers, not a timer"],
+      "6": ["It is `vorschau`, in a group of its own, on `demo`'s Mitmachen"]
+    }
   }
 }

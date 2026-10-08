@@ -348,6 +348,13 @@ export const MODULE_LABELS: Readonly<Record<string, ModuleWords>> = {
       defaultMessage: 'A short note about the community area.',
     }),
   },
+  'sudoku-card': {
+    label: wbMessage({ id: 'home.module.sudokuCard', defaultMessage: 'Sudoku card' }),
+    what: wbMessage({
+      id: 'home.module.sudokuCard.what',
+      defaultMessage: 'The daily Sudoku in its small form, with the way into the full game.',
+    }),
+  },
   'profile-club-card': {
     label: wbMessage({ id: 'home.module.profileClubCard', defaultMessage: 'Profile card' }),
     what: wbMessage({

@@ -946,6 +946,12 @@
     "defaultMessage": "Trial",
     "description": "In the settings, answering how this account has app access. gate.noAccess.tierTrial is the same word at the door, where it names the account's tier."
   },
+  "settings.account.nickname": {
+    "defaultMessage": "Nickname"
+  },
+  "settings.account.nicknameNote": {
+    "defaultMessage": "Shown where other members can see you, in the Sudoku high scores first. Without one you appear with your first name and the initial of your last name."
+  },
   "settings.account.section": {
     "defaultMessage": "Account"
   },
@@ -1006,6 +1012,133 @@
   },
   "settings.title": {
     "defaultMessage": "Settings"
+  },
+  "sudoku.board": {
+    "defaultMessage": "Sudoku board"
+  },
+  "sudoku.card.heading": {
+    "defaultMessage": "The daily Sudoku"
+  },
+  "sudoku.card.label": {
+    "defaultMessage": "Puzzle of the day"
+  },
+  "sudoku.card.leadNew": {
+    "defaultMessage": "One puzzle a day, the same for every member. How fast are you?"
+  },
+  "sudoku.card.leadPlaying": {
+    "defaultMessage": "Your game is open: {time} so far.",
+    "description": "On the home card while a game is open. {time} is the clock as minutes:seconds."
+  },
+  "sudoku.card.leadSolved": {
+    "defaultMessage": "Solved today: {points, number} points in {time}.",
+    "description": "On the home card once today's puzzle is solved. {points} is the score, {time} minutes:seconds."
+  },
+  "sudoku.card.play": {
+    "defaultMessage": "Play now"
+  },
+  "sudoku.card.resume": {
+    "defaultMessage": "Continue"
+  },
+  "sudoku.card.table": {
+    "defaultMessage": "See the high scores"
+  },
+  "sudoku.cell": {
+    "defaultMessage": "Row {row}, column {column}: {digit, select, 0 {empty} other {{digit}}}{state, select, given {, given} wrong {, wrong} other {}}",
+    "description": "The accessible name of one cell, read aloud and never seen. {row} and {column} count from 1 to 9 from the top left; {digit} is the digit in the cell, 0 when it is empty; {state} is given for a printed digit the player cannot change, wrong for a digit that is not the solution, and anything else for neither."
+  },
+  "sudoku.continueDaily": {
+    "defaultMessage": "Continue today's puzzle"
+  },
+  "sudoku.dailySolved": {
+    "defaultMessage": "Today's puzzle solved: {points, number} points in {time}",
+    "description": "Under the difficulty choice once the daily puzzle at that difficulty is solved. {points} is the score, {time} the time it took as minutes:seconds."
+  },
+  "sudoku.difficulty": {
+    "defaultMessage": "Difficulty"
+  },
+  "sudoku.erase": {
+    "defaultMessage": "Erase"
+  },
+  "sudoku.freeNote": {
+    "defaultMessage": "A free game is a puzzle of its own and counts towards the table as well."
+  },
+  "sudoku.giveUp": {
+    "defaultMessage": "Abandon this game"
+  },
+  "sudoku.hint": {
+    "defaultMessage": "Hint"
+  },
+  "sudoku.intro": {
+    "defaultMessage": "A new puzzle every day, the same for every member. Fill each row, column and box with the digits 1 to 9."
+  },
+  "sudoku.level.easy": {
+    "defaultMessage": "Easy"
+  },
+  "sudoku.level.hard": {
+    "defaultMessage": "Hard"
+  },
+  "sudoku.level.medium": {
+    "defaultMessage": "Medium"
+  },
+  "sudoku.newFree": {
+    "defaultMessage": "New free game"
+  },
+  "sudoku.notes": {
+    "defaultMessage": "Notes",
+    "description": "A switch under the board: while it is on, a digit goes into the chosen cell as a pencil mark. The button is filled while it is on."
+  },
+  "sudoku.pad.digit": {
+    "defaultMessage": "{digit}, {remaining, plural, =0 {all placed} one {one left} other {# left}}",
+    "description": "The accessible name of one digit button under the board. {digit} is the digit from 1 to 9, {remaining} how many of it are still missing from the board."
+  },
+  "sudoku.playDaily": {
+    "defaultMessage": "Play today's puzzle"
+  },
+  "sudoku.setNickname": {
+    "defaultMessage": "Choose a nickname"
+  },
+  "sudoku.solved.detail": {
+    "defaultMessage": "{time} · {mistakes, plural, =0 {no mistakes} one {one mistake} other {# mistakes}} · {hints, plural, =0 {no hints} one {one hint} other {# hints}} · place {rank} at this level",
+    "description": "Under the points once a puzzle is solved. {time} is minutes:seconds, {mistakes} and {hints} are counts, {rank} the place among all results at the same difficulty on this device."
+  },
+  "sudoku.solved.points": {
+    "defaultMessage": "{points, number} points",
+    "description": "The large figure on the card shown once a puzzle is solved. {points} is the score."
+  },
+  "sudoku.solved.section": {
+    "defaultMessage": "Solved"
+  },
+  "sudoku.status": {
+    "defaultMessage": "{kind, select, daily {Daily puzzle} other {Free game}} · {difficulty} · {time} · {mistakes, plural, =0 {no mistakes} one {one mistake} other {# mistakes}}",
+    "description": "The line above the board. {kind} is daily or free, {difficulty} the difficulty as sudoku.level.* words it, {time} the clock as minutes:seconds, {mistakes} how many wrong digits were entered."
+  },
+  "sudoku.table.all": {
+    "defaultMessage": "All"
+  },
+  "sudoku.table.anonymous": {
+    "defaultMessage": "Anonymous member",
+    "description": "Stands in the high score table for a result entered while nobody was signed in, and for the player when no name is known."
+  },
+  "sudoku.table.empty": {
+    "defaultMessage": "No puzzle solved yet. The first result will be listed here."
+  },
+  "sudoku.table.note": {
+    "defaultMessage": "Your results are listed as \"{name}\". The table is kept on this device for now; a shared one for all members is planned.",
+    "description": "Under the high score table. {name} is the nickname, or the first name and the initial of the last name."
+  },
+  "sudoku.table.row": {
+    "defaultMessage": "{rank}. {name}",
+    "description": "One row of the high score table: {rank} is the place, {name} who played."
+  },
+  "sudoku.table.section": {
+    "defaultMessage": "High scores"
+  },
+  "sudoku.table.value": {
+    "defaultMessage": "{points, number} · {time}",
+    "description": "The right side of one high score row: {points} the score, {time} minutes:seconds."
+  },
+  "sudoku.title": {
+    "defaultMessage": "Sudoku"
   },
   "ui.back": {
     "defaultMessage": "Back",
